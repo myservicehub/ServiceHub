@@ -19,16 +19,16 @@ const Header = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <a href="#" className="text-gray-700 hover:text-green-600 transition-colors">
+            <a href="#" className="text-gray-700 hover:text-green-600 transition-colors" style={{'--tw-text-opacity': '1', color: 'rgb(107 114 128 / var(--tw-text-opacity))'}} onMouseEnter={(e) => e.target.style.color = '#2F8140'} onMouseLeave={(e) => e.target.style.color = 'rgb(107 114 128)'}>
               How it works
             </a>
-            <a href="#" className="text-gray-700 hover:text-green-600 transition-colors">
+            <a href="#" className="text-gray-700 hover:text-green-600 transition-colors" style={{'--tw-text-opacity': '1', color: 'rgb(107 114 128 / var(--tw-text-opacity))'}} onMouseEnter={(e) => e.target.style.color = '#2F8140'} onMouseLeave={(e) => e.target.style.color = 'rgb(107 114 128)'}>
               Find tradespeople
             </a>
-            <a href="#" className="text-gray-700 hover:text-green-600 transition-colors">
+            <a href="#" className="text-gray-700 hover:text-green-600 transition-colors" style={{'--tw-text-opacity': '1', color: 'rgb(107 114 128 / var(--tw-text-opacity))'}} onMouseEnter={(e) => e.target.style.color = '#2F8140'} onMouseLeave={(e) => e.target.style.color = 'rgb(107 114 128)'}>
               Join as tradesperson
             </a>
-            <a href="#" className="text-gray-700 hover:text-green-600 transition-colors">
+            <a href="#" className="text-gray-700 hover:text-green-600 transition-colors" style={{'--tw-text-opacity': '1', color: 'rgb(107 114 128 / var(--tw-text-opacity))'}} onMouseEnter={(e) => e.target.style.color = '#2F8140'} onMouseLeave={(e) => e.target.style.color = 'rgb(107 114 128)'}>
               Help
             </a>
           </nav>
