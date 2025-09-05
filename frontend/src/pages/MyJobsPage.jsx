@@ -480,9 +480,9 @@ const MyJobsPage = () => {
                             {/* Action Buttons */}
                             <div className="flex justify-between items-center pt-4 border-t">
                               <div className="text-sm text-gray-500 font-lato">
-                                {job.quotes_count > 0 
-                                  ? `${job.quotes_count} quote${job.quotes_count > 1 ? 's' : ''} received`
-                                  : 'No quotes yet'
+                                {job.interests_count > 0 
+                                  ? `${job.interests_count} tradesperson${job.interests_count > 1 ? 's' : ''} interested`
+                                  : 'No interested tradespeople yet'
                                 }
                               </div>
                               
