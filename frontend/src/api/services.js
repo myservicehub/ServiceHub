@@ -1,5 +1,48 @@
 import apiClient from './client';
 
+// Authentication API
+export const authAPI = {
+  login: async (email, password) => {
+    const response = await apiClient.post('/auth/login', { email, password });
+    return response.data;
+  },
+
+  registerHomeowner: async (registrationData) => {
+    const response = await apiClient.post('/auth/register/homeowner', registrationData);
+    return response.data;
+  },
+
+  registerTradesperson: async (registrationData) => {
+    const response = await apiClient.post('/auth/register/tradesperson', registrationData);
+    return response.data;
+  },
+
+  getCurrentUser: async () => {
+    const response = await apiClient.get('/auth/me');
+    return response.data;
+  },
+
+  updateProfile: async (profileData) => {
+    const response = await apiClient.put('/auth/profile', profileData);
+    return response.data;
+  },
+
+  updateTradespersonProfile: async (profileData) => {
+    const response = await apiClient.put('/auth/profile/tradesperson', profileData);
+    return response.data;
+  },
+
+  logout: async () => {
+    const response = await apiClient.post('/auth/logout');
+    return response.data;
+  },
+
+  requestPasswordReset: async (email) => {
+    const response = await apiClient.post('/auth/password-reset-request', { email });
+    return response.data;
+  },
+};
+
 // Statistics API
 export const statsAPI = {
   getStats: async () => {
