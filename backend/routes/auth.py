@@ -45,8 +45,9 @@ async def register_homeowner(registration_data: HomeownerRegistration):
         formatted_phone = format_nigerian_phone(registration_data.phone)
 
         # Create user data
+        user_id = str(uuid.uuid4())
         user_data = {
-            "id": str(uuid.uuid4()),
+            "id": user_id,
             "name": registration_data.name,
             "email": registration_data.email,
             "phone": formatted_phone,
@@ -57,6 +58,10 @@ async def register_homeowner(registration_data: HomeownerRegistration):
             "postcode": registration_data.postcode,
             "email_verified": False,
             "phone_verified": False,
+            "is_verified": False,
+            "verification_submitted": False,
+            "total_referrals": 0,
+            "referral_coins_earned": 0,
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
             "avatar_url": None,
