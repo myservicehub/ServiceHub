@@ -8,7 +8,7 @@ from pathlib import Path
 
 # Import database and routes
 from database import database
-from routes import jobs, tradespeople, quotes, reviews, stats
+from routes import jobs, tradespeople, quotes, reviews, stats, auth
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
