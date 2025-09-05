@@ -12,19 +12,19 @@ const StatsSection = () => {
       icon: Users,
       number: '251,959',
       label: 'registered tradespeople',
-      color: 'text-green-600'
+      color: '#2F8140'
     },
     {
       icon: Wrench,
       number: '40+',
       label: 'trade categories',
-      color: 'text-orange-500'
+      color: '#121E3C'
     },
     {
       icon: Star,
       number: '2,630,834',
       label: 'customer reviews',
-      color: 'text-yellow-500'
+      color: '#2F8140'
     }
   ];
 
@@ -34,19 +34,19 @@ const StatsSection = () => {
       icon: Users,
       number: stats.total_tradespeople.toLocaleString(),
       label: 'registered tradespeople',
-      color: 'text-green-600'
+      color: '#2F8140'
     },
     {
       icon: Wrench,
       number: `${stats.total_categories}+`,
       label: 'trade categories',
-      color: 'text-orange-500'
+      color: '#121E3C'
     },
     {
       icon: Star,
       number: stats.total_reviews.toLocaleString(),
       label: 'customer reviews',
-      color: 'text-yellow-500'
+      color: '#2F8140'
     }
   ] : defaultStats;
 
@@ -62,13 +62,13 @@ const StatsSection = () => {
             const IconComponent = stat.icon;
             return (
               <div key={index} className="text-center">
-                <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4 ${stat.color}`}>
-                  <IconComponent size={32} />
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
+                  <IconComponent size={32} style={{color: stat.color}} />
                 </div>
-                <div className={`text-3xl font-bold text-gray-900 mb-2 ${loading ? 'animate-pulse bg-gray-200 rounded' : ''}`}>
+                <div className={`text-3xl font-bold font-montserrat mb-2 ${loading ? 'animate-pulse bg-gray-200 rounded' : ''}`} style={{color: '#121E3C'}}>
                   {loading ? '...' : stat.number}
                 </div>
-                <div className="text-gray-600">
+                <div className="text-gray-600 font-lato">
                   {stat.label}
                 </div>
               </div>

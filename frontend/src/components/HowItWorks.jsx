@@ -29,10 +29,10 @@ const HowItWorks = () => {
       <div className="container mx-auto px-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl lg:text-4xl font-bold font-montserrat mb-4" style={{color: '#121E3C'}}>
               How to hire the right tradesperson
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-xl text-gray-600 font-lato max-w-2xl mx-auto">
               Finding reliable tradespeople has never been easier. Follow these simple steps to get your job done.
             </p>
           </div>
@@ -43,17 +43,17 @@ const HowItWorks = () => {
               return (
                 <div key={index} className="text-center">
                   <div className="relative mb-6">
-                    <div className="w-20 h-20 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <span className="text-2xl font-bold text-white">{step.number}</span>
+                    <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4" style={{backgroundColor: '#2F8140'}}>
+                      <span className="text-2xl font-bold font-montserrat text-white">{step.number}</span>
                     </div>
-                    <div className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center mx-auto -mt-6 ml-14">
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto -mt-6 ml-14" style={{backgroundColor: '#121E3C'}}>
                       <IconComponent size={24} className="text-white" />
                     </div>
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                  <h3 className="text-xl font-semibold font-montserrat mb-3" style={{color: '#121E3C'}}>
                     {step.title}
                   </h3>
-                  <p className="text-gray-600">
+                  <p className="text-gray-600 font-lato">
                     {step.description}
                   </p>
                 </div>
@@ -62,7 +62,7 @@ const HowItWorks = () => {
           </div>
 
           <div className="text-center">
-            <Button className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 text-lg">
+            <Button className="text-white px-8 py-3 text-lg font-lato hover:opacity-90" style={{backgroundColor: '#2F8140'}}>
               See how it works
             </Button>
           </div>

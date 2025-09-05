@@ -12,33 +12,33 @@ const Header = () => {
           {/* Logo */}
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{backgroundColor: '#2F8140'}}>
-              <span className="text-white font-bold text-sm">S</span>
+              <span className="text-white font-bold text-sm font-montserrat">S</span>
             </div>
-            <span className="text-xl font-bold" style={{color: '#121E3C'}}>serviceHub</span>
+            <span className="text-xl font-bold font-montserrat" style={{color: '#121E3C'}}>serviceHub</span>
           </div>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <a href="#" className="text-gray-700 hover:text-green-600 transition-colors" style={{'--tw-text-opacity': '1', color: 'rgb(107 114 128 / var(--tw-text-opacity))'}} onMouseEnter={(e) => e.target.style.color = '#2F8140'} onMouseLeave={(e) => e.target.style.color = 'rgb(107 114 128)'}>
+            <a href="#" className="text-gray-700 font-lato transition-colors hover:text-[#2F8140]">
               How it works
             </a>
-            <a href="#" className="text-gray-700 hover:text-green-600 transition-colors" style={{'--tw-text-opacity': '1', color: 'rgb(107 114 128 / var(--tw-text-opacity))'}} onMouseEnter={(e) => e.target.style.color = '#2F8140'} onMouseLeave={(e) => e.target.style.color = 'rgb(107 114 128)'}>
+            <a href="#" className="text-gray-700 font-lato transition-colors hover:text-[#2F8140]">
               Find tradespeople
             </a>
-            <a href="#" className="text-gray-700 hover:text-green-600 transition-colors" style={{'--tw-text-opacity': '1', color: 'rgb(107 114 128 / var(--tw-text-opacity))'}} onMouseEnter={(e) => e.target.style.color = '#2F8140'} onMouseLeave={(e) => e.target.style.color = 'rgb(107 114 128)'}>
+            <a href="#" className="text-gray-700 font-lato transition-colors hover:text-[#2F8140]">
               Join as tradesperson
             </a>
-            <a href="#" className="text-gray-700 hover:text-green-600 transition-colors" style={{'--tw-text-opacity': '1', color: 'rgb(107 114 128 / var(--tw-text-opacity))'}} onMouseEnter={(e) => e.target.style.color = '#2F8140'} onMouseLeave={(e) => e.target.style.color = 'rgb(107 114 128)'}>
+            <a href="#" className="text-gray-700 font-lato transition-colors hover:text-[#2F8140]">
               Help
             </a>
           </nav>
 
           {/* Desktop Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button variant="ghost" className="text-gray-700 hover:text-green-600">
+            <Button variant="ghost" className="text-gray-700 font-lato hover:text-[#2F8140]">
               Sign in
             </Button>
-            <Button className="bg-green-600 hover:bg-green-700 text-white">
+            <Button className="font-lato text-white hover:opacity-90" style={{backgroundColor: '#2F8140'}}>
               Post a job
             </Button>
           </div>
@@ -47,6 +47,7 @@ const Header = () => {
           <button
             className="md:hidden"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
+            style={{color: '#121E3C'}}
           >
             {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
@@ -56,23 +57,23 @@ const Header = () => {
         {isMenuOpen && (
           <div className="md:hidden border-t bg-white py-4">
             <nav className="flex flex-col space-y-4">
-              <a href="#" className="text-gray-700 hover:text-green-600 transition-colors">
+              <a href="#" className="text-gray-700 font-lato transition-colors hover:text-[#2F8140]">
                 How it works
               </a>
-              <a href="#" className="text-gray-700 hover:text-green-600 transition-colors">
+              <a href="#" className="text-gray-700 font-lato transition-colors hover:text-[#2F8140]">
                 Find tradespeople
               </a>
-              <a href="#" className="text-gray-700 hover:text-green-600 transition-colors">
+              <a href="#" className="text-gray-700 font-lato transition-colors hover:text-[#2F8140]">
                 Join as tradesperson
               </a>
-              <a href="#" className="text-gray-700 hover:text-green-600 transition-colors">
+              <a href="#" className="text-gray-700 font-lato transition-colors hover:text-[#2F8140]">
                 Help
               </a>
               <div className="flex flex-col space-y-2 pt-4">
-                <Button variant="ghost" className="text-gray-700 hover:text-green-600 justify-start">
+                <Button variant="ghost" className="text-gray-700 font-lato hover:text-[#2F8140] justify-start">
                   Sign in
                 </Button>
-                <Button className="bg-green-600 hover:bg-green-700 text-white justify-start">
+                <Button className="font-lato text-white justify-start" style={{backgroundColor: '#2F8140'}}>
                   Post a job
                 </Button>
               </div>

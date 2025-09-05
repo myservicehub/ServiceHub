@@ -67,14 +67,14 @@ const HeroSection = () => {
   };
 
   return (
-    <section className="bg-gradient-to-br from-green-50 to-orange-50 py-16 lg:py-24">
+    <section className="py-16 lg:py-24" style={{background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)'}}>
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-6">
+          <h1 className="text-4xl lg:text-6xl font-bold font-montserrat mb-6" style={{color: '#121E3C'}}>
             The reliable way to hire a{' '}
-            <span className="text-green-600">tradesperson</span>
+            <span style={{color: '#2F8140'}}>tradesperson</span>
           </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-600 font-lato mb-8 max-w-2xl mx-auto">
             Post your job for free and connect with vetted, local tradespeople across Nigeria. 
             Read genuine reviews from homeowners like you.
           </p>
@@ -89,7 +89,7 @@ const HeroSection = () => {
                   placeholder="What job do you need doing?"
                   value={job}
                   onChange={(e) => setJob(e.target.value)}
-                  className="pl-10 h-12 text-lg"
+                  className="pl-10 h-12 text-lg font-lato"
                 />
               </div>
               <div className="flex-1 relative">
@@ -99,20 +99,21 @@ const HeroSection = () => {
                   placeholder="Where are you based?"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  className="pl-10 h-12 text-lg"
+                  className="pl-10 h-12 text-lg font-lato"
                 />
               </div>
               <Button 
                 type="submit" 
                 disabled={isSearching}
-                className="bg-orange-500 hover:bg-orange-600 text-white h-12 px-8 text-lg font-semibold disabled:opacity-50"
+                className="text-white h-12 px-8 text-lg font-semibold font-lato disabled:opacity-50 hover:opacity-90"
+                style={{backgroundColor: '#121E3C'}}
               >
                 {isSearching ? 'Searching...' : 'Find tradespeople'}
               </Button>
             </div>
           </form>
 
-          <p className="text-gray-500 text-sm">
+          <p className="text-gray-500 text-sm font-lato">
             Posting is free and only takes a couple of minutes
           </p>
         </div>
