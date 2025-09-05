@@ -1752,17 +1752,51 @@ class BackendTester:
                 print(f"   • {error}")
         
         return self.results
+
+    def run_interest_system_tests(self):
+        """Run comprehensive interest system tests for lead generation marketplace"""
+        print("🚀 Starting ServiceHub Interest System Tests (Lead Generation)")
+        print(f"Testing against: {self.base_url}")
+        
+        try:
+            self.test_health_endpoints()
+            self.test_authentication_system()
+            self.test_homeowner_job_management()
+            self.test_interest_system()
+            
+        except Exception as e:
+            print(f"\n❌ Critical test failure: {e}")
+            self.results['failed'] += 1
+            self.results['errors'].append(f"Critical failure: {str(e)}")
+        
+        # Print summary
+        print(f"\n{'='*60}")
+        print("🏁 INTEREST SYSTEM TEST SUMMARY")
+        print(f"{'='*60}")
+        print(f"✅ Passed: {self.results['passed']}")
+        print(f"❌ Failed: {self.results['failed']}")
+        
+        if self.results['passed'] + self.results['failed'] > 0:
+            success_rate = (self.results['passed']/(self.results['passed']+self.results['failed'])*100)
+            print(f"📊 Success Rate: {success_rate:.1f}%")
+        
+        if self.results['errors']:
+            print(f"\n🔍 FAILED TESTS:")
+            for error in self.results['errors']:
+                print(f"   • {error}")
+        
+        return self.results
     
 if __name__ == "__main__":
     tester = BackendTester()
     
-    # Run communication system tests as requested
-    results = tester.run_communication_system_tests()
+    # Run interest system tests as requested
+    results = tester.run_interest_system_tests()
     
     # Exit with error code if tests failed
     if results['failed'] > 0:
-        print(f"\n⚠️  Communication system tests completed with {results['failed']} failures")
+        print(f"\n⚠️  Interest system tests completed with {results['failed']} failures")
         exit(1)
     else:
-        print(f"\n🎉 All communication system tests passed successfully!")
+        print(f"\n🎉 All interest system tests passed successfully!")
         exit(0)
