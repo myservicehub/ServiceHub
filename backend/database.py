@@ -853,7 +853,7 @@ class Database:
     async def update_interest_status(self, interest_id: str, update_data: dict) -> Optional[dict]:
         """Update interest status and related fields"""
         result = await self.interests_collection.update_one(
-            {"_id": interest_id},
+            {"id": interest_id},
             {"$set": update_data}
         )
         
