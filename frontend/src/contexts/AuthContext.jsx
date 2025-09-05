@@ -97,6 +97,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateUser = (userData) => {
+    setUser(userData);
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     setToken(null);
