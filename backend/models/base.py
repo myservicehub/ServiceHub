@@ -302,3 +302,60 @@ class ContactDetails(BaseModel):
     job_description: str
     job_location: str
     budget_range: Optional[str] = None
+
+# Wallet System Models
+class TransactionType(str, Enum):
+    WALLET_FUNDING = "wallet_funding"
+    ACCESS_FEE_DEDUCTION = "access_fee_deduction"
+    REFUND = "refund"
+
+class TransactionStatus(str, Enum):
+    PENDING = "pending"
+    CONFIRMED = "confirmed"
+    REJECTED = "rejected"
+
+class Wallet(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    balance_coins: int = 0  # Balance in coins (1 coin = ₦100)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class WalletTransaction(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    wallet_id: str
+    user_id: str
+    transaction_type: TransactionType
+    amount_coins: int  # Amount in coins
+    amount_naira: int  # Amount in naira (for display)
+    status: TransactionStatus = TransactionStatus.PENDING
+    description: str
+    reference: Optional[str] = None  # Payment reference/proof
+    proof_image: Optional[str] = None  # Payment proof screenshot
+    admin_notes: Optional[str] = None
+    processed_by: Optional[str] = None  # Admin who processed
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    processed_at: Optional[datetime] = None
+
+class WalletFundingRequest(BaseModel):
+    amount_naira: int = Field(..., ge=1500)  # Minimum funding ₦1500
+    proof_image: str  # Base64 or filename of payment proof
+
+class WalletResponse(BaseModel):
+    balance_coins: int
+    balance_naira: int
+    transactions: List[WalletTransaction] = []
+
+# Job with Access Fee
+class JobWithAccessFee(Job):
+    access_fee_naira: int = 1500  # Default ₦1500
+    access_fee_coins: int = 15   # Default 15 coins
+
+class JobAccessFeeUpdate(BaseModel):
+    access_fee_naira: int = Field(..., ge=1500, le=5000)  # ₦1500 - ₦5000
+
+# Bank Details Model for Frontend
+class BankDetails(BaseModel):
+    bank_name: str = "Kuda Bank"
+    account_name: str = "Francis Erayefa Samuel"
+    account_number: str = "1100023164"
