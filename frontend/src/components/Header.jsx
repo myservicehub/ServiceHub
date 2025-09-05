@@ -11,10 +11,10 @@ const Header = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{backgroundColor: '#2F8140'}}>
               <span className="text-white font-bold text-sm">S</span>
             </div>
-            <span className="text-xl font-bold text-gray-900">serviceHub</span>
+            <span className="text-xl font-bold" style={{color: '#121E3C'}}>serviceHub</span>
           </div>
 
           {/* Desktop Navigation */}
