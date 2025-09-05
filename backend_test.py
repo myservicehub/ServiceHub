@@ -848,8 +848,9 @@ class BackendTester:
             else:
                 self.log_result("Portfolio item deletion", False, f"Status: {response.status_code}")
         
-        # Test 11: Error Handling - Invalid Portfolio Item ID
-        response = self.make_request("GET", "/portfolio/invalid-item-id")
+        # Test 11: Error Handling - Invalid Portfolio Item ID for Update
+        response = self.make_request("PUT", "/portfolio/invalid-item-id", 
+                                   params={'title': 'Test'}, auth_token=tradesperson_token)
         if response.status_code == 404:
             self.log_result("Invalid portfolio item ID handling", True, "Correctly returned 404")
         else:
