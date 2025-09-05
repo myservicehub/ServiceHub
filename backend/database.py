@@ -583,5 +583,19 @@ class Database:
         
         return categories
 
+    async def get_featured_reviews(self, limit: int = 6) -> List[dict]:
+        """Get featured reviews for homepage"""
+        # Get recent high-rated reviews
+        filters = {'rating': {'$gte': 4}}
+        
+        reviews = await self.get_reviews(limit=limit, filters=filters)
+        
+        # Convert ObjectId to string for each review
+        for review in reviews:
+            if '_id' in review:
+                review['_id'] = str(review['_id'])
+        
+        return reviews
+
 # Global database instance
 database = Database()
