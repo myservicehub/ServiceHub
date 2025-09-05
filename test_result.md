@@ -246,8 +246,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "User Profile Management - Frontend"
-  stuck_tasks: []
+    - "Portfolio System - Frontend"
+  stuck_tasks:
+    - "Portfolio System - Frontend"
   test_all: false
   test_priority: "high_first"
 
