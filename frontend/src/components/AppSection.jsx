@@ -88,7 +88,7 @@ const AppSection = () => {
                     <div className="bg-white rounded-lg p-4 mb-4">
                       <div className="flex items-center space-x-2 mb-2">
                         <div className="w-6 h-6 bg-green-500 rounded-full"></div>
-                        <span className="text-xs font-semibold">MyBuilder</span>
+                        <span className="text-xs font-semibold">serviceHub</span>
                       </div>
                       <div className="text-left text-xs space-y-1">
                         <div className="bg-gray-100 h-2 rounded"></div>
