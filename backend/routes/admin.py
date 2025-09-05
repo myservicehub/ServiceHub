@@ -251,3 +251,109 @@ async def get_transaction_details(transaction_id: str):
     }
     
     return transaction
+
+# ==========================================
+# VERIFICATION MANAGEMENT
+# ==========================================
+
+@router.get("/verifications/pending")
+async def get_pending_verifications(skip: int = 0, limit: int = 20):
+    """Get pending identity verifications for admin review"""
+    
+    verifications = await database.get_pending_verifications(skip=skip, limit=limit)
+    
+    return {
+        "verifications": verifications,
+        "pagination": {
+            "skip": skip,
+            "limit": limit,
+            "total": len(verifications)
+        }
+    }
+
+@router.post("/verifications/{verification_id}/approve")
+async def approve_verification(
+    verification_id: str,
+    admin_notes: str = Form("")
+):
+    """Approve user identity verification"""
+    
+    success = await database.verify_user_documents(
+        verification_id=verification_id,
+        admin_id="admin",  # In production, use actual admin ID
+        approved=True,
+        admin_notes=admin_notes
+    )
+    
+    if not success:
+        raise HTTPException(status_code=404, detail="Verification not found or already processed")
+    
+    return {
+        "message": "Verification approved successfully",
+        "verification_id": verification_id,
+        "status": "verified",
+        "note": "User has been verified and referral rewards processed if applicable"
+    }
+
+@router.post("/verifications/{verification_id}/reject")
+async def reject_verification(
+    verification_id: str,
+    admin_notes: str = Form(...)
+):
+    """Reject user identity verification"""
+    
+    if not admin_notes.strip():
+        raise HTTPException(status_code=400, detail="Admin notes are required for rejection")
+    
+    success = await database.verify_user_documents(
+        verification_id=verification_id,
+        admin_id="admin",  # In production, use actual admin ID
+        approved=False,
+        admin_notes=admin_notes
+    )
+    
+    if not success:
+        raise HTTPException(status_code=404, detail="Verification not found or already processed")
+    
+    return {
+        "message": "Verification rejected",
+        "verification_id": verification_id,
+        "status": "rejected",
+        "notes": admin_notes
+    }
+
+@router.get("/verifications/{verification_id}")
+async def get_verification_details(verification_id: str):
+    """Get detailed verification information for admin review"""
+    
+    verification = await database.user_verifications_collection.find_one({"id": verification_id})
+    
+    if not verification:
+        raise HTTPException(status_code=404, detail="Verification not found")
+    
+    # Get user details
+    user = await database.get_user_by_id(verification["user_id"])
+    
+    verification["_id"] = str(verification["_id"])
+    verification["user_details"] = {
+        "name": user.get("name", "Unknown") if user else "Unknown",
+        "email": user.get("email", "Unknown") if user else "Unknown",
+        "phone": user.get("phone", "Unknown") if user else "Unknown",
+        "role": user.get("role", "Unknown") if user else "Unknown",
+        "created_at": user.get("created_at") if user else None
+    }
+    
+    return verification
+
+@router.get("/verifications/document/{filename}")
+async def view_verification_document(filename: str):
+    """View verification document image (admin only)"""
+    from fastapi.responses import FileResponse
+    import os
+    
+    file_path = f"/app/uploads/verification_documents/{filename}"
+    
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Verification document not found")
+    
+    return FileResponse(file_path, media_type="image/jpeg")
