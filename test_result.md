@@ -250,8 +250,7 @@ metadata:
 test_plan:
   current_focus:
     - "Portfolio System - Frontend"
-  stuck_tasks:
-    - "Portfolio System - Frontend"
+  stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
