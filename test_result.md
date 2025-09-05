@@ -200,3 +200,5 @@ agent_communication:
     message: "Completed implementation of homeowner job and quote management system. Added /api/jobs/my-jobs endpoint, updated MyJobsPage to use proper backend API, and enhanced navigation with role-based links. Ready for backend testing."
   - agent: "testing"
     message: "✅ BACKEND TESTING COMPLETE: All backend APIs are working perfectly! Fixed 3 critical issues: 1) Route order conflict with /my-jobs endpoint, 2) Tradesperson status issue (set to active for testing), 3) Missing tradesperson_id in quote response aggregation. All 29 test cases now pass with 100% success rate. The homeowner job and quote management system is fully functional."
+  - agent: "testing"
+    message: "❌ CRITICAL FRONTEND INFRASTRUCTURE ISSUES FOUND: 1) Mixed Content Security Error - HTTPS page making HTTP API requests blocked by browser. 2) Backend API errors causing 500 responses. 3) Frontend components are well-implemented but cannot function due to API configuration issues. URGENT: Main agent must use WEBSEARCH TOOL to research and fix HTTPS/HTTP protocol mismatch in API client configuration."
