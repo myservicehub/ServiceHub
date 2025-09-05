@@ -45,7 +45,7 @@ async def get_bank_details():
 async def fund_wallet(
     amount_naira: int = Form(...),
     proof_image: UploadFile = File(...),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Request wallet funding with payment proof"""
     
