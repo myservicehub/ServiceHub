@@ -1559,5 +1559,369 @@ class Database:
         
         return jobs
 
+    # ==========================================
+    # REFERRAL SYSTEM METHODS
+    # ==========================================
+    
+    @property
+    def referrals_collection(self):
+        """Access to referrals collection"""
+        return self.database.referrals
+    
+    @property
+    def user_verifications_collection(self):
+        """Access to user verifications collection"""
+        return self.database.user_verifications
+    
+    @property
+    def referral_codes_collection(self):
+        """Access to referral codes collection"""
+        return self.database.referral_codes
+
+    async def generate_referral_code(self, user_id: str) -> str:
+        """Generate unique referral code for user"""
+        # Get user info for code generation
+        user = await self.get_user_by_id(user_id)
+        if not user:
+            raise ValueError("User not found")
+        
+        # Generate code based on name + random numbers
+        base_name = user["name"].split()[0].upper()[:4]  # First 4 letters of first name
+        
+        # Find unique code
+        import random
+        for _ in range(10):  # Try 10 times
+            random_num = random.randint(1000, 9999)
+            code = f"{base_name}{random_num}"
+            
+            # Check if code exists
+            existing = await self.referral_codes_collection.find_one({"code": code})
+            if not existing:
+                # Create referral code record
+                referral_code_data = {
+                    "id": str(uuid.uuid4()),
+                    "user_id": user_id,
+                    "code": code,
+                    "is_active": True,
+                    "created_at": datetime.utcnow(),
+                    "uses_count": 0
+                }
+                
+                await self.referral_codes_collection.insert_one(referral_code_data)
+                
+                # Update user record
+                await self.users_collection.update_one(
+                    {"id": user_id},
+                    {"$set": {"referral_code": code}}
+                )
+                
+                return code
+        
+        # Fallback to UUID if no unique code found
+        fallback_code = str(uuid.uuid4())[:8].upper()
+        referral_code_data = {
+            "id": str(uuid.uuid4()),
+            "user_id": user_id,
+            "code": fallback_code,
+            "is_active": True,
+            "created_at": datetime.utcnow(),
+            "uses_count": 0
+        }
+        
+        await self.referral_codes_collection.insert_one(referral_code_data)
+        await self.users_collection.update_one(
+            {"id": user_id},
+            {"$set": {"referral_code": fallback_code}}
+        )
+        
+        return fallback_code
+
+    async def record_referral(self, referrer_code: str, referred_user_id: str) -> bool:
+        """Record a referral when someone signs up with a referral code"""
+        # Find referrer by code
+        referral_code_record = await self.referral_codes_collection.find_one({"code": referrer_code, "is_active": True})
+        if not referral_code_record:
+            return False
+        
+        referrer_id = referral_code_record["user_id"]
+        
+        # Don't allow self-referral
+        if referrer_id == referred_user_id:
+            return False
+        
+        # Check if referral already exists
+        existing = await self.referrals_collection.find_one({
+            "referrer_id": referrer_id,
+            "referred_user_id": referred_user_id
+        })
+        if existing:
+            return False
+        
+        # Create referral record
+        referral_data = {
+            "id": str(uuid.uuid4()),
+            "referrer_id": referrer_id,
+            "referred_user_id": referred_user_id,
+            "referral_code": referrer_code,
+            "status": "pending",
+            "coins_earned": 0,
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+        
+        await self.referrals_collection.insert_one(referral_data)
+        
+        # Update referral code usage count
+        await self.referral_codes_collection.update_one(
+            {"code": referrer_code},
+            {"$inc": {"uses_count": 1}}
+        )
+        
+        # Update referred user to track who referred them
+        await self.users_collection.update_one(
+            {"id": referred_user_id},
+            {"$set": {"referred_by": referrer_id}}
+        )
+        
+        return True
+
+    async def submit_verification_documents(self, user_id: str, document_type: str, document_url: str, full_name: str, document_number: str = None) -> str:
+        """Submit verification documents"""
+        verification_data = {
+            "id": str(uuid.uuid4()),
+            "user_id": user_id,
+            "document_type": document_type,
+            "document_url": document_url,
+            "full_name": full_name,
+            "document_number": document_number,
+            "status": "pending",
+            "submitted_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+        
+        await self.user_verifications_collection.insert_one(verification_data)
+        
+        # Update user status
+        await self.users_collection.update_one(
+            {"id": user_id},
+            {"$set": {"verification_submitted": True}}
+        )
+        
+        return verification_data["id"]
+
+    async def verify_user_documents(self, verification_id: str, admin_id: str, approved: bool, admin_notes: str = "") -> bool:
+        """Admin approves or rejects user verification"""
+        verification = await self.user_verifications_collection.find_one({"id": verification_id})
+        if not verification:
+            return False
+        
+        status = "verified" if approved else "rejected"
+        
+        # Update verification record
+        result = await self.user_verifications_collection.update_one(
+            {"id": verification_id},
+            {
+                "$set": {
+                    "status": status,
+                    "admin_notes": admin_notes,
+                    "verified_by": admin_id,
+                    "verified_at": datetime.utcnow(),
+                    "updated_at": datetime.utcnow()
+                }
+            }
+        )
+        
+        if result.modified_count == 0:
+            return False
+        
+        if approved:
+            # Update user verification status
+            await self.users_collection.update_one(
+                {"id": verification["user_id"]},
+                {"$set": {"is_verified": True}}
+            )
+            
+            # Process referral rewards
+            await self._process_referral_rewards(verification["user_id"])
+        
+        return True
+
+    async def _process_referral_rewards(self, verified_user_id: str):
+        """Process referral rewards when user gets verified"""
+        # Find pending referral for this user
+        referral = await self.referrals_collection.find_one({
+            "referred_user_id": verified_user_id,
+            "status": "pending"
+        })
+        
+        if not referral:
+            return
+        
+        # Award 5 coins to referrer
+        coins_to_award = 5
+        referrer_id = referral["referrer_id"]
+        
+        # Get or create referrer's wallet
+        wallet = await self.get_wallet_by_user_id(referrer_id)
+        
+        # Add referral coins to wallet
+        await self.wallets_collection.update_one(
+            {"user_id": referrer_id},
+            {
+                "$inc": {"balance_coins": coins_to_award},
+                "$set": {"updated_at": datetime.utcnow()}
+            }
+        )
+        
+        # Create transaction record
+        transaction_data = {
+            "wallet_id": wallet["id"],
+            "user_id": referrer_id,
+            "transaction_type": "referral_reward",
+            "amount_coins": coins_to_award,
+            "amount_naira": coins_to_award * 100,
+            "status": "confirmed",
+            "description": f"Referral reward for successful referral",
+            "reference": verified_user_id,
+            "processed_at": datetime.utcnow()
+        }
+        
+        await self.create_wallet_transaction(transaction_data)
+        
+        # Update referral record
+        await self.referrals_collection.update_one(
+            {"id": referral["id"]},
+            {
+                "$set": {
+                    "status": "verified",
+                    "coins_earned": coins_to_award,
+                    "verified_at": datetime.utcnow(),
+                    "updated_at": datetime.utcnow()
+                }
+            }
+        )
+        
+        # Update referrer's stats
+        await self.users_collection.update_one(
+            {"id": referrer_id},
+            {
+                "$inc": {
+                    "total_referrals": 1,
+                    "referral_coins_earned": coins_to_award
+                }
+            }
+        )
+
+    async def get_user_referral_stats(self, user_id: str) -> dict:
+        """Get referral statistics for user"""
+        # Get user's referral code
+        user = await self.get_user_by_id(user_id)
+        if not user:
+            return None
+        
+        referral_code = user.get("referral_code")
+        if not referral_code:
+            # Generate referral code if doesn't exist
+            referral_code = await self.generate_referral_code(user_id)
+        
+        # Get referral statistics
+        total_referrals = await self.referrals_collection.count_documents({"referrer_id": user_id})
+        pending_referrals = await self.referrals_collection.count_documents({
+            "referrer_id": user_id,
+            "status": "pending"
+        })
+        verified_referrals = await self.referrals_collection.count_documents({
+            "referrer_id": user_id,
+            "status": "verified"
+        })
+        
+        # Get total coins earned from referrals
+        pipeline = [
+            {"$match": {"referrer_id": user_id, "status": "verified"}},
+            {"$group": {"_id": None, "total_coins": {"$sum": "$coins_earned"}}}
+        ]
+        
+        total_coins_earned = 0
+        async for doc in self.referrals_collection.aggregate(pipeline):
+            total_coins_earned = doc["total_coins"]
+        
+        return {
+            "total_referrals": total_referrals,
+            "pending_referrals": pending_referrals,
+            "verified_referrals": verified_referrals,
+            "total_coins_earned": total_coins_earned,
+            "referral_code": referral_code,
+            "referral_link": f"https://servicehub.ng/signup?ref={referral_code}"
+        }
+
+    async def get_pending_verifications(self, skip: int = 0, limit: int = 20) -> List[dict]:
+        """Get pending document verifications for admin"""
+        cursor = self.user_verifications_collection.find({
+            "status": "pending"
+        }).sort("submitted_at", -1).skip(skip).limit(limit)
+        
+        verifications = []
+        async for verification in cursor:
+            verification["_id"] = str(verification["_id"])
+            
+            # Get user details
+            user = await self.get_user_by_id(verification["user_id"])
+            if user:
+                verification["user_name"] = user.get("name", "Unknown")
+                verification["user_email"] = user.get("email", "Unknown")
+                verification["user_role"] = user.get("role", "Unknown")
+            
+            verifications.append(verification)
+        
+        return verifications
+
+    async def get_user_referrals(self, user_id: str, skip: int = 0, limit: int = 10) -> List[dict]:
+        """Get list of users referred by this user"""
+        cursor = self.referrals_collection.find({
+            "referrer_id": user_id
+        }).sort("created_at", -1).skip(skip).limit(limit)
+        
+        referrals = []
+        async for referral in cursor:
+            referral["_id"] = str(referral["_id"])
+            
+            # Get referred user details
+            referred_user = await self.get_user_by_id(referral["referred_user_id"])
+            if referred_user:
+                referral["referred_user_name"] = referred_user.get("name", "Unknown")
+                referral["referred_user_email"] = referred_user.get("email", "Unknown")
+                referral["referred_user_role"] = referred_user.get("role", "Unknown")
+                referral["is_verified"] = referred_user.get("is_verified", False)
+            
+            referrals.append(referral)
+        
+        return referrals
+
+    async def check_withdrawal_eligibility(self, user_id: str) -> dict:
+        """Check if user is eligible to withdraw referral coins"""
+        wallet = await self.get_wallet_by_user_id(user_id)
+        
+        # Get referral coins
+        referral_transactions = await self.wallet_transactions_collection.find({
+            "user_id": user_id,
+            "transaction_type": "referral_reward",
+            "status": "confirmed"
+        }).to_list(length=None)
+        
+        referral_coins = sum(t.get("amount_coins", 0) for t in referral_transactions)
+        
+        # Check if total wallet balance >= 15 coins
+        total_coins = wallet.get("balance_coins", 0)
+        can_withdraw = total_coins >= 15
+        
+        return {
+            "total_coins": total_coins,
+            "referral_coins": referral_coins,
+            "regular_coins": total_coins - referral_coins,
+            "can_withdraw_referrals": can_withdraw,
+            "minimum_required": 15,
+            "shortfall": max(0, 15 - total_coins)
+        }
+
 # Global database instance
 database = Database()
