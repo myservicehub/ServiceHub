@@ -324,3 +324,37 @@ async def _notify_tradesperson_contact_shared(job: dict, tradesperson_id: str, i
         
     except Exception as e:
         logger.error(f"❌ Failed to send contact shared notification for {interest_id}: {str(e)}")
+
+async def _notify_payment_confirmation(tradesperson: dict, job: dict, interest_id: str, access_fee: float):
+    """Background task to notify about payment confirmation"""
+    try:
+        # Get tradesperson preferences
+        preferences = await database.get_user_notification_preferences(tradesperson["id"])
+        
+        # Prepare template data
+        template_data = {
+            "tradesperson_name": tradesperson.get("business_name") or tradesperson.get("name", "Tradesperson"),
+            "job_title": job.get("title", "Untitled Job"),
+            "job_location": job.get("location", ""),
+            "homeowner_name": job.get("homeowner", {}).get("name", "Homeowner"),
+            "access_fee": f"₦{access_fee:,.2f}",
+            "view_url": f"https://servicehub.ng/my-interests"
+        }
+        
+        # Send notification
+        notification = await notification_service.send_notification(
+            user_id=tradesperson["id"],
+            notification_type=NotificationType.PAYMENT_CONFIRMATION,
+            template_data=template_data,
+            user_preferences=preferences,
+            recipient_email=tradesperson.get("email"),
+            recipient_phone=tradesperson.get("phone")
+        )
+        
+        # Save notification to database
+        await database.create_notification(notification)
+        
+        logger.info(f"✅ Payment confirmation notification sent to tradesperson {tradesperson['id']} for interest {interest_id}")
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to send payment confirmation notification for {interest_id}: {str(e)}")
