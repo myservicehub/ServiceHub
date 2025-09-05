@@ -273,3 +273,42 @@ async def _notify_homeowner_new_interest(job: dict, tradesperson: dict, interest
         
     except Exception as e:
         logger.error(f"❌ Failed to send new interest notification for {interest_id}: {str(e)}")
+
+async def _notify_tradesperson_contact_shared(job: dict, tradesperson_id: str, interest_id: str):
+    """Background task to notify tradesperson that contact details have been shared"""
+    try:
+        # Get tradesperson details
+        tradesperson = await database.get_user_by_id(tradesperson_id)
+        if not tradesperson:
+            logger.warning(f"Tradesperson {tradesperson_id} not found")
+            return
+        
+        # Get tradesperson preferences
+        preferences = await database.get_user_notification_preferences(tradesperson_id)
+        
+        # Prepare template data
+        template_data = {
+            "tradesperson_name": tradesperson.get("business_name") or tradesperson.get("name", "Tradesperson"),
+            "job_title": job.get("title", "Untitled Job"),
+            "job_location": job.get("location", ""),
+            "homeowner_name": job.get("homeowner", {}).get("name", "Homeowner"),
+            "view_url": f"https://servicehub.ng/my-interests"
+        }
+        
+        # Send notification
+        notification = await notification_service.send_notification(
+            user_id=tradesperson_id,
+            notification_type=NotificationType.CONTACT_SHARED,
+            template_data=template_data,
+            user_preferences=preferences,
+            recipient_email=tradesperson.get("email"),
+            recipient_phone=tradesperson.get("phone")
+        )
+        
+        # Save notification to database
+        await database.create_notification(notification)
+        
+        logger.info(f"✅ Contact shared notification sent to tradesperson {tradesperson_id} for interest {interest_id}")
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to send contact shared notification for {interest_id}: {str(e)}")
