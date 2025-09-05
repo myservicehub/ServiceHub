@@ -8,6 +8,10 @@ from models.notifications import (
     Notification, NotificationPreferences, NotificationChannel,
     NotificationType, NotificationStatus
 )
+from models.reviews import (
+    Review, ReviewCreate, ReviewSummary, ReviewRequest, 
+    ReviewStats, ReviewType, ReviewStatus
+)
 
 logger = logging.getLogger(__name__)
 
