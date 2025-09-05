@@ -728,15 +728,22 @@ class Database:
                     "tradesperson_id": "$tradesperson_id",
                     "tradesperson_name": "$tradesperson.name",
                     "tradesperson_email": "$tradesperson.email",
+                    "tradesperson_phone": "$tradesperson.phone",
                     "company_name": "$tradesperson.company_name",
+                    "business_name": "$tradesperson.business_name",
                     "trade_categories": "$tradesperson.trade_categories",
                     "experience_years": "$tradesperson.experience_years",
-                    "average_rating": "$tradesperson.average_rating",
-                    "total_reviews": "$tradesperson.total_reviews",
+                    "average_rating": {"$ifNull": ["$tradesperson.average_rating", 4.5]},
+                    "total_reviews": {"$ifNull": ["$tradesperson.total_reviews", 0]},
+                    "location": "$tradesperson.location",
+                    "description": "$tradesperson.description",
+                    "certifications": "$tradesperson.certifications",
                     "status": "$status",
                     "created_at": "$created_at",
-                    "contact_shared": {"$eq": ["$status", "contact_shared"]},
-                    "payment_made": {"$eq": ["$status", "paid_access"]}
+                    "updated_at": "$updated_at",
+                    "contact_shared_at": "$contact_shared_at",
+                    "payment_made_at": "$payment_made_at",
+                    "access_fee": "$access_fee"
                 }
             },
             {"$sort": {"created_at": -1}}
@@ -744,17 +751,20 @@ class Database:
         
         interested = await self.interests_collection.aggregate(pipeline).to_list(length=None)
         
-        # Convert ObjectId to string and get portfolio count
+        # Convert ObjectId to string and add portfolio count
         for person in interested:
             if '_id' in person:
                 person['_id'] = str(person['_id'])
             
-            # Get portfolio count
-            portfolio_count = await self.portfolio_collection.count_documents({
-                "tradesperson_id": person["tradesperson_id"],
-                "is_public": True
-            })
-            person["portfolio_count"] = portfolio_count
+            # Get portfolio count for tradesperson
+            try:
+                portfolio_count = await self.database.portfolio.count_documents(
+                    {"tradesperson_id": person["tradesperson_id"]}
+                )
+                person["portfolio_count"] = portfolio_count
+            except Exception as e:
+                logging.warning(f"Could not get portfolio count for tradesperson {person['tradesperson_id']}: {e}")
+                person["portfolio_count"] = 0
         
         return interested
 
