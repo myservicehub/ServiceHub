@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Search, MapPin } from 'lucide-react';
+import { Search, MapPin, Plus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { jobsAPI } from '../api/services';
 import { useToast } from '../hooks/use-toast';
 
@@ -10,6 +11,7 @@ const HeroSection = () => {
   const [location, setLocation] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleSearch = async (e) => {
     e.preventDefault();
