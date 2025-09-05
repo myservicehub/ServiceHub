@@ -41,7 +41,7 @@ const BrowseJobsPage = () => {
   const loadAvailableJobs = async (page = 1) => {
     try {
       setLoading(true);
-      const response = await quotesAPI.getAvailableJobs({ page, limit: 10 });
+      const response = await jobsAPI.getJobs({ page, limit: 10 });
       setJobs(response.jobs || []);
       setPagination(response.pagination);
     } catch (error) {
