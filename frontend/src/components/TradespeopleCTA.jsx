@@ -31,7 +31,7 @@ const TradespeopleCTA = () => {
                 Looking for leads?
               </h2>
               <p className="text-xl mb-8 opacity-90">
-                Grow your business with MyBuilder. MyBuilder is the reliable way to get more of the work you want. 
+                Grow your business with serviceHub. serviceHub is the reliable way to get more of the work you want. 
                 Sign up for free to receive a steady stream of local job opportunities that match your skills.
               </p>
 
