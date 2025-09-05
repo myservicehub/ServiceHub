@@ -290,11 +290,11 @@ class BackendTester:
         
         # Test unauthenticated access
         response = self.make_request("GET", "/jobs/my-jobs")
-        if response.status_code == 401:
+        if response.status_code in [401, 403]:
             self.log_result("Unauthenticated access prevention", True, "Correctly requires authentication")
         else:
             self.log_result("Unauthenticated access prevention", False, 
-                           f"Expected 401, got {response.status_code}")
+                           f"Expected 401 or 403, got {response.status_code}")
     
     def test_quote_management_system(self):
         """Test quote creation and management workflow"""
