@@ -56,6 +56,45 @@ export const statsAPI = {
   },
 };
 
+// Portfolio API
+export const portfolioAPI = {
+  uploadImage: async (formData) => {
+    const response = await apiClient.post('/portfolio/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  getMyPortfolio: async () => {
+    const response = await apiClient.get('/portfolio/my-portfolio');
+    return response.data;
+  },
+
+  getTradespersonPortfolio: async (tradespersonId) => {
+    const response = await apiClient.get(`/portfolio/tradesperson/${tradespersonId}`);
+    return response.data;
+  },
+
+  updatePortfolioItem: async (itemId, updateData) => {
+    const response = await apiClient.put(`/portfolio/${itemId}`, null, {
+      params: updateData
+    });
+    return response.data;
+  },
+
+  deletePortfolioItem: async (itemId) => {
+    const response = await apiClient.delete(`/portfolio/${itemId}`);
+    return response.data;
+  },
+
+  getAllPublicPortfolio: async (params = {}) => {
+    const response = await apiClient.get('/portfolio/', { params });
+    return response.data;
+  },
+};
+
 // Jobs API
 export const jobsAPI = {
   createJob: async (jobData) => {
