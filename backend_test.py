@@ -1427,13 +1427,13 @@ class BackendTester:
 if __name__ == "__main__":
     tester = BackendTester()
     
-    # Run portfolio management tests as requested
-    results = tester.run_portfolio_management_tests()
+    # Run communication system tests as requested
+    results = tester.run_communication_system_tests()
     
     # Exit with error code if tests failed
     if results['failed'] > 0:
-        print(f"\n⚠️  Portfolio management tests completed with {results['failed']} failures")
+        print(f"\n⚠️  Communication system tests completed with {results['failed']} failures")
         exit(1)
     else:
-        print(f"\n🎉 All portfolio management tests passed successfully!")
+        print(f"\n🎉 All communication system tests passed successfully!")
         exit(0)
