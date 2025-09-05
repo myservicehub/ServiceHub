@@ -21,14 +21,14 @@ router = APIRouter(prefix="/api/wallet", tags=["wallet"])
 BANK_DETAILS = BankDetails()
 
 @router.get("/balance", response_model=WalletResponse)
-async def get_wallet_balance(current_user: dict = Depends(get_current_user)):
+async def get_wallet_balance(current_user: User = Depends(get_current_user)):
     """Get user's wallet balance and recent transactions"""
     
     # Get or create wallet
-    wallet = await database.get_wallet_by_user_id(current_user["id"])
+    wallet = await database.get_wallet_by_user_id(current_user.id)
     
     # Get recent transactions
-    transactions = await database.get_wallet_transactions(current_user["id"], limit=10)
+    transactions = await database.get_wallet_transactions(current_user.id, limit=10)
     
     return WalletResponse(
         balance_coins=wallet["balance_coins"],
