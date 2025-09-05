@@ -51,13 +51,13 @@ async def submit_verification_documents(
     full_name: str = Form(...),
     document_number: str = Form(""),
     document_image: UploadFile = File(...),
-    current_user: dict = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     """Submit documents for identity verification"""
     
     # Check if user already has pending or verified submission
     existing = await database.user_verifications_collection.find_one({
-        "user_id": current_user["id"],
+        "user_id": current_user.id,
         "status": {"$in": ["pending", "verified"]}
     })
     
