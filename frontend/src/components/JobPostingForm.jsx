@@ -6,8 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Progress } from './ui/progress';
 import { ArrowLeft, ArrowRight, MapPin, Calendar, DollarSign, FileText, User, Phone, Mail, Lock, CheckCircle } from 'lucide-react';
-import { jobsAPI } from '../api/services';
-import { authAPI } from '../api/auth';
+import { jobsAPI, authAPI } from '../api/services';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
 
