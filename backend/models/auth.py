@@ -43,6 +43,14 @@ class User(BaseModel):
     total_reviews: Optional[int] = 0
     total_jobs: Optional[int] = 0
     verified_tradesperson: Optional[bool] = False
+    
+    # Referral and Verification fields
+    referral_code: Optional[str] = None          # User's unique referral code
+    referred_by: Optional[str] = None            # ID of user who referred this user
+    is_verified: bool = False                    # Document verification status
+    verification_submitted: bool = False         # Has user submitted verification documents
+    total_referrals: Optional[int] = 0          # Number of successful referrals made
+    referral_coins_earned: Optional[int] = 0    # Total coins earned from referrals
 
     def dict(self, **kwargs):
         d = super().dict(**kwargs)
