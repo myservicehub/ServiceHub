@@ -32,7 +32,7 @@ async def create_review(review_data: ReviewCreate):
         
         # Convert to dict and prepare for database
         review_dict = review_data.dict()
-        review_dict['id'] = Review().id  # Generate new ID
+        review_dict['id'] = str(uuid.uuid4())  # Generate new ID
         review_dict['location'] = job['location']  # Get location from job
         review_dict['featured'] = False
         review_dict['created_at'] = datetime.utcnow()
