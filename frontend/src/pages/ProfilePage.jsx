@@ -61,8 +61,13 @@ const ProfilePage = () => {
         trade_categories: user.trade_categories || [],
         certifications: user.certifications || []
       });
+
+      // Load portfolio if tradesperson
+      if (isTradesperson()) {
+        loadPortfolio();
+      }
     }
-  }, [user, isAuthenticated]);
+  }, [user, isAuthenticated, isTradesperson]);
 
   const handleEditToggle = () => {
     if (isEditing) {
