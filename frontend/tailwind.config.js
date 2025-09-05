@@ -13,6 +13,13 @@ module.exports = {
   			sm: 'calc(var(--radius) - 4px)'
   		},
   		colors: {
+  			// serviceHub Brand Colors
+  			'servicehub': {
+  				'navy': '#121E3C',
+  				'green': '#2F8140',
+  				'gray': '#E55E55',
+  				'white': '#FFFFFF'
+  			},
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {
@@ -53,6 +60,10 @@ module.exports = {
   				'4': 'hsl(var(--chart-4))',
   				'5': 'hsl(var(--chart-5))'
   			}
+  		},
+  		fontFamily: {
+  			'montserrat': ['Montserrat', 'sans-serif'],
+  			'lato': ['Lato', 'sans-serif']
   		},
   		keyframes: {
   			'accordion-down': {
