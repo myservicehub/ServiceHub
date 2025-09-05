@@ -476,6 +476,86 @@ const JobPostingForm = ({ onComplete }) => {
           </div>
         );
 
+      case 5:
+        return (
+          <div className="space-y-6">
+            <div className="text-center">
+              <CheckCircle size={48} className="mx-auto mb-4 text-green-600" />
+              <h3 className="text-xl font-semibold font-montserrat mb-2" style={{color: '#121E3C'}}>
+                Create Your Account
+              </h3>
+              <p className="text-gray-600 font-lato">
+                Create an account to track your job, leads and interested tradespeople
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                Password *
+              </label>
+              <Input
+                type="password"
+                placeholder="Enter a secure password"
+                value={formData.password}
+                onChange={(e) => updateFormData('password', e.target.value)}
+                className={`font-lato ${errors.password ? 'border-red-500' : ''}`}
+              />
+              {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                Confirm Password *
+              </label>
+              <Input
+                type="password"
+                placeholder="Confirm your password"
+                value={formData.confirmPassword}
+                onChange={(e) => updateFormData('confirmPassword', e.target.value)}
+                className={`font-lato ${errors.confirmPassword ? 'border-red-500' : ''}`}
+              />
+              {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>}
+            </div>
+
+            {/* Account Benefits */}
+            <div className="bg-green-50 p-6 rounded-lg">
+              <h4 className="font-semibold font-montserrat mb-3 text-green-800">
+                With your account, you'll be able to:
+              </h4>
+              <ul className="space-y-2 text-sm font-lato text-green-700">
+                <li className="flex items-center">
+                  <CheckCircle size={16} className="mr-2 text-green-600" />
+                  Track your job status and interested tradespeople
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle size={16} className="mr-2 text-green-600" />
+                  Review and rate tradespeople after job completion
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle size={16} className="mr-2 text-green-600" />
+                  Receive notifications about job updates
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle size={16} className="mr-2 text-green-600" />
+                  Post additional jobs in the future
+                </li>
+              </ul>
+            </div>
+
+            {/* User Details Summary */}
+            <div className="bg-gray-50 p-6 rounded-lg">
+              <h4 className="font-semibold font-montserrat mb-3" style={{color: '#121E3C'}}>
+                Account Details
+              </h4>
+              <div className="space-y-1 text-sm font-lato">
+                <p><strong>Name:</strong> {formData.homeowner_name}</p>
+                <p><strong>Email:</strong> {formData.homeowner_email}</p>
+                <p><strong>Phone:</strong> {formData.homeowner_phone}</p>
+              </div>
+            </div>
+          </div>
+        );
+
       default:
         return null;
     }
