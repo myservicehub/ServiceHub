@@ -208,6 +208,7 @@ class Database:
             {"$project": {
                 "id": 1,
                 "job_id": 1,
+                "tradesperson_id": 1,  # Include tradesperson_id
                 "price": 1,
                 "message": 1,
                 "estimated_duration": 1,
