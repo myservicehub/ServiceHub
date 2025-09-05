@@ -66,6 +66,37 @@ const MessagesPage = () => {
     }
   }, [isAuthenticated]);
 
+  // Handle navigation state from other pages (e.g., from quotes)
+  useEffect(() => {
+    if (location.state && conversations.length > 0) {
+      const { selectedJobId, selectedUserId, selectedUserName } = location.state;
+      
+      if (selectedJobId) {
+        // Find conversation for this job
+        const targetConversation = conversations.find(conv => 
+          conv.job_id === selectedJobId
+        );
+        
+        if (targetConversation) {
+          setSelectedConversation(targetConversation);
+        } else if (selectedUserId && selectedUserName) {
+          // Create a temporary conversation object for new conversation
+          const tempConversation = {
+            job_id: selectedJobId,
+            other_user_id: selectedUserId,
+            other_user_name: selectedUserName,
+            job_title: 'Job Discussion', // This will be updated when messages load
+            unread_count: 0
+          };
+          setSelectedConversation(tempConversation);
+        }
+      }
+      
+      // Clear the navigation state to prevent re-selection on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, conversations]);
+
   const handleConversationSelect = (conversation) => {
     setSelectedConversation(conversation);
   };
