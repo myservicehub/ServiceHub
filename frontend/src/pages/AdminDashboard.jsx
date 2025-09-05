@@ -133,6 +133,49 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleApproveVerification = async (verificationId, notes = '') => {
+    try {
+      await adminReferralsAPI.approveVerification(verificationId, notes);
+      toast({
+        title: "Verification Approved",
+        description: "User has been verified and referral rewards processed"
+      });
+      fetchData();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to approve verification",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleRejectVerification = async (verificationId, notes) => {
+    if (!notes.trim()) {
+      toast({
+        title: "Notes Required",
+        description: "Please provide a reason for rejection",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      await adminReferralsAPI.rejectVerification(verificationId, notes);
+      toast({
+        title: "Verification Rejected",
+        description: "User has been notified of the rejection"
+      });
+      fetchData();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to reject verification",
+        variant: "destructive"
+      });
+    }
+  };
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
