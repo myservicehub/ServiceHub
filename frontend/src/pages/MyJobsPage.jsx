@@ -41,12 +41,8 @@ const MyJobsPage = () => {
   const loadMyJobs = async () => {
     try {
       setLoading(true);
-      const response = await jobsAPI.getJobs({ limit: 50 });
-      // Filter jobs by current user's email
-      const myJobs = response.jobs.filter(job => 
-        job.homeowner?.email === user?.email
-      );
-      setJobs(myJobs);
+      const response = await jobsAPI.getMyJobs({ limit: 50 });
+      setJobs(response.jobs || []);
     } catch (error) {
       console.error('Failed to load jobs:', error);
       toast({
