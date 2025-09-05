@@ -5,6 +5,7 @@ import HomePage from "./components/HomePage";
 import PostJobPage from "./pages/PostJobPage";
 import MyJobsPage from "./pages/MyJobsPage";
 import BrowseJobsPage from "./pages/BrowseJobsPage";
+import ProfilePage from "./pages/ProfilePage";
 import { Toaster } from "./components/ui/toaster";
 import { AuthProvider } from "./contexts/AuthContext";
 
