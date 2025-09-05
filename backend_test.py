@@ -165,9 +165,6 @@ class BackendTester:
         }
         
         response = self.make_request("POST", "/jobs/", json=job_data)
-        print(f"DEBUG: Job creation request - Status: {response.status_code}")
-        print(f"DEBUG: Request data: {job_data}")
-        print(f"DEBUG: Response: {response.text[:500]}")
         if response.status_code == 200:
             created_job = response.json()
             if 'id' in created_job and created_job['title'] == job_data['title']:
