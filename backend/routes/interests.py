@@ -176,17 +176,15 @@ async def get_my_interests(
 @router.post("/pay-access/{interest_id}")
 async def pay_for_access(
     interest_id: str,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_tradesperson)
 ):
     """Tradesperson pays for access to contact details (placeholder for payment integration)"""
     try:
         # Get interest record and verify it belongs to current user
-        interest = await database.interests_collection.find_one({
-            "id": interest_id,
-            "tradesperson_id": current_user.id
-        })
+        interest = await database.get_interest_by_id(interest_id)
         
-        if not interest:
+        if not interest or interest["tradesperson_id"] != current_user.id:
             raise HTTPException(status_code=404, detail="Interest not found")
         
         if interest["status"] != InterestStatus.CONTACT_SHARED:
@@ -199,14 +197,30 @@ async def pay_for_access(
         # TODO: Integrate with Paystack/Flutterwave
         access_fee = 1000.0  # ₦1000 default access fee
         
-        updated = await database.update_interest_status(
-            interest_id, 
-            InterestStatus.PAID_ACCESS,
-            {"access_fee": access_fee}
-        )
+        # Update interest status
+        update_data = {
+            "status": InterestStatus.PAID_ACCESS,
+            "access_fee": access_fee,
+            "payment_made_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
         
-        if not updated:
+        updated_interest = await database.update_interest_status(interest_id, update_data)
+        
+        if not updated_interest:
             raise HTTPException(status_code=400, detail="Failed to process payment")
+        
+        # Get job details for notification
+        job = await database.get_job_by_id(interest["job_id"])
+        
+        # Add background task to send payment confirmation notification
+        background_tasks.add_task(
+            _notify_payment_confirmation,
+            tradesperson=current_user.dict(),
+            job=job,
+            interest_id=interest_id,
+            access_fee=access_fee
+        )
         
         return {
             "message": "Payment successful! Access granted to contact details.",
@@ -216,10 +230,8 @@ async def pay_for_access(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to process payment: {str(e)}"
-        )
+        logger.error(f"Error processing payment: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to process payment")
 
 @router.get("/contact-details/{job_id}", response_model=ContactDetails)
 async def get_contact_details(
