@@ -17,6 +17,7 @@ import {
   Heart
 } from 'lucide-react';
 import { jobsAPI, interestsAPI } from '../api/services';
+import { walletAPI } from '../api/wallet';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
