@@ -360,7 +360,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Phase 8: Rating & Review System - Frontend"
+    - "Phase 9A: Wallet System Backend Implementation"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
