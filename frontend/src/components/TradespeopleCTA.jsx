@@ -67,7 +67,7 @@ const TradespeopleCTA = () => {
                   <h3 className="text-2xl font-bold mb-4">Join today and start earning</h3>
                   <div className="grid grid-cols-2 gap-4 text-center">
                     <div>
-                      <div className="text-3xl font-bold">£35k+</div>
+                      <div className="text-3xl font-bold">₦2.5M+</div>
                       <div className="text-sm opacity-80">Average annual earnings</div>
                     </div>
                     <div>
