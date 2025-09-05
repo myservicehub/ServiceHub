@@ -264,7 +264,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Portfolio System - Frontend"
+    - "Communication System - Backend"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
