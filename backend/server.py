@@ -55,7 +55,7 @@ async def health_check():
     return {"status": "healthy", "service": "serviceHub API"}
 
 # Include route modules
-from routes import auth, jobs, tradespeople, quotes, reviews, stats, portfolio
+from routes import auth, jobs, tradespeople, quotes, reviews, stats, portfolio, messages
 
 app.include_router(auth.router)
 app.include_router(jobs.router)
@@ -64,6 +64,7 @@ app.include_router(quotes.router)
 app.include_router(reviews.router)
 app.include_router(stats.router)
 app.include_router(portfolio.router)
+app.include_router(messages.router)
 
 # Include the main api router
 app.include_router(api_router)
