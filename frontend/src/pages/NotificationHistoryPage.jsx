@@ -44,7 +44,7 @@ const NotificationHistoryPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated()) {
       navigate('/');
       return;
     }
