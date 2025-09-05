@@ -91,39 +91,70 @@ const ReviewsSection = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {reviews.map((review, index) => (
-              <Card key={index} className="bg-white hover:shadow-lg transition-shadow duration-300">
-                <CardContent className="p-6">
-                  <div className="flex items-center mb-4">
-                    <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center text-white font-semibold mr-3">
-                      {review.avatar}
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900">{review.name}</h4>
-                      <div className="flex items-center text-sm text-gray-500">
-                        <MapPin size={12} className="mr-1" />
-                        {review.location}
+            {loading ? (
+              // Loading skeleton
+              Array.from({ length: 4 }).map((_, index) => (
+                <Card key={index} className="bg-white">
+                  <CardContent className="p-6">
+                    <div className="flex items-center mb-4">
+                      <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse mr-3"></div>
+                      <div>
+                        <div className="h-4 bg-gray-200 rounded animate-pulse mb-2 w-24"></div>
+                        <div className="h-3 bg-gray-200 rounded animate-pulse w-16"></div>
                       </div>
                     </div>
-                  </div>
-
-                  <div className="flex items-center mb-2">
-                    <div className="flex mr-2">
-                      {renderStars(review.rating)}
+                    <div className="flex items-center mb-2">
+                      <div className="flex mr-2">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <div key={i} className="w-4 h-4 bg-gray-200 rounded animate-pulse mr-1"></div>
+                        ))}
+                      </div>
+                      <div className="h-3 bg-gray-200 rounded animate-pulse w-16"></div>
                     </div>
-                    <span className="text-sm text-gray-500">{review.date}</span>
-                  </div>
+                    <div className="h-4 bg-gray-200 rounded animate-pulse mb-2 w-32"></div>
+                    <div className="space-y-1">
+                      <div className="h-3 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-3 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-3 bg-gray-200 rounded animate-pulse w-3/4"></div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              displayReviews.slice(0, 4).map((review, index) => (
+                <Card key={review.id || index} className="bg-white hover:shadow-lg transition-shadow duration-300">
+                  <CardContent className="p-6">
+                    <div className="flex items-center mb-4">
+                      <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center text-white font-semibold mr-3">
+                        {getInitials(review.homeowner_name)}
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-gray-900">{review.homeowner_name}</h4>
+                        <div className="flex items-center text-sm text-gray-500">
+                          <MapPin size={12} className="mr-1" />
+                          {review.location}
+                        </div>
+                      </div>
+                    </div>
 
-                  <p className="text-sm font-medium text-gray-700 mb-2">
-                    {review.job}
-                  </p>
+                    <div className="flex items-center mb-2">
+                      <div className="flex mr-2">
+                        {renderStars(review.rating)}
+                      </div>
+                      <span className="text-sm text-gray-500">{formatDate(review.created_at)}</span>
+                    </div>
 
-                  <p className="text-sm text-gray-600 line-clamp-4">
-                    "{review.review}"
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
+                    <p className="text-sm font-medium text-gray-700 mb-2">
+                      {review.title}
+                    </p>
+
+                    <p className="text-sm text-gray-600 line-clamp-4">
+                      "{review.comment}"
+                    </p>
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </div>
 
           <div className="text-center mt-12">
