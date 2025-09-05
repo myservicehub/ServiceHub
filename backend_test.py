@@ -913,10 +913,14 @@ class BackendTester:
         """Step 1: Create test homeowner and tradesperson accounts"""
         print("\n=== Step 1: User Management & Authentication ===")
         
+        # Generate unique timestamp for email addresses
+        import time
+        timestamp = str(int(time.time()))
+        
         # Create test homeowner with realistic Nigerian data
         homeowner_data = {
             "name": "Adunni Olatunji",
-            "email": "test.e2e.homeowner@test.com",
+            "email": f"test.e2e.homeowner.{timestamp}@test.com",
             "password": "SecurePass123",
             "phone": "08123456789",
             "location": "Victoria Island, Lagos State",
