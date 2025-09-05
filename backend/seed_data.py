@@ -27,10 +27,6 @@ NIGERIAN_POSTCODES = [
     "230001", "740001", "920001", "840001", "520001"
 ]
 
-# Legacy variables for compatibility (will be removed)
-UK_CITIES = NIGERIAN_CITIES
-POSTCODES = NIGERIAN_POSTCODES
-
 TRADE_CATEGORIES = [
     "Gardening & Landscaping", "Painting & Decorating", "Plastering & Rendering",
     "Plumbing", "Electrical Work", "Carpentry & Joinery", "Building", "Roofing",
