@@ -3,6 +3,7 @@ from typing import List
 from models import QuoteCreate, Quote, QuotesResponse, Job
 from database import database
 from datetime import datetime
+import uuid
 
 router = APIRouter(prefix="/api/quotes", tags=["quotes"])
 
