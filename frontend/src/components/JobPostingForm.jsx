@@ -121,6 +121,13 @@ const JobPostingForm = ({ onComplete }) => {
           newErrors.homeowner_phone = 'Please enter valid Nigerian phone number (+234xxxxxxxxxx)';
         }
         break;
+        
+      case 5:
+        if (!formData.password.trim()) newErrors.password = 'Password is required';
+        if (formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
+        if (!formData.confirmPassword.trim()) newErrors.confirmPassword = 'Please confirm your password';
+        if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
+        break;
     }
 
     setErrors(newErrors);
