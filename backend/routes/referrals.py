@@ -77,7 +77,7 @@ async def submit_verification_documents(
     
     # Generate unique filename
     file_extension = document_image.filename.split(".")[-1].lower()
-    filename = f"{current_user['id']}_{document_type}_{uuid.uuid4().hex}.{file_extension}"
+    filename = f"{current_user.id}_{document_type}_{uuid.uuid4().hex}.{file_extension}"
     file_path = os.path.join(upload_dir, filename)
     
     # Save and optimize image
