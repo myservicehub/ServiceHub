@@ -30,8 +30,8 @@ async def lifespan(app: FastAPI):
     await database.close_mongo_connection()
     logger.info("MongoDB connection closed")
 
-# Create the main app with lifespan events
-app = FastAPI(lifespan=lifespan)
+# Create the main app with lifespan events  
+app = FastAPI(lifespan=lifespan, redirect_slashes=False)
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
