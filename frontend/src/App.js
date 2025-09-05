@@ -10,6 +10,8 @@ import TradespersonPortfolioPage from "./pages/TradespersonPortfolioPage";
 import NotificationPreferencesPage from "./pages/NotificationPreferencesPage";
 import NotificationHistoryPage from "./pages/NotificationHistoryPage";
 import ReviewsPage from "./pages/ReviewsPage";
+import WalletPage from "./pages/WalletPage";
+import AdminDashboard from "./pages/AdminDashboard";
 import { Toaster } from "./components/ui/toaster";
 import { AuthProvider } from "./contexts/AuthContext";
 
