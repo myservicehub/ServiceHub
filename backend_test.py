@@ -682,18 +682,15 @@ class BackendTester:
         else:
             self.log_result("Health endpoint", False, f"Status: {response.status_code}")
     
-    def run_homeowner_quote_tests(self):
-        """Run all homeowner and quote management tests"""
-        print("🚀 Starting ServiceHub Homeowner & Quote Management Tests")
+    def run_profile_management_tests(self):
+        """Run comprehensive profile management tests"""
+        print("🚀 Starting ServiceHub Profile Management Tests")
         print(f"Testing against: {self.base_url}")
         
         try:
             self.test_health_endpoints()
             self.test_authentication_system()
-            self.test_homeowner_job_management()
-            self.test_my_jobs_endpoint()
-            self.test_quote_management_system()
-            self.test_error_handling_and_edge_cases()
+            self.test_profile_management_system()
             
         except Exception as e:
             print(f"\n❌ Critical test failure: {e}")
@@ -702,7 +699,7 @@ class BackendTester:
         
         # Print summary
         print(f"\n{'='*60}")
-        print("🏁 HOMEOWNER & QUOTE MANAGEMENT TEST SUMMARY")
+        print("🏁 PROFILE MANAGEMENT TEST SUMMARY")
         print(f"{'='*60}")
         print(f"✅ Passed: {self.results['passed']}")
         print(f"❌ Failed: {self.results['failed']}")
