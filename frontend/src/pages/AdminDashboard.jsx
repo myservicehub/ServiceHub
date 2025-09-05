@@ -621,7 +621,7 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Reject Modal */}
+      {/* Reject Funding Modal */}
       {selectedTransaction && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
@@ -649,6 +649,44 @@ const AdminDashboard = () => {
                   const notes = document.getElementById('rejection-notes').value;
                   handleRejectFunding(selectedTransaction.id, notes);
                   setSelectedTransaction(null);
+                }}
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
+              >
+                Reject
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reject Verification Modal */}
+      {selectedVerification && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">Reject ID Verification</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              User: {selectedVerification.user_name} ({selectedVerification.user_email})
+              <br />
+              Document: {selectedVerification.document_type.replace('_', ' ').toUpperCase()}
+            </p>
+            <textarea
+              placeholder="Reason for rejection (required)"
+              className="w-full p-3 border rounded-lg mb-4"
+              rows="3"
+              id="verification-rejection-notes"
+            />
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setSelectedVerification(null)}
+                className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const notes = document.getElementById('verification-rejection-notes').value;
+                  handleRejectVerification(selectedVerification.id, notes);
+                  setSelectedVerification(null);
                 }}
                 className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
               >
