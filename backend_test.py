@@ -944,7 +944,7 @@ class BackendTester:
         # Create test tradesperson with realistic Nigerian data
         tradesperson_data = {
             "name": "Chinedu Okoro",
-            "email": "test.e2e.tradesperson@test.com",
+            "email": f"test.e2e.tradesperson.{timestamp}@test.com",
             "password": "SecurePass123",
             "phone": "08187654321",
             "location": "Ikeja, Lagos State",
