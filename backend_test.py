@@ -953,6 +953,39 @@ class BackendTester:
         else:
             self.log_result("Health endpoint", False, f"Status: {response.status_code}")
     
+    def run_portfolio_management_tests(self):
+        """Run comprehensive portfolio management tests"""
+        print("🚀 Starting ServiceHub Portfolio Management Tests")
+        print(f"Testing against: {self.base_url}")
+        
+        try:
+            self.test_health_endpoints()
+            self.test_authentication_system()
+            self.test_portfolio_management_system()
+            
+        except Exception as e:
+            print(f"\n❌ Critical test failure: {e}")
+            self.results['failed'] += 1
+            self.results['errors'].append(f"Critical failure: {str(e)}")
+        
+        # Print summary
+        print(f"\n{'='*60}")
+        print("🏁 PORTFOLIO MANAGEMENT TEST SUMMARY")
+        print(f"{'='*60}")
+        print(f"✅ Passed: {self.results['passed']}")
+        print(f"❌ Failed: {self.results['failed']}")
+        
+        if self.results['passed'] + self.results['failed'] > 0:
+            success_rate = (self.results['passed']/(self.results['passed']+self.results['failed'])*100)
+            print(f"📊 Success Rate: {success_rate:.1f}%")
+        
+        if self.results['errors']:
+            print(f"\n🔍 FAILED TESTS:")
+            for error in self.results['errors']:
+                print(f"   • {error}")
+        
+        return self.results
+
     def run_profile_management_tests(self):
         """Run comprehensive profile management tests"""
         print("🚀 Starting ServiceHub Profile Management Tests")
