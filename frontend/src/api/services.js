@@ -131,7 +131,7 @@ export const interestsAPI = {
 // Jobs API
 export const jobsAPI = {
   createJob: async (jobData) => {
-    const response = await apiClient.post('/jobs', jobData);
+    const response = await apiClient.post('/jobs/', jobData);
     return response.data;
   },
 
