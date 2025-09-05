@@ -97,6 +97,15 @@ const Header = () => {
                 {/* Notification Indicator for all authenticated users */}
                 <NotificationIndicator />
                 
+                {/* Link to Reviews */}
+                <button
+                  onClick={() => navigate('/reviews')}
+                  className="flex items-center space-x-1 text-gray-600 hover:text-gray-900 font-lato"
+                >
+                  <Star size={16} />
+                  <span>My Reviews</span>
+                </button>
+                
                 {/* Profile Link for all authenticated users */}
                 <Button 
                   variant="ghost"
