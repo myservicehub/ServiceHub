@@ -10,10 +10,12 @@ const AdminDashboard = () => {
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [fundingRequests, setFundingRequests] = useState([]);
   const [jobs, setJobs] = useState([]);
+  const [verifications, setVerifications] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [editingJob, setEditingJob] = useState(null);
+  const [selectedVerification, setSelectedVerification] = useState(null);
   const { toast } = useToast();
 
   useEffect(() => {
