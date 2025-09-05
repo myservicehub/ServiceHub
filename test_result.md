@@ -288,7 +288,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Communication System - Backend"
+    - "Show Interest System - Backend"
+    - "Show Interest Frontend Integration - BrowseJobsPage"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
