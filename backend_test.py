@@ -36,21 +36,265 @@ class BackendTester:
             self.results['errors'].append(f"{test_name}: {message}")
             print(f"❌ {test_name}: FAILED - {message}")
     
-    def make_request(self, method: str, endpoint: str, **kwargs) -> requests.Response:
-        """Make HTTP request with error handling"""
+    def make_request(self, method: str, endpoint: str, auth_token: str = None, **kwargs) -> requests.Response:
+        """Make HTTP request with error handling and optional authentication"""
         url = f"{self.base_url}{endpoint}"
         try:
             # Set proper headers for JSON requests
+            if 'headers' not in kwargs:
+                kwargs['headers'] = {}
+            
             if 'json' in kwargs:
-                if 'headers' not in kwargs:
-                    kwargs['headers'] = {}
                 kwargs['headers']['Content-Type'] = 'application/json'
+            
+            # Add authentication header if token provided
+            if auth_token:
+                kwargs['headers']['Authorization'] = f'Bearer {auth_token}'
             
             response = self.session.request(method, url, **kwargs)
             return response
         except Exception as e:
             print(f"Request failed: {e}")
             raise
+    
+    def test_authentication_system(self):
+        """Test user registration and authentication"""
+        print("\n=== Testing Authentication System ===")
+        
+        # Test homeowner registration
+        homeowner_data = {
+            "name": "Adebayo Johnson",
+            "email": f"adebayo.johnson.{uuid.uuid4().hex[:8]}@email.com",
+            "password": "SecurePass123",
+            "phone": "08123456789",
+            "location": "Lagos, Lagos State",
+            "postcode": "100001"
+        }
+        
+        response = self.make_request("POST", "/auth/register/homeowner", json=homeowner_data)
+        if response.status_code == 200:
+            homeowner_profile = response.json()
+            if homeowner_profile.get('role') == 'homeowner':
+                self.log_result("Homeowner registration", True, f"ID: {homeowner_profile['id']}")
+                self.test_data['homeowner_profile'] = homeowner_profile
+                self.test_data['homeowner_credentials'] = {
+                    'email': homeowner_data['email'],
+                    'password': homeowner_data['password']
+                }
+            else:
+                self.log_result("Homeowner registration", False, "Invalid role in response")
+        else:
+            self.log_result("Homeowner registration", False, f"Status: {response.status_code}, Response: {response.text}")
+        
+        # Test tradesperson registration
+        tradesperson_data = {
+            "name": "Emeka Okafor",
+            "email": f"emeka.okafor.{uuid.uuid4().hex[:8]}@tradework.com",
+            "password": "SecurePass123",
+            "phone": "08187654321",
+            "location": "Abuja, FCT",
+            "postcode": "900001",
+            "trade_categories": ["Plumbing", "Heating & Gas"],
+            "experience_years": 8,
+            "company_name": "Okafor Plumbing Services",
+            "description": "Professional plumber with 8 years experience in residential and commercial projects.",
+            "certifications": ["Licensed Plumber", "Gas Safety Certificate"]
+        }
+        
+        response = self.make_request("POST", "/auth/register/tradesperson", json=tradesperson_data)
+        if response.status_code == 200:
+            tradesperson_profile = response.json()
+            if tradesperson_profile.get('role') == 'tradesperson':
+                self.log_result("Tradesperson registration", True, f"ID: {tradesperson_profile['id']}")
+                self.test_data['tradesperson_profile'] = tradesperson_profile
+                self.test_data['tradesperson_credentials'] = {
+                    'email': tradesperson_data['email'],
+                    'password': tradesperson_data['password']
+                }
+            else:
+                self.log_result("Tradesperson registration", False, "Invalid role in response")
+        else:
+            self.log_result("Tradesperson registration", False, f"Status: {response.status_code}, Response: {response.text}")
+        
+        # Test homeowner login
+        if 'homeowner_credentials' in self.test_data:
+            login_data = self.test_data['homeowner_credentials']
+            response = self.make_request("POST", "/auth/login", json=login_data)
+            if response.status_code == 200:
+                login_response = response.json()
+                if 'access_token' in login_response and login_response.get('user', {}).get('role') == 'homeowner':
+                    self.log_result("Homeowner login", True)
+                    self.auth_tokens['homeowner'] = login_response['access_token']
+                    self.test_data['homeowner_user'] = login_response['user']
+                else:
+                    self.log_result("Homeowner login", False, "Invalid login response")
+            else:
+                self.log_result("Homeowner login", False, f"Status: {response.status_code}")
+        
+        # Test tradesperson login
+        if 'tradesperson_credentials' in self.test_data:
+            login_data = self.test_data['tradesperson_credentials']
+            response = self.make_request("POST", "/auth/login", json=login_data)
+            if response.status_code == 200:
+                login_response = response.json()
+                if 'access_token' in login_response and login_response.get('user', {}).get('role') == 'tradesperson':
+                    self.log_result("Tradesperson login", True)
+                    self.auth_tokens['tradesperson'] = login_response['access_token']
+                    self.test_data['tradesperson_user'] = login_response['user']
+                else:
+                    self.log_result("Tradesperson login", False, "Invalid login response")
+            else:
+                self.log_result("Tradesperson login", False, f"Status: {response.status_code}")
+        
+        # Test authentication verification
+        if 'homeowner' in self.auth_tokens:
+            response = self.make_request("GET", "/auth/me", auth_token=self.auth_tokens['homeowner'])
+            if response.status_code == 200:
+                profile = response.json()
+                if profile.get('role') == 'homeowner':
+                    self.log_result("Authentication verification", True)
+                else:
+                    self.log_result("Authentication verification", False, "Wrong role returned")
+            else:
+                self.log_result("Authentication verification", False, f"Status: {response.status_code}")
+    
+    def test_homeowner_job_management(self):
+        """Test homeowner job creation and management"""
+        print("\n=== Testing Homeowner Job Management ===")
+        
+        if 'homeowner' not in self.auth_tokens:
+            self.log_result("Job management tests", False, "No homeowner authentication token")
+            return
+        
+        homeowner_token = self.auth_tokens['homeowner']
+        homeowner_user = self.test_data.get('homeowner_user', {})
+        
+        # Test job creation as homeowner
+        job_data = {
+            "title": "Kitchen Renovation - Modern Nigerian Design",
+            "description": "Looking for an experienced kitchen fitter to completely renovate our kitchen in Lagos. We want a modern design with new cabinets, granite countertops, and modern appliances. The space is approximately 15 square meters. We have already purchased some materials and need professional installation.",
+            "category": "Carpentry & Joinery",
+            "location": "Victoria Island, Lagos State",
+            "postcode": "101001",
+            "budget_min": 500000,
+            "budget_max": 800000,
+            "timeline": "Within 6 weeks",
+            "homeowner_name": homeowner_user.get('name', 'Test Homeowner'),
+            "homeowner_email": homeowner_user.get('email', 'test@example.com'),
+            "homeowner_phone": homeowner_user.get('phone', '08123456789')
+        }
+        
+        response = self.make_request("POST", "/jobs/", json=job_data, auth_token=homeowner_token)
+        if response.status_code == 200:
+            created_job = response.json()
+            if 'id' in created_job and created_job['title'] == job_data['title']:
+                self.log_result("Create job as homeowner", True, f"Job ID: {created_job['id']}")
+                self.test_data['homeowner_job'] = created_job
+            else:
+                self.log_result("Create job as homeowner", False, "Invalid job creation response")
+        else:
+            self.log_result("Create job as homeowner", False, f"Status: {response.status_code}, Response: {response.text}")
+        
+        # Create a second job for testing
+        job_data2 = {
+            "title": "Bathroom Plumbing Repair",
+            "description": "Need urgent plumbing repair for bathroom. Leaking pipes and blocked drain need professional attention.",
+            "category": "Plumbing",
+            "location": "Ikeja, Lagos State", 
+            "postcode": "100001",
+            "budget_min": 50000,
+            "budget_max": 100000,
+            "timeline": "Within 1 week",
+            "homeowner_name": homeowner_user.get('name', 'Test Homeowner'),
+            "homeowner_email": homeowner_user.get('email', 'test@example.com'),
+            "homeowner_phone": homeowner_user.get('phone', '08123456789')
+        }
+        
+        response = self.make_request("POST", "/jobs/", json=job_data2, auth_token=homeowner_token)
+        if response.status_code == 200:
+            created_job2 = response.json()
+            self.log_result("Create second job", True, f"Job ID: {created_job2['id']}")
+            self.test_data['homeowner_job2'] = created_job2
+        else:
+            self.log_result("Create second job", False, f"Status: {response.status_code}")
+    
+    def test_my_jobs_endpoint(self):
+        """Test the new /my-jobs endpoint for homeowners"""
+        print("\n=== Testing /my-jobs Endpoint ===")
+        
+        if 'homeowner' not in self.auth_tokens:
+            self.log_result("My jobs endpoint tests", False, "No homeowner authentication token")
+            return
+        
+        homeowner_token = self.auth_tokens['homeowner']
+        
+        # Test getting homeowner's own jobs
+        response = self.make_request("GET", "/jobs/my-jobs", auth_token=homeowner_token)
+        if response.status_code == 200:
+            data = response.json()
+            if 'jobs' in data and 'pagination' in data:
+                jobs = data['jobs']
+                if len(jobs) >= 2:  # Should have at least the 2 jobs we created
+                    self.log_result("Get my jobs", True, f"Found {len(jobs)} jobs")
+                    
+                    # Verify jobs belong to current homeowner
+                    homeowner_email = self.test_data.get('homeowner_user', {}).get('email')
+                    all_jobs_owned = all(job.get('homeowner', {}).get('email') == homeowner_email for job in jobs)
+                    if all_jobs_owned:
+                        self.log_result("Job ownership verification", True, "All jobs belong to current homeowner")
+                    else:
+                        self.log_result("Job ownership verification", False, "Found jobs not owned by current homeowner")
+                else:
+                    self.log_result("Get my jobs", False, f"Expected at least 2 jobs, found {len(jobs)}")
+            else:
+                self.log_result("Get my jobs", False, "Invalid response structure")
+        else:
+            self.log_result("Get my jobs", False, f"Status: {response.status_code}, Response: {response.text}")
+        
+        # Test pagination
+        response = self.make_request("GET", "/jobs/my-jobs", 
+                                   params={"page": 1, "limit": 1}, 
+                                   auth_token=homeowner_token)
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('pagination', {}).get('limit') == 1:
+                self.log_result("My jobs pagination", True, "Pagination working correctly")
+            else:
+                self.log_result("My jobs pagination", False, "Pagination not working")
+        else:
+            self.log_result("My jobs pagination", False, f"Status: {response.status_code}")
+        
+        # Test status filtering
+        response = self.make_request("GET", "/jobs/my-jobs", 
+                                   params={"status": "active"}, 
+                                   auth_token=homeowner_token)
+        if response.status_code == 200:
+            data = response.json()
+            jobs = data.get('jobs', [])
+            if all(job.get('status') == 'active' for job in jobs):
+                self.log_result("My jobs status filter", True, f"Found {len(jobs)} active jobs")
+            else:
+                self.log_result("My jobs status filter", False, "Status filtering not working")
+        else:
+            self.log_result("My jobs status filter", False, f"Status: {response.status_code}")
+        
+        # Test unauthorized access (tradesperson trying to access /my-jobs)
+        if 'tradesperson' in self.auth_tokens:
+            response = self.make_request("GET", "/jobs/my-jobs", 
+                                       auth_token=self.auth_tokens['tradesperson'])
+            if response.status_code == 403:
+                self.log_result("Unauthorized access prevention", True, "Tradesperson correctly denied access")
+            else:
+                self.log_result("Unauthorized access prevention", False, 
+                               f"Expected 403, got {response.status_code}")
+        
+        # Test unauthenticated access
+        response = self.make_request("GET", "/jobs/my-jobs")
+        if response.status_code == 401:
+            self.log_result("Unauthenticated access prevention", True, "Correctly requires authentication")
+        else:
+            self.log_result("Unauthenticated access prevention", False, 
+                           f"Expected 401, got {response.status_code}")
     
     def test_health_endpoints(self):
         """Test basic health and connectivity"""
