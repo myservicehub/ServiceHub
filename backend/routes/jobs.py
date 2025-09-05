@@ -43,6 +43,8 @@ async def create_job(
         job_dict['status'] = 'active'
         job_dict['quotes_count'] = 0
         job_dict['interests_count'] = 0  # Add interests count
+        job_dict['access_fee_naira'] = 1500  # Default access fee ₦1500
+        job_dict['access_fee_coins'] = 15    # Default access fee 15 coins
         job_dict['created_at'] = datetime.utcnow()
         job_dict['updated_at'] = datetime.utcnow()
         job_dict['expires_at'] = datetime.utcnow() + timedelta(days=30)
