@@ -65,6 +65,7 @@ app.include_router(reviews.router)
 app.include_router(stats.router)
 app.include_router(portfolio.router)
 app.include_router(interests.router)
+app.include_router(notifications.router, prefix="/api/notifications", tags=["notifications"])
 
 # Include the main api router
 app.include_router(api_router)
