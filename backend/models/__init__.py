@@ -1,10 +1,5 @@
 # Models package
-import sys
-import os
-# Add parent directory to path
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-
-from models import (
+from .base import (
     JobCreate, Job, JobsResponse, JobStatus,
     TradespersonCreate, Tradesperson, TradespeopleResponse,
     QuoteCreate, Quote, QuotesResponse, QuoteStatus,
@@ -13,12 +8,29 @@ from models import (
     Homeowner, Location
 )
 
+from .auth import (
+    User, UserRole, UserStatus,
+    HomeownerRegistration, TradespersonRegistration,
+    UserLogin, LoginResponse,
+    UserProfile, UserProfileUpdate, TradespersonProfileUpdate,
+    Token, TokenData,
+    PasswordResetRequest, PasswordReset
+)
+
 # Re-export all models for easy importing
 __all__ = [
+    # Base models
     'JobCreate', 'Job', 'JobsResponse', 'JobStatus',
     'TradespersonCreate', 'Tradesperson', 'TradespeopleResponse',
     'QuoteCreate', 'Quote', 'QuotesResponse', 'QuoteStatus',
     'ReviewCreate', 'Review', 'ReviewsResponse',
     'StatsResponse', 'Category',
-    'Homeowner', 'Location'
+    'Homeowner', 'Location',
+    # Auth models
+    'User', 'UserRole', 'UserStatus',
+    'HomeownerRegistration', 'TradespersonRegistration',
+    'UserLogin', 'LoginResponse',
+    'UserProfile', 'UserProfileUpdate', 'TradespersonProfileUpdate',
+    'Token', 'TokenData',
+    'PasswordResetRequest', 'PasswordReset'
 ]
