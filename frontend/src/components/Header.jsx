@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Logo from './Logo';
 import AuthModal from './auth/AuthModal';
+import NotificationIndicator from './NotificationIndicator';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
