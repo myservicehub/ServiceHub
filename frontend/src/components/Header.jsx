@@ -213,6 +213,15 @@ const Header = () => {
                       </Button>
                     )}
                     
+                    {/* Link to Reviews */}
+                    <button
+                      onClick={() => navigate('/reviews')}
+                      className="flex items-center space-x-1 text-gray-600 hover:text-gray-900 font-lato justify-start px-3 py-2"
+                    >
+                      <Star size={16} />
+                      <span>My Reviews</span>
+                    </button>
+                    
                     {/* Profile Link for all authenticated users */}
                     <Button 
                       variant="ghost"
