@@ -82,6 +82,7 @@ class TradespersonRegistration(BaseModel):
     company_name: Optional[str] = None
     description: str = Field(..., min_length=50, max_length=1000)
     certifications: List[str] = []
+    referral_code: Optional[str] = None  # Optional referral code
 
 # Login Models
 class UserLogin(BaseModel):
