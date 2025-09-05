@@ -163,21 +163,7 @@ const BrowseJobsPage = () => {
     );
   }
 
-  if (showQuoteForm && selectedJob) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <div className="container mx-auto px-4 py-8">
-          <QuoteForm
-            job={selectedJob}
-            onQuoteSubmitted={handleQuoteSubmitted}
-            onCancel={handleCancelQuote}
-          />
-        </div>
-        <Footer />
-      </div>
-    );
-  }
+
 
   return (
     <div className="min-h-screen bg-gray-50">
