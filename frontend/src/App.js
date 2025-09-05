@@ -9,6 +9,7 @@ import ProfilePage from "./pages/ProfilePage";
 import TradespersonPortfolioPage from "./pages/TradespersonPortfolioPage";
 import NotificationPreferencesPage from "./pages/NotificationPreferencesPage";
 import NotificationHistoryPage from "./pages/NotificationHistoryPage";
+import ReviewsPage from "./pages/ReviewsPage";
 import { Toaster } from "./components/ui/toaster";
 import { AuthProvider } from "./contexts/AuthContext";
 
