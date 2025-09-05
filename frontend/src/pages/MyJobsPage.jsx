@@ -32,6 +32,7 @@ const MyJobsPage = () => {
 
   const { user, isAuthenticated, isHomeowner } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!isAuthenticated() || !isHomeowner()) {
