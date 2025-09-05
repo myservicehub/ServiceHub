@@ -602,6 +602,277 @@ class BackendTester:
         else:
             self.log_result("Certification management", False, f"Status: {response.status_code}")
 
+    def test_portfolio_management_system(self):
+        """Test comprehensive portfolio management for tradespeople"""
+        print("\n=== Testing Portfolio Management System ===")
+        
+        if 'tradesperson' not in self.auth_tokens:
+            self.log_result("Portfolio management tests", False, "No tradesperson authentication token")
+            return
+        
+        tradesperson_token = self.auth_tokens['tradesperson']
+        
+        # Test 1: Portfolio Image Upload with Form Data
+        print("\n--- Testing Portfolio Image Upload ---")
+        
+        # Create a test image file (1x1 pixel JPEG)
+        import io
+        from PIL import Image
+        
+        # Create a small test image
+        test_image = Image.new('RGB', (100, 100), color='red')
+        img_buffer = io.BytesIO()
+        test_image.save(img_buffer, format='JPEG')
+        img_buffer.seek(0)
+        
+        # Test valid image upload
+        files = {'file': ('test_image.jpg', img_buffer, 'image/jpeg')}
+        data = {
+            'title': 'Modern Bathroom Installation - Lagos Project',
+            'description': 'Complete bathroom renovation with modern fixtures and professional plumbing installation in Victoria Island, Lagos.',
+            'category': 'bathroom_fitting'
+        }
+        
+        response = self.session.post(
+            f"{self.base_url}/portfolio/upload",
+            files=files,
+            data=data,
+            headers={'Authorization': f'Bearer {tradesperson_token}'}
+        )
+        
+        if response.status_code == 200:
+            portfolio_item = response.json()
+            required_fields = ['id', 'tradesperson_id', 'title', 'description', 'category', 
+                             'image_url', 'image_filename', 'created_at', 'is_public']
+            missing_fields = [field for field in required_fields if field not in portfolio_item]
+            
+            if not missing_fields:
+                self.log_result("Portfolio image upload", True, 
+                               f"ID: {portfolio_item['id']}, Category: {portfolio_item['category']}")
+                self.test_data['portfolio_item'] = portfolio_item
+            else:
+                self.log_result("Portfolio image upload", False, f"Missing fields: {missing_fields}")
+        else:
+            self.log_result("Portfolio image upload", False, 
+                           f"Status: {response.status_code}, Response: {response.text}")
+        
+        # Test 2: Invalid File Upload - Wrong Format
+        img_buffer.seek(0)
+        files = {'file': ('test_image.txt', img_buffer, 'text/plain')}
+        data = {
+            'title': 'Test Upload',
+            'category': 'plumbing'
+        }
+        
+        response = self.session.post(
+            f"{self.base_url}/portfolio/upload",
+            files=files,
+            data=data,
+            headers={'Authorization': f'Bearer {tradesperson_token}'}
+        )
+        
+        if response.status_code == 400:
+            self.log_result("Invalid file format rejection", True, "Correctly rejected non-image file")
+        else:
+            self.log_result("Invalid file format rejection", False, 
+                           f"Expected 400, got {response.status_code}")
+        
+        # Test 3: Unauthorized Upload (Homeowner trying to upload)
+        if 'homeowner' in self.auth_tokens:
+            img_buffer.seek(0)
+            files = {'file': ('test_image.jpg', img_buffer, 'image/jpeg')}
+            data = {'title': 'Test', 'category': 'plumbing'}
+            
+            response = self.session.post(
+                f"{self.base_url}/portfolio/upload",
+                files=files,
+                data=data,
+                headers={'Authorization': f'Bearer {self.auth_tokens["homeowner"]}'}
+            )
+            
+            if response.status_code == 403:
+                self.log_result("Homeowner upload prevention", True, "Correctly denied homeowner access")
+            else:
+                self.log_result("Homeowner upload prevention", False, 
+                               f"Expected 403, got {response.status_code}")
+        
+        # Test 4: Get My Portfolio
+        response = self.make_request("GET", "/portfolio/my-portfolio", auth_token=tradesperson_token)
+        if response.status_code == 200:
+            portfolio_data = response.json()
+            if 'items' in portfolio_data and 'total' in portfolio_data:
+                items = portfolio_data['items']
+                if len(items) > 0:
+                    self.log_result("Get my portfolio", True, f"Found {len(items)} portfolio items")
+                    
+                    # Verify all items belong to current tradesperson
+                    tradesperson_id = self.test_data.get('tradesperson_user', {}).get('id')
+                    all_owned = all(item.get('tradesperson_id') == tradesperson_id for item in items)
+                    if all_owned:
+                        self.log_result("Portfolio ownership verification", True, 
+                                       "All items belong to current tradesperson")
+                    else:
+                        self.log_result("Portfolio ownership verification", False, 
+                                       "Found items not owned by current tradesperson")
+                else:
+                    self.log_result("Get my portfolio", True, "No portfolio items found (expected for new account)")
+            else:
+                self.log_result("Get my portfolio", False, "Invalid response structure")
+        else:
+            self.log_result("Get my portfolio", False, f"Status: {response.status_code}")
+        
+        # Test 5: Get Public Portfolio for Tradesperson
+        tradesperson_id = self.test_data.get('tradesperson_user', {}).get('id')
+        if tradesperson_id:
+            response = self.make_request("GET", f"/portfolio/tradesperson/{tradesperson_id}")
+            if response.status_code == 200:
+                portfolio_data = response.json()
+                if 'items' in portfolio_data and 'total' in portfolio_data:
+                    self.log_result("Get public tradesperson portfolio", True, 
+                                   f"Found {len(portfolio_data['items'])} public items")
+                else:
+                    self.log_result("Get public tradesperson portfolio", False, "Invalid response structure")
+            else:
+                self.log_result("Get public tradesperson portfolio", False, f"Status: {response.status_code}")
+        
+        # Test 6: Portfolio Item Update
+        if 'portfolio_item' in self.test_data:
+            item_id = self.test_data['portfolio_item']['id']
+            
+            # Test updating portfolio item details
+            update_data = {
+                'title': 'Updated Bathroom Installation Project',
+                'description': 'Updated description with more details about the modern bathroom renovation project.',
+                'category': 'plumbing',
+                'is_public': False
+            }
+            
+            response = self.make_request("PUT", f"/portfolio/{item_id}", 
+                                       json=update_data, auth_token=tradesperson_token)
+            if response.status_code == 200:
+                updated_item = response.json()
+                if (updated_item['title'] == update_data['title'] and 
+                    updated_item['is_public'] == update_data['is_public']):
+                    self.log_result("Portfolio item update", True, "All fields updated correctly")
+                else:
+                    self.log_result("Portfolio item update", False, "Fields not updated correctly")
+            else:
+                self.log_result("Portfolio item update", False, f"Status: {response.status_code}")
+            
+            # Test unauthorized update (homeowner trying to update)
+            if 'homeowner' in self.auth_tokens:
+                response = self.make_request("PUT", f"/portfolio/{item_id}", 
+                                           json={'title': 'Hacked'}, 
+                                           auth_token=self.auth_tokens['homeowner'])
+                if response.status_code == 403:
+                    self.log_result("Unauthorized portfolio update prevention", True, 
+                                   "Correctly denied homeowner access")
+                else:
+                    self.log_result("Unauthorized portfolio update prevention", False, 
+                                   f"Expected 403, got {response.status_code}")
+        
+        # Test 7: Get All Public Portfolio Items
+        response = self.make_request("GET", "/portfolio/")
+        if response.status_code == 200:
+            portfolio_data = response.json()
+            if 'items' in portfolio_data and 'total' in portfolio_data:
+                self.log_result("Get all public portfolio items", True, 
+                               f"Found {len(portfolio_data['items'])} public items")
+            else:
+                self.log_result("Get all public portfolio items", False, "Invalid response structure")
+        else:
+            self.log_result("Get all public portfolio items", False, f"Status: {response.status_code}")
+        
+        # Test 8: Portfolio Category Filtering
+        response = self.make_request("GET", "/portfolio/", params={'category': 'plumbing'})
+        if response.status_code == 200:
+            portfolio_data = response.json()
+            items = portfolio_data.get('items', [])
+            if all(item.get('category') == 'plumbing' for item in items):
+                self.log_result("Portfolio category filtering", True, f"Found {len(items)} plumbing items")
+            else:
+                self.log_result("Portfolio category filtering", False, "Category filtering not working")
+        else:
+            self.log_result("Portfolio category filtering", False, f"Status: {response.status_code}")
+        
+        # Test 9: Image Serving Endpoint
+        if 'portfolio_item' in self.test_data:
+            image_filename = self.test_data['portfolio_item']['image_filename']
+            response = self.make_request("GET", f"/portfolio/images/{image_filename}")
+            if response.status_code == 200:
+                if response.headers.get('content-type', '').startswith('image/'):
+                    self.log_result("Portfolio image serving", True, "Image served correctly")
+                else:
+                    self.log_result("Portfolio image serving", False, "Wrong content type")
+            else:
+                self.log_result("Portfolio image serving", False, f"Status: {response.status_code}")
+        
+        # Test 10: Portfolio Item Deletion
+        if 'portfolio_item' in self.test_data:
+            item_id = self.test_data['portfolio_item']['id']
+            
+            # Test unauthorized deletion (homeowner trying to delete)
+            if 'homeowner' in self.auth_tokens:
+                response = self.make_request("DELETE", f"/portfolio/{item_id}", 
+                                           auth_token=self.auth_tokens['homeowner'])
+                if response.status_code == 403:
+                    self.log_result("Unauthorized portfolio deletion prevention", True, 
+                                   "Correctly denied homeowner access")
+                else:
+                    self.log_result("Unauthorized portfolio deletion prevention", False, 
+                                   f"Expected 403, got {response.status_code}")
+            
+            # Test valid deletion
+            response = self.make_request("DELETE", f"/portfolio/{item_id}", 
+                                       auth_token=tradesperson_token)
+            if response.status_code == 200:
+                result = response.json()
+                if "deleted successfully" in result.get('message', '').lower():
+                    self.log_result("Portfolio item deletion", True, "Item deleted successfully")
+                    
+                    # Verify item is actually deleted
+                    response = self.make_request("GET", "/portfolio/my-portfolio", 
+                                               auth_token=tradesperson_token)
+                    if response.status_code == 200:
+                        portfolio_data = response.json()
+                        remaining_items = [item for item in portfolio_data['items'] 
+                                         if item['id'] == item_id]
+                        if not remaining_items:
+                            self.log_result("Portfolio deletion verification", True, 
+                                           "Item successfully removed from database")
+                        else:
+                            self.log_result("Portfolio deletion verification", False, 
+                                           "Item still exists in database")
+                else:
+                    self.log_result("Portfolio item deletion", False, "Unexpected response message")
+            else:
+                self.log_result("Portfolio item deletion", False, f"Status: {response.status_code}")
+        
+        # Test 11: Error Handling - Invalid Portfolio Item ID
+        response = self.make_request("GET", "/portfolio/invalid-item-id")
+        if response.status_code == 404:
+            self.log_result("Invalid portfolio item ID handling", True, "Correctly returned 404")
+        else:
+            self.log_result("Invalid portfolio item ID handling", False, 
+                           f"Expected 404, got {response.status_code}")
+        
+        # Test 12: Error Handling - Missing Required Fields in Upload
+        files = {'file': ('test.jpg', io.BytesIO(b'fake image'), 'image/jpeg')}
+        data = {'title': ''}  # Empty title
+        
+        response = self.session.post(
+            f"{self.base_url}/portfolio/upload",
+            files=files,
+            data=data,
+            headers={'Authorization': f'Bearer {tradesperson_token}'}
+        )
+        
+        if response.status_code in [400, 422]:
+            self.log_result("Missing required fields handling", True, "Correctly rejected empty title")
+        else:
+            self.log_result("Missing required fields handling", False, 
+                           f"Expected 400/422, got {response.status_code}")
+
     def test_error_handling_and_edge_cases(self):
         """Test error handling scenarios for job and quote management"""
         print("\n=== Testing Error Handling & Edge Cases ===")
