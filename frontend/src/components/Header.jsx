@@ -77,7 +77,11 @@ const Header = () => {
                 <Button variant="ghost" className="text-gray-700 font-lato hover:text-[#2F8140] justify-start">
                   Sign in
                 </Button>
-                <Button className="font-lato text-white justify-start" style={{backgroundColor: '#2F8140'}}>
+                <Button 
+                  onClick={() => navigate('/post-job')}
+                  className="font-lato text-white justify-start" 
+                  style={{backgroundColor: '#2F8140'}}
+                >
                   Post a job
                 </Button>
               </div>
