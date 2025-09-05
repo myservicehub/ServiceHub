@@ -95,57 +95,35 @@ export const portfolioAPI = {
   },
 };
 
-// Messages API
-export const messagesAPI = {
-  sendMessage: async (messageData) => {
-    const response = await apiClient.post('/messages/send', messageData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+// Interests API (Lead Generation System)
+export const interestsAPI = {
+  showInterest: async (jobId) => {
+    const response = await apiClient.post('/interests/show-interest', { job_id: jobId });
     return response.data;
   },
 
-  sendTextMessage: async (jobId, recipientId, content) => {
-    const formData = new FormData();
-    formData.append('job_id', jobId);
-    formData.append('recipient_id', recipientId);
-    formData.append('content', content);
-    formData.append('message_type', 'text');
-    
-    const response = await apiClient.post('/messages/send', formData);
+  getJobInterestedTradespeople: async (jobId) => {
+    const response = await apiClient.get(`/interests/job/${jobId}`);
     return response.data;
   },
 
-  sendImageMessage: async (jobId, recipientId, content, imageFile) => {
-    const formData = new FormData();
-    formData.append('job_id', jobId);
-    formData.append('recipient_id', recipientId);
-    formData.append('content', content);
-    formData.append('message_type', 'image');
-    formData.append('file', imageFile);
-    
-    const response = await apiClient.post('/messages/send', formData);
+  shareContactDetails: async (interestId) => {
+    const response = await apiClient.put(`/interests/share-contact/${interestId}`);
     return response.data;
   },
 
-  getJobMessages: async (jobId, params = {}) => {
-    const response = await apiClient.get(`/messages/job/${jobId}`, { params });
+  getMyInterests: async () => {
+    const response = await apiClient.get('/interests/my-interests');
     return response.data;
   },
 
-  getConversations: async () => {
-    const response = await apiClient.get('/messages/conversations');
+  payForAccess: async (interestId) => {
+    const response = await apiClient.post(`/interests/pay-access/${interestId}`);
     return response.data;
   },
 
-  markMessageAsRead: async (messageId) => {
-    const response = await apiClient.put(`/messages/${messageId}/read`);
-    return response.data;
-  },
-
-  getUnreadCount: async () => {
-    const response = await apiClient.get('/messages/unread-count');
+  getContactDetails: async (jobId) => {
+    const response = await apiClient.get(`/interests/contact-details/${jobId}`);
     return response.data;
   },
 };
