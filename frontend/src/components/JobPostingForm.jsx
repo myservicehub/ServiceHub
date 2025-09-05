@@ -567,6 +567,7 @@ const JobPostingForm = ({ onComplete }) => {
       case 2: return <MapPin size={20} />;
       case 3: return <DollarSign size={20} />;
       case 4: return <User size={20} />;
+      case 5: return <Lock size={20} />;
       default: return null;
     }
   };
