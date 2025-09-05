@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Query
 from typing import List
-from models import QuoteCreate, Quote, QuotesResponse
+from models import QuoteCreate, Quote, QuotesResponse, Job
 from database import database
 from datetime import datetime
 
