@@ -1,4 +1,4 @@
-# MyBuilder Clone - Backend Contracts
+# serviceHub Clone - Backend Contracts
 
 ## API Contracts
 
