@@ -1,5 +1,8 @@
 from fastapi import APIRouter, HTTPException, Query
 from typing import Optional
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from models import ReviewCreate, Review, ReviewsResponse
 from database import database
 from datetime import datetime
