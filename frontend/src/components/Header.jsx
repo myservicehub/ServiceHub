@@ -157,13 +157,39 @@ const Header = () => {
                         Welcome, {user?.name?.split(' ')[0]}
                       </span>
                     </div>
-                    <Button 
-                      onClick={() => navigate('/post-job')}
-                      className="font-lato text-white justify-start" 
-                      style={{backgroundColor: '#2F8140'}}
-                    >
-                      Post a job
-                    </Button>
+                    
+                    {/* Mobile Navigation based on user type */}
+                    {isHomeowner() && (
+                      <>
+                        <Button 
+                          variant="ghost"
+                          onClick={() => navigate('/my-jobs')}
+                          className="text-gray-700 font-lato hover:text-[#2F8140] justify-start flex items-center space-x-1"
+                        >
+                          <Briefcase size={16} />
+                          <span>My Jobs</span>
+                        </Button>
+                        <Button 
+                          onClick={() => navigate('/post-job')}
+                          className="font-lato text-white justify-start" 
+                          style={{backgroundColor: '#2F8140'}}
+                        >
+                          Post a job
+                        </Button>
+                      </>
+                    )}
+                    
+                    {isTradesperson() && (
+                      <Button 
+                        variant="ghost"
+                        onClick={() => navigate('/browse-jobs')}
+                        className="text-gray-700 font-lato hover:text-[#2F8140] justify-start flex items-center space-x-1"
+                      >
+                        <Search size={16} />
+                        <span>Browse Jobs</span>
+                      </Button>
+                    )}
+                    
                     <Button
                       variant="ghost"
                       onClick={handleLogout}
