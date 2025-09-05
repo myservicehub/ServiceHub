@@ -216,3 +216,22 @@ async def get_contact_details(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get contact details: {str(e)}"
         )
+
+async def _notify_homeowner_new_interest(job: dict, tradesperson: dict, interest_id: str):
+    """Background task to notify homeowner of new interest"""
+    try:
+        # Create notification for homeowner
+        await notification_service.create_notification(
+            user_id=job.get("homeowner", {}).get("id"),
+            notification_type=NotificationType.NEW_INTEREST,
+            title="New Interest in Your Job",
+            message=f"{tradesperson.get('business_name', tradesperson.get('name', 'A tradesperson'))} has shown interest in your job: {job.get('title', 'Untitled Job')}",
+            data={
+                "job_id": job.get("id"),
+                "tradesperson_id": tradesperson.get("id"),
+                "interest_id": interest_id
+            }
+        )
+        logger.info(f"Notification sent to homeowner {job.get('homeowner', {}).get('id')} for new interest {interest_id}")
+    except Exception as e:
+        logger.error(f"Failed to send notification for new interest {interest_id}: {str(e)}")
