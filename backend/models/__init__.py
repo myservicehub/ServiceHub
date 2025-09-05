@@ -29,7 +29,7 @@ __all__ = [
     'StatsResponse', 'Category',
     'Homeowner', 'Location',
     'PortfolioItemCreate', 'PortfolioItem', 'PortfolioResponse', 'PortfolioItemCategory',
-    'InterestCreate', 'Interest', 'InterestedTradesperson', 'InterestResponse', 'InterestStatus', 'ContactDetails',
+    'InterestCreate', 'Interest', 'InterestedTradesperson', 'InterestResponse', 'InterestStatus', 'ContactDetails', 'ShareContactResponse',
     # Auth models
     'User', 'UserRole', 'UserStatus',
     'HomeownerRegistration', 'TradespersonRegistration',
