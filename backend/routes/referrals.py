@@ -104,7 +104,7 @@ async def submit_verification_documents(
     
     # Submit verification
     verification_id = await database.submit_verification_documents(
-        user_id=current_user["id"],
+        user_id=current_user.id,
         document_type=document_type,
         document_url=filename,
         full_name=full_name,
