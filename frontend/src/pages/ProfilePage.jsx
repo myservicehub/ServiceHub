@@ -1,0 +1,645 @@
+import React, { useState, useEffect } from 'react';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Textarea } from '../components/ui/textarea';
+import { Badge } from '../components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { 
+  User, 
+  Mail, 
+  Phone, 
+  MapPin, 
+  Building2, 
+  Star, 
+  Calendar,
+  Edit3,
+  Save,
+  X,
+  Award,
+  Briefcase,
+  Clock,
+  Shield,
+  Settings
+} from 'lucide-react';
+import { authAPI } from '../api/services';
+import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../hooks/use-toast';
+
+const ProfilePage = () => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [profileData, setProfileData] = useState(null);
+  const [editData, setEditData] = useState({});
+  
+  const { user, isAuthenticated, isHomeowner, isTradesperson, updateUser } = useAuth();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (isAuthenticated() && user) {
+      setProfileData(user);
+      setEditData({
+        name: user.name || '',
+        phone: user.phone || '',
+        location: user.location || '',
+        postcode: user.postcode || '',
+        // Tradesperson specific fields
+        company_name: user.company_name || '',
+        description: user.description || '',
+        experience_years: user.experience_years || 0,
+        trade_categories: user.trade_categories || [],
+        certifications: user.certifications || []
+      });
+    }
+  }, [user, isAuthenticated]);
+
+  const handleEditToggle = () => {
+    if (isEditing) {
+      // Reset edit data to original values
+      setEditData({
+        name: profileData.name || '',
+        phone: profileData.phone || '',
+        location: profileData.location || '',
+        postcode: profileData.postcode || '',
+        company_name: profileData.company_name || '',
+        description: profileData.description || '',
+        experience_years: profileData.experience_years || 0,
+        trade_categories: profileData.trade_categories || [],
+        certifications: profileData.certifications || []
+      });
+    }
+    setIsEditing(!isEditing);
+  };
+
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+      
+      // Prepare update data - only send fields that have changed
+      const updateData = {};
+      if (editData.name !== profileData.name) updateData.name = editData.name;
+      if (editData.phone !== profileData.phone) updateData.phone = editData.phone;
+      if (editData.location !== profileData.location) updateData.location = editData.location;
+      if (editData.postcode !== profileData.postcode) updateData.postcode = editData.postcode;
+
+      let response;
+      if (isTradesperson()) {
+        // Include tradesperson-specific fields
+        if (editData.company_name !== profileData.company_name) updateData.company_name = editData.company_name;
+        if (editData.description !== profileData.description) updateData.description = editData.description;
+        if (editData.experience_years !== profileData.experience_years) updateData.experience_years = parseInt(editData.experience_years);
+        if (JSON.stringify(editData.trade_categories) !== JSON.stringify(profileData.trade_categories)) {
+          updateData.trade_categories = editData.trade_categories;
+        }
+        if (JSON.stringify(editData.certifications) !== JSON.stringify(profileData.certifications)) {
+          updateData.certifications = editData.certifications;
+        }
+        
+        response = await authAPI.updateTradespersonProfile(updateData);
+      } else {
+        response = await authAPI.updateProfile(updateData);
+      }
+
+      // Update local state and auth context
+      setProfileData(response);
+      updateUser(response);
+      setIsEditing(false);
+
+      toast({
+        title: "Profile updated successfully!",
+        description: "Your profile information has been saved.",
+      });
+
+    } catch (error) {
+      console.error('Profile update error:', error);
+      toast({
+        title: "Failed to update profile",
+        description: error.response?.data?.detail || "There was an error updating your profile. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Never';
+    return new Date(dateString).toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const handleAddCertification = () => {
+    setEditData({
+      ...editData,
+      certifications: [...editData.certifications, '']
+    });
+  };
+
+  const handleRemoveCertification = (index) => {
+    const newCertifications = editData.certifications.filter((_, i) => i !== index);
+    setEditData({
+      ...editData,
+      certifications: newCertifications
+    });
+  };
+
+  const handleCertificationChange = (index, value) => {
+    const newCertifications = [...editData.certifications];
+    newCertifications[index] = value;
+    setEditData({
+      ...editData,
+      certifications: newCertifications
+    });
+  };
+
+  if (!isAuthenticated() || !profileData) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="container mx-auto px-4 py-16">
+          <div className="max-w-md mx-auto text-center">
+            <h1 className="text-2xl font-bold font-montserrat mb-4" style={{color: '#121E3C'}}>
+              Sign In Required
+            </h1>
+            <p className="text-gray-600 font-lato mb-6">
+              Please sign in to view your profile.
+            </p>
+            <Button 
+              onClick={() => window.location.reload()}
+              className="text-white font-lato"
+              style={{backgroundColor: '#2F8140'}}
+            >
+              Sign In
+            </Button>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      
+      {/* Page Header */}
+      <section className="py-8 bg-white border-b">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold font-montserrat mb-2" style={{color: '#121E3C'}}>
+                  My Profile
+                </h1>
+                <p className="text-lg text-gray-600 font-lato">
+                  Manage your account information and preferences
+                </p>
+              </div>
+              
+              <div className="flex space-x-3">
+                {isEditing ? (
+                  <>
+                    <Button
+                      variant="outline"
+                      onClick={handleEditToggle}
+                      className="font-lato"
+                    >
+                      <X size={16} className="mr-2" />
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleSave}
+                      disabled={loading}
+                      className="text-white font-lato"
+                      style={{backgroundColor: '#2F8140'}}
+                    >
+                      <Save size={16} className="mr-2" />
+                      {loading ? 'Saving...' : 'Save Changes'}
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    onClick={handleEditToggle}
+                    className="text-white font-lato"
+                    style={{backgroundColor: '#2F8140'}}
+                  >
+                    <Edit3 size={16} className="mr-2" />
+                    Edit Profile
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Profile Content */}
+      <section className="py-8">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <Tabs defaultValue="profile" className="space-y-6">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="profile">Profile Information</TabsTrigger>
+                <TabsTrigger value="account">Account Settings</TabsTrigger>
+                <TabsTrigger value="activity">Activity</TabsTrigger>
+              </TabsList>
+
+              {/* Profile Information Tab */}
+              <TabsContent value="profile" className="space-y-6">
+                {/* Basic Information Card */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center font-montserrat" style={{color: '#121E3C'}}>
+                      <User size={20} className="mr-2" style={{color: '#2F8140'}} />
+                      Basic Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Name Field */}
+                      <div>
+                        <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                          Full Name
+                        </label>
+                        {isEditing ? (
+                          <Input
+                            value={editData.name}
+                            onChange={(e) => setEditData({...editData, name: e.target.value})}
+                            className="font-lato"
+                            placeholder="Enter your full name"
+                          />
+                        ) : (
+                          <p className="text-gray-700 font-lato py-2">{profileData.name}</p>
+                        )}
+                      </div>
+
+                      {/* Email Field (Read-only) */}
+                      <div>
+                        <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                          Email Address
+                        </label>
+                        <div className="flex items-center space-x-2">
+                          <p className="text-gray-700 font-lato py-2">{profileData.email}</p>
+                          {profileData.email_verified ? (
+                            <Badge className="bg-green-100 text-green-800 text-xs">Verified</Badge>
+                          ) : (
+                            <Badge className="bg-yellow-100 text-yellow-800 text-xs">Unverified</Badge>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Phone Field */}
+                      <div>
+                        <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                          Phone Number
+                        </label>
+                        {isEditing ? (
+                          <Input
+                            value={editData.phone}
+                            onChange={(e) => setEditData({...editData, phone: e.target.value})}
+                            className="font-lato"
+                            placeholder="e.g., 08123456789"
+                          />
+                        ) : (
+                          <div className="flex items-center space-x-2">
+                            <p className="text-gray-700 font-lato py-2">{profileData.phone}</p>
+                            {profileData.phone_verified ? (
+                              <Badge className="bg-green-100 text-green-800 text-xs">Verified</Badge>
+                            ) : (
+                              <Badge className="bg-yellow-100 text-yellow-800 text-xs">Unverified</Badge>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Location Field */}
+                      <div>
+                        <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                          Location
+                        </label>
+                        {isEditing ? (
+                          <Input
+                            value={editData.location}
+                            onChange={(e) => setEditData({...editData, location: e.target.value})}
+                            className="font-lato"
+                            placeholder="e.g., Lagos, Nigeria"
+                          />
+                        ) : (
+                          <p className="text-gray-700 font-lato py-2">{profileData.location}</p>
+                        )}
+                      </div>
+
+                      {/* Postcode Field */}
+                      <div>
+                        <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                          Postcode
+                        </label>
+                        {isEditing ? (
+                          <Input
+                            value={editData.postcode}
+                            onChange={(e) => setEditData({...editData, postcode: e.target.value})}
+                            className="font-lato"
+                            placeholder="e.g., 101001"
+                          />
+                        ) : (
+                          <p className="text-gray-700 font-lato py-2">{profileData.postcode}</p>
+                        )}
+                      </div>
+
+                      {/* Role Badge */}
+                      <div>
+                        <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                          Account Type
+                        </label>
+                        <Badge className="bg-blue-100 text-blue-800 text-sm py-1 px-3">
+                          {profileData.role === 'homeowner' ? 'Homeowner' : 'Tradesperson'}
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Tradesperson Specific Fields */}
+                {isTradesperson() && (
+                  <>
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center font-montserrat" style={{color: '#121E3C'}}>
+                          <Briefcase size={20} className="mr-2" style={{color: '#2F8140'}} />
+                          Professional Information
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* Company Name */}
+                          <div>
+                            <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                              Company Name
+                            </label>
+                            {isEditing ? (
+                              <Input
+                                value={editData.company_name}
+                                onChange={(e) => setEditData({...editData, company_name: e.target.value})}
+                                className="font-lato"
+                                placeholder="Enter company name (optional)"
+                              />
+                            ) : (
+                              <p className="text-gray-700 font-lato py-2">{profileData.company_name || 'Not specified'}</p>
+                            )}
+                          </div>
+
+                          {/* Experience Years */}
+                          <div>
+                            <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                              Years of Experience
+                            </label>
+                            {isEditing ? (
+                              <Input
+                                type="number"
+                                min="0"
+                                max="50"
+                                value={editData.experience_years}
+                                onChange={(e) => setEditData({...editData, experience_years: e.target.value})}
+                                className="font-lato"
+                                placeholder="Years of experience"
+                              />
+                            ) : (
+                              <p className="text-gray-700 font-lato py-2">{profileData.experience_years} years</p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Description */}
+                        <div>
+                          <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                            Professional Description
+                          </label>
+                          {isEditing ? (
+                            <Textarea
+                              value={editData.description}
+                              onChange={(e) => setEditData({...editData, description: e.target.value})}
+                              className="font-lato"
+                              rows={4}
+                              placeholder="Describe your professional background and expertise..."
+                            />
+                          ) : (
+                            <p className="text-gray-700 font-lato py-2">{profileData.description}</p>
+                          )}
+                        </div>
+
+                        {/* Trade Categories */}
+                        <div>
+                          <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                            Skills & Expertise
+                          </label>
+                          <div className="flex flex-wrap gap-2">
+                            {profileData.trade_categories?.map((category, index) => (
+                              <Badge key={index} variant="outline" className="text-sm">
+                                {category}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Rating and Reviews */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
+                          <div className="text-center">
+                            <div className="flex items-center justify-center space-x-1 mb-1">
+                              <Star size={16} className="text-yellow-400 fill-current" />
+                              <span className="text-lg font-bold font-montserrat" style={{color: '#2F8140'}}>
+                                {profileData.average_rating?.toFixed(1) || '0.0'}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-600 font-lato">Average Rating</p>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-lg font-bold font-montserrat mb-1" style={{color: '#2F8140'}}>
+                              {profileData.total_reviews || 0}
+                            </div>
+                            <p className="text-sm text-gray-600 font-lato">Total Reviews</p>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-lg font-bold font-montserrat mb-1" style={{color: '#2F8140'}}>
+                              {profileData.total_jobs || 0}
+                            </div>
+                            <p className="text-sm text-gray-600 font-lato">Jobs Completed</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Certifications Card */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center font-montserrat" style={{color: '#121E3C'}}>
+                          <Award size={20} className="mr-2" style={{color: '#2F8140'}} />
+                          Certifications
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        {isEditing ? (
+                          <div className="space-y-3">
+                            {editData.certifications.map((cert, index) => (
+                              <div key={index} className="flex items-center space-x-2">
+                                <Input
+                                  value={cert}
+                                  onChange={(e) => handleCertificationChange(index, e.target.value)}
+                                  placeholder="Enter certification name"
+                                  className="flex-1 font-lato"
+                                />
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleRemoveCertification(index)}
+                                  className="text-red-600 hover:text-red-700"
+                                >
+                                  <X size={16} />
+                                </Button>
+                              </div>
+                            ))}
+                            <Button
+                              variant="outline"
+                              onClick={handleAddCertification}
+                              className="font-lato"
+                            >
+                              Add Certification
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {profileData.certifications?.length > 0 ? (
+                              profileData.certifications.map((cert, index) => (
+                                <div key={index} className="flex items-center space-x-2">
+                                  <Award size={14} style={{color: '#2F8140'}} />
+                                  <span className="text-gray-700 font-lato">{cert}</span>
+                                </div>
+                              ))
+                            ) : (
+                              <p className="text-gray-500 font-lato">No certifications added yet</p>
+                            )}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </>
+                )}
+              </TabsContent>
+
+              {/* Account Settings Tab */}
+              <TabsContent value="account" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center font-montserrat" style={{color: '#121E3C'}}>
+                      <Settings size={20} className="mr-2" style={{color: '#2F8140'}} />
+                      Account Settings
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <h3 className="font-semibold font-montserrat mb-2" style={{color: '#121E3C'}}>
+                          Account Status
+                        </h3>
+                        <div className="flex items-center space-x-2">
+                          <Shield size={16} style={{color: '#2F8140'}} />
+                          <span className="text-gray-700 font-lato capitalize">{profileData.status}</span>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h3 className="font-semibold font-montserrat mb-2" style={{color: '#121E3C'}}>
+                          Verification Status
+                        </h3>
+                        <div className="space-y-1">
+                          <div className="flex items-center space-x-2">
+                            <Mail size={14} />
+                            <span className="text-sm font-lato">Email: </span>
+                            {profileData.email_verified ? (
+                              <Badge className="bg-green-100 text-green-800 text-xs">Verified</Badge>
+                            ) : (
+                              <Badge className="bg-yellow-100 text-yellow-800 text-xs">Unverified</Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Phone size={14} />
+                            <span className="text-sm font-lato">Phone: </span>
+                            {profileData.phone_verified ? (
+                              <Badge className="bg-green-100 text-green-800 text-xs">Verified</Badge>
+                            ) : (
+                              <Badge className="bg-yellow-100 text-yellow-800 text-xs">Unverified</Badge>
+                            )}
+                          </div>
+                          {isTradesperson() && (
+                            <div className="flex items-center space-x-2">
+                              <Award size={14} />
+                              <span className="text-sm font-lato">Tradesperson: </span>
+                              {profileData.verified_tradesperson ? (
+                                <Badge className="bg-green-100 text-green-800 text-xs">Verified</Badge>
+                              ) : (
+                                <Badge className="bg-yellow-100 text-yellow-800 text-xs">Unverified</Badge>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Activity Tab */}
+              <TabsContent value="activity" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center font-montserrat" style={{color: '#121E3C'}}>
+                      <Clock size={20} className="mr-2" style={{color: '#2F8140'}} />
+                      Account Activity
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between py-2 border-b">
+                        <div className="flex items-center space-x-2">
+                          <Calendar size={16} style={{color: '#2F8140'}} />
+                          <span className="font-lato">Member since</span>
+                        </div>
+                        <span className="text-gray-600 font-lato">{formatDate(profileData.created_at)}</span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between py-2 border-b">
+                        <div className="flex items-center space-x-2">
+                          <Clock size={16} style={{color: '#2F8140'}} />
+                          <span className="font-lato">Last login</span>
+                        </div>
+                        <span className="text-gray-600 font-lato">{formatDate(profileData.last_login)}</span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between py-2">
+                        <div className="flex items-center space-x-2">
+                          <Edit3 size={16} style={{color: '#2F8140'}} />
+                          <span className="font-lato">Profile updated</span>
+                        </div>
+                        <span className="text-gray-600 font-lato">{formatDate(profileData.updated_at)}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
+      </section>
+
+      <Footer />
+    </div>
+  );
+};
+
+export default ProfilePage;
