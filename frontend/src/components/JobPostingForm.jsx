@@ -163,11 +163,26 @@ const JobPostingForm = ({ onComplete }) => {
   };
 
   const handleSubmit = async () => {
-    if (!validateStep(4)) return;
+    if (!validateStep(5)) return;
 
     setIsSubmitting(true);
     
     try {
+      // Step 1: Create homeowner account
+      const signupData = {
+        name: formData.homeowner_name,
+        email: formData.homeowner_email,
+        phone: formData.homeowner_phone,
+        password: formData.password,
+        role: 'homeowner'
+      };
+
+      const authResult = await authAPI.signup(signupData);
+      
+      // Step 2: Login the user
+      await login(authResult.access_token, authResult.user);
+      
+      // Step 3: Create the job (now authenticated)
       const jobData = {
         title: formData.title,
         description: formData.description,
@@ -185,8 +200,8 @@ const JobPostingForm = ({ onComplete }) => {
       const result = await jobsAPI.createJob(jobData);
       
       toast({
-        title: "Job posted successfully!",
-        description: "Your job has been posted and tradespeople will start responding soon.",
+        title: "Account created and job posted!",
+        description: "Welcome to ServiceHub! Your job has been posted and tradespeople will start responding soon.",
       });
 
       if (onComplete) {
@@ -194,12 +209,21 @@ const JobPostingForm = ({ onComplete }) => {
       }
       
     } catch (error) {
-      console.error('Job posting error:', error);
-      toast({
-        title: "Failed to post job",
-        description: error.response?.data?.detail || "There was an error posting your job. Please try again.",
-        variant: "destructive",
-      });
+      console.error('Account creation or job posting error:', error);
+      
+      if (error.response?.status === 400 && error.response?.data?.detail?.includes('already registered')) {
+        toast({
+          title: "Email already exists",
+          description: "An account with this email already exists. Please use the login option instead.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Failed to create account or post job",
+          description: error.response?.data?.detail || "There was an error. Please try again.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
