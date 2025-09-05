@@ -266,16 +266,23 @@ class InterestedTradesperson(BaseModel):
     tradesperson_id: str
     tradesperson_name: str
     tradesperson_email: str
+    tradesperson_phone: Optional[str] = None
     company_name: Optional[str] = None
-    trade_categories: List[str]
+    business_name: Optional[str] = None
+    trade_categories: List[str] = []
     experience_years: int
-    average_rating: float
-    total_reviews: int
+    average_rating: float = 4.5
+    total_reviews: int = 0
+    location: Optional[str] = None
+    description: Optional[str] = None
+    certifications: List[str] = []
     portfolio_count: Optional[int] = 0
     status: InterestStatus
     created_at: datetime
-    contact_shared: bool = False
-    payment_made: bool = False
+    updated_at: Optional[datetime] = None
+    contact_shared_at: Optional[datetime] = None
+    payment_made_at: Optional[datetime] = None
+    access_fee: Optional[float] = None
 
 class InterestResponse(BaseModel):
     interested_tradespeople: List[InterestedTradesperson]
