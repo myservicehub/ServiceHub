@@ -36,7 +36,11 @@ const JobPostingForm = ({ onComplete }) => {
     // Step 4: Contact Details
     homeowner_name: '',
     homeowner_email: '',
-    homeowner_phone: ''
+    homeowner_phone: '',
+    
+    // Step 5: Account Creation
+    password: '',
+    confirmPassword: ''
   });
 
   const [errors, setErrors] = useState({});
