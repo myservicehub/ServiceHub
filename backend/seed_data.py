@@ -137,9 +137,9 @@ async def seed_jobs(count: int = 50):
         location = random.choice(NIGERIAN_CITIES)
         postcode = random.choice(NIGERIAN_POSTCODES)
         
-        # Random budget
-        budget_min = random.randint(500, 5000)
-        budget_max = budget_min + random.randint(1000, 10000)
+        # Random budget in Nigerian Naira
+        budget_min = random.randint(50000, 500000)  # ₦50,000 to ₦500,000
+        budget_max = budget_min + random.randint(100000, 1000000)  # Up to ₦1.5M
         
         # Random timeline
         timelines = ["ASAP", "1-2 weeks", "2-4 weeks", "1-2 months", "Flexible"]
