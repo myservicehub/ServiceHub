@@ -93,16 +93,6 @@ const Header = () => {
                   </>
                 )}
                 
-                {/* Messages Link for all authenticated users */}
-                <Button 
-                  variant="ghost"
-                  onClick={() => navigate('/messages')}
-                  className="text-gray-700 font-lato hover:text-[#2F8140] flex items-center space-x-1"
-                >
-                  <MessageCircle size={16} />
-                  <span>Messages</span>
-                </Button>
-                
                 {/* Profile Link for all authenticated users */}
                 <Button 
                   variant="ghost"
