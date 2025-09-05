@@ -841,6 +841,41 @@ class Database:
             "budget_range": f"₦{job.get('budget_min', 0):,} - ₦{job.get('budget_max', 0):,}" if job.get('budget_min') else None
         }
 
+    async def get_interest_by_job_and_tradesperson(self, job_id: str, tradesperson_id: str) -> Optional[dict]:
+        """Get interest by job and tradesperson"""
+        interest = await self.interests_collection.find_one({
+            "job_id": job_id,
+            "tradesperson_id": tradesperson_id
+        })
+        
+        if interest:
+            interest["id"] = str(interest["_id"])
+            del interest["_id"]
+        
+        return interest
+
+    async def get_interest_by_id(self, interest_id: str) -> Optional[dict]:
+        """Get interest by ID"""
+        interest = await self.interests_collection.find_one({"_id": interest_id})
+        
+        if interest:
+            interest["id"] = str(interest["_id"])
+            del interest["_id"]
+        
+        return interest
+
+    async def update_interest_status(self, interest_id: str, update_data: dict) -> Optional[dict]:
+        """Update interest status and related fields"""
+        result = await self.interests_collection.update_one(
+            {"_id": interest_id},
+            {"$set": update_data}
+        )
+        
+        if result.modified_count > 0:
+            return await self.get_interest_by_id(interest_id)
+        
+        return None
+
     @property
     def interests_collection(self):
         """Access to interests collection"""
