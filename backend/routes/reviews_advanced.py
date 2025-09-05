@@ -329,9 +329,10 @@ async def get_my_reviews(
     """Get reviews written by current user"""
     try:
         # Get reviews written by current user
+        skip = (page - 1) * limit
         cursor = database.reviews_collection.find(
             {"reviewer_id": current_user.id}
-        ).sort("created_at", -1).skip((page - 1) * limit).limit(limit)
+        ).sort("created_at", -1).skip(skip).limit(limit)
         
         reviews = []
         async for doc in cursor:
