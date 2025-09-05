@@ -48,11 +48,11 @@ app.add_middleware(
 # Health check endpoint
 @api_router.get("/")
 async def root():
-    return {"message": "MyBuilder API is running", "status": "healthy"}
+    return {"message": "serviceHub API is running", "status": "healthy"}
 
 @api_router.get("/health")
 async def health_check():
-    return {"status": "healthy", "service": "MyBuilder API"}
+    return {"status": "healthy", "service": "serviceHub API"}
 
 # Include route modules
 app.include_router(jobs.router)
