@@ -2537,6 +2537,9 @@ class BackendTester:
         self.test_notification_system()
         self.test_notification_workflow_integration()
         
+        # NEW: Phase 8 - Rating & Review System
+        self.test_rating_review_system()
+        
         # Print final results
         print("\n" + "=" * 80)
         print("🏁 FINAL TEST RESULTS")
