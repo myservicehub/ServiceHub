@@ -68,7 +68,20 @@ async def register_homeowner(registration_data: HomeownerRegistration):
         
         # Remove password hash from response
         user_response = User(**created_user)
-        return UserProfile(**user_response.dict())
+        
+        # Create access token for immediate login
+        access_token_expires = timedelta(minutes=60 * 24)  # 24 hours
+        access_token = create_access_token(
+            data={"sub": created_user["id"], "email": created_user["email"]},
+            expires_delta=access_token_expires
+        )
+        
+        # Return both user profile and access token
+        return {
+            "user": user_response.dict(),
+            "access_token": access_token,
+            "token_type": "bearer"
+        }
 
     except HTTPException:
         raise
