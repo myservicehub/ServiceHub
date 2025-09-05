@@ -16,10 +16,10 @@ from models.base import (
 router = APIRouter(prefix="/api/referrals", tags=["referrals"])
 
 @router.get("/my-stats", response_model=ReferralStats)
-async def get_my_referral_stats(current_user: dict = Depends(get_current_user)):
+async def get_my_referral_stats(current_user = Depends(get_current_user)):
     """Get current user's referral statistics and referral code"""
     
-    stats = await database.get_user_referral_stats(current_user["id"])
+    stats = await database.get_user_referral_stats(current_user.id)
     
     if not stats:
         raise HTTPException(status_code=404, detail="User not found")
