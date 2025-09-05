@@ -882,6 +882,332 @@ class Database:
         """Access to interests collection"""
         return self.database.interests
 
+    # Review Management Methods (Trust & Quality System)
+    async def create_review(self, review: Review) -> Review:
+        """Create a new review"""
+        review_dict = review.dict()
+        review_dict["_id"] = review_dict["id"]
+        
+        await self.reviews_collection.insert_one(review_dict)
+        
+        # Update user's review summary
+        await self._update_user_review_summary(review.reviewee_id)
+        
+        return review
+
+    async def get_review_by_id(self, review_id: str) -> Optional[Review]:
+        """Get review by ID"""
+        review_doc = await self.reviews_collection.find_one({"id": review_id})
+        if review_doc:
+            review_doc["id"] = str(review_doc["_id"])
+            del review_doc["_id"]
+            return Review(**review_doc)
+        return None
+
+    async def get_user_reviews(
+        self, 
+        user_id: str, 
+        review_type: Optional[str] = None,
+        page: int = 1, 
+        limit: int = 10
+    ) -> Dict[str, Any]:
+        """Get reviews for a user with pagination"""
+        query = {"reviewee_id": user_id, "status": ReviewStatus.PUBLISHED}
+        
+        if review_type:
+            query["review_type"] = review_type
+        
+        # Get total count
+        total = await self.reviews_collection.count_documents(query)
+        
+        # Get paginated reviews
+        skip = (page - 1) * limit
+        cursor = self.reviews_collection.find(query).sort("created_at", -1).skip(skip).limit(limit)
+        
+        reviews = []
+        async for doc in cursor:
+            doc["id"] = str(doc["_id"])
+            del doc["_id"]
+            reviews.append(Review(**doc))
+        
+        # Calculate average rating
+        avg_rating = 0.0
+        if reviews:
+            avg_rating = sum(review.rating for review in reviews) / len(reviews)
+        
+        return {
+            "reviews": reviews,
+            "total": total,
+            "page": page,
+            "limit": limit,
+            "total_pages": (total + limit - 1) // limit,
+            "average_rating": round(avg_rating, 1)
+        }
+
+    async def get_reviews_by_job(self, job_id: str) -> List[Review]:
+        """Get all reviews for a specific job"""
+        cursor = self.reviews_collection.find(
+            {"job_id": job_id, "status": ReviewStatus.PUBLISHED}
+        ).sort("created_at", -1)
+        
+        reviews = []
+        async for doc in cursor:
+            doc["id"] = str(doc["_id"])
+            del doc["_id"]
+            reviews.append(Review(**doc))
+        
+        return reviews
+
+    async def get_user_review_summary(self, user_id: str) -> ReviewSummary:
+        """Get comprehensive review summary for a user"""
+        # Get all published reviews for user
+        reviews_cursor = self.reviews_collection.find(
+            {"reviewee_id": user_id, "status": ReviewStatus.PUBLISHED}
+        ).sort("created_at", -1)
+        
+        all_reviews = []
+        total_rating = 0
+        rating_distribution = {"5": 0, "4": 0, "3": 0, "2": 0, "1": 0}
+        category_totals = {}
+        category_counts = {}
+        recommend_count = 0
+        
+        async for doc in reviews_cursor:
+            doc["id"] = str(doc["_id"])
+            del doc["_id"]
+            review = Review(**doc)
+            all_reviews.append(review)
+            
+            # Calculate rating statistics
+            total_rating += review.rating
+            rating_distribution[str(review.rating)] += 1
+            
+            # Calculate category averages
+            if review.category_ratings:
+                for category, rating in review.category_ratings.items():
+                    if category not in category_totals:
+                        category_totals[category] = 0
+                        category_counts[category] = 0
+                    category_totals[category] += rating
+                    category_counts[category] += 1
+            
+            # Count recommendations
+            if review.would_recommend:
+                recommend_count += 1
+        
+        # Calculate averages
+        total_reviews = len(all_reviews)
+        average_rating = (total_rating / total_reviews) if total_reviews > 0 else 0.0
+        
+        category_averages = {}
+        for category, total in category_totals.items():
+            category_averages[category] = round(total / category_counts[category], 1)
+        
+        recommendation_percentage = (recommend_count / total_reviews * 100) if total_reviews > 0 else 0.0
+        
+        return ReviewSummary(
+            total_reviews=total_reviews,
+            average_rating=round(average_rating, 1),
+            rating_distribution=rating_distribution,
+            category_averages=category_averages,
+            recent_reviews=all_reviews[:5],  # Last 5 reviews
+            recommendation_percentage=round(recommendation_percentage, 1),
+            verified_reviews_count=total_reviews  # All reviews are verified after job completion
+        )
+
+    async def update_review(self, review_id: str, update_data: Dict[str, Any]) -> Optional[Review]:
+        """Update a review"""
+        update_data["updated_at"] = datetime.utcnow()
+        
+        result = await self.reviews_collection.update_one(
+            {"id": review_id},
+            {"$set": update_data}
+        )
+        
+        if result.modified_count > 0:
+            return await self.get_review_by_id(review_id)
+        return None
+
+    async def add_review_response(self, review_id: str, response: str, responder_id: str) -> Optional[Review]:
+        """Add response to a review"""
+        update_data = {
+            "response": response,
+            "response_date": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+        
+        # Verify the responder is the reviewee
+        review = await self.get_review_by_id(review_id)
+        if not review or review.reviewee_id != responder_id:
+            return None
+        
+        return await self.update_review(review_id, update_data)
+
+    async def mark_review_helpful(self, review_id: str, user_id: str) -> bool:
+        """Mark a review as helpful"""
+        # Check if user already marked this review
+        existing = await self.database.review_helpful.find_one({
+            "review_id": review_id,
+            "user_id": user_id
+        })
+        
+        if existing:
+            return False
+        
+        # Add helpful record
+        await self.database.review_helpful.insert_one({
+            "review_id": review_id,
+            "user_id": user_id,
+            "created_at": datetime.utcnow()
+        })
+        
+        # Increment helpful count
+        await self.reviews_collection.update_one(
+            {"id": review_id},
+            {"$inc": {"helpful_count": 1}}
+        )
+        
+        return True
+
+    async def get_platform_review_stats(self) -> ReviewStats:
+        """Get platform-wide review statistics"""
+        # Total reviews
+        total_reviews = await self.reviews_collection.count_documents(
+            {"status": ReviewStatus.PUBLISHED}
+        )
+        
+        # Rating distribution
+        pipeline = [
+            {"$match": {"status": ReviewStatus.PUBLISHED}},
+            {"$group": {
+                "_id": "$rating",
+                "count": {"$sum": 1}
+            }}
+        ]
+        
+        rating_counts = {}
+        total_rating = 0
+        async for doc in self.reviews_collection.aggregate(pipeline):
+            rating_counts[str(doc["_id"])] = doc["count"]
+            total_rating += doc["_id"] * doc["count"]
+        
+        average_rating = (total_rating / total_reviews) if total_reviews > 0 else 0.0
+        
+        # Reviews this month
+        from datetime import timedelta
+        month_ago = datetime.utcnow() - timedelta(days=30)
+        reviews_this_month = await self.reviews_collection.count_documents({
+            "status": ReviewStatus.PUBLISHED,
+            "created_at": {"$gte": month_ago}
+        })
+        
+        # Top rated tradespeople
+        top_tradespeople_pipeline = [
+            {"$match": {
+                "status": ReviewStatus.PUBLISHED,
+                "review_type": ReviewType.HOMEOWNER_TO_TRADESPERSON
+            }},
+            {"$group": {
+                "_id": "$reviewee_id",
+                "name": {"$first": "$reviewee_name"},
+                "average_rating": {"$avg": "$rating"},
+                "total_reviews": {"$sum": 1}
+            }},
+            {"$match": {"total_reviews": {"$gte": 5}}},
+            {"$sort": {"average_rating": -1, "total_reviews": -1}},
+            {"$limit": 10}
+        ]
+        
+        top_tradespeople = []
+        async for doc in self.reviews_collection.aggregate(top_tradespeople_pipeline):
+            top_tradespeople.append({
+                "id": doc["_id"],
+                "name": doc["name"],
+                "average_rating": round(doc["average_rating"], 1),
+                "total_reviews": doc["total_reviews"]
+            })
+        
+        # Recent reviews
+        recent_cursor = self.reviews_collection.find(
+            {"status": ReviewStatus.PUBLISHED}
+        ).sort("created_at", -1).limit(10)
+        
+        recent_reviews = []
+        async for doc in recent_cursor:
+            doc["id"] = str(doc["_id"])
+            del doc["_id"]
+            recent_reviews.append(Review(**doc))
+        
+        return ReviewStats(
+            total_reviews=total_reviews,
+            total_ratings=rating_counts,
+            average_platform_rating=round(average_rating, 1),
+            reviews_this_month=reviews_this_month,
+            top_rated_tradespeople=top_tradespeople,
+            top_rated_categories=[],  # TODO: Implement if needed
+            recent_reviews=recent_reviews
+        )
+
+    async def can_user_review(self, reviewer_id: str, reviewee_id: str, job_id: str) -> bool:
+        """Check if user can review another user for a specific job"""
+        # Check if review already exists
+        existing_review = await self.reviews_collection.find_one({
+            "reviewer_id": reviewer_id,
+            "reviewee_id": reviewee_id,
+            "job_id": job_id
+        })
+        
+        if existing_review:
+            return False
+        
+        # Check if job exists and is completed
+        job = await self.get_job_by_id(job_id)
+        if not job:
+            return False
+        
+        # Check if there's a completed interest (indicating job interaction)
+        interest = await self.interests_collection.find_one({
+            "job_id": job_id,
+            "tradesperson_id": reviewee_id if reviewer_id == job["homeowner"]["id"] else reviewer_id,
+            "status": {"$in": ["contact_shared", "paid_access"]}
+        })
+        
+        return interest is not None
+
+    async def _update_user_review_summary(self, user_id: str):
+        """Update cached review summary for user (internal method)"""
+        summary = await self.get_user_review_summary(user_id)
+        
+        # Update user profile with review stats
+        await self.users_collection.update_one(
+            {"id": user_id},
+            {"$set": {
+                "total_reviews": summary.total_reviews,
+                "average_rating": summary.average_rating,
+                "recommendation_percentage": summary.recommendation_percentage,
+                "review_summary_updated_at": datetime.utcnow()
+            }}
+        )
+
+    async def get_reviews_requiring_moderation(self, limit: int = 50) -> List[Review]:
+        """Get reviews that need moderation"""
+        cursor = self.reviews_collection.find(
+            {"status": {"$in": [ReviewStatus.FLAGGED, ReviewStatus.PENDING]}}
+        ).sort("created_at", -1).limit(limit)
+        
+        reviews = []
+        async for doc in cursor:
+            doc["id"] = str(doc["_id"])
+            del doc["_id"]
+            reviews.append(Review(**doc))
+        
+        return reviews
+
+    @property
+    def reviews_collection(self):
+        """Access to reviews collection"""
+        return self.database.reviews
+
     # Notification Management Methods
     async def create_notification(self, notification: Notification) -> Notification:
         """Create a new notification"""
