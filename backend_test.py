@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Comprehensive Backend API Tests for ServiceHub - Homeowner Job & Quote Management
-Tests authentication, job management, and quote system with focus on new /my-jobs endpoint
+PHASE 7: End-to-End System Testing - Complete Backend Integration
+Comprehensive testing of the entire serviceHub lead generation marketplace backend workflow
+to ensure all systems work together seamlessly.
 """
 
 import requests
