@@ -101,6 +101,12 @@ export const AuthProvider = ({ children }) => {
     setUser(userData);
   };
 
+  const loginWithToken = (token, userData) => {
+    localStorage.setItem('token', token);
+    setToken(token);
+    setUser(userData);
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     setToken(null);
