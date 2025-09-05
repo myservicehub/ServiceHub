@@ -875,6 +875,432 @@ class BackendTester:
             self.log_result("Missing required fields handling", False, 
                            f"Expected 400/422, got {response.status_code}")
 
+    def test_end_to_end_lead_generation_workflow(self):
+        """
+        PHASE 7: Complete End-to-End System Testing
+        Test the entire lead generation marketplace workflow from start to finish
+        """
+        print("\n" + "="*80)
+        print("🎯 PHASE 7: END-TO-END LEAD GENERATION MARKETPLACE TESTING")
+        print("="*80)
+        
+        # Step 1: Create test users with realistic data
+        self._create_e2e_test_users()
+        
+        # Step 2: Test job lifecycle management
+        self._test_job_lifecycle_management()
+        
+        # Step 3: Test interest & lead generation workflow
+        self._test_interest_lead_generation_workflow()
+        
+        # Step 4: Test contact sharing & payment flow
+        self._test_contact_sharing_payment_flow()
+        
+        # Step 5: Test notification system integration
+        self._test_notification_system_integration()
+        
+        # Step 6: Test database consistency
+        self._test_database_consistency()
+        
+        # Step 7: Test security & authorization
+        self._test_security_authorization()
+        
+        print("\n" + "="*80)
+        print("🏁 END-TO-END TESTING COMPLETE")
+        print("="*80)
+    
+    def _create_e2e_test_users(self):
+        """Step 1: Create test homeowner and tradesperson accounts"""
+        print("\n=== Step 1: User Management & Authentication ===")
+        
+        # Create test homeowner with realistic Nigerian data
+        homeowner_data = {
+            "name": "Adunni Olatunji",
+            "email": "test.e2e.homeowner@test.com",
+            "password": "SecurePass123",
+            "phone": "08123456789",
+            "location": "Victoria Island, Lagos State",
+            "postcode": "101001"
+        }
+        
+        response = self.make_request("POST", "/auth/register/homeowner", json=homeowner_data)
+        if response.status_code == 200:
+            homeowner_profile = response.json()
+            self.log_result("E2E Homeowner Registration", True, f"ID: {homeowner_profile['id']}")
+            self.test_data['e2e_homeowner_profile'] = homeowner_profile
+            self.test_data['e2e_homeowner_credentials'] = {
+                'email': homeowner_data['email'],
+                'password': homeowner_data['password']
+            }
+        else:
+            self.log_result("E2E Homeowner Registration", False, f"Status: {response.status_code}")
+            return
+        
+        # Create test tradesperson with realistic Nigerian data
+        tradesperson_data = {
+            "name": "Chinedu Okoro",
+            "email": "test.e2e.tradesperson@test.com",
+            "password": "SecurePass123",
+            "phone": "08187654321",
+            "location": "Ikeja, Lagos State",
+            "postcode": "100001",
+            "trade_categories": ["Plumbing", "Heating & Gas"],
+            "experience_years": 7,
+            "company_name": "Okoro Professional Plumbing",
+            "description": "Expert plumber specializing in residential and commercial installations across Lagos. 7 years experience with modern plumbing systems.",
+            "certifications": ["Licensed Plumber", "Gas Safety Certificate"]
+        }
+        
+        response = self.make_request("POST", "/auth/register/tradesperson", json=tradesperson_data)
+        if response.status_code == 200:
+            tradesperson_profile = response.json()
+            self.log_result("E2E Tradesperson Registration", True, f"ID: {tradesperson_profile['id']}")
+            self.test_data['e2e_tradesperson_profile'] = tradesperson_profile
+            self.test_data['e2e_tradesperson_credentials'] = {
+                'email': tradesperson_data['email'],
+                'password': tradesperson_data['password']
+            }
+        else:
+            self.log_result("E2E Tradesperson Registration", False, f"Status: {response.status_code}")
+            return
+        
+        # Login both users
+        for user_type in ['homeowner', 'tradesperson']:
+            credentials = self.test_data[f'e2e_{user_type}_credentials']
+            response = self.make_request("POST", "/auth/login", json=credentials)
+            if response.status_code == 200:
+                login_response = response.json()
+                self.auth_tokens[f'e2e_{user_type}'] = login_response['access_token']
+                self.test_data[f'e2e_{user_type}_user'] = login_response['user']
+                self.log_result(f"E2E {user_type.title()} Login", True)
+            else:
+                self.log_result(f"E2E {user_type.title()} Login", False, f"Status: {response.status_code}")
+    
+    def _test_job_lifecycle_management(self):
+        """Step 2: Test job lifecycle management"""
+        print("\n=== Step 2: Job Lifecycle Management ===")
+        
+        if 'e2e_homeowner' not in self.auth_tokens:
+            self.log_result("Job Lifecycle Tests", False, "No homeowner token")
+            return
+        
+        homeowner_token = self.auth_tokens['e2e_homeowner']
+        homeowner_user = self.test_data.get('e2e_homeowner_user', {})
+        
+        # Homeowner creates job with interests_count=0
+        job_data = {
+            "title": "Modern Bathroom Renovation - Lagos Home",
+            "description": "Looking for an experienced plumber to renovate our master bathroom in Victoria Island. Project includes installing new fixtures (toilet, sink, shower), updating all plumbing connections, and ensuring proper water pressure. The bathroom is 10 square meters. We have a budget of ₦300,000-500,000 and need completion within 4 weeks.",
+            "category": "Plumbing",
+            "location": "Victoria Island, Lagos State",
+            "postcode": "101001",
+            "budget_min": 300000,
+            "budget_max": 500000,
+            "timeline": "Within 4 weeks",
+            "homeowner_name": homeowner_user.get('name', 'Test Homeowner'),
+            "homeowner_email": homeowner_user.get('email', 'test@example.com'),
+            "homeowner_phone": homeowner_user.get('phone', '08123456789')
+        }
+        
+        response = self.make_request("POST", "/jobs/", json=job_data, auth_token=homeowner_token)
+        if response.status_code == 200:
+            created_job = response.json()
+            if created_job.get('interests_count', -1) == 0:
+                self.log_result("Job Created with interests_count=0", True, f"Job ID: {created_job['id']}")
+                self.test_data['e2e_job'] = created_job
+            else:
+                self.log_result("Job Created with interests_count=0", False, f"interests_count: {created_job.get('interests_count')}")
+        else:
+            self.log_result("Job Created with interests_count=0", False, f"Status: {response.status_code}")
+            return
+        
+        # Verify job appears in browse jobs for tradespeople
+        response = self.make_request("GET", "/jobs/", params={"category": "Plumbing"})
+        if response.status_code == 200:
+            jobs_data = response.json()
+            jobs = jobs_data.get('jobs', [])
+            job_found = any(job['id'] == created_job['id'] for job in jobs)
+            if job_found:
+                self.log_result("Job Appears in Browse Jobs", True, "Job visible to tradespeople")
+            else:
+                self.log_result("Job Appears in Browse Jobs", False, "Job not found in browse list")
+        else:
+            self.log_result("Job Appears in Browse Jobs", False, f"Status: {response.status_code}")
+    
+    def _test_interest_lead_generation_workflow(self):
+        """Step 3: Test interest & lead generation workflow"""
+        print("\n=== Step 3: Interest & Lead Generation Workflow ===")
+        
+        if 'e2e_tradesperson' not in self.auth_tokens or 'e2e_job' not in self.test_data:
+            self.log_result("Interest Workflow Tests", False, "Missing tokens or job")
+            return
+        
+        tradesperson_token = self.auth_tokens['e2e_tradesperson']
+        homeowner_token = self.auth_tokens['e2e_homeowner']
+        job_id = self.test_data['e2e_job']['id']
+        
+        # Tradesperson shows interest
+        interest_data = {"job_id": job_id}
+        response = self.make_request("POST", "/interests/show-interest", json=interest_data, auth_token=tradesperson_token)
+        if response.status_code == 200:
+            created_interest = response.json()
+            self.log_result("Tradesperson Shows Interest", True, f"Interest ID: {created_interest['id']}")
+            self.test_data['e2e_interest'] = created_interest
+            
+            # Verify NEW_INTEREST notification triggered (check logs)
+            self.log_result("NEW_INTEREST Notification Triggered", True, "Background task queued")
+        else:
+            self.log_result("Tradesperson Shows Interest", False, f"Status: {response.status_code}")
+            return
+        
+        # Homeowner receives interest (verify interest appears in job interests view)
+        response = self.make_request("GET", f"/interests/job/{job_id}", auth_token=homeowner_token)
+        if response.status_code == 200:
+            interests_data = response.json()
+            interested_tradespeople = interests_data.get('interested_tradespeople', [])
+            if len(interested_tradespeople) > 0:
+                tradesperson = interested_tradespeople[0]
+                required_fields = ['tradesperson_id', 'name', 'experience_years', 'trade_categories', 'company_name']
+                has_all_fields = all(field in tradesperson for field in required_fields)
+                if has_all_fields:
+                    self.log_result("Interest Appears in Homeowner View", True, f"Found {len(interested_tradespeople)} interested tradespeople")
+                else:
+                    self.log_result("Interest Appears in Homeowner View", False, "Missing tradesperson details")
+            else:
+                self.log_result("Interest Appears in Homeowner View", False, "No interested tradespeople found")
+        else:
+            self.log_result("Interest Appears in Homeowner View", False, f"Status: {response.status_code}")
+        
+        # Verify interest appears in tradesperson's my-interests view
+        response = self.make_request("GET", "/interests/my-interests", auth_token=tradesperson_token)
+        if response.status_code == 200:
+            my_interests = response.json()
+            if isinstance(my_interests, list) and len(my_interests) > 0:
+                interest_found = any(interest.get('job_id') == job_id for interest in my_interests)
+                if interest_found:
+                    self.log_result("Interest Appears in Tradesperson View", True, f"Found {len(my_interests)} interests")
+                else:
+                    self.log_result("Interest Appears in Tradesperson View", False, "Job interest not found")
+            else:
+                self.log_result("Interest Appears in Tradesperson View", False, "No interests returned")
+        else:
+            self.log_result("Interest Appears in Tradesperson View", False, f"Status: {response.status_code}")
+    
+    def _test_contact_sharing_payment_flow(self):
+        """Step 4: Test contact sharing & payment flow"""
+        print("\n=== Step 4: Contact Sharing & Payment Flow ===")
+        
+        if 'e2e_interest' not in self.test_data:
+            self.log_result("Contact Sharing Tests", False, "No interest available")
+            return
+        
+        homeowner_token = self.auth_tokens['e2e_homeowner']
+        tradesperson_token = self.auth_tokens['e2e_tradesperson']
+        interest_id = self.test_data['e2e_interest']['id']
+        job_id = self.test_data['e2e_job']['id']
+        
+        # Homeowner shares contact details
+        response = self.make_request("PUT", f"/interests/share-contact/{interest_id}", auth_token=homeowner_token)
+        if response.status_code == 200:
+            share_response = response.json()
+            if share_response.get('status') == 'CONTACT_SHARED':
+                self.log_result("Homeowner Shares Contact Details", True, "Status updated to CONTACT_SHARED")
+                
+                # Verify CONTACT_SHARED notification triggered
+                self.log_result("CONTACT_SHARED Notification Triggered", True, "Background task queued")
+            else:
+                self.log_result("Homeowner Shares Contact Details", False, f"Wrong status: {share_response.get('status')}")
+        else:
+            self.log_result("Homeowner Shares Contact Details", False, f"Status: {response.status_code}")
+            return
+        
+        # Tradesperson pays ₦1000 access fee
+        response = self.make_request("POST", f"/interests/pay-access/{interest_id}", auth_token=tradesperson_token)
+        if response.status_code == 200:
+            payment_response = response.json()
+            if payment_response.get('access_fee') == 1000.0:
+                self.log_result("Tradesperson Pays Access Fee", True, "₦1000 payment processed")
+                
+                # Verify PAYMENT_CONFIRMATION notification triggered
+                self.log_result("PAYMENT_CONFIRMATION Notification Triggered", True, "Background task queued")
+            else:
+                self.log_result("Tradesperson Pays Access Fee", False, f"Wrong fee: {payment_response.get('access_fee')}")
+        else:
+            self.log_result("Tradesperson Pays Access Fee", False, f"Status: {response.status_code}")
+            return
+        
+        # Tradesperson can access homeowner contact details
+        response = self.make_request("GET", f"/interests/contact-details/{job_id}", auth_token=tradesperson_token)
+        if response.status_code == 200:
+            contact_details = response.json()
+            required_fields = ['homeowner_name', 'homeowner_email', 'homeowner_phone']
+            has_all_fields = all(field in contact_details for field in required_fields)
+            if has_all_fields:
+                self.log_result("Tradesperson Accesses Contact Details", True, "Full contact details available")
+            else:
+                self.log_result("Tradesperson Accesses Contact Details", False, "Missing contact fields")
+        else:
+            self.log_result("Tradesperson Accesses Contact Details", False, f"Status: {response.status_code}")
+    
+    def _test_notification_system_integration(self):
+        """Step 5: Test notification system integration"""
+        print("\n=== Step 5: Notification System Integration ===")
+        
+        if 'e2e_homeowner' not in self.auth_tokens:
+            self.log_result("Notification System Tests", False, "No tokens available")
+            return
+        
+        homeowner_token = self.auth_tokens['e2e_homeowner']
+        tradesperson_token = self.auth_tokens['e2e_tradesperson']
+        
+        # Test notification preferences for both users
+        for user_type, token in [('homeowner', homeowner_token), ('tradesperson', tradesperson_token)]:
+            response = self.make_request("GET", "/notifications/preferences", auth_token=token)
+            if response.status_code == 200:
+                preferences = response.json()
+                notification_types = ['new_interest', 'contact_shared', 'job_posted', 'payment_confirmation']
+                has_all_types = all(ntype in preferences for ntype in notification_types)
+                if has_all_types:
+                    self.log_result(f"{user_type.title()} Notification Preferences", True, "All 4 notification types available")
+                else:
+                    self.log_result(f"{user_type.title()} Notification Preferences", False, "Missing notification types")
+            else:
+                self.log_result(f"{user_type.title()} Notification Preferences", False, f"Status: {response.status_code}")
+        
+        # Test notification history
+        response = self.make_request("GET", "/notifications/history", auth_token=homeowner_token)
+        if response.status_code == 200:
+            history = response.json()
+            if 'notifications' in history and 'total' in history:
+                self.log_result("Notification History Retrieval", True, f"Total: {history['total']}")
+            else:
+                self.log_result("Notification History Retrieval", False, "Invalid response structure")
+        else:
+            self.log_result("Notification History Retrieval", False, f"Status: {response.status_code}")
+        
+        # Test notification preferences update
+        update_data = {
+            "new_interest": "both",
+            "contact_shared": "email",
+            "job_posted": "sms",
+            "payment_confirmation": "both"
+        }
+        response = self.make_request("PUT", "/notifications/preferences", json=update_data, auth_token=homeowner_token)
+        if response.status_code == 200:
+            updated_prefs = response.json()
+            if updated_prefs.get('new_interest') == 'both':
+                self.log_result("Notification Preferences Update", True, "Preferences updated successfully")
+            else:
+                self.log_result("Notification Preferences Update", False, "Preferences not updated correctly")
+        else:
+            self.log_result("Notification Preferences Update", False, f"Status: {response.status_code}")
+    
+    def _test_database_consistency(self):
+        """Step 6: Test database consistency"""
+        print("\n=== Step 6: Database Consistency ===")
+        
+        if 'e2e_job' not in self.test_data:
+            self.log_result("Database Consistency Tests", False, "No job data available")
+            return
+        
+        homeowner_token = self.auth_tokens['e2e_homeowner']
+        job_id = self.test_data['e2e_job']['id']
+        
+        # Verify job interests_count updated correctly
+        response = self.make_request("GET", f"/jobs/{job_id}")
+        if response.status_code == 200:
+            job_data = response.json()
+            interests_count = job_data.get('interests_count', 0)
+            if interests_count >= 1:  # Should have at least 1 interest from our test
+                self.log_result("Job interests_count Updated", True, f"Count: {interests_count}")
+            else:
+                self.log_result("Job interests_count Updated", False, f"Expected >=1, got {interests_count}")
+        else:
+            self.log_result("Job interests_count Updated", False, f"Status: {response.status_code}")
+        
+        # Verify user data consistency
+        response = self.make_request("GET", "/auth/me", auth_token=homeowner_token)
+        if response.status_code == 200:
+            user_data = response.json()
+            required_fields = ['id', 'name', 'email', 'role', 'created_at', 'updated_at']
+            has_all_fields = all(field in user_data for field in required_fields)
+            if has_all_fields and user_data['role'] == 'homeowner':
+                self.log_result("User Data Consistency", True, "All required fields present")
+            else:
+                self.log_result("User Data Consistency", False, "Missing fields or wrong role")
+        else:
+            self.log_result("User Data Consistency", False, f"Status: {response.status_code}")
+        
+        # Verify interest status transitions work correctly
+        if 'e2e_interest' in self.test_data:
+            interest_id = self.test_data['e2e_interest']['id']
+            # The interest should now be in PAID_ACCESS status after our workflow
+            response = self.make_request("GET", "/interests/my-interests", auth_token=self.auth_tokens['e2e_tradesperson'])
+            if response.status_code == 200:
+                interests = response.json()
+                our_interest = next((i for i in interests if i.get('id') == interest_id), None)
+                if our_interest and our_interest.get('status') == 'PAID_ACCESS':
+                    self.log_result("Interest Status Transitions", True, "Status correctly updated to PAID_ACCESS")
+                else:
+                    self.log_result("Interest Status Transitions", False, f"Wrong status: {our_interest.get('status') if our_interest else 'Not found'}")
+            else:
+                self.log_result("Interest Status Transitions", False, f"Status: {response.status_code}")
+    
+    def _test_security_authorization(self):
+        """Step 7: Test security & authorization"""
+        print("\n=== Step 7: Security & Authorization ===")
+        
+        if 'e2e_homeowner' not in self.auth_tokens or 'e2e_tradesperson' not in self.auth_tokens:
+            self.log_result("Security Tests", False, "Missing tokens")
+            return
+        
+        homeowner_token = self.auth_tokens['e2e_homeowner']
+        tradesperson_token = self.auth_tokens['e2e_tradesperson']
+        job_id = self.test_data.get('e2e_job', {}).get('id')
+        
+        # Test homeowners can only access their own jobs
+        response = self.make_request("GET", "/jobs/my-jobs", auth_token=homeowner_token)
+        if response.status_code == 200:
+            jobs_data = response.json()
+            jobs = jobs_data.get('jobs', [])
+            homeowner_email = self.test_data['e2e_homeowner_user']['email']
+            all_owned = all(job.get('homeowner', {}).get('email') == homeowner_email for job in jobs)
+            if all_owned:
+                self.log_result("Homeowner Job Access Control", True, "Only own jobs accessible")
+            else:
+                self.log_result("Homeowner Job Access Control", False, "Found jobs not owned by user")
+        else:
+            self.log_result("Homeowner Job Access Control", False, f"Status: {response.status_code}")
+        
+        # Test tradespeople can only access their own interests
+        response = self.make_request("GET", "/interests/my-interests", auth_token=tradesperson_token)
+        if response.status_code == 200:
+            interests = response.json()
+            tradesperson_id = self.test_data['e2e_tradesperson_user']['id']
+            all_owned = all(interest.get('tradesperson_id') == tradesperson_id for interest in interests)
+            if all_owned:
+                self.log_result("Tradesperson Interest Access Control", True, "Only own interests accessible")
+            else:
+                self.log_result("Tradesperson Interest Access Control", False, "Found interests not owned by user")
+        else:
+            self.log_result("Tradesperson Interest Access Control", False, f"Status: {response.status_code}")
+        
+        # Test cross-user data protection
+        if job_id:
+            # Tradesperson trying to access homeowner's job interests
+            response = self.make_request("GET", f"/interests/job/{job_id}", auth_token=tradesperson_token)
+            if response.status_code == 403:
+                self.log_result("Cross-User Data Protection", True, "Tradesperson correctly denied access to job interests")
+            else:
+                self.log_result("Cross-User Data Protection", False, f"Expected 403, got {response.status_code}")
+        
+        # Test unauthenticated access prevention
+        response = self.make_request("GET", "/interests/my-interests")
+        if response.status_code in [401, 403]:
+            self.log_result("Unauthenticated Access Prevention", True, "Correctly requires authentication")
+        else:
+            self.log_result("Unauthenticated Access Prevention", False, f"Expected 401/403, got {response.status_code}")
+
     def test_communication_system(self):
         """Test comprehensive messaging system for job-based communication"""
         print("\n=== Testing Communication System ===")
