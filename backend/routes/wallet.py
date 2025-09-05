@@ -92,12 +92,12 @@ async def fund_wallet(
     amount_coins = amount_naira // 100
     
     # Get or create wallet
-    wallet = await database.get_wallet_by_user_id(current_user["id"])
+    wallet = await database.get_wallet_by_user_id(current_user.id)
     
     # Create funding transaction
     transaction_data = {
         "wallet_id": wallet["id"],
-        "user_id": current_user["id"],
+        "user_id": current_user.id,
         "transaction_type": TransactionType.WALLET_FUNDING,
         "amount_coins": amount_coins,
         "amount_naira": amount_naira,
