@@ -232,37 +232,37 @@ class Database:
         
         results = await self.database.tradespeople.aggregate(pipeline).to_list(None)
         
-        # Define category details
+        # Define category details for Nigeria
         category_details = {
-            "Gardening & Landscaping": {
-                "description": "Dreaming of a garden that captivates and soothes? Our detailed guides will provide pricing info and help you find the perfect gardener.",
-                "icon": "🌿",
-                "color": "from-green-400 to-green-600"
-            },
-            "Painting & Decorating": {
-                "description": "Thinking about giving your space a fresh, new look? Our guides will not only provide pricing info but also connect you with skilled painters.",
-                "icon": "🎨",
-                "color": "from-blue-400 to-blue-600"
-            },
-            "Plastering & Rendering": {
-                "description": "Are you interested in price information about a job in this service category? To give you an idea of costs, here are some recent projects.",
+            "Building & Construction": {
+                "description": "From foundation to roofing, find experienced builders for your construction projects. Quality workmanship guaranteed.",
                 "icon": "🏗️",
                 "color": "from-orange-400 to-orange-600"
             },
-            "Plumbing": {
-                "description": "From leaky taps to full bathroom installations, find qualified plumbers for any job. Get quotes and compare reviews.",
+            "Plumbing & Water Works": {
+                "description": "Professional plumbers for installations, repairs, and water system maintenance. Available for emergency services.",
                 "icon": "🔧",
                 "color": "from-indigo-400 to-indigo-600"
             },
-            "Electrical Work": {
-                "description": "Safe, certified electrical work from qualified electricians. From socket installations to full rewiring projects.",
+            "Electrical Installation": {
+                "description": "Certified electricians for wiring, installations, and electrical repairs. Safe and reliable electrical services.",
                 "icon": "⚡",
                 "color": "from-yellow-400 to-yellow-600"
             },
-            "Carpentry & Joinery": {
-                "description": "Custom woodwork, fitted wardrobes, kitchen installations and more from skilled carpenters and joiners.",
-                "icon": "🪚",
-                "color": "from-amber-400 to-amber-600"
+            "Painting & Decorating": {
+                "description": "Transform your space with professional painters and decorators. Interior and exterior painting services available.",
+                "icon": "🎨",
+                "color": "from-blue-400 to-blue-600"
+            },
+            "POP & Ceiling Works": {
+                "description": "Expert ceiling installation and POP works. Modern designs and professional finishing for your interior spaces.",
+                "icon": "🏠",
+                "color": "from-purple-400 to-purple-600"
+            },
+            "Generator Installation & Repair": {
+                "description": "Professional generator installation and maintenance services. Reliable power solutions for homes and businesses.",
+                "icon": "🔌",
+                "color": "from-red-400 to-red-600"
             }
         }
         
