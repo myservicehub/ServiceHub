@@ -77,21 +77,6 @@ async def get_jobs(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/{job_id}", response_model=Job)
-async def get_job(job_id: str):
-    """Get a specific job by ID"""
-    try:
-        job = await database.get_job_by_id(job_id)
-        if not job:
-            raise HTTPException(status_code=404, detail="Job not found")
-        
-        return Job(**job)
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
 @router.get("/search", response_model=JobsResponse)
 async def search_jobs(
     q: Optional[str] = Query(None, description="Search query"),
