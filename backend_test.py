@@ -12,7 +12,7 @@ from typing import Dict, List, Any
 import uuid
 
 # Get backend URL from environment
-BACKEND_URL = "https://builder-marketplace.preview.emergentagent.com/api"
+BACKEND_URL = "https://servicehub-ng.preview.emergentagent.com/api"
 
 class BackendTester:
     def __init__(self):
