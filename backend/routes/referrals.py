@@ -30,11 +30,11 @@ async def get_my_referral_stats(current_user = Depends(get_current_user)):
 async def get_my_referrals(
     skip: int = 0,
     limit: int = 10,
-    current_user: dict = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     """Get list of users I have referred"""
     
-    referrals = await database.get_user_referrals(current_user["id"], skip=skip, limit=limit)
+    referrals = await database.get_user_referrals(current_user.id, skip=skip, limit=limit)
     
     return {
         "referrals": referrals,
