@@ -2,14 +2,68 @@ import React, { useState } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Search, MapPin } from 'lucide-react';
+import { jobsAPI } from '../api/services';
+import { useToast } from '../hooks/use-toast';
 
 const HeroSection = () => {
   const [job, setJob] = useState('');
   const [location, setLocation] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const { toast } = useToast();
 
-  const handleSearch = (e) => {
+  const handleSearch = async (e) => {
     e.preventDefault();
-    console.log('Searching for:', { job, location });
+    
+    if (!job.trim()) {
+      toast({
+        title: "Search required",
+        description: "Please enter what job you need doing.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!location.trim()) {
+      toast({
+        title: "Location required", 
+        description: "Please enter your location.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSearching(true);
+    
+    try {
+      // Search for existing jobs
+      const results = await jobsAPI.searchJobs({
+        q: job,
+        location: location,
+        limit: 10
+      });
+
+      console.log('Search results:', results);
+
+      // For now, just show a success message
+      // In a real app, you'd navigate to a search results page
+      toast({
+        title: "Search completed!",
+        description: `Found ${results.pagination?.total || 0} matching jobs in ${location}.`,
+      });
+
+      // Here you would typically navigate to search results page
+      // navigate(`/search?q=${encodeURIComponent(job)}&location=${encodeURIComponent(location)}`);
+      
+    } catch (error) {
+      console.error('Search error:', error);
+      toast({
+        title: "Search failed",
+        description: "There was an error searching for jobs. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   return (
