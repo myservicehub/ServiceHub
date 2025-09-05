@@ -10,18 +10,19 @@ const Header = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <div className="flex items-center space-x-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-full" style={{backgroundColor: '#2F8140'}}>
-              {/* Person Icon */}
-              <div className="text-white">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+          <div className="flex items-center">
+            <div className="flex items-center px-3 py-2 rounded-lg" style={{backgroundColor: '#121E3C'}}>
+              {/* Green circle with person icon */}
+              <div className="flex items-center justify-center w-8 h-8 rounded-full mr-2" style={{backgroundColor: '#2F8140'}}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
                   <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                 </svg>
               </div>
-            </div>
-            <div className="flex items-center">
-              <span className="text-xl font-bold font-montserrat text-white">Service</span>
-              <span className="text-xl font-bold font-montserrat" style={{color: '#2F8140'}}>Hub</span>
+              {/* Logo text */}
+              <div className="flex items-center">
+                <span className="text-lg font-bold font-montserrat text-white">Service</span>
+                <span className="text-lg font-bold font-montserrat" style={{color: '#2F8140'}}>Hub</span>
+              </div>
             </div>
           </div>
 
