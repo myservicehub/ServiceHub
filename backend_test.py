@@ -296,6 +296,208 @@ class BackendTester:
             self.log_result("Unauthenticated access prevention", False, 
                            f"Expected 401, got {response.status_code}")
     
+    def test_quote_management_system(self):
+        """Test quote creation and management workflow"""
+        print("\n=== Testing Quote Management System ===")
+        
+        if 'homeowner' not in self.auth_tokens or 'tradesperson' not in self.auth_tokens:
+            self.log_result("Quote management tests", False, "Missing authentication tokens")
+            return
+        
+        if 'homeowner_job' not in self.test_data:
+            self.log_result("Quote management tests", False, "No job available for testing")
+            return
+        
+        homeowner_token = self.auth_tokens['homeowner']
+        tradesperson_token = self.auth_tokens['tradesperson']
+        job_id = self.test_data['homeowner_job']['id']
+        tradesperson_id = self.test_data['tradesperson_user']['id']
+        
+        # Test quote creation by tradesperson
+        quote_data = {
+            "job_id": job_id,
+            "price": 650000,
+            "message": "I can complete your kitchen renovation project within your budget and timeline. I have 8 years of experience with similar projects in Lagos and can provide references. The work includes full installation of cabinets, granite countertops, and appliance connections. I guarantee all work and provide a 2-year warranty on installations.",
+            "estimated_duration": "4-5 weeks",
+            "start_date": (datetime.utcnow() + timedelta(days=14)).isoformat()
+        }
+        
+        response = self.make_request("POST", "/quotes/", json=quote_data, auth_token=tradesperson_token)
+        if response.status_code == 200:
+            created_quote = response.json()
+            if 'id' in created_quote and created_quote['job_id'] == job_id:
+                self.log_result("Create quote", True, f"Quote ID: {created_quote['id']}")
+                self.test_data['created_quote'] = created_quote
+            else:
+                self.log_result("Create quote", False, "Invalid quote creation response")
+        else:
+            self.log_result("Create quote", False, f"Status: {response.status_code}, Response: {response.text}")
+        
+        # Test duplicate quote prevention
+        response = self.make_request("POST", "/quotes/", json=quote_data, auth_token=tradesperson_token)
+        if response.status_code == 400:
+            self.log_result("Duplicate quote prevention", True, "Correctly rejected duplicate quote")
+        else:
+            self.log_result("Duplicate quote prevention", False, 
+                           f"Should have rejected duplicate, got: {response.status_code}")
+        
+        # Test get quotes for job (homeowner only)
+        response = self.make_request("GET", f"/quotes/job/{job_id}", auth_token=homeowner_token)
+        if response.status_code == 200:
+            data = response.json()
+            if 'quotes' in data and 'job' in data:
+                quotes = data['quotes']
+                if len(quotes) > 0:
+                    self.log_result("Get job quotes (homeowner)", True, f"Found {len(quotes)} quotes")
+                    
+                    # Verify quote details
+                    quote = quotes[0]
+                    if quote.get('job_id') == job_id:
+                        self.log_result("Quote job association", True, "Quote correctly associated with job")
+                    else:
+                        self.log_result("Quote job association", False, "Quote job ID mismatch")
+                else:
+                    self.log_result("Get job quotes (homeowner)", False, "No quotes found")
+            else:
+                self.log_result("Get job quotes (homeowner)", False, "Invalid response structure")
+        else:
+            self.log_result("Get job quotes (homeowner)", False, f"Status: {response.status_code}")
+        
+        # Test unauthorized access to job quotes (tradesperson trying to access)
+        response = self.make_request("GET", f"/quotes/job/{job_id}", auth_token=tradesperson_token)
+        if response.status_code == 403:
+            self.log_result("Quote access authorization", True, "Tradesperson correctly denied access to job quotes")
+        else:
+            self.log_result("Quote access authorization", False, 
+                           f"Expected 403, got {response.status_code}")
+        
+        # Test quote summary endpoint
+        response = self.make_request("GET", f"/quotes/job/{job_id}/summary", auth_token=homeowner_token)
+        if response.status_code == 200:
+            summary = response.json()
+            required_fields = ['job_id', 'job_title', 'total_quotes', 'pending_quotes', 
+                             'accepted_quotes', 'rejected_quotes', 'average_price', 'price_range']
+            missing_fields = [field for field in required_fields if field not in summary]
+            if not missing_fields:
+                self.log_result("Quote summary", True, 
+                               f"Total quotes: {summary['total_quotes']}, "
+                               f"Avg price: ₦{summary['average_price']:,.0f}")
+            else:
+                self.log_result("Quote summary", False, f"Missing fields: {missing_fields}")
+        else:
+            self.log_result("Quote summary", False, f"Status: {response.status_code}")
+        
+        # Test quote status update (accept quote)
+        if 'created_quote' in self.test_data:
+            quote_id = self.test_data['created_quote']['id']
+            
+            # Test accepting quote
+            response = self.make_request("PUT", f"/quotes/{quote_id}/status", 
+                                       params={"status": "accepted"}, 
+                                       auth_token=homeowner_token)
+            if response.status_code == 200:
+                result = response.json()
+                if "accepted" in result.get('message', '').lower():
+                    self.log_result("Accept quote", True, "Quote accepted successfully")
+                else:
+                    self.log_result("Accept quote", False, "Unexpected response message")
+            else:
+                self.log_result("Accept quote", False, f"Status: {response.status_code}")
+            
+            # Test unauthorized quote status update (tradesperson trying to update)
+            response = self.make_request("PUT", f"/quotes/{quote_id}/status", 
+                                       params={"status": "rejected"}, 
+                                       auth_token=tradesperson_token)
+            if response.status_code == 403:
+                self.log_result("Quote status authorization", True, "Tradesperson correctly denied access")
+            else:
+                self.log_result("Quote status authorization", False, 
+                               f"Expected 403, got {response.status_code}")
+        
+        # Test accessing quotes for non-owned job
+        if 'homeowner_job2' in self.test_data:
+            # Create another homeowner to test cross-user access
+            other_homeowner_data = {
+                "name": "Kemi Adebayo",
+                "email": f"kemi.adebayo.{uuid.uuid4().hex[:8]}@email.com",
+                "password": "SecurePass123",
+                "phone": "08198765432",
+                "location": "Abuja, FCT",
+                "postcode": "900001"
+            }
+            
+            response = self.make_request("POST", "/auth/register/homeowner", json=other_homeowner_data)
+            if response.status_code == 200:
+                # Login the other homeowner
+                login_response = self.make_request("POST", "/auth/login", 
+                                                 json={"email": other_homeowner_data["email"], 
+                                                      "password": other_homeowner_data["password"]})
+                if login_response.status_code == 200:
+                    other_token = login_response.json()['access_token']
+                    
+                    # Try to access first homeowner's job quotes
+                    response = self.make_request("GET", f"/quotes/job/{job_id}", auth_token=other_token)
+                    if response.status_code == 403:
+                        self.log_result("Cross-user job access prevention", True, 
+                                       "Correctly prevented access to other user's job quotes")
+                    else:
+                        self.log_result("Cross-user job access prevention", False, 
+                                       f"Expected 403, got {response.status_code}")
+    
+    def test_error_handling_and_edge_cases(self):
+        """Test error handling scenarios for job and quote management"""
+        print("\n=== Testing Error Handling & Edge Cases ===")
+        
+        if 'homeowner' not in self.auth_tokens:
+            self.log_result("Error handling tests", False, "No homeowner authentication token")
+            return
+        
+        homeowner_token = self.auth_tokens['homeowner']
+        
+        # Test invalid job ID for my-jobs
+        response = self.make_request("GET", "/jobs/invalid-job-id")
+        if response.status_code == 404:
+            self.log_result("Invalid job ID handling", True)
+        else:
+            self.log_result("Invalid job ID handling", False, f"Expected 404, got {response.status_code}")
+        
+        # Test invalid job ID for quotes
+        response = self.make_request("GET", "/quotes/job/invalid-job-id", auth_token=homeowner_token)
+        if response.status_code == 404:
+            self.log_result("Invalid job ID for quotes", True)
+        else:
+            self.log_result("Invalid job ID for quotes", False, f"Expected 404, got {response.status_code}")
+        
+        # Test invalid quote ID for status update
+        response = self.make_request("PUT", "/quotes/invalid-quote-id/status", 
+                                   params={"status": "accepted"}, 
+                                   auth_token=homeowner_token)
+        if response.status_code == 404:
+            self.log_result("Invalid quote ID handling", True)
+        else:
+            self.log_result("Invalid quote ID handling", False, f"Expected 404, got {response.status_code}")
+        
+        # Test invalid status value
+        if 'created_quote' in self.test_data:
+            quote_id = self.test_data['created_quote']['id']
+            response = self.make_request("PUT", f"/quotes/{quote_id}/status", 
+                                       params={"status": "invalid_status"}, 
+                                       auth_token=homeowner_token)
+            if response.status_code == 400:
+                self.log_result("Invalid status value handling", True)
+            else:
+                self.log_result("Invalid status value handling", False, 
+                               f"Expected 400, got {response.status_code}")
+        
+        # Test job creation with missing required fields
+        invalid_job = {"title": "Too short"}
+        response = self.make_request("POST", "/jobs/", json=invalid_job, auth_token=homeowner_token)
+        if response.status_code in [400, 422]:
+            self.log_result("Invalid job creation handling", True)
+        else:
+            self.log_result("Invalid job creation handling", False, 
+                           f"Expected 400/422, got {response.status_code}")
+    
     def test_health_endpoints(self):
         """Test basic health and connectivity"""
         print("\n=== Testing Health Endpoints ===")
@@ -304,7 +506,7 @@ class BackendTester:
         response = self.make_request("GET", "/")
         if response.status_code == 200:
             data = response.json()
-            if "MyBuilder API" in data.get("message", ""):
+            if "serviceHub API" in data.get("message", ""):
                 self.log_result("Root endpoint", True, f"Status: {data.get('status')}")
             else:
                 self.log_result("Root endpoint", False, f"Unexpected response: {data}")
@@ -321,6 +523,42 @@ class BackendTester:
                 self.log_result("Health endpoint", False, f"Status not healthy: {data}")
         else:
             self.log_result("Health endpoint", False, f"Status: {response.status_code}")
+    
+    def run_homeowner_quote_tests(self):
+        """Run all homeowner and quote management tests"""
+        print("🚀 Starting ServiceHub Homeowner & Quote Management Tests")
+        print(f"Testing against: {self.base_url}")
+        
+        try:
+            self.test_health_endpoints()
+            self.test_authentication_system()
+            self.test_homeowner_job_management()
+            self.test_my_jobs_endpoint()
+            self.test_quote_management_system()
+            self.test_error_handling_and_edge_cases()
+            
+        except Exception as e:
+            print(f"\n❌ Critical test failure: {e}")
+            self.results['failed'] += 1
+            self.results['errors'].append(f"Critical failure: {str(e)}")
+        
+        # Print summary
+        print(f"\n{'='*60}")
+        print("🏁 HOMEOWNER & QUOTE MANAGEMENT TEST SUMMARY")
+        print(f"{'='*60}")
+        print(f"✅ Passed: {self.results['passed']}")
+        print(f"❌ Failed: {self.results['failed']}")
+        
+        if self.results['passed'] + self.results['failed'] > 0:
+            success_rate = (self.results['passed']/(self.results['passed']+self.results['failed'])*100)
+            print(f"📊 Success Rate: {success_rate:.1f}%")
+        
+        if self.results['errors']:
+            print(f"\n🔍 FAILED TESTS:")
+            for error in self.results['errors']:
+                print(f"   • {error}")
+        
+        return self.results
     
     def test_stats_endpoints(self):
         """Test statistics endpoints"""
