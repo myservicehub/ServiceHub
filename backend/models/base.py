@@ -16,6 +16,21 @@ class QuoteStatus(str, Enum):
     ACCEPTED = "accepted"
     REJECTED = "rejected"
 
+class PortfolioItemCategory(str, Enum):
+    PLUMBING = "plumbing"
+    ELECTRICAL = "electrical"
+    CARPENTRY = "carpentry"
+    PAINTING = "painting"
+    TILING = "tiling"
+    ROOFING = "roofing"
+    HEATING_GAS = "heating_gas"
+    KITCHEN_FITTING = "kitchen_fitting"
+    BATHROOM_FITTING = "bathroom_fitting"
+    GARDEN_LANDSCAPING = "garden_landscaping"
+    FLOORING = "flooring"
+    PLASTERING = "plastering"
+    OTHER = "other"
+
 # Base Models
 class Homeowner(BaseModel):
     name: str
