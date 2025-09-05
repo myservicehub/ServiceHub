@@ -429,8 +429,8 @@ const MyJobsPage = () => {
                                     Posted {formatDate(job.created_at)}
                                   </span>
                                   <span className="flex items-center">
-                                    <MessageSquare size={14} className="mr-1" />
-                                    {job.quotes_count || 0} quotes received
+                                    <Heart size={14} className="mr-1" />
+                                    {job.interests_count || 0} interested
                                   </span>
                                 </div>
                               </div>
