@@ -176,7 +176,7 @@ const JobPostingForm = ({ onComplete }) => {
         role: 'homeowner'
       };
 
-      const authResult = await authAPI.signup(signupData);
+      const authResult = await authAPI.registerHomeowner(signupData);
       
       // Step 2: Login the user
       await login(authResult.access_token, authResult.user);
