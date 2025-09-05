@@ -140,8 +140,8 @@ const Footer = () => {
                 <a href="#" className="hover:text-white transition-colors">Cookie Policy</a>
               </div>
               <div className="flex items-center space-x-4 text-sm text-gray-400">
-                <span>🇬🇧 United Kingdom</span>
-                <span>Made in the UK</span>
+                <span>🇳🇬 Nigeria</span>
+                <span>Made in Nigeria</span>
               </div>
             </div>
           </div>
