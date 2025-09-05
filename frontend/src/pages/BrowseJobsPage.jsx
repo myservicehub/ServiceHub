@@ -32,6 +32,7 @@ const BrowseJobsPage = () => {
 
   const { user, isAuthenticated, isTradesperson } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!isAuthenticated() || !isTradesperson()) {
