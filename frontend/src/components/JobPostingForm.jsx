@@ -173,7 +173,8 @@ const JobPostingForm = ({ onComplete }) => {
         email: formData.homeowner_email,
         phone: formData.homeowner_phone,
         password: formData.password,
-        role: 'homeowner'
+        location: formData.location,
+        postcode: formData.postcode
       };
 
       const authResult = await authAPI.registerHomeowner(signupData);
