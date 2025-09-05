@@ -26,7 +26,7 @@ async def create_job(job_data: JobCreate):
         }
         
         # Add default values
-        job_dict['id'] = Job().id  # Generate new ID
+        job_dict['id'] = str(uuid.uuid4())  # Generate new ID
         job_dict['status'] = 'active'
         job_dict['quotes_count'] = 0
         job_dict['created_at'] = datetime.utcnow()
