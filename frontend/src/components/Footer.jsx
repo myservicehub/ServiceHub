@@ -72,7 +72,7 @@ const Footer = () => {
                 <span className="text-xl font-bold">MyBuilder</span>
               </div>
               <p className="text-gray-400 text-sm mb-6">
-                The UK's most trusted platform for connecting homeowners with reliable, local tradespeople.
+                Nigeria's most trusted platform for connecting homeowners with reliable, local tradespeople.
               </p>
               <div className="flex space-x-4">
                 {socialLinks.map((social, index) => {
