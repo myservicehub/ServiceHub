@@ -121,16 +121,48 @@ const Header = () => {
                 Help
               </a>
               <div className="flex flex-col space-y-2 pt-4">
-                <Button variant="ghost" className="text-gray-700 font-lato hover:text-[#2F8140] justify-start">
-                  Sign in
-                </Button>
-                <Button 
-                  onClick={() => navigate('/post-job')}
-                  className="font-lato text-white justify-start" 
-                  style={{backgroundColor: '#2F8140'}}
-                >
-                  Post a job
-                </Button>
+                {isAuthenticated() ? (
+                  <>
+                    <div className="flex items-center space-x-2 px-4 py-2">
+                      <User size={20} style={{color: '#2F8140'}} />
+                      <span className="font-lato text-gray-700">
+                        Welcome, {user?.name?.split(' ')[0]}
+                      </span>
+                    </div>
+                    <Button 
+                      onClick={() => navigate('/post-job')}
+                      className="font-lato text-white justify-start" 
+                      style={{backgroundColor: '#2F8140'}}
+                    >
+                      Post a job
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={handleLogout}
+                      className="text-gray-700 font-lato hover:text-red-600 justify-start flex items-center space-x-1"
+                    >
+                      <LogOut size={16} />
+                      <span>Logout</span>
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button 
+                      variant="ghost" 
+                      onClick={() => handleAuthClick('login')}
+                      className="text-gray-700 font-lato hover:text-[#2F8140] justify-start"
+                    >
+                      Sign in
+                    </Button>
+                    <Button 
+                      onClick={() => handleAuthClick('signup')}
+                      className="font-lato text-white justify-start" 
+                      style={{backgroundColor: '#2F8140'}}
+                    >
+                      Join serviceHub
+                    </Button>
+                  </>
+                )}
               </div>
             </nav>
           </div>
