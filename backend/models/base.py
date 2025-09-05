@@ -288,6 +288,12 @@ class InterestResponse(BaseModel):
     interested_tradespeople: List[InterestedTradesperson]
     total: int
 
+class ShareContactResponse(BaseModel):
+    interest_id: str
+    status: InterestStatus
+    message: str
+    contact_shared_at: Optional[datetime] = None
+
 class ContactDetails(BaseModel):
     homeowner_name: str
     homeowner_email: str
