@@ -21,6 +21,50 @@ class Database:
             self.client.close()
             logger.info("MongoDB connection closed")
 
+    # User authentication operations
+    async def create_user(self, user_data: dict) -> dict:
+        """Create a new user"""
+        result = await self.database.users.insert_one(user_data)
+        user_data['_id'] = str(result.inserted_id)
+        return user_data
+
+    async def get_user_by_id(self, user_id: str) -> Optional[dict]:
+        """Get user by ID"""
+        user = await self.database.users.find_one({"id": user_id})
+        if user:
+            user['_id'] = str(user['_id'])
+        return user
+
+    async def get_user_by_email(self, email: str) -> Optional[dict]:
+        """Get user by email"""
+        user = await self.database.users.find_one({"email": email})
+        if user:
+            user['_id'] = str(user['_id'])
+        return user
+
+    async def update_user(self, user_id: str, update_data: dict) -> bool:
+        """Update user data"""
+        update_data['updated_at'] = datetime.utcnow()
+        result = await self.database.users.update_one(
+            {"id": user_id},
+            {"$set": update_data}
+        )
+        return result.modified_count > 0
+
+    async def update_user_last_login(self, user_id: str):
+        """Update user's last login timestamp"""
+        await self.database.users.update_one(
+            {"id": user_id},
+            {"$set": {"last_login": datetime.utcnow()}}
+        )
+
+    async def verify_user_email(self, user_id: str):
+        """Mark user email as verified"""
+        await self.database.users.update_one(
+            {"id": user_id},
+            {"$set": {"email_verified": True, "updated_at": datetime.utcnow()}}
+        )
+
     # Job operations
     async def create_job(self, job_data: dict) -> dict:
         # Set expiration date (30 days from now)
