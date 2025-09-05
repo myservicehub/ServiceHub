@@ -105,20 +105,17 @@
 user_problem_statement: "Pivot from direct messaging system to lead generation marketplace where tradespeople show interest in jobs, homeowners review interested tradespeople, and payment system controls access to contact details."
 
 backend:
-  - task: "Quote Management API Endpoints"
+  - task: "Show Interest System - Backend"
     implemented: true
     working: true
-    file: "/app/backend/routes/quotes.py"
+    file: "/app/backend/routes/interests.py, /app/backend/models/base.py"
     stuck_count: 0
     priority: "high"
     needs_retesting: false
     status_history:
       - working: true
         agent: "main"
-        comment: "All quote API endpoints are implemented and working: get job quotes, update quote status, quote summary"
-      - working: true
-        agent: "testing"
-        comment: "✅ TESTED: All quote endpoints working correctly. Quote creation, retrieval, status updates, and authorization all functioning properly. Fixed tradesperson_id field in database aggregation."
+        comment: "✅ Complete interest-based lead generation backend implemented: Interest models (InterestCreate, Interest, InterestResponse, InterestStatus), comprehensive API endpoints (/show-interest, /job/{job_id}, /share-contact/{interest_id}, /my-interests, /pay-access/{interest_id}, /contact-details/{job_id}), database methods for interest CRUD operations, job-based authorization system, payment integration placeholder for Paystack. Full workflow: tradesperson shows interest → homeowner reviews → contact sharing → payment for access."
 
 frontend:
   - task: "Quote Components (QuoteForm, QuotesList)"
