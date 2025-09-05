@@ -2,8 +2,10 @@ from fastapi import APIRouter, HTTPException, Query, Depends
 from typing import Optional, List
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-from models import JobCreate, Job, JobsResponse
+# Add parent directory to path to import models.py directly
+backend_dir = os.path.dirname(os.path.dirname(__file__))
+sys.path.insert(0, backend_dir)
+import models
 from models.auth import User
 from auth.dependencies import get_current_active_user, get_current_homeowner
 from database import database
@@ -12,8 +14,8 @@ import uuid
 
 router = APIRouter(prefix="/api/jobs", tags=["jobs"])
 
-@router.post("/", response_model=Job)
-async def create_job(job_data: JobCreate):
+@router.post("/", response_model=models.Job)
+async def create_job(job_data: models.JobCreate):
     """Create a new job posting"""
     try:
         # Convert to dict and prepare for database
@@ -37,12 +39,12 @@ async def create_job(job_data: JobCreate):
         # Save to database
         created_job = await database.create_job(job_dict)
         
-        return Job(**created_job)
+        return models.Job(**created_job)
         
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/", response_model=JobsResponse)
+@router.get("/", response_model=models.JobsResponse)
 async def get_jobs(
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1, le=50),
@@ -65,12 +67,12 @@ async def get_jobs(
         total_jobs = await database.get_jobs_count(filters=filters)
         
         # Convert to Job objects
-        job_objects = [Job(**job) for job in jobs]
+        job_objects = [models.Job(**job) for job in jobs]
         
         # Calculate pagination
         total_pages = (total_jobs + limit - 1) // limit
         
-        return JobsResponse(
+        return models.JobsResponse(
             jobs=job_objects,
             pagination={
                 "page": page,
@@ -83,7 +85,7 @@ async def get_jobs(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/search", response_model=JobsResponse)
+@router.get("/search", response_model=models.JobsResponse)
 async def search_jobs(
     q: Optional[str] = Query(None, description="Search query"),
     location: Optional[str] = Query(None, description="Location filter"),
@@ -116,12 +118,12 @@ async def search_jobs(
         total_jobs = await database.get_jobs_count(filters=filters)
         
         # Convert to Job objects
-        job_objects = [Job(**job) for job in jobs]
+        job_objects = [models.Job(**job) for job in jobs]
         
         # Calculate pagination
         total_pages = (total_jobs + limit - 1) // limit
         
-        return JobsResponse(
+        return models.JobsResponse(
             jobs=job_objects,
             pagination={
                 "page": page,
@@ -133,7 +135,8 @@ async def search_jobs(
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-@router.get("/{job_id}", response_model=Job)
+
+@router.get("/{job_id}", response_model=models.Job)
 async def get_job(job_id: str):
     """Get a specific job by ID"""
     try:
@@ -141,14 +144,14 @@ async def get_job(job_id: str):
         if not job:
             raise HTTPException(status_code=404, detail="Job not found")
         
-        return Job(**job)
+        return models.Job(**job)
         
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/my-jobs", response_model=JobsResponse)
+@router.get("/my-jobs", response_model=models.JobsResponse)
 async def get_my_jobs(
     current_user: User = Depends(get_current_homeowner),
     page: int = Query(1, ge=1),
@@ -169,12 +172,12 @@ async def get_my_jobs(
         total_jobs = await database.get_jobs_count(filters=filters)
         
         # Convert to Job objects
-        job_objects = [Job(**job) for job in jobs]
+        job_objects = [models.Job(**job) for job in jobs]
         
         # Calculate pagination
         total_pages = (total_jobs + limit - 1) // limit
         
-        return JobsResponse(
+        return models.JobsResponse(
             jobs=job_objects,
             pagination={
                 "page": page,
