@@ -31,6 +31,8 @@ function App() {
             <Route path="/notifications/history" element={<NotificationHistoryPage />} />
             <Route path="/reviews" element={<ReviewsPage />} />
             <Route path="/reviews/:userId" element={<ReviewsPage />} />
+            <Route path="/wallet" element={<WalletPage />} />
+            <Route path="/admin" element={<AdminDashboard />} />
           </Routes>
           <Toaster />
         </BrowserRouter>
