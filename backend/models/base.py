@@ -359,3 +359,88 @@ class BankDetails(BaseModel):
     bank_name: str = "Kuda Bank"
     account_name: str = "Francis Erayefa Samuel"
     account_number: str = "1100023164"
+
+# Referral System Models
+class ReferralStatus(str, Enum):
+    PENDING = "pending"           # Referred user signed up but not verified
+    VERIFIED = "verified"         # Referred user verified, coins awarded
+    CANCELLED = "cancelled"       # Referral cancelled (user deleted account, etc.)
+
+class DocumentType(str, Enum):
+    NATIONAL_ID = "national_id"           # Nigerian National ID
+    VOTERS_CARD = "voters_card"           # Permanent Voters Card (PVC)
+    DRIVERS_LICENSE = "drivers_license"   # Nigerian Driver's License
+    PASSPORT = "passport"                 # Nigerian International Passport
+    BUSINESS_REGISTRATION = "business_registration"  # CAC Business Registration
+
+class VerificationStatus(str, Enum):
+    PENDING = "pending"           # Document uploaded, awaiting admin review
+    VERIFIED = "verified"         # Document approved by admin
+    REJECTED = "rejected"         # Document rejected by admin
+    RESUBMITTED = "resubmitted"   # User resubmitted after rejection
+
+class Referral(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    referrer_id: str              # User who made the referral
+    referred_user_id: str         # User who was referred
+    referral_code: str            # The referral code used
+    status: ReferralStatus = ReferralStatus.PENDING
+    coins_earned: int = 0         # Coins earned (5 when verified)
+    verified_at: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class UserVerification(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    document_type: DocumentType
+    document_url: str             # Path to uploaded document image
+    full_name: str                # Full name as shown on document
+    document_number: Optional[str] = None  # ID number, license number, etc.
+    status: VerificationStatus = VerificationStatus.PENDING
+    admin_notes: Optional[str] = None
+    verified_by: Optional[str] = None     # Admin who verified
+    submitted_at: datetime = Field(default_factory=datetime.utcnow)
+    verified_at: Optional[datetime] = None
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class ReferralCode(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    code: str                     # e.g., JOHN2024, MARY5678
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    uses_count: int = 0           # Track how many people used this code
+
+# Request/Response Models
+class DocumentUpload(BaseModel):
+    document_type: DocumentType
+    full_name: str
+    document_number: Optional[str] = None
+
+class ReferralStats(BaseModel):
+    total_referrals: int
+    pending_referrals: int
+    verified_referrals: int
+    total_coins_earned: int
+    referral_code: str
+    referral_link: str
+
+class VerificationSubmission(BaseModel):
+    message: str
+    verification_id: str
+    status: str
+
+# Updated Wallet Response to include referral coins
+class WalletResponseWithReferrals(BaseModel):
+    balance_coins: int
+    balance_naira: int
+    referral_coins: int           # Coins earned from referrals
+    referral_coins_naira: int     # Referral coins in naira
+    can_withdraw_referrals: bool  # True if total coins >= 15
+    transactions: List[WalletTransaction] = []
+
+class WithdrawalRequest(BaseModel):
+    amount_coins: int
+    include_referral_coins: bool = False
+    bank_details_confirmed: bool = True
