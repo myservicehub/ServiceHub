@@ -31,7 +31,7 @@ const AppSection = () => {
                 Download our app
               </h2>
               <p className="text-xl text-gray-600 mb-8">
-                Posting and managing your jobs is even easier with the MyBuilder app. 
+                Posting and managing your jobs is even easier with the serviceHub app. 
                 Add photos and information in an instant and keep things moving with 
                 notifications and chat.
               </p>
