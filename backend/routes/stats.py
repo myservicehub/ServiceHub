@@ -8,6 +8,7 @@ from database import database
 
 router = APIRouter(prefix="/api/stats", tags=["statistics"])
 
+@router.get("", response_model=models.StatsResponse)
 @router.get("/", response_model=models.StatsResponse)
 async def get_platform_stats():
     """Get platform statistics"""
