@@ -180,6 +180,30 @@ frontend:
       - working: "NA"
         agent: "main"
         comment: "Added /api/jobs/my-jobs endpoint for homeowners to get their own jobs with proper authentication"
+
+  - task: "User Profile Management - Backend"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/auth.py, /app/backend/models/auth.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "✅ Profile management backend already implemented with comprehensive endpoints: /api/auth/me (get profile), /api/auth/profile (update profile), /api/auth/profile/tradesperson (update tradesperson profile). UserProfile and UserProfileUpdate models are complete with all necessary fields."
+
+  - task: "User Profile Management - Frontend"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/ProfilePage.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ Created comprehensive ProfilePage with tabbed interface: Profile Information (editable basic info, tradesperson professional details, certifications), Account Settings (verification status, account security), Activity (login history, account dates). Supports both homeowner and tradesperson profiles with role-specific fields."
       - working: true
         agent: "testing"
         comment: "✅ TESTED: /my-jobs endpoint working perfectly. Fixed route order issue (moved before /{job_id} route). Proper authentication, pagination, filtering, and authorization all working correctly."
