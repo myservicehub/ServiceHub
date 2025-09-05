@@ -27,6 +27,7 @@ const BrowseJobsPage = () => {
   const [loading, setLoading] = useState(true);
   const [showingInterest, setShowingInterest] = useState(null);
   const [pagination, setPagination] = useState(null);
+  const [walletBalance, setWalletBalance] = useState(null);
 
   const { user, isAuthenticated, isTradesperson } = useAuth();
   const { toast } = useToast();
