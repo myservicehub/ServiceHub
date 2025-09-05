@@ -261,8 +261,8 @@ const BrowseJobsPage = () => {
                               Posted {formatDate(job.created_at)}
                             </span>
                             <span className="flex items-center">
-                              <MessageSquare size={14} className="mr-1" />
-                              {job.quotes_count} quotes
+                              <Heart size={14} className="mr-1" />
+                              {job.interests_count || 0} interested
                             </span>
                           </div>
                         </div>
