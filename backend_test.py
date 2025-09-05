@@ -39,6 +39,12 @@ class BackendTester:
         """Make HTTP request with error handling"""
         url = f"{self.base_url}{endpoint}"
         try:
+            # Set proper headers for JSON requests
+            if 'json' in kwargs:
+                if 'headers' not in kwargs:
+                    kwargs['headers'] = {}
+                kwargs['headers']['Content-Type'] = 'application/json'
+            
             response = self.session.request(method, url, **kwargs)
             return response
         except Exception as e:
