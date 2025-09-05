@@ -2086,39 +2086,48 @@ class BackendTester:
         
         return self.results
 
-    def run_interest_system_tests(self):
-        """Run comprehensive interest system tests for lead generation marketplace"""
-        print("🚀 Starting ServiceHub Interest System Tests (Lead Generation)")
-        print(f"Testing against: {self.base_url}")
+    def run_all_tests(self):
+        """Run all test suites"""
+        print("🚀 Starting Comprehensive Backend API Tests for ServiceHub")
+        print(f"Backend URL: {self.base_url}")
+        print("=" * 80)
         
-        try:
-            self.test_health_endpoints()
-            self.test_authentication_system()
-            self.test_homeowner_job_management()
-            self.test_interest_system()
-            
-        except Exception as e:
-            print(f"\n❌ Critical test failure: {e}")
-            self.results['failed'] += 1
-            self.results['errors'].append(f"Critical failure: {str(e)}")
+        # Run test suites
+        self.test_authentication_system()
+        self.test_homeowner_job_management()
+        self.test_my_jobs_endpoint()
+        self.test_quote_management_system()
+        self.test_profile_management_system()
+        self.test_portfolio_management_system()
+        self.test_communication_system()
+        self.test_interest_system()
+        self.test_notification_system()
+        self.test_notification_workflow_integration()
         
-        # Print summary
-        print(f"\n{'='*60}")
-        print("🏁 INTEREST SYSTEM TEST SUMMARY")
-        print(f"{'='*60}")
-        print(f"✅ Passed: {self.results['passed']}")
-        print(f"❌ Failed: {self.results['failed']}")
-        
-        if self.results['passed'] + self.results['failed'] > 0:
-            success_rate = (self.results['passed']/(self.results['passed']+self.results['failed'])*100)
-            print(f"📊 Success Rate: {success_rate:.1f}%")
+        # Print final results
+        print("\n" + "=" * 80)
+        print("🏁 FINAL TEST RESULTS")
+        print("=" * 80)
+        print(f"✅ PASSED: {self.results['passed']}")
+        print(f"❌ FAILED: {self.results['failed']}")
+        print(f"📊 SUCCESS RATE: {(self.results['passed'] / (self.results['passed'] + self.results['failed']) * 100):.1f}%")
         
         if self.results['errors']:
-            print(f"\n🔍 FAILED TESTS:")
+            print(f"\n❌ FAILED TESTS ({len(self.results['errors'])}):")
             for error in self.results['errors']:
                 print(f"   • {error}")
         
-        return self.results
+        print("\n🎯 Test Summary:")
+        print("   • Authentication System: User registration, login, profile management")
+        print("   • Job Management: Creation, retrieval, homeowner-specific endpoints")
+        print("   • Quote System: Quote creation, management, authorization")
+        print("   • Profile Management: User profiles, role-based updates")
+        print("   • Portfolio System: Image upload, CRUD operations, public/private visibility")
+        print("   • Communication System: Job-based messaging, image sharing, real-time features")
+        print("   • Interest System: Lead generation marketplace, contact sharing, payment workflow")
+        print("   • Notification System: Mock email/SMS services, preferences, history, workflow integration")
+        
+        return self.results['failed'] == 0
     
 if __name__ == "__main__":
     tester = BackendTester()
