@@ -856,7 +856,8 @@ class Database:
         interest = await self.interests_collection.find_one({"id": interest_id})
         
         if interest:
-            interest['_id'] = str(interest['_id'])
+            # Ensure _id is properly converted to string
+            interest["_id"] = str(interest["_id"])
         
         return interest
 
