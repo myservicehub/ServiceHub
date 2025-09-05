@@ -682,163 +682,164 @@ class Database:
         from datetime import datetime
         return datetime.utcnow()
 
-    # Message Management Methods
-    async def create_message(self, message_data: dict) -> dict:
-        """Create a new message"""
-        await self.messages_collection.insert_one(message_data)
-        return message_data
-
-    async def get_message_by_id(self, message_id: str) -> dict:
-        """Get message by ID"""
-        return await self.messages_collection.find_one({"id": message_id})
-
-    async def get_job_messages(self, job_id: str, user_id: str, skip: int = 0, limit: int = 50) -> List[dict]:
-        """Get messages for a specific job conversation"""
-        # Get messages where user is either sender or recipient
-        cursor = self.messages_collection.find({
-            "job_id": job_id,
-            "$or": [
-                {"sender_id": user_id},
-                {"recipient_id": user_id}
-            ]
-        }).sort("created_at", 1).skip(skip).limit(limit)
+    # Interest Management Methods (Lead Generation System)
+    async def create_interest(self, interest_data: dict) -> dict:
+        """Create a new interest record"""
+        # Check if tradesperson already showed interest in this job
+        existing_interest = await self.interests_collection.find_one({
+            "job_id": interest_data["job_id"],
+            "tradesperson_id": interest_data["tradesperson_id"]
+        })
         
-        messages = await cursor.to_list(length=None)
+        if existing_interest:
+            raise Exception("Already showed interest in this job")
+        
+        await self.interests_collection.insert_one(interest_data)
+        return interest_data
+
+    async def get_job_interested_tradespeople(self, job_id: str) -> List[dict]:
+        """Get all tradespeople who showed interest in a job"""
+        pipeline = [
+            {"$match": {"job_id": job_id}},
+            {
+                "$lookup": {
+                    "from": "users",
+                    "localField": "tradesperson_id",
+                    "foreignField": "id",
+                    "as": "tradesperson"
+                }
+            },
+            {"$unwind": "$tradesperson"},
+            {
+                "$project": {
+                    "interest_id": "$id",
+                    "tradesperson_id": "$tradesperson_id",
+                    "tradesperson_name": "$tradesperson.name",
+                    "tradesperson_email": "$tradesperson.email",
+                    "company_name": "$tradesperson.company_name",
+                    "trade_categories": "$tradesperson.trade_categories",
+                    "experience_years": "$tradesperson.experience_years",
+                    "average_rating": "$tradesperson.average_rating",
+                    "total_reviews": "$tradesperson.total_reviews",
+                    "status": "$status",
+                    "created_at": "$created_at",
+                    "contact_shared": {"$eq": ["$status", "contact_shared"]},
+                    "payment_made": {"$eq": ["$status", "paid_access"]}
+                }
+            },
+            {"$sort": {"created_at": -1}}
+        ]
+        
+        interested = await self.interests_collection.aggregate(pipeline).to_list(length=None)
+        
+        # Convert ObjectId to string and get portfolio count
+        for person in interested:
+            if '_id' in person:
+                person['_id'] = str(person['_id'])
+            
+            # Get portfolio count
+            portfolio_count = await self.portfolio_collection.count_documents({
+                "tradesperson_id": person["tradesperson_id"],
+                "is_public": True
+            })
+            person["portfolio_count"] = portfolio_count
+        
+        return interested
+
+    async def update_interest_status(self, interest_id: str, status: str, additional_data: dict = None) -> bool:
+        """Update interest status"""
+        update_data = {
+            "status": status,
+            "updated_at": datetime.utcnow()
+        }
+        
+        if status == "contact_shared":
+            update_data["contact_shared_at"] = datetime.utcnow()
+        elif status == "paid_access":
+            update_data["payment_made_at"] = datetime.utcnow()
+            if additional_data and "access_fee" in additional_data:
+                update_data["access_fee"] = additional_data["access_fee"]
+        
+        result = await self.interests_collection.update_one(
+            {"id": interest_id},
+            {"$set": update_data}
+        )
+        return result.modified_count > 0
+
+    async def get_tradesperson_interests(self, tradesperson_id: str) -> List[dict]:
+        """Get all interests for a tradesperson"""
+        pipeline = [
+            {"$match": {"tradesperson_id": tradesperson_id}},
+            {
+                "$lookup": {
+                    "from": "jobs",
+                    "localField": "job_id",
+                    "foreignField": "id",
+                    "as": "job"
+                }
+            },
+            {"$unwind": "$job"},
+            {
+                "$project": {
+                    "id": 1,
+                    "job_id": 1,
+                    "status": 1,
+                    "created_at": 1,
+                    "job_title": "$job.title",
+                    "job_location": "$job.location",
+                    "homeowner_name": "$job.homeowner.name",
+                    "contact_shared": {"$eq": ["$status", "contact_shared"]},
+                    "payment_made": {"$eq": ["$status", "paid_access"]},
+                    "access_fee": 1
+                }
+            },
+            {"$sort": {"created_at": -1}}
+        ]
+        
+        interests = await self.interests_collection.aggregate(pipeline).to_list(length=None)
         
         # Convert ObjectId to string
-        for message in messages:
-            if '_id' in message:
-                message['_id'] = str(message['_id'])
+        for interest in interests:
+            if '_id' in interest:
+                interest['_id'] = str(interest['_id'])
         
-        return messages
+        return interests
 
-    async def get_job_messages_count(self, job_id: str) -> int:
-        """Get total count of messages for a job"""
-        return await self.messages_collection.count_documents({"job_id": job_id})
-
-    async def get_conversation_summary(self, job_id: str, user_id: str) -> dict:
-        """Get conversation summary for a job"""
-        # Get the job details
+    async def get_contact_details(self, job_id: str, tradesperson_id: str) -> dict:
+        """Get homeowner contact details for paid access"""
+        # Verify tradesperson has paid access
+        interest = await self.interests_collection.find_one({
+            "job_id": job_id,
+            "tradesperson_id": tradesperson_id,
+            "status": "paid_access"
+        })
+        
+        if not interest:
+            raise Exception("Access not paid or interest not found")
+        
+        # Get job and homeowner details
         job = await self.get_job_by_id(job_id)
         if not job:
             raise Exception("Job not found")
         
-        # Determine the other user in the conversation
-        is_homeowner = job.get("homeowner", {}).get("email") == (await self.get_user_by_id(user_id))["email"]
-        
-        if is_homeowner:
-            # For homeowner, find the tradesperson they're talking to
-            # Get the latest message to determine the other party
-            latest_message = await self.messages_collection.find_one(
-                {
-                    "job_id": job_id,
-                    "$or": [{"sender_id": user_id}, {"recipient_id": user_id}]
-                },
-                sort=[("created_at", -1)]
-            )
-            
-            if latest_message:
-                other_user_id = latest_message["sender_id"] if latest_message["recipient_id"] == user_id else latest_message["recipient_id"]
-                other_user = await self.get_user_by_id(other_user_id)
-            else:
-                # No messages yet, use the job owner for now
-                other_user = await self.get_user_by_id(user_id)
-                other_user_id = user_id
-        else:
-            # For tradesperson, the other user is always the homeowner
-            homeowner_email = job.get("homeowner", {}).get("email")
-            other_user = await self.get_user_by_email(homeowner_email)
-            other_user_id = other_user["id"]
-        
-        # Get last message
-        last_message = await self.messages_collection.find_one(
-            {
-                "job_id": job_id,
-                "$or": [{"sender_id": user_id}, {"recipient_id": user_id}]
-            },
-            sort=[("created_at", -1)]
-        )
-        
-        # Get unread count
-        unread_count = await self.messages_collection.count_documents({
-            "job_id": job_id,
-            "recipient_id": user_id,
-            "read_at": None
-        })
+        homeowner = await self.get_user_by_email(job["homeower"]["email"])
+        if not homeowner:
+            raise Exception("Homeowner not found")
         
         return {
-            "job_id": job_id,
-            "job_title": job.get("title", ""),
-            "other_user_id": other_user_id,
-            "other_user_name": other_user.get("name", ""),
-            "other_user_role": other_user.get("role", ""),
-            "last_message": last_message,
-            "unread_count": unread_count,
-            "created_at": job.get("created_at"),
-            "updated_at": last_message.get("created_at") if last_message else job.get("created_at")
+            "homeowner_name": homeowner["name"],
+            "homeowner_email": homeowner["email"],
+            "homeowner_phone": homeowner["phone"],
+            "job_title": job["title"],
+            "job_description": job["description"],
+            "job_location": job["location"],
+            "budget_range": f"₦{job.get('budget_min', 0):,} - ₦{job.get('budget_max', 0):,}" if job.get('budget_min') else None
         }
 
-    async def get_user_conversations(self, user_id: str) -> List[dict]:
-        """Get all conversations for a user"""
-        # Get all jobs where user has sent or received messages
-        pipeline = [
-            {
-                "$match": {
-                    "$or": [
-                        {"sender_id": user_id},
-                        {"recipient_id": user_id}
-                    ]
-                }
-            },
-            {
-                "$group": {
-                    "_id": "$job_id",
-                    "last_message_time": {"$max": "$created_at"},
-                    "message_count": {"$sum": 1}
-                }
-            },
-            {"$sort": {"last_message_time": -1}}
-        ]
-        
-        conversation_jobs = await self.messages_collection.aggregate(pipeline).to_list(length=None)
-        
-        conversations = []
-        for conv in conversation_jobs:
-            try:
-                job_id = conv["_id"]
-                summary = await self.get_conversation_summary(job_id, user_id)
-                conversations.append(summary)
-            except Exception as e:
-                print(f"Error getting conversation summary for job {job_id}: {e}")
-                continue
-        
-        return conversations
-
-    async def mark_message_as_read(self, message_id: str) -> bool:
-        """Mark a message as read"""
-        result = await self.messages_collection.update_one(
-            {"id": message_id},
-            {
-                "$set": {
-                    "status": "read",
-                    "read_at": datetime.utcnow(),
-                    "updated_at": datetime.utcnow()
-                }
-            }
-        )
-        return result.modified_count > 0
-
-    async def get_unread_messages_count(self, user_id: str) -> int:
-        """Get total unread messages count for user"""
-        return await self.messages_collection.count_documents({
-            "recipient_id": user_id,
-            "read_at": None
-        })
-
     @property
-    def messages_collection(self):
-        """Access to messages collection"""
-        return self.database.messages
+    def interests_collection(self):
+        """Access to interests collection"""
+        return self.database.interests
 
 # Global database instance
 database = Database()
