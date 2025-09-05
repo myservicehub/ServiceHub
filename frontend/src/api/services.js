@@ -95,6 +95,61 @@ export const portfolioAPI = {
   },
 };
 
+// Messages API
+export const messagesAPI = {
+  sendMessage: async (messageData) => {
+    const response = await apiClient.post('/messages/send', messageData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  sendTextMessage: async (jobId, recipientId, content) => {
+    const formData = new FormData();
+    formData.append('job_id', jobId);
+    formData.append('recipient_id', recipientId);
+    formData.append('content', content);
+    formData.append('message_type', 'text');
+    
+    const response = await apiClient.post('/messages/send', formData);
+    return response.data;
+  },
+
+  sendImageMessage: async (jobId, recipientId, content, imageFile) => {
+    const formData = new FormData();
+    formData.append('job_id', jobId);
+    formData.append('recipient_id', recipientId);
+    formData.append('content', content);
+    formData.append('message_type', 'image');
+    formData.append('file', imageFile);
+    
+    const response = await apiClient.post('/messages/send', formData);
+    return response.data;
+  },
+
+  getJobMessages: async (jobId, params = {}) => {
+    const response = await apiClient.get(`/messages/job/${jobId}`, { params });
+    return response.data;
+  },
+
+  getConversations: async () => {
+    const response = await apiClient.get('/messages/conversations');
+    return response.data;
+  },
+
+  markMessageAsRead: async (messageId) => {
+    const response = await apiClient.put(`/messages/${messageId}/read`);
+    return response.data;
+  },
+
+  getUnreadCount: async () => {
+    const response = await apiClient.get('/messages/unread-count');
+    return response.data;
+  },
+};
+
 // Jobs API
 export const jobsAPI = {
   createJob: async (jobData) => {
