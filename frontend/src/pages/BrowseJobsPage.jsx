@@ -16,9 +16,10 @@ import {
   Filter,
   ArrowRight,
   Briefcase,
-  MessageCircle
+  Heart,
+  HandHeart
 } from 'lucide-react';
-import { quotesAPI } from '../api/services';
+import { jobsAPI, interestsAPI } from '../api/services';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
