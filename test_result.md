@@ -189,7 +189,9 @@ test_plan:
     - "Backend API Enhancement"
     - "My Jobs & Quotes Page for Homeowners" 
     - "Navigation Integration"
-  stuck_tasks: []
+  stuck_tasks:
+    - "My Jobs & Quotes Page for Homeowners"
+    - "Navigation Integration"
   test_all: false
   test_priority: "high_first"
 
