@@ -23,7 +23,7 @@ const NotificationIndicator = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated()) {
       loadNotificationData();
       // Set up periodic refresh every 30 seconds
       const interval = setInterval(loadNotificationData, 30000);
