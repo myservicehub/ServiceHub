@@ -16,7 +16,7 @@ import uuid
 
 router = APIRouter(prefix="/api/auth", tags=["authentication"])
 
-@router.post("/register/homeowner", response_model=UserProfile)
+@router.post("/register/homeowner")
 async def register_homeowner(registration_data: HomeownerRegistration):
     """Register a new homeowner account"""
     try:
