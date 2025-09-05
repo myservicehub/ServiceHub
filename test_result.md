@@ -116,6 +116,9 @@ backend:
       - working: true
         agent: "main"
         comment: "All quote API endpoints are implemented and working: get job quotes, update quote status, quote summary"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: All quote endpoints working correctly. Quote creation, retrieval, status updates, and authorization all functioning properly. Fixed tradesperson_id field in database aggregation."
 
 frontend:
   - task: "Quote Components (QuoteForm, QuotesList)"
