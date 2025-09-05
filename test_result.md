@@ -135,27 +135,33 @@ frontend:
 
   - task: "My Jobs & Quotes Page for Homeowners"
     implemented: true
-    working: "NA"
+    working: false
     file: "/app/frontend/src/pages/MyJobsPage.jsx"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Updated MyJobsPage to use proper backend endpoint /my-jobs instead of client-side filtering"
+      - working: false
+        agent: "testing"
+        comment: "❌ CRITICAL ISSUES FOUND: 1) Mixed Content Error - HTTPS page making HTTP API requests blocked by browser security. 2) Backend API errors: 'Database object has no attribute get_featured_reviews' causing 500 errors. 3) Page loading timeouts due to API failures. Frontend components are implemented correctly but cannot function due to infrastructure issues."
 
   - task: "Navigation Integration"
     implemented: true
-    working: "NA"
+    working: false
     file: "/app/frontend/src/App.js, /app/frontend/src/components/Header.jsx"
-    stuck_count: 0
+    stuck_count: 1
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Added /my-jobs and /browse-jobs routes to App.js. Updated Header with role-based navigation for homeowners and tradespeople"
+      - working: false
+        agent: "testing"
+        comment: "❌ CRITICAL INFRASTRUCTURE ISSUE: Mixed Content Security Error prevents API calls. Frontend routing and navigation components are implemented correctly, but authentication and data loading fail due to HTTPS/HTTP protocol mismatch. API client making HTTP requests from HTTPS page."
 
   - task: "Backend API Enhancement"
     implemented: true
