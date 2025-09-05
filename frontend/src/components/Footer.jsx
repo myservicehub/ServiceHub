@@ -66,11 +66,8 @@ const Footer = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-12">
             {/* Logo and Description */}
             <div className="lg:col-span-1">
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{backgroundColor: '#2F8140'}}>
-                  <span className="text-white font-bold text-sm font-montserrat">S</span>
-                </div>
-                <span className="text-xl font-bold font-montserrat">serviceHub</span>
+              <div className="mb-4">
+                <Logo size="medium" variant="dark" />
               </div>
               <p className="text-gray-300 text-sm font-lato mb-6">
                 Nigeria's most trusted platform for connecting homeowners with reliable, local tradespeople.
