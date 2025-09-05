@@ -11,10 +11,6 @@ router = APIRouter(prefix="/api/jobs", tags=["jobs"])
 async def create_job(job_data: JobCreate):
     """Create a new job posting"""
     try:
-        print(f"DEBUG: Received job_data: {job_data}")
-        print(f"DEBUG: job_data type: {type(job_data)}")
-        print(f"DEBUG: job_data dict: {job_data.dict()}")
-        
         # Convert to dict and prepare for database
         job_dict = job_data.dict()
         
