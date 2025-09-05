@@ -1179,7 +1179,7 @@ class Database:
         summary = await self.get_user_review_summary(user_id)
         
         # Update user profile with review stats
-        await self.users_collection.update_one(
+        await self.database.users.update_one(
             {"id": user_id},
             {"$set": {
                 "total_reviews": summary.total_reviews,
