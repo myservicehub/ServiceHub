@@ -14,7 +14,9 @@ import { useToast } from '../hooks/use-toast';
 const JobPostingForm = ({ onComplete }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showAccountCreation, setShowAccountCreation] = useState(false);
   const { toast } = useToast();
+  const { login, isAuthenticated } = useAuth();
 
   const [formData, setFormData] = useState({
     // Step 1: Job Details
