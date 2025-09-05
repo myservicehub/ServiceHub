@@ -159,7 +159,7 @@ const ReviewsSection = () => {
 
           <div className="text-center mt-12">
             <p className="text-gray-600 mb-6">
-              Join thousands of satisfied homeowners who found their perfect tradesperson on MyBuilder
+              Join thousands of satisfied homeowners who found their perfect tradesperson on serviceHub
             </p>
             <div className="flex flex-wrap justify-center gap-2 text-sm text-gray-500">
               <span className="bg-white px-3 py-1 rounded-full">⭐ 4.8/5 average rating</span>
