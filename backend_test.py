@@ -251,6 +251,9 @@ class BackendTester:
         }
         
         response = self.make_request("POST", "/tradespeople/", json=tradesperson_data)
+        print(f"DEBUG: Tradesperson creation request - Status: {response.status_code}")
+        print(f"DEBUG: Request data: {tradesperson_data}")
+        print(f"DEBUG: Response: {response.text[:500]}")
         if response.status_code == 200:
             created_tradesperson = response.json()
             if 'id' in created_tradesperson and created_tradesperson['name'] == tradesperson_data['name']:
