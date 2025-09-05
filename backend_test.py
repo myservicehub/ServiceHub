@@ -444,6 +444,164 @@ class BackendTester:
                         self.log_result("Cross-user job access prevention", False, 
                                        f"Expected 403, got {response.status_code}")
     
+    def test_profile_management_system(self):
+        """Test comprehensive profile management for both user types"""
+        print("\n=== Testing Profile Management System ===")
+        
+        if 'homeowner' not in self.auth_tokens or 'tradesperson' not in self.auth_tokens:
+            self.log_result("Profile management tests", False, "Missing authentication tokens")
+            return
+        
+        homeowner_token = self.auth_tokens['homeowner']
+        tradesperson_token = self.auth_tokens['tradesperson']
+        
+        # Test 1: Profile Retrieval - Homeowner
+        response = self.make_request("GET", "/auth/me", auth_token=homeowner_token)
+        if response.status_code == 200:
+            homeowner_profile = response.json()
+            required_fields = ['id', 'name', 'email', 'phone', 'role', 'location', 'postcode', 
+                             'email_verified', 'phone_verified', 'created_at', 'updated_at']
+            missing_fields = [field for field in required_fields if field not in homeowner_profile]
+            
+            if not missing_fields and homeowner_profile.get('role') == 'homeowner':
+                self.log_result("Homeowner profile retrieval", True, 
+                               f"Name: {homeowner_profile['name']}, Role: {homeowner_profile['role']}")
+                self.test_data['homeowner_profile_data'] = homeowner_profile
+            else:
+                self.log_result("Homeowner profile retrieval", False, 
+                               f"Missing fields: {missing_fields} or wrong role")
+        else:
+            self.log_result("Homeowner profile retrieval", False, f"Status: {response.status_code}")
+        
+        # Test 2: Profile Retrieval - Tradesperson
+        response = self.make_request("GET", "/auth/me", auth_token=tradesperson_token)
+        if response.status_code == 200:
+            tradesperson_profile = response.json()
+            required_fields = ['id', 'name', 'email', 'phone', 'role', 'location', 'postcode',
+                             'trade_categories', 'experience_years', 'company_name', 'description', 
+                             'certifications', 'average_rating', 'total_reviews']
+            missing_fields = [field for field in required_fields if field not in tradesperson_profile]
+            
+            if not missing_fields and tradesperson_profile.get('role') == 'tradesperson':
+                self.log_result("Tradesperson profile retrieval", True, 
+                               f"Name: {tradesperson_profile['name']}, Trade: {tradesperson_profile['trade_categories']}")
+                self.test_data['tradesperson_profile_data'] = tradesperson_profile
+            else:
+                self.log_result("Tradesperson profile retrieval", False, 
+                               f"Missing fields: {missing_fields} or wrong role")
+        else:
+            self.log_result("Tradesperson profile retrieval", False, f"Status: {response.status_code}")
+        
+        # Test 3: Unauthenticated Profile Access
+        response = self.make_request("GET", "/auth/me")
+        if response.status_code in [401, 403]:
+            self.log_result("Unauthenticated profile access prevention", True, "Correctly requires authentication")
+        else:
+            self.log_result("Unauthenticated profile access prevention", False, 
+                           f"Expected 401/403, got {response.status_code}")
+        
+        # Test 4: General Profile Update - Homeowner
+        original_phone = self.test_data.get('homeowner_profile_data', {}).get('phone')
+        update_data = {
+            "name": "Adebayo Johnson Updated",
+            "phone": "08134567890",  # Different valid Nigerian number
+            "location": "Lekki, Lagos State",
+            "postcode": "101001"
+        }
+        
+        response = self.make_request("PUT", "/auth/profile", json=update_data, auth_token=homeowner_token)
+        if response.status_code == 200:
+            updated_profile = response.json()
+            if (updated_profile['name'] == update_data['name'] and 
+                updated_profile['location'] == update_data['location'] and
+                updated_profile['phone'] != original_phone):
+                self.log_result("Homeowner profile update", True, "All fields updated correctly")
+                
+                # Verify phone_verified was reset
+                if not updated_profile.get('phone_verified', True):
+                    self.log_result("Phone verification reset", True, "Phone verification correctly reset on phone change")
+                else:
+                    self.log_result("Phone verification reset", False, "Phone verification should be reset when phone changes")
+            else:
+                self.log_result("Homeowner profile update", False, "Fields not updated correctly")
+        else:
+            self.log_result("Homeowner profile update", False, f"Status: {response.status_code}, Response: {response.text}")
+        
+        # Test 5: Partial Profile Update
+        partial_update = {"name": "Adebayo Johnson Final"}
+        response = self.make_request("PUT", "/auth/profile", json=partial_update, auth_token=homeowner_token)
+        if response.status_code == 200:
+            updated_profile = response.json()
+            if updated_profile['name'] == partial_update['name']:
+                self.log_result("Partial profile update", True, "Name updated successfully")
+            else:
+                self.log_result("Partial profile update", False, "Name not updated")
+        else:
+            self.log_result("Partial profile update", False, f"Status: {response.status_code}")
+        
+        # Test 6: Invalid Phone Number Validation
+        invalid_phone_data = {"phone": "123456789"}  # Invalid Nigerian number
+        response = self.make_request("PUT", "/auth/profile", json=invalid_phone_data, auth_token=homeowner_token)
+        if response.status_code == 400:
+            self.log_result("Invalid phone validation", True, "Correctly rejected invalid phone number")
+        else:
+            self.log_result("Invalid phone validation", False, f"Expected 400, got {response.status_code}")
+        
+        # Test 7: Tradesperson-Specific Profile Update
+        tradesperson_update = {
+            "name": "Emeka Okafor Professional",
+            "trade_categories": ["Plumbing", "Heating & Gas", "Electrical"],
+            "experience_years": 10,
+            "company_name": "Okafor Professional Services Ltd",
+            "description": "Expert plumber and electrician with over 10 years of experience in residential and commercial projects across Lagos and Abuja. Specialized in modern plumbing systems and electrical installations.",
+            "certifications": ["Licensed Plumber", "Gas Safety Certificate", "Electrical Installation Certificate"]
+        }
+        
+        response = self.make_request("PUT", "/auth/profile/tradesperson", 
+                                   json=tradesperson_update, auth_token=tradesperson_token)
+        if response.status_code == 200:
+            updated_profile = response.json()
+            if (updated_profile['name'] == tradesperson_update['name'] and 
+                updated_profile['experience_years'] == tradesperson_update['experience_years'] and
+                len(updated_profile['certifications']) == 3):
+                self.log_result("Tradesperson profile update", True, 
+                               f"Experience: {updated_profile['experience_years']} years, "
+                               f"Certifications: {len(updated_profile['certifications'])}")
+            else:
+                self.log_result("Tradesperson profile update", False, "Fields not updated correctly")
+        else:
+            self.log_result("Tradesperson profile update", False, f"Status: {response.status_code}, Response: {response.text}")
+        
+        # Test 8: Role-Based Access Control - Homeowner accessing tradesperson endpoint
+        response = self.make_request("PUT", "/auth/profile/tradesperson", 
+                                   json={"experience_years": 5}, auth_token=homeowner_token)
+        if response.status_code == 403:
+            self.log_result("Homeowner tradesperson endpoint access", True, "Correctly denied access")
+        else:
+            self.log_result("Homeowner tradesperson endpoint access", False, 
+                           f"Expected 403, got {response.status_code}")
+        
+        # Test 9: Unauthenticated Profile Update
+        response = self.make_request("PUT", "/auth/profile", json={"name": "Test"})
+        if response.status_code in [401, 403]:
+            self.log_result("Unauthenticated profile update prevention", True, "Correctly requires authentication")
+        else:
+            self.log_result("Unauthenticated profile update prevention", False, 
+                           f"Expected 401/403, got {response.status_code}")
+        
+        # Test 10: Certification Management
+        cert_update = {"certifications": ["New Certification", "Updated Certificate"]}
+        response = self.make_request("PUT", "/auth/profile/tradesperson", 
+                                   json=cert_update, auth_token=tradesperson_token)
+        if response.status_code == 200:
+            updated_profile = response.json()
+            if len(updated_profile['certifications']) == 2:
+                self.log_result("Certification management", True, "Certifications updated successfully")
+            else:
+                self.log_result("Certification management", False, "Certifications not updated correctly")
+        else:
+            self.log_result("Certification management", False, f"Status: {response.status_code}")
+
     def test_error_handling_and_edge_cases(self):
         """Test error handling scenarios for job and quote management"""
         print("\n=== Testing Error Handling & Edge Cases ===")
