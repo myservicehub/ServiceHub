@@ -1362,5 +1362,202 @@ class Database:
         """Access to notification preferences collection"""
         return self.database.notification_preferences
 
+    # ==========================================
+    # WALLET SYSTEM METHODS
+    # ==========================================
+    
+    @property
+    def wallets_collection(self):
+        """Access to wallets collection"""
+        return self.database.wallets
+    
+    @property
+    def wallet_transactions_collection(self):
+        """Access to wallet transactions collection"""
+        return self.database.wallet_transactions
+
+    async def create_wallet(self, user_id: str) -> dict:
+        """Create a new wallet for user"""
+        wallet_data = {
+            "id": str(uuid.uuid4()),
+            "user_id": user_id,
+            "balance_coins": 0,
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+        
+        # Check if wallet already exists
+        existing = await self.wallets_collection.find_one({"user_id": user_id})
+        if existing:
+            return existing
+            
+        await self.wallets_collection.insert_one(wallet_data)
+        return wallet_data
+
+    async def get_wallet_by_user_id(self, user_id: str) -> Optional[dict]:
+        """Get wallet by user ID"""
+        wallet = await self.wallets_collection.find_one({"user_id": user_id})
+        if not wallet:
+            # Create wallet if it doesn't exist
+            wallet = await self.create_wallet(user_id)
+        return wallet
+
+    async def update_wallet_balance(self, user_id: str, coins_change: int) -> bool:
+        """Update wallet balance (positive to add, negative to deduct)"""
+        result = await self.wallets_collection.update_one(
+            {"user_id": user_id},
+            {
+                "$inc": {"balance_coins": coins_change},
+                "$set": {"updated_at": datetime.utcnow()}
+            }
+        )
+        return result.modified_count > 0
+
+    async def create_wallet_transaction(self, transaction_data: dict) -> dict:
+        """Create a new wallet transaction"""
+        transaction_data["id"] = str(uuid.uuid4())
+        transaction_data["created_at"] = datetime.utcnow()
+        
+        await self.wallet_transactions_collection.insert_one(transaction_data)
+        return transaction_data
+
+    async def get_wallet_transactions(self, user_id: str, skip: int = 0, limit: int = 10) -> List[dict]:
+        """Get wallet transactions for user"""
+        cursor = self.wallet_transactions_collection.find(
+            {"user_id": user_id}
+        ).sort("created_at", -1).skip(skip).limit(limit)
+        
+        transactions = []
+        async for transaction in cursor:
+            transaction["_id"] = str(transaction["_id"])
+            transactions.append(transaction)
+        
+        return transactions
+
+    async def get_pending_funding_requests(self, skip: int = 0, limit: int = 20) -> List[dict]:
+        """Get pending wallet funding requests for admin"""
+        cursor = self.wallet_transactions_collection.find({
+            "transaction_type": "wallet_funding",
+            "status": "pending"
+        }).sort("created_at", -1).skip(skip).limit(limit)
+        
+        requests = []
+        async for request in cursor:
+            request["_id"] = str(request["_id"])
+            # Get user details
+            user = await self.get_user_by_id(request["user_id"])
+            if user:
+                request["user_name"] = user.get("name", "Unknown")
+                request["user_email"] = user.get("email", "Unknown")
+            requests.append(request)
+        
+        return requests
+
+    async def confirm_wallet_funding(self, transaction_id: str, admin_id: str, admin_notes: str = "") -> bool:
+        """Confirm wallet funding request"""
+        # Get transaction
+        transaction = await self.wallet_transactions_collection.find_one({"id": transaction_id})
+        if not transaction or transaction["status"] != "pending":
+            return False
+        
+        # Update transaction status
+        result = await self.wallet_transactions_collection.update_one(
+            {"id": transaction_id},
+            {
+                "$set": {
+                    "status": "confirmed",
+                    "processed_by": admin_id,
+                    "admin_notes": admin_notes,
+                    "processed_at": datetime.utcnow()
+                }
+            }
+        )
+        
+        if result.modified_count > 0:
+            # Add coins to wallet
+            coins_to_add = transaction["amount_coins"]
+            await self.update_wallet_balance(transaction["user_id"], coins_to_add)
+            return True
+        
+        return False
+
+    async def reject_wallet_funding(self, transaction_id: str, admin_id: str, admin_notes: str = "") -> bool:
+        """Reject wallet funding request"""
+        result = await self.wallet_transactions_collection.update_one(
+            {"id": transaction_id, "status": "pending"},
+            {
+                "$set": {
+                    "status": "rejected",
+                    "processed_by": admin_id,
+                    "admin_notes": admin_notes,
+                    "processed_at": datetime.utcnow()
+                }
+            }
+        )
+        return result.modified_count > 0
+
+    async def deduct_access_fee(self, user_id: str, job_id: str, access_fee_coins: int) -> bool:
+        """Deduct access fee from wallet and create transaction record"""
+        # Check wallet balance
+        wallet = await self.get_wallet_by_user_id(user_id)
+        if wallet["balance_coins"] < access_fee_coins:
+            return False
+        
+        # Deduct coins
+        success = await self.update_wallet_balance(user_id, -access_fee_coins)
+        if not success:
+            return False
+        
+        # Create transaction record
+        transaction_data = {
+            "wallet_id": wallet["id"],
+            "user_id": user_id,
+            "transaction_type": "access_fee_deduction",
+            "amount_coins": access_fee_coins,
+            "amount_naira": access_fee_coins * 100,  # Convert to naira
+            "status": "confirmed",
+            "description": f"Access fee for job contact details",
+            "reference": job_id,
+            "processed_at": datetime.utcnow()
+        }
+        
+        await self.create_wallet_transaction(transaction_data)
+        return True
+
+    # ==========================================
+    # JOB ACCESS FEE METHODS  
+    # ==========================================
+    
+    async def update_job_access_fee(self, job_id: str, access_fee_naira: int) -> bool:
+        """Update job access fee (admin only)"""
+        access_fee_coins = access_fee_naira // 100  # Convert to coins
+        
+        result = await self.database.jobs.update_one(
+            {"id": job_id},
+            {
+                "$set": {
+                    "access_fee_naira": access_fee_naira,
+                    "access_fee_coins": access_fee_coins,
+                    "updated_at": datetime.utcnow()
+                }
+            }
+        )
+        return result.modified_count > 0
+
+    async def get_jobs_with_access_fees(self, skip: int = 0, limit: int = 20) -> List[dict]:
+        """Get all jobs with access fees for admin management"""
+        cursor = self.database.jobs.find({}).sort("created_at", -1).skip(skip).limit(limit)
+        
+        jobs = []
+        async for job in cursor:
+            job["_id"] = str(job["_id"])
+            # Set default access fee if not present
+            if "access_fee_naira" not in job:
+                job["access_fee_naira"] = 1500
+                job["access_fee_coins"] = 15
+            jobs.append(job)
+        
+        return jobs
+
 # Global database instance
 database = Database()
