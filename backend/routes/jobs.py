@@ -144,3 +144,42 @@ async def get_job(job_id: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/my-jobs", response_model=JobsResponse)
+async def get_my_jobs(
+    current_user: User = Depends(get_current_homeowner),
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=50),
+    status: Optional[str] = Query(None, description="Filter by job status")
+):
+    """Get jobs posted by current homeowner"""
+    try:
+        skip = (page - 1) * limit
+        
+        # Build filters for homeowner's jobs
+        filters = {"homeowner.email": current_user.email}
+        if status:
+            filters["status"] = status
+        
+        # Get jobs and total count
+        jobs = await database.get_jobs(skip=skip, limit=limit, filters=filters)
+        total_jobs = await database.get_jobs_count(filters=filters)
+        
+        # Convert to Job objects
+        job_objects = [Job(**job) for job in jobs]
+        
+        # Calculate pagination
+        total_pages = (total_jobs + limit - 1) // limit
+        
+        return JobsResponse(
+            jobs=job_objects,
+            pagination={
+                "page": page,
+                "limit": limit,
+                "total": total_jobs,
+                "pages": total_pages
+            }
+        )
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
