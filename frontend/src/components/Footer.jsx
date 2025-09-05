@@ -67,9 +67,9 @@ const Footer = () => {
             <div className="lg:col-span-1">
               <div className="flex items-center space-x-2 mb-4">
                 <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">M</span>
+                  <span className="text-white font-bold text-sm">S</span>
                 </div>
-                <span className="text-xl font-bold">MyBuilder</span>
+                <span className="text-xl font-bold">serviceHub</span>
               </div>
               <p className="text-gray-400 text-sm mb-6">
                 Nigeria's most trusted platform for connecting homeowners with reliable, local tradespeople.
