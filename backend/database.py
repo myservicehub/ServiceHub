@@ -846,5 +846,159 @@ class Database:
         """Access to interests collection"""
         return self.database.interests
 
+    # Notification Management Methods
+    async def create_notification(self, notification: Notification) -> Notification:
+        """Create a new notification"""
+        notification_dict = notification.dict()
+        notification_dict["_id"] = notification_dict["id"]
+        
+        await self.notifications_collection.insert_one(notification_dict)
+        return notification
+
+    async def get_user_notification_preferences(self, user_id: str) -> NotificationPreferences:
+        """Get user notification preferences, create defaults if not exist"""
+        preferences = await self.notification_preferences_collection.find_one({"user_id": user_id})
+        
+        if not preferences:
+            # Create default preferences
+            default_preferences = NotificationPreferences(
+                id=str(uuid.uuid4()),
+                user_id=user_id
+            )
+            await self.create_notification_preferences(default_preferences)
+            return default_preferences
+        
+        # Convert MongoDB document to Pydantic model
+        preferences["id"] = str(preferences["_id"])
+        del preferences["_id"]
+        return NotificationPreferences(**preferences)
+
+    async def create_notification_preferences(self, preferences: NotificationPreferences) -> NotificationPreferences:
+        """Create notification preferences for a user"""
+        preferences_dict = preferences.dict()
+        preferences_dict["_id"] = preferences_dict["id"]
+        
+        await self.notification_preferences_collection.insert_one(preferences_dict)
+        return preferences
+
+    async def update_notification_preferences(self, user_id: str, updates: Dict[str, Any]) -> NotificationPreferences:
+        """Update user notification preferences"""
+        # Add updated timestamp
+        updates["updated_at"] = datetime.utcnow()
+        
+        await self.notification_preferences_collection.update_one(
+            {"user_id": user_id},
+            {"$set": updates}
+        )
+        
+        return await self.get_user_notification_preferences(user_id)
+
+    async def get_user_notifications(self, user_id: str, limit: int = 50, offset: int = 0) -> List[Notification]:
+        """Get notifications for a user with pagination"""
+        cursor = self.notifications_collection.find(
+            {"user_id": user_id}
+        ).sort("created_at", -1).skip(offset).limit(limit)
+        
+        notifications = []
+        async for doc in cursor:
+            doc["id"] = str(doc["_id"])
+            del doc["_id"]
+            notifications.append(Notification(**doc))
+        
+        return notifications
+
+    async def update_notification_status(self, notification_id: str, status: NotificationStatus, delivered_at: Optional[datetime] = None) -> bool:
+        """Update notification delivery status"""
+        update_data = {"status": status, "updated_at": datetime.utcnow()}
+        if delivered_at:
+            update_data["delivered_at"] = delivered_at
+        
+        result = await self.notifications_collection.update_one(
+            {"_id": notification_id},
+            {"$set": update_data}
+        )
+        
+        return result.modified_count > 0
+
+    async def get_notification_stats(self) -> Dict[str, Any]:
+        """Get notification delivery statistics"""
+        pipeline = [
+            {
+                "$group": {
+                    "_id": "$status",
+                    "count": {"$sum": 1}
+                }
+            }
+        ]
+        
+        status_counts = {}
+        async for doc in self.notifications_collection.aggregate(pipeline):
+            status_counts[doc["_id"]] = doc["count"]
+        
+        # Calculate delivery rate
+        total_sent = status_counts.get("sent", 0) + status_counts.get("delivered", 0)
+        total_attempts = sum(status_counts.values())
+        delivery_rate = (total_sent / total_attempts * 100) if total_attempts > 0 else 0
+        
+        # Get stats by type and channel
+        type_pipeline = [
+            {
+                "$group": {
+                    "_id": "$type",
+                    "count": {"$sum": 1}
+                }
+            }
+        ]
+        
+        channel_pipeline = [
+            {
+                "$group": {
+                    "_id": "$channel",
+                    "count": {"$sum": 1}
+                }
+            }
+        ]
+        
+        by_type = {}
+        async for doc in self.notifications_collection.aggregate(type_pipeline):
+            by_type[doc["_id"]] = doc["count"]
+        
+        by_channel = {}
+        async for doc in self.notifications_collection.aggregate(channel_pipeline):
+            by_channel[doc["_id"]] = doc["count"]
+        
+        # Get recent failures
+        recent_failures = []
+        cursor = self.notifications_collection.find(
+            {"status": "failed"}
+        ).sort("created_at", -1).limit(10)
+        
+        async for doc in cursor:
+            recent_failures.append({
+                "id": str(doc["_id"]),
+                "type": doc["type"],
+                "channel": doc["channel"],
+                "created_at": doc["created_at"],
+                "metadata": doc.get("metadata", {})
+            })
+        
+        return {
+            "total_sent": total_sent,
+            "delivery_rate": round(delivery_rate, 2),
+            "by_type": by_type,
+            "by_channel": by_channel,
+            "recent_failures": recent_failures
+        }
+
+    @property
+    def notifications_collection(self):
+        """Access to notifications collection"""
+        return self.database.notifications
+
+    @property
+    def notification_preferences_collection(self):
+        """Access to notification preferences collection"""
+        return self.database.notification_preferences
+
 # Global database instance
 database = Database()
