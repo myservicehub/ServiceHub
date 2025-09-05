@@ -57,10 +57,11 @@ LAST_NAMES = [
 ]
 
 JOB_TITLES = [
-    "Kitchen renovation needed", "Bathroom installation required", "Garden landscaping project",
-    "House painting and decorating", "Plumbing repair needed", "Electrical work required",
-    "Roof repair urgent", "Flooring installation", "Plastering work needed", "Carpentry services required",
-    "Heating system installation", "Tiling work needed", "Building extension project", "Fence installation required"
+    "Kitchen renovation needed", "Bathroom installation required", "POP ceiling installation",
+    "House painting and decoration", "Plumbing and water connection", "Electrical wiring needed",
+    "Roofing and waterproofing work", "Tiling work needed", "Building construction project",
+    "Generator installation required", "Air conditioning installation", "Solar panel installation",
+    "Compound landscaping project", "Interior decoration services", "Welding and gate fabrication"
 ]
 
 REVIEW_COMMENTS = [
