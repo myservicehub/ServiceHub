@@ -1021,11 +1021,14 @@ class BackendTester:
     
 if __name__ == "__main__":
     tester = BackendTester()
-    results = tester.run_profile_management_tests()
+    
+    # Run portfolio management tests as requested
+    results = tester.run_portfolio_management_tests()
     
     # Exit with error code if tests failed
     if results['failed'] > 0:
+        print(f"\n⚠️  Portfolio management tests completed with {results['failed']} failures")
         exit(1)
     else:
-        print(f"\n🎉 All profile management tests passed successfully!")
+        print(f"\n🎉 All portfolio management tests passed successfully!")
         exit(0)
