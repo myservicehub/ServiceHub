@@ -171,14 +171,14 @@ class BackendTester:
         
         # Test job creation as homeowner
         job_data = {
-            "title": "Kitchen Renovation - Modern Nigerian Design",
-            "description": "Looking for an experienced kitchen fitter to completely renovate our kitchen in Lagos. We want a modern design with new cabinets, granite countertops, and modern appliances. The space is approximately 15 square meters. We have already purchased some materials and need professional installation.",
-            "category": "Carpentry & Joinery",
+            "title": "Bathroom Plumbing Installation - Modern Nigerian Design",
+            "description": "Looking for an experienced plumber to install new bathroom fixtures in our Lagos home. We need installation of new toilet, sink, shower, and connecting all plumbing. The bathroom is approximately 8 square meters. We have already purchased the fixtures and need professional installation with proper water connections.",
+            "category": "Plumbing",
             "location": "Victoria Island, Lagos State",
             "postcode": "101001",
-            "budget_min": 500000,
-            "budget_max": 800000,
-            "timeline": "Within 6 weeks",
+            "budget_min": 200000,
+            "budget_max": 400000,
+            "timeline": "Within 3 weeks",
             "homeowner_name": homeowner_user.get('name', 'Test Homeowner'),
             "homeowner_email": homeowner_user.get('email', 'test@example.com'),
             "homeowner_phone": homeowner_user.get('phone', '08123456789')
