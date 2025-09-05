@@ -575,7 +575,8 @@ const JobPostingForm = ({ onComplete }) => {
     { number: 1, title: 'Job Details', description: 'What do you need done?' },
     { number: 2, title: 'Location & Timeline', description: 'Where and when?' },
     { number: 3, title: 'Budget', description: 'What\'s your budget?' },
-    { number: 4, title: 'Contact Details', description: 'How can tradespeople reach you?' }
+    { number: 4, title: 'Contact Details', description: 'How can tradespeople reach you?' },
+    { number: 5, title: 'Create Account', description: 'Track your job and leads' }
   ];
 
   return (
