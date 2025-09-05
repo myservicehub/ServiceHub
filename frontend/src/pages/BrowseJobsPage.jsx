@@ -13,7 +13,8 @@ import {
   Search,
   Filter,
   Briefcase,
-  HandHeart
+  HandHeart,
+  Heart
 } from 'lucide-react';
 import { jobsAPI, interestsAPI } from '../api/services';
 import { useAuth } from '../contexts/AuthContext';
