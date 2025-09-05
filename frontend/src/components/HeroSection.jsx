@@ -104,9 +104,10 @@ const HeroSection = () => {
               </div>
               <Button 
                 type="submit" 
-                className="bg-orange-500 hover:bg-orange-600 text-white h-12 px-8 text-lg font-semibold"
+                disabled={isSearching}
+                className="bg-orange-500 hover:bg-orange-600 text-white h-12 px-8 text-lg font-semibold disabled:opacity-50"
               >
-                Find tradespeople
+                {isSearching ? 'Searching...' : 'Find tradespeople'}
               </Button>
             </div>
           </form>
