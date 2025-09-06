@@ -200,7 +200,9 @@ const JobPostingForm = ({ onComplete }) => {
         timeline: formData.timeline,
         homeowner_name: formData.homeowner_name,
         homeowner_email: formData.homeowner_email,
-        homeowner_phone: formData.homeowner_phone
+        homeowner_phone: formData.homeowner_phone,
+        latitude: formData.job_latitude,
+        longitude: formData.job_longitude
       };
 
       const result = await jobsAPI.createJob(jobData);
