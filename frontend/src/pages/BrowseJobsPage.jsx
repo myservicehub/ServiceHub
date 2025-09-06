@@ -338,6 +338,132 @@ const BrowseJobsPage = () => {
               Browse jobs that match your skills and show your interest to homeowners.
             </p>
             
+            {/* Search and Filters */}
+            <div className="mt-6 space-y-4">
+              {/* Search Bar */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1 relative">
+                  <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search jobs by title, description, or location..."
+                    value={filters.search}
+                    onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato"
+                  />
+                </div>
+                
+                <select
+                  value={filters.category}
+                  onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
+                  className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato"
+                >
+                  <option value="">All Categories</option>
+                  <option value="Plumbing">Plumbing</option>
+                  <option value="Electrical">Electrical</option>
+                  <option value="Carpentry">Carpentry</option>
+                  <option value="Painting">Painting</option>
+                  <option value="Tiling">Tiling</option>
+                  <option value="Roofing">Roofing</option>
+                  <option value="HVAC">HVAC</option>
+                  <option value="Landscaping">Landscaping</option>
+                </select>
+              </div>
+
+              {/* Location and View Controls */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                {/* Location Controls */}
+                <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="useLocation"
+                      checked={filters.useLocation}
+                      onChange={(e) => setFilters(prev => ({ ...prev, useLocation: e.target.checked }))}
+                      className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="useLocation" className="text-sm font-medium text-gray-700 font-lato">
+                      Filter by location
+                    </label>
+                  </div>
+
+                  {filters.useLocation && (
+                    <>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm text-gray-600 font-lato">Within</span>
+                        <input
+                          type="range"
+                          min="5"
+                          max="100"
+                          value={filters.maxDistance}
+                          onChange={(e) => setFilters(prev => ({ ...prev, maxDistance: parseInt(e.target.value) }))}
+                          className="w-20"
+                        />
+                        <span className="text-sm font-medium text-gray-700 font-lato w-8">
+                          {filters.maxDistance}km
+                        </span>
+                      </div>
+
+                      <button
+                        onClick={getCurrentLocation}
+                        disabled={locationLoading}
+                        className="flex items-center space-x-1 px-3 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white rounded-lg text-sm font-lato"
+                      >
+                        <Crosshair size={14} />
+                        <span>{locationLoading ? 'Getting...' : 'Use GPS'}</span>
+                      </button>
+
+                      <button
+                        onClick={() => setShowLocationSettings(true)}
+                        className="flex items-center space-x-1 px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-lato"
+                      >
+                        <Settings size={14} />
+                        <span>Settings</span>
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {/* View Toggle */}
+                <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-lato transition-colors ${
+                      viewMode === 'list'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    <List size={16} />
+                    <span>List</span>
+                  </button>
+                  <button
+                    onClick={() => setViewMode('map')}
+                    className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-lato transition-colors ${
+                      viewMode === 'map'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    <Map size={16} />
+                    <span>Map</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Location Status */}
+              {userLocation && filters.useLocation && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <div className="flex items-center space-x-2">
+                    <Navigation size={16} className="text-green-600" />
+                    <span className="text-sm text-green-800 font-lato">
+                      Showing jobs within {filters.maxDistance}km of your location
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Wallet Balance & User Skills */}
             <div className="mt-6 grid md:grid-cols-2 gap-6">
               {/* Wallet Balance */}
