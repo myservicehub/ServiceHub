@@ -253,9 +253,28 @@ const AboutUsPage = () => {
                     </h3>
                   </div>
                   
-                  <p className="text-gray-700 font-lato text-lg leading-relaxed">
-                    To become Nigeria's most trusted digital marketplace for professional services, setting the standard for quality, accountability, and convenience in the service industry.
-                  </p>
+                  <div className="space-y-6">
+                    <p className="text-gray-700 font-lato text-lg leading-relaxed">
+                      To become Nigeria's most trusted digital marketplace for professional services, setting the standard for:
+                    </p>
+                    
+                    <div className="grid grid-cols-1 gap-4">
+                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                        <h4 className="font-semibold text-blue-800 font-montserrat mb-2">Quality</h4>
+                        <p className="text-blue-700 font-lato text-sm">Only verified, skilled professionals on our platform</p>
+                      </div>
+                      
+                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                        <h4 className="font-semibold text-blue-800 font-montserrat mb-2">Accountability</h4>
+                        <p className="text-blue-700 font-lato text-sm">Transparent reviews and reliable dispute resolution</p>
+                      </div>
+                      
+                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                        <h4 className="font-semibold text-blue-800 font-montserrat mb-2">Convenience</h4>
+                        <p className="text-blue-700 font-lato text-sm">Easy booking, secure payments, and 24/7 support</p>
+                      </div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
