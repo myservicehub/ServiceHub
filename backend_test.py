@@ -3240,9 +3240,13 @@ class BackendTester:
         response = self.make_request("GET", "/auth/me", auth_token=tradesperson_token)
         if response.status_code == 200:
             profile = response.json()
-            if (profile.get("latitude") == lagos_lat and 
-                profile.get("longitude") == lagos_lng and
-                profile.get("travel_distance_km") == travel_distance):
+            expected_lat = self.test_data.get('updated_lat')
+            expected_lng = self.test_data.get('updated_lng') 
+            expected_travel = self.test_data.get('updated_travel')
+            
+            if (profile.get("latitude") == expected_lat and 
+                profile.get("longitude") == expected_lng and
+                profile.get("travel_distance_km") == expected_travel):
                 self.log_result("Location Persistence in Profile", True, 
                                "Location correctly stored in user profile")
             else:
@@ -3251,7 +3255,7 @@ class BackendTester:
                 actual_lng = profile.get("longitude") 
                 actual_travel = profile.get("travel_distance_km")
                 self.log_result("Location Persistence in Profile", False, 
-                               f"Expected: lat={lagos_lat}, lng={lagos_lng}, travel={travel_distance}. Got: lat={actual_lat}, lng={actual_lng}, travel={actual_travel}")
+                               f"Expected: lat={expected_lat}, lng={expected_lng}, travel={expected_travel}. Got: lat={actual_lat}, lng={actual_lng}, travel={actual_travel}")
         else:
             self.log_result("Location Persistence in Profile", False, 
                            f"Failed to get profile: {response.status_code}")
