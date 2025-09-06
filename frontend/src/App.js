@@ -12,6 +12,8 @@ import NotificationHistoryPage from "./pages/NotificationHistoryPage";
 import ReviewsPage from "./pages/ReviewsPage";
 import WalletPage from "./pages/WalletPage";
 import AdminDashboard from "./pages/AdminDashboard";
+import ReferralsPage from "./pages/ReferralsPage";
+import VerifyAccountPage from "./pages/VerifyAccountPage";
 import { Toaster } from "./components/ui/toaster";
 import { AuthProvider } from "./contexts/AuthContext";
 
