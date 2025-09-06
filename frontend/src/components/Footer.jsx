@@ -110,6 +110,8 @@ const Footer = () => {
                             navigate('/reviews-policy');
                           } else if (link === 'How it works') {
                             navigate('/how-it-works');
+                          } else if (link === 'Partnerships') {
+                            navigate('/partnerships');
                           }
                         }}
                         className="text-gray-300 hover:text-white transition-colors text-sm font-lato cursor-pointer"
