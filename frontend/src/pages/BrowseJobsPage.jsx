@@ -583,7 +583,7 @@ const BrowseJobsPage = () => {
                   </Card>
                 ) : (
                   <div className="space-y-6">
-                {jobs.map((job) => (
+                    {jobs.map((job) => (
                   <Card key={job.id} className="hover:shadow-lg transition-shadow duration-300">
                     <CardHeader>
                       <div className="flex items-start justify-between">
