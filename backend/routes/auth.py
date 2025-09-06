@@ -431,3 +431,11 @@ async def request_password_reset(request_data: PasswordResetRequest):
     
     # In production, generate secure token and send email
     return {"message": "If an account with this email exists, you will receive a password reset link."}
+
+@router.get("/trade-categories")
+async def get_trade_categories():
+    """Get all available trade categories for the Nigerian market"""
+    return {
+        "categories": NIGERIAN_TRADE_CATEGORIES,
+        "total": len(NIGERIAN_TRADE_CATEGORIES)
+    }
