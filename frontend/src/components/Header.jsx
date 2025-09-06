@@ -181,6 +181,15 @@ const Header = () => {
         {isMenuOpen && (
           <div className="md:hidden border-t bg-white py-4">
             <nav className="flex flex-col space-y-4">
+              <a 
+                onClick={() => {
+                  navigate('/about');
+                  setIsMenuOpen(false);
+                }}
+                className="text-gray-700 font-lato transition-colors hover:text-[#2F8140] cursor-pointer"
+              >
+                About us
+              </a>
               <a href="#" className="text-gray-700 font-lato transition-colors hover:text-[#2F8140]">
                 How it works
               </a>
