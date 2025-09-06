@@ -285,6 +285,16 @@ const ReviewsPage = () => {
                 </div>
               )}
             </div>
+            
+            {/* Reviews Policy Link */}
+            <div className="mt-4">
+              <button
+                onClick={() => navigate('/reviews-policy')}
+                className="text-sm text-blue-600 hover:text-blue-800 font-lato underline"
+              >
+                📋 Read our Reviews & Ratings Policy
+              </button>
+            </div>
           </div>
 
           {/* Review Summary */}
