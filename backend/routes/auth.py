@@ -11,6 +11,7 @@ from auth.security import (
 )
 from auth.dependencies import get_current_user, get_current_active_user
 from database import database
+from models.trade_categories import NIGERIAN_TRADE_CATEGORIES, validate_trade_category
 from datetime import datetime
 from typing import Optional
 import uuid
