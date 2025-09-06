@@ -201,9 +201,43 @@ const AboutUsPage = () => {
                     </h3>
                   </div>
                   
-                  <p className="text-gray-700 font-lato text-lg leading-relaxed">
-                    To empower Nigerians with easy access to trusted and reliable service professionals, while helping skilled workers grow sustainable businesses through technology, transparency, and opportunity.
-                  </p>
+                  <div className="space-y-6">
+                    <p className="text-gray-700 font-lato text-lg leading-relaxed">
+                      To empower Nigerians with easy access to trusted and reliable service professionals, while helping skilled workers grow sustainable businesses through:
+                    </p>
+                    
+                    <div className="space-y-4">
+                      <div className="flex items-start space-x-3">
+                        <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mt-1">
+                          <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-800 font-montserrat">Technology</h4>
+                          <p className="text-gray-600 font-lato">Modern platform connecting users instantly</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start space-x-3">
+                        <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mt-1">
+                          <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-800 font-montserrat">Transparency</h4>
+                          <p className="text-gray-600 font-lato">Clear pricing, honest reviews, verified professionals</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start space-x-3">
+                        <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mt-1">
+                          <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-800 font-montserrat">Opportunity</h4>
+                          <p className="text-gray-600 font-lato">Creating sustainable income for skilled workers</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
 
