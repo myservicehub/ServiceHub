@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException, Depends, status, Query
 from datetime import timedelta
 from models.auth import (
     UserLogin, LoginResponse, HomeownerRegistration, TradespersonRegistration,
