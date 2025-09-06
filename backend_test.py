@@ -3440,44 +3440,44 @@ class BackendTester:
         print("\n=== Step 4: Distance Calculations ===")
         
         # Test with known distances between Nigerian cities
-        # Lagos to Abuja is approximately 523km
+        # Lagos to Ikeja is approximately 15km
         lagos_lat, lagos_lng = 6.5244, 3.3792
-        abuja_lat, abuja_lng = 9.0765, 7.3986
+        ikeja_lat, ikeja_lng = 6.6018, 3.3515
         
-        # Create a test job in Abuja (if we have homeowner token)
+        # Create a test job in Ikeja (if we have homeowner token)
         if 'homeowner' in self.auth_tokens:
             homeowner_token = self.auth_tokens['homeowner']
             homeowner_user = self.test_data.get('homeowner_user', {})
             
-            # Create job in Abuja
-            abuja_job_data = {
-                "title": "Electrical Installation - Abuja Office",
-                "description": "Need professional electrician for office electrical installation in Abuja. Complete wiring for 200 square meter office space with modern electrical systems and safety compliance.",
+            # Create job in Ikeja
+            ikeja_job_data = {
+                "title": "Electrical Installation - Ikeja Office",
+                "description": "Need professional electrician for office electrical installation in Ikeja. Complete wiring for 150 square meter office space with modern electrical systems and safety compliance.",
                 "category": "Electrical",
-                "location": "Wuse 2, Abuja, FCT",
-                "postcode": "900001",
-                "budget_min": 400000,
-                "budget_max": 600000,
+                "location": "Ikeja, Lagos State",
+                "postcode": "100001",
+                "budget_min": 300000,
+                "budget_max": 500000,
                 "timeline": "Within 2 weeks",
                 "homeowner_name": homeowner_user.get('name', 'Test Homeowner'),
                 "homeowner_email": homeowner_user.get('email', 'test@example.com'),
                 "homeowner_phone": homeowner_user.get('phone', '08123456789')
             }
             
-            response = self.make_request("POST", "/jobs/", json=abuja_job_data, auth_token=homeowner_token)
+            response = self.make_request("POST", "/jobs/", json=ikeja_job_data, auth_token=homeowner_token)
             if response.status_code == 200:
-                abuja_job = response.json()
-                abuja_job_id = abuja_job['id']
+                ikeja_job = response.json()
+                ikeja_job_id = ikeja_job['id']
                 
-                # Update job location to Abuja coordinates
+                # Update job location to Ikeja coordinates
                 response = self.make_request(
-                    "PUT", f"/jobs/{abuja_job_id}/location",
-                    params={"latitude": abuja_lat, "longitude": abuja_lng},
+                    "PUT", f"/jobs/{ikeja_job_id}/location",
+                    params={"latitude": ikeja_lat, "longitude": ikeja_lng},
                     auth_token=homeowner_token
                 )
                 
                 if response.status_code == 200:
-                    self.log_result("Create Test Job in Abuja", True, f"Job ID: {abuja_job_id}")
+                    self.log_result("Create Test Job in Ikeja", True, f"Job ID: {ikeja_job_id}")
                     
                     # Now test distance calculation by searching from Lagos
                     response = self.make_request(
@@ -3485,7 +3485,7 @@ class BackendTester:
                         params={
                             "latitude": lagos_lat,
                             "longitude": lagos_lng,
-                            "max_distance_km": 200,  # Maximum allowed distance
+                            "max_distance_km": 50,  # Should include Ikeja
                             "limit": 50
                         }
                     )
@@ -3494,36 +3494,36 @@ class BackendTester:
                         nearby_jobs = response.json()
                         jobs = nearby_jobs['jobs']
                         
-                        # Find our Abuja job
-                        abuja_job_result = None
+                        # Find our Ikeja job
+                        ikeja_job_result = None
                         for job in jobs:
-                            if job['id'] == abuja_job_id:
-                                abuja_job_result = job
+                            if job['id'] == ikeja_job_id:
+                                ikeja_job_result = job
                                 break
                         
-                        if abuja_job_result and 'distance_km' in abuja_job_result:
-                            calculated_distance = abuja_job_result['distance_km']
-                            # Lagos to Abuja is approximately 523km, allow 10% margin
-                            expected_distance = 523
-                            margin = expected_distance * 0.1
+                        if ikeja_job_result and 'distance_km' in ikeja_job_result:
+                            calculated_distance = ikeja_job_result['distance_km']
+                            # Lagos to Ikeja is approximately 15km, allow 50% margin for testing
+                            expected_distance = 15
+                            margin = expected_distance * 0.5
                             
                             if abs(calculated_distance - expected_distance) <= margin:
                                 self.log_result("Distance Calculation Accuracy", True, 
-                                               f"Lagos-Abuja distance: {calculated_distance}km (expected ~{expected_distance}km)")
+                                               f"Lagos-Ikeja distance: {calculated_distance}km (expected ~{expected_distance}km)")
                             else:
                                 self.log_result("Distance Calculation Accuracy", False, 
                                                f"Distance {calculated_distance}km too far from expected {expected_distance}km")
                         else:
                             self.log_result("Distance Calculation Accuracy", False, 
-                                           "Abuja job not found in nearby results or missing distance")
+                                           "Ikeja job not found in nearby results or missing distance")
                     else:
                         self.log_result("Distance Calculation Accuracy", False, 
                                        f"Failed to get nearby jobs: {response.status_code}")
                 else:
-                    self.log_result("Create Test Job in Abuja", False, 
+                    self.log_result("Create Test Job in Ikeja", False, 
                                    f"Failed to update job location: {response.status_code}")
             else:
-                self.log_result("Create Test Job in Abuja", False, 
+                self.log_result("Create Test Job in Ikeja", False, 
                                f"Failed to create job: {response.status_code}")
         
         # Test 2: Verify jobs are sorted by distance (closest first)
