@@ -515,10 +515,35 @@ const BrowseJobsPage = () => {
         </div>
       </section>
 
-      {/* Jobs List */}
+      {/* Jobs Display */}
       <section className="py-8">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold font-montserrat" style={{color: '#121E3C'}}>
+                Available Jobs
+              </h2>
+              {jobs.length > 0 && (
+                <p className="text-gray-600 font-lato">
+                  {jobs.length} job{jobs.length !== 1 ? 's' : ''} found
+                  {viewMode === 'map' && ` • ${viewMode} view`}
+                </p>
+              )}
+            </div>
+
+            {/* Map View */}
+            {viewMode === 'map' && (
+              <div className="mb-6">
+                <JobsMap
+                  jobs={jobs}
+                  selectedJobId={selectedJobId}
+                  onJobSelect={(job) => setSelectedJobId(job.id)}
+                  userLocation={userLocation}
+                  showUserLocation={!!userLocation}
+                  height="500px"
+                />
+              </div>
+            )}
             {loading ? (
               <div className="space-y-6">
                 {Array.from({ length: 3 }).map((_, index) => (
