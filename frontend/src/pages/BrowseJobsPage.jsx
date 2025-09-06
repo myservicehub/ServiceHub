@@ -561,26 +561,26 @@ const BrowseJobsPage = () => {
                   </div>
                 ) : jobs.length === 0 ? (
                   <Card>
-                <CardContent className="text-center py-16">
-                  <Briefcase size={64} className="mx-auto text-gray-400 mb-4" />
-                  <h3 className="text-xl font-semibold font-montserrat text-gray-900 mb-2">
-                    No available jobs right now
-                  </h3>
-                  <p className="text-gray-600 font-lato mb-6">
-                    {user?.trade_categories?.length 
-                      ? "There are no jobs matching your skills at the moment. Check back later!"
-                      : "Complete your profile with your trade categories to see relevant jobs."
-                    }
-                  </p>
-                  <Button 
-                    onClick={() => loadJobsBasedOnFilters()}
-                    className="text-white font-lato"
-                    style={{backgroundColor: '#2F8140'}}
-                  >
-                    Refresh Jobs
-                  </Button>
-                </CardContent>
-              </Card>
+                    <CardContent className="text-center py-16">
+                      <Briefcase size={64} className="mx-auto text-gray-400 mb-4" />
+                      <h3 className="text-xl font-semibold font-montserrat text-gray-900 mb-2">
+                        No available jobs right now
+                      </h3>
+                      <p className="text-gray-600 font-lato mb-6">
+                        {user?.trade_categories?.length 
+                          ? "There are no jobs matching your skills at the moment. Check back later!"
+                          : "Complete your profile with your trade categories to see relevant jobs."
+                        }
+                      </p>
+                      <Button 
+                        onClick={() => loadJobsBasedOnFilters()}
+                        className="text-white font-lato"
+                        style={{backgroundColor: '#2F8140'}}
+                      >
+                        Refresh Jobs
+                      </Button>
+                    </CardContent>
+                  </Card>
             ) : (
               <div className="space-y-6">
                 {jobs.map((job) => (
