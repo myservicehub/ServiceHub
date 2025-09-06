@@ -15,6 +15,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import ReferralsPage from "./pages/ReferralsPage";
 import VerifyAccountPage from "./pages/VerifyAccountPage";
 import AboutUsPage from "./pages/AboutUsPage";
+import ReviewsPolicyPage from "./pages/ReviewsPolicyPage";
 import { Toaster } from "./components/ui/toaster";
 import { AuthProvider } from "./contexts/AuthContext";
 
