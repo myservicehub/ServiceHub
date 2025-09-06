@@ -65,6 +65,160 @@ async def create_job(
         logger.error(f"Error creating job: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
+@router.put("/{job_id}/location")
+async def update_job_location(
+    job_id: str,
+    latitude: float = Query(..., ge=-90, le=90, description="Latitude coordinate"),
+    longitude: float = Query(..., ge=-180, le=180, description="Longitude coordinate"),
+    current_user: User = Depends(get_current_homeowner)
+):
+    """Update job location coordinates"""
+    try:
+        # Verify job ownership
+        job = await database.get_job_by_id(job_id)
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+        
+        if job["homeowner"]["id"] != current_user.id:
+            raise HTTPException(status_code=403, detail="Not authorized to update this job")
+        
+        # Update location
+        success = await database.update_job_location(job_id, latitude, longitude)
+        
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to update job location")
+        
+        return {
+            "message": "Job location updated successfully",
+            "job_id": job_id,
+            "latitude": latitude,
+            "longitude": longitude
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating job location: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to update job location: {str(e)}")
+
+@router.get("/nearby")
+async def get_nearby_jobs(
+    latitude: float = Query(..., ge=-90, le=90, description="User latitude"),
+    longitude: float = Query(..., ge=-180, le=180, description="User longitude"),
+    max_distance_km: int = Query(25, ge=1, le=200, description="Maximum distance in kilometers"),
+    skip: int = Query(0, ge=0, description="Number of items to skip"),
+    limit: int = Query(50, ge=1, le=100, description="Number of items to return")
+):
+    """Get jobs near a specific location"""
+    try:
+        jobs = await database.get_jobs_near_location(
+            latitude=latitude,
+            longitude=longitude,
+            max_distance_km=max_distance_km,
+            skip=skip,
+            limit=limit
+        )
+        
+        return {
+            "jobs": jobs,
+            "total": len(jobs),
+            "location": {
+                "latitude": latitude,
+                "longitude": longitude,
+                "max_distance_km": max_distance_km
+            },
+            "pagination": {
+                "skip": skip,
+                "limit": limit
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting nearby jobs: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get nearby jobs: {str(e)}")
+
+@router.get("/for-tradesperson")
+async def get_jobs_for_tradesperson(
+    skip: int = Query(0, ge=0, description="Number of items to skip"),
+    limit: int = Query(50, ge=1, le=100, description="Number of items to return"),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get jobs filtered by tradesperson's location and travel preferences"""
+    try:
+        # Ensure user is a tradesperson
+        if current_user.role != "tradesperson":
+            raise HTTPException(status_code=403, detail="This endpoint is for tradespeople only")
+        
+        jobs = await database.get_jobs_for_tradesperson(
+            tradesperson_id=current_user.id,
+            skip=skip,
+            limit=limit
+        )
+        
+        return {
+            "jobs": jobs,
+            "total": len(jobs),
+            "user_location": {
+                "latitude": current_user.latitude,
+                "longitude": current_user.longitude,
+                "travel_distance_km": current_user.travel_distance_km
+            } if current_user.latitude and current_user.longitude else None,
+            "pagination": {
+                "skip": skip,
+                "limit": limit
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting jobs for tradesperson: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get jobs for tradesperson: {str(e)}")
+
+@router.get("/search")
+async def search_jobs_with_location(
+    q: Optional[str] = Query(None, description="Search query"),
+    category: Optional[str] = Query(None, description="Job category filter"),
+    latitude: Optional[float] = Query(None, ge=-90, le=90, description="User latitude for location filtering"),
+    longitude: Optional[float] = Query(None, ge=-180, le=180, description="User longitude for location filtering"),
+    max_distance_km: Optional[int] = Query(None, ge=1, le=200, description="Maximum distance in kilometers"),
+    skip: int = Query(0, ge=0, description="Number of items to skip"),
+    limit: int = Query(50, ge=1, le=100, description="Number of items to return")
+):
+    """Search jobs with optional location filtering"""
+    try:
+        jobs = await database.search_jobs_with_location(
+            search_query=q,
+            category=category,
+            user_latitude=latitude,
+            user_longitude=longitude,
+            max_distance_km=max_distance_km,
+            skip=skip,
+            limit=limit
+        )
+        
+        return {
+            "jobs": jobs,
+            "total": len(jobs),
+            "search_params": {
+                "query": q,
+                "category": category,
+                "location_filter": {
+                    "latitude": latitude,
+                    "longitude": longitude,
+                    "max_distance_km": max_distance_km
+                } if latitude and longitude and max_distance_km else None
+            },
+            "pagination": {
+                "skip": skip,
+                "limit": limit
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Error searching jobs with location: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to search jobs: {str(e)}")
+
 @router.get("/", response_model=JobsResponse)
 async def get_jobs(
     page: int = Query(1, ge=1),
