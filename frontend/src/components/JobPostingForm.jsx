@@ -9,6 +9,7 @@ import { ArrowLeft, ArrowRight, MapPin, Calendar, DollarSign, FileText, User, Ph
 import { jobsAPI, authAPI } from '../api/services';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
+import LocationPicker from './maps/LocationPicker';
 
 const JobPostingForm = ({ onComplete }) => {
   const [currentStep, setCurrentStep] = useState(1);
