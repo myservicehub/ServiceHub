@@ -296,50 +296,83 @@ const JobPostingForm = ({ onComplete }) => {
       case 2:
         return (
           <div className="space-y-6">
+            <div className="text-center">
+              <MapPin size={48} className="mx-auto mb-4" style={{color: '#2F8140'}} />
+              <h3 className="text-xl font-semibold font-montserrat mb-2" style={{color: '#121E3C'}}>
+                Location & Timeline
+              </h3>
+              <p className="text-gray-600 font-lato">
+                Where is the job and when do you need it done?
+              </p>
+            </div>
+
             <div>
               <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
-                Location *
+                City/Area *
               </label>
-              <Select value={formData.location} onValueChange={(value) => updateFormData('location', value)}>
-                <SelectTrigger className={`font-lato ${errors.location ? 'border-red-500' : ''}`}>
-                  <SelectValue placeholder="Select your city" />
-                </SelectTrigger>
-                <SelectContent>
-                  {nigerianCities.map((city) => (
-                    <SelectItem key={city} value={city} className="font-lato">
-                      {city}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input
+                placeholder="e.g., Victoria Island, Lagos"
+                value={formData.location}
+                onChange={(e) => updateFormData('location', e.target.value)}
+                className={`font-lato ${errors.location ? 'border-red-500' : ''}`}
+              />
               {errors.location && <p className="text-red-500 text-sm mt-1">{errors.location}</p>}
             </div>
 
             <div>
               <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
-                Postcode *
+                Postcode
               </label>
               <Input
-                placeholder="e.g., 100001"
+                placeholder="Enter postcode (optional)"
                 value={formData.postcode}
                 onChange={(e) => updateFormData('postcode', e.target.value)}
-                className={`font-lato ${errors.postcode ? 'border-red-500' : ''}`}
+                className="font-lato"
               />
-              {errors.postcode && <p className="text-red-500 text-sm mt-1">{errors.postcode}</p>}
+            </div>
+
+            {/* Precise Location Picker */}
+            <div>
+              <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                Exact Job Location *
+              </label>
+              <p className="text-sm text-gray-600 font-lato mb-3">
+                Pin the exact location where the work will be done. This helps tradespeople find you easily.
+              </p>
+              <LocationPicker
+                height="300px"
+                placeholder="Search for the exact job address..."
+                onLocationSelect={(location) => {
+                  updateFormData('job_latitude', location.lat);
+                  updateFormData('job_longitude', location.lng);
+                  updateFormData('job_address', location.address || '');
+                }}
+                initialLocation={
+                  formData.job_latitude && formData.job_longitude
+                    ? { lat: formData.job_latitude, lng: formData.job_longitude }
+                    : null
+                }
+              />
+              {formData.job_address && (
+                <p className="text-sm text-green-600 font-lato mt-2">
+                  ✓ Location set: {formData.job_address}
+                </p>
+              )}
+              {errors.job_location && <p className="text-red-500 text-sm mt-1">{errors.job_location}</p>}
             </div>
 
             <div>
               <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
-                When do you need this done? *
+                Timeline *
               </label>
               <Select value={formData.timeline} onValueChange={(value) => updateFormData('timeline', value)}>
                 <SelectTrigger className={`font-lato ${errors.timeline ? 'border-red-500' : ''}`}>
-                  <SelectValue placeholder="Select timeline" />
+                  <SelectValue placeholder="When do you need this done?" />
                 </SelectTrigger>
                 <SelectContent>
-                  {timelines.map((timeline) => (
-                    <SelectItem key={timeline} value={timeline} className="font-lato">
-                      {timeline}
+                  {timelines.map((option) => (
+                    <SelectItem key={option} value={option} className="font-lato">
+                      {option}
                     </SelectItem>
                   ))}
                 </SelectContent>
