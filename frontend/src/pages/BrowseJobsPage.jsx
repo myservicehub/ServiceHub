@@ -35,6 +35,17 @@ const BrowseJobsPage = () => {
   const [showingInterest, setShowingInterest] = useState(null);
   const [pagination, setPagination] = useState(null);
   const [walletBalance, setWalletBalance] = useState(null);
+  const [viewMode, setViewMode] = useState('list'); // 'list' or 'map'
+  const [selectedJobId, setSelectedJobId] = useState(null);
+  const [userLocation, setUserLocation] = useState(null);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [showLocationSettings, setShowLocationSettings] = useState(false);
+  const [filters, setFilters] = useState({
+    search: '',
+    category: '',
+    useLocation: false,
+    maxDistance: user?.travel_distance_km || 25
+  });
 
   const { user, isAuthenticated, isTradesperson } = useAuth();
   const { toast } = useToast();
