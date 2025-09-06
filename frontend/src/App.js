@@ -35,6 +35,8 @@ function App() {
             <Route path="/reviews/:userId" element={<ReviewsPage />} />
             <Route path="/wallet" element={<WalletPage />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/referrals" element={<ReferralsPage />} />
+            <Route path="/verify-account" element={<VerifyAccountPage />} />
           </Routes>
           <Toaster />
         </BrowserRouter>
