@@ -37,19 +37,36 @@ const SignupForm = ({ onClose, onSwitchToLogin }) => {
     'Onitsha', 'Aba', 'Warri', 'Calabar', 'Akure'
   ];
 
+  // Nigerian Trade Categories - Updated comprehensive list
   const tradeCategories = [
-    'Building & Construction',
-    'Plumbing & Water Works',
-    'Electrical Installation',
-    'Painting & Decorating',
-    'POP & Ceiling Works',
-    'Generator Installation & Repair',
-    'Air Conditioning & Refrigeration',
-    'Solar Installation',
-    'Welding & Fabrication',
-    'Tiling & Marble Works',
-    'Carpentry & Woodwork',
-    'Landscaping & Gardening'
+    "Building",
+    "Concrete Works", 
+    "Tiling",
+    "CCTV & Security Systems",
+    "Door & Window Installation",
+    "Air Conditioning & Refrigeration",
+    "Renovations",
+    "Relocation/Moving",
+    "Painting",
+    "Carpentry",
+    "General Handyman Work",
+    "Bathroom Fitting",
+    "Generator Services",
+    "Home Extensions",
+    "Scaffolding",
+    "Waste Disposal",
+    "Flooring",
+    "Plastering/POP",
+    "Cleaning",
+    "Electrical Repairs",
+    "Solar & Inverter Installation",
+    "Plumbing",
+    "Welding",
+    "Furniture Making",
+    "Interior Design",
+    "Roofing",
+    "Locksmithing",
+    "Recycling"
   ];
 
   const updateFormData = (field, value) => {
