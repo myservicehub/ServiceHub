@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query, Depends, BackgroundTasks
-from typing import Optional, List
+from typing import Optional
 from models import JobCreate, Job, JobsResponse
 from models.auth import User
 from models.notifications import NotificationType
@@ -384,7 +384,7 @@ async def _notify_job_posted_successfully(homeowner: dict, job: dict):
             "job_category": job.get("category", ""),
             "job_budget": f"₦{job.get('budget_min', 0):,} - ₦{job.get('budget_max', 0):,}" if job.get('budget_min') and job.get('budget_max') else "Budget not specified",
             "post_date": "Today",
-            "manage_url": f"https://servicehub.ng/my-jobs"
+            "manage_url": "https://servicehub.ng/my-jobs"
         }
         
         # Send notification
