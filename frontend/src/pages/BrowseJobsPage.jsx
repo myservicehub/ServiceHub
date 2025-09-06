@@ -686,27 +686,27 @@ const BrowseJobsPage = () => {
                         </Button>
                       </div>
                     </CardContent>
-                  </Card>
-                ))}
-
-                {/* Pagination */}
-                {pagination && pagination.pages > 1 && (
-                  <div className="flex justify-center space-x-2 mt-8">
-                    {Array.from({ length: pagination.pages }, (_, i) => i + 1).map(page => (
-                      <Button
-                        key={page}
-                        variant={page === pagination.page ? "default" : "outline"}
-                        onClick={() => loadJobsBasedOnFilters(page)}
-                        className="font-lato"
-                        style={page === pagination.page ? {backgroundColor: '#2F8140', color: 'white'} : {}}
-                      >
-                        {page}
-                      </Button>
+                      </Card>
                     ))}
+
+                    {/* Pagination */}
+                    {pagination && pagination.pages > 1 && (
+                      <div className="flex justify-center space-x-2 mt-8">
+                        {Array.from({ length: pagination.pages }, (_, i) => i + 1).map(page => (
+                          <Button
+                            key={page}
+                            variant={page === pagination.page ? "default" : "outline"}
+                            onClick={() => loadJobsBasedOnFilters(page)}
+                            className="font-lato"
+                            style={page === pagination.page ? {backgroundColor: '#2F8140', color: 'white'} : {}}
+                          >
+                            {page}
+                          </Button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
-              </div>
-            )}
               </>
             )}
           </div>
