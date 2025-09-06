@@ -111,6 +111,14 @@ const SignupForm = ({ onClose, onSwitchToLogin }) => {
       newErrors.phone = 'Phone number is required';
     }
 
+    if (!formData.location.trim()) {
+      newErrors.location = 'State/Location is required';
+    }
+
+    if (!formData.postcode.trim()) {
+      newErrors.postcode = 'Postcode is required';
+    }
+
     // Tradesperson specific validation
     if (activeTab === 'tradesperson') {
       if (formData.trade_categories.length === 0) {
