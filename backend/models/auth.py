@@ -51,6 +51,11 @@ class User(BaseModel):
     verification_submitted: bool = False         # Has user submitted verification documents
     total_referrals: Optional[int] = 0          # Number of successful referrals made
     referral_coins_earned: Optional[int] = 0    # Total coins earned from referrals
+    
+    # Location fields
+    latitude: Optional[float] = None           # Home base latitude for tradespeople
+    longitude: Optional[float] = None          # Home base longitude for tradespeople
+    travel_distance_km: Optional[int] = 25     # Maximum travel distance in kilometers (default 25km)
 
     def dict(self, **kwargs):
         d = super().dict(**kwargs)
