@@ -72,6 +72,11 @@ class Job(BaseModel):
     status: JobStatus = JobStatus.ACTIVE
     quotes_count: int = 0
     interests_count: int = 0  # Add interests count field
+    
+    # Location fields
+    latitude: Optional[float] = None           # Job location latitude
+    longitude: Optional[float] = None          # Job location longitude
+    
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     expires_at: datetime
