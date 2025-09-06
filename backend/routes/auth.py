@@ -136,6 +136,14 @@ async def register_tradesperson(registration_data: TradespersonRegistration):
 
         formatted_phone = format_nigerian_phone(registration_data.phone)
 
+        # Validate trade categories
+        invalid_categories = [cat for cat in registration_data.trade_categories if not validate_trade_category(cat)]
+        if invalid_categories:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid trade categories: {', '.join(invalid_categories)}"
+            )
+
         # Create user data
         user_data = {
             "id": str(uuid.uuid4()),
