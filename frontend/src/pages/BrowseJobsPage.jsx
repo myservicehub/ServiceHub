@@ -112,7 +112,7 @@ const BrowseJobsPage = () => {
         response = await jobsAPI.apiClient.get(url);
       } else {
         // Use regular job fetching for tradespeople
-        response = await jobsAPI.apiClient.get('/jobs/for-tradesperson?limit=50');
+        response = await jobsAPI.apiClient.get(`/jobs/for-tradesperson?limit=50&page=${page}`);
       }
 
       setJobs(response.data.jobs || []);
