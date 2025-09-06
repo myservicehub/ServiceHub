@@ -104,8 +104,8 @@ const JobPostingForm = ({ onComplete }) => {
         break;
         
       case 2:
-        if (!formData.location) newErrors.location = 'Please select your location';
-        if (!formData.postcode.trim()) newErrors.postcode = 'Postcode is required';
+        if (!formData.location.trim()) newErrors.location = 'City/Area is required';
+        if (!formData.job_latitude || !formData.job_longitude) newErrors.job_location = 'Please pin the exact job location on the map';
         if (!formData.timeline) newErrors.timeline = 'Please select a timeline';
         break;
         
