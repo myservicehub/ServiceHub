@@ -715,6 +715,15 @@ const BrowseJobsPage = () => {
       </section>
 
       <Footer />
+      
+      {/* Location Settings Modal */}
+      <LocationSettingsModal
+        isOpen={showLocationSettings}
+        onClose={() => setShowLocationSettings(false)}
+        onSave={updateLocationSettings}
+        currentLocation={userLocation}
+        currentTravelDistance={filters.maxDistance}
+      />
     </div>
   );
 };
