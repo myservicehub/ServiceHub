@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import Logo from './Logo';
 
 const Footer = () => {
+  const navigate = useNavigate();
+  
   const footerSections = [
     {
       title: 'For homeowners',
