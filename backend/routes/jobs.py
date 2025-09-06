@@ -260,7 +260,7 @@ async def get_jobs(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/search", response_model=JobsResponse)
+@router.get("/search-text", response_model=JobsResponse)
 async def search_jobs(
     q: Optional[str] = Query(None, description="Search query"),
     location: Optional[str] = Query(None, description="Location filter"),
