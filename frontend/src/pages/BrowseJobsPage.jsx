@@ -87,7 +87,7 @@ const BrowseJobsPage = () => {
     }
   };
 
-  const loadJobsBasedOnFilters = async () => {
+  const loadJobsBasedOnFilters = async (page = 1) => {
     try {
       setLoading(true);
       let response;
