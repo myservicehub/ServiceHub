@@ -544,7 +544,10 @@ const BrowseJobsPage = () => {
                 />
               </div>
             )}
-            {loading ? (
+            {/* Jobs List View */}
+            {viewMode === 'list' && (
+              <>
+                {loading ? (
               <div className="space-y-6">
                 {Array.from({ length: 3 }).map((_, index) => (
                   <Card key={index} className="animate-pulse">
