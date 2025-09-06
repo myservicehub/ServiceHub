@@ -549,16 +549,16 @@ const BrowseJobsPage = () => {
               <>
                 {loading ? (
                   <div className="space-y-6">
-                {Array.from({ length: 3 }).map((_, index) => (
-                  <Card key={index} className="animate-pulse">
-                    <CardContent className="p-6">
-                      <div className="h-6 bg-gray-200 rounded mb-4"></div>
-                      <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                    {Array.from({ length: 3 }).map((_, index) => (
+                      <Card key={index} className="animate-pulse">
+                        <CardContent className="p-6">
+                          <div className="h-6 bg-gray-200 rounded mb-4"></div>
+                          <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
             ) : jobs.length === 0 ? (
               <Card>
                 <CardContent className="text-center py-16">
