@@ -40,6 +40,7 @@ function App() {
             <Route path="/referrals" element={<ReferralsPage />} />
             <Route path="/verify-account" element={<VerifyAccountPage />} />
             <Route path="/about" element={<AboutUsPage />} />
+            <Route path="/reviews-policy" element={<ReviewsPolicyPage />} />
           </Routes>
           <Toaster />
         </BrowserRouter>
