@@ -38,6 +38,7 @@ function App() {
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/referrals" element={<ReferralsPage />} />
             <Route path="/verify-account" element={<VerifyAccountPage />} />
+            <Route path="/about" element={<AboutUsPage />} />
           </Routes>
           <Toaster />
         </BrowserRouter>
