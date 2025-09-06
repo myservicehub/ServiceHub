@@ -1,80 +1,100 @@
 <analysis>
-The AI engineer successfully built  from a MyBuilder.com clone, implementing pixel-perfect frontend, FastAPI backend, and MongoDB. Key requests included Nigerian market adaptation, rebranding, job posting, and robust user authentication. The work progressed iteratively, first addressing homeowner job and quote management, which involved extensive backend API development, database integration, and frontend component creation (). A significant effort was made to resolve complex backend import errors and frontend mixed content issues. Subsequently, the engineer implemented a comprehensive User Profile Management system, including dedicated profile pages and editing capabilities, and a Tradesperson Portfolio system with file upload and gallery features. The most recent major pivot was from a direct communication (messaging) system to a **lead generation marketplace model**, where tradespeople Show Interest in jobs. The AI engineer is currently in the process of dismantling the previously built messaging system and integrating the new Show Interest functionality into the frontend.
+The trajectory details the iterative development of , a full-stack application for the Nigerian market. Starting from an MVP, the AI engineer incrementally added significant features based on user requirements. Key phases included evolving from a messaging system to a Show Interest lead generation model, implementing a robust Rating & Review system, and establishing a comprehensive coin-based Wallet system with admin controls for funding and access fees. A viral Referral system with identity verification was then integrated, boosting user acquisition and trust. Each phase involved detailed backend and frontend implementation, rigorous testing, and frequent user interaction for clarification. The project maintains a strong focus on secure environment variable management and adherence to API routing rules. The current work is focused on integrating Google Maps for location-based job matching and tradesperson travel preferences, making the application highly tailored and user-centric for its target market.
 </analysis>
 
 <product_requirements>
-The initial product requirement was to create a pixel-perfect, responsive clone of MyBuilder.com. This evolved into a full-stack application, , for the Nigerian market. Explicit user requests included:
-1.  **Full-stack Development**: Transition from mock data to a live FastAPI backend with MongoDB.
-2.  **Nigerian Market Adaptation**: Integrate Nigerian cities, currency (Naira), phone formats, trade categories, and certifications.
-3.  **Rebranding**: Change the application name to serviceHub, implement specific brand colors (Navy Blue: , Service Green: , Light Gray: , Pure White: ), Montserrat Bold/Lato Regular typography, and integrate a custom logo.
-4.  **Job Posting Functionality**: Enable homeowners to post jobs via a multi-step form.
-5.  **User Authentication**: Implement sign-up/login for both homeowners and tradespeople.
-6.  **Quote Management**: Allow tradespeople to submit quotes for jobs, and homeowners to review and manage them. (Initial implementation focused on homeowner view, ).
-7.  **User Profile Management**: Create detailed profile pages for homeowners and tradespeople with editing capabilities.
-8.  **Tradesperson Portfolio**: Allow tradespeople to showcase work with a photo gallery.
-9.  **Lead Generation Marketplace (New)**: A recent pivot where tradespeople Show Interest in jobs, homeowners review interested tradespeople, and tradespeople pay an access fee for contact details, replacing direct messaging.
+The goal is to develop , a pixel-perfect, responsive full-stack application (React, FastAPI, MongoDB) for the Nigerian market. Initially, it included rebranding, user authentication, multi-step job posting for homeowners, and quote/interest management for tradespeople. User profiles and tradesperson portfolios were added. A key pivot established a lead generation marketplace where tradespeople Show Interest in jobs, replacing direct messaging. Further enhancements include a homeowner interest review system, a notification system (email/SMS), and a comprehensive rating and review system. Most recently, a coin-based wallet system was implemented for access fees, allowing tradespeople to fund wallets via bank transfer (Kuda Bank) and administrators to manage fees and verify payments. A referral system rewards users (5 coins for verified sign-up, 15 coins for withdrawal) with custom links and ID/document verification. The current focus is integrating Google Maps for location-based job matching, enabling tradespeople to view nearby jobs and set travel distances. The final aim is production deployment, including Paystack integration (though manual payment was chosen).
 </product_requirements>
 
 <key_technical_concepts>
--   **Full-stack Architecture**: React.js frontend, FastAPI backend, MongoDB database.
--   **UI/UX**: Tailwind CSS for styling, ShadCN UI for components, React Router DOM for navigation.
--   **API Communication**: Axios for HTTP requests, JWT for authentication, bcrypt for hashing passwords.
--   **State Management**: React Context API for global authentication state.
--   **Environment Management**:  files for configuration.
--   **Image Handling**: Pillow for backend image processing in portfolio features.
+- Full-stack: React.js, FastAPI, MongoDB (Motor AsyncIOMotorClient)
+- UI/UX: Tailwind CSS, ShadCN UI, React Router DOM
+- API: Axios, JWT, bcrypt, Pydantic, UUIDs for IDs
+- State Management: React Context API
+- Environment:  files, Kubernetes, Supervisor
+- Image Handling: Pillow
+- External Integrations: Google Maps API, Paystack (initially planned, then moved to manual bank transfer wallet system)
 </key_technical_concepts>
 
 <code_architecture>
 
-
-**Key Files and their importance (recent changes highlighted):**
-
--   : Main FastAPI entry. **Updated to include  and  routers.** Removed  router.
--   : Centralizes core Pydantic models. **Updated with ,  (removed),  models.** Used to resolve circular import issues.
--   : Exports models. **Updated to include new  and  models, and removed  models.**
--   : API endpoints for jobs. **Added  for homeowners to retrieve their posted jobs.**
--   : **Newly created API endpoints for tradesperson portfolio management (CRUD for portfolio items, including file uploads).**
--   : **Newly created API endpoints for handling Show Interest functionality (creating, retrieving, updating interest status), replacing messaging routes.**
--   : Handles MongoDB interactions. **Added methods for ,  management, and  management. Removed messaging-related methods.** Also added .
--   : Python dependencies. ** added for image processing.**
--   : Main React app, defines routing. **Added , ,  routes. Removed  route.**
--   : Centralized API calls. **Added ,  (CRUD for portfolio items),  (CRUD for interests). Removed .**
--   : Navigation bar. **Updated to include My Jobs and Profile links in user menu. Removed Messages link.**
--   : **Newly created page for homeowners to view and manage their posted jobs, updated to use backend endpoint. Messaging integration added, then removed.**
--   : **Newly created page for user profile viewing and editing. Updated to properly handle authentication loading state.**
--   : **Newly created component for image uploads in portfolio.**
--   : **Newly created component for displaying portfolio items.**
--   : **Newly created page for public viewing of tradesperson portfolios.**
--   : Manages authentication state. **Added  for local state updates after profile edits.**
--   : Displays jobs for tradespeople. **Currently being updated to remove Submit Quote and Message Homeowner buttons and integrate Show Interest functionality.**
-
+- : Main FastAPI app.
+    - **Changes**: Integrated new , , , , , and  routers.
+- : Core Pydantic models.
+    - **Changes**: Added/updated  models, , , , , , , , , .  model updated with , .  updated with , , .
+- : Pydantic models for authentication.
+    - **Changes**:  model updated to include , , , .  and  models updated with optional .
+- : Handles MongoDB interactions.
+    - **Changes**: Added methods for , ,  management, and extensive CRUD operations for , ,  tracking, and . Includes new , , , , , , , , , and location-based filtering/distance calculation.
+- : API for Show Interest.
+    - **Changes**:  logic updated to integrate with the new wallet system for access fee deduction.
+- : **NEW.**
+    - **Importance**: API endpoints for managing user wallets, funding, and transactions.
+- : **NEW.**
+    - **Importance**: API endpoints for administrative tasks, including funding request approval/rejection, verification management, and job access fee settings.
+- : **NEW.**
+    - **Importance**: API endpoints for user referral statistics, code generation, document verification uploads, and withdrawal eligibility checks.
+- : Authentication API.
+    - **Changes**: Modified registration processes (, ) to handle  and record referral data. Added endpoints for updating user location and travel distance (, ).
+- : API for jobs.
+    - **Changes**: Job creation updated to include default access fee. Added location-based endpoints like  for filtered job searches.
+- : Frontend environment variables.
+    - **Changes**: Added .
+- : Frontend dependencies.
+    - **Changes**: Added .
+- : Main React app routing.
+    - **Changes**: Added routes for notifications, reviews, , , , and .
+- : Frontend API client.
+    - **Changes**: Updated  to use  correctly.
+- : **NEW.**
+    - **Importance**: Frontend API client for wallet management.
+- : **NEW.**
+    - **Importance**: Frontend API client for referral system interactions.
+- : Global navigation bar.
+    - **Changes**: Integrated , My Reviews, Wallet (for tradespeople), and Referrals links.
+- : Multi-step job posting form.
+    - **Changes**: Modified to a 5-step process, with Step 5 for homeowner account creation, including password fields and account benefits. Integrated  for job coordinates.
+- : **NEW.**
+    - **Importance**: Displays user's current wallet balance.
+- : **NEW.**
+    - **Importance**: Handles the UI for funding a wallet via bank transfer.
+- : **NEW.**
+    - **Importance**: Displays a list of user's wallet transactions.
+- : **NEW.**
+    - **Importance**: Reusable component for selecting a precise geographical location on a map.
+- : **NEW.**
+    - **Importance**: Displays jobs on an interactive Google Map.
+- : **NEW.**
+    - **Importance**: Modal for tradespeople to set their home location and preferred travel distance.
+- : User signup form.
+    - **Changes**: Added optional  field and integrated URL parameter parsing for  codes.
+- : Page for tradespeople to browse jobs.
+    - **Changes**: Updated to display access fees and perform wallet balance checks before showing interest. Currently being updated to include map/list toggle view, location-based filtering, and .
+- : Page for homeowners to manage their jobs.
+    - **Changes**: Added access fee display in job cards.
+- : **NEW.**
+    - **Importance**: Central page for wallet management, funding, and transaction history.
+- : **NEW.**
+    - **Importance**: Admin interface for managing funding requests, job access fees, and user verifications.
+- : **NEW.**
+    - **Importance**: User dashboard for referral statistics, code sharing, and social media integration.
+- : **NEW.**
+    - **Importance**: Page for users to upload identity documents for verification.
 </code_architecture>
 
 <pending_tasks>
--   **Payment Integration**: Implement Nigerian payment systems (Paystack/Flutterwave).
--   **Notifications**: Implement email/SMS notifications for job updates, quotes, etc.
--   **Deployment**: Deploy the application to make it publicly accessible.
--   **Complete Lead Generation Workflow**: Implement homeowner review of interests, sharing contact details, and tradesperson payment access fee.
+- Real Notifications: Upgrade from mock email/SMS to real SendGrid/Twilio services.
+- Advanced Features (Analytics, Search, Admin): Develop analytics dashboard, advanced job search and filtering beyond basic location, and further admin functionalities.
+- Production Deployment: Configure Docker files and deployment scripts for Hostinger, and perform the actual deployment.
 </pending_tasks>
 
 <current_work>
-Immediately before this summary request, the AI engineer was in the middle of a significant pivot from a direct communication (messaging) system to a **lead generation marketplace model**. The user explicitly requested that tradespeople should not directly message homeowners. Instead, tradespeople should Show Interest in a job, and homeowners would then review these expressions of interest, potentially leading to contact sharing and a payment access fee for tradespeople.
-
-The AI engineer has completed the backend and a substantial portion of the frontend work for this pivot:
--   **Backend**:
-    -   Removed all messaging-related models, routes, and database methods.
-    -   Created new , ,  models in .
-    -   Created a new  file in  for managing interests (create, retrieve, update status).
-    -   Added corresponding  database methods to .
-    -   Integrated the new  router into .
--   **Frontend**:
-    -   Removed all messaging-related components (, , , ) and the .
-    -   Removed the  route from  and the Messages navigation link from .
-    -   Removed messaging API methods from  and added new  methods.
-
-The current work focuses on **updating the ** to align with the new lead generation model. This involves removing the old Submit Quote and Message Homeowner buttons and implementing the Show Interest button. The trajectory ends while the agent is still modifying  to remove quote functionality and update action buttons to integrate the  function, with some lint errors noted in the process. The code is in an incomplete state regarding this specific frontend integration.
+Immediately prior to this summary request, the AI engineer was implementing the Google Maps integration (Phase 9E). This involved several backend and frontend updates.
+On the backend, models were updated to include ,  for jobs and , ,  for tradesperson profiles. New database methods for distance calculation and location-based job filtering were added. API endpoints for location-based job search () and updating user/tradesperson location/travel distance (, ) were created.
+On the frontend, the Google Maps API key was added to , and  was installed. New components  and  were created. The  was modified to integrate the  for setting job coordinates. The  is actively being updated to include a map/list toggle view, location-based filtering, and to integrate these new map components. The  component was just created to allow tradespeople to configure their home location and travel distance. The backend services were restarted and verified to be running.
 </current_work>
 
 <optional_next_step>
-Complete the integration of the Show Interest button and functionality in .
+Import and use the  in the  component.
 </optional_next_step>
+
