@@ -137,7 +137,8 @@ const SignupForm = ({ onClose, onSwitchToLogin }) => {
           experience_years: parseInt(formData.experience_years),
           company_name: formData.company_name,
           description: formData.description,
-          certifications: formData.certifications
+          certifications: formData.certifications,
+          referral_code: formData.referral_code || undefined
         });
       }
 
