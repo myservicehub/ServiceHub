@@ -122,7 +122,8 @@ const SignupForm = ({ onClose, onSwitchToLogin }) => {
           password: formData.password,
           phone: formData.phone,
           location: formData.location,
-          postcode: formData.postcode
+          postcode: formData.postcode,
+          referral_code: formData.referral_code || undefined
         });
       } else {
         result = await registerTradesperson({
