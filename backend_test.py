@@ -3122,6 +3122,648 @@ class BackendTester:
         else:
             self.log_result("Nigerian currency context", True, "Nigerian market pricing supported")
 
+    def test_google_maps_integration_comprehensive(self):
+        """
+        PHASE 9E: Google Maps Integration Backend Testing
+        Test location-based job search, user location management, and distance calculations
+        """
+        print("\n" + "="*80)
+        print("🗺️ PHASE 9E: GOOGLE MAPS INTEGRATION BACKEND TESTING")
+        print("="*80)
+        
+        # Step 1: Test User Location Management
+        self._test_user_location_management()
+        
+        # Step 2: Test Job Location Management
+        self._test_job_location_management()
+        
+        # Step 3: Test Location-based Job Search
+        self._test_location_based_job_search()
+        
+        # Step 4: Test Distance Calculations
+        self._test_distance_calculations()
+        
+        # Step 5: Test Job Search with Location Filtering
+        self._test_job_search_with_location_filtering()
+        
+        # Step 6: Test Tradesperson Location-based Job Filtering
+        self._test_tradesperson_location_job_filtering()
+        
+        print("\n" + "="*80)
+        print("🏁 GOOGLE MAPS INTEGRATION TESTING COMPLETE")
+        print("="*80)
+    
+    def _test_user_location_management(self):
+        """Test user location update API endpoints"""
+        print("\n=== Step 1: User Location Management ===")
+        
+        if 'tradesperson' not in self.auth_tokens:
+            self.log_result("User Location Management Tests", False, "No tradesperson authentication token")
+            return
+        
+        tradesperson_token = self.auth_tokens['tradesperson']
+        
+        # Test 1: Update user location with valid coordinates (Lagos, Nigeria)
+        lagos_lat, lagos_lng = 6.5244, 3.3792
+        travel_distance = 30
+        
+        response = self.make_request(
+            "PUT", "/auth/profile/location",
+            params={
+                "latitude": lagos_lat,
+                "longitude": lagos_lng,
+                "travel_distance_km": travel_distance
+            },
+            auth_token=tradesperson_token
+        )
+        
+        if response.status_code == 200:
+            location_response = response.json()
+            if (location_response.get("latitude") == lagos_lat and 
+                location_response.get("longitude") == lagos_lng and
+                location_response.get("travel_distance_km") == travel_distance):
+                self.log_result("Update User Location - Valid Coordinates", True, 
+                               f"Lagos coordinates: {lagos_lat}, {lagos_lng}, Travel: {travel_distance}km")
+            else:
+                self.log_result("Update User Location - Valid Coordinates", False, 
+                               "Response coordinates don't match input")
+        else:
+            self.log_result("Update User Location - Valid Coordinates", False, 
+                           f"Status: {response.status_code}, Response: {response.text}")
+        
+        # Test 2: Update location with invalid latitude (out of range)
+        response = self.make_request(
+            "PUT", "/auth/profile/location",
+            params={"latitude": 95.0, "longitude": 3.3792},  # Invalid latitude > 90
+            auth_token=tradesperson_token
+        )
+        
+        if response.status_code == 422:  # Validation error
+            self.log_result("Invalid Latitude Validation", True, "Correctly rejected latitude > 90")
+        else:
+            self.log_result("Invalid Latitude Validation", False, 
+                           f"Expected 422, got {response.status_code}")
+        
+        # Test 3: Update location with invalid longitude (out of range)
+        response = self.make_request(
+            "PUT", "/auth/profile/location",
+            params={"latitude": 6.5244, "longitude": 185.0},  # Invalid longitude > 180
+            auth_token=tradesperson_token
+        )
+        
+        if response.status_code == 422:  # Validation error
+            self.log_result("Invalid Longitude Validation", True, "Correctly rejected longitude > 180")
+        else:
+            self.log_result("Invalid Longitude Validation", False, 
+                           f"Expected 422, got {response.status_code}")
+        
+        # Test 4: Update location without authentication
+        response = self.make_request(
+            "PUT", "/auth/profile/location",
+            params={"latitude": 6.5244, "longitude": 3.3792}
+        )
+        
+        if response.status_code in [401, 403]:
+            self.log_result("Unauthenticated Location Update Prevention", True, 
+                           "Correctly requires authentication")
+        else:
+            self.log_result("Unauthenticated Location Update Prevention", False, 
+                           f"Expected 401/403, got {response.status_code}")
+        
+        # Test 5: Verify location is stored in user profile
+        response = self.make_request("GET", "/auth/me", auth_token=tradesperson_token)
+        if response.status_code == 200:
+            profile = response.json()
+            if (profile.get("latitude") == lagos_lat and 
+                profile.get("longitude") == lagos_lng and
+                profile.get("travel_distance_km") == travel_distance):
+                self.log_result("Location Persistence in Profile", True, 
+                               "Location correctly stored in user profile")
+            else:
+                self.log_result("Location Persistence in Profile", False, 
+                               "Location not found in user profile")
+        else:
+            self.log_result("Location Persistence in Profile", False, 
+                           f"Failed to get profile: {response.status_code}")
+    
+    def _test_job_location_management(self):
+        """Test job location update functionality"""
+        print("\n=== Step 2: Job Location Management ===")
+        
+        if 'homeowner' not in self.auth_tokens or 'homeowner_job' not in self.test_data:
+            self.log_result("Job Location Management Tests", False, "Missing homeowner token or job")
+            return
+        
+        homeowner_token = self.auth_tokens['homeowner']
+        job_id = self.test_data['homeowner_job']['id']
+        
+        # Test 1: Update job location with valid coordinates (Victoria Island, Lagos)
+        vi_lat, vi_lng = 6.4281, 3.4219
+        
+        response = self.make_request(
+            "PUT", f"/jobs/{job_id}/location",
+            params={"latitude": vi_lat, "longitude": vi_lng},
+            auth_token=homeowner_token
+        )
+        
+        if response.status_code == 200:
+            location_response = response.json()
+            if (location_response.get("latitude") == vi_lat and 
+                location_response.get("longitude") == vi_lng and
+                location_response.get("job_id") == job_id):
+                self.log_result("Update Job Location - Valid Coordinates", True, 
+                               f"Victoria Island coordinates: {vi_lat}, {vi_lng}")
+                # Store updated job coordinates for later tests
+                self.test_data['job_latitude'] = vi_lat
+                self.test_data['job_longitude'] = vi_lng
+            else:
+                self.log_result("Update Job Location - Valid Coordinates", False, 
+                               "Response coordinates don't match input")
+        else:
+            self.log_result("Update Job Location - Valid Coordinates", False, 
+                           f"Status: {response.status_code}, Response: {response.text}")
+        
+        # Test 2: Try to update job location with invalid job ID
+        response = self.make_request(
+            "PUT", "/jobs/invalid-job-id/location",
+            params={"latitude": vi_lat, "longitude": vi_lng},
+            auth_token=homeowner_token
+        )
+        
+        if response.status_code == 404:
+            self.log_result("Invalid Job ID Handling", True, "Correctly returned 404 for invalid job ID")
+        else:
+            self.log_result("Invalid Job ID Handling", False, 
+                           f"Expected 404, got {response.status_code}")
+        
+        # Test 3: Try to update job location as unauthorized user (tradesperson)
+        if 'tradesperson' in self.auth_tokens:
+            response = self.make_request(
+                "PUT", f"/jobs/{job_id}/location",
+                params={"latitude": vi_lat, "longitude": vi_lng},
+                auth_token=self.auth_tokens['tradesperson']
+            )
+            
+            if response.status_code == 403:
+                self.log_result("Unauthorized Job Location Update Prevention", True, 
+                               "Correctly denied tradesperson access")
+            else:
+                self.log_result("Unauthorized Job Location Update Prevention", False, 
+                               f"Expected 403, got {response.status_code}")
+        
+        # Test 4: Verify job location is updated in database
+        response = self.make_request("GET", f"/jobs/{job_id}")
+        if response.status_code == 200:
+            job = response.json()
+            if (job.get("latitude") == vi_lat and job.get("longitude") == vi_lng):
+                self.log_result("Job Location Persistence", True, 
+                               "Job location correctly updated in database")
+            else:
+                self.log_result("Job Location Persistence", False, 
+                               "Job location not updated in database")
+        else:
+            self.log_result("Job Location Persistence", False, 
+                           f"Failed to get job: {response.status_code}")
+    
+    def _test_location_based_job_search(self):
+        """Test nearby jobs API endpoint"""
+        print("\n=== Step 3: Location-based Job Search ===")
+        
+        # Test 1: Get nearby jobs from Lagos center
+        lagos_lat, lagos_lng = 6.5244, 3.3792
+        max_distance = 50  # 50km radius
+        
+        response = self.make_request(
+            "GET", "/jobs/nearby",
+            params={
+                "latitude": lagos_lat,
+                "longitude": lagos_lng,
+                "max_distance_km": max_distance,
+                "skip": 0,
+                "limit": 10
+            }
+        )
+        
+        if response.status_code == 200:
+            nearby_jobs = response.json()
+            required_fields = ['jobs', 'total', 'location', 'pagination']
+            missing_fields = [field for field in required_fields if field not in nearby_jobs]
+            
+            if not missing_fields:
+                jobs = nearby_jobs['jobs']
+                location_info = nearby_jobs['location']
+                
+                # Verify location parameters are returned correctly
+                if (location_info.get('latitude') == lagos_lat and 
+                    location_info.get('longitude') == lagos_lng and
+                    location_info.get('max_distance_km') == max_distance):
+                    
+                    # Check if jobs have distance information
+                    jobs_with_distance = [job for job in jobs if 'distance_km' in job]
+                    
+                    self.log_result("Get Nearby Jobs - Lagos Center", True, 
+                                   f"Found {len(jobs)} jobs, {len(jobs_with_distance)} with distance info")
+                else:
+                    self.log_result("Get Nearby Jobs - Lagos Center", False, 
+                                   "Location parameters not returned correctly")
+            else:
+                self.log_result("Get Nearby Jobs - Lagos Center", False, 
+                               f"Missing fields: {missing_fields}")
+        else:
+            self.log_result("Get Nearby Jobs - Lagos Center", False, 
+                           f"Status: {response.status_code}, Response: {response.text}")
+        
+        # Test 2: Test with very small radius (should return fewer or no jobs)
+        response = self.make_request(
+            "GET", "/jobs/nearby",
+            params={
+                "latitude": lagos_lat,
+                "longitude": lagos_lng,
+                "max_distance_km": 1,  # 1km radius
+                "limit": 10
+            }
+        )
+        
+        if response.status_code == 200:
+            nearby_jobs_small = response.json()
+            jobs_small = nearby_jobs_small['jobs']
+            self.log_result("Get Nearby Jobs - Small Radius", True, 
+                           f"Found {len(jobs_small)} jobs within 1km")
+        else:
+            self.log_result("Get Nearby Jobs - Small Radius", False, 
+                           f"Status: {response.status_code}")
+        
+        # Test 3: Test with invalid coordinates
+        response = self.make_request(
+            "GET", "/jobs/nearby",
+            params={
+                "latitude": 95.0,  # Invalid latitude
+                "longitude": 3.3792,
+                "max_distance_km": 25
+            }
+        )
+        
+        if response.status_code == 422:  # Validation error
+            self.log_result("Invalid Coordinates Validation - Nearby Jobs", True, 
+                           "Correctly rejected invalid latitude")
+        else:
+            self.log_result("Invalid Coordinates Validation - Nearby Jobs", False, 
+                           f"Expected 422, got {response.status_code}")
+        
+        # Test 4: Test pagination
+        response = self.make_request(
+            "GET", "/jobs/nearby",
+            params={
+                "latitude": lagos_lat,
+                "longitude": lagos_lng,
+                "max_distance_km": 50,
+                "skip": 0,
+                "limit": 5
+            }
+        )
+        
+        if response.status_code == 200:
+            paginated_jobs = response.json()
+            pagination = paginated_jobs.get('pagination', {})
+            if pagination.get('limit') == 5:
+                self.log_result("Nearby Jobs Pagination", True, 
+                               f"Pagination working correctly, limit: {pagination.get('limit')}")
+            else:
+                self.log_result("Nearby Jobs Pagination", False, 
+                               "Pagination parameters not working correctly")
+        else:
+            self.log_result("Nearby Jobs Pagination", False, 
+                           f"Status: {response.status_code}")
+    
+    def _test_distance_calculations(self):
+        """Test distance calculation accuracy"""
+        print("\n=== Step 4: Distance Calculations ===")
+        
+        # Test with known distances between Nigerian cities
+        # Lagos to Abuja is approximately 523km
+        lagos_lat, lagos_lng = 6.5244, 3.3792
+        abuja_lat, abuja_lng = 9.0765, 7.3986
+        
+        # Create a test job in Abuja (if we have homeowner token)
+        if 'homeowner' in self.auth_tokens:
+            homeowner_token = self.auth_tokens['homeowner']
+            homeowner_user = self.test_data.get('homeowner_user', {})
+            
+            # Create job in Abuja
+            abuja_job_data = {
+                "title": "Electrical Installation - Abuja Office",
+                "description": "Need professional electrician for office electrical installation in Abuja. Complete wiring for 200 square meter office space with modern electrical systems and safety compliance.",
+                "category": "Electrical",
+                "location": "Wuse 2, Abuja, FCT",
+                "postcode": "900001",
+                "budget_min": 400000,
+                "budget_max": 600000,
+                "timeline": "Within 2 weeks",
+                "homeowner_name": homeowner_user.get('name', 'Test Homeowner'),
+                "homeowner_email": homeowner_user.get('email', 'test@example.com'),
+                "homeowner_phone": homeowner_user.get('phone', '08123456789')
+            }
+            
+            response = self.make_request("POST", "/jobs/", json=abuja_job_data, auth_token=homeowner_token)
+            if response.status_code == 200:
+                abuja_job = response.json()
+                abuja_job_id = abuja_job['id']
+                
+                # Update job location to Abuja coordinates
+                response = self.make_request(
+                    "PUT", f"/jobs/{abuja_job_id}/location",
+                    params={"latitude": abuja_lat, "longitude": abuja_lng},
+                    auth_token=homeowner_token
+                )
+                
+                if response.status_code == 200:
+                    self.log_result("Create Test Job in Abuja", True, f"Job ID: {abuja_job_id}")
+                    
+                    # Now test distance calculation by searching from Lagos
+                    response = self.make_request(
+                        "GET", "/jobs/nearby",
+                        params={
+                            "latitude": lagos_lat,
+                            "longitude": lagos_lng,
+                            "max_distance_km": 600,  # Should include Abuja
+                            "limit": 50
+                        }
+                    )
+                    
+                    if response.status_code == 200:
+                        nearby_jobs = response.json()
+                        jobs = nearby_jobs['jobs']
+                        
+                        # Find our Abuja job
+                        abuja_job_result = None
+                        for job in jobs:
+                            if job['id'] == abuja_job_id:
+                                abuja_job_result = job
+                                break
+                        
+                        if abuja_job_result and 'distance_km' in abuja_job_result:
+                            calculated_distance = abuja_job_result['distance_km']
+                            # Lagos to Abuja is approximately 523km, allow 10% margin
+                            expected_distance = 523
+                            margin = expected_distance * 0.1
+                            
+                            if abs(calculated_distance - expected_distance) <= margin:
+                                self.log_result("Distance Calculation Accuracy", True, 
+                                               f"Lagos-Abuja distance: {calculated_distance}km (expected ~{expected_distance}km)")
+                            else:
+                                self.log_result("Distance Calculation Accuracy", False, 
+                                               f"Distance {calculated_distance}km too far from expected {expected_distance}km")
+                        else:
+                            self.log_result("Distance Calculation Accuracy", False, 
+                                           "Abuja job not found in nearby results or missing distance")
+                    else:
+                        self.log_result("Distance Calculation Accuracy", False, 
+                                       f"Failed to get nearby jobs: {response.status_code}")
+                else:
+                    self.log_result("Create Test Job in Abuja", False, 
+                                   f"Failed to update job location: {response.status_code}")
+            else:
+                self.log_result("Create Test Job in Abuja", False, 
+                               f"Failed to create job: {response.status_code}")
+        
+        # Test 2: Verify jobs are sorted by distance (closest first)
+        response = self.make_request(
+            "GET", "/jobs/nearby",
+            params={
+                "latitude": lagos_lat,
+                "longitude": lagos_lng,
+                "max_distance_km": 100,
+                "limit": 10
+            }
+        )
+        
+        if response.status_code == 200:
+            nearby_jobs = response.json()
+            jobs = nearby_jobs['jobs']
+            
+            if len(jobs) >= 2:
+                # Check if jobs are sorted by distance (ascending)
+                distances = [job.get('distance_km', float('inf')) for job in jobs if 'distance_km' in job]
+                is_sorted = all(distances[i] <= distances[i+1] for i in range(len(distances)-1))
+                
+                if is_sorted:
+                    self.log_result("Jobs Sorted by Distance", True, 
+                                   f"Jobs correctly sorted by distance: {distances[:3]}km")
+                else:
+                    self.log_result("Jobs Sorted by Distance", False, 
+                                   f"Jobs not sorted correctly: {distances[:3]}km")
+            else:
+                self.log_result("Jobs Sorted by Distance", True, 
+                               f"Only {len(jobs)} jobs found, sorting not testable")
+        else:
+            self.log_result("Jobs Sorted by Distance", False, 
+                           f"Status: {response.status_code}")
+    
+    def _test_job_search_with_location_filtering(self):
+        """Test job search API with location filtering"""
+        print("\n=== Step 5: Job Search with Location Filtering ===")
+        
+        lagos_lat, lagos_lng = 6.5244, 3.3792
+        
+        # Test 1: Search jobs with location filter and category
+        response = self.make_request(
+            "GET", "/jobs/search",
+            params={
+                "category": "Plumbing",
+                "latitude": lagos_lat,
+                "longitude": lagos_lng,
+                "max_distance_km": 50,
+                "limit": 10
+            }
+        )
+        
+        if response.status_code == 200:
+            search_results = response.json()
+            required_fields = ['jobs', 'total', 'search_params', 'pagination']
+            missing_fields = [field for field in required_fields if field not in search_results]
+            
+            if not missing_fields:
+                jobs = search_results['jobs']
+                search_params = search_results['search_params']
+                
+                # Verify search parameters are returned
+                location_filter = search_params.get('location_filter', {})
+                if (location_filter.get('latitude') == lagos_lat and 
+                    location_filter.get('longitude') == lagos_lng and
+                    location_filter.get('max_distance_km') == 50):
+                    
+                    # Verify all jobs are in the specified category
+                    plumbing_jobs = [job for job in jobs if job.get('category') == 'Plumbing']
+                    
+                    if len(plumbing_jobs) == len(jobs):
+                        self.log_result("Job Search with Location + Category Filter", True, 
+                                       f"Found {len(jobs)} plumbing jobs within 50km of Lagos")
+                    else:
+                        self.log_result("Job Search with Location + Category Filter", False, 
+                                       f"Category filter not working: {len(plumbing_jobs)}/{len(jobs)} plumbing jobs")
+                else:
+                    self.log_result("Job Search with Location + Category Filter", False, 
+                                   "Search parameters not returned correctly")
+            else:
+                self.log_result("Job Search with Location + Category Filter", False, 
+                               f"Missing fields: {missing_fields}")
+        else:
+            self.log_result("Job Search with Location + Category Filter", False, 
+                           f"Status: {response.status_code}, Response: {response.text}")
+        
+        # Test 2: Search with text query and location
+        response = self.make_request(
+            "GET", "/jobs/search",
+            params={
+                "q": "bathroom",
+                "latitude": lagos_lat,
+                "longitude": lagos_lng,
+                "max_distance_km": 30,
+                "limit": 10
+            }
+        )
+        
+        if response.status_code == 200:
+            search_results = response.json()
+            jobs = search_results['jobs']
+            search_params = search_results['search_params']
+            
+            if search_params.get('query') == 'bathroom':
+                # Verify jobs contain the search term
+                matching_jobs = [job for job in jobs if 
+                               'bathroom' in job.get('title', '').lower() or 
+                               'bathroom' in job.get('description', '').lower()]
+                
+                if len(matching_jobs) == len(jobs) or len(jobs) == 0:
+                    self.log_result("Job Search with Text Query + Location", True, 
+                                   f"Found {len(jobs)} bathroom-related jobs")
+                else:
+                    self.log_result("Job Search with Text Query + Location", False, 
+                                   f"Text search not working: {len(matching_jobs)}/{len(jobs)} matching jobs")
+            else:
+                self.log_result("Job Search with Text Query + Location", False, 
+                               "Search query not returned correctly")
+        else:
+            self.log_result("Job Search with Text Query + Location", False, 
+                           f"Status: {response.status_code}")
+        
+        # Test 3: Search without location filter (should work normally)
+        response = self.make_request(
+            "GET", "/jobs/search",
+            params={
+                "category": "Plumbing",
+                "limit": 10
+            }
+        )
+        
+        if response.status_code == 200:
+            search_results = response.json()
+            search_params = search_results['search_params']
+            
+            if search_params.get('location_filter') is None:
+                self.log_result("Job Search without Location Filter", True, 
+                               "Search works correctly without location filtering")
+            else:
+                self.log_result("Job Search without Location Filter", False, 
+                               "Location filter should be None when not provided")
+        else:
+            self.log_result("Job Search without Location Filter", False, 
+                           f"Status: {response.status_code}")
+    
+    def _test_tradesperson_location_job_filtering(self):
+        """Test tradesperson-specific location-based job filtering"""
+        print("\n=== Step 6: Tradesperson Location-based Job Filtering ===")
+        
+        if 'tradesperson' not in self.auth_tokens:
+            self.log_result("Tradesperson Location Job Filtering Tests", False, "No tradesperson token")
+            return
+        
+        tradesperson_token = self.auth_tokens['tradesperson']
+        
+        # Test 1: Get jobs for tradesperson (should use their location and travel distance)
+        response = self.make_request(
+            "GET", "/jobs/for-tradesperson",
+            params={"limit": 10},
+            auth_token=tradesperson_token
+        )
+        
+        if response.status_code == 200:
+            jobs_response = response.json()
+            required_fields = ['jobs', 'total', 'user_location', 'pagination']
+            missing_fields = [field for field in required_fields if field not in jobs_response]
+            
+            if not missing_fields:
+                jobs = jobs_response['jobs']
+                user_location = jobs_response['user_location']
+                
+                # Verify user location is returned (if set)
+                if user_location:
+                    if ('latitude' in user_location and 'longitude' in user_location and 
+                        'travel_distance_km' in user_location):
+                        
+                        # Check if jobs have distance information
+                        jobs_with_distance = [job for job in jobs if 'distance_km' in job]
+                        
+                        self.log_result("Get Jobs for Tradesperson with Location", True, 
+                                       f"Found {len(jobs)} jobs, {len(jobs_with_distance)} with distance info")
+                    else:
+                        self.log_result("Get Jobs for Tradesperson with Location", False, 
+                                       "User location missing required fields")
+                else:
+                    self.log_result("Get Jobs for Tradesperson with Location", True, 
+                                   f"Found {len(jobs)} jobs (no location set)")
+            else:
+                self.log_result("Get Jobs for Tradesperson with Location", False, 
+                               f"Missing fields: {missing_fields}")
+        else:
+            self.log_result("Get Jobs for Tradesperson with Location", False, 
+                           f"Status: {response.status_code}, Response: {response.text}")
+        
+        # Test 2: Test unauthorized access (homeowner trying to access tradesperson endpoint)
+        if 'homeowner' in self.auth_tokens:
+            response = self.make_request(
+                "GET", "/jobs/for-tradesperson",
+                auth_token=self.auth_tokens['homeowner']
+            )
+            
+            if response.status_code == 403:
+                self.log_result("Unauthorized Tradesperson Endpoint Access", True, 
+                               "Correctly denied homeowner access")
+            else:
+                self.log_result("Unauthorized Tradesperson Endpoint Access", False, 
+                               f"Expected 403, got {response.status_code}")
+        
+        # Test 3: Test unauthenticated access
+        response = self.make_request("GET", "/jobs/for-tradesperson")
+        
+        if response.status_code in [401, 403]:
+            self.log_result("Unauthenticated Tradesperson Endpoint Access", True, 
+                           "Correctly requires authentication")
+        else:
+            self.log_result("Unauthenticated Tradesperson Endpoint Access", False, 
+                           f"Expected 401/403, got {response.status_code}")
+        
+        # Test 4: Test pagination for tradesperson jobs
+        response = self.make_request(
+            "GET", "/jobs/for-tradesperson",
+            params={"skip": 0, "limit": 5},
+            auth_token=tradesperson_token
+        )
+        
+        if response.status_code == 200:
+            jobs_response = response.json()
+            pagination = jobs_response.get('pagination', {})
+            
+            if pagination.get('limit') == 5:
+                self.log_result("Tradesperson Jobs Pagination", True, 
+                               f"Pagination working correctly, limit: {pagination.get('limit')}")
+            else:
+                self.log_result("Tradesperson Jobs Pagination", False, 
+                               "Pagination parameters not working correctly")
+        else:
+            self.log_result("Tradesperson Jobs Pagination", False, 
+                           f"Status: {response.status_code}")
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting Comprehensive Backend API Tests for ServiceHub")
@@ -3142,6 +3784,9 @@ class BackendTester:
         
         # NEW: Phase 8 - Rating & Review System
         self.test_rating_review_system()
+        
+        # NEW: Phase 9E - Google Maps Integration
+        self.test_google_maps_integration_comprehensive()
         
         # Print final results
         print("\n" + "=" * 80)
@@ -3166,6 +3811,7 @@ class BackendTester:
         print("   • Interest System: Lead generation marketplace, contact sharing, payment workflow")
         print("   • Notification System: Mock email/SMS services, preferences, history, workflow integration")
         print("   • Rating & Review System: 5-star ratings, category ratings, mutual reviews, platform stats")
+        print("   • Google Maps Integration: Location-based job search, distance calculations, user location management")
         
         return self.results['failed'] == 0
 
