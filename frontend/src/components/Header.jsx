@@ -53,12 +53,6 @@ const Header = () => {
             <a href="#" className="text-gray-700 font-lato transition-colors hover:text-[#2F8140]">
               Join as tradesperson
             </a>
-            <a 
-              onClick={() => navigate('/trade-categories')}
-              className="text-gray-700 font-lato transition-colors hover:text-[#2F8140] cursor-pointer"
-            >
-              Trade Categories
-            </a>
             <a href="#" className="text-gray-700 font-lato transition-colors hover:text-[#2F8140]">
               Help
             </a>
