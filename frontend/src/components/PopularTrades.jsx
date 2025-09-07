@@ -115,12 +115,90 @@ const PopularTrades = () => {
       <div className="container mx-auto px-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-              Popular trades
+            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4 font-montserrat" style={{color: '#121E3C'}}>
+              Popular Trades
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-gray-600 font-lato mb-8">
               Browse our most popular trade categories and find the right specialist for your project.
             </p>
+            
+            {/* Trade Categories Dropdown */}
+            <div className="max-w-md mx-auto mb-8">
+              <div className="relative">
+                <button
+                  onClick={() => setShowDropdown(!showDropdown)}
+                  className="w-full bg-white border-2 border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between hover:border-green-500 focus:border-green-500 focus:outline-none transition-colors"
+                >
+                  <span className="text-gray-700 font-lato">
+                    {selectedCategory || 'Browse all trade categories (28)'}
+                  </span>
+                  <ChevronDown 
+                    size={20} 
+                    className={`text-gray-500 transition-transform ${showDropdown ? 'rotate-180' : ''}`} 
+                  />
+                </button>
+                
+                {/* Dropdown Menu */}
+                {showDropdown && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-80 overflow-hidden">
+                    {/* Search Input */}
+                    <div className="p-3 border-b border-gray-100">
+                      <div className="relative">
+                        <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                        <input
+                          type="text"
+                          placeholder="Search trade categories..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato text-sm"
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* Categories List */}
+                    <div className="max-h-60 overflow-y-auto">
+                      {filteredCategories.length > 0 ? (
+                        filteredCategories.map((category, index) => (
+                          <button
+                            key={index}
+                            onClick={() => handleCategorySelect(category)}
+                            className="w-full text-left px-4 py-3 hover:bg-green-50 hover:text-green-700 transition-colors font-lato text-sm border-b border-gray-50 last:border-b-0"
+                          >
+                            {category}
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-4 py-3 text-gray-500 text-sm font-lato">
+                          No categories found matching "{searchTerm}"
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Show All Categories Footer */}
+                    <div className="p-3 border-t border-gray-100 bg-gray-50">
+                      <p className="text-xs text-gray-600 font-lato text-center">
+                        {NIGERIAN_TRADE_CATEGORIES.length} total service categories available
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Selected Category Display */}
+              {selectedCategory && (
+                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-green-800 font-lato text-sm">
+                    <span className="font-semibold">Selected:</span> {selectedCategory}
+                  </p>
+                  <button
+                    onClick={() => setSelectedCategory('')}
+                    className="mt-2 text-xs text-green-600 hover:text-green-700 font-lato underline"
+                  >
+                    Clear selection
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
