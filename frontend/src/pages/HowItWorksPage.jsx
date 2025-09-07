@@ -161,9 +161,9 @@ const HowItWorksPage = () => {
       description: "All tradespeople undergo identity verification and skill assessment"
     },
     {
-      icon: Coins,
-      title: "Coin-Based System",
-      description: "Fair access fee system ensures serious inquiries and quality connections"
+      icon: CheckCircle,
+      title: "Quality Connections",
+      description: "Professional matching system ensures serious inquiries and quality connections"
     },
     {
       icon: MapPin,
