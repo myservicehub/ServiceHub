@@ -46,6 +46,7 @@ function App() {
             <Route path="/reviews-policy" element={<ReviewsPolicyPage />} />
             <Route path="/how-it-works" element={<HowItWorksPage />} />
             <Route path="/partnerships" element={<PartnershipPage />} />
+            <Route path="/trade-categories" element={<TradeCategoriesPage />} />
           </Routes>
           <Toaster />
         </BrowserRouter>
