@@ -3,7 +3,7 @@ import { Dialog, DialogContent } from '../ui/dialog';
 import LoginForm from './LoginForm';
 import SignupForm from './SignupForm';
 
-const AuthModal = ({ isOpen, onClose, defaultMode = 'login', defaultTab = 'homeowner' }) => {
+const AuthModal = ({ isOpen, onClose, defaultMode = 'login', defaultTab = 'homeowner', showOnlyTradesperson = false }) => {
   const [mode, setMode] = useState(defaultMode);
 
   const handleClose = () => {
