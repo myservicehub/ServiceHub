@@ -22,8 +22,28 @@ async def create_job(
 ):
     """Create a new job posting"""
     try:
+        from models.nigerian_lgas import validate_lga_for_state, validate_zip_code
+        
         # Convert to dict and prepare for database
         job_dict = job_data.dict()
+        
+        # Validate LGA belongs to the specified state
+        if not validate_lga_for_state(job_data.state, job_data.lga):
+            raise HTTPException(
+                status_code=400, 
+                detail=f"LGA '{job_data.lga}' does not belong to state '{job_data.state}'"
+            )
+        
+        # Validate zip code format
+        if not validate_zip_code(job_data.zip_code, job_data.state, job_data.lga):
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid zip code format. Nigerian zip codes must be 6 digits."
+            )
+        
+        # Auto-populate legacy fields for compatibility
+        job_dict['location'] = job_data.state  # Use state as location
+        job_dict['postcode'] = job_data.zip_code  # Use zip_code as postcode
         
         # Create homeowner object using current user data
         job_dict['homeowner'] = {
