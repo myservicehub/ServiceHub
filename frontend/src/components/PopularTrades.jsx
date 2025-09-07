@@ -208,14 +208,14 @@ const PopularTrades = () => {
                   <div className={`w-16 h-16 rounded-lg bg-gradient-to-r ${trade.color} flex items-center justify-center mb-4 text-2xl`}>
                     {trade.icon}
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3 group-hover:text-green-600 transition-colors">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3 group-hover:text-green-600 transition-colors font-montserrat">
                     {trade.title}
                   </h3>
-                  <p className="text-gray-600 mb-4 line-clamp-3">
+                  <p className="text-gray-600 mb-4 line-clamp-3 font-lato">
                     {trade.description}
                   </p>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-gray-500 font-lato">
                       {loading ? (
                         <div className="animate-pulse bg-gray-200 h-4 w-24 rounded"></div>
                       ) : (
@@ -224,7 +224,7 @@ const PopularTrades = () => {
                           : trade.tradesperson_count} tradespeople in Nigeria`
                       )}
                     </span>
-                    <Button variant="ghost" size="sm" className="text-green-600 hover:text-green-700 p-0">
+                    <Button variant="ghost" size="sm" className="text-green-600 hover:text-green-700 p-0 font-lato">
                       View all <ArrowRight size={16} className="ml-1" />
                     </Button>
                   </div>
