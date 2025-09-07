@@ -74,12 +74,12 @@ class Job(BaseModel):
     description: str
     category: str
     
-    # Enhanced location fields
-    state: str  # Nigerian state
-    lga: str    # Local Government Area  
-    town: str   # Town/area name
-    zip_code: str  # Nigerian 6-digit postal code
-    home_address: str  # Full home address
+    # Enhanced location fields (optional for backward compatibility)
+    state: Optional[str] = None  # Nigerian state
+    lga: Optional[str] = None    # Local Government Area  
+    town: Optional[str] = None   # Town/area name
+    zip_code: Optional[str] = None  # Nigerian 6-digit postal code
+    home_address: Optional[str] = None  # Full home address
     
     # Legacy fields (keep for compatibility)
     location: str  # Auto-populated from state
