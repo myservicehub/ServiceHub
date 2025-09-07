@@ -4,11 +4,10 @@ import { ArrowRight, TrendingUp, Clock, Shield } from 'lucide-react';
 import AuthModal from './auth/AuthModal';
 
 const TradespeopleCTA = () => {
-  const { showAuthModal } = useAuth();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   const handleJoinClick = () => {
-    // Show the authentication modal with tradesperson registration tab active
-    showAuthModal('register', 'tradesperson');
+    setAuthModalOpen(true);
   };
   const benefits = [
     {
