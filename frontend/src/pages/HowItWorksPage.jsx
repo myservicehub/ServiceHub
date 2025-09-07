@@ -118,13 +118,13 @@ const HowItWorksPage = () => {
     },
     {
       step: 3,
-      icon: Coins,
-      title: "Show Interest (Small Fee)",
-      description: "Pay a small access fee (typically 15 coins/₦1,500) to show serious interest in jobs.",
+      icon: Heart,
+      title: "Show Interest",
+      description: "Express serious interest in jobs that match your skills.",
       details: [
-        "Fund your wallet via bank transfer",
-        "Pay only for jobs you're serious about",
-        "Access fee filters out non-serious inquiries",
+        "Apply for jobs that match your expertise",
+        "Show commitment to quality work",
+        "Professional application process",
         "Increases your chances of being selected"
       ]
     },
