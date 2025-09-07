@@ -449,7 +449,7 @@ const SignupForm = ({ onClose, onSwitchToLogin, defaultTab = 'homeowner', showOn
               className="w-full text-white font-lato py-3 disabled:opacity-50"
               style={{backgroundColor: '#2F8140'}}
             >
-              {isLoading ? 'Creating Account...' : `Create ${activeTab === 'homeowner' ? 'Homeowner' : 'Tradesperson'} Account`}
+              {isLoading ? 'Creating Account...' : `Create ${showOnlyTradesperson ? 'Tradesperson' : (activeTab === 'homeowner' ? 'Homeowner' : 'Tradesperson')} Account`}
             </Button>
 
             {/* Switch to Login */}
