@@ -248,6 +248,76 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
     setCurrentStep(5);
   };
 
+  const continueToLogin = () => {
+    setShowAccountModal(false);
+    setShowLoginModal(true);
+  };
+
+  const handleJobSubmissionForAuthenticatedUser = async () => {
+    if (!isAuthenticated() || !currentUser) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to post a job.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      // Create the job using authenticated user's data
+      const jobData = {
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        state: formData.state,
+        lga: formData.lga,
+        town: formData.town,
+        zip_code: formData.zip_code,
+        home_address: formData.home_address,
+        budget_min: formData.budgetType === 'range' ? parseInt(formData.budget_min) : null,
+        budget_max: formData.budgetType === 'range' ? parseInt(formData.budget_max) : null,
+        timeline: formData.timeline,
+        homeowner_name: currentUser.name,
+        homeowner_email: currentUser.email,
+        homeowner_phone: currentUser.phone
+      };
+
+      // Add coordinates if location was selected
+      if (formData.jobLocation) {
+        jobData.latitude = formData.jobLocation.lat;
+        jobData.longitude = formData.jobLocation.lng;
+      }
+
+      const jobResponse = await jobsAPI.createJob(jobData);
+
+      toast({
+        title: "Success!",
+        description: "Your job has been posted successfully! Tradespeople will start showing interest soon.",
+      });
+
+      if (onJobPosted) {
+        onJobPosted(jobResponse);
+      }
+
+      // Redirect to homepage instead of success page
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 2000);
+
+    } catch (error) {
+      console.error('Job posting failed:', error);
+      toast({
+        title: "Error",
+        description: error.response?.data?.detail || "Failed to post job. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateStep(5)) return;
