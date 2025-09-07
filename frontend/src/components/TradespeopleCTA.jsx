@@ -59,7 +59,10 @@ const TradespeopleCTA = () => {
                 })}
               </div>
 
-              <Button className="bg-white text-[#121E3C] hover:bg-gray-100 px-8 py-3 text-lg font-semibold font-lato">
+              <Button 
+                className="bg-white text-[#121E3C] hover:bg-gray-100 px-8 py-3 text-lg font-semibold font-lato"
+                onClick={handleJoinClick}
+              >
                 Tradespeople join for free
                 <ArrowRight size={20} className="ml-2" />
               </Button>
