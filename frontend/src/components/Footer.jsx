@@ -13,6 +13,7 @@ const Footer = () => {
       links: [
         'Post a job',
         'Find tradespeople',
+        'Trade Categories',
         'How it works',
         'Cost guides',
         'Reviews',
