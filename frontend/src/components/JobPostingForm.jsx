@@ -1089,6 +1089,112 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
     )
   );
 
+  // Login Modal for returning users
+  const LoginModal = () => {
+    const [loginData, setLoginData] = useState({ email: '', password: '' });
+    const [loginErrors, setLoginErrors] = useState({});
+    const [loggingIn, setLoggingIn] = useState(false);
+
+    const handleLogin = async (e) => {
+      e.preventDefault();
+      setLoggingIn(true);
+      
+      try {
+        const response = await authAPI.login(loginData.email, loginData.password);
+        if (response.access_token) {
+          loginWithToken(response.access_token, response.user);
+          setShowLoginModal(false);
+          
+          toast({
+            title: "Welcome back!",
+            description: "You're now logged in. Let's post your job!",
+          });
+          
+          // Automatically submit the job after login
+          setTimeout(() => {
+            handleJobSubmissionForAuthenticatedUser();
+          }, 1000);
+        }
+      } catch (error) {
+        console.error('Login failed:', error);
+        setLoginErrors({ 
+          general: error.response?.data?.detail || "Login failed. Please check your credentials." 
+        });
+      } finally {
+        setLoggingIn(false);
+      }
+    };
+
+    return showLoginModal && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg max-w-md w-full p-6">
+          <div className="text-center mb-6">
+            <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+              <User size={32} style={{color: '#121E3C'}} />
+            </div>
+            <h3 className="text-xl font-bold font-montserrat mb-2" style={{color: '#121E3C'}}>
+              Welcome back!
+            </h3>
+            <p className="text-gray-600 font-lato text-sm">
+              Sign in to your account to post your job and track interested tradespeople.
+            </p>
+          </div>
+          
+          <form onSubmit={handleLogin} className="space-y-4">
+            {loginErrors.general && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-red-600 text-sm">{loginErrors.general}</p>
+              </div>
+            )}
+            
+            <div>
+              <label className="block text-sm font-medium font-lato mb-2">Email</label>
+              <input
+                type="email"
+                placeholder="your.email@example.com"
+                value={loginData.email}
+                onChange={(e) => setLoginData(prev => ({ ...prev, email: e.target.value }))}
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-lato"
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium font-lato mb-2">Password</label>
+              <input
+                type="password"
+                placeholder="Enter your password"
+                value={loginData.password}
+                onChange={(e) => setLoginData(prev => ({ ...prev, password: e.target.value }))}
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-lato"
+                required
+              />
+            </div>
+            
+            <div className="flex space-x-3 pt-4">
+              <Button
+                type="button"
+                onClick={() => setShowLoginModal(false)}
+                variant="outline"
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={loggingIn}
+                className="flex-1 text-white"
+                style={{backgroundColor: '#121E3C'}}
+              >
+                {loggingIn ? 'Signing In...' : 'Sign In & Post Job'}
+              </Button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <>
       <div className="max-w-2xl mx-auto p-6">
