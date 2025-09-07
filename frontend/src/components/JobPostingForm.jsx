@@ -319,7 +319,15 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
+    
+    // If user is authenticated, use the authenticated flow
+    if (isAuthenticated()) {
+      await handleJobSubmissionForAuthenticatedUser();
+      return;
+    }
+    
+    // For non-authenticated users, validate step 5 (account creation)
     if (!validateStep(5)) return;
 
     setSubmitting(true);
@@ -372,15 +380,17 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
 
       toast({
         title: "Success!",
-        description: "Your account has been created and job posted successfully!",
+        description: "Your account has been created and job posted successfully! Welcome to ServiceHub!",
       });
 
       if (onJobPosted) {
         onJobPosted(jobResponse);
       }
 
-      // Redirect to a success page or close modal
-      window.location.href = '/post-job/success';
+      // Redirect to homepage instead of success page
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 2000);
 
     } catch (error) {
       console.error('Job posting failed:', error);
