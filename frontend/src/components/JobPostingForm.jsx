@@ -101,6 +101,8 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
   });
   
   const [errors, setErrors] = useState({});
+  const [availableLGAs, setAvailableLGAs] = useState([]);
+  const [loadingLGAs, setLoadingLGAs] = useState(false);
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
