@@ -73,8 +73,18 @@ class Job(BaseModel):
     title: str
     description: str
     category: str
-    location: str
-    postcode: str
+    
+    # Enhanced location fields
+    state: str  # Nigerian state
+    lga: str    # Local Government Area  
+    town: str   # Town/area name
+    zip_code: str  # Nigerian 6-digit postal code
+    home_address: str  # Full home address
+    
+    # Legacy fields (keep for compatibility)
+    location: str  # Auto-populated from state
+    postcode: str  # Auto-populated from zip_code
+    
     budget_min: Optional[int] = None
     budget_max: Optional[int] = None
     timeline: str
