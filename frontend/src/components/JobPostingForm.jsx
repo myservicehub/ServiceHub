@@ -1236,10 +1236,17 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
                   <Button
                     type="button"
                     onClick={nextStep}
+                    disabled={submitting}
                     className="flex items-center text-white font-lato"
                     style={{backgroundColor: '#2F8140'}}
                   >
-                    {currentStep === 4 ? 'Create Account & Post Job' : 'Continue'}
+                    {currentStep === 4 && isAuthenticated() ? (
+                      submitting ? 'Posting Job...' : 'Post Job'
+                    ) : currentStep === 4 ? (
+                      'Continue'
+                    ) : (
+                      'Continue'
+                    )}
                     <ArrowRight size={16} className="ml-2" />
                   </Button>
                 ) : (
