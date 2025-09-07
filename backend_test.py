@@ -912,6 +912,37 @@ class BackendTester:
         print("🏁 REFERRAL SYSTEM TESTING COMPLETE")
         print("="*80)
 
+    def test_enhanced_job_posting_backend(self):
+        """
+        PHASE 10: Enhanced Job Posting Form Backend Testing
+        Test the enhanced job posting functionality with new location fields
+        """
+        print("\n" + "="*80)
+        print("🎯 PHASE 10: ENHANCED JOB POSTING FORM BACKEND TESTING")
+        print("="*80)
+        
+        # Step 1: Test LGA API endpoints
+        self._test_lga_api_endpoints()
+        
+        # Step 2: Test enhanced job creation with authentication
+        self._test_enhanced_job_creation_authenticated()
+        
+        # Step 3: Test enhanced job creation without authentication
+        self._test_enhanced_job_creation_non_authenticated()
+        
+        # Step 4: Test location field validation
+        self._test_location_field_validation()
+        
+        # Step 5: Test backward compatibility
+        self._test_backward_compatibility()
+        
+        # Step 6: Test error handling and validation
+        self._test_enhanced_job_error_handling()
+        
+        print("\n" + "="*80)
+        print("🏁 ENHANCED JOB POSTING BACKEND TESTING COMPLETE")
+        print("="*80)
+
     def test_end_to_end_lead_generation_workflow(self):
         """
         PHASE 7: Complete End-to-End System Testing
