@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from './ui/button';
 import { ArrowRight, TrendingUp, Clock, Shield } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 const TradespeopleCTA = () => {
   const benefits = [
