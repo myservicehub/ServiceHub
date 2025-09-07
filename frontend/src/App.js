@@ -18,6 +18,7 @@ import AboutUsPage from "./pages/AboutUsPage";
 import ReviewsPolicyPage from "./pages/ReviewsPolicyPage";
 import HowItWorksPage from "./pages/HowItWorksPage";
 import PartnershipPage from "./pages/PartnershipPage";
+import TradeCategoriesPage from "./pages/TradeCategoriesPage";
 import { Toaster } from "./components/ui/toaster";
 import { AuthProvider } from "./contexts/AuthContext";
 
