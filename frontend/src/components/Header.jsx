@@ -329,7 +329,7 @@ const Header = () => {
         onClose={() => setAuthModalOpen(false)}
         defaultMode={authMode}
         defaultTab="tradesperson"
-        showOnlyTradesperson={authMode === 'signup'}
+        showOnlyTradesperson={true}
       />
     </header>
   );
