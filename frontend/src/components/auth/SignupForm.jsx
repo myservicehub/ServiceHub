@@ -7,8 +7,8 @@ import { Eye, EyeOff, User, Mail, Lock, Phone, MapPin, AlertCircle, Home, Wrench
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../hooks/use-toast';
 
-const SignupForm = ({ onClose, onSwitchToLogin }) => {
-  const [activeTab, setActiveTab] = useState('homeowner');
+const SignupForm = ({ onClose, onSwitchToLogin, defaultTab = 'homeowner' }) => {
+  const [activeTab, setActiveTab] = useState(defaultTab);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
