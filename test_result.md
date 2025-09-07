@@ -502,7 +502,7 @@ metadata:
 
   - task: "Homeowner Registration Removal from Signup Flows"
     implemented: true
-    working: false
+    working: true
     file: "/app/frontend/src/components/Header.jsx, /app/frontend/src/components/auth/AuthModal.jsx, /app/frontend/src/components/auth/SignupForm.jsx"
     stuck_count: 0
     priority: "high"
