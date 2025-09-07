@@ -381,56 +381,58 @@ const SignupForm = ({ onClose, onSwitchToLogin, defaultTab = 'homeowner', showOn
             </div>
 
             {/* Tradesperson Specific Fields */}
-            <TabsContent value="tradesperson" className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
-                    Experience Years *
-                  </label>
-                  <Input
-                    type="number"
-                    placeholder="Years of experience"
-                    value={formData.experience_years}
-                    onChange={(e) => updateFormData('experience_years', e.target.value)}
-                    className={`font-lato ${errors.experience_years ? 'border-red-500' : ''}`}
-                  />
-                  {errors.experience_years && <p className="text-red-500 text-sm mt-1">{errors.experience_years}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
-                    Company Name
-                  </label>
-                  <Input
-                    placeholder="Your company name (optional)"
-                    value={formData.company_name}
-                    onChange={(e) => updateFormData('company_name', e.target.value)}
-                    className="font-lato"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
-                  Trade Categories * ({formData.trade_categories.length} selected)
-                </label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-40 overflow-y-auto border rounded-lg p-3">
-                  {tradeCategories.map((category) => (
-                    <label key={category} className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={formData.trade_categories.includes(category)}
-                        onChange={() => handleTradeToggle(category)}
-                        className="rounded"
-                        style={{accentColor: '#2F8140'}}
-                      />
-                      <span className="text-sm font-lato">{category}</span>
+            {(activeTab === 'tradesperson' || showOnlyTradesperson) && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                      Experience Years *
                     </label>
-                  ))}
+                    <Input
+                      type="number"
+                      placeholder="Years of experience"
+                      value={formData.experience_years}
+                      onChange={(e) => updateFormData('experience_years', e.target.value)}
+                      className={`font-lato ${errors.experience_years ? 'border-red-500' : ''}`}
+                    />
+                    {errors.experience_years && <p className="text-red-500 text-sm mt-1">{errors.experience_years}</p>}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                      Company Name
+                    </label>
+                    <Input
+                      placeholder="Your company name (optional)"
+                      value={formData.company_name}
+                      onChange={(e) => updateFormData('company_name', e.target.value)}
+                      className="font-lato"
+                    />
+                  </div>
                 </div>
-                {errors.trade_categories && <p className="text-red-500 text-sm mt-1">{errors.trade_categories}</p>}
+
+                <div>
+                  <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                    Trade Categories * ({formData.trade_categories.length} selected)
+                  </label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-40 overflow-y-auto border rounded-lg p-3">
+                    {tradeCategories.map((category) => (
+                      <label key={category} className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.trade_categories.includes(category)}
+                          onChange={() => handleTradeToggle(category)}
+                          className="rounded"
+                          style={{accentColor: '#2F8140'}}
+                        />
+                        <span className="text-sm font-lato">{category}</span>
+                      </label>
+                    ))}
+                  </div>
+                  {errors.trade_categories && <p className="text-red-500 text-sm mt-1">{errors.trade_categories}</p>}
+                </div>
               </div>
-            </TabsContent>
+            )}
 
             {/* Submit Error */}
             {errors.submit && (
