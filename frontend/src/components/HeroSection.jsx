@@ -59,6 +59,16 @@ const HeroSection = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  const handleJobSelect = (selectedJob) => {
+    setJob(selectedJob);
+    setShowJobDropdown(false);
+  };
+
+  const handleLocationSelect = (selectedLocation) => {
+    setLocation(selectedLocation);
+    setShowLocationDropdown(false);
+  };
+
   const handleSearch = async (e) => {
     e.preventDefault();
     
