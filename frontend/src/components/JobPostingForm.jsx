@@ -1023,7 +1023,7 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
     }
   };
 
-  // Account Creation Modal
+  // Account/Login Choice Modal
   const AccountCreationModal = () => (
     showAccountModal && (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -1033,10 +1033,10 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
               <User size={32} style={{color: '#2F8140'}} />
             </div>
             <h3 className="text-xl font-bold font-montserrat mb-2" style={{color: '#121E3C'}}>
-              Create account to track job leads
+              Almost ready to post your job!
             </h3>
             <p className="text-gray-600 font-lato text-sm">
-              Create your free account to track interested tradespeople and get notifications about your job.
+              Choose how you'd like to proceed to track interested tradespeople and get notifications.
             </p>
           </div>
           
@@ -1061,20 +1061,27 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
             </div>
           </div>
 
-          <div className="flex space-x-3">
-            <Button
-              onClick={() => setShowAccountModal(false)}
-              variant="outline"
-              className="flex-1"
-            >
-              Skip for now
-            </Button>
+          <div className="space-y-3">
             <Button
               onClick={continueToAccountCreation}
-              className="flex-1 text-white"
+              className="w-full text-white font-lato"
               style={{backgroundColor: '#2F8140'}}
             >
-              Continue
+              I'm new - Create Account
+            </Button>
+            <Button
+              onClick={continueToLogin}
+              variant="outline"
+              className="w-full font-lato"
+            >
+              I have an account - Sign In
+            </Button>
+            <Button
+              onClick={() => setShowAccountModal(false)}
+              variant="ghost"
+              className="w-full text-gray-500 font-lato text-sm"
+            >
+              Skip for now
             </Button>
           </div>
         </div>
