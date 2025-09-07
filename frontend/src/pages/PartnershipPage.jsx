@@ -590,7 +590,7 @@ const PartnershipPage = () => {
                   
                   <div className="pt-6">
                     <Button 
-                      onClick={() => window.location.href = 'mailto:partnerships@servicehub.ng?subject=Partnership Inquiry&body=Hi ServiceHub Team,%0A%0AI am interested in exploring partnership opportunities with ServiceHub.%0A%0ACompany Name:%0APartnership Type:%0AContact Person:%0APhone Number:%0A%0APlease contact me to discuss further.%0A%0AThank you!'} 
+                      onClick={() => window.location.href = 'mailto:partnerships@myservicehub.co?subject=Partnership Inquiry&body=Hi ServiceHub Team,%0A%0AI am interested in exploring partnership opportunities with ServiceHub.%0A%0ACompany Name:%0APartnership Type:%0AContact Person:%0APhone Number:%0A%0APlease contact me to discuss further.%0A%0AThank you!'} 
                       className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-lato font-semibold"
                     >
                       Send Partnership Inquiry
