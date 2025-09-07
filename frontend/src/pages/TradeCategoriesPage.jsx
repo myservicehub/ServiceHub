@@ -418,7 +418,8 @@ const TradeCategoriesPage = () => {
           </div>
         </div>
       </div>
-    </div>
+      <Footer />
+    </>
   );
 };
 
