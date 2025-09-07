@@ -462,3 +462,36 @@ async def get_nigerian_states():
         "states": NIGERIAN_STATES,
         "total": len(NIGERIAN_STATES)
     }
+
+@router.get("/lgas/{state}")
+async def get_lgas_for_state(state: str):
+    """Get all Local Government Areas (LGAs) for a specific Nigerian state"""
+    from ..models.nigerian_lgas import get_lgas_for_state, get_all_states
+    
+    # Validate state exists
+    if state not in get_all_states():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"State '{state}' is not in our service coverage area"
+        )
+    
+    lgas = get_lgas_for_state(state)
+    return {
+        "state": state,
+        "lgas": lgas,
+        "total": len(lgas)
+    }
+
+@router.get("/all-lgas")
+async def get_all_lgas():
+    """Get all Local Government Areas organized by state"""
+    from ..models.nigerian_lgas import get_all_lgas
+    
+    all_lgas = get_all_lgas()
+    total_lgas = sum(len(lgas) for lgas in all_lgas.values())
+    
+    return {
+        "lgas_by_state": all_lgas,
+        "total_states": len(all_lgas),
+        "total_lgas": total_lgas
+    }
