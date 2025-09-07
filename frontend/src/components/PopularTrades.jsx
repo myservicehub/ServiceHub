@@ -1,11 +1,47 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ChevronDown, Search } from 'lucide-react';
 import { statsAPI } from '../api/services';
 import { useAPI } from '../hooks/useAPI';
 
+// Nigerian Trade Categories
+const NIGERIAN_TRADE_CATEGORIES = [
+  "Building",
+  "Concrete Works", 
+  "Tiling",
+  "CCTV & Security Systems",
+  "Door & Window Installation",
+  "Air Conditioning & Refrigeration",
+  "Renovations",
+  "Relocation/Moving",
+  "Painting",
+  "Carpentry",
+  "General Handyman Work",
+  "Bathroom Fitting",
+  "Generator Services",
+  "Home Extensions",
+  "Scaffolding",
+  "Waste Disposal",
+  "Flooring",
+  "Plastering/POP",
+  "Cleaning",
+  "Electrical Repairs",
+  "Solar & Inverter Installation",
+  "Plumbing",
+  "Welding",
+  "Furniture Making",
+  "Interior Design",
+  "Roofing",
+  "Locksmithing",
+  "Recycling"
+];
+
 const PopularTrades = () => {
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  
   const { data: categoriesData, loading, error } = useAPI(() => statsAPI.getCategories());
 
   // Fallback data while loading or on error
