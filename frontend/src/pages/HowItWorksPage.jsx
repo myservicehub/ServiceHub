@@ -26,6 +26,7 @@ import {
 
 const HowItWorksPage = () => {
   const [activeTab, setActiveTab] = useState('homeowner');
+  const { isTradesperson, isAuthenticated } = useAuth();
 
   const homeownerSteps = [
     {
