@@ -466,7 +466,7 @@ async def get_nigerian_states():
 @router.get("/lgas/{state}")
 async def get_lgas_for_state(state: str):
     """Get all Local Government Areas (LGAs) for a specific Nigerian state"""
-    from ..models.nigerian_lgas import get_lgas_for_state, get_all_states
+    from models.nigerian_lgas import get_lgas_for_state, get_all_states
     
     # Validate state exists
     if state not in get_all_states():
