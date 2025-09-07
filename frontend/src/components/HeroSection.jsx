@@ -140,26 +140,78 @@ const HeroSection = () => {
           {/* Search Form */}
           <form onSubmit={handleSearch} className="bg-white rounded-lg shadow-lg p-6 mb-8">
             <div className="flex flex-col md:flex-row gap-4">
+              {/* Job Category Dropdown */}
               <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                <Input
-                  type="text"
-                  placeholder="What job do you need doing?"
-                  value={job}
-                  onChange={(e) => setJob(e.target.value)}
-                  className="pl-10 h-12 text-lg font-lato"
-                />
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10" size={20} />
+                  <button
+                    type="button"
+                    onClick={() => setShowJobDropdown(!showJobDropdown)}
+                    className="w-full h-12 pl-10 pr-10 text-left text-lg font-lato border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white hover:border-gray-400 transition-colors"
+                  >
+                    <span className={job ? 'text-gray-900' : 'text-gray-500'}>
+                      {job || 'What job do you need doing?'}
+                    </span>
+                  </button>
+                  <ChevronDown 
+                    className={`absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 transition-transform ${showJobDropdown ? 'rotate-180' : ''}`} 
+                    size={20} 
+                  />
+                  
+                  {/* Job Categories Dropdown */}
+                  {showJobDropdown && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
+                      {NIGERIAN_TRADE_CATEGORIES.map((category, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => handleJobSelect(category)}
+                          className="w-full text-left px-4 py-3 hover:bg-green-50 hover:text-green-700 transition-colors font-lato border-b border-gray-100 last:border-b-0"
+                        >
+                          {category}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
+
+              {/* Location Dropdown */}
               <div className="flex-1 relative">
-                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                <Input
-                  type="text"
-                  placeholder="Where are you based?"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  className="pl-10 h-12 text-lg font-lato"
-                />
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10" size={20} />
+                  <button
+                    type="button"
+                    onClick={() => setShowLocationDropdown(!showLocationDropdown)}
+                    className="w-full h-12 pl-10 pr-10 text-left text-lg font-lato border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white hover:border-gray-400 transition-colors"
+                  >
+                    <span className={location ? 'text-gray-900' : 'text-gray-500'}>
+                      {location || 'Where are you based?'}
+                    </span>
+                  </button>
+                  <ChevronDown 
+                    className={`absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 transition-transform ${showLocationDropdown ? 'rotate-180' : ''}`} 
+                    size={20} 
+                  />
+                  
+                  {/* Location States Dropdown */}
+                  {showLocationDropdown && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-50">
+                      {NIGERIAN_STATES.map((state, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => handleLocationSelect(state)}
+                          className="w-full text-left px-4 py-3 hover:bg-green-50 hover:text-green-700 transition-colors font-lato border-b border-gray-100 last:border-b-0"
+                        >
+                          {state}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
+
               <Button 
                 type="submit" 
                 disabled={isSearching}
