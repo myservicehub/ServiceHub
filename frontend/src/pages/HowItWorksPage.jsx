@@ -352,18 +352,19 @@ const HowItWorksPage = () => {
         </div>
       </section>
 
-      {/* How The Coin System Works */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold font-montserrat mb-4" style={{color: '#121E3C'}}>
-                Understanding Our Coin System
-              </h2>
-              <p className="text-lg text-gray-600 font-lato">
-                Fair and transparent pricing that ensures quality connections
-              </p>
-            </div>
+      {/* How The Coin System Works - Only visible to tradespeople */}
+      {isTradesperson() && (
+        <section className="py-16">
+          <div className="container mx-auto px-4">
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-12">
+                <h2 className="text-3xl font-bold font-montserrat mb-4" style={{color: '#121E3C'}}>
+                  Understanding Our Coin System
+                </h2>
+                <p className="text-lg text-gray-600 font-lato">
+                  Fair and transparent pricing that ensures quality connections
+                </p>
+              </div>
 
             <div className="grid md:grid-cols-2 gap-8">
               <Card className="border-0 shadow-lg">
