@@ -485,7 +485,7 @@ async def get_lgas_for_state(state: str):
 @router.get("/all-lgas")
 async def get_all_lgas():
     """Get all Local Government Areas organized by state"""
-    from ..models.nigerian_lgas import get_all_lgas
+    from models.nigerian_lgas import get_all_lgas
     
     all_lgas = get_all_lgas()
     total_lgas = sum(len(lgas) for lgas in all_lgas.values())
