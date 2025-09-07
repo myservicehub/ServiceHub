@@ -45,7 +45,7 @@ const HowItWorksPage = () => {
       step: 2,
       icon: Heart,
       title: "Receive Interest",
-      description: "Verified tradespeople show interest in your job by paying a small access fee.",
+      description: "Verified tradespeople show interest in your job.",
       details: [
         "Only serious professionals apply",
         "View their profiles and ratings",
