@@ -224,7 +224,12 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
 
   const nextStep = () => {
     if (currentStep === 4) {
-      // Show account creation modal before going to step 5
+      // If user is already authenticated, skip account creation and submit job
+      if (isAuthenticated()) {
+        handleSubmit();
+        return;
+      }
+      // For non-authenticated users, show account/login choice modal
       setShowAccountModal(true);
       return;
     }
