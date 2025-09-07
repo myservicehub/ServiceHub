@@ -788,82 +788,123 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
           <div className="space-y-6">
             <div className="text-center mb-6">
               <h2 className="text-2xl font-bold font-montserrat mb-2" style={{color: '#121E3C'}}>
-                Your Contact Information
+                {isAuthenticated() ? 'Review & Post Your Job' : 'Your Contact Information'}
               </h2>
               <p className="text-gray-600 font-lato">
-                How should tradespeople contact you about this job?
+                {isAuthenticated() 
+                  ? 'Review your job details and post it to connect with tradespeople'
+                  : 'How should tradespeople contact you about this job?'
+                }
               </p>
             </div>
 
-            {/* Name */}
-            <div>
-              <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
-                Your Full Name *
-              </label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                <input
-                  type="text"
-                  placeholder="Enter your full name"
-                  value={formData.homeowner_name}
-                  onChange={(e) => updateFormData('homeowner_name', e.target.value)}
-                  className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
-                    errors.homeowner_name ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                />
+            {isAuthenticated() ? (
+              // For authenticated users - show review summary
+              <div className="space-y-4">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+                  <h3 className="font-semibold font-montserrat text-green-800 mb-4">
+                    Ready to Post Your Job
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium">Your Name:</span> {currentUser?.name}
+                    </div>
+                    <div>
+                      <span className="font-medium">Email:</span> {currentUser?.email}
+                    </div>
+                    <div>
+                      <span className="font-medium">Phone:</span> {currentUser?.phone}
+                    </div>
+                    <div>
+                      <span className="font-medium">Location:</span> {formData.town}, {formData.lga}, {formData.state}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h4 className="font-semibold font-montserrat text-blue-800 mb-2">What happens next?</h4>
+                  <ul className="text-sm text-blue-700 space-y-1 font-lato">
+                    <li>• Your job will be visible to qualified tradespeople in your area</li>
+                    <li>• Interested tradespeople will show interest in your job</li>
+                    <li>• You'll receive notifications when someone shows interest</li>
+                    <li>• You can review their profiles and choose who to contact</li>
+                  </ul>
+                </div>
               </div>
-              {errors.homeowner_name && <p className="text-red-500 text-sm mt-1">{errors.homeowner_name}</p>}
-            </div>
+            ) : (
+              // For non-authenticated users - show contact form
+              <>
+                {/* Name */}
+                <div>
+                  <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                    Your Full Name *
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                    <input
+                      type="text"
+                      placeholder="Enter your full name"
+                      value={formData.homeowner_name}
+                      onChange={(e) => updateFormData('homeowner_name', e.target.value)}
+                      className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
+                        errors.homeowner_name ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    />
+                  </div>
+                  {errors.homeowner_name && <p className="text-red-500 text-sm mt-1">{errors.homeowner_name}</p>}
+                </div>
 
-            {/* Email */}
-            <div>
-              <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
-                Email Address *
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                <input
-                  type="email"
-                  placeholder="your.email@example.com"
-                  value={formData.homeowner_email}
-                  onChange={(e) => updateFormData('homeowner_email', e.target.value)}
-                  className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
-                    errors.homeowner_email ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                />
-              </div>
-              {errors.homeowner_email && <p className="text-red-500 text-sm mt-1">{errors.homeowner_email}</p>}
-            </div>
+                {/* Email */}
+                <div>
+                  <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                    Email Address *
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                    <input
+                      type="email"
+                      placeholder="your.email@example.com"
+                      value={formData.homeowner_email}
+                      onChange={(e) => updateFormData('homeowner_email', e.target.value)}
+                      className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
+                        errors.homeowner_email ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    />
+                  </div>
+                  {errors.homeowner_email && <p className="text-red-500 text-sm mt-1">{errors.homeowner_email}</p>}
+                </div>
 
-            {/* Phone */}
-            <div>
-              <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
-                Phone Number *
-              </label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                <input
-                  type="tel"
-                  placeholder="08012345678"
-                  value={formData.homeowner_phone}
-                  onChange={(e) => updateFormData('homeowner_phone', e.target.value)}
-                  className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
-                    errors.homeowner_phone ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                />
-              </div>
-              {errors.homeowner_phone && <p className="text-red-500 text-sm mt-1">{errors.homeowner_phone}</p>}
-            </div>
+                {/* Phone */}
+                <div>
+                  <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                    Phone Number *
+                  </label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                    <input
+                      type="tel"
+                      placeholder="08012345678"
+                      value={formData.homeowner_phone}
+                      onChange={(e) => updateFormData('homeowner_phone', e.target.value)}
+                      className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
+                        errors.homeowner_phone ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    />
+                  </div>
+                  {errors.homeowner_phone && <p className="text-red-500 text-sm mt-1">{errors.homeowner_phone}</p>}
+                </div>
 
-            {/* Privacy Notice */}
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <h4 className="font-semibold font-montserrat text-gray-800 mb-2">Privacy & Communication</h4>
-              <ul className="text-sm text-gray-600 space-y-1 font-lato">
-                <li>• Your contact details will only be shared with tradespeople you choose</li>
-                <li>• You'll receive updates about your job via email and SMS</li>
-                <li>• You can manage your communication preferences anytime</li>
-              </ul>
-            </div>
+                {/* Privacy Notice */}
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <h4 className="font-semibold font-montserrat text-gray-800 mb-2">Privacy & Communication</h4>
+                  <ul className="text-sm text-gray-600 space-y-1 font-lato">
+                    <li>• Your contact details will only be shared with tradespeople you choose</li>
+                    <li>• You'll receive updates about your job via email and SMS</li>
+                    <li>• You can manage your communication preferences anytime</li>
+                  </ul>
+                </div>
+              </>
+            )}
           </div>
         );
 
