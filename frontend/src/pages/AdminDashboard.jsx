@@ -113,6 +113,15 @@ const AdminDashboard = () => {
         
         setPolicies(policiesData.policies || []);
         setPolicyTypes(typesData.policy_types || []);
+      } else if (activeTab === 'contacts') {
+        // Load contacts and contact types
+        const [contactsData, typesData] = await Promise.all([
+          adminAPI.getAllContacts(),
+          adminAPI.getContactTypes()
+        ]);
+        
+        setContacts(contactsData.contacts || []);
+        setContactTypes(typesData.contact_types || []);
       } else if (activeTab === 'stats') {
         const data = await adminAPI.getDashboardStats();
         setStats(data);
