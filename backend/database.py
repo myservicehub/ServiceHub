@@ -2460,13 +2460,19 @@ class Database:
     async def add_new_town(self, state_name: str, lga_name: str, town_name: str, zip_code: str = ""):
         """Add a new town to an LGA"""
         try:
-            # Check if LGA exists
-            lga_exists = await self.database.system_locations.find_one({
+            # Check if LGA exists in static data or database
+            from models.nigerian_lgas import get_lgas_for_state
+            static_lgas = get_lgas_for_state(state_name)
+            lga_exists_static = lga_name in static_lgas if static_lgas else False
+            
+            # Also check database for custom LGAs
+            lga_exists_db = await self.database.system_locations.find_one({
                 "name": lga_name, 
                 "state": state_name, 
                 "type": "lga"
             })
-            if not lga_exists:
+            
+            if not (lga_exists_static or lga_exists_db):
                 return False
             
             town_doc = {
