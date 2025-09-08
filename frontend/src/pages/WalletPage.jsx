@@ -105,11 +105,11 @@ const WalletPage = () => {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Min. Funding</span>
-                    <span className="font-medium">₦1,500</span>
+                    <span className="font-medium">₦100</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Typical Access Fee</span>
-                    <span className="font-medium">15-50 coins</span>
+                    <span className="font-medium">5-100 coins</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Processing Time</span>
