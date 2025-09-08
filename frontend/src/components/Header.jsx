@@ -16,7 +16,10 @@ const Header = () => {
 
   const handleAuthClick = (mode) => {
     setAuthMode(mode);
-    setAuthModalOpen(true);
+    setAuthModalOpen(prev => {
+      console.log('Setting authModalOpen from', prev, 'to true');
+      return true;
+    });
   };
 
   const handleLogout = () => {
