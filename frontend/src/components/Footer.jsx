@@ -58,10 +58,26 @@ const Footer = () => {
   ];
 
   const socialLinks = [
-    { icon: Facebook, href: '#' },
-    { icon: Twitter, href: '#' },
-    { icon: Instagram, href: '#' },
-    { icon: Linkedin, href: '#' }
+    { 
+      icon: Facebook, 
+      href: 'https://www.facebook.com/share/18xd2rkVkV/',
+      label: 'Follow us on Facebook'
+    },
+    { 
+      icon: Instagram, 
+      href: 'https://www.instagram.com/myservice_hub?igsh=MTg2cWwweGQ3MzdoMA==',
+      label: 'Follow us on Instagram'
+    },
+    { 
+      icon: Youtube, 
+      href: 'https://youtube.com/@myservicehub?si=bKHBrzZ-Hu4hjHW6',
+      label: 'Subscribe to our YouTube channel'
+    },
+    { 
+      icon: Twitter, 
+      href: '#',
+      label: 'Follow us on Twitter'
+    }
   ];
 
   return (
