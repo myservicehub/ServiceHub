@@ -2204,16 +2204,16 @@ class Database:
         if user.get("role") == "homeowner":
             # Homeowner statistics
             stats.update({
-                "total_jobs_posted": await self.jobs_collection.count_documents({"homeowner.id": user_id}),
-                "active_jobs": await self.jobs_collection.count_documents({
+                "total_jobs_posted": await self.database.jobs.count_documents({"homeowner.id": user_id}),
+                "active_jobs": await self.database.jobs.count_documents({
                     "homeowner.id": user_id,
                     "status": "open"
                 }),
-                "completed_jobs": await self.jobs_collection.count_documents({
+                "completed_jobs": await self.database.jobs.count_documents({
                     "homeowner.id": user_id,
                     "status": "completed"
                 }),
-                "total_interests_received": await self.interests_collection.count_documents({
+                "total_interests_received": await self.database.interests.count_documents({
                     "job.homeowner.id": user_id
                 }),
                 "average_job_budget": await self._get_average_job_budget(user_id)
