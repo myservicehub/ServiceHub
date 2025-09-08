@@ -345,7 +345,11 @@ const TradeCategoriesPage = () => {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredCategories.map((category, index) => (
-                    <div key={index} className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border border-gray-100">
+                    <div 
+                      key={index} 
+                      onClick={() => handleCategoryClick(category.name)}
+                      className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-all duration-200 border border-gray-100 cursor-pointer hover:border-green-300 hover:scale-105"
+                    >
                       <div className="flex items-start space-x-4">
                         <div className="text-3xl">{category.icon}</div>
                         <div className="flex-1">
@@ -366,13 +370,9 @@ const TradeCategoriesPage = () => {
                             <span className="text-green-600 font-semibold text-sm">
                               {category.serviceCount} Available
                             </span>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              className="text-green-600 hover:text-green-700 p-1"
-                            >
+                            <div className="text-green-600 hover:text-green-700">
                               <ArrowRight size={16} />
-                            </Button>
+                            </div>
                           </div>
                         </div>
                       </div>
