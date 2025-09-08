@@ -29,6 +29,13 @@ const AdminDashboard = () => {
   const [tradeGroups, setTradeGroups] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  
+  // Skills Questions Management state
+  const [skillsQuestions, setSkillsQuestions] = useState({});
+  const [questionStats, setQuestionStats] = useState({});
+  const [selectedTrade, setSelectedTrade] = useState('');
+  const [showAddQuestion, setShowAddQuestion] = useState(false);
+  const [editingQuestion, setEditingQuestion] = useState(null);
   const { toast } = useToast();
 
   useEffect(() => {
