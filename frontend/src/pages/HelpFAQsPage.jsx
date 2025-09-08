@@ -98,7 +98,7 @@ const HelpFAQsPage = () => {
     payments: [
       {
         question: "What payment methods do you accept?",
-        answer: "We accept bank transfers to our Kuda Bank account. Simply transfer the amount you want to add to your wallet, upload proof of payment, and we'll credit your account within 2-4 hours during business hours."
+        answer: "Payment methods are only for tradespeople - homeowners use serviceHub completely free! Tradespeople can fund their wallets via bank transfer to our Kuda Bank account. Simply transfer the amount you want to add to your wallet, upload proof of payment, and we'll credit your account within 2-4 hours during business hours."
       },
       {
         question: "What is the coin system?",
