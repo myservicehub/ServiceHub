@@ -5525,6 +5525,9 @@ class BackendTester:
         # NEW: Admin Skills Questions Management System Testing (as requested)
         self.test_admin_skills_questions_management()
         
+        # NEW: Policy Management System Testing (as requested)
+        self.test_policy_management_system()
+        
         # Print final results
         print("\n" + "=" * 80)
         print("🏁 FINAL TEST RESULTS")
