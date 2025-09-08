@@ -29,6 +29,13 @@ const HelpFAQsPage = () => {
 
   const categories = getVisibleCategories();
 
+  // Reset activeCategory if user doesn't have access to payments
+  React.useEffect(() => {
+    if (activeCategory === 'payments' && !(isAuthenticated() && isTradesperson())) {
+      setActiveCategory('general');
+    }
+  }, [activeCategory, isAuthenticated, isTradesperson]);
+
   const faqData = {
     general: [
       {
