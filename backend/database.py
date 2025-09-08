@@ -2294,11 +2294,11 @@ class Database:
             }
             
             # Check if state already exists
-            existing = await self.db.system_locations.find_one({"name": state_name, "type": "state"})
+            existing = await self.database.system_locations.find_one({"name": state_name, "type": "state"})
             if existing:
                 return False
             
-            await self.db.system_locations.insert_one(state_doc)
+            await self.database.system_locations.insert_one(state_doc)
             return True
         except Exception as e:
             print(f"Error adding state: {e}")
