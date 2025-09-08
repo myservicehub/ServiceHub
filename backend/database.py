@@ -2673,7 +2673,17 @@ class Database:
             ]
             
             stats = await self.database.skills_questions.aggregate(pipeline).to_list(length=None)
-            return {stat['_id']: stat for stat in stats}
+            
+            # Convert ObjectIds and structure the response
+            result = {}
+            for stat in stats:
+                trade_name = stat['_id']
+                result[trade_name] = {
+                    'count': stat['count'],
+                    'active_count': stat['active_count']
+                }
+            
+            return result
         except Exception as e:
             print(f"Error getting question stats: {e}")
             return {}
