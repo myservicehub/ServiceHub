@@ -1622,6 +1622,155 @@ const AdminDashboard = () => {
         </div>
       )}
 
+      {/* Edit Item Modal */}
+      {editingItem && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">
+              Edit {editingItem.type === 'state' ? 'State' : editingItem.type === 'lga' ? 'LGA' : editingItem.type === 'trade' ? 'Trade Category' : 'Item'}
+            </h3>
+            
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              const formData = new FormData(e.target);
+              
+              try {
+                if (editingItem.type === 'state') {
+                  await adminAPI.updateState(
+                    editingItem.name,
+                    formData.get('new_name'),
+                    formData.get('region'),
+                    formData.get('postcodes')
+                  );
+                } else if (editingItem.type === 'lga') {
+                  await adminAPI.updateLGA(
+                    editingItem.state,
+                    editingItem.name,
+                    formData.get('new_name'),
+                    formData.get('zip_codes')
+                  );
+                } else if (editingItem.type === 'trade') {
+                  await adminAPI.updateTrade(
+                    editingItem.name,
+                    formData.get('new_name'),
+                    formData.get('group'),
+                    formData.get('description')
+                  );
+                }
+                
+                toast({ title: `${editingItem.type} updated successfully` });
+                setEditingItem(null);
+                fetchData();
+              } catch (error) {
+                toast({ title: `Failed to update ${editingItem.type}`, variant: "destructive" });
+              }
+            }}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {editingItem.type === 'state' ? 'State' : editingItem.type === 'lga' ? 'LGA' : 'Trade'} Name *
+                  </label>
+                  <input
+                    type="text"
+                    name="new_name"
+                    required
+                    defaultValue={editingItem.name}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                
+                {editingItem.type === 'state' && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Region
+                      </label>
+                      <input
+                        type="text"
+                        name="region"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="e.g., South West"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Sample Postcodes
+                      </label>
+                      <input
+                        type="text"
+                        name="postcodes"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="e.g., 110001,110002"
+                      />
+                    </div>
+                  </>
+                )}
+                
+                {editingItem.type === 'lga' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Zip Codes
+                    </label>
+                    <input
+                      type="text"
+                      name="zip_codes"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="e.g., 110001,110002"
+                    />
+                  </div>
+                )}
+                
+                {editingItem.type === 'trade' && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Group
+                      </label>
+                      <select
+                        name="group"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="General Services">General Services</option>
+                        {tradeGroups.map((group, index) => (
+                          <option key={index} value={group}>{group}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Description
+                      </label>
+                      <input
+                        type="text"
+                        name="description"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="Brief description"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+              
+              <div className="flex space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setEditingItem(null)}
+                  className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                >
+                  Update
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <Footer />
     </div>
   );
