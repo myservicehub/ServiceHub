@@ -40,6 +40,10 @@ const AdminDashboard = () => {
       } else if (activeTab === 'verifications') {
         const data = await adminReferralsAPI.getPendingVerifications();
         setVerifications(data.verifications || []);
+      } else if (activeTab === 'users') {
+        const data = await adminAPI.getAllUsers();
+        setUsers(data.users || []);
+        setUserStats(data.stats || {});
       } else if (activeTab === 'stats') {
         const data = await adminAPI.getDashboardStats();
         setStats(data);
