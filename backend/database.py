@@ -2221,19 +2221,19 @@ class Database:
             
         elif user.get("role") == "tradesperson":
             # Tradesperson statistics
-            wallet = await self.wallets_collection.find_one({"user_id": user_id})
+            wallet = await self.database.wallets.find_one({"user_id": user_id})
             
             stats.update({
-                "total_interests_shown": await self.interests_collection.count_documents({"tradesperson_id": user_id}),
+                "total_interests_shown": await self.database.interests.count_documents({"tradesperson_id": user_id}),
                 "wallet_balance_coins": wallet.get("balance_coins", 0) if wallet else 0,
                 "wallet_balance_naira": wallet.get("balance_naira", 0) if wallet else 0,
-                "successful_referrals": await self.user_verifications_collection.count_documents({
+                "successful_referrals": await self.database.user_verifications.count_documents({
                     "referred_by": user_id,
                     "verification_status": "verified"
                 }),
-                "portfolio_items": await self.portfolio_collection.count_documents({"tradesperson_id": user_id}),
+                "portfolio_items": await self.database.portfolio.count_documents({"tradesperson_id": user_id}),
                 "average_rating": await self._get_tradesperson_average_rating(user_id),
-                "total_reviews": await self.reviews_collection.count_documents({"tradesperson_id": user_id})
+                "total_reviews": await self.database.reviews.count_documents({"tradesperson_id": user_id})
             })
         
         return stats
