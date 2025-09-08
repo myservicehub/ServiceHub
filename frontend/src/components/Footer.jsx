@@ -138,6 +138,10 @@ const Footer = () => {
                             navigate('/help');
                           } else if (link === 'Contact us') {
                             navigate('/contact');
+                          } else if (link === 'Join for free') {
+                            navigate('/join-for-free');
+                          } else if (link === 'Help centre') {
+                            navigate('/help-centre');
                           }
                         }}
                         className="text-gray-300 hover:text-white transition-colors text-sm font-lato cursor-pointer"
