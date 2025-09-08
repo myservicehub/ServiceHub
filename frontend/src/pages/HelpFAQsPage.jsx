@@ -46,7 +46,7 @@ const HelpFAQsPage = () => {
       },
       {
         question: "How much does it cost to use serviceHub as a homeowner?",
-        answer: "Posting jobs is completely free! You only pay a small access fee (ranging from ₦500 to ₦5,000 depending on the job size) when you want to contact a tradesperson who has shown interest in your job. This ensures you only pay for genuine leads."
+        answer: "serviceHub is completely FREE for homeowners! You can post unlimited jobs, browse tradesperson profiles, read reviews, and contact interested tradespeople without any charges. We believe homeowners should have free access to find the right professionals for their projects."
       },
       {
         question: "How do I choose the right tradesperson for my job?",
