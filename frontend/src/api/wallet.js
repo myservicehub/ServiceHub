@@ -404,3 +404,16 @@ export const policiesAPI = {
     return response.data;
   }
 };
+
+// Public API for contacts (no authentication required)
+export const contactsAPI = {
+  async getAllContacts() {
+    const response = await apiClient.get('/jobs/contacts');
+    return response.data;
+  },
+
+  async getContactsByType(contactType) {
+    const response = await apiClient.get(`/jobs/contacts/${contactType}`);
+    return response.data;
+  }
+};
