@@ -214,8 +214,20 @@ export const navigationLinks = [
 ];
 
 export const socialLinks = [
-  { platform: 'Facebook', href: '#' },
-  { platform: 'Twitter', href: '#' },
-  { platform: 'Instagram', href: '#' },
-  { platform: 'LinkedIn', href: '#' }
+  { 
+    platform: 'Facebook', 
+    href: 'https://www.facebook.com/share/18xd2rkVkV/' 
+  },
+  { 
+    platform: 'Instagram', 
+    href: 'https://www.instagram.com/myservice_hub?igsh=MTg2cWwweGQ3MzdoMA==' 
+  },
+  { 
+    platform: 'YouTube', 
+    href: 'https://youtube.com/@myservicehub?si=bKHBrzZ-Hu4hjHW6' 
+  },
+  { 
+    platform: 'Twitter', 
+    href: '#' 
+  }
 ];
