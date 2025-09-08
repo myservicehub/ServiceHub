@@ -9,7 +9,7 @@ import NotificationIndicator from './NotificationIndicator';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(true); // Test: Start with modal open
   const [authMode, setAuthMode] = useState('login');
   const navigate = useNavigate();
   const { user, isAuthenticated, isHomeowner, isTradesperson, logout } = useAuth();
