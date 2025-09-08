@@ -579,6 +579,294 @@ export const skillsTestQuestions = {
 
   // Add more trade categories: 'Roofing', 'Carpentry', 'Painting', etc.
   // Each should have exactly 20 questions covering technical knowledge, safety, and Nigerian standards
+
+  'Concrete Works': [
+    {
+      question: "What is the standard concrete mix ratio for structural work in Nigeria?",
+      options: ["1:2:4", "1:3:6", "1:2:3", "1:4:8"],
+      correct: 0,
+      category: "Technical Knowledge",
+      explanation: "1:2:4 (cement:sand:aggregate) is the standard mix for structural concrete in Nigeria."
+    },
+    {
+      question: "What is the minimum curing period for concrete in Nigerian tropical climate?",
+      options: ["7 days", "14 days", "21 days", "28 days"],
+      correct: 3,
+      category: "Curing Standards",
+      explanation: "28 days is the standard curing period for concrete to achieve full strength."
+    },
+    {
+      question: "Which aggregate size is best for concrete foundations?",
+      options: ["10mm", "20mm", "25mm", "40mm"],
+      correct: 1,
+      category: "Materials",
+      explanation: "20mm aggregate provides optimal strength and workability for foundation concrete."
+    },
+    {
+      question: "What water-cement ratio gives the strongest concrete?",
+      options: ["0.3", "0.45", "0.6", "0.8"],
+      correct: 1,
+      category: "Mix Design",
+      explanation: "0.45 water-cement ratio provides optimal strength while maintaining workability."
+    },
+    {
+      question: "How long should concrete be protected from rain after pouring?",
+      options: ["2 hours", "6 hours", "24 hours", "48 hours"],
+      correct: 2,
+      category: "Weather Protection",
+      explanation: "Concrete needs 24 hours protection from rain to prevent surface damage."
+    },
+    {
+      question: "What is the maximum slump for structural concrete?",
+      options: ["25mm", "50mm", "75mm", "100mm"],
+      correct: 2,
+      category: "Quality Control",
+      explanation: "75mm maximum slump ensures proper strength while allowing adequate workability."
+    },
+    {
+      question: "Which admixture is commonly used in Nigerian hot climate?",
+      options: ["Accelerator", "Retarder", "Air entrainer", "Superplasticizer"],
+      correct: 1,
+      category: "Admixtures",
+      explanation: "Retarders slow down concrete setting in hot Nigerian climate."
+    },
+    {
+      question: "What is the minimum concrete cover for reinforcement in foundations?",
+      options: ["25mm", "40mm", "50mm", "75mm"],
+      correct: 3,
+      category: "Reinforcement",
+      explanation: "75mm minimum cover protects reinforcement from corrosion in Nigerian soil."
+    },
+    {
+      question: "At what temperature should concrete pouring be avoided?",
+      options: ["Above 25°C", "Above 30°C", "Above 35°C", "Above 40°C"],
+      correct: 2,
+      category: "Temperature Control",
+      explanation: "Concrete pouring above 35°C can cause rapid moisture loss and cracking."
+    },
+    {
+      question: "What causes plastic shrinkage cracks in concrete?",
+      options: ["Too much water", "Rapid moisture loss", "Poor mixing", "Cold weather"],
+      correct: 1,
+      category: "Defect Prevention",
+      explanation: "Rapid moisture loss from surface causes plastic shrinkage cracks."
+    },
+    {
+      question: "Which test checks concrete workability on site?",
+      options: ["Cube test", "Slump test", "Flow test", "Ball penetration test"],
+      correct: 1,
+      category: "Site Testing",
+      explanation: "Slump test is the standard field test for concrete workability."
+    },
+    {
+      question: "What is the standard size for concrete test cubes in Nigeria?",
+      options: ["100mm", "150mm", "200mm", "300mm"],
+      correct: 1,
+      category: "Testing Standards",
+      explanation: "150mm cubes are standard for concrete strength testing in Nigeria."
+    },
+    {
+      question: "How should concrete be transported to prevent segregation?",
+      options: ["Open truck", "Covered truck", "Ready-mix truck", "Wheelbarrow only"],
+      correct: 2,
+      category: "Transportation",
+      explanation: "Ready-mix trucks prevent segregation and maintain concrete quality."
+    },
+    {
+      question: "What is the maximum time between mixing and placing concrete?",
+      options: ["30 minutes", "60 minutes", "90 minutes", "120 minutes"],
+      correct: 1,
+      category: "Placement Time",
+      explanation: "Concrete should be placed within 60 minutes of mixing to maintain quality."
+    },
+    {
+      question: "Which vibration method is best for foundation concrete?",
+      options: ["Manual", "Needle vibrator", "Table vibrator", "External vibrator"],
+      correct: 1,
+      category: "Compaction",
+      explanation: "Needle vibrators provide effective compaction for foundation concrete."
+    },
+    {
+      question: "What safety equipment is mandatory when working with concrete?",
+      options: ["Gloves only", "Boots only", "Gloves and boots", "Full protective gear"],
+      correct: 3,
+      category: "Safety Standards",
+      explanation: "Full protective gear including gloves, boots, and eye protection is mandatory."
+    },
+    {
+      question: "How should concrete be cured in Nigerian dry season?",
+      options: ["Air curing", "Water curing", "Steam curing", "Chemical curing"],
+      correct: 1,
+      category: "Seasonal Curing",
+      explanation: "Water curing is essential in Nigerian dry season to prevent rapid moisture loss."
+    },
+    {
+      question: "What causes honeycombing in concrete?",
+      options: ["Too much cement", "Poor compaction", "Too much water", "Wrong aggregate"],
+      correct: 1,
+      category: "Quality Issues",
+      explanation: "Poor compaction leaves voids creating honeycomb appearance."
+    },
+    {
+      question: "Which concrete grade is suitable for residential foundations?",
+      options: ["C15", "C20", "C25", "C30"],
+      correct: 2,
+      category: "Grade Selection",
+      explanation: "C25 concrete provides adequate strength for residential foundations."
+    },
+    {
+      question: "What is the first aid for concrete burns?",
+      options: ["Apply oil", "Flush with water", "Apply ice", "Cover with cloth"],
+      correct: 1,
+      category: "First Aid",
+      explanation: "Immediate flushing with clean water removes alkaline concrete from skin."
+    }
+  ],
+
+  'Painting': [
+    {
+      question: "What primer is best for new concrete walls before painting?",
+      options: ["Oil-based primer", "Water-based primer", "Alkali-resistant primer", "No primer needed"],
+      correct: 2,
+      category: "Surface Preparation",
+      explanation: "Alkali-resistant primer prevents paint failure on alkaline concrete surfaces."
+    },
+    {
+      question: "In Nigerian humid climate, what paint type is best for exterior walls?",
+      options: ["Emulsion paint", "Oil paint", "Acrylic paint", "Lime wash"],
+      correct: 2,
+      category: "Climate Considerations",
+      explanation: "Acrylic paint resists moisture and humidity better than other types."
+    },
+    {
+      question: "What is the recommended moisture content before painting interior walls?",
+      options: ["Less than 5%", "Less than 10%", "Less than 15%", "Less than 20%"],
+      correct: 1,
+      category: "Moisture Control",
+      explanation: "Walls should have less than 10% moisture content for proper paint adhesion."
+    },
+    {
+      question: "Which tool gives the smoothest finish on walls?",
+      options: ["Brush", "Roller", "Spray gun", "Sponge"],
+      correct: 2,
+      category: "Application Tools",
+      explanation: "Spray guns provide the smoothest, most even finish when properly used."
+    },
+    {
+      question: "What causes paint to peel off walls?",
+      options: ["Too thick application", "Poor surface preparation", "Wrong color choice", "Expensive paint"],
+      correct: 1,
+      category: "Paint Failure",
+      explanation: "Poor surface preparation is the main cause of paint peeling."
+    },
+    {
+      question: "How long should primer dry before applying paint?",
+      options: ["1 hour", "4 hours", "8 hours", "24 hours"],
+      correct: 2,
+      category: "Drying Time",
+      explanation: "Primer should dry for 8 hours minimum before paint application."
+    },
+    {
+      question: "What is the coverage area of 1 liter of quality emulsion paint?",
+      options: ["5-8 m²", "10-12 m²", "15-18 m²", "20-25 m²"],
+      correct: 1,
+      category: "Material Calculation",
+      explanation: "1 liter of quality emulsion paint typically covers 10-12 m² on prepared surfaces."
+    },
+    {
+      question: "Which sandpaper grit is best for smoothing walls before painting?",
+      options: ["60 grit", "120 grit", "220 grit", "400 grit"],
+      correct: 1,
+      category: "Surface Preparation",
+      explanation: "120 grit sandpaper provides optimal smoothing without damaging the surface."
+    },
+    {
+      question: "What safety equipment is essential for spray painting?",
+      options: ["Gloves only", "Mask only", "Mask and goggles", "Full protective suit"],
+      correct: 3,
+      category: "Safety Standards",
+      explanation: "Full protective equipment prevents inhalation and skin contact with paint."
+    },
+    {
+      question: "How should paint brushes be cleaned after oil-based paint?",
+      options: ["Water only", "Soap and water", "Turpentine/thinner", "Just wipe clean"],
+      correct: 2,
+      category: "Tool Maintenance",
+      explanation: "Turpentine or paint thinner dissolves oil-based paint for proper brush cleaning."
+    },
+    {
+      question: "What causes streaks in painted surfaces?",
+      options: ["Wrong color", "Uneven application", "Too much paint", "Poor quality paint"],
+      correct: 1,
+      category: "Application Technique",
+      explanation: "Uneven application pressure and overlapping strokes cause visible streaks."
+    },
+    {
+      question: "Which weather condition is best for exterior painting?",
+      options: ["Hot sunny day", "Rainy day", "Humid evening", "Cool dry day"],
+      correct: 3,
+      category: "Weather Conditions",
+      explanation: "Cool dry conditions allow proper paint flow and drying without defects."
+    },
+    {
+      question: "What is the purpose of undercoat in painting?",
+      options: ["Color matching", "Surface sealing", "Cost reduction", "Quick drying"],
+      correct: 1,
+      category: "Paint System",
+      explanation: "Undercoat seals surfaces and provides better adhesion for topcoat."
+    },
+    {
+      question: "How many coats are typically needed for good paint coverage?",
+      options: ["1 coat", "2 coats", "3 coats", "4 coats"],
+      correct: 1,
+      category: "Application Standards",
+      explanation: "2 coats (primer + topcoat) provide adequate coverage and durability."
+    },
+    {
+      question: "What should be done to walls with efflorescence before painting?",
+      options: ["Paint over it", "Scrape and seal", "Just prime", "Ignore it"],
+      correct: 1,
+      category: "Defect Treatment",
+      explanation: "Efflorescence must be scraped off and surface sealed before painting."
+    },
+    {
+      question: "Which paint defect appears as white chalky residue?",
+      options: ["Blistering", "Chalking", "Flaking", "Bleeding"],
+      correct: 1,
+      category: "Paint Defects",
+      explanation: "Chalking appears as white powdery residue from paint deterioration."
+    },
+    {
+      question: "What mixing ratio is typical for thinning emulsion paint?",
+      options: ["1:1", "4:1", "10:1", "No thinning needed"],
+      correct: 2,
+      category: "Paint Mixing",
+      explanation: "10:1 (paint:water) ratio provides optimal consistency for brush application."
+    },
+    {
+      question: "How should paint be stored to maintain quality?",
+      options: ["In direct sunlight", "In cool dry place", "In refrigerator", "Anywhere is fine"],
+      correct: 1,
+      category: "Storage",
+      explanation: "Cool dry storage prevents paint deterioration and maintains quality."
+    },
+    {
+      question: "What causes paint to bubble or blister?",
+      options: ["Good preparation", "Moisture under paint", "Correct primer", "Proper drying"],
+      correct: 1,
+      category: "Paint Problems",
+      explanation: "Moisture trapped under paint film causes bubbling and blistering."
+    },
+    {
+      question: "Which measurement tool is essential for accurate paint estimates?",
+      options: ["Ruler", "Measuring tape", "Calculator", "Scale"],
+      correct: 1,
+      category: "Measurement Tools",
+      explanation: "Measuring tape accurately determines surface areas for paint calculation."
+    }
+  ]
+
+  // Add more trade categories: 'Roofing', 'Carpentry', 'Painting', etc.
 };
 
 // Function to get questions for specific trades
