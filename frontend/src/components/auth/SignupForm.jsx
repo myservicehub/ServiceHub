@@ -8,8 +8,9 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../hooks/use-toast';
 import TradespersonRegistration from './TradespersonRegistration';
 
-const SignupForm = ({ onClose, onSwitchToLogin, defaultTab = 'tradesperson', showOnlyTradesperson = true }) => {
+const SignupForm = ({ onClose, onSwitchToLogin, defaultTab = 'tradesperson', showOnlyTradesperson = true, useMultiStepRegistration = false }) => {
   const [activeTab, setActiveTab] = useState(defaultTab);
+  const [showMultiStep, setShowMultiStep] = useState(useMultiStepRegistration);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
