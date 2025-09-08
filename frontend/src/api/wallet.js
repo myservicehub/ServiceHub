@@ -294,6 +294,57 @@ export const adminAPI = {
   async deleteSkillsQuestion(questionId) {
     const response = await apiClient.delete(`/admin/skills-questions/${questionId}`);
     return response.data;
+  },
+
+  // Policy Management Methods
+  async getAllPolicies() {
+    const response = await apiClient.get('/admin/policies');
+    return response.data;
+  },
+
+  async getPolicyTypes() {
+    const response = await apiClient.get('/admin/policies/types');
+    return response.data;
+  },
+
+  async getPolicyByType(policyType) {
+    const response = await apiClient.get(`/admin/policies/${policyType}`);
+    return response.data;
+  },
+
+  async getPolicyHistory(policyType) {
+    const response = await apiClient.get(`/admin/policies/${policyType}/history`);
+    return response.data;
+  },
+
+  async createPolicy(policyData) {
+    const response = await apiClient.post('/admin/policies', policyData);
+    return response.data;
+  },
+
+  async updatePolicy(policyId, policyData) {
+    const response = await apiClient.put(`/admin/policies/${policyId}`, policyData);
+    return response.data;
+  },
+
+  async deletePolicy(policyId) {
+    const response = await apiClient.delete(`/admin/policies/${policyId}`);
+    return response.data;
+  },
+
+  async restorePolicyVersion(policyType, version) {
+    const response = await apiClient.post(`/admin/policies/${policyType}/restore/${version}`);
+    return response.data;
+  },
+
+  async archivePolicy(policyId) {
+    const response = await apiClient.post(`/admin/policies/${policyId}/archive`);
+    return response.data;
+  },
+
+  async activateScheduledPolicies() {
+    const response = await apiClient.post('/admin/policies/activate-scheduled');
+    return response.data;
   }
 };
 
