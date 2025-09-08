@@ -43,7 +43,7 @@ export const referralsAPI = {
 
   // Get verification document image URL
   getDocumentUrl(filename) {
-    return `${import.meta.env.VITE_BACKEND_URL || process.env.REACT_APP_BACKEND_URL}/api/referrals/verification-document/${filename}`;
+    return `${process.env.REACT_APP_BACKEND_URL}/api/referrals/verification-document/${filename}`;
   }
 };
 
