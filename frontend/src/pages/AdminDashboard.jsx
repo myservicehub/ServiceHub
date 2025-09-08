@@ -582,6 +582,681 @@ const AdminDashboard = () => {
                 </div>
               )}
 
+              {/* Location & Trades Management Tab */}
+              {activeTab === 'locations' && (
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-xl font-semibold">Location & Trades Management</h2>
+                    <button
+                      onClick={fetchData}
+                      className="text-blue-600 hover:text-blue-700"
+                    >
+                      Refresh
+                    </button>
+                  </div>
+
+                  {/* Sub-tabs for different management areas */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="flex space-x-4 mb-6">
+                      {[
+                        { id: 'states', label: 'States', icon: '🏛️' },
+                        { id: 'lgas', label: 'LGAs', icon: '🏘️' },
+                        { id: 'towns', label: 'Towns', icon: '🏠' },
+                        { id: 'trades', label: 'Trade Categories', icon: '🔨' }
+                      ].map((subTab) => (
+                        <button
+                          key={subTab.id}
+                          onClick={() => setActiveLocationTab(subTab.id)}
+                          className={`py-2 px-4 rounded-lg font-medium text-sm transition-colors ${
+                            activeLocationTab === subTab.id
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-white text-gray-600 hover:bg-gray-100'
+                          }`}
+                        >
+                          <span className="mr-2">{subTab.icon}</span>
+                          {subTab.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* States Management */}
+                    {activeLocationTab === 'states' && (
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <h3 className="text-lg font-semibold">Nigerian States</h3>
+                          <button
+                            onClick={() => setShowAddForm(!showAddForm)}
+                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm"
+                          >
+                            {showAddForm ? 'Cancel' : 'Add New State'}
+                          </button>
+                        </div>
+
+                        {showAddForm && (
+                          <div className="bg-white p-4 rounded-lg border">
+                            <h4 className="font-semibold mb-3">Add New State</h4>
+                            <form onSubmit={async (e) => {
+                              e.preventDefault();
+                              const formData = new FormData(e.target);
+                              try {
+                                await adminAPI.addNewState(
+                                  formData.get('state_name'),
+                                  formData.get('region'),
+                                  formData.get('postcodes')
+                                );
+                                toast({ title: "State added successfully" });
+                                setShowAddForm(false);
+                                fetchData();
+                              } catch (error) {
+                                toast({ title: "Failed to add state", variant: "destructive" });
+                              }
+                            }}>
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    State Name *
+                                  </label>
+                                  <input
+                                    type="text"
+                                    name="state_name"
+                                    required
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    placeholder="e.g., Ogun"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Region
+                                  </label>
+                                  <input
+                                    type="text"
+                                    name="region"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    placeholder="e.g., South West"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Sample Postcodes
+                                  </label>
+                                  <input
+                                    type="text"
+                                    name="postcodes"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    placeholder="e.g., 110001,110002"
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex space-x-2 mt-4">
+                                <button
+                                  type="submit"
+                                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
+                                >
+                                  Add State
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setShowAddForm(false)}
+                                  className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </form>
+                          </div>
+                        )}
+
+                        {loading ? (
+                          <div className="space-y-2">
+                            {[...Array(5)].map((_, i) => (
+                              <div key={i} className="bg-white p-4 rounded-lg animate-pulse">
+                                <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="bg-white rounded-lg border overflow-hidden">
+                            <table className="min-w-full divide-y divide-gray-200">
+                              <thead className="bg-gray-50">
+                                <tr>
+                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    State Name
+                                  </th>
+                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Actions
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody className="bg-white divide-y divide-gray-200">
+                                {states.map((state, index) => (
+                                  <tr key={index} className="hover:bg-gray-50">
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                      <div className="text-sm font-medium text-gray-900">
+                                        {state}
+                                      </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                      <div className="flex space-x-2">
+                                        <button
+                                          onClick={() => setEditingItem({ type: 'state', name: state })}
+                                          className="text-blue-600 hover:text-blue-900"
+                                        >
+                                          Edit
+                                        </button>
+                                        <button
+                                          onClick={async () => {
+                                            if (window.confirm(`Delete state "${state}"? This will also delete all its LGAs and towns.`)) {
+                                              try {
+                                                await adminAPI.deleteState(state);
+                                                toast({ title: "State deleted successfully" });
+                                                fetchData();
+                                              } catch (error) {
+                                                toast({ title: "Failed to delete state", variant: "destructive" });
+                                              }
+                                            }
+                                          }}
+                                          className="text-red-600 hover:text-red-900"
+                                        >
+                                          Delete
+                                        </button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* LGAs Management */}
+                    {activeLocationTab === 'lgas' && (
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <h3 className="text-lg font-semibold">Local Government Areas (LGAs)</h3>
+                          <button
+                            onClick={() => setShowAddForm(!showAddForm)}
+                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm"
+                          >
+                            {showAddForm ? 'Cancel' : 'Add New LGA'}
+                          </button>
+                        </div>
+
+                        {showAddForm && (
+                          <div className="bg-white p-4 rounded-lg border">
+                            <h4 className="font-semibold mb-3">Add New LGA</h4>
+                            <form onSubmit={async (e) => {
+                              e.preventDefault();
+                              const formData = new FormData(e.target);
+                              try {
+                                await adminAPI.addNewLGA(
+                                  formData.get('state_name'),
+                                  formData.get('lga_name'),
+                                  formData.get('zip_codes')
+                                );
+                                toast({ title: "LGA added successfully" });
+                                setShowAddForm(false);
+                                fetchData();
+                              } catch (error) {
+                                toast({ title: "Failed to add LGA", variant: "destructive" });
+                              }
+                            }}>
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    State *
+                                  </label>
+                                  <select
+                                    name="state_name"
+                                    required
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                  >
+                                    <option value="">Select State</option>
+                                    {states.map((state, index) => (
+                                      <option key={index} value={state}>{state}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    LGA Name *
+                                  </label>
+                                  <input
+                                    type="text"
+                                    name="lga_name"
+                                    required
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    placeholder="e.g., Abeokuta North"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Zip Codes
+                                  </label>
+                                  <input
+                                    type="text"
+                                    name="zip_codes"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    placeholder="e.g., 110001,110002"
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex space-x-2 mt-4">
+                                <button
+                                  type="submit"
+                                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
+                                >
+                                  Add LGA
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setShowAddForm(false)}
+                                  className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </form>
+                          </div>
+                        )}
+
+                        {loading ? (
+                          <div className="space-y-2">
+                            {[...Array(5)].map((_, i) => (
+                              <div key={i} className="bg-white p-4 rounded-lg animate-pulse">
+                                <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
+                                <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {Object.entries(lgas).map(([state, stateLgas]) => (
+                              <div key={state} className="bg-white rounded-lg border overflow-hidden">
+                                <div className="bg-gray-50 px-6 py-3 border-b">
+                                  <h4 className="font-semibold text-gray-800">{state} ({stateLgas.length} LGAs)</h4>
+                                </div>
+                                <div className="p-4">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                    {stateLgas.map((lga, index) => (
+                                      <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                        <span className="text-sm text-gray-700">{lga}</span>
+                                        <div className="flex space-x-1">
+                                          <button
+                                            onClick={() => setEditingItem({ type: 'lga', state, name: lga })}
+                                            className="text-blue-600 hover:text-blue-900 text-xs"
+                                          >
+                                            Edit
+                                          </button>
+                                          <button
+                                            onClick={async () => {
+                                              if (window.confirm(`Delete LGA "${lga}" from ${state}?`)) {
+                                                try {
+                                                  await adminAPI.deleteLGA(state, lga);
+                                                  toast({ title: "LGA deleted successfully" });
+                                                  fetchData();
+                                                } catch (error) {
+                                                  toast({ title: "Failed to delete LGA", variant: "destructive" });
+                                                }
+                                              }
+                                            }}
+                                            className="text-red-600 hover:text-red-900 text-xs"
+                                          >
+                                            Delete
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Towns Management */}
+                    {activeLocationTab === 'towns' && (
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <h3 className="text-lg font-semibold">Towns</h3>
+                          <button
+                            onClick={() => setShowAddForm(!showAddForm)}
+                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm"
+                          >
+                            {showAddForm ? 'Cancel' : 'Add New Town'}
+                          </button>
+                        </div>
+
+                        {showAddForm && (
+                          <div className="bg-white p-4 rounded-lg border">
+                            <h4 className="font-semibold mb-3">Add New Town</h4>
+                            <form onSubmit={async (e) => {
+                              e.preventDefault();
+                              const formData = new FormData(e.target);
+                              try {
+                                await adminAPI.addNewTown(
+                                  formData.get('state_name'),
+                                  formData.get('lga_name'),
+                                  formData.get('town_name'),
+                                  formData.get('zip_code')
+                                );
+                                toast({ title: "Town added successfully" });
+                                setShowAddForm(false);
+                                fetchData();
+                              } catch (error) {
+                                toast({ title: "Failed to add town", variant: "destructive" });
+                              }
+                            }}>
+                              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    State *
+                                  </label>
+                                  <select
+                                    name="state_name"
+                                    required
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    onChange={async (e) => {
+                                      const selectedState = e.target.value;
+                                      if (selectedState) {
+                                        try {
+                                          const data = await adminAPI.getLGAsForState(selectedState);
+                                          const lgaSelect = document.querySelector('select[name="lga_name"]');
+                                          lgaSelect.innerHTML = '<option value="">Select LGA</option>';
+                                          data.lgas.forEach(lga => {
+                                            const option = document.createElement('option');
+                                            option.value = lga;
+                                            option.textContent = lga;
+                                            lgaSelect.appendChild(option);
+                                          });
+                                        } catch (error) {
+                                          console.error('Failed to load LGAs:', error);
+                                        }
+                                      }
+                                    }}
+                                  >
+                                    <option value="">Select State</option>
+                                    {states.map((state, index) => (
+                                      <option key={index} value={state}>{state}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    LGA *
+                                  </label>
+                                  <select
+                                    name="lga_name"
+                                    required
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                  >
+                                    <option value="">Select LGA</option>
+                                  </select>
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Town Name *
+                                  </label>
+                                  <input
+                                    type="text"
+                                    name="town_name"
+                                    required
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    placeholder="e.g., Iberekodo"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Zip Code
+                                  </label>
+                                  <input
+                                    type="text"
+                                    name="zip_code"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    placeholder="e.g., 110001"
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex space-x-2 mt-4">
+                                <button
+                                  type="submit"
+                                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
+                                >
+                                  Add Town
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setShowAddForm(false)}
+                                  className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </form>
+                          </div>
+                        )}
+
+                        {loading ? (
+                          <div className="space-y-2">
+                            {[...Array(3)].map((_, i) => (
+                              <div key={i} className="bg-white p-4 rounded-lg animate-pulse">
+                                <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
+                                <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {Object.entries(towns).map(([state, stateTowns]) => (
+                              <div key={state} className="bg-white rounded-lg border overflow-hidden">
+                                <div className="bg-gray-50 px-6 py-3 border-b">
+                                  <h4 className="font-semibold text-gray-800">{state}</h4>
+                                </div>
+                                <div className="p-4">
+                                  {Object.entries(stateTowns).map(([lga, lgaTowns]) => (
+                                    <div key={lga} className="mb-4 last:mb-0">
+                                      <h5 className="font-medium text-gray-700 mb-2">{lga} ({lgaTowns.length} towns)</h5>
+                                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+                                        {lgaTowns.map((town, index) => (
+                                          <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                                            <span className="text-sm text-gray-700">{town}</span>
+                                            <button
+                                              onClick={async () => {
+                                                if (window.confirm(`Delete town "${town}" from ${lga}, ${state}?`)) {
+                                                  try {
+                                                    await adminAPI.deleteTown(state, lga, town);
+                                                    toast({ title: "Town deleted successfully" });
+                                                    fetchData();
+                                                  } catch (error) {
+                                                    toast({ title: "Failed to delete town", variant: "destructive" });
+                                                  }
+                                                }
+                                              }}
+                                              className="text-red-600 hover:text-red-900 text-xs"
+                                            >
+                                              ×
+                                            </button>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Trade Categories Management */}
+                    {activeLocationTab === 'trades' && (
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <h3 className="text-lg font-semibold">Trade Categories</h3>
+                          <button
+                            onClick={() => setShowAddForm(!showAddForm)}
+                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm"
+                          >
+                            {showAddForm ? 'Cancel' : 'Add New Trade'}
+                          </button>
+                        </div>
+
+                        {showAddForm && (
+                          <div className="bg-white p-4 rounded-lg border">
+                            <h4 className="font-semibold mb-3">Add New Trade Category</h4>
+                            <form onSubmit={async (e) => {
+                              e.preventDefault();
+                              const formData = new FormData(e.target);
+                              try {
+                                await adminAPI.addNewTrade(
+                                  formData.get('trade_name'),
+                                  formData.get('group'),
+                                  formData.get('description')
+                                );
+                                toast({ title: "Trade category added successfully" });
+                                setShowAddForm(false);
+                                fetchData();
+                              } catch (error) {
+                                toast({ title: "Failed to add trade category", variant: "destructive" });
+                              }
+                            }}>
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Trade Name *
+                                  </label>
+                                  <input
+                                    type="text"
+                                    name="trade_name"
+                                    required
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    placeholder="e.g., Solar Installation"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Group
+                                  </label>
+                                  <select
+                                    name="group"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                  >
+                                    <option value="General Services">General Services</option>
+                                    {tradeGroups.map((group, index) => (
+                                      <option key={index} value={group}>{group}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Description
+                                  </label>
+                                  <input
+                                    type="text"
+                                    name="description"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Brief description"
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex space-x-2 mt-4">
+                                <button
+                                  type="submit"
+                                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
+                                >
+                                  Add Trade
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setShowAddForm(false)}
+                                  className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </form>
+                          </div>
+                        )}
+
+                        {loading ? (
+                          <div className="space-y-2">
+                            {[...Array(8)].map((_, i) => (
+                              <div key={i} className="bg-white p-4 rounded-lg animate-pulse">
+                                <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="bg-white rounded-lg border overflow-hidden">
+                            <table className="min-w-full divide-y divide-gray-200">
+                              <thead className="bg-gray-50">
+                                <tr>
+                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Trade Name
+                                  </th>
+                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Group
+                                  </th>
+                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Actions
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody className="bg-white divide-y divide-gray-200">
+                                {trades.map((trade, index) => (
+                                  <tr key={index} className="hover:bg-gray-50">
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                      <div className="text-sm font-medium text-gray-900">
+                                        {trade}
+                                      </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                        General Services
+                                      </span>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                      <div className="flex space-x-2">
+                                        <button
+                                          onClick={() => setEditingItem({ type: 'trade', name: trade })}
+                                          className="text-blue-600 hover:text-blue-900"
+                                        >
+                                          Edit
+                                        </button>
+                                        <button
+                                          onClick={async () => {
+                                            if (window.confirm(`Delete trade category "${trade}"?`)) {
+                                              try {
+                                                await adminAPI.deleteTrade(trade);
+                                                toast({ title: "Trade category deleted successfully" });
+                                                fetchData();
+                                              } catch (error) {
+                                                toast({ title: "Failed to delete trade category", variant: "destructive" });
+                                              }
+                                            }
+                                          }}
+                                          className="text-red-600 hover:text-red-900"
+                                        >
+                                          Delete
+                                        </button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Stats Tab */}
               {activeTab === 'stats' && (
                 <div className="space-y-6">
