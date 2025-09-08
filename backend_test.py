@@ -4932,6 +4932,315 @@ class BackendTester:
         else:
             self.log_result("Complete journey - Admin dashboard stats", False, 
                            f"Status: {response.status_code}")
+    def test_job_loading_api_endpoints(self):
+        """
+        Test the job loading API endpoints for Browse Jobs page functionality
+        Focus on the specific issue with 'page' vs 'skip' parameters
+        """
+        print("\n" + "="*80)
+        print("🎯 TESTING JOB LOADING API ENDPOINTS FOR BROWSE JOBS PAGE")
+        print("="*80)
+        
+        # Step 1: Login with tradesperson credentials
+        self._test_tradesperson_login()
+        
+        # Step 2: Test /api/jobs/for-tradesperson endpoint with skip/limit parameters
+        self._test_for_tradesperson_endpoint()
+        
+        # Step 3: Test pagination with different skip values
+        self._test_pagination_with_skip_values()
+        
+        # Step 4: Test location-based endpoints
+        self._test_location_based_endpoints()
+        
+        print("\n" + "="*80)
+        print("🏁 JOB LOADING API ENDPOINTS TESTING COMPLETE")
+        print("="*80)
+    
+    def _test_tradesperson_login(self):
+        """Test login with specific tradesperson credentials"""
+        print("\n=== Step 1: Tradesperson Authentication ===")
+        
+        # Test login with provided credentials
+        login_data = {
+            "email": "john.plumber@gmail.com",
+            "password": "Password123!"
+        }
+        
+        response = self.make_request("POST", "/auth/login", json=login_data)
+        if response.status_code == 200:
+            login_response = response.json()
+            if 'access_token' in login_response and login_response.get('user', {}).get('role') == 'tradesperson':
+                self.log_result("Tradesperson login (john.plumber@gmail.com)", True, 
+                               f"User ID: {login_response['user']['id']}")
+                self.auth_tokens['test_tradesperson'] = login_response['access_token']
+                self.test_data['test_tradesperson_user'] = login_response['user']
+            else:
+                self.log_result("Tradesperson login (john.plumber@gmail.com)", False, "Invalid login response")
+        else:
+            self.log_result("Tradesperson login (john.plumber@gmail.com)", False, 
+                           f"Status: {response.status_code}, Response: {response.text}")
+    
+    def _test_for_tradesperson_endpoint(self):
+        """Test /api/jobs/for-tradesperson endpoint with proper skip/limit parameters"""
+        print("\n=== Step 2: Testing /api/jobs/for-tradesperson Endpoint ===")
+        
+        if 'test_tradesperson' not in self.auth_tokens:
+            self.log_result("For-tradesperson endpoint tests", False, "No tradesperson authentication token")
+            return
+        
+        tradesperson_token = self.auth_tokens['test_tradesperson']
+        
+        # Test 1: Basic endpoint with default parameters
+        response = self.make_request("GET", "/jobs/for-tradesperson", auth_token=tradesperson_token)
+        if response.status_code == 200:
+            data = response.json()
+            required_fields = ['jobs', 'total', 'pagination']
+            missing_fields = [field for field in required_fields if field not in data]
+            
+            if not missing_fields:
+                jobs = data['jobs']
+                pagination = data['pagination']
+                self.log_result("For-tradesperson endpoint (default params)", True, 
+                               f"Found {len(jobs)} jobs, Total: {data['total']}")
+                
+                # Verify pagination structure
+                if 'skip' in pagination and 'limit' in pagination:
+                    self.log_result("Pagination structure (skip/limit)", True, 
+                                   f"Skip: {pagination['skip']}, Limit: {pagination['limit']}")
+                else:
+                    self.log_result("Pagination structure (skip/limit)", False, 
+                                   "Missing skip or limit in pagination")
+                
+                # Store jobs for further testing
+                self.test_data['tradesperson_jobs'] = jobs
+            else:
+                self.log_result("For-tradesperson endpoint (default params)", False, 
+                               f"Missing fields: {missing_fields}")
+        else:
+            self.log_result("For-tradesperson endpoint (default params)", False, 
+                           f"Status: {response.status_code}, Response: {response.text}")
+        
+        # Test 2: Endpoint with explicit skip/limit parameters
+        response = self.make_request("GET", "/jobs/for-tradesperson", 
+                                   params={"skip": 0, "limit": 10}, 
+                                   auth_token=tradesperson_token)
+        if response.status_code == 200:
+            data = response.json()
+            jobs = data.get('jobs', [])
+            pagination = data.get('pagination', {})
+            
+            if pagination.get('skip') == 0 and pagination.get('limit') == 10:
+                self.log_result("For-tradesperson endpoint (skip=0, limit=10)", True, 
+                               f"Found {len(jobs)} jobs with correct pagination")
+            else:
+                self.log_result("For-tradesperson endpoint (skip=0, limit=10)", False, 
+                               f"Wrong pagination: {pagination}")
+        else:
+            self.log_result("For-tradesperson endpoint (skip=0, limit=10)", False, 
+                           f"Status: {response.status_code}")
+        
+        # Test 3: Verify jobs have required fields for frontend display
+        if 'tradesperson_jobs' in self.test_data and self.test_data['tradesperson_jobs']:
+            job = self.test_data['tradesperson_jobs'][0]
+            required_job_fields = ['id', 'title', 'description', 'category', 'location', 
+                                 'budget_min', 'budget_max', 'timeline', 'homeowner', 
+                                 'interests_count', 'created_at']
+            missing_job_fields = [field for field in required_job_fields if field not in job]
+            
+            if not missing_job_fields:
+                self.log_result("Job fields for frontend display", True, 
+                               f"All required fields present: {len(required_job_fields)} fields")
+            else:
+                self.log_result("Job fields for frontend display", False, 
+                               f"Missing fields: {missing_job_fields}")
+        
+        # Test 4: Verify authentication requirement
+        response = self.make_request("GET", "/jobs/for-tradesperson")
+        if response.status_code in [401, 403]:
+            self.log_result("Authentication requirement", True, "Correctly requires authentication")
+        else:
+            self.log_result("Authentication requirement", False, 
+                           f"Expected 401/403, got {response.status_code}")
+    
+    def _test_pagination_with_skip_values(self):
+        """Test different skip values to ensure pagination works"""
+        print("\n=== Step 3: Testing Pagination with Different Skip Values ===")
+        
+        if 'test_tradesperson' not in self.auth_tokens:
+            self.log_result("Pagination tests", False, "No tradesperson authentication token")
+            return
+        
+        tradesperson_token = self.auth_tokens['test_tradesperson']
+        
+        # Test skip=0, limit=5
+        response = self.make_request("GET", "/jobs/for-tradesperson", 
+                                   params={"skip": 0, "limit": 5}, 
+                                   auth_token=tradesperson_token)
+        if response.status_code == 200:
+            data = response.json()
+            first_batch = data.get('jobs', [])
+            self.log_result("Pagination (skip=0, limit=5)", True, 
+                           f"Retrieved {len(first_batch)} jobs")
+            self.test_data['first_batch_jobs'] = first_batch
+        else:
+            self.log_result("Pagination (skip=0, limit=5)", False, 
+                           f"Status: {response.status_code}")
+        
+        # Test skip=5, limit=5 (next page)
+        response = self.make_request("GET", "/jobs/for-tradesperson", 
+                                   params={"skip": 5, "limit": 5}, 
+                                   auth_token=tradesperson_token)
+        if response.status_code == 200:
+            data = response.json()
+            second_batch = data.get('jobs', [])
+            self.log_result("Pagination (skip=5, limit=5)", True, 
+                           f"Retrieved {len(second_batch)} jobs")
+            
+            # Verify different jobs in second batch
+            if 'first_batch_jobs' in self.test_data:
+                first_ids = {job['id'] for job in self.test_data['first_batch_jobs']}
+                second_ids = {job['id'] for job in second_batch}
+                overlap = first_ids.intersection(second_ids)
+                
+                if not overlap:
+                    self.log_result("Pagination job uniqueness", True, "No overlap between batches")
+                else:
+                    self.log_result("Pagination job uniqueness", False, 
+                                   f"Found {len(overlap)} overlapping jobs")
+        else:
+            self.log_result("Pagination (skip=5, limit=5)", False, 
+                           f"Status: {response.status_code}")
+        
+        # Test large skip value
+        response = self.make_request("GET", "/jobs/for-tradesperson", 
+                                   params={"skip": 1000, "limit": 10}, 
+                                   auth_token=tradesperson_token)
+        if response.status_code == 200:
+            data = response.json()
+            jobs = data.get('jobs', [])
+            self.log_result("Pagination (large skip=1000)", True, 
+                           f"Retrieved {len(jobs)} jobs (expected 0 or few)")
+        else:
+            self.log_result("Pagination (large skip=1000)", False, 
+                           f"Status: {response.status_code}")
+    
+    def _test_location_based_endpoints(self):
+        """Test location-based job endpoints: /api/jobs/nearby and /api/jobs/search"""
+        print("\n=== Step 4: Testing Location-based Endpoints ===")
+        
+        # Test /api/jobs/nearby endpoint
+        # Using Lagos coordinates for testing
+        lagos_lat, lagos_lng = 6.5244, 3.3792
+        
+        response = self.make_request("GET", "/jobs/nearby", 
+                                   params={
+                                       "latitude": lagos_lat,
+                                       "longitude": lagos_lng,
+                                       "max_distance_km": 25,
+                                       "skip": 0,
+                                       "limit": 10
+                                   })
+        if response.status_code == 200:
+            data = response.json()
+            required_fields = ['jobs', 'total', 'location', 'pagination']
+            missing_fields = [field for field in required_fields if field not in data]
+            
+            if not missing_fields:
+                jobs = data['jobs']
+                location_info = data['location']
+                self.log_result("Nearby jobs endpoint", True, 
+                               f"Found {len(jobs)} jobs near Lagos")
+                
+                # Verify location parameters are returned correctly
+                if (location_info.get('latitude') == lagos_lat and 
+                    location_info.get('longitude') == lagos_lng and
+                    location_info.get('max_distance_km') == 25):
+                    self.log_result("Nearby jobs location parameters", True, 
+                                   "Location parameters returned correctly")
+                else:
+                    self.log_result("Nearby jobs location parameters", False, 
+                                   f"Wrong location params: {location_info}")
+            else:
+                self.log_result("Nearby jobs endpoint", False, 
+                               f"Missing fields: {missing_fields}")
+        else:
+            self.log_result("Nearby jobs endpoint", False, 
+                           f"Status: {response.status_code}, Response: {response.text}")
+        
+        # Test /api/jobs/search endpoint with location
+        response = self.make_request("GET", "/jobs/search", 
+                                   params={
+                                       "q": "plumbing",
+                                       "latitude": lagos_lat,
+                                       "longitude": lagos_lng,
+                                       "max_distance_km": 50,
+                                       "skip": 0,
+                                       "limit": 10
+                                   })
+        if response.status_code == 200:
+            data = response.json()
+            required_fields = ['jobs', 'total', 'search_params', 'pagination']
+            missing_fields = [field for field in required_fields if field not in data]
+            
+            if not missing_fields:
+                jobs = data['jobs']
+                search_params = data['search_params']
+                self.log_result("Search jobs with location", True, 
+                               f"Found {len(jobs)} plumbing jobs near Lagos")
+                
+                # Verify search parameters
+                if (search_params.get('query') == 'plumbing' and
+                    search_params.get('location_filter', {}).get('latitude') == lagos_lat):
+                    self.log_result("Search parameters validation", True, 
+                                   "Search parameters returned correctly")
+                else:
+                    self.log_result("Search parameters validation", False, 
+                                   f"Wrong search params: {search_params}")
+            else:
+                self.log_result("Search jobs with location", False, 
+                               f"Missing fields: {missing_fields}")
+        else:
+            self.log_result("Search jobs with location", False, 
+                           f"Status: {response.status_code}")
+        
+        # Test /api/jobs/search endpoint without location (text search only)
+        response = self.make_request("GET", "/jobs/search", 
+                                   params={
+                                       "q": "bathroom",
+                                       "category": "Plumbing",
+                                       "skip": 0,
+                                       "limit": 5
+                                   })
+        if response.status_code == 200:
+            data = response.json()
+            jobs = data.get('jobs', [])
+            search_params = data.get('search_params', {})
+            
+            self.log_result("Search jobs (text only)", True, 
+                           f"Found {len(jobs)} bathroom plumbing jobs")
+            
+            # Verify no location filter when not provided
+            if search_params.get('location_filter') is None:
+                self.log_result("Search without location filter", True, 
+                               "No location filter applied correctly")
+            else:
+                self.log_result("Search without location filter", False, 
+                               "Location filter should be None")
+        else:
+            self.log_result("Search jobs (text only)", False, 
+                           f"Status: {response.status_code}")
+    
+    def run_job_loading_tests(self):
+        """Run only the job loading API tests"""
+        print("🚀 Starting Job Loading API Testing Suite")
+        print("=" * 80)
+        
+        # Run job loading specific tests
+        self.test_job_loading_api_endpoints()
+        
+        # Print final results
+        self.print_final_results()
     
 if __name__ == "__main__":
     tester = BackendTester()
