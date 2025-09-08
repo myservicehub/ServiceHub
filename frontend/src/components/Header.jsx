@@ -229,7 +229,14 @@ const Header = () => {
               <a href="#" className="text-gray-700 font-lato transition-colors hover:text-[#2F8140]">
                 Find tradespeople
               </a>
-              <a href="#" className="text-gray-700 font-lato transition-colors hover:text-[#2F8140]">
+              <a 
+                href="#" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleAuthClick('signup');
+                }}
+                className="text-gray-700 font-lato transition-colors hover:text-[#2F8140]"
+              >
                 Join as tradesperson
               </a>
               <a href="#" className="text-gray-700 font-lato transition-colors hover:text-[#2F8140]">
