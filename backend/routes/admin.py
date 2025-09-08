@@ -237,6 +237,187 @@ async def view_payment_proof(filename: str):
     return FileResponse(file_path, media_type="image/jpeg")
 
 # ==========================================
+# POLICY MANAGEMENT
+# ==========================================
+
+@router.get("/policies")
+async def get_all_policies():
+    """Get all policies for admin management"""
+    
+    policies = await database.get_all_policies()
+    
+    # Get history count for each policy
+    policies_with_stats = []
+    for policy in policies:
+        history = await database.get_policy_history(policy["policy_type"])
+        policy_stats = {
+            **policy,
+            "has_history": len(history) > 0,
+            "total_versions": len(history) + 1  # +1 for current version
+        }
+        policies_with_stats.append(policy_stats)
+    
+    return {
+        "policies": policies_with_stats,
+        "total_count": len(policies_with_stats)
+    }
+
+@router.get("/policies/types")
+async def get_policy_types():
+    """Get available policy types"""
+    
+    return {
+        "policy_types": [
+            {"value": "privacy_policy", "label": "Privacy Policy"},
+            {"value": "terms_of_service", "label": "Terms of Service"},
+            {"value": "reviews_policy", "label": "Reviews Policy"},
+            {"value": "cookie_policy", "label": "Cookie Policy"},
+            {"value": "refund_policy", "label": "Refund/Cancellation Policy"}
+        ]
+    }
+
+@router.get("/policies/{policy_type}")
+async def get_policy_by_type(policy_type: str):
+    """Get current active policy by type"""
+    
+    policy = await database.get_policy_by_type(policy_type)
+    
+    if not policy:
+        raise HTTPException(status_code=404, detail="Policy not found")
+    
+    # Get history for this policy type
+    history = await database.get_policy_history(policy_type)
+    
+    return {
+        "policy": policy,
+        "has_history": len(history) > 0,
+        "total_versions": len(history) + 1
+    }
+
+@router.get("/policies/{policy_type}/history")
+async def get_policy_history(policy_type: str):
+    """Get version history for a policy type"""
+    
+    history = await database.get_policy_history(policy_type)
+    
+    return {
+        "policy_type": policy_type,
+        "history": history,
+        "total_versions": len(history)
+    }
+
+@router.post("/policies")
+async def create_policy(policy_data: dict):
+    """Create a new policy"""
+    
+    # Validate required fields
+    required_fields = ['policy_type', 'title', 'content']
+    for field in required_fields:
+        if field not in policy_data:
+            raise HTTPException(status_code=400, detail=f"Missing required field: {field}")
+    
+    # Validate policy type
+    valid_types = ['privacy_policy', 'terms_of_service', 'reviews_policy', 'cookie_policy', 'refund_policy']
+    if policy_data['policy_type'] not in valid_types:
+        raise HTTPException(status_code=400, detail=f"Invalid policy type. Must be one of: {valid_types}")
+    
+    # Validate content length
+    if len(policy_data['content']) < 50:
+        raise HTTPException(status_code=400, detail="Policy content must be at least 50 characters")
+    
+    # Validate title length
+    if len(policy_data['title']) < 5:
+        raise HTTPException(status_code=400, detail="Policy title must be at least 5 characters")
+    
+    policy_id = await database.create_policy(policy_data, "admin")
+    
+    if not policy_id:
+        raise HTTPException(status_code=500, detail="Failed to create policy")
+    
+    return {
+        "message": "Policy created successfully",
+        "policy_id": policy_id,
+        "policy_type": policy_data['policy_type']
+    }
+
+@router.put("/policies/{policy_id}")
+async def update_policy(policy_id: str, policy_data: dict):
+    """Update an existing policy"""
+    
+    # Validate content length if provided
+    if 'content' in policy_data and len(policy_data['content']) < 50:
+        raise HTTPException(status_code=400, detail="Policy content must be at least 50 characters")
+    
+    # Validate title length if provided
+    if 'title' in policy_data and len(policy_data['title']) < 5:
+        raise HTTPException(status_code=400, detail="Policy title must be at least 5 characters")
+    
+    success = await database.update_policy(policy_id, policy_data, "admin")
+    
+    if not success:
+        raise HTTPException(status_code=404, detail="Policy not found or update failed")
+    
+    return {
+        "message": "Policy updated successfully",
+        "policy_id": policy_id
+    }
+
+@router.delete("/policies/{policy_id}")
+async def delete_policy(policy_id: str):
+    """Delete a policy (only drafts can be deleted)"""
+    
+    success = await database.delete_policy(policy_id)
+    
+    if not success:
+        raise HTTPException(status_code=400, detail="Policy not found or cannot be deleted (only drafts can be deleted)")
+    
+    return {
+        "message": "Policy deleted successfully",
+        "policy_id": policy_id
+    }
+
+@router.post("/policies/{policy_type}/restore/{version}")
+async def restore_policy_version(policy_type: str, version: int):
+    """Restore a specific version of a policy"""
+    
+    policy_id = await database.restore_policy_version(policy_type, version, "admin")
+    
+    if not policy_id:
+        raise HTTPException(status_code=404, detail="Policy version not found or restore failed")
+    
+    return {
+        "message": f"Policy version {version} restored successfully",
+        "policy_id": policy_id,
+        "policy_type": policy_type,
+        "restored_version": version
+    }
+
+@router.post("/policies/{policy_id}/archive")
+async def archive_policy(policy_id: str):
+    """Manually archive a policy"""
+    
+    success = await database.archive_policy(policy_id, "admin")
+    
+    if not success:
+        raise HTTPException(status_code=404, detail="Policy not found or archive failed")
+    
+    return {
+        "message": "Policy archived successfully",
+        "policy_id": policy_id
+    }
+
+@router.post("/policies/activate-scheduled")
+async def activate_scheduled_policies():
+    """Manually trigger activation of scheduled policies (for testing)"""
+    
+    activated_count = await database.activate_scheduled_policies()
+    
+    return {
+        "message": f"Activated {activated_count} scheduled policies",
+        "activated_count": activated_count
+    }
+
+# ==========================================
 # USER MANAGEMENT
 # ==========================================
 
