@@ -557,8 +557,8 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
 
           <Button
             type="button"
-            onClick={nextStep}
-            disabled={isLoading}
+            onClick={currentStep === 6 ? handleFinalSubmit : nextStep}
+            disabled={isLoading || (currentStep === 4 && !formData.skillsTestPassed)}
             className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white"
           >
             <span>
