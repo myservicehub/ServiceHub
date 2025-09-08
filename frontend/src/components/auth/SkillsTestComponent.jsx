@@ -199,19 +199,29 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
         </div>
 
         <div className="space-y-4">
-          <h4 className="font-medium text-gray-800">You will be tested on:</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {formData.selectedTrades.map((trade, index) => (
-              <div key={trade} className="flex items-center space-x-3 p-3 border rounded-lg bg-green-50">
-                <Trophy className="h-5 w-5 text-green-600" />
-                <div>
-                  <span className="font-medium">{trade}</span>
-                  <p className="text-sm text-gray-600">20 questions</p>
-                </div>
+          <h4 className="font-medium text-gray-800">You will be tested on your main trade:</h4>
+          <div className="grid grid-cols-1 gap-3">
+            <div className="flex items-center space-x-3 p-4 border-2 border-green-500 rounded-lg bg-green-50">
+              <Trophy className="h-6 w-6 text-green-600" />
+              <div>
+                <span className="font-semibold text-lg text-green-800">{formData.selectedTrades[0]}</span>
+                <p className="text-sm text-green-700">Your primary trade • 20 questions</p>
               </div>
-            ))}
+            </div>
           </div>
-          <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
+          
+          {formData.selectedTrades.length > 1 && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <p className="text-sm text-blue-800">
+                <strong>Note:</strong> You selected {formData.selectedTrades.length} trades, but you'll only be tested on your main trade ({formData.selectedTrades[0]}) to keep the assessment focused and manageable.
+              </p>
+              <p className="text-xs text-blue-600 mt-1">
+                Other trades: {formData.selectedTrades.slice(1).join(', ')}
+              </p>
+            </div>
+          )}
+          
+          <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
             <strong>Total:</strong> {getTotalQuestions()} questions covering technical knowledge, safety procedures, and Nigerian building standards.
           </div>
         </div>
