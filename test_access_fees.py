@@ -92,7 +92,7 @@ class AccessFeeSystemTester:
             "trade_categories": ["Plumbing"],
             "experience_years": 5,
             "company_name": "Test Plumbing Co",
-            "description": "Test plumber for access fee testing",
+            "description": "Professional plumber with extensive experience in residential and commercial plumbing installations, repairs, and maintenance services across Lagos and surrounding areas.",
             "certifications": ["Licensed Plumber"]
         }
         
