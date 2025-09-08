@@ -12,6 +12,8 @@ const AdminDashboard = () => {
   const [fundingRequests, setFundingRequests] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [verifications, setVerifications] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [userStats, setUserStats] = useState(null);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
