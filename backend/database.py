@@ -2687,6 +2687,318 @@ class Database:
         except Exception as e:
             print(f"Error getting question stats: {e}")
             return {}
+    
+    # Policy Management Methods
+    async def get_all_policies(self):
+        """Get all current active policies"""
+        try:
+            policies = await self.database.policies.find(
+                {"status": {"$in": ["active", "scheduled"]}}
+            ).sort("policy_type", 1).to_list(length=None)
+            
+            # Convert ObjectIds to strings for JSON serialization
+            for policy in policies:
+                if '_id' in policy:
+                    policy['_id'] = str(policy['_id'])
+            
+            return policies
+        except Exception as e:
+            print(f"Error getting policies: {e}")
+            return []
+    
+    async def get_policy_by_type(self, policy_type: str):
+        """Get current active policy by type"""
+        try:
+            policy = await self.database.policies.find_one({
+                "policy_type": policy_type,
+                "status": "active"
+            })
+            
+            if policy and '_id' in policy:
+                policy['_id'] = str(policy['_id'])
+            
+            return policy
+        except Exception as e:
+            print(f"Error getting policy {policy_type}: {e}")
+            return None
+    
+    async def get_policy_by_id(self, policy_id: str):
+        """Get policy by ID"""
+        try:
+            policy = await self.database.policies.find_one({"id": policy_id})
+            
+            if policy and '_id' in policy:
+                policy['_id'] = str(policy['_id'])
+            
+            return policy
+        except Exception as e:
+            print(f"Error getting policy {policy_id}: {e}")
+            return None
+    
+    async def create_policy(self, policy_data: dict, created_by: str):
+        """Create a new policy version"""
+        try:
+            # Check if there's an existing active policy of this type
+            existing_policy = await self.database.policies.find_one({
+                "policy_type": policy_data["policy_type"],
+                "status": "active"
+            })
+            
+            # Get next version number
+            version = 1
+            if existing_policy:
+                # Archive the existing active policy
+                await self.archive_policy(existing_policy["id"], created_by)
+                version = existing_policy.get("version", 0) + 1
+            
+            # Determine status based on effective_date
+            status = "draft"
+            if policy_data.get("effective_date"):
+                effective_date = policy_data["effective_date"]
+                if isinstance(effective_date, str):
+                    effective_date = datetime.fromisoformat(effective_date.replace('Z', '+00:00'))
+                
+                if effective_date <= datetime.now():
+                    status = "active"
+                else:
+                    status = "scheduled"
+            else:
+                status = "active"  # Immediate activation if no date specified
+            
+            policy_doc = {
+                "id": str(uuid.uuid4()),
+                "policy_type": policy_data["policy_type"],
+                "title": policy_data["title"],
+                "content": policy_data["content"],
+                "status": status,
+                "version": version,
+                "effective_date": policy_data.get("effective_date"),
+                "created_at": datetime.now().isoformat(),
+                "updated_at": datetime.now().isoformat(),
+                "created_by": created_by,
+                "notes": policy_data.get("notes", "")
+            }
+            
+            result = await self.database.policies.insert_one(policy_doc)
+            
+            if result.inserted_id:
+                return policy_doc["id"]
+            return None
+            
+        except Exception as e:
+            print(f"Error creating policy: {e}")
+            return None
+    
+    async def update_policy(self, policy_id: str, policy_data: dict, updated_by: str):
+        """Update an existing policy"""
+        try:
+            existing_policy = await self.get_policy_by_id(policy_id)
+            if not existing_policy:
+                return False
+            
+            # Archive current version if it's active
+            if existing_policy["status"] == "active":
+                await self.archive_policy(policy_id, updated_by)
+                # Create new version
+                new_version = existing_policy["version"] + 1
+            else:
+                # Update in place if not active
+                new_version = existing_policy["version"]
+            
+            update_data = {
+                "updated_at": datetime.now().isoformat()
+            }
+            
+            # Update fields if provided
+            if "title" in policy_data:
+                update_data["title"] = policy_data["title"]
+            if "content" in policy_data:
+                update_data["content"] = policy_data["content"]
+            if "notes" in policy_data:
+                update_data["notes"] = policy_data["notes"]
+            if "effective_date" in policy_data:
+                update_data["effective_date"] = policy_data["effective_date"]
+                
+                # Update status based on effective date
+                if policy_data["effective_date"]:
+                    effective_date = policy_data["effective_date"]
+                    if isinstance(effective_date, str):
+                        effective_date = datetime.fromisoformat(effective_date.replace('Z', '+00:00'))
+                    
+                    if effective_date <= datetime.now():
+                        update_data["status"] = "active"
+                    else:
+                        update_data["status"] = "scheduled"
+            
+            if "status" in policy_data:
+                update_data["status"] = policy_data["status"]
+            
+            # If creating new version
+            if existing_policy["status"] == "active":
+                update_data["version"] = new_version
+                update_data["id"] = str(uuid.uuid4())
+                result = await self.database.policies.insert_one(update_data)
+                return result.inserted_id is not None
+            else:
+                # Update existing
+                result = await self.database.policies.update_one(
+                    {"id": policy_id},
+                    {"$set": update_data}
+                )
+                return result.modified_count > 0
+            
+        except Exception as e:
+            print(f"Error updating policy {policy_id}: {e}")
+            return False
+    
+    async def archive_policy(self, policy_id: str, archived_by: str):
+        """Archive a policy (move to history)"""
+        try:
+            policy = await self.get_policy_by_id(policy_id)
+            if not policy:
+                return False
+            
+            # Create history record
+            history_doc = {
+                "policy_id": policy["id"],
+                "policy_type": policy["policy_type"],
+                "title": policy["title"],
+                "content": policy["content"],
+                "version": policy["version"],
+                "effective_date": policy.get("effective_date"),
+                "created_at": policy["created_at"],
+                "created_by": policy["created_by"],
+                "notes": policy.get("notes", ""),
+                "archived_at": datetime.now().isoformat(),
+                "archived_by": archived_by
+            }
+            
+            # Insert into history collection
+            await self.database.policy_history.insert_one(history_doc)
+            
+            # Update policy status to archived
+            result = await self.database.policies.update_one(
+                {"id": policy_id},
+                {"$set": {"status": "archived", "updated_at": datetime.now().isoformat()}}
+            )
+            
+            return result.modified_count > 0
+            
+        except Exception as e:
+            print(f"Error archiving policy {policy_id}: {e}")
+            return False
+    
+    async def get_policy_history(self, policy_type: str):
+        """Get version history for a policy type"""
+        try:
+            history = await self.database.policy_history.find(
+                {"policy_type": policy_type}
+            ).sort("version", -1).to_list(length=None)
+            
+            # Convert ObjectIds to strings for JSON serialization
+            for record in history:
+                if '_id' in record:
+                    record['_id'] = str(record['_id'])
+            
+            return history
+        except Exception as e:
+            print(f"Error getting policy history for {policy_type}: {e}")
+            return []
+    
+    async def restore_policy_version(self, policy_type: str, version: int, restored_by: str):
+        """Restore a specific version of a policy"""
+        try:
+            # Get the version from history
+            history_record = await self.database.policy_history.find_one({
+                "policy_type": policy_type,
+                "version": version
+            })
+            
+            if not history_record:
+                return None
+            
+            # Archive current active policy
+            current_policy = await self.get_policy_by_type(policy_type)
+            if current_policy:
+                await self.archive_policy(current_policy["id"], restored_by)
+            
+            # Create new policy from history
+            new_version = current_policy["version"] + 1 if current_policy else 1
+            
+            policy_doc = {
+                "id": str(uuid.uuid4()),
+                "policy_type": history_record["policy_type"],
+                "title": history_record["title"],
+                "content": history_record["content"],
+                "status": "active",
+                "version": new_version,
+                "effective_date": None,  # Restore immediately
+                "created_at": datetime.now().isoformat(),
+                "updated_at": datetime.now().isoformat(),
+                "created_by": restored_by,
+                "notes": f"Restored from version {version}"
+            }
+            
+            result = await self.database.policies.insert_one(policy_doc)
+            
+            if result.inserted_id:
+                return policy_doc["id"]
+            return None
+            
+        except Exception as e:
+            print(f"Error restoring policy version: {e}")
+            return None
+    
+    async def delete_policy(self, policy_id: str):
+        """Delete a policy (only drafts can be deleted)"""
+        try:
+            policy = await self.get_policy_by_id(policy_id)
+            if not policy or policy["status"] != "draft":
+                return False
+            
+            result = await self.database.policies.delete_one({"id": policy_id})
+            return result.deleted_count > 0
+            
+        except Exception as e:
+            print(f"Error deleting policy {policy_id}: {e}")
+            return False
+    
+    async def activate_scheduled_policies(self):
+        """Activate policies that have reached their effective date (for background task)"""
+        try:
+            current_time = datetime.now()
+            
+            # Find scheduled policies with effective_date <= now
+            scheduled_policies = await self.database.policies.find({
+                "status": "scheduled",
+                "effective_date": {"$lte": current_time.isoformat()}
+            }).to_list(length=None)
+            
+            activated_count = 0
+            
+            for policy in scheduled_policies:
+                # Archive any existing active policy of the same type
+                existing_active = await self.database.policies.find_one({
+                    "policy_type": policy["policy_type"],
+                    "status": "active"
+                })
+                
+                if existing_active:
+                    await self.archive_policy(existing_active["id"], "system")
+                
+                # Activate the scheduled policy
+                await self.database.policies.update_one(
+                    {"id": policy["id"]},
+                    {"$set": {"status": "active", "updated_at": current_time.isoformat()}}
+                )
+                
+                activated_count += 1
+            
+            return activated_count
+            
+        except Exception as e:
+            print(f"Error activating scheduled policies: {e}")
+            return 0
 
 # Global database instance
 database = Database()
