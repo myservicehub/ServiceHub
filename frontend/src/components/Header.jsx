@@ -169,13 +169,15 @@ const Header = () => {
               </>
             ) : (
               <>
-                <Button 
-                  variant="ghost" 
-                  onClick={() => handleAuthClick('login')}
-                  className="text-gray-700 font-lato hover:text-[#2F8140]"
+                <button 
+                  onClick={() => {
+                    console.log('Sign in button clicked!');
+                    handleAuthClick('login');
+                  }}
+                  className="text-gray-700 font-lato hover:text-[#2F8140] px-3 py-2 rounded border border-gray-300 bg-white hover:bg-gray-50"
                 >
                   Sign in
-                </Button>
+                </button>
                 <Button 
                   onClick={() => handleAuthClick('signup')}
                   className="font-lato text-white hover:opacity-90" 
