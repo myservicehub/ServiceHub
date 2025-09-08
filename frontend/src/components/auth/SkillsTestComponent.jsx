@@ -334,7 +334,8 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
   }
 
   // Active test screen
-  const currentTradeQuestions = testQuestions[formData.selectedTrades[currentTrade]] || [];
+  const mainTrade = formData.selectedTrades[0];
+  const currentTradeQuestions = testQuestions[mainTrade] || [];
   const currentQuestionData = currentTradeQuestions[currentQuestion];
 
   return (
