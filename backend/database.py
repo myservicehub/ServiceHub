@@ -2560,5 +2560,112 @@ class Database:
             print(f"Error deleting trade: {e}")
             return False
 
+    # Skills Test Questions Management
+    async def get_all_skills_questions(self):
+        """Get all skills test questions grouped by trade"""
+        try:
+            questions = await self.database.skills_questions.find().to_list(length=None)
+            
+            # Group questions by trade
+            questions_by_trade = {}
+            for question in questions:
+                trade = question.get('trade_category', 'Unknown')
+                if trade not in questions_by_trade:
+                    questions_by_trade[trade] = []
+                questions_by_trade[trade].append(question)
+            
+            return questions_by_trade
+        except Exception as e:
+            print(f"Error getting skills questions: {e}")
+            return {}
+    
+    async def get_questions_for_trade(self, trade_category: str):
+        """Get all questions for a specific trade"""
+        try:
+            questions = await self.database.skills_questions.find(
+                {"trade_category": trade_category}
+            ).to_list(length=None)
+            return questions
+        except Exception as e:
+            print(f"Error getting questions for trade {trade_category}: {e}")
+            return []
+    
+    async def add_skills_question(self, trade_category: str, question_data: dict):
+        """Add a new skills test question"""
+        try:
+            question_doc = {
+                "id": str(uuid.uuid4()),
+                "trade_category": trade_category,
+                "question": question_data.get('question'),
+                "options": question_data.get('options', []),
+                "correct_answer": question_data.get('correct_answer', 0),
+                "category": question_data.get('category', 'General'),
+                "explanation": question_data.get('explanation', ''),
+                "difficulty": question_data.get('difficulty', 'Medium'),
+                "created_at": datetime.now(),
+                "updated_at": datetime.now(),
+                "created_by": "admin",
+                "is_active": True
+            }
+            
+            result = await self.database.skills_questions.insert_one(question_doc)
+            return str(result.inserted_id) if result.inserted_id else None
+        except Exception as e:
+            print(f"Error adding skills question: {e}")
+            return None
+    
+    async def update_skills_question(self, question_id: str, question_data: dict):
+        """Update an existing skills test question"""
+        try:
+            update_data = {
+                "question": question_data.get('question'),
+                "options": question_data.get('options', []),
+                "correct_answer": question_data.get('correct_answer', 0),
+                "category": question_data.get('category', 'General'),
+                "explanation": question_data.get('explanation', ''),
+                "difficulty": question_data.get('difficulty', 'Medium'),
+                "updated_at": datetime.now()
+            }
+            
+            result = await self.database.skills_questions.update_one(
+                {"id": question_id},
+                {"$set": update_data}
+            )
+            
+            return result.modified_count > 0
+        except Exception as e:
+            print(f"Error updating skills question: {e}")
+            return False
+    
+    async def delete_skills_question(self, question_id: str):
+        """Delete a skills test question"""
+        try:
+            result = await self.database.skills_questions.delete_one({"id": question_id})
+            return result.deleted_count > 0
+        except Exception as e:
+            print(f"Error deleting skills question: {e}")
+            return False
+    
+    async def get_question_stats(self):
+        """Get statistics about skills questions"""
+        try:
+            pipeline = [
+                {
+                    "$group": {
+                        "_id": "$trade_category",
+                        "count": {"$sum": 1},
+                        "active_count": {
+                            "$sum": {"$cond": [{"$eq": ["$is_active", True]}, 1, 0]}
+                        }
+                    }
+                }
+            ]
+            
+            stats = await self.database.skills_questions.aggregate(pipeline).to_list(length=None)
+            return {stat['_id']: stat for stat in stats}
+        except Exception as e:
+            print(f"Error getting question stats: {e}")
+            return {}
+
 # Global database instance
 database = Database()
