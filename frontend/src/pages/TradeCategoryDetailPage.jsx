@@ -601,6 +601,161 @@ const TradeCategoryDetailPage = () => {
         "Environmentally harmful practices"
       ]
     },
+    "home-extensions": {
+      name: "Home Extensions",
+      description: "Professional home extension and addition services",
+      services: [
+        "Room additions",
+        "Second story additions",
+        "Kitchen extensions",
+        "Garage conversions",
+        "Porch and patio extensions",
+        "Structural modifications"
+      ],
+      averagePrice: "₦500,000 - ₦5,000,000",
+      timeframe: "4-20 weeks",
+      materials: ["Structural materials", "Roofing", "Windows", "Doors", "Insulation", "Finishing materials"],
+      whatToExpect: "Extension specialists handle planning, permits, construction, and finishing of home additions that integrate seamlessly with existing structures.",
+      whenToHire: "When needing more space, increasing home value, or adapting home layout to changing needs.",
+      tips: [
+        "Check planning permission requirements",
+        "Ensure structural integrity assessment",
+        "Match existing architectural style",
+        "Plan utilities and services integration",
+        "Set realistic timeline expectations"
+      ],
+      redFlags: [
+        "Doesn't understand building regulations",
+        "Cannot provide structural calculations",
+        "Poor integration with existing structure",
+        "No permits or approvals",
+        "Unrealistic cost estimates"
+      ]
+    },
+    "scaffolding": {
+      name: "Scaffolding",
+      description: "Professional scaffolding erection and rental services for construction projects",
+      services: [
+        "Scaffolding erection",
+        "Scaffolding dismantling",
+        "Safety inspections",
+        "Equipment rental",
+        "Custom scaffolding solutions",
+        "Training and consultation"
+      ],
+      averagePrice: "₦20,000 - ₦200,000",
+      timeframe: "1-3 days",
+      materials: ["Scaffolding poles", "Couplers", "Boards", "Base plates", "Safety equipment", "Ties"],
+      whatToExpect: "Scaffolding professionals provide safe, stable platforms for construction work, ensuring compliance with safety regulations.",
+      whenToHire: "For construction, maintenance, or repair work at height requiring safe access platforms.",
+      tips: [
+        "Verify safety certifications",
+        "Ensure proper ground conditions",
+        "Check inspection schedules",
+        "Understand rental terms",
+        "Confirm load capacity requirements"
+      ],
+      redFlags: [
+        "No safety certifications",
+        "Uses damaged equipment",
+        "Inadequate foundation preparation",
+        "No inspection documentation",
+        "Ignores safety regulations"
+      ]
+    },
+    "waste-disposal": {
+      name: "Waste Disposal",
+      description: "Professional waste collection and disposal services",
+      services: [
+        "Construction waste removal",
+        "Household waste collection",
+        "Hazardous waste disposal",
+        "Bulk item removal",
+        "Recycling services",
+        "Skip hire services"
+      ],
+      averagePrice: "₦10,000 - ₦100,000",
+      timeframe: "1-3 hours",
+      materials: ["Collection vehicles", "Containers", "Safety equipment", "Disposal documentation", "Protective gear", "Sorting equipment"],
+      whatToExpect: "Waste disposal professionals collect, transport, and dispose of various waste types according to environmental regulations.",
+      whenToHire: "For large cleanouts, construction waste, hazardous materials, or regular waste collection services.",
+      tips: [
+        "Understand what waste types are accepted",
+        "Check environmental compliance",
+        "Verify proper disposal methods",
+        "Get documentation for hazardous waste",
+        "Compare pricing and service levels"
+      ],
+      redFlags: [
+        "No proper licenses for waste handling",
+        "Illegal dumping practices",
+        "Cannot handle hazardous materials",
+        "No documentation provided",
+        "Damages property during collection"
+      ]
+    },
+    "flooring": {
+      name: "Flooring",
+      description: "Professional flooring installation and repair services",
+      services: [
+        "Tile flooring installation",
+        "Wooden floor installation",
+        "Vinyl and laminate flooring",
+        "Floor repairs and restoration",
+        "Subfloor preparation",
+        "Floor finishing and sealing"
+      ],
+      averagePrice: "₦15,000 - ₦400,000",
+      timeframe: "1-7 days",
+      materials: ["Flooring materials", "Adhesives", "Underlayment", "Trims", "Sealers", "Tools"],
+      whatToExpect: "Flooring specialists prepare surfaces and install various flooring types with precision, ensuring durability and aesthetics.",
+      whenToHire: "For new flooring installation, replacements, repairs, or when updating room aesthetics.",
+      tips: [
+        "Choose appropriate flooring for room use",
+        "Ensure proper subfloor preparation",
+        "Discuss acclimatization requirements",
+        "Plan for furniture removal",
+        "Understand maintenance requirements"
+      ],
+      redFlags: [
+        "Skips subfloor preparation",
+        "Uses inappropriate materials",
+        "Poor pattern alignment",
+        "Inadequate expansion gaps",
+        "No finishing or sealing"
+      ]
+    },
+    "plastering-pop": {
+      name: "Plastering/POP",
+      description: "Professional plastering and POP (Plaster of Paris) ceiling services",
+      services: [
+        "Wall plastering",
+        "POP ceiling installation",
+        "Decorative moldings",
+        "Repair and restoration",
+        "Texture application",
+        "Surface preparation"
+      ],
+      averagePrice: "₦20,000 - ₦300,000",
+      timeframe: "2-10 days",
+      materials: ["Plaster", "POP", "Mesh", "Primers", "Tools", "Finishing materials"],
+      whatToExpected: "Plasterers create smooth, even surfaces on walls and decorative ceiling features using traditional and modern techniques.",
+      whenToHire: "For wall finishing, decorative ceilings, repairs, or when preparing surfaces for painting.",
+      tips: [
+        "Allow proper drying time",
+        "Ensure surface preparation",
+        "Discuss finish quality expectations",
+        "Plan for dust and mess protection",
+        "Verify material quality"
+      ],
+      redFlags: [
+        "Rushes drying process",
+        "Poor surface preparation",
+        "Uses low-quality materials",
+        "Inconsistent thickness application",
+        "Cannot achieve smooth finish"
+      ]
+    },
     "roofing": {
       name: "Roofing",
       description: "Professional roofing services for installation, repairs, and maintenance",
