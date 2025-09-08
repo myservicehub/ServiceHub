@@ -649,7 +649,17 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
           </p>
 
           {!formData.idDocument ? (
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-400 transition-colors">
+            <div 
+              className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                dragActive 
+                  ? 'border-green-500 bg-green-50' 
+                  : 'border-gray-300 hover:border-green-400'
+              } ${isUploading ? 'pointer-events-none opacity-50' : ''}`}
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+            >
               <input
                 type="file"
                 accept="image/*,.pdf"
@@ -668,10 +678,10 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
                 className="cursor-pointer"
               >
                 <div className="space-y-3">
-                  <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                  <Upload className={`mx-auto h-12 w-12 ${dragActive ? 'text-green-500' : 'text-gray-400'}`} />
                   <div>
                     <p className="text-sm font-medium text-gray-900">
-                      Click to upload or drag and drop
+                      {dragActive ? 'Drop your file here' : 'Click to upload or drag and drop'}
                     </p>
                     <p className="text-xs text-gray-500">
                       JPEG, PNG, WebP or PDF up to 5MB
