@@ -97,6 +97,15 @@ const AdminDashboard = () => {
         setSkillsQuestions(questionsData.questions || {});
         setQuestionStats(questionsData.stats || {});
         setTrades(tradesData.trades || []); // Use trades for dropdown options
+      } else if (activeTab === 'policies') {
+        // Load policies and policy types
+        const [policiesData, typesData] = await Promise.all([
+          adminAPI.getAllPolicies(),
+          adminAPI.getPolicyTypes()
+        ]);
+        
+        setPolicies(policiesData.policies || []);
+        setPolicyTypes(typesData.policy_types || []);
       } else if (activeTab === 'stats') {
         const data = await adminAPI.getDashboardStats();
         setStats(data);
