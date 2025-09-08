@@ -345,46 +345,14 @@ const Header = () => {
         )}
       </div>
       
-      {/* Debug: Simple modal instead of AuthModal */}
-      {authModalOpen && (
-        <div 
-          className="fixed inset-0 z-50 bg-black bg-opacity-50"
-          onClick={() => setAuthModalOpen(false)}
-        >
-          <div 
-            className="fixed left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-8 rounded-lg shadow-lg max-w-md w-full mx-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Sign In</h2>
-              <button 
-                onClick={() => setAuthModalOpen(false)}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
-              >
-                ×
-              </button>
-            </div>
-            <div className="space-y-4">
-              <input 
-                type="email" 
-                placeholder="Email" 
-                className="w-full p-3 border rounded"
-              />
-              <input 
-                type="password" 
-                placeholder="Password" 
-                className="w-full p-3 border rounded"
-              />
-              <button className="w-full bg-green-600 text-white p-3 rounded hover:bg-green-700">
-                Sign In
-              </button>
-            </div>
-            <p className="mt-4 text-sm text-gray-600">
-              Debug: Mode is {authMode}
-            </p>
-          </div>
-        </div>
-      )}
+      {/* Auth Modal */}
+      <AuthModal 
+        isOpen={authModalOpen} 
+        onClose={() => setAuthModalOpen(false)}
+        defaultMode={authMode}
+        defaultTab="tradesperson"
+        showOnlyTradesperson={true}
+      />
     </header>
   );
 };
