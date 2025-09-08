@@ -154,6 +154,14 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
     return answers[questionKey];
   };
 
+  const canGoNext = () => {
+    return getCurrentAnswer() !== undefined;
+  };
+
+  const canGoPrevious = () => {
+    return currentQuestion > 0;
+  };
+
   const isLastQuestion = () => {
     const mainTrade = formData.selectedTrades[0];
     const totalQuestions = testQuestions[mainTrade]?.length || 0;
