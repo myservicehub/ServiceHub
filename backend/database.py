@@ -2999,6 +2999,258 @@ class Database:
         except Exception as e:
             print(f"Error activating scheduled policies: {e}")
             return 0
+    
+    # Contact Management Methods
+    async def get_all_contacts(self):
+        """Get all contacts grouped by type"""
+        try:
+            contacts = await self.database.contacts.find(
+                {"is_active": True}
+            ).sort([("contact_type", 1), ("display_order", 1)]).to_list(length=None)
+            
+            # Convert ObjectIds to strings for JSON serialization
+            for contact in contacts:
+                if '_id' in contact:
+                    contact['_id'] = str(contact['_id'])
+            
+            return contacts
+        except Exception as e:
+            print(f"Error getting contacts: {e}")
+            return []
+    
+    async def get_contacts_by_type(self, contact_type: str):
+        """Get contacts by specific type"""
+        try:
+            contacts = await self.database.contacts.find({
+                "contact_type": contact_type,
+                "is_active": True
+            }).sort("display_order", 1).to_list(length=None)
+            
+            # Convert ObjectIds to strings for JSON serialization
+            for contact in contacts:
+                if '_id' in contact:
+                    contact['_id'] = str(contact['_id'])
+            
+            return contacts
+        except Exception as e:
+            print(f"Error getting contacts by type {contact_type}: {e}")
+            return []
+    
+    async def get_contact_by_id(self, contact_id: str):
+        """Get contact by ID"""
+        try:
+            contact = await self.database.contacts.find_one({"id": contact_id})
+            
+            if contact and '_id' in contact:
+                contact['_id'] = str(contact['_id'])
+            
+            return contact
+        except Exception as e:
+            print(f"Error getting contact {contact_id}: {e}")
+            return None
+    
+    async def create_contact(self, contact_data: dict, created_by: str):
+        """Create a new contact"""
+        try:
+            contact_doc = {
+                "id": str(uuid.uuid4()),
+                "contact_type": contact_data["contact_type"],
+                "label": contact_data["label"],
+                "value": contact_data["value"],
+                "is_active": contact_data.get("is_active", True),
+                "display_order": contact_data.get("display_order", 0),
+                "notes": contact_data.get("notes", ""),
+                "created_at": datetime.now().isoformat(),
+                "updated_at": datetime.now().isoformat(),
+                "updated_by": created_by
+            }
+            
+            result = await self.database.contacts.insert_one(contact_doc)
+            
+            if result.inserted_id:
+                return contact_doc["id"]
+            return None
+            
+        except Exception as e:
+            print(f"Error creating contact: {e}")
+            return None
+    
+    async def update_contact(self, contact_id: str, contact_data: dict, updated_by: str):
+        """Update an existing contact"""
+        try:
+            update_data = {
+                "updated_at": datetime.now().isoformat(),
+                "updated_by": updated_by
+            }
+            
+            # Update fields if provided
+            if "label" in contact_data:
+                update_data["label"] = contact_data["label"]
+            if "value" in contact_data:
+                update_data["value"] = contact_data["value"]
+            if "is_active" in contact_data:
+                update_data["is_active"] = contact_data["is_active"]
+            if "display_order" in contact_data:
+                update_data["display_order"] = contact_data["display_order"]
+            if "notes" in contact_data:
+                update_data["notes"] = contact_data["notes"]
+            
+            result = await self.database.contacts.update_one(
+                {"id": contact_id},
+                {"$set": update_data}
+            )
+            
+            return result.modified_count > 0
+            
+        except Exception as e:
+            print(f"Error updating contact {contact_id}: {e}")
+            return False
+    
+    async def delete_contact(self, contact_id: str):
+        """Delete a contact"""
+        try:
+            result = await self.database.contacts.delete_one({"id": contact_id})
+            return result.deleted_count > 0
+            
+        except Exception as e:
+            print(f"Error deleting contact {contact_id}: {e}")
+            return False
+    
+    async def get_public_contacts(self):
+        """Get public contacts for website display (organized by type)"""
+        try:
+            contacts = await self.get_all_contacts()
+            
+            # Group contacts by type for easy frontend consumption
+            contacts_by_type = {}
+            for contact in contacts:
+                contact_type = contact["contact_type"]
+                if contact_type not in contacts_by_type:
+                    contacts_by_type[contact_type] = []
+                contacts_by_type[contact_type].append({
+                    "label": contact["label"],
+                    "value": contact["value"],
+                    "display_order": contact["display_order"]
+                })
+            
+            # Sort each type by display_order
+            for contact_type in contacts_by_type:
+                contacts_by_type[contact_type].sort(key=lambda x: x["display_order"])
+            
+            return contacts_by_type
+            
+        except Exception as e:
+            print(f"Error getting public contacts: {e}")
+            return {}
+    
+    async def initialize_default_contacts(self):
+        """Initialize default contact information if none exists"""
+        try:
+            # Check if contacts already exist
+            existing_contacts = await self.database.contacts.count_documents({})
+            if existing_contacts > 0:
+                return
+            
+            # Default contact information
+            default_contacts = [
+                {
+                    "contact_type": "phone_support",
+                    "label": "Customer Support",
+                    "value": "+234 901 234 5678",
+                    "is_active": True,
+                    "display_order": 1,
+                    "notes": "Primary customer support line"
+                },
+                {
+                    "contact_type": "phone_business",
+                    "label": "Business Line",
+                    "value": "+234 901 234 5679",
+                    "is_active": True,
+                    "display_order": 2,
+                    "notes": "Business inquiries and partnerships"
+                },
+                {
+                    "contact_type": "email_support",
+                    "label": "Support Email",
+                    "value": "support@servicehub.ng",
+                    "is_active": True,
+                    "display_order": 1,
+                    "notes": "Customer support and technical issues"
+                },
+                {
+                    "contact_type": "email_business",
+                    "label": "Business Email",
+                    "value": "business@servicehub.ng",
+                    "is_active": True,
+                    "display_order": 2,
+                    "notes": "Business partnerships and corporate inquiries"
+                },
+                {
+                    "contact_type": "address_office",
+                    "label": "Head Office",
+                    "value": "123 Tech District, Victoria Island, Lagos, Nigeria",
+                    "is_active": True,
+                    "display_order": 1,
+                    "notes": "Main office location"
+                },
+                {
+                    "contact_type": "social_facebook",
+                    "label": "Facebook",
+                    "value": "https://facebook.com/servicehubng",
+                    "is_active": True,
+                    "display_order": 1,
+                    "notes": "Official Facebook page"
+                },
+                {
+                    "contact_type": "social_instagram",
+                    "label": "Instagram",
+                    "value": "https://instagram.com/servicehubng",
+                    "is_active": True,
+                    "display_order": 2,
+                    "notes": "Official Instagram account"
+                },
+                {
+                    "contact_type": "social_youtube",
+                    "label": "YouTube",
+                    "value": "https://youtube.com/@servicehubng",
+                    "is_active": True,
+                    "display_order": 3,
+                    "notes": "Official YouTube channel"
+                },
+                {
+                    "contact_type": "social_twitter",
+                    "label": "Twitter",
+                    "value": "https://twitter.com/servicehubng",
+                    "is_active": True,
+                    "display_order": 4,
+                    "notes": "Official Twitter account"
+                },
+                {
+                    "contact_type": "website_url",
+                    "label": "Website",
+                    "value": "https://servicehub.ng",
+                    "is_active": True,
+                    "display_order": 1,
+                    "notes": "Main website URL"
+                },
+                {
+                    "contact_type": "business_hours",
+                    "label": "Business Hours",
+                    "value": "Monday - Friday: 9:00 AM - 6:00 PM\nSaturday: 10:00 AM - 4:00 PM\nSunday: Closed",
+                    "is_active": True,
+                    "display_order": 1,
+                    "notes": "Standard operating hours"
+                }
+            ]
+            
+            # Insert default contacts
+            for contact_data in default_contacts:
+                await self.create_contact(contact_data, "system")
+            
+            print("Default contact information initialized")
+            
+        except Exception as e:
+            print(f"Error initializing default contacts: {e}")
 
 # Global database instance
 database = Database()
