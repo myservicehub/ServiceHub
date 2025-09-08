@@ -10,7 +10,7 @@ import uuid
 from datetime import datetime, timedelta
 
 # Get backend URL from environment
-BACKEND_URL = "https://jobmatch-naija.preview.emergentagent.com/api"
+BACKEND_URL = "https://nigerian-trades.preview.emergentagent.com/api"
 
 class EnhancedJobPostingTester:
     def __init__(self):
