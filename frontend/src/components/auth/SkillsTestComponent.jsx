@@ -154,17 +154,10 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
     return answers[questionKey];
   };
 
-  const canGoNext = () => {
-    return getCurrentAnswer() !== undefined;
-  };
-
-  const canGoPrevious = () => {
-    return currentTrade > 0 || currentQuestion > 0;
-  };
-
   const isLastQuestion = () => {
-    return currentTrade === formData.selectedTrades.length - 1 && 
-           currentQuestion === (testQuestions[formData.selectedTrades[currentTrade]]?.length || 1) - 1;
+    const mainTrade = formData.selectedTrades[0];
+    const totalQuestions = testQuestions[mainTrade]?.length || 0;
+    return currentQuestion === totalQuestions - 1;
   };
 
   // Introduction screen
