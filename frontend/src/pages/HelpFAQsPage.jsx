@@ -316,13 +316,18 @@ const HelpFAQsPage = () => {
                     <h4 className="font-medium text-gray-900">Browse Jobs</h4>
                     <p className="text-sm text-gray-600 mt-1">Find work opportunities</p>
                   </button>
-                  <button
-                    onClick={() => navigate('/wallet')}
-                    className="p-4 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-colors text-left"
-                  >
-                    <h4 className="font-medium text-gray-900">Manage Wallet</h4>
-                    <p className="text-sm text-gray-600 mt-1">Add funds or check balance</p>
-                  </button>
+                  
+                  {/* Only show Manage Wallet to authenticated tradespeople */}
+                  {isAuthenticated() && isTradesperson() && (
+                    <button
+                      onClick={() => navigate('/wallet')}
+                      className="p-4 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-colors text-left"
+                    >
+                      <h4 className="font-medium text-gray-900">Manage Wallet</h4>
+                      <p className="text-sm text-gray-600 mt-1">Add funds or check balance</p>
+                    </button>
+                  )}
+                  
                   <button
                     onClick={() => navigate('/profile')}
                     className="p-4 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-colors text-left"
