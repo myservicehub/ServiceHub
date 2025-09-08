@@ -125,6 +125,6 @@ export const adminAPI = {
 
   // Get payment proof image (admin)
   getPaymentProofUrl(filename) {
-    return `${import.meta.env.VITE_BACKEND_URL || process.env.REACT_APP_BACKEND_URL}/api/admin/wallet/payment-proof/${filename}`;
+    return `${process.env.REACT_APP_BACKEND_URL}/api/admin/wallet/payment-proof/${filename}`;
   }
 };
