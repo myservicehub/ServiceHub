@@ -1334,7 +1334,7 @@ const AdminDashboard = () => {
                       <div className="bg-white p-4 rounded-lg border">
                         <h3 className="text-lg font-semibold text-gray-800">Trade Categories</h3>
                         <p className="text-3xl font-bold text-green-600">
-                          {Object.keys(skillsQuestions).length}
+                          {trades.length}
                         </p>
                       </div>
                       <div className="bg-white p-4 rounded-lg border">
