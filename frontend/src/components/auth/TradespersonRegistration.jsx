@@ -110,6 +110,79 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
     }
   };
 
+  const handleFileUpload = async (file) => {
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
+    if (!allowedTypes.includes(file.type)) {
+      setErrors({ idDocument: 'Please upload a valid image (JPEG, PNG, WebP) or PDF file' });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      setErrors({ idDocument: 'File size must be less than 5MB' });
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
+      // Simulate upload progress (in real app, this would be actual upload progress)
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 100);
+
+      // Create a preview URL for the file
+      const fileUrl = URL.createObjectURL(file);
+      
+      // In a real application, you would upload to your server here
+      // For now, we'll just store the file info
+      const fileInfo = {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        url: fileUrl,
+        uploadedAt: new Date().toISOString()
+      };
+
+      setTimeout(() => {
+        setUploadProgress(100);
+        updateFormData('idDocument', fileInfo);
+        setIsUploading(false);
+        toast({
+          title: "Document uploaded successfully!",
+          description: `${file.name} has been uploaded for verification.`,
+        });
+      }, 1000);
+
+    } catch (error) {
+      setIsUploading(false);
+      setUploadProgress(0);
+      setErrors({ idDocument: 'Upload failed. Please try again.' });
+      toast({
+        title: "Upload failed",
+        description: "There was an error uploading your document. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const removeUploadedFile = () => {
+    if (formData.idDocument?.url) {
+      URL.revokeObjectURL(formData.idDocument.url);
+    }
+    updateFormData('idDocument', null);
+    setUploadProgress(0);
+  };
+
   const nextStep = () => {
     if (validateCurrentStep()) {
       setCurrentStep(prev => Math.min(prev + 1, 6));
