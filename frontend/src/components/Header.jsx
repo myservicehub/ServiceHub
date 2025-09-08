@@ -16,10 +16,7 @@ const Header = () => {
 
   const handleAuthClick = (mode) => {
     setAuthMode(mode);
-    // Use setTimeout to ensure state update happens
-    setTimeout(() => {
-      setAuthModalOpen(true);
-    }, 0);
+    setAuthModalOpen(true);
   };
 
   const handleLogout = () => {
