@@ -61,7 +61,11 @@ const LoginForm = ({ onClose, onSwitchToSignup }) => {
         
         if (onClose) onClose();
       } else {
-        setErrors({ submit: result.error });
+        // Ensure error is a string, not an object
+        const errorMessage = typeof result.error === 'string' 
+          ? result.error 
+          : result.error?.message || result.error?.msg || 'Login failed. Please check your credentials and try again.';
+        setErrors({ submit: errorMessage });
       }
     } catch (error) {
       setErrors({ submit: 'An unexpected error occurred. Please try again.' });
