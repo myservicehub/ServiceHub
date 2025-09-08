@@ -5787,6 +5787,9 @@ class BackendTester:
         # NEW: Policy Management System Testing (as requested)
         self.test_policy_management_system()
         
+        # NEW: Contact Management System Testing (as requested)
+        self.test_contact_management_system()
+        
         # Print final results
         print("\n" + "=" * 80)
         print("🏁 FINAL TEST RESULTS")
