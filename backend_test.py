@@ -5218,6 +5218,9 @@ class BackendTester:
         # NEW: Admin Location & Trades Management System Testing
         self.test_admin_location_trades_management()
         
+        # NEW: Admin Skills Questions Management System Testing (as requested)
+        self.test_admin_skills_questions_management()
+        
         # Print final results
         print("\n" + "=" * 80)
         print("🏁 FINAL TEST RESULTS")
