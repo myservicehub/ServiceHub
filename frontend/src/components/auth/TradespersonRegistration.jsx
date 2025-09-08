@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../hooks/use-toast';
+import SkillsTestComponent from './SkillsTestComponent';
 
 const TradespersonRegistration = ({ onClose, onComplete }) => {
   const [currentStep, setCurrentStep] = useState(1);
