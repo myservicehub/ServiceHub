@@ -115,6 +115,51 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
     setCurrentStep(prev => Math.max(prev - 1, 1));
   };
 
+  const handleFinalSubmit = async () => {
+    if (!validateCurrentStep()) return;
+    
+    setIsLoading(true);
+    
+    try {
+      const fullName = `${formData.firstName} ${formData.lastName}`;
+      
+      const result = await registerTradesperson({
+        name: fullName,
+        email: formData.email || `${formData.phone}@servicehub.temp`, // Generate email if not provided
+        password: formData.password,
+        phone: formData.phone,
+        location: formData.state,
+        postcode: '000000', // Placeholder postcode
+        trade_categories: formData.selectedTrades,
+        experience_years: 1, // Default experience
+        company_name: formData.tradingName,
+        description: formData.profileDescription,
+        certifications: formData.certifications,
+        business_type: formData.businessType,
+        travel_distance: formData.travelDistance,
+        skills_test_passed: formData.skillsTestPassed,
+        test_scores: formData.testScores
+      });
+
+      if (result.success) {
+        toast({
+          title: "Registration Successful!",
+          description: `Welcome to ServiceHub, ${fullName}! Your account is being reviewed and you'll be notified once approved.`,
+        });
+        
+        if (onComplete) {
+          onComplete(result);
+        }
+      } else {
+        setErrors({ submit: result.error });
+      }
+    } catch (error) {
+      setErrors({ submit: 'Registration failed. Please try again.' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const validateCurrentStep = () => {
     const newErrors = {};
 
