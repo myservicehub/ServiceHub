@@ -48,6 +48,7 @@ function App() {
             <Route path="/how-it-works" element={<HowItWorksPage />} />
             <Route path="/partnerships" element={<PartnershipPage />} />
             <Route path="/trade-categories" element={<TradeCategoriesPage />} />
+            <Route path="/help" element={<HelpFAQsPage />} />
           </Routes>
           <Toaster />
         </BrowserRouter>
