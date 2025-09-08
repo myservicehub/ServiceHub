@@ -132,7 +132,7 @@ const BrowseJobsPage = () => {
           longitude: userLocation.lng.toString(),
           max_distance_km: filters.maxDistance.toString(),
           limit: '50',
-          page: page.toString()
+          skip: ((page - 1) * 50).toString()
         });
 
         if (filters.search) params.append('q', filters.search);
@@ -145,7 +145,8 @@ const BrowseJobsPage = () => {
         response = await jobsAPI.apiClient.get(url);
       } else {
         // Use regular job fetching for tradespeople
-        response = await jobsAPI.apiClient.get(`/jobs/for-tradesperson?limit=50&page=${page}`);
+        const skip = (page - 1) * 50;
+        response = await jobsAPI.apiClient.get(`/jobs/for-tradesperson?limit=50&skip=${skip}`);
       }
 
       setJobs(response.data.jobs || []);
