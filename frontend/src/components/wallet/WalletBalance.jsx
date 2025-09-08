@@ -68,10 +68,10 @@ const WalletBalance = ({ showFundButton = true, onFundClick }) => {
         )}
       </div>
       
-      {balance?.balance_coins < 15 && (
+      {balance?.balance_coins < 5 && (
         <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
           <p className="text-sm text-yellow-800">
-            ⚠️ Low balance: You need at least 15 coins (₦1,500) to access job contact details.
+            ⚠️ Low balance: You may need more coins to access some job contact details.
           </p>
         </div>
       )}
