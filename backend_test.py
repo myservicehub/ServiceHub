@@ -4890,6 +4890,9 @@ class BackendTester:
         # NEW: Admin User Management System Testing
         self.test_admin_user_management_system()
         
+        # NEW: Admin Location & Trades Management System Testing
+        self.test_admin_location_trades_management()
+        
         # Print final results
         print("\n" + "=" * 80)
         print("🏁 FINAL TEST RESULTS")
