@@ -130,6 +130,8 @@ export const interestsAPI = {
 
 // Jobs API
 export const jobsAPI = {
+  apiClient, // Export apiClient for direct access
+  
   createJob: async (jobData) => {
     const response = await apiClient.post('/jobs/', jobData);
     return response.data;
