@@ -1286,6 +1286,149 @@ const AdminDashboard = () => {
                 </div>
               )}
 
+              {/* Skills Questions Management Tab */}
+              {activeTab === 'questions' && (
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-xl font-semibold">Skills Test Questions Management</h2>
+                    <button
+                      onClick={fetchData}
+                      className="text-blue-600 hover:text-blue-700"
+                    >
+                      Refresh
+                    </button>
+                  </div>
+
+                  {/* Trade Category Selection */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Select Trade Category
+                      </label>
+                      <select
+                        value={selectedTrade}
+                        onChange={(e) => setSelectedTrade(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Select a trade category</option>
+                        {Object.keys(skillsQuestions).map((trade) => (
+                          <option key={trade} value={trade}>{trade}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Questions Overview */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                      <div className="bg-white p-4 rounded-lg border">
+                        <h3 className="text-lg font-semibold text-gray-800">Total Questions</h3>
+                        <p className="text-3xl font-bold text-blue-600">
+                          {Object.values(skillsQuestions).reduce((total, questions) => total + questions.length, 0)}
+                        </p>
+                      </div>
+                      <div className="bg-white p-4 rounded-lg border">
+                        <h3 className="text-lg font-semibold text-gray-800">Trade Categories</h3>
+                        <p className="text-3xl font-bold text-green-600">
+                          {Object.keys(skillsQuestions).length}
+                        </p>
+                      </div>
+                      <div className="bg-white p-4 rounded-lg border">
+                        <h3 className="text-lg font-semibold text-gray-800">Selected Trade</h3>
+                        <p className="text-lg font-semibold text-purple-600">
+                          {selectedTrade ? `${skillsQuestions[selectedTrade]?.length || 0} questions` : 'None selected'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Questions for Selected Trade */}
+                    {selectedTrade && (
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <h3 className="text-lg font-semibold">Questions for {selectedTrade}</h3>
+                          <button
+                            onClick={() => setShowAddQuestion(true)}
+                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm"
+                          >
+                            Add New Question
+                          </button>
+                        </div>
+
+                        {loading ? (
+                          <div className="space-y-2">
+                            {[...Array(3)].map((_, i) => (
+                              <div key={i} className="bg-white p-4 rounded-lg animate-pulse">
+                                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {(skillsQuestions[selectedTrade] || []).map((question, index) => (
+                              <div key={question.id || index} className="bg-white border rounded-lg p-4">
+                                <div className="flex justify-between items-start mb-2">
+                                  <div className="flex-1">
+                                    <h4 className="font-medium text-gray-900 mb-1">
+                                      Q{index + 1}: {question.question}
+                                    </h4>
+                                    <div className="text-sm text-gray-600 mb-2">
+                                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs mr-2">
+                                        {question.category || 'General'}
+                                      </span>
+                                      <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs">
+                                        {question.difficulty || 'Medium'}
+                                      </span>
+                                    </div>
+                                    <div className="text-sm text-gray-700">
+                                      <strong>Options:</strong>
+                                      <ul className="list-disc list-inside mt-1">
+                                        {question.options?.map((option, optIndex) => (
+                                          <li key={optIndex} className={optIndex === question.correct_answer ? 'text-green-600 font-medium' : ''}>
+                                            {option} {optIndex === question.correct_answer && '✓'}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                    {question.explanation && (
+                                      <div className="text-sm text-gray-600 mt-2">
+                                        <strong>Explanation:</strong> {question.explanation}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex space-x-2">
+                                    <button
+                                      onClick={() => setEditingQuestion(question)}
+                                      className="text-blue-600 hover:text-blue-900 text-sm"
+                                    >
+                                      Edit
+                                    </button>
+                                    <button
+                                      onClick={async () => {
+                                        if (window.confirm('Are you sure you want to delete this question?')) {
+                                          try {
+                                            await adminAPI.deleteSkillsQuestion(question.id);
+                                            toast({ title: "Question deleted successfully" });
+                                            fetchData();
+                                          } catch (error) {
+                                            toast({ title: "Failed to delete question", variant: "destructive" });
+                                          }
+                                        }
+                                      }}
+                                      className="text-red-600 hover:text-red-900 text-sm"
+                                    >
+                                      Delete
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Stats Tab */}
               {activeTab === 'stats' && (
                 <div className="space-y-6">
