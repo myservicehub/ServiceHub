@@ -14,7 +14,8 @@ import {
   Flag,
   RotateCcw
 } from 'lucide-react';
-import { getQuestionsForTrades, calculateTestScore } from '../../data/skillsTestQuestions';
+import { skillsAPI } from '../../api/wallet';
+import { calculateTestScore } from '../../data/skillsTestQuestions';
 
 const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
   const [testState, setTestState] = useState('intro'); // intro, active, results
