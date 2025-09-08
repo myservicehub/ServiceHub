@@ -327,6 +327,260 @@ async def update_user_status(
         "admin_notes": admin_notes
     }
 
+# ==========================================
+# LOCATION MANAGEMENT (States, LGAs, Towns)
+# ==========================================
+
+@router.get("/locations/states")
+async def get_all_states():
+    """Get all Nigerian states"""
+    from models.nigerian_states import NIGERIAN_STATES
+    return {"states": NIGERIAN_STATES}
+
+@router.post("/locations/states")
+async def add_new_state(
+    state_name: str = Form(...),
+    region: str = Form(""),
+    postcode_samples: str = Form("")  # Comma-separated postcodes
+):
+    """Add a new Nigerian state"""
+    
+    # Validate state name
+    if not state_name.strip():
+        raise HTTPException(status_code=400, detail="State name is required")
+    
+    from models.nigerian_states import NIGERIAN_STATES
+    
+    if state_name in NIGERIAN_STATES:
+        raise HTTPException(status_code=400, detail="State already exists")
+    
+    # Add state to the list (in production, this would be database operation)
+    success = await database.add_new_state(state_name.strip(), region, postcode_samples)
+    
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to add state")
+    
+    return {
+        "message": "State added successfully",
+        "state_name": state_name,
+        "region": region
+    }
+
+@router.put("/locations/states/{state_name}")
+async def update_state(
+    state_name: str,
+    new_name: str = Form(...),
+    region: str = Form(""),
+    postcode_samples: str = Form("")
+):
+    """Update an existing state"""
+    
+    success = await database.update_state(state_name, new_name.strip(), region, postcode_samples)
+    
+    if not success:
+        raise HTTPException(status_code=404, detail="State not found")
+    
+    return {
+        "message": "State updated successfully",
+        "old_name": state_name,
+        "new_name": new_name
+    }
+
+@router.delete("/locations/states/{state_name}")
+async def delete_state(state_name: str):
+    """Delete a state (and all its LGAs)"""
+    
+    success = await database.delete_state(state_name)
+    
+    if not success:
+        raise HTTPException(status_code=404, detail="State not found")
+    
+    return {"message": f"State '{state_name}' deleted successfully"}
+
+@router.get("/locations/lgas")
+async def get_all_lgas():
+    """Get all LGAs organized by state"""
+    from models.nigerian_lgas import NIGERIAN_LGAS
+    return {"lgas": NIGERIAN_LGAS}
+
+@router.get("/locations/lgas/{state_name}")
+async def get_lgas_for_state(state_name: str):
+    """Get LGAs for a specific state"""
+    from models.nigerian_lgas import get_lgas_for_state
+    lgas = get_lgas_for_state(state_name)
+    if not lgas:
+        raise HTTPException(status_code=404, detail="State not found or no LGAs available")
+    return {"state": state_name, "lgas": lgas}
+
+@router.post("/locations/lgas")
+async def add_new_lga(
+    state_name: str = Form(...),
+    lga_name: str = Form(...),
+    zip_codes: str = Form("")  # Comma-separated zip codes
+):
+    """Add a new LGA to a state"""
+    
+    if not lga_name.strip():
+        raise HTTPException(status_code=400, detail="LGA name is required")
+    
+    success = await database.add_new_lga(state_name, lga_name.strip(), zip_codes)
+    
+    if not success:
+        raise HTTPException(status_code=400, detail="Failed to add LGA. State may not exist or LGA already exists.")
+    
+    return {
+        "message": "LGA added successfully",
+        "state": state_name,
+        "lga": lga_name
+    }
+
+@router.put("/locations/lgas/{state_name}/{lga_name}")
+async def update_lga(
+    state_name: str,
+    lga_name: str,
+    new_name: str = Form(...),
+    zip_codes: str = Form("")
+):
+    """Update an existing LGA"""
+    
+    success = await database.update_lga(state_name, lga_name, new_name.strip(), zip_codes)
+    
+    if not success:
+        raise HTTPException(status_code=404, detail="LGA not found")
+    
+    return {
+        "message": "LGA updated successfully",
+        "state": state_name,
+        "old_name": lga_name,
+        "new_name": new_name
+    }
+
+@router.delete("/locations/lgas/{state_name}/{lga_name}")
+async def delete_lga(state_name: str, lga_name: str):
+    """Delete an LGA from a state"""
+    
+    success = await database.delete_lga(state_name, lga_name)
+    
+    if not success:
+        raise HTTPException(status_code=404, detail="LGA not found")
+    
+    return {"message": f"LGA '{lga_name}' deleted from {state_name}"}
+
+@router.get("/locations/towns")
+async def get_all_towns():
+    """Get all towns organized by state and LGA"""
+    towns = await database.get_all_towns()
+    return {"towns": towns}
+
+@router.post("/locations/towns")
+async def add_new_town(
+    state_name: str = Form(...),
+    lga_name: str = Form(...),
+    town_name: str = Form(...),
+    zip_code: str = Form("")
+):
+    """Add a new town to an LGA"""
+    
+    if not town_name.strip():
+        raise HTTPException(status_code=400, detail="Town name is required")
+    
+    success = await database.add_new_town(state_name, lga_name, town_name.strip(), zip_code)
+    
+    if not success:
+        raise HTTPException(status_code=400, detail="Failed to add town. State or LGA may not exist.")
+    
+    return {
+        "message": "Town added successfully",
+        "state": state_name,
+        "lga": lga_name,
+        "town": town_name
+    }
+
+@router.delete("/locations/towns/{state_name}/{lga_name}/{town_name}")
+async def delete_town(state_name: str, lga_name: str, town_name: str):
+    """Delete a town"""
+    
+    success = await database.delete_town(state_name, lga_name, town_name)
+    
+    if not success:
+        raise HTTPException(status_code=404, detail="Town not found")
+    
+    return {"message": f"Town '{town_name}' deleted successfully"}
+
+# ==========================================
+# TRADE CATEGORIES MANAGEMENT
+# ==========================================
+
+@router.get("/trades")
+async def get_all_trades():
+    """Get all trade categories"""
+    from models.trade_categories import NIGERIAN_TRADE_CATEGORIES, TRADE_CATEGORY_GROUPS
+    return {
+        "trades": NIGERIAN_TRADE_CATEGORIES,
+        "groups": TRADE_CATEGORY_GROUPS
+    }
+
+@router.post("/trades")
+async def add_new_trade(
+    trade_name: str = Form(...),
+    group: str = Form("General Services"),
+    description: str = Form("")
+):
+    """Add a new trade category"""
+    
+    if not trade_name.strip():
+        raise HTTPException(status_code=400, detail="Trade name is required")
+    
+    from models.trade_categories import NIGERIAN_TRADE_CATEGORIES
+    
+    if trade_name in NIGERIAN_TRADE_CATEGORIES:
+        raise HTTPException(status_code=400, detail="Trade category already exists")
+    
+    success = await database.add_new_trade(trade_name.strip(), group, description)
+    
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to add trade category")
+    
+    return {
+        "message": "Trade category added successfully",
+        "trade_name": trade_name,
+        "group": group
+    }
+
+@router.put("/trades/{trade_name}")
+async def update_trade(
+    trade_name: str,
+    new_name: str = Form(...),
+    group: str = Form(""),
+    description: str = Form("")
+):
+    """Update an existing trade category"""
+    
+    if not new_name.strip():
+        raise HTTPException(status_code=400, detail="Trade name is required")
+    
+    success = await database.update_trade(trade_name, new_name.strip(), group, description)
+    
+    if not success:
+        raise HTTPException(status_code=404, detail="Trade category not found")
+    
+    return {
+        "message": "Trade category updated successfully",
+        "old_name": trade_name,
+        "new_name": new_name
+    }
+
+@router.delete("/trades/{trade_name}")
+async def delete_trade(trade_name: str):
+    """Delete a trade category"""
+    
+    success = await database.delete_trade(trade_name)
+    
+    if not success:
+        raise HTTPException(status_code=404, detail="Trade category not found")
+    
+    return {"message": f"Trade category '{trade_name}' deleted successfully"}
+
 @router.get("/wallet/transaction/{transaction_id}")
 async def get_transaction_details(transaction_id: str):
     """Get detailed transaction information for admin review"""
