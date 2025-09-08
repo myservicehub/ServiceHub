@@ -102,7 +102,7 @@ const HelpFAQsPage = () => {
       },
       {
         question: "What is the coin system?",
-        answer: "Our coin system makes payments simple and transparent. 1 coin = ₦100. You use coins to access homeowner contact details when you're interested in a job. Different jobs have different access fees based on their value and complexity."
+        answer: "The coin system is for tradespeople only - homeowners don't need to worry about coins! Our coin system makes payments simple for tradesperson. 1 coin = ₦100. Tradespeople use coins to access homeowner contact details when they want to show interest in a job. Homeowners never pay any fees and don't use the coin system."
       },
       {
         question: "How do I check my wallet balance?",
