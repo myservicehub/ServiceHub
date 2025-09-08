@@ -537,3 +537,52 @@ class PolicyResponse(BaseModel):
 class PolicyListResponse(BaseModel):
     policies: List[Policy]
     total_count: int
+
+# Contact Management Models
+class ContactType(str, Enum):
+    PHONE_SUPPORT = "phone_support"
+    PHONE_BUSINESS = "phone_business"
+    EMAIL_SUPPORT = "email_support"
+    EMAIL_BUSINESS = "email_business"
+    ADDRESS_OFFICE = "address_office"
+    SOCIAL_FACEBOOK = "social_facebook"
+    SOCIAL_INSTAGRAM = "social_instagram"
+    SOCIAL_YOUTUBE = "social_youtube"
+    SOCIAL_TWITTER = "social_twitter"
+    WEBSITE_URL = "website_url"
+    BUSINESS_HOURS = "business_hours"
+
+class ContactCreate(BaseModel):
+    contact_type: ContactType
+    label: str = Field(..., min_length=2, max_length=100)
+    value: str = Field(..., min_length=1, max_length=500)
+    is_active: bool = True
+    display_order: Optional[int] = 0
+    notes: Optional[str] = Field(None, max_length=200)
+
+class ContactUpdate(BaseModel):
+    label: Optional[str] = Field(None, min_length=2, max_length=100)
+    value: Optional[str] = Field(None, min_length=1, max_length=500)
+    is_active: Optional[bool] = None
+    display_order: Optional[int] = None
+    notes: Optional[str] = Field(None, max_length=200)
+
+class Contact(BaseModel):
+    id: str
+    contact_type: ContactType
+    label: str
+    value: str
+    is_active: bool
+    display_order: int
+    notes: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    updated_by: str  # admin username
+
+class ContactResponse(BaseModel):
+    contacts: List[Contact]
+    total_count: int
+
+class ContactsByType(BaseModel):
+    contact_type: ContactType
+    contacts: List[Contact]
