@@ -863,7 +863,7 @@ export const skillsTestQuestions = {
     }
   ]
 
-  // Add more trade categories: 'Roofing', 'Carpentry', 'Painting', etc.
+  // Add more trade categories: 'Roofing', 'Carpentry', etc.
 };
 
 // Function to get questions for specific trades
