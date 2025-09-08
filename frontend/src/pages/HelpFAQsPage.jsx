@@ -45,6 +45,10 @@ const HelpFAQsPage = () => {
         answer: "Posting a job is completely FREE and easy! Click 'Post a Job' on our homepage, fill out the job details including category, description, budget, and location. You can post without creating an account initially, but you'll need to register to manage your job and communicate with interested tradespeople. Everything is free for homeowners - no charges at any stage."
       },
       {
+        question: "Are there any hidden fees for homeowners?",
+        answer: "Absolutely not! serviceHub is 100% free for homeowners with no hidden charges. You can post unlimited jobs, receive interest from tradespeople, view their profiles and portfolios, communicate with them, and hire them - all completely free. Our revenue comes from tradespeople who pay to access job opportunities, not from homeowners."
+      },
+      {
         question: "How much does it cost to use serviceHub as a homeowner?",
         answer: "serviceHub is completely FREE for homeowners! You can post unlimited jobs, browse tradesperson profiles, read reviews, and contact interested tradespeople without any charges. We believe homeowners should have free access to find the right professionals for their projects."
       },
