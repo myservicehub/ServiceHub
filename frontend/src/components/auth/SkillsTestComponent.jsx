@@ -78,14 +78,13 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
   };
 
   const handleNextQuestion = () => {
-    const currentTradeQuestions = testQuestions[formData.selectedTrades[currentTrade]] || [];
+    const mainTrade = formData.selectedTrades[0];
+    const currentTradeQuestions = testQuestions[mainTrade] || [];
     
     if (currentQuestion < currentTradeQuestions.length - 1) {
       setCurrentQuestion(prev => prev + 1);
-    } else if (currentTrade < formData.selectedTrades.length - 1) {
-      setCurrentTrade(prev => prev + 1);
-      setCurrentQuestion(0);
     } else {
+      // End of test - submit
       handleSubmitTest();
     }
   };
@@ -93,10 +92,6 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
   const handlePreviousQuestion = () => {
     if (currentQuestion > 0) {
       setCurrentQuestion(prev => prev - 1);
-    } else if (currentTrade > 0) {
-      const prevTradeQuestions = testQuestions[formData.selectedTrades[currentTrade - 1]] || [];
-      setCurrentTrade(prev => prev - 1);
-      setCurrentQuestion(prevTradeQuestions.length - 1);
     }
   };
 
