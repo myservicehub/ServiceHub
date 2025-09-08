@@ -29,12 +29,27 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
 
   // Initialize test questions when component mounts - only for main trade
   useEffect(() => {
-    if (formData.selectedTrades && formData.selectedTrades.length > 0) {
-      // Only test the main trade (first selected trade)
-      const mainTrade = formData.selectedTrades[0];
-      const questions = getQuestionsForTrades([mainTrade], 20);
-      setTestQuestions(questions);
-    }
+    const loadQuestions = async () => {
+      if (formData.selectedTrades && formData.selectedTrades.length > 0) {
+        try {
+          // Only test the main trade (first selected trade)
+          const mainTrade = formData.selectedTrades[0];
+          const response = await skillsAPI.getQuestionsForTrade(mainTrade);
+          
+          const questions = {
+            [mainTrade]: response.questions || []
+          };
+          
+          setTestQuestions(questions);
+        } catch (error) {
+          console.error('Failed to load skills questions:', error);
+          // Fallback to empty questions
+          setTestQuestions({});
+        }
+      }
+    };
+
+    loadQuestions();
   }, [formData.selectedTrades]);
 
   // Timer countdown
