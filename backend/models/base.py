@@ -364,7 +364,7 @@ class WalletTransaction(BaseModel):
     processed_at: Optional[datetime] = None
 
 class WalletFundingRequest(BaseModel):
-    amount_naira: int = Field(..., ge=1500)  # Minimum funding ₦1500
+    amount_naira: int = Field(..., gt=0)  # Any positive amount
     proof_image: str  # Base64 or filename of payment proof
 
 class WalletResponse(BaseModel):
