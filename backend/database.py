@@ -2351,9 +2351,9 @@ class Database:
     async def add_new_lga(self, state_name: str, lga_name: str, zip_codes: str = ""):
         """Add a new LGA to a state"""
         try:
-            # Check if state exists
-            state_exists = await self.database.system_locations.find_one({"name": state_name, "type": "state"})
-            if not state_exists:
+            # Check if state exists in the static list
+            from models.nigerian_states import NIGERIAN_STATES
+            if state_name not in NIGERIAN_STATES:
                 return False
             
             lga_doc = {
