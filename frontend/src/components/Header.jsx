@@ -340,12 +340,7 @@ const Header = () => {
         )}
       </div>
       
-      {/* Debug state display */}
-      <div className="fixed top-20 right-4 bg-red-500 text-white p-2 text-xs z-50">
-        Modal: {authModalOpen ? 'OPEN' : 'CLOSED'} | Mode: {authMode}
-      </div>
-
-      {/* Simple AuthModal replacement for testing */}
+      {/* Working Auth Modal */}
       {authModalOpen && (
         <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white p-8 rounded-lg max-w-md w-full mx-4 shadow-lg">
