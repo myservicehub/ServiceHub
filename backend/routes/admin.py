@@ -237,6 +237,134 @@ async def view_payment_proof(filename: str):
     return FileResponse(file_path, media_type="image/jpeg")
 
 # ==========================================
+# CONTACT MANAGEMENT
+# ==========================================
+
+@router.get("/contacts")
+async def get_all_contacts():
+    """Get all contacts for admin management"""
+    
+    contacts = await database.get_all_contacts()
+    
+    return {
+        "contacts": contacts,
+        "total_count": len(contacts)
+    }
+
+@router.get("/contacts/types")
+async def get_contact_types():
+    """Get available contact types"""
+    
+    return {
+        "contact_types": [
+            {"value": "phone_support", "label": "Support Phone", "category": "Phone Numbers"},
+            {"value": "phone_business", "label": "Business Phone", "category": "Phone Numbers"},
+            {"value": "email_support", "label": "Support Email", "category": "Email Addresses"},
+            {"value": "email_business", "label": "Business Email", "category": "Email Addresses"},
+            {"value": "address_office", "label": "Office Address", "category": "Physical Addresses"},
+            {"value": "social_facebook", "label": "Facebook", "category": "Social Media"},
+            {"value": "social_instagram", "label": "Instagram", "category": "Social Media"},
+            {"value": "social_youtube", "label": "YouTube", "category": "Social Media"},
+            {"value": "social_twitter", "label": "Twitter", "category": "Social Media"},
+            {"value": "website_url", "label": "Website URL", "category": "Website"},
+            {"value": "business_hours", "label": "Business Hours", "category": "Operating Hours"}
+        ]
+    }
+
+@router.get("/contacts/{contact_id}")
+async def get_contact_by_id(contact_id: str):
+    """Get specific contact by ID"""
+    
+    contact = await database.get_contact_by_id(contact_id)
+    
+    if not contact:
+        raise HTTPException(status_code=404, detail="Contact not found")
+    
+    return contact
+
+@router.post("/contacts")
+async def create_contact(contact_data: dict):
+    """Create a new contact"""
+    
+    # Validate required fields
+    required_fields = ['contact_type', 'label', 'value']
+    for field in required_fields:
+        if field not in contact_data:
+            raise HTTPException(status_code=400, detail=f"Missing required field: {field}")
+    
+    # Validate contact type
+    valid_types = [
+        'phone_support', 'phone_business', 'email_support', 'email_business',
+        'address_office', 'social_facebook', 'social_instagram', 'social_youtube',
+        'social_twitter', 'website_url', 'business_hours'
+    ]
+    if contact_data['contact_type'] not in valid_types:
+        raise HTTPException(status_code=400, detail=f"Invalid contact type. Must be one of: {valid_types}")
+    
+    # Validate field lengths
+    if len(contact_data['label']) < 2:
+        raise HTTPException(status_code=400, detail="Contact label must be at least 2 characters")
+    
+    if len(contact_data['value']) < 1:
+        raise HTTPException(status_code=400, detail="Contact value cannot be empty")
+    
+    contact_id = await database.create_contact(contact_data, "admin")
+    
+    if not contact_id:
+        raise HTTPException(status_code=500, detail="Failed to create contact")
+    
+    return {
+        "message": "Contact created successfully",
+        "contact_id": contact_id,
+        "contact_type": contact_data['contact_type']
+    }
+
+@router.put("/contacts/{contact_id}")
+async def update_contact(contact_id: str, contact_data: dict):
+    """Update an existing contact"""
+    
+    # Validate field lengths if provided
+    if 'label' in contact_data and len(contact_data['label']) < 2:
+        raise HTTPException(status_code=400, detail="Contact label must be at least 2 characters")
+    
+    if 'value' in contact_data and len(contact_data['value']) < 1:
+        raise HTTPException(status_code=400, detail="Contact value cannot be empty")
+    
+    success = await database.update_contact(contact_id, contact_data, "admin")
+    
+    if not success:
+        raise HTTPException(status_code=404, detail="Contact not found or update failed")
+    
+    return {
+        "message": "Contact updated successfully",
+        "contact_id": contact_id
+    }
+
+@router.delete("/contacts/{contact_id}")
+async def delete_contact(contact_id: str):
+    """Delete a contact"""
+    
+    success = await database.delete_contact(contact_id)
+    
+    if not success:
+        raise HTTPException(status_code=404, detail="Contact not found or deletion failed")
+    
+    return {
+        "message": "Contact deleted successfully",
+        "contact_id": contact_id
+    }
+
+@router.post("/contacts/initialize-defaults")
+async def initialize_default_contacts():
+    """Initialize default contact information"""
+    
+    await database.initialize_default_contacts()
+    
+    return {
+        "message": "Default contacts initialized successfully"
+    }
+
+# ==========================================
 # POLICY MANAGEMENT
 # ==========================================
 
