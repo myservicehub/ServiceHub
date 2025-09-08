@@ -102,35 +102,25 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
   const handleSubmitTest = async () => {
     setIsSubmitting(true);
     
-    // Calculate results for each trade
-    const results = {};
-    let overallCorrect = 0;
-    let overallTotal = 0;
+    // Calculate results for main trade only
+    const mainTrade = formData.selectedTrades[0];
+    const tradeQuestions = testQuestions[mainTrade] || [];
+    const tradeAnswers = {};
     
-    formData.selectedTrades.forEach(trade => {
-      const tradeQuestions = testQuestions[trade] || [];
-      const tradeAnswers = {};
-      
-      tradeQuestions.forEach((_, index) => {
-        const questionKey = `${trade}_${index}`;
-        tradeAnswers[index] = answers[questionKey];
-      });
-      
-      const tradeResult = calculateTestScore(tradeAnswers, tradeQuestions);
-      results[trade] = tradeResult;
-      overallCorrect += tradeResult.correct;
-      overallTotal += tradeResult.total;
+    tradeQuestions.forEach((_, index) => {
+      const questionKey = `${mainTrade}_${index}`;
+      tradeAnswers[index] = answers[questionKey];
     });
     
-    const overallScore = Math.round((overallCorrect / overallTotal) * 100);
-    const passed = overallScore >= 80;
+    const tradeResult = calculateTestScore(tradeAnswers, tradeQuestions);
     
     const finalResults = {
-      tradeResults: results,
-      overallScore,
-      overallCorrect,
-      overallTotal,
-      passed,
+      mainTrade,
+      tradeResult,
+      overallScore: tradeResult.score,
+      overallCorrect: tradeResult.correct,
+      overallTotal: tradeResult.total,
+      passed: tradeResult.passed,
       completedAt: new Date().toISOString(),
       timeUsed: 1800 - timeRemaining
     };
@@ -139,7 +129,7 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
     setTestState('results');
     
     // Update form data
-    updateFormData('skillsTestPassed', passed);
+    updateFormData('skillsTestPassed', tradeResult.passed);
     updateFormData('testScores', finalResults);
     
     if (onTestComplete) {
