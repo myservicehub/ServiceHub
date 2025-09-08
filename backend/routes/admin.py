@@ -131,11 +131,17 @@ async def update_job_access_fee(
 ):
     """Update access fee for a specific job"""
     
-    # Validate fee range
-    if access_fee_naira < 1500 or access_fee_naira > 5000:
+    # Validate fee is positive and reasonable
+    if access_fee_naira <= 0:
         raise HTTPException(
             status_code=400, 
-            detail="Access fee must be between ₦1,500 and ₦5,000"
+            detail="Access fee must be greater than ₦0"
+        )
+    
+    if access_fee_naira > 10000:
+        raise HTTPException(
+            status_code=400, 
+            detail="Access fee cannot exceed ₦10,000"
         )
     
     # Check if job exists
