@@ -15,11 +15,8 @@ const Header = () => {
   const { user, isAuthenticated, isHomeowner, isTradesperson, logout } = useAuth();
 
   const handleAuthClick = (mode) => {
-    console.log('handleAuthClick called with mode:', mode);
-    console.log('Current authModalOpen state:', authModalOpen);
     setAuthMode(mode);
     setAuthModalOpen(true);
-    console.log('Setting authModalOpen to true');
   };
 
   const handleLogout = () => {
