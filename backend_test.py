@@ -4286,6 +4286,262 @@ class BackendTester:
             else:
                 self.log_result("Schema backward compatibility", False, f"Status: {response.status_code}")
 
+    def test_access_fee_system_changes(self):
+        """
+        Test the access fee system changes after removing minimum fee restrictions
+        """
+        print("\n" + "="*80)
+        print("🎯 TESTING ACCESS FEE SYSTEM CHANGES")
+        print("="*80)
+        
+        # Step 1: Test new job creation with default ₦1000 (10 coins)
+        self._test_new_job_default_access_fee()
+        
+        # Step 2: Test admin can set flexible access fees
+        self._test_admin_flexible_access_fees()
+        
+        # Step 3: Test wallet funding with lower minimum (₦100)
+        self._test_wallet_funding_lower_minimum()
+        
+        # Step 4: Test withdrawal eligibility at 5 coins
+        self._test_withdrawal_eligibility_5_coins()
+        
+        # Step 5: Test access fee validation (positive amounts only)
+        self._test_access_fee_validation()
+        
+        print("\n" + "="*80)
+        print("🏁 ACCESS FEE SYSTEM TESTING COMPLETE")
+        print("="*80)
+    
+    def _test_new_job_default_access_fee(self):
+        """Test that new jobs are created with default ₦1000 (10 coins)"""
+        print("\n=== Testing New Job Default Access Fee ===")
+        
+        if 'homeowner' not in self.auth_tokens:
+            self.log_result("New Job Default Access Fee", False, "No homeowner authentication token")
+            return
+        
+        homeowner_token = self.auth_tokens['homeowner']
+        homeowner_user = self.test_data.get('homeowner_user', {})
+        
+        # Create a new job and check default access fee
+        job_data = {
+            "title": "Test Job for Access Fee Verification",
+            "description": "Testing that new jobs have default ₦1000 access fee instead of ₦1500",
+            "category": "Plumbing",
+            "location": "Lagos, Lagos State",
+            "postcode": "100001",
+            "budget_min": 100000,
+            "budget_max": 200000,
+            "timeline": "Within 2 weeks",
+            "homeowner_name": homeowner_user.get('name', 'Test Homeowner'),
+            "homeowner_email": homeowner_user.get('email', 'test@example.com'),
+            "homeowner_phone": homeowner_user.get('phone', '08123456789')
+        }
+        
+        response = self.make_request("POST", "/jobs/", json=job_data, auth_token=homeowner_token)
+        if response.status_code == 200:
+            created_job = response.json()
+            access_fee_naira = created_job.get('access_fee_naira', 0)
+            access_fee_coins = created_job.get('access_fee_coins', 0)
+            
+            if access_fee_naira == 1000 and access_fee_coins == 10:
+                self.log_result("New Job Default Access Fee ₦1000 (10 coins)", True, 
+                               f"Correct default: ₦{access_fee_naira} ({access_fee_coins} coins)")
+                self.test_data['test_job_for_fees'] = created_job
+            else:
+                self.log_result("New Job Default Access Fee ₦1000 (10 coins)", False, 
+                               f"Expected ₦1000 (10 coins), got ₦{access_fee_naira} ({access_fee_coins} coins)")
+        else:
+            self.log_result("New Job Default Access Fee ₦1000 (10 coins)", False, 
+                           f"Status: {response.status_code}, Response: {response.text}")
+    
+    def _test_admin_flexible_access_fees(self):
+        """Test that admin can set access fees to various amounts"""
+        print("\n=== Testing Admin Flexible Access Fee Updates ===")
+        
+        if 'test_job_for_fees' not in self.test_data:
+            self.log_result("Admin Flexible Access Fees", False, "No test job available")
+            return
+        
+        job_id = self.test_data['test_job_for_fees']['id']
+        
+        # Test various access fee amounts
+        test_amounts = [500, 100, 2000, 750, 5000]
+        
+        for amount in test_amounts:
+            response = self.make_request("PUT", f"/admin/jobs/{job_id}/access-fee", 
+                                       data={"access_fee_naira": amount})
+            if response.status_code == 200:
+                result = response.json()
+                if result.get('new_access_fee_naira') == amount:
+                    self.log_result(f"Admin Set Access Fee ₦{amount}", True, 
+                                   f"Successfully updated to ₦{amount} ({amount//100} coins)")
+                else:
+                    self.log_result(f"Admin Set Access Fee ₦{amount}", False, 
+                                   f"Expected ₦{amount}, got ₦{result.get('new_access_fee_naira')}")
+            else:
+                self.log_result(f"Admin Set Access Fee ₦{amount}", False, 
+                               f"Status: {response.status_code}, Response: {response.text}")
+        
+        # Test that access fees below ₦1 are rejected
+        response = self.make_request("PUT", f"/admin/jobs/{job_id}/access-fee", 
+                                   data={"access_fee_naira": 0})
+        if response.status_code == 400:
+            self.log_result("Reject Access Fee ₦0", True, "Correctly rejected zero amount")
+        else:
+            self.log_result("Reject Access Fee ₦0", False, 
+                           f"Expected 400, got {response.status_code}")
+        
+        # Test negative amount rejection
+        response = self.make_request("PUT", f"/admin/jobs/{job_id}/access-fee", 
+                                   data={"access_fee_naira": -100})
+        if response.status_code == 400:
+            self.log_result("Reject Negative Access Fee", True, "Correctly rejected negative amount")
+        else:
+            self.log_result("Reject Negative Access Fee", False, 
+                           f"Expected 400, got {response.status_code}")
+    
+    def _test_wallet_funding_lower_minimum(self):
+        """Test that wallet funding now accepts smaller amounts (₦100 minimum)"""
+        print("\n=== Testing Wallet Funding Lower Minimum ===")
+        
+        if 'tradesperson' not in self.auth_tokens:
+            self.log_result("Wallet Funding Lower Minimum", False, "No tradesperson authentication token")
+            return
+        
+        tradesperson_token = self.auth_tokens['tradesperson']
+        
+        # Create a small test image for payment proof
+        import io
+        from PIL import Image
+        
+        test_image = Image.new('RGB', (100, 100), color='blue')
+        img_buffer = io.BytesIO()
+        test_image.save(img_buffer, format='JPEG')
+        img_buffer.seek(0)
+        
+        # Test funding with ₦100 (should be accepted if minimum was lowered)
+        files = {'proof_image': ('payment_proof.jpg', img_buffer, 'image/jpeg')}
+        data = {'amount_naira': 100}
+        
+        response = self.session.post(
+            f"{self.base_url}/wallet/fund",
+            files=files,
+            data=data,
+            headers={'Authorization': f'Bearer {tradesperson_token}'}
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            if result.get('amount_naira') == 100:
+                self.log_result("Wallet Funding ₦100 Minimum", True, 
+                               "Successfully accepted ₦100 funding request")
+            else:
+                self.log_result("Wallet Funding ₦100 Minimum", False, 
+                               f"Expected ₦100, got ₦{result.get('amount_naira')}")
+        elif response.status_code == 400 and "minimum" in response.text.lower():
+            self.log_result("Wallet Funding ₦100 Minimum", False, 
+                           f"Still has minimum restriction: {response.text}")
+        else:
+            self.log_result("Wallet Funding ₦100 Minimum", False, 
+                           f"Status: {response.status_code}, Response: {response.text}")
+        
+        # Test funding with ₦250 (should definitely be accepted)
+        img_buffer.seek(0)
+        files = {'proof_image': ('payment_proof2.jpg', img_buffer, 'image/jpeg')}
+        data = {'amount_naira': 250}
+        
+        response = self.session.post(
+            f"{self.base_url}/wallet/fund",
+            files=files,
+            data=data,
+            headers={'Authorization': f'Bearer {tradesperson_token}'}
+        )
+        
+        if response.status_code == 200:
+            self.log_result("Wallet Funding ₦250", True, "Successfully accepted ₦250 funding request")
+        else:
+            self.log_result("Wallet Funding ₦250", False, 
+                           f"Status: {response.status_code}, Response: {response.text}")
+    
+    def _test_withdrawal_eligibility_5_coins(self):
+        """Test that withdrawal eligibility is now 5 coins instead of 15"""
+        print("\n=== Testing Withdrawal Eligibility 5 Coins ===")
+        
+        if 'tradesperson' not in self.auth_tokens:
+            self.log_result("Withdrawal Eligibility 5 Coins", False, "No tradesperson authentication token")
+            return
+        
+        tradesperson_token = self.auth_tokens['tradesperson']
+        
+        # Check withdrawal eligibility
+        response = self.make_request("GET", "/referrals/withdrawal-eligibility", 
+                                   auth_token=tradesperson_token)
+        if response.status_code == 200:
+            eligibility = response.json()
+            minimum_required = eligibility.get('minimum_required', 0)
+            
+            if minimum_required == 5:
+                self.log_result("Withdrawal Eligibility 5 Coins", True, 
+                               f"Correct minimum: {minimum_required} coins")
+                
+                # Check the message content
+                message = eligibility.get('message', '')
+                if '5 coins' in message:
+                    self.log_result("Withdrawal Message Updated", True, 
+                                   "Message correctly mentions 5 coins")
+                else:
+                    self.log_result("Withdrawal Message Updated", False, 
+                                   f"Message still mentions old requirement: {message}")
+            else:
+                self.log_result("Withdrawal Eligibility 5 Coins", False, 
+                               f"Expected 5 coins, got {minimum_required} coins")
+        else:
+            self.log_result("Withdrawal Eligibility 5 Coins", False, 
+                           f"Status: {response.status_code}, Response: {response.text}")
+    
+    def _test_access_fee_validation(self):
+        """Test access fee validation ensures positive amounts only"""
+        print("\n=== Testing Access Fee Validation ===")
+        
+        if 'test_job_for_fees' not in self.test_data:
+            self.log_result("Access Fee Validation", False, "No test job available")
+            return
+        
+        job_id = self.test_data['test_job_for_fees']['id']
+        
+        # Test various edge cases
+        test_cases = [
+            {"amount": 1, "should_pass": True, "description": "₦1 (minimum positive)"},
+            {"amount": 50, "should_pass": True, "description": "₦50 (small positive)"},
+            {"amount": 10000, "should_pass": True, "description": "₦10,000 (maximum allowed)"},
+            {"amount": 10001, "should_pass": False, "description": "₦10,001 (above maximum)"},
+            {"amount": 0, "should_pass": False, "description": "₦0 (zero)"},
+            {"amount": -1, "should_pass": False, "description": "₦-1 (negative)"}
+        ]
+        
+        for test_case in test_cases:
+            amount = test_case["amount"]
+            should_pass = test_case["should_pass"]
+            description = test_case["description"]
+            
+            response = self.make_request("PUT", f"/admin/jobs/{job_id}/access-fee", 
+                                       data={"access_fee_naira": amount})
+            
+            if should_pass:
+                if response.status_code == 200:
+                    self.log_result(f"Accept {description}", True, "Correctly accepted")
+                else:
+                    self.log_result(f"Accept {description}", False, 
+                                   f"Expected 200, got {response.status_code}")
+            else:
+                if response.status_code == 400:
+                    self.log_result(f"Reject {description}", True, "Correctly rejected")
+                else:
+                    self.log_result(f"Reject {description}", False, 
+                                   f"Expected 400, got {response.status_code}")
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting Comprehensive Backend API Tests for ServiceHub")
@@ -4313,6 +4569,9 @@ class BackendTester:
         # NEW: Phase 10 - Enhanced Job Posting Form Backend
         self.test_phase_10_enhanced_job_posting_backend()
         
+        # NEW: Access Fee System Changes Testing
+        self.test_access_fee_system_changes()
+        
         # Print final results
         print("\n" + "=" * 80)
         print("🏁 FINAL TEST RESULTS")
@@ -4337,6 +4596,7 @@ class BackendTester:
         print("   • Notification System: Mock email/SMS services, preferences, history, workflow integration")
         print("   • Rating & Review System: 5-star ratings, category ratings, mutual reviews, platform stats")
         print("   • Google Maps Integration: Location-based job search, distance calculations, user location management")
+        print("   • Access Fee System: Flexible access fees, lower minimums, 5-coin withdrawal eligibility")
         
         return self.results['failed'] == 0
 
