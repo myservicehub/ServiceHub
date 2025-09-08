@@ -68,8 +68,8 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
   };
 
   const handleAnswerSelect = (answerIndex) => {
-    const tradeKey = formData.selectedTrades[currentTrade];
-    const questionKey = `${tradeKey}_${currentQuestion}`;
+    const mainTrade = formData.selectedTrades[0];
+    const questionKey = `${mainTrade}_${currentQuestion}`;
     
     setAnswers(prev => ({
       ...prev,
