@@ -2275,6 +2275,284 @@ class Database:
         
         result = await self.database.reviews.aggregate(pipeline).to_list(length=1)
         return round(result[0]["avg_rating"], 1) if result else 0
+    
+    # ==========================================
+    # LOCATION MANAGEMENT METHODS (Admin)
+    # ==========================================
+    
+    async def add_new_state(self, state_name: str, region: str = "", postcode_samples: str = ""):
+        """Add a new state to the system"""
+        try:
+            # In a real implementation, this would update files or database
+            # For now, we'll store in a collection
+            state_doc = {
+                "name": state_name,
+                "region": region,
+                "postcode_samples": postcode_samples.split(",") if postcode_samples else [],
+                "created_at": datetime.now(),
+                "type": "state"
+            }
+            
+            # Check if state already exists
+            existing = await self.db.system_locations.find_one({"name": state_name, "type": "state"})
+            if existing:
+                return False
+            
+            await self.db.system_locations.insert_one(state_doc)
+            return True
+        except Exception as e:
+            print(f"Error adding state: {e}")
+            return False
+    
+    async def update_state(self, old_name: str, new_name: str, region: str = "", postcode_samples: str = ""):
+        """Update an existing state"""
+        try:
+            update_data = {
+                "name": new_name,
+                "region": region,
+                "postcode_samples": postcode_samples.split(",") if postcode_samples else [],
+                "updated_at": datetime.now()
+            }
+            
+            result = await self.db.system_locations.update_one(
+                {"name": old_name, "type": "state"},
+                {"$set": update_data}
+            )
+            
+            # Also update LGAs that reference this state
+            if result.modified_count > 0:
+                await self.db.system_locations.update_many(
+                    {"state": old_name, "type": "lga"},
+                    {"$set": {"state": new_name}}
+                )
+            
+            return result.modified_count > 0
+        except Exception as e:
+            print(f"Error updating state: {e}")
+            return False
+    
+    async def delete_state(self, state_name: str):
+        """Delete a state and all its LGAs"""
+        try:
+            # Delete all LGAs for this state
+            await self.db.system_locations.delete_many({"state": state_name, "type": "lga"})
+            
+            # Delete all towns for this state
+            await self.db.system_locations.delete_many({"state": state_name, "type": "town"})
+            
+            # Delete the state
+            result = await self.db.system_locations.delete_one({"name": state_name, "type": "state"})
+            
+            return result.deleted_count > 0
+        except Exception as e:
+            print(f"Error deleting state: {e}")
+            return False
+    
+    async def add_new_lga(self, state_name: str, lga_name: str, zip_codes: str = ""):
+        """Add a new LGA to a state"""
+        try:
+            # Check if state exists
+            state_exists = await self.db.system_locations.find_one({"name": state_name, "type": "state"})
+            if not state_exists:
+                return False
+            
+            lga_doc = {
+                "name": lga_name,
+                "state": state_name,
+                "zip_codes": zip_codes.split(",") if zip_codes else [],
+                "created_at": datetime.now(),
+                "type": "lga"
+            }
+            
+            # Check if LGA already exists in this state
+            existing = await self.db.system_locations.find_one({
+                "name": lga_name, 
+                "state": state_name, 
+                "type": "lga"
+            })
+            if existing:
+                return False
+            
+            await self.db.system_locations.insert_one(lga_doc)
+            return True
+        except Exception as e:
+            print(f"Error adding LGA: {e}")
+            return False
+    
+    async def update_lga(self, state_name: str, old_name: str, new_name: str, zip_codes: str = ""):
+        """Update an existing LGA"""
+        try:
+            update_data = {
+                "name": new_name,
+                "zip_codes": zip_codes.split(",") if zip_codes else [],
+                "updated_at": datetime.now()
+            }
+            
+            result = await self.db.system_locations.update_one(
+                {"name": old_name, "state": state_name, "type": "lga"},
+                {"$set": update_data}
+            )
+            
+            # Also update towns that reference this LGA
+            if result.modified_count > 0:
+                await self.db.system_locations.update_many(
+                    {"lga": old_name, "state": state_name, "type": "town"},
+                    {"$set": {"lga": new_name}}
+                )
+            
+            return result.modified_count > 0
+        except Exception as e:
+            print(f"Error updating LGA: {e}")
+            return False
+    
+    async def delete_lga(self, state_name: str, lga_name: str):
+        """Delete an LGA and all its towns"""
+        try:
+            # Delete all towns for this LGA
+            await self.db.system_locations.delete_many({
+                "state": state_name, 
+                "lga": lga_name, 
+                "type": "town"
+            })
+            
+            # Delete the LGA
+            result = await self.db.system_locations.delete_one({
+                "name": lga_name, 
+                "state": state_name, 
+                "type": "lga"
+            })
+            
+            return result.deleted_count > 0
+        except Exception as e:
+            print(f"Error deleting LGA: {e}")
+            return False
+    
+    async def get_all_towns(self):
+        """Get all towns organized by state and LGA"""
+        try:
+            towns_cursor = self.db.system_locations.find({"type": "town"})
+            towns = await towns_cursor.to_list(length=None)
+            
+            # Organize by state and LGA
+            organized_towns = {}
+            for town in towns:
+                state = town.get("state", "Unknown")
+                lga = town.get("lga", "Unknown")
+                town_name = town.get("name", "")
+                
+                if state not in organized_towns:
+                    organized_towns[state] = {}
+                
+                if lga not in organized_towns[state]:
+                    organized_towns[state][lga] = []
+                
+                organized_towns[state][lga].append({
+                    "name": town_name,
+                    "zip_code": town.get("zip_code", ""),
+                    "created_at": town.get("created_at")
+                })
+            
+            return organized_towns
+        except Exception as e:
+            print(f"Error getting towns: {e}")
+            return {}
+    
+    async def add_new_town(self, state_name: str, lga_name: str, town_name: str, zip_code: str = ""):
+        """Add a new town to an LGA"""
+        try:
+            # Check if LGA exists
+            lga_exists = await self.db.system_locations.find_one({
+                "name": lga_name, 
+                "state": state_name, 
+                "type": "lga"
+            })
+            if not lga_exists:
+                return False
+            
+            town_doc = {
+                "name": town_name,
+                "state": state_name,
+                "lga": lga_name,
+                "zip_code": zip_code,
+                "created_at": datetime.now(),
+                "type": "town"
+            }
+            
+            await self.db.system_locations.insert_one(town_doc)
+            return True
+        except Exception as e:
+            print(f"Error adding town: {e}")
+            return False
+    
+    async def delete_town(self, state_name: str, lga_name: str, town_name: str):
+        """Delete a town"""
+        try:
+            result = await self.db.system_locations.delete_one({
+                "name": town_name,
+                "state": state_name,
+                "lga": lga_name,
+                "type": "town"
+            })
+            
+            return result.deleted_count > 0
+        except Exception as e:
+            print(f"Error deleting town: {e}")
+            return False
+    
+    # ==========================================
+    # TRADE CATEGORIES MANAGEMENT METHODS (Admin)
+    # ==========================================
+    
+    async def add_new_trade(self, trade_name: str, group: str = "", description: str = ""):
+        """Add a new trade category"""
+        try:
+            trade_doc = {
+                "name": trade_name,
+                "group": group,
+                "description": description,
+                "created_at": datetime.now(),
+                "active": True
+            }
+            
+            # Check if trade already exists
+            existing = await self.db.system_trades.find_one({"name": trade_name})
+            if existing:
+                return False
+            
+            await self.db.system_trades.insert_one(trade_doc)
+            return True
+        except Exception as e:
+            print(f"Error adding trade: {e}")
+            return False
+    
+    async def update_trade(self, old_name: str, new_name: str, group: str = "", description: str = ""):
+        """Update an existing trade category"""
+        try:
+            update_data = {
+                "name": new_name,
+                "group": group,
+                "description": description,
+                "updated_at": datetime.now()
+            }
+            
+            result = await self.db.system_trades.update_one(
+                {"name": old_name},
+                {"$set": update_data}
+            )
+            
+            return result.modified_count > 0
+        except Exception as e:
+            print(f"Error updating trade: {e}")
+            return False
+    
+    async def delete_trade(self, trade_name: str):
+        """Delete a trade category"""
+        try:
+            result = await self.db.system_trades.delete_one({"name": trade_name})
+            return result.deleted_count > 0
+        except Exception as e:
+            print(f"Error deleting trade: {e}")
+            return False
 
 # Global database instance
 database = Database()
