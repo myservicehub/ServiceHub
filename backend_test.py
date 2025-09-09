@@ -7036,7 +7036,7 @@ class BackendTester:
             "trade_categories": ["Plumbing & Water Works", "Electrical Installation"],
             "experience_years": 6,
             "company_name": "Ogundimu Professional Services",
-            "description": "Expert plumber and electrician with 6 years experience in Lagos residential projects.",
+            "description": "Expert plumber and electrician with 6 years experience in Lagos residential projects. Specializing in modern plumbing systems and electrical installations for homes and businesses.",
             "certifications": ["Licensed Plumber", "Electrical Installation Certificate"]
         }
         
