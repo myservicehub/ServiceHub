@@ -66,7 +66,7 @@ class ContactNotificationTester:
             "email": f"test.notification.homeowner.{timestamp}@test.com",
             "password": "SecurePass123",
             "phone": "08123456789",
-            "location": "Victoria Island, Lagos State",
+            "location": "Lagos",
             "postcode": "101001"
         }
         
