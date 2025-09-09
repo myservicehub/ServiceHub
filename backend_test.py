@@ -7011,7 +7011,7 @@ class BackendTester:
             "email": f"interests.test.homeowner.{timestamp}@test.com",
             "password": "SecurePass123",
             "phone": "08123456789",
-            "location": "Victoria Island, Lagos State",
+            "location": "Lagos",
             "postcode": "101001"
         }
         
