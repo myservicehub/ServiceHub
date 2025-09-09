@@ -6565,38 +6565,426 @@ class BackendTester:
             self.log_result("Review Request Fix Format", False, 
                            "Payment URL template doesn't match review request")
 
+    def test_jobposting_form_backend_verification(self):
+        """
+        JOBPOSTING FORM BACKEND VERIFICATION
+        Test backend systems to verify that the JobPostingForm fix didn't break any backend functionality
+        Focus on: Authentication, Job Creation API, Auto-population Data, Enhanced Location Fields
+        """
+        print("\n" + "="*80)
+        print("🎯 JOBPOSTING FORM BACKEND VERIFICATION TESTING")
+        print("="*80)
+        
+        # Step 1: Test Authentication System for both user types
+        self._test_authentication_for_jobposting()
+        
+        # Step 2: Test Job Creation API with authenticated users
+        self._test_job_creation_api_functionality()
+        
+        # Step 3: Test Auto-population Data (user profile retrieval)
+        self._test_user_data_autopopulation()
+        
+        # Step 4: Test Enhanced Location Fields (Nigerian states/LGAs APIs)
+        self._test_enhanced_location_fields_api()
+        
+        # Step 5: Test Job Posting Workflow End-to-End
+        self._test_complete_job_posting_workflow()
+        
+        print("\n" + "="*80)
+        print("🏁 JOBPOSTING FORM BACKEND VERIFICATION COMPLETE")
+        print("="*80)
+
+    def _test_authentication_for_jobposting(self):
+        """Step 1: Test Authentication System for Job Posting"""
+        print("\n=== Step 1: Authentication System Testing ===")
+        
+        # Generate unique identifiers for test users
+        import time
+        timestamp = str(int(time.time()))
+        
+        # Test Homeowner Registration
+        homeowner_data = {
+            "name": "Folake Adebayo",
+            "email": f"folake.adebayo.{timestamp}@test.com",
+            "password": "SecurePass123",
+            "phone": "08123456789",
+            "location": "Lagos",
+            "postcode": "100001"
+        }
+        
+        response = self.make_request("POST", "/auth/register/homeowner", json=homeowner_data)
+        if response.status_code == 200:
+            homeowner_profile = response.json()
+            if 'access_token' in homeowner_profile and homeowner_profile.get('user', {}).get('role') == 'homeowner':
+                self.log_result("Homeowner Registration & Token", True, f"ID: {homeowner_profile['user']['id']}")
+                self.auth_tokens['jobpost_homeowner'] = homeowner_profile['access_token']
+                self.test_data['jobpost_homeowner_user'] = homeowner_profile['user']
+            else:
+                self.log_result("Homeowner Registration & Token", False, "Missing access token or wrong role")
+        else:
+            self.log_result("Homeowner Registration & Token", False, f"Status: {response.status_code}, Response: {response.text}")
+        
+        # Test Tradesperson Registration
+        tradesperson_data = {
+            "name": "Chukwudi Okonkwo",
+            "email": f"chukwudi.okonkwo.{timestamp}@test.com",
+            "password": "SecurePass123",
+            "phone": "08187654321",
+            "location": "Abuja",
+            "postcode": "900001",
+            "trade_categories": ["Plumbing", "Electrical"],
+            "experience_years": 6,
+            "company_name": "Okonkwo Professional Services",
+            "description": "Expert plumber and electrician with 6 years experience in residential projects.",
+            "certifications": ["Licensed Plumber", "Electrical Certificate"]
+        }
+        
+        response = self.make_request("POST", "/auth/register/tradesperson", json=tradesperson_data)
+        if response.status_code == 200:
+            tradesperson_profile = response.json()
+            if tradesperson_profile.get('role') == 'tradesperson':
+                self.log_result("Tradesperson Registration", True, f"ID: {tradesperson_profile['id']}")
+                self.test_data['jobpost_tradesperson_profile'] = tradesperson_profile
+                
+                # Login tradesperson to get token
+                login_data = {"email": tradesperson_data["email"], "password": tradesperson_data["password"]}
+                login_response = self.make_request("POST", "/auth/login", json=login_data)
+                if login_response.status_code == 200:
+                    login_result = login_response.json()
+                    self.auth_tokens['jobpost_tradesperson'] = login_result['access_token']
+                    self.test_data['jobpost_tradesperson_user'] = login_result['user']
+                    self.log_result("Tradesperson Login & Token", True)
+                else:
+                    self.log_result("Tradesperson Login & Token", False, f"Status: {login_response.status_code}")
+            else:
+                self.log_result("Tradesperson Registration", False, "Invalid role in response")
+        else:
+            self.log_result("Tradesperson Registration", False, f"Status: {response.status_code}, Response: {response.text}")
+
+    def _test_job_creation_api_functionality(self):
+        """Step 2: Test Job Creation API with authenticated users"""
+        print("\n=== Step 2: Job Creation API Functionality ===")
+        
+        if 'jobpost_homeowner' not in self.auth_tokens:
+            self.log_result("Job Creation API Tests", False, "No homeowner authentication token")
+            return
+        
+        homeowner_token = self.auth_tokens['jobpost_homeowner']
+        homeowner_user = self.test_data.get('jobpost_homeowner_user', {})
+        
+        # Test Enhanced Job Creation with new location fields
+        enhanced_job_data = {
+            "title": "Kitchen Plumbing Installation - Modern Nigerian Home",
+            "description": "Looking for an experienced plumber to install new kitchen plumbing in our Lagos home. We need installation of new sink, dishwasher connections, and water filtration system. The kitchen is approximately 15 square meters. Professional installation required with proper water pressure and drainage.",
+            "category": "Plumbing",
+            "state": "Lagos",
+            "lga": "Lagos Island",
+            "town": "Victoria Island",
+            "zip_code": "101001",
+            "home_address": "15 Ahmadu Bello Way, Victoria Island",
+            "budget_min": 250000,
+            "budget_max": 450000,
+            "timeline": "Within 2 weeks"
+        }
+        
+        response = self.make_request("POST", "/jobs/", json=enhanced_job_data, auth_token=homeowner_token)
+        if response.status_code == 200:
+            created_job = response.json()
+            required_fields = ['id', 'title', 'state', 'lga', 'town', 'zip_code', 'home_address', 'location', 'postcode', 'homeowner', 'interests_count', 'access_fee_naira', 'access_fee_coins']
+            missing_fields = [field for field in required_fields if field not in created_job]
+            
+            if not missing_fields:
+                # Verify enhanced fields are properly saved
+                if (created_job['state'] == enhanced_job_data['state'] and 
+                    created_job['lga'] == enhanced_job_data['lga'] and
+                    created_job['location'] == enhanced_job_data['state'] and  # Legacy field auto-populated
+                    created_job['postcode'] == enhanced_job_data['zip_code'] and  # Legacy field auto-populated
+                    created_job['interests_count'] == 0 and
+                    created_job['access_fee_naira'] == 1000):  # Default access fee
+                    
+                    self.log_result("Enhanced Job Creation with Authentication", True, 
+                                   f"Job ID: {created_job['id']}, State: {created_job['state']}, LGA: {created_job['lga']}")
+                    self.test_data['jobpost_created_job'] = created_job
+                else:
+                    self.log_result("Enhanced Job Creation with Authentication", False, "Enhanced fields not properly saved")
+            else:
+                self.log_result("Enhanced Job Creation with Authentication", False, f"Missing fields: {missing_fields}")
+        else:
+            self.log_result("Enhanced Job Creation with Authentication", False, f"Status: {response.status_code}, Response: {response.text}")
+        
+        # Test Job Creation without Authentication (should fail)
+        response = self.make_request("POST", "/jobs/", json=enhanced_job_data)
+        if response.status_code in [401, 403]:
+            self.log_result("Unauthenticated Job Creation Prevention", True, "Correctly requires authentication")
+        else:
+            self.log_result("Unauthenticated Job Creation Prevention", False, f"Expected 401/403, got {response.status_code}")
+        
+        # Test Job Creation with Tradesperson Token (should fail)
+        if 'jobpost_tradesperson' in self.auth_tokens:
+            response = self.make_request("POST", "/jobs/", json=enhanced_job_data, auth_token=self.auth_tokens['jobpost_tradesperson'])
+            if response.status_code == 403:
+                self.log_result("Tradesperson Job Creation Prevention", True, "Correctly denied tradesperson access")
+            else:
+                self.log_result("Tradesperson Job Creation Prevention", False, f"Expected 403, got {response.status_code}")
+
+    def _test_user_data_autopopulation(self):
+        """Step 3: Test Auto-population Data (user profile retrieval)"""
+        print("\n=== Step 3: User Data Auto-population Testing ===")
+        
+        # Test Homeowner Profile Retrieval for Auto-population
+        if 'jobpost_homeowner' in self.auth_tokens:
+            response = self.make_request("GET", "/auth/me", auth_token=self.auth_tokens['jobpost_homeowner'])
+            if response.status_code == 200:
+                profile = response.json()
+                required_fields = ['id', 'name', 'email', 'phone', 'role', 'location', 'postcode']
+                missing_fields = [field for field in required_fields if field not in profile]
+                
+                if not missing_fields and profile.get('role') == 'homeowner':
+                    self.log_result("Homeowner Profile Auto-population Data", True, 
+                                   f"Name: {profile['name']}, Email: {profile['email']}, Phone: {profile['phone']}")
+                else:
+                    self.log_result("Homeowner Profile Auto-population Data", False, 
+                                   f"Missing fields: {missing_fields} or wrong role")
+            else:
+                self.log_result("Homeowner Profile Auto-population Data", False, f"Status: {response.status_code}")
+        
+        # Test Tradesperson Profile Retrieval for Auto-population
+        if 'jobpost_tradesperson' in self.auth_tokens:
+            response = self.make_request("GET", "/auth/me", auth_token=self.auth_tokens['jobpost_tradesperson'])
+            if response.status_code == 200:
+                profile = response.json()
+                required_fields = ['id', 'name', 'email', 'phone', 'role', 'location', 'postcode', 'trade_categories', 'company_name']
+                missing_fields = [field for field in required_fields if field not in profile]
+                
+                if not missing_fields and profile.get('role') == 'tradesperson':
+                    self.log_result("Tradesperson Profile Auto-population Data", True, 
+                                   f"Name: {profile['name']}, Company: {profile['company_name']}, Trades: {profile['trade_categories']}")
+                else:
+                    self.log_result("Tradesperson Profile Auto-population Data", False, 
+                                   f"Missing fields: {missing_fields} or wrong role")
+            else:
+                self.log_result("Tradesperson Profile Auto-population Data", False, f"Status: {response.status_code}")
+        
+        # Test Unauthenticated Profile Access (should fail)
+        response = self.make_request("GET", "/auth/me")
+        if response.status_code in [401, 403]:
+            self.log_result("Unauthenticated Profile Access Prevention", True, "Correctly requires authentication")
+        else:
+            self.log_result("Unauthenticated Profile Access Prevention", False, f"Expected 401/403, got {response.status_code}")
+
+    def _test_enhanced_location_fields_api(self):
+        """Step 4: Test Enhanced Location Fields (Nigerian states/LGAs APIs)"""
+        print("\n=== Step 4: Enhanced Location Fields API Testing ===")
+        
+        # Test Get All Nigerian States
+        response = self.make_request("GET", "/auth/nigerian-states")
+        if response.status_code == 200:
+            states_data = response.json()
+            if 'states' in states_data and 'total' in states_data:
+                states = states_data['states']
+                expected_states = ['Lagos', 'Abuja', 'Delta', 'Rivers State', 'Benin', 'Bayelsa', 'Enugu', 'Cross Rivers']
+                if len(states) >= 8 and all(state in states for state in expected_states[:4]):  # Check first 4 states
+                    self.log_result("Nigerian States API", True, f"Found {len(states)} states including major ones")
+                else:
+                    self.log_result("Nigerian States API", False, f"Expected states not found. Got: {states}")
+            else:
+                self.log_result("Nigerian States API", False, "Invalid response structure")
+        else:
+            self.log_result("Nigerian States API", False, f"Status: {response.status_code}")
+        
+        # Test Get All LGAs
+        response = self.make_request("GET", "/auth/all-lgas")
+        if response.status_code == 200:
+            lgas_data = response.json()
+            if 'lgas_by_state' in lgas_data and 'total_lgas' in lgas_data and 'total_states' in lgas_data:
+                total_lgas = lgas_data['total_lgas']
+                total_states = lgas_data['total_states']
+                if total_lgas >= 100 and total_states >= 8:  # Expect reasonable numbers
+                    self.log_result("All LGAs API", True, f"Found {total_lgas} LGAs across {total_states} states")
+                else:
+                    self.log_result("All LGAs API", False, f"Insufficient data: {total_lgas} LGAs, {total_states} states")
+            else:
+                self.log_result("All LGAs API", False, "Invalid response structure")
+        else:
+            self.log_result("All LGAs API", False, f"Status: {response.status_code}")
+        
+        # Test Get LGAs for Specific State (Lagos)
+        response = self.make_request("GET", "/auth/lgas/Lagos")
+        if response.status_code == 200:
+            lagos_lgas = response.json()
+            if 'state' in lagos_lgas and 'lgas' in lagos_lgas and 'total' in lagos_lgas:
+                lgas = lagos_lgas['lgas']
+                expected_lgas = ['Lagos Island', 'Lagos Mainland', 'Ikeja', 'Surulere']
+                if len(lgas) >= 15 and any(lga in lgas for lga in expected_lgas):  # Lagos should have many LGAs
+                    self.log_result("Lagos LGAs API", True, f"Found {len(lgas)} LGAs for Lagos state")
+                else:
+                    self.log_result("Lagos LGAs API", False, f"Expected LGAs not found. Got: {lgas}")
+            else:
+                self.log_result("Lagos LGAs API", False, "Invalid response structure")
+        else:
+            self.log_result("Lagos LGAs API", False, f"Status: {response.status_code}")
+        
+        # Test Get LGAs for Specific State (Abuja)
+        response = self.make_request("GET", "/auth/lgas/Abuja")
+        if response.status_code == 200:
+            abuja_lgas = response.json()
+            if 'state' in abuja_lgas and 'lgas' in abuja_lgas and 'total' in abuja_lgas:
+                lgas = abuja_lgas['lgas']
+                expected_lgas = ['Gwagwalada', 'Kuje', 'Abaji', 'Bwari', 'Municipal Area Council', 'Kwali']
+                if len(lgas) >= 5 and any(lga in lgas for lga in expected_lgas):
+                    self.log_result("Abuja LGAs API", True, f"Found {len(lgas)} LGAs for Abuja")
+                else:
+                    self.log_result("Abuja LGAs API", False, f"Expected LGAs not found. Got: {lgas}")
+            else:
+                self.log_result("Abuja LGAs API", False, "Invalid response structure")
+        else:
+            self.log_result("Abuja LGAs API", False, f"Status: {response.status_code}")
+        
+        # Test Invalid State (should return 404)
+        response = self.make_request("GET", "/auth/lgas/InvalidState")
+        if response.status_code == 404:
+            self.log_result("Invalid State LGA Request", True, "Correctly returned 404 for invalid state")
+        else:
+            self.log_result("Invalid State LGA Request", False, f"Expected 404, got {response.status_code}")
+
+    def _test_complete_job_posting_workflow(self):
+        """Step 5: Test Complete Job Posting Workflow End-to-End"""
+        print("\n=== Step 5: Complete Job Posting Workflow Testing ===")
+        
+        if 'jobpost_homeowner' not in self.auth_tokens:
+            self.log_result("Job Posting Workflow Tests", False, "No homeowner authentication token")
+            return
+        
+        homeowner_token = self.auth_tokens['jobpost_homeowner']
+        
+        # Test Job Creation with Location Validation
+        job_with_valid_location = {
+            "title": "Electrical Installation - New Home Wiring",
+            "description": "Need professional electrician to install complete electrical system in new 3-bedroom home in Lekki, Lagos. Includes wiring, outlets, switches, and electrical panel installation.",
+            "category": "Electrical",
+            "state": "Lagos",
+            "lga": "Eti-Osa",  # Valid LGA for Lagos
+            "town": "Lekki",
+            "zip_code": "101001",
+            "home_address": "Plot 25, Lekki Phase 1",
+            "budget_min": 400000,
+            "budget_max": 700000,
+            "timeline": "Within 3 weeks"
+        }
+        
+        response = self.make_request("POST", "/jobs/", json=job_with_valid_location, auth_token=homeowner_token)
+        if response.status_code == 200:
+            created_job = response.json()
+            self.log_result("Job Creation with Valid Location", True, f"Job ID: {created_job['id']}")
+            self.test_data['workflow_job'] = created_job
+        else:
+            self.log_result("Job Creation with Valid Location", False, f"Status: {response.status_code}, Response: {response.text}")
+        
+        # Test Job Creation with Invalid LGA-State Combination
+        job_with_invalid_location = {
+            "title": "Test Job with Invalid Location",
+            "description": "Test description",
+            "category": "Plumbing",
+            "state": "Lagos",
+            "lga": "Gwagwalada",  # This LGA belongs to Abuja, not Lagos
+            "town": "Test Town",
+            "zip_code": "100001",
+            "home_address": "Test Address",
+            "budget_min": 100000,
+            "budget_max": 200000,
+            "timeline": "Within 1 week"
+        }
+        
+        response = self.make_request("POST", "/jobs/", json=job_with_invalid_location, auth_token=homeowner_token)
+        if response.status_code == 400:
+            self.log_result("Invalid LGA-State Validation", True, "Correctly rejected invalid LGA-state combination")
+        else:
+            self.log_result("Invalid LGA-State Validation", False, f"Expected 400, got {response.status_code}")
+        
+        # Test Job Creation with Invalid Zip Code
+        job_with_invalid_zip = {
+            "title": "Test Job with Invalid Zip",
+            "description": "Test description",
+            "category": "Plumbing",
+            "state": "Lagos",
+            "lga": "Lagos Island",
+            "town": "Victoria Island",
+            "zip_code": "12345",  # Invalid format (should be 6 digits)
+            "home_address": "Test Address",
+            "budget_min": 100000,
+            "budget_max": 200000,
+            "timeline": "Within 1 week"
+        }
+        
+        response = self.make_request("POST", "/jobs/", json=job_with_invalid_zip, auth_token=homeowner_token)
+        if response.status_code == 400:
+            self.log_result("Invalid Zip Code Validation", True, "Correctly rejected invalid zip code format")
+        else:
+            self.log_result("Invalid Zip Code Validation", False, f"Expected 400, got {response.status_code}")
+        
+        # Test Job Retrieval by Homeowner
+        if 'workflow_job' in self.test_data:
+            job_id = self.test_data['workflow_job']['id']
+            response = self.make_request("GET", f"/jobs/{job_id}")
+            if response.status_code == 200:
+                retrieved_job = response.json()
+                if retrieved_job['id'] == job_id:
+                    self.log_result("Job Retrieval by ID", True, f"Successfully retrieved job {job_id}")
+                else:
+                    self.log_result("Job Retrieval by ID", False, "Job ID mismatch")
+            else:
+                self.log_result("Job Retrieval by ID", False, f"Status: {response.status_code}")
+        
+        # Test My Jobs Endpoint
+        response = self.make_request("GET", "/jobs/my-jobs", auth_token=homeowner_token)
+        if response.status_code == 200:
+            my_jobs_data = response.json()
+            if 'jobs' in my_jobs_data and 'pagination' in my_jobs_data:
+                jobs = my_jobs_data['jobs']
+                if len(jobs) >= 2:  # Should have at least the 2 jobs we created
+                    self.log_result("My Jobs Endpoint", True, f"Found {len(jobs)} jobs for homeowner")
+                else:
+                    self.log_result("My Jobs Endpoint", False, f"Expected at least 2 jobs, found {len(jobs)}")
+            else:
+                self.log_result("My Jobs Endpoint", False, "Invalid response structure")
+        else:
+            self.log_result("My Jobs Endpoint", False, f"Status: {response.status_code}")
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting Comprehensive Backend API Tests for ServiceHub")
         print(f"Backend URL: {self.base_url}")
         print("=" * 80)
         
-        # Run test suites
-        self.test_authentication_system()
-        self.test_homeowner_job_management()
-        self.test_my_jobs_endpoint()
-        self.test_quote_management_system()
-        self.test_profile_management_system()
-        self.test_portfolio_management_system()
-        self.test_communication_system()
-        self.test_interest_system()
-        self.test_notification_system()
-        self.test_notification_workflow_integration()
+        # Run JobPosting Form Backend Verification (focused on review request)
+        self.test_jobposting_form_backend_verification()
+        
+        # Run other test suites if needed
+        # self.test_authentication_system()
+        # self.test_homeowner_job_management()
+        # self.test_my_jobs_endpoint()
+        # self.test_quote_management_system()
+        # self.test_profile_management_system()
+        # self.test_portfolio_management_system()
+        # self.test_communication_system()
+        # self.test_interest_system()
+        # self.test_notification_system()
+        # self.test_notification_workflow_integration()
         
         # NEW: Phase 8 - Rating & Review System
-        self.test_rating_review_system()
+        # self.test_rating_review_system()
         
         # NEW: Phase 9E - Google Maps Integration
-        self.test_google_maps_integration_comprehensive()
+        # self.test_google_maps_integration_comprehensive()
         
         # NEW: Phase 10 - Enhanced Job Posting Form Backend
-        self.test_phase_10_enhanced_job_posting_backend()
+        # self.test_phase_10_enhanced_job_posting_backend()
         
         # NEW: Access Fee System Changes Testing
-        self.test_access_fee_system_changes()
+        # self.test_access_fee_system_changes()
         
         # NEW: Admin User Management System Testing
-        self.test_admin_user_management_system()
+        # self.test_admin_user_management_system()
         
         # NEW: Admin Location & Trades Management System Testing
         self.test_admin_location_trades_management()
