@@ -7115,7 +7115,7 @@ class BackendTester:
         job_data = {
             "title": "Kitchen Plumbing Upgrade - My Interests Test",
             "description": "Need professional plumber to upgrade kitchen plumbing system. Install new sink, dishwasher connections, and fix water pressure issues. Modern kitchen in Lagos home.",
-            "category": "Plumbing & Water Works",
+            "category": "Plumbing",
             "location": "Lagos",
             "postcode": "101001",
             "budget_min": 150000,
