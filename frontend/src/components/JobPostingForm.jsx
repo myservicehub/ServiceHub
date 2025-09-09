@@ -938,7 +938,7 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
 
       case 5:
         // Account creation step should only be shown for unauthenticated users
-        if (isAuthenticated()) {
+        if (isUserAuthenticated()) {
           return null; // Don't render account creation step for authenticated users
         }
         
