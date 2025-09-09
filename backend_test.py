@@ -7954,5 +7954,5 @@ class BackendTester:
     
 if __name__ == "__main__":
     tester = BackendTester()
-    # Run the contact sharing notification system test as requested in review
-    tester.test_contact_sharing_notification_system()
+    # Run the JobPosting Form Backend Verification as requested in review
+    tester.test_jobposting_form_backend_verification()
