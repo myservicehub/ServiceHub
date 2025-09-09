@@ -28,7 +28,8 @@ import {
   Building,
   Star
 } from 'lucide-react';
-import { interestsAPI, walletAPI } from '../api/services';
+import { interestsAPI } from '../api/services';
+import { walletAPI } from '../api/wallet';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
