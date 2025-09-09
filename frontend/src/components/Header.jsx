@@ -359,8 +359,8 @@ const Header = () => {
         isOpen={authModalOpen} 
         onClose={() => setAuthModalOpen(false)}
         defaultMode={authMode}
-        defaultTab="tradesperson"
-        showOnlyTradesperson={true}
+        defaultTab="homeowner"
+        showOnlyTradesperson={false}
       />
     </header>
   );
