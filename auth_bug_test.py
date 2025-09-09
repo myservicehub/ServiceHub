@@ -82,7 +82,7 @@ class AuthenticationBugTester:
             "email": f"adebayo.test.{uuid.uuid4().hex[:8]}@email.com",
             "password": "SecurePass123",
             "phone": "08123456789",
-            "location": "Lagos, Lagos State",
+            "location": "Lagos",
             "postcode": "100001"
         }
         
