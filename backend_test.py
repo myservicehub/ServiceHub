@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
 """
-PHASE 7: End-to-End System Testing - Complete Backend Integration
-Comprehensive testing of the entire serviceHub lead generation marketplace backend workflow
-to ensure all systems work together seamlessly.
+CRITICAL AUTHENTICATION BUG INVESTIGATION
+Testing authentication system where logged-in homeowners are being told 
+"You must be logged in to post a job" even though they are authenticated.
+
+Focus Areas:
+1. JWT token validation and authentication chain
+2. get_current_homeowner dependency functionality  
+3. Bearer token validation
+4. User role validation (homeowner vs tradesperson)
+5. Edge cases: expired tokens, invalid tokens, missing tokens
 """
 
 import requests
@@ -11,6 +18,7 @@ import os
 from datetime import datetime, timedelta
 from typing import Dict, List, Any
 import uuid
+import time
 
 # Get backend URL from environment
 BACKEND_URL = "https://tradehub-ng.preview.emergentagent.com/api"
