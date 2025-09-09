@@ -6925,7 +6925,11 @@ class BackendTester:
             "home_address": "Test Address",
             "budget_min": 100000,
             "budget_max": 200000,
-            "timeline": "Within 1 week"
+            "timeline": "Within 1 week",
+            # Add required homeowner fields
+            "homeowner_name": self.test_data.get('jobpost_homeowner_user', {}).get('name', 'Test Homeowner'),
+            "homeowner_email": self.test_data.get('jobpost_homeowner_user', {}).get('email', 'test@example.com'),
+            "homeowner_phone": self.test_data.get('jobpost_homeowner_user', {}).get('phone', '08123456789')
         }
         
         response = self.make_request("POST", "/jobs/", json=job_with_invalid_zip, auth_token=homeowner_token)
