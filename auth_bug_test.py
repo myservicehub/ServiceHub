@@ -264,7 +264,7 @@ class AuthenticationBugTester:
             "email": f"emeka.test.{uuid.uuid4().hex[:8]}@tradework.com",
             "password": "SecurePass123",
             "phone": "08187654321",
-            "location": "Abuja, FCT",
+            "location": "Abuja",
             "postcode": "900001",
             "trade_categories": ["Plumbing"],
             "experience_years": 5,
