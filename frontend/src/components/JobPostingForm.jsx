@@ -1284,7 +1284,10 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
                     className="flex items-center text-white font-lato"
                     style={{backgroundColor: '#2F8140'}}
                   >
-                    {submitting ? 'Creating Account & Posting Job...' : 'Create Account & Post Job'}
+                    {submitting 
+                      ? (isAuthenticated() ? 'Posting Job...' : 'Creating Account & Posting Job...') 
+                      : (isAuthenticated() ? 'Post Job' : 'Create Account & Post Job')
+                    }
                     <ArrowRight size={16} className="ml-2" />
                   </Button>
                 )}
