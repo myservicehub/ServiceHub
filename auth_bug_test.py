@@ -202,7 +202,10 @@ class AuthenticationBugTester:
             "home_address": "123 Test Street, Victoria Island",
             "budget_min": 200000,
             "budget_max": 400000,
-            "timeline": "Within 2 weeks"
+            "timeline": "Within 2 weeks",
+            "homeowner_name": homeowner_user.get('name', 'Test Homeowner'),
+            "homeowner_email": homeowner_user.get('email', 'test@example.com'),
+            "homeowner_phone": homeowner_user.get('phone', '08123456789')
         }
         
         print(f"🔍 Testing job creation with homeowner token")
