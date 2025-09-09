@@ -113,14 +113,14 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
   const { loginWithToken, isAuthenticated, currentUser, loading } = useAuth();
   const { toast } = useToast();
   
-  // Enhanced authentication check - use multiple indicators to be more robust
+  // Enhanced authentication check - avoiding immediate currentUser access
   const isUserAuthenticated = () => {
-    return isAuthenticated() || (currentUser && currentUser.id);
+    return isAuthenticated() && !loading;
   };
 
   // Auto-populate user details for authenticated users
   useEffect(() => {
-    if (isUserAuthenticated() && currentUser) {
+    if (isAuthenticated() && currentUser && !loading) {
       setFormData(prev => ({
         ...prev,
         homeowner_name: currentUser.name || '',
@@ -128,7 +128,7 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
         homeowner_phone: currentUser.phone || ''
       }));
     }
-  }, [currentUser, isAuthenticated]);
+  }, [currentUser, isAuthenticated, loading]);
 
   // Dynamic total steps based on authentication status  
   const totalSteps = isUserAuthenticated() ? 4 : 5;
