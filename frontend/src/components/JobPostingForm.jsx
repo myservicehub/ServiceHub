@@ -109,7 +109,7 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   
-  const { loginWithToken, isAuthenticated, currentUser } = useAuth();
+  const { loginWithToken, isAuthenticated, currentUser, loading } = useAuth();
   const { toast } = useToast();
   
   // Dynamic total steps based on authentication status
