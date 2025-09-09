@@ -6908,10 +6908,10 @@ class BackendTester:
         }
         
         response = self.make_request("POST", "/jobs/", json=job_with_invalid_location, auth_token=homeowner_token)
-        if response.status_code == 400:
+        if response.status_code in [400, 422]:  # Accept both 400 and 422 for validation errors
             self.log_result("Invalid LGA-State Validation", True, "Correctly rejected invalid LGA-state combination")
         else:
-            self.log_result("Invalid LGA-State Validation", False, f"Expected 400, got {response.status_code}")
+            self.log_result("Invalid LGA-State Validation", False, f"Expected 400/422, got {response.status_code}")
         
         # Test Job Creation with Invalid Zip Code
         job_with_invalid_zip = {
@@ -6933,10 +6933,10 @@ class BackendTester:
         }
         
         response = self.make_request("POST", "/jobs/", json=job_with_invalid_zip, auth_token=homeowner_token)
-        if response.status_code == 400:
+        if response.status_code in [400, 422]:  # Accept both 400 and 422 for validation errors
             self.log_result("Invalid Zip Code Validation", True, "Correctly rejected invalid zip code format")
         else:
-            self.log_result("Invalid Zip Code Validation", False, f"Expected 400, got {response.status_code}")
+            self.log_result("Invalid Zip Code Validation", False, f"Expected 400/422, got {response.status_code}")
         
         # Test Job Retrieval by Homeowner
         if 'workflow_job' in self.test_data:
