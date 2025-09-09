@@ -110,7 +110,7 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const { loginWithToken, isAuthenticated, currentUser, loading } = useAuth();
+  const { loginWithToken, isAuthenticated, user: currentUser, loading } = useAuth();
   const { toast } = useToast();
   
   // Enhanced authentication check - avoiding immediate currentUser access
