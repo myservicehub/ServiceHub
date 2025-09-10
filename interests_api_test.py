@@ -188,7 +188,7 @@ class InterestsAPITester:
             "title": "Bathroom Plumbing Installation - Modern Nigerian Design",
             "description": "Looking for an experienced plumber to install new bathroom fixtures in our Lagos home. We need installation of new toilet, sink, shower, and connecting all plumbing. The bathroom is approximately 8 square meters. We have already purchased the fixtures and need professional installation with proper water connections.",
             "category": "Plumbing",
-            "location": "Victoria Island, Lagos State",
+            "location": "Lagos",
             "postcode": "101001",
             "budget_min": 200000,
             "budget_max": 400000,
