@@ -115,7 +115,7 @@ class AdminJobManagementTester:
             "email": f"adebayo.johnson.{uuid.uuid4().hex[:8]}@email.com",
             "password": "SecurePass123",
             "phone": "08123456789",
-            "location": "Lagos, Lagos State",
+            "location": "Lagos",  # Use valid location
             "postcode": "100001"
         }
         
