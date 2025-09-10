@@ -599,6 +599,7 @@ const InterestedTradespeopleePage = () => {
 
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
+                    <Contact size={20} style={{color: '#2F8140'}} />
                     <h3 className="text-2xl font-bold font-montserrat">
                       {selectedTradesperson.tradesperson_name}
                     </h3>
