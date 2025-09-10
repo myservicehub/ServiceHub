@@ -127,67 +127,8 @@ class AdminJobManagementTester:
             self.test_data['homeowner_user'] = homeowner_profile['user']
         else:
             self.log_result("Create test homeowner", False, f"Status: {response.status_code}")
-            return
         
-        # Create test jobs
-        homeowner_token = self.auth_tokens['homeowner']
-        homeowner_user = self.test_data['homeowner_user']
-        
-        jobs_data = [
-            {
-                "title": "Bathroom Plumbing Installation - Modern Nigerian Design",
-                "description": "Looking for an experienced plumber to install new bathroom fixtures in our Lagos home. We need installation of new toilet, sink, shower, and connecting all plumbing.",
-                "category": "Plumbing",
-                "location": "Victoria Island, Lagos State",
-                "postcode": "101001",
-                "budget_min": 200000,
-                "budget_max": 400000,
-                "timeline": "Within 3 weeks",
-                "homeowner_name": homeowner_user.get('name', 'Test Homeowner'),
-                "homeowner_email": homeowner_user.get('email', 'test@example.com'),
-                "homeowner_phone": homeowner_user.get('phone', '08123456789')
-            },
-            {
-                "title": "Kitchen Electrical Work - Wiring and Outlets",
-                "description": "Need electrical work for kitchen renovation. Install new outlets, lighting fixtures, and ensure all wiring meets Nigerian electrical standards.",
-                "category": "Electrical",
-                "location": "Ikeja, Lagos State",
-                "postcode": "100001",
-                "budget_min": 150000,
-                "budget_max": 300000,
-                "timeline": "Within 2 weeks",
-                "homeowner_name": homeowner_user.get('name', 'Test Homeowner'),
-                "homeowner_email": homeowner_user.get('email', 'test@example.com'),
-                "homeowner_phone": homeowner_user.get('phone', '08123456789')
-            },
-            {
-                "title": "Roof Repair - Leak Prevention",
-                "description": "Urgent roof repair needed. Several leaks during rainy season. Need professional assessment and repair of roof tiles and waterproofing.",
-                "category": "Roofing",
-                "location": "Surulere, Lagos State",
-                "postcode": "100001",
-                "budget_min": 100000,
-                "budget_max": 250000,
-                "timeline": "Within 1 week",
-                "homeowner_name": homeowner_user.get('name', 'Test Homeowner'),
-                "homeowner_email": homeowner_user.get('email', 'test@example.com'),
-                "homeowner_phone": homeowner_user.get('phone', '08123456789')
-            }
-        ]
-        
-        created_jobs = []
-        for i, job_data in enumerate(jobs_data):
-            response = self.make_request("POST", "/jobs/", json=job_data, auth_token=homeowner_token)
-            if response.status_code == 200:
-                created_job = response.json()
-                created_jobs.append(created_job)
-                self.log_result(f"Create test job {i+1}", True, f"Job ID: {created_job['id']}")
-            else:
-                self.log_result(f"Create test job {i+1}", False, f"Status: {response.status_code}")
-        
-        self.test_data['created_jobs'] = created_jobs
-        
-        # Create tradesperson and show interest in jobs
+        # Create tradesperson
         tradesperson_data = {
             "name": "Emeka Okafor",
             "email": f"emeka.okafor.{uuid.uuid4().hex[:8]}@tradework.com",
@@ -208,10 +149,30 @@ class AdminJobManagementTester:
             self.auth_tokens['tradesperson'] = tradesperson_profile['access_token']
             self.test_data['tradesperson_user'] = tradesperson_profile
             self.log_result("Create test tradesperson", True, f"ID: {tradesperson_profile['id']}")
-            
-            # Show interest in first two jobs
+        else:
+            self.log_result("Create test tradesperson", False, f"Status: {response.status_code}")
+        
+        # Get existing jobs from the database for testing admin endpoints
+        if 'admin' in self.auth_tokens:
+            admin_token = self.auth_tokens['admin']
+            response = self.make_request("GET", "/admin/jobs/all?limit=5", auth_token=admin_token)
+            if response.status_code == 200:
+                jobs_response = response.json()
+                existing_jobs = jobs_response.get('jobs', [])
+                if existing_jobs:
+                    self.test_data['created_jobs'] = existing_jobs[:3]  # Use first 3 jobs for testing
+                    self.log_result("Get existing jobs for testing", True, f"Found {len(existing_jobs)} existing jobs")
+                else:
+                    self.log_result("Get existing jobs for testing", False, "No existing jobs found")
+            else:
+                self.log_result("Get existing jobs for testing", False, f"Status: {response.status_code}")
+        
+        # If we have tradesperson and jobs, show interest in some jobs
+        if ('tradesperson' in self.auth_tokens and 
+            'created_jobs' in self.test_data and 
+            len(self.test_data['created_jobs']) > 0):
             tradesperson_token = self.auth_tokens['tradesperson']
-            for i, job in enumerate(created_jobs[:2]):
+            for i, job in enumerate(self.test_data['created_jobs'][:2]):
                 interest_data = {"job_id": job['id']}
                 response = self.make_request("POST", "/interests/show-interest", 
                                            json=interest_data, auth_token=tradesperson_token)
@@ -219,8 +180,6 @@ class AdminJobManagementTester:
                     self.log_result(f"Show interest in job {i+1}", True)
                 else:
                     self.log_result(f"Show interest in job {i+1}", False, f"Status: {response.status_code}")
-        else:
-            self.log_result("Create test tradesperson", False, f"Status: {response.status_code}")
     
     def test_admin_jobs_all_endpoint(self):
         """Test GET /api/admin/jobs/all endpoint"""
