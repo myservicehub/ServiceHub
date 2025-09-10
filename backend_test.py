@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
 """
-INTERESTS API ENDPOINTS TESTING
-Testing the interests API endpoints that support the new Interested Tradespeople page functionality.
+ADMIN JOB MANAGEMENT API ENDPOINTS TESTING
+Testing the comprehensive admin job management API endpoints for admin dashboard functionality.
 
 Focus Areas:
-1. Job Interests API: /api/interests/job/{job_id} - Get tradespeople who showed interest
-2. Interest Management APIs:
-   - /api/interests/show-interest - For tradespeople showing interest
-   - /api/interests/share-contact/{interest_id} - For homeowners sharing contact details  
-   - /api/interests/my-interests - For tradespeople viewing their interests
-3. Data Structure Validation: Complete tradesperson profiles, interest status tracking, job details
-4. Authentication Requirements: homeowner/tradesperson roles
-5. Error Handling: Valid/invalid IDs, various interest statuses, edge cases
+1. Admin Job Management APIs:
+   - GET /api/admin/jobs/all - Get all jobs with comprehensive details
+   - GET /api/admin/jobs/{job_id}/details - Get detailed job information
+   - PUT /api/admin/jobs/{job_id} - Update job details
+   - PATCH /api/admin/jobs/{job_id}/status - Update job status
+   - DELETE /api/admin/jobs/{job_id} - Soft delete job
+   - GET /api/admin/jobs/stats - Get job statistics
+2. Data Structure Validation: Complete job details with homeowner information, interest counts
+3. CRUD Operations Testing: Creating/reading/updating/deleting jobs through admin endpoints
+4. Error Handling: Invalid job IDs, invalid status values, missing required fields
+5. Authentication Requirements: Admin authentication
 """
 
 import requests
