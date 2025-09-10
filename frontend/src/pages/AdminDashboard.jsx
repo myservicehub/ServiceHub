@@ -101,7 +101,8 @@ const AdminDashboard = () => {
         } else if (activeLocationTab === 'trades') {
           const data = await adminAPI.getAllTrades();
           setTrades(data.trades || []);
-          setTradeGroups(data.groups || []);
+          // Extract group names from the groups object
+          setTradeGroups(data.groups ? Object.keys(data.groups) : []);
         }
       } else if (activeTab === 'questions') {
         // Load both skills questions and available trade categories
