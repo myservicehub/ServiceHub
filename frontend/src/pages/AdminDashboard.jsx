@@ -54,6 +54,14 @@ const AdminDashboard = () => {
   const [showAddContact, setShowAddContact] = useState(false);
   const [editingContact, setEditingContact] = useState(null);
   
+  // Jobs Management state
+  const [jobsFilter, setJobsFilter] = useState('');
+  const [editingJobStatus, setEditingJobStatus] = useState(null);
+  const [selectedJobDetails, setSelectedJobDetails] = useState(null);
+  const [showJobDetailsModal, setShowJobDetailsModal] = useState(false);
+  const [showEditJobModal, setShowEditJobModal] = useState(false);
+  const [editingJobData, setEditingJobData] = useState(null);
+  
   const { toast } = useToast();
 
   useEffect(() => {
