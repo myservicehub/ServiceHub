@@ -20,6 +20,7 @@ const AuthModal = ({ isOpen, onClose, defaultMode = 'login', defaultTab = 'trade
 
   const switchToLogin = () => setMode('login');
   const switchToSignup = () => setMode('signup');
+  const switchToForgotPassword = () => setMode('forgotPassword');
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
