@@ -226,6 +226,77 @@ const AdminDashboard = () => {
     }
   };
 
+  // Jobs Management Functions
+  const handleUpdateJobStatus = async (jobId, newStatus) => {
+    try {
+      const response = await adminAPI.updateJobStatus(jobId, newStatus);
+      if (response) {
+        toast({
+          title: "Success",
+          description: "Job status updated successfully",
+        });
+        setEditingJobStatus(null);
+        fetchData();
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update job status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleViewJobDetails = (job) => {
+    setSelectedJobDetails(job);
+    setShowJobDetailsModal(true);
+  };
+
+  const handleEditJob = (job) => {
+    setEditingJobData(job);
+    setShowEditJobModal(true);
+  };
+
+  const handleDeleteJob = async (jobId) => {
+    if (!window.confirm('Are you sure you want to delete this job? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await adminAPI.deleteJob(jobId);
+      if (response) {
+        toast({
+          title: "Success",
+          description: "Job deleted successfully",
+        });
+        fetchData();
+      }
+    } catch (error) {
+      toast({
+        title: "Error", 
+        description: "Failed to delete job",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getJobStatusColor = (status) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-100 text-green-800';
+      case 'completed':
+        return 'bg-blue-100 text-blue-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      case 'expired':
+        return 'bg-gray-100 text-gray-800';
+      case 'on_hold':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   const handleApproveVerification = async (verificationId, notes = '') => {
     try {
       await adminReferralsAPI.approveVerification(verificationId, notes);
