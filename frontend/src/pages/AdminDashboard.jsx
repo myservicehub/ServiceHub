@@ -1329,13 +1329,29 @@ const AdminDashboard = () => {
                                   description
                                 );
                                 console.log('API response:', result);
-                                toast({ title: "Trade category added successfully" });
+                                
+                                // Show success toast
+                                console.log('Attempting to show success toast...');
+                                toast({ 
+                                  title: "Trade category added successfully",
+                                  description: `Added "${tradeName}" to ${group}`,
+                                  variant: "default"
+                                });
+                                
                                 setShowAddForm(false);
-                                fetchData();
+                                await fetchData();
+                                console.log('Form closed and data refreshed');
                               } catch (error) {
                                 console.error('Form submission error:', error);
                                 console.error('Error details:', error.response?.data);
-                                toast({ title: "Failed to add trade category", variant: "destructive" });
+                                
+                                // Show error toast with more details
+                                console.log('Attempting to show error toast...');
+                                toast({ 
+                                  title: "Failed to add trade category", 
+                                  description: error.response?.data?.detail || error.message || "Unknown error",
+                                  variant: "destructive" 
+                                });
                               }
                             }}>
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
