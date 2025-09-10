@@ -827,7 +827,7 @@ const AdminDashboard = () => {
                                 await adminAPI.addNewState(
                                   formData.get('state_name'),
                                   formData.get('region'),
-                                  formData.get('postcodes') // This matches the form field name
+                                  formData.get('postcode_samples') // Fixed: use correct field name
                                 );
                                 toast({ title: "State added successfully" });
                                 setShowAddForm(false);
