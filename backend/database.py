@@ -2509,6 +2509,16 @@ class Database:
     # LOCATION MANAGEMENT METHODS (Admin)
     # ==========================================
     
+    async def get_custom_states(self):
+        """Get custom states added by admin"""
+        try:
+            states_cursor = self.database.system_locations.find({"type": "state"})
+            states = await states_cursor.to_list(length=None)
+            return [state["name"] for state in states]
+        except Exception as e:
+            print(f"Error getting custom states: {e}")
+            return []
+    
     async def add_new_state(self, state_name: str, region: str = "", postcode_samples: str = ""):
         """Add a new state to the system"""
         try:
