@@ -164,6 +164,7 @@ const LoginForm = ({ onClose, onSwitchToSignup, onSwitchToForgotPassword }) => {
           <div className="text-center">
             <button
               type="button"
+              onClick={onSwitchToForgotPassword}
               className="text-sm font-lato hover:underline"
               style={{color: '#2F8140'}}
             >
