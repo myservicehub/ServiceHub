@@ -374,7 +374,7 @@ const InterestedTradespeopleePage = () => {
 
                 {tradesperson.status === 'contact_shared' && (
                   <Badge className="bg-green-50 text-green-700 border-green-200">
-                    Contact details shared - Waiting for payment
+                    Contact details shared, waiting for feedback
                   </Badge>
                 )}
 
