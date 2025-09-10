@@ -69,7 +69,8 @@ const BrowseJobsPage = () => {
   const [pagination, setPagination] = useState(null);
   const [walletBalance, setWalletBalance] = useState(null);
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'map'
-  const [selectedJobId, setSelectedJobId] = useState(null);
+  const [selectedJobDetails, setSelectedJobDetails] = useState(null);
+  const [showJobModal, setShowJobModal] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   const [locationLoading, setLocationLoading] = useState(false);
   const [showLocationSettings, setShowLocationSettings] = useState(false);
