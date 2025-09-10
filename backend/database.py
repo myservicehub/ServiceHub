@@ -2509,30 +2509,6 @@ class Database:
     # LOCATION MANAGEMENT METHODS (Admin)
     # ==========================================
     
-    async def get_custom_towns(self):
-        """Get custom towns added by admin, organized by state and LGA"""
-        try:
-            towns_cursor = self.database.system_locations.find({"type": "town"})
-            towns = await towns_cursor.to_list(length=None)
-            
-            # Organize by state and LGA
-            towns_by_state_lga = {}
-            for town in towns:
-                state = town["state"]
-                lga = town["lga"]
-                
-                if state not in towns_by_state_lga:
-                    towns_by_state_lga[state] = {}
-                if lga not in towns_by_state_lga[state]:
-                    towns_by_state_lga[state][lga] = []
-                
-                towns_by_state_lga[state][lga].append(town["name"])
-            
-            return towns_by_state_lga
-        except Exception as e:
-            print(f"Error getting custom towns: {e}")
-            return {}
-    
     async def get_custom_lgas(self):
         """Get custom LGAs added by admin, organized by state"""
         try:
