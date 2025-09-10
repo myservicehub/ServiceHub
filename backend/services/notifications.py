@@ -414,6 +414,9 @@ class NotificationService:
         if not notification.recipient_email:
             raise ValueError("No recipient email provided")
         
+        # Ensure services are initialized
+        self._ensure_services_initialized()
+        
         template = self.template_service.get_template(notification.type, NotificationChannel.EMAIL)
         if not template:
             raise ValueError(f"No email template found for {notification.type}")
