@@ -1,20 +1,37 @@
 #!/usr/bin/env python3
 """
-ADMIN JOB MANAGEMENT API ENDPOINTS TESTING
-Testing the comprehensive admin job management API endpoints for admin dashboard functionality.
+REAL-TIME NOTIFICATION SYSTEM TESTING - SendGrid (Email) and Termii (SMS)
+Testing the comprehensive real-time notification system with SendGrid and Termii services.
 
 Focus Areas:
-1. Admin Job Management APIs:
-   - GET /api/admin/jobs/all - Get all jobs with comprehensive details
-   - GET /api/admin/jobs/{job_id}/details - Get detailed job information
-   - PUT /api/admin/jobs/{job_id} - Update job details
-   - PATCH /api/admin/jobs/{job_id}/status - Update job status
-   - DELETE /api/admin/jobs/{job_id} - Soft delete job
-   - GET /api/admin/jobs/stats - Get job statistics
-2. Data Structure Validation: Complete job details with homeowner information, interest counts
-3. CRUD Operations Testing: Creating/reading/updating/deleting jobs through admin endpoints
-4. Error Handling: Invalid job IDs, invalid status values, missing required fields
-5. Authentication Requirements: Admin authentication
+1. Service Initialization Testing:
+   - Test lazy initialization of SendGrid and Termii services
+   - Verify environment variable loading (SENDGRID_API_KEY, SENDER_EMAIL, TERMII_API_KEY, TERMII_SENDER_ID)
+   - Check fallback to mock services when API keys are missing
+
+2. Email Notification Testing (SendGrid):
+   - Test all 4 notification types: NEW_INTEREST, CONTACT_SHARED, JOB_POSTED, PAYMENT_CONFIRMATION
+   - Verify HTML content conversion (newlines to <br> tags)
+   - Test template rendering with proper variable substitution
+   - Verify SendGrid API integration and response handling
+
+3. SMS Notification Testing (Termii):
+   - Test all 4 notification types with SMS channel
+   - Verify Nigerian phone number formatting (removes + prefix for Termii API)
+   - Test Termii API payload structure and response handling
+   - Test phone number formatting edge cases
+
+4. Notification Workflow Integration:
+   - Test notification sending via /api/notifications/send endpoint
+   - Test background task notification processing
+   - Verify notification history storage in database
+   - Test notification preferences integration
+
+5. Error Handling & Fallback:
+   - Test behavior when SendGrid API fails
+   - Test behavior when Termii API fails  
+   - Verify mock service fallback functionality
+   - Test comprehensive error logging
 """
 
 import requests
