@@ -867,7 +867,7 @@ const AdminDashboard = () => {
                                   </label>
                                   <input
                                     type="text"
-                                    name="postcodes"
+                                    name="postcode_samples"
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                     placeholder="e.g., 110001,110002"
                                   />
