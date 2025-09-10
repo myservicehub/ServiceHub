@@ -193,7 +193,7 @@ class AdminJobManagementTester:
             "email": f"emeka.okafor.{uuid.uuid4().hex[:8]}@tradework.com",
             "password": "SecurePass123",
             "phone": "08187654321",
-            "location": "Abuja, FCT",
+            "location": "Abuja",
             "postcode": "900001",
             "trade_categories": ["Plumbing", "Electrical"],
             "experience_years": 8,
