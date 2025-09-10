@@ -337,10 +337,6 @@ const InterestedTradespeopleePage = () => {
                   <TrendingUp size={12} />
                   <span>{tradesperson.portfolio_count || 0} portfolio items</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <DollarSign size={12} />
-                  <span>Access Fee: {formatCurrency(tradesperson.access_fee || 1000)}</span>
-                </div>
               </div>
 
               {/* Action Buttons */}
