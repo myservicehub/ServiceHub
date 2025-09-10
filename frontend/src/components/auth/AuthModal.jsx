@@ -26,7 +26,16 @@ const AuthModal = ({ isOpen, onClose, defaultMode = 'login', defaultTab = 'trade
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
         {mode === 'login' ? (
-          <LoginForm onClose={handleClose} onSwitchToSignup={switchToSignup} />
+          <LoginForm 
+            onClose={handleClose} 
+            onSwitchToSignup={switchToSignup}
+            onSwitchToForgotPassword={switchToForgotPassword}
+          />
+        ) : mode === 'forgotPassword' ? (
+          <ForgotPasswordForm 
+            onClose={handleClose} 
+            onBackToLogin={switchToLogin}
+          />
         ) : (
           <SignupForm 
             onClose={handleClose} 
