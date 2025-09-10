@@ -363,7 +363,9 @@ class DynamicLocationTester:
             "budget_min": 75000,
             "budget_max": 200000,
             "timeline": "Within 1 week",
-            "requirements": "Certified electrician with commercial experience"
+            "homeowner_name": self.test_data['homeowner_user']['name'],
+            "homeowner_email": self.test_data['homeowner_user']['email'],
+            "homeowner_phone": self.test_data['homeowner_user']['phone']
         }
         
         response = self.make_request("POST", "/jobs/", json=job_data_static, auth_token=homeowner_token)
