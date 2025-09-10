@@ -239,7 +239,11 @@ export const adminAPI = {
     formData.append('lga_name', lgaName);
     formData.append('zip_codes', zipCodes);
     
-    const response = await apiClient.post('/admin/locations/lgas', formData);
+    const response = await apiClient.post('/admin/locations/lgas', formData, {
+      headers: {
+        'Content-Type': undefined, // Let axios set multipart/form-data with boundary
+      },
+    });
     return response.data;
   },
 
