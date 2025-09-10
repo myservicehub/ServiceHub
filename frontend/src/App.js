@@ -40,6 +40,7 @@ function App() {
             <Route path="/post-job" element={<PostJobPage />} />
             <Route path="/my-jobs" element={<MyJobsPage />} />
             <Route path="/my-interests" element={<MyInterestsPage />} />
+            <Route path="/tradesperson/:id" element={<TradespersonProfilePage />} />
             <Route path="/browse-jobs" element={<BrowseJobsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/tradesperson/:tradespersonId/portfolio" element={<TradespersonPortfolioPage />} />
