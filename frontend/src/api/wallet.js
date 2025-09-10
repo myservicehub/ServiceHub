@@ -199,9 +199,10 @@ export const adminAPI = {
     formData.append('region', region);
     formData.append('postcode_samples', postcodes);
     
+    // Let axios set the correct Content-Type for FormData automatically
     const response = await apiClient.post('/admin/locations/states', formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        'Content-Type': undefined, // This allows axios to set multipart/form-data with boundary
       },
     });
     return response.data;
