@@ -195,7 +195,7 @@ class AdminJobManagementTester:
             "phone": "08187654321",
             "location": "Abuja",
             "postcode": "900001",
-            "trade_categories": ["Plumbing", "Electrical"],
+            "trade_categories": ["Plumbing", "Building"],
             "experience_years": 8,
             "company_name": "Okafor Services",
             "description": "Professional tradesperson with 8 years experience in residential and commercial projects across Nigeria.",
