@@ -298,7 +298,11 @@ export const adminAPI = {
     formData.append('group', group);
     formData.append('description', description);
     
-    const response = await apiClient.post('/admin/trades', formData);
+    const response = await apiClient.post('/admin/trades', formData, {
+      headers: {
+        'Content-Type': undefined, // Let axios set multipart/form-data with boundary
+      },
+    });
     return response.data;
   },
 
