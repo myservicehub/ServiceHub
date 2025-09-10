@@ -93,23 +93,29 @@ class NotificationSystemTester:
         """Test user authentication system for notification testing"""
         print("\n=== Testing User Authentication ===")
         
-        # Test tradesperson login
-        tradesperson_credentials = {
-            "email": "john.plumber@gmail.com",
-            "password": "password123"
+        # Create a test tradesperson first
+        tradesperson_data = {
+            "name": "John Plumber",
+            "email": f"john.plumber.{uuid.uuid4().hex[:8]}@tradework.com",
+            "password": "SecurePass123",
+            "phone": "+2348187654321",
+            "location": "Lagos",
+            "postcode": "100001",
+            "trade_categories": ["Plumbing", "Building"],
+            "experience_years": 8,
+            "company_name": "John's Plumbing Services",
+            "description": "Professional plumber with 8 years experience in residential and commercial projects across Nigeria.",
+            "certifications": ["Licensed Professional"]
         }
         
-        response = self.make_request("POST", "/auth/login", json=tradesperson_credentials)
+        response = self.make_request("POST", "/auth/register/tradesperson", json=tradesperson_data)
         if response.status_code == 200:
-            login_response = response.json()
-            if 'access_token' in login_response:
-                self.log_result("Tradesperson login", True, "Authentication successful")
-                self.auth_tokens['tradesperson'] = login_response['access_token']
-                self.test_data['tradesperson_user'] = login_response.get('user', {})
-            else:
-                self.log_result("Tradesperson login", False, "No access token in response")
+            tradesperson_profile = response.json()
+            self.log_result("Create test tradesperson", True, f"ID: {tradesperson_profile['user']['id']}")
+            self.auth_tokens['tradesperson'] = tradesperson_profile['access_token']
+            self.test_data['tradesperson_user'] = tradesperson_profile['user']
         else:
-            self.log_result("Tradesperson login", False, f"Status: {response.status_code}, Response: {response.text}")
+            self.log_result("Create test tradesperson", False, f"Status: {response.status_code}, Response: {response.text}")
         
         # Test homeowner login - create a test homeowner if needed
         homeowner_data = {
