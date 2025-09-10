@@ -33,11 +33,10 @@ const SignupForm = ({ onClose, onSwitchToLogin, defaultTab = 'tradesperson', sho
 
   const { registerHomeowner, registerTradesperson } = useAuth();
   const { toast } = useToast();
-
-  const { signup } = useAuth();
-  const { toast } = useToast();
   const { states: nigerianStates, loading: statesLoading } = useStates();
-    "Building",
+
+  // Nigerian Trade Categories - Updated comprehensive list
+  const tradeCategories = [
     "Concrete Works", 
     "Tiling",
     "CCTV & Security Systems",
