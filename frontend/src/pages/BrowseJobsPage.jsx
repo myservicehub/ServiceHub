@@ -641,72 +641,29 @@ const BrowseJobsPage = () => {
                     {jobs.map((job) => (
                       <Card 
                         key={job.id} 
-                        className="hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+                        className="hover:shadow-md transition-shadow duration-200 cursor-pointer border-l-4 border-l-transparent hover:border-l-purple-500"
                         onClick={() => handleViewJobDetails(job)}
                       >
-                        <CardContent className="p-6">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center space-x-2 mb-2">
-                                <h3 className="text-xl font-bold font-montserrat" style={{color: '#121E3C'}}>
-                                  {job.title}
-                                </h3>
-                                <Badge className="bg-blue-100 text-blue-800">
-                                  {job.category}
-                                </Badge>
-                              </div>
-                              
-                              <div className="flex items-center space-x-4 text-sm text-gray-600 font-lato mb-3">
-                                <span className="flex items-center">
-                                  <MapPin size={14} className="mr-1" />
-                                  {job.location}
-                                </span>
-                                <span className="flex items-center">
-                                  <Calendar size={14} className="mr-1" />
-                                  Posted {formatDate(job.created_at)}
-                                </span>
-                                <span className="flex items-center">
-                                  <Heart size={14} className="mr-1" />
-                                  {job.interests_count || 0} interested
-                                </span>
-                              </div>
-
-                              {/* Job Summary */}
-                              <p className="text-gray-700 font-lato line-clamp-2 mb-4">
-                                {job.description}
-                              </p>
-
-                              {/* Quick Details */}
-                              <div className="flex items-center space-x-4 text-sm text-gray-600">
-                                <span className="flex items-center">
-                                  <Clock size={14} className="mr-1" />
-                                  {job.timeline || 'Flexible'}
-                                </span>
-                                <span className="flex items-center">
-                                  <User size={14} className="mr-1" />
-                                  {job.homeowner?.name || 'Homeowner'}
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Budget & Status */}
-                            <div className="text-right space-y-2 ml-4">
-                              {job.budget_min && job.budget_max ? (
-                                <div>
-                                  <div className="text-lg font-bold font-montserrat" style={{color: '#2F8140'}}>
-                                    {formatCurrency(job.budget_min)} - {formatCurrency(job.budget_max)}
-                                  </div>
-                                  <div className="text-sm text-gray-500 font-lato">Budget Range</div>
-                                </div>
-                              ) : (
-                                <div className="text-sm text-gray-500 font-lato">Budget negotiable</div>
-                              )}
-                              
-                              <div className="text-sm text-blue-600 font-medium">
-                                Click to view details →
-                              </div>
+                        <CardContent className="p-4">
+                          {/* Top row with category, location, and time */}
+                          <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
+                            <div className="flex items-center space-x-4">
+                              <span className="flex items-center">
+                                🔨 {job.category}
+                              </span>
+                              <span className="flex items-center">
+                                📍 {job.location}
+                              </span>
+                              <span className="flex items-center">
+                                🕐 {formatDate(job.created_at)}
+                              </span>
                             </div>
                           </div>
+
+                          {/* Job title */}
+                          <h3 className="text-lg font-semibold text-purple-900 leading-tight">
+                            {job.title}
+                          </h3>
                         </CardContent>
                       </Card>
                     ))}
