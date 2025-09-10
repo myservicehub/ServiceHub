@@ -39,18 +39,6 @@ const NIGERIAN_TRADE_CATEGORIES = [
   "Recycling"
 ];
 
-// Nigerian States
-const NIGERIAN_STATES = [
-  "Abuja",
-  "Lagos", 
-  "Delta",
-  "Rivers State",
-  "Benin",
-  "Bayelsa",
-  "Enugu",
-  "Cross Rivers"
-];
-
 const HeroSection = () => {
   const [job, setJob] = useState('');
   const [location, setLocation] = useState('');
@@ -59,6 +47,7 @@ const HeroSection = () => {
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { states: nigerianStates, loading: statesLoading } = useStates();
 
   const handleJobSelect = (selectedJob) => {
     setJob(selectedJob);
