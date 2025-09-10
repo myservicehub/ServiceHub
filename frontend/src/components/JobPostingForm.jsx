@@ -570,7 +570,7 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
                   }`}
                 >
                   <option value="">Select your state</option>
-                  {NIGERIAN_STATES.map((state) => (
+                  {nigerianStates.map((state) => (
                     <option key={state} value={state}>
                       {state}
                     </option>
