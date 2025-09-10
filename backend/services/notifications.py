@@ -62,30 +62,56 @@ class SendGridEmailService:
             logger.error(f"❌ Email sending failed: {str(e)}")
             return False
 
-class MockSMSService:
-    """Mock SMS service that logs instead of sending real SMS"""
+class TermiiSMSService:
+    """Real Termii SMS service for Nigerian market"""
     
     def __init__(self):
-        self.service_name = "MockSMSService"
-        logger.info(f"🔧 {self.service_name} initialized - Development Mode (Logging Only)")
+        self.service_name = "TermiiSMSService"
+        self.api_key = os.environ.get('TERMII_API_KEY')
+        self.sender_id = os.environ.get('TERMII_SENDER_ID')
+        self.base_url = os.environ.get('TERMII_BASE_URL', 'https://api.ng.termii.com')
+        
+        if not self.api_key or not self.sender_id:
+            logger.error("❌ Termii configuration missing: TERMII_API_KEY or TERMII_SENDER_ID")
+            raise ValueError("Missing Termii configuration")
+            
+        logger.info(f"🔧 {self.service_name} initialized - Production Mode")
     
     async def send_sms(self, to: str, message: str, metadata: Dict[str, Any] = None) -> bool:
-        """Mock send SMS - logs the SMS instead of sending"""
+        """Send real SMS using Termii API"""
         try:
-            # Format Nigerian phone number for display
+            # Format Nigerian phone number
             formatted_phone = self._format_nigerian_phone(to)
             
-            log_data = {
-                "service": self.service_name,
+            # Prepare API payload
+            payload = {
                 "to": formatted_phone,
-                "message": message,
-                "metadata": metadata or {},
-                "timestamp": datetime.now(timezone.utc).isoformat()
+                "from": self.sender_id,
+                "sms": message,
+                "type": "plain",
+                "api_key": self.api_key,
+                "channel": "generic"
             }
             
-            logger.info(f"📱 SMS SENT: {json.dumps(log_data, indent=2)}")
-            return True
+            # Send request to Termii API
+            response = requests.post(
+                f"{self.base_url}/api/sms/send",
+                json=payload,
+                headers={"Content-Type": "application/json"}
+            )
             
+            if response.status_code == 200:
+                response_data = response.json()
+                if response_data.get('code') == 'ok':
+                    logger.info(f"📱 SMS SENT: to={formatted_phone}, message_id={response_data.get('message_id')}")
+                    return True
+                else:
+                    logger.error(f"❌ Termii API error: {response_data}")
+                    return False
+            else:
+                logger.error(f"❌ Termii HTTP error: {response.status_code} - {response.text}")
+                return False
+                
         except Exception as e:
             logger.error(f"❌ SMS sending failed: {str(e)}")
             return False
@@ -97,17 +123,18 @@ class MockSMSService:
         
         # Handle different Nigerian phone formats
         if len(clean_phone) == 11 and clean_phone.startswith('0'):
-            # Convert 0803... to +2340803...
-            return f"+234{clean_phone[1:]}"
+            # Convert 0803... to 234803...
+            return f"234{clean_phone[1:]}"
         elif len(clean_phone) == 10:
-            # Convert 803... to +234803...
-            return f"+234{clean_phone}"
+            # Convert 803... to 234803...
+            return f"234{clean_phone}"
         elif len(clean_phone) == 13 and clean_phone.startswith('234'):
-            # Already has 234, add +
-            return f"+{clean_phone}"
+            # Already has 234, use as is
+            return clean_phone
         else:
-            # Return as is with + if not present
-            return f"+{clean_phone}" if not phone.startswith('+') else phone
+            # Return as is but log warning
+            logger.warning(f"⚠️ Unusual phone format: {phone}")
+            return clean_phone
 
 class NotificationTemplateService:
     """Service for managing notification templates"""
@@ -287,7 +314,7 @@ class NotificationService:
     
     def __init__(self):
         self.email_service = SendGridEmailService()
-        self.sms_service = MockSMSService()
+        self.sms_service = TermiiSMSService()
         self.template_service = NotificationTemplateService()
         logger.info("🔧 NotificationService initialized - Ready for production notifications")
     
