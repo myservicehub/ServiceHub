@@ -850,11 +850,21 @@ async def get_all_lgas():
 @router.get("/locations/lgas/{state_name}")
 async def get_lgas_for_state(state_name: str):
     """Get LGAs for a specific state"""
-    from models.nigerian_lgas import get_lgas_for_state
-    lgas = get_lgas_for_state(state_name)
-    if not lgas:
+    # Get static LGAs
+    from models.nigerian_lgas import get_lgas_for_state as get_static_lgas
+    static_lgas = get_static_lgas(state_name) or []
+    
+    # Get custom LGAs from database
+    custom_lgas = await database.get_custom_lgas()
+    dynamic_lgas = custom_lgas.get(state_name, [])
+    
+    # Combine both lists and remove duplicates
+    all_lgas = list(set(static_lgas + dynamic_lgas))
+    
+    if not all_lgas:
         raise HTTPException(status_code=404, detail="State not found or no LGAs available")
-    return {"state": state_name, "lgas": lgas}
+    
+    return {"state": state_name, "lgas": all_lgas}
 
 @router.post("/locations/lgas")
 async def add_new_lga(
