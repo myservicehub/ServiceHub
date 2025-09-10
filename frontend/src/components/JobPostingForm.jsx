@@ -58,18 +58,6 @@ const NIGERIAN_TRADE_CATEGORIES = [
   "Recycling"
 ];
 
-// Nigerian States - Service Coverage Areas
-const NIGERIAN_STATES = [
-  "Abuja",
-  "Lagos", 
-  "Delta",
-  "Rivers State",
-  "Benin",
-  "Bayelsa",
-  "Enugu",
-  "Cross Rivers"
-];
-
 const JobPostingForm = ({ onClose, onJobPosted }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
