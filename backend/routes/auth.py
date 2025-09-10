@@ -458,9 +458,21 @@ async def get_trade_categories():
 @router.get("/nigerian-states")
 async def get_nigerian_states():
     """Get all available Nigerian states/locations for service coverage"""
+    # Get static states
+    from models.nigerian_states import NIGERIAN_STATES
+    
+    # Get custom states from database
+    custom_states_cursor = database.database.system_locations.find({"type": "state"})
+    custom_states_docs = await custom_states_cursor.to_list(length=None)
+    custom_states = [state["name"] for state in custom_states_docs]
+    
+    # Combine both lists and remove duplicates
+    all_states = list(set(NIGERIAN_STATES + custom_states))
+    all_states.sort()  # Sort alphabetically
+    
     return {
-        "states": NIGERIAN_STATES,
-        "total": len(NIGERIAN_STATES)
+        "states": all_states,
+        "total": len(all_states)
     }
 
 @router.get("/lgas/{state}")
