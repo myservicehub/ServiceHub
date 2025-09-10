@@ -133,13 +133,29 @@ class Database:
             job["_id"] = str(job["_id"])
             
             # Get homeowner details
-            homeowner = await self.database.users.find_one({"id": job["homeowner_id"]})
-            if homeowner:
+            if "homeowner_id" in job:
+                homeowner = await self.database.users.find_one({"id": job["homeowner_id"]})
+                if homeowner:
+                    job["homeowner"] = {
+                        "id": homeowner["id"],
+                        "name": homeowner.get("name", "Unknown"),
+                        "email": homeowner.get("email", ""),
+                        "phone": homeowner.get("phone", "")
+                    }
+                else:
+                    job["homeowner"] = {
+                        "id": job.get("homeowner_id", "unknown"),
+                        "name": "Unknown",
+                        "email": "",
+                        "phone": ""
+                    }
+            else:
+                # Handle legacy jobs without homeowner_id
                 job["homeowner"] = {
-                    "id": homeowner["id"],
-                    "name": homeowner.get("name", "Unknown"),
-                    "email": homeowner.get("email", ""),
-                    "phone": homeowner.get("phone", "")
+                    "id": "unknown",
+                    "name": job.get("homeowner_name", "Unknown"),
+                    "email": job.get("homeowner_email", ""),
+                    "phone": job.get("homeowner_phone", "")
                 }
             
             # Get interests count
