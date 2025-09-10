@@ -46,11 +46,11 @@ app.add_middleware(
 )
 
 # Health check endpoint
-@api_router.get("/")
+@api_router.get("/api/")
 async def root():
     return {"message": "serviceHub API is running", "status": "healthy"}
 
-@api_router.get("/health")
+@api_router.get("/api/health")
 async def health_check():
     return {"status": "healthy", "service": "serviceHub API"}
 
