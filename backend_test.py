@@ -454,7 +454,9 @@ class DynamicLocationTester:
             "budget_min": 50000,
             "budget_max": 100000,
             "timeline": "1 week",
-            "requirements": "Test requirements"
+            "homeowner_name": self.test_data['homeowner_user']['name'],
+            "homeowner_email": self.test_data['homeowner_user']['email'],
+            "homeowner_phone": self.test_data['homeowner_user']['phone']
         }
         
         response = self.make_request("POST", "/jobs/", json=invalid_lga_job, auth_token=homeowner_token)
