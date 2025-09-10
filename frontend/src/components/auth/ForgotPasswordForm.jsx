@@ -36,7 +36,7 @@ const ForgotPasswordForm = ({ onClose, onBackToLogin }) => {
     }
 
     setIsLoading(true);
-    setErrors({});
+    setErrors({}); // Clear all errors when starting submission
 
     try {
       // Call the backend password reset endpoint
