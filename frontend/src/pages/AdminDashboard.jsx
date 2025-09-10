@@ -1248,12 +1248,18 @@ const AdminDashboard = () => {
                                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
                                         {lgaTowns.map((town, index) => (
                                           <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                                            <span className="text-sm text-gray-700">{town}</span>
+                                            <div className="text-sm text-gray-700">
+                                              <div className="font-medium">{typeof town === 'string' ? town : town.name}</div>
+                                              {typeof town === 'object' && town.zip_code && (
+                                                <div className="text-xs text-gray-500">Zip: {town.zip_code}</div>
+                                              )}
+                                            </div>
                                             <button
                                               onClick={async () => {
-                                                if (window.confirm(`Delete town "${town}" from ${lga}, ${state}?`)) {
+                                                const townName = typeof town === 'string' ? town : town.name;
+                                                if (window.confirm(`Delete town "${townName}" from ${lga}, ${state}?`)) {
                                                   try {
-                                                    await adminAPI.deleteTown(state, lga, town);
+                                                    await adminAPI.deleteTown(state, lga, townName);
                                                     toast({ title: "Town deleted successfully" });
                                                     fetchData();
                                                   } catch (error) {
