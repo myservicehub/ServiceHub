@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent } from '../ui/dialog';
 import LoginForm from './LoginForm';
 import SignupForm from './SignupForm';
+import ForgotPasswordForm from './ForgotPasswordForm';
 
 const AuthModal = ({ isOpen, onClose, defaultMode = 'login', defaultTab = 'tradesperson', showOnlyTradesperson = true }) => {
   const [mode, setMode] = useState(defaultMode);
