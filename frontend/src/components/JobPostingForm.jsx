@@ -26,7 +26,7 @@ import { useToast } from '../hooks/use-toast';
 import useStates from '../hooks/useStates';
 import LocationPicker from './maps/LocationPicker';
 
-// Nigerian Trade Categories
+// Trade categories remain hardcoded as they're not frequently changed by admins
 const NIGERIAN_TRADE_CATEGORIES = [
   "Building",
   "Concrete Works", 
