@@ -338,10 +338,30 @@ class NotificationService:
     """Main notification service orchestrating email and SMS delivery"""
     
     def __init__(self):
-        self.email_service = SendGridEmailService()
-        self.sms_service = TermiiSMSService()
+        self.email_service = None
+        self.sms_service = None
         self.template_service = NotificationTemplateService()
-        logger.info("🔧 NotificationService initialized - Ready for production notifications (SendGrid + Termii)")
+        logger.info("🔧 NotificationService initialized - Services will be loaded on first use")
+    
+    def _ensure_services_initialized(self):
+        """Initialize email and SMS services if not already done"""
+        if self.email_service is None:
+            try:
+                self.email_service = SendGridEmailService()
+                logger.info("📧 SendGrid email service initialized")
+            except Exception as e:
+                logger.error(f"❌ Failed to initialize SendGrid: {e}")
+                # Fall back to mock for development
+                self.email_service = MockEmailService()
+        
+        if self.sms_service is None:
+            try:
+                self.sms_service = TermiiSMSService()
+                logger.info("📱 Termii SMS service initialized")
+            except Exception as e:
+                logger.error(f"❌ Failed to initialize Termii: {e}")
+                # Fall back to mock for development
+                self.sms_service = MockSMSService()
     
     async def send_notification(
         self,
