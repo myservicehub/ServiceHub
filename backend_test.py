@@ -175,24 +175,24 @@ class DynamicLocationTester:
         # Add LGAs for Kaduna state
         kaduna_lgas = [
             {
-                "name": "Kaduna North",
-                "state": "Kaduna",
-                "description": "Kaduna North LGA - Added via admin dashboard"
+                "state_name": "Kaduna",
+                "lga_name": "Kaduna North",
+                "zip_codes": "800001,800002"
             },
             {
-                "name": "Kaduna Central",
-                "state": "Kaduna", 
-                "description": "Kaduna Central LGA - Added via admin dashboard"
+                "state_name": "Kaduna",
+                "lga_name": "Kaduna Central", 
+                "zip_codes": "800101,800102"
             },
             {
-                "name": "Kaduna Municipal983",
-                "state": "Kaduna",
-                "description": "Kaduna Municipal LGA - Added via admin dashboard with unique identifier"
+                "state_name": "Kaduna",
+                "lga_name": "Kaduna Municipal983",
+                "zip_codes": "800201,800202"
             }
         ]
         
         for lga_data in kaduna_lgas:
-            response = self.make_request("POST", "/admin/locations/lgas", json=lga_data, auth_token=admin_token)
+            response = self.make_request("POST", "/admin/locations/lgas", data=lga_data, auth_token=admin_token)
             if response.status_code in [200, 201]:
                 lga_response = response.json()
                 self.log_result(f"Add {lga_data['name']} LGA", True, f"LGA added to {lga_data['state']}")
