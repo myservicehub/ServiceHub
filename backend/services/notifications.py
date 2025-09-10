@@ -316,7 +316,7 @@ class NotificationService:
         self.email_service = SendGridEmailService()
         self.sms_service = TermiiSMSService()
         self.template_service = NotificationTemplateService()
-        logger.info("🔧 NotificationService initialized - Ready for production notifications")
+        logger.info("🔧 NotificationService initialized - Ready for production notifications (SendGrid + Termii)")
     
     async def send_notification(
         self,
