@@ -466,20 +466,42 @@ async def get_nigerian_states():
 @router.get("/lgas/{state}")
 async def get_lgas_for_state(state: str):
     """Get all Local Government Areas (LGAs) for a specific Nigerian state"""
-    from models.nigerian_lgas import get_lgas_for_state, get_all_states
+    from models.nigerian_lgas import get_lgas_for_state as get_static_lgas, get_all_states
     
-    # Validate state exists
-    if state not in get_all_states():
+    # Check if state exists in static states
+    static_state_exists = state in get_all_states()
+    
+    # Check if state exists in dynamic states (admin-added)
+    dynamic_state_exists = await database.database.system_locations.find_one({
+        "name": state,
+        "type": "state"
+    })
+    
+    # Validate state exists in either static or dynamic
+    if not (static_state_exists or dynamic_state_exists):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"State '{state}' is not in our service coverage area"
         )
     
-    lgas = get_lgas_for_state(state)
+    # Get static LGAs
+    static_lgas = get_static_lgas(state) or []
+    
+    # Get custom LGAs from database
+    custom_lgas_cursor = database.database.system_locations.find({
+        "state": state,
+        "type": "lga"
+    })
+    custom_lgas_docs = await custom_lgas_cursor.to_list(length=None)
+    custom_lgas = [lga["name"] for lga in custom_lgas_docs]
+    
+    # Combine both lists and remove duplicates
+    all_lgas = list(set(static_lgas + custom_lgas))
+    
     return {
         "state": state,
-        "lgas": lgas,
-        "total": len(lgas)
+        "lgas": all_lgas,
+        "total": len(all_lgas)
     }
 
 @router.get("/all-lgas")
