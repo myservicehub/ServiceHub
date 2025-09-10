@@ -78,7 +78,7 @@ const AdminDashboard = () => {
         const data = await adminAPI.getFundingRequests();
         setFundingRequests(data.funding_requests || []);
       } else if (activeTab === 'jobs') {
-        const data = await adminAPI.getJobsWithFees();
+        const data = await adminAPI.getAllJobsAdmin(0, 100, jobsFilter || null);
         setJobs(data.jobs || []);
       } else if (activeTab === 'verifications') {
         const data = await adminReferralsAPI.getPendingVerifications();
