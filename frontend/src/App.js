@@ -44,6 +44,7 @@ function App() {
             <Route path="/my-interests" element={<MyInterestsPage />} />
             <Route path="/tradesperson/:id" element={<TradespersonProfilePage />} />
             <Route path="/browse-tradespeople" element={<BrowseTradespeopleePage />} />
+            <Route path="/job/:jobId/interested-tradespeople" element={<InterestedTradespeopleePage />} />
             <Route path="/browse-jobs" element={<BrowseJobsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/tradesperson/:tradespersonId/portfolio" element={<TradespersonPortfolioPage />} />
