@@ -827,12 +827,13 @@ const AdminDashboard = () => {
                                 await adminAPI.addNewState(
                                   formData.get('state_name'),
                                   formData.get('region'),
-                                  formData.get('postcodes')
+                                  formData.get('postcodes') // This matches the form field name
                                 );
                                 toast({ title: "State added successfully" });
                                 setShowAddForm(false);
                                 fetchData();
                               } catch (error) {
+                                console.error('Add state error:', error);
                                 toast({ title: "Failed to add state", variant: "destructive" });
                               }
                             }}>
