@@ -18,6 +18,31 @@ import requests
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("notifications")
 
+class MockEmailService:
+    """Mock email service for development/testing"""
+    
+    def __init__(self):
+        self.service_name = "MockEmailService"
+        logger.info(f"🔧 {self.service_name} initialized - Development Mode")
+    
+    async def send_email(self, to: str, subject: str, content: str, metadata: Dict[str, Any] = None) -> bool:
+        """Mock email sending - logs instead of sending"""
+        logger.info(f"📧 MOCK EMAIL: to={to}, subject={subject[:50]}...")
+        logger.debug(f"📧 MOCK EMAIL CONTENT: {content[:100]}...")
+        return True
+
+class MockSMSService:
+    """Mock SMS service for development/testing"""
+    
+    def __init__(self):
+        self.service_name = "MockSMSService"
+        logger.info(f"🔧 {self.service_name} initialized - Development Mode")
+    
+    async def send_sms(self, to: str, message: str, metadata: Dict[str, Any] = None) -> bool:
+        """Mock SMS sending - logs instead of sending"""
+        logger.info(f"📱 MOCK SMS: to={to}, message={message[:50]}...")
+        return True
+
 class SendGridEmailService:
     """Real SendGrid email service for production use"""
     
