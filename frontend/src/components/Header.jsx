@@ -248,16 +248,20 @@ const Header = () => {
               <a href="#" className="text-gray-700 font-lato transition-colors hover:text-[#2F8140]">
                 Find tradespeople
               </a>
-              <a 
-                href="#" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleAuthClick('signup');
-                }}
-                className="text-gray-700 font-lato transition-colors hover:text-[#2F8140]"
-              >
-                Join as tradesperson
-              </a>
+              {/* Only show "Join as tradesperson" if user is not already a tradesperson */}
+              {!isAuthenticated() || !isTradesperson() ? (
+                <a 
+                  href="#" 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleAuthClick('signup');
+                    setIsMenuOpen(false);
+                  }}
+                  className="text-gray-700 font-lato transition-colors hover:text-[#2F8140]"
+                >
+                  Join as tradesperson
+                </a>
+              ) : null}
               <a href="#" className="text-gray-700 font-lato transition-colors hover:text-[#2F8140]">
                 Help
               </a>
