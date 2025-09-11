@@ -6,7 +6,7 @@ Debug Policy Issue
 import requests
 import json
 
-BACKEND_URL = "https://notify-connect.preview.emergentagent.com/api"
+BACKEND_URL = "https://servicehub-fixes.preview.emergentagent.com/api"
 
 def test_policy_endpoints():
     print("=== Debugging Policy Endpoints ===")
