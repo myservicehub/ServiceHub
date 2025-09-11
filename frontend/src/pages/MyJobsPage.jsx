@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import JobEditModal from '../components/JobEditModal';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -17,11 +16,7 @@ import {
   TrendingUp,
   Users,
   MessageCircle,
-  MessageSquare,
-  Edit3,
-  X,
-  RotateCcw,
-  AlertCircle
+  MessageSquare
 } from 'lucide-react';
 import { jobsAPI, interestsAPI } from '../api/services';
 import { useAuth } from '../contexts/AuthContext';
