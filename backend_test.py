@@ -751,6 +751,9 @@ class MessagingSystemTester:
         tradesperson_token = self.auth_tokens['tradesperson']
         conversation_id = self.test_data['conversation_id']
         
+        # Add delay to avoid rate limiting
+        time.sleep(2)
+        
         # Test sending a text message
         message_data = {
             "conversation_id": conversation_id,
