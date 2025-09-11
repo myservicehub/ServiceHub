@@ -1345,42 +1345,35 @@ class MessagingSystemTester:
                 self.log_result(f"Authentication required - {method} {endpoint}", False, 
                               f"Expected 401/403, got {response.status_code}")
     
-    def run_show_interest_tests(self):
-        """Run comprehensive show interest functionality testing"""
-        print("🎯 STARTING COMPREHENSIVE SHOW INTEREST FUNCTIONALITY TESTING")
+    def run_messaging_system_tests(self):
+        """Run comprehensive messaging system API testing"""
+        print("💬 STARTING COMPREHENSIVE MESSAGING SYSTEM API TESTING")
         print("=" * 80)
         
         # Setup authentication and test data
         self.test_tradesperson_authentication()
         self.test_homeowner_authentication()
         
-        # Create test jobs
+        # Create test jobs for messaging context
         self.test_job_creation_for_interest_testing()
         
-        # Test job data integration
-        self.test_jobs_for_tradesperson_endpoint()
+        # Test messaging system endpoints
+        print("\n🔄 TESTING MESSAGING SYSTEM ENDPOINTS")
+        self.test_conversation_creation()
+        self.test_get_conversations()
+        self.test_send_message()
+        self.test_get_conversation_messages()
+        self.test_mark_messages_as_read()
+        self.test_get_or_create_conversation_for_job()
         
-        # Test core show interest functionality
-        self.test_show_interest_api_endpoint()
-        
-        # Test role restrictions
-        self.test_homeowner_role_restriction()
-        
-        # Test interest retrieval
-        self.test_interest_retrieval_endpoints()
-        
-        # Test job status validation
-        self.test_job_status_validation()
-        
-        # Test authentication edge cases
-        self.test_authentication_edge_cases()
-        
-        # Test notification system integration
-        self.test_notification_system_integration()
+        # Test security and access control
+        print("\n🔒 TESTING SECURITY AND ACCESS CONTROL")
+        self.test_messaging_access_control()
+        self.test_messaging_authentication_requirements()
         
         # Print final summary
         print("\n" + "=" * 80)
-        print("🎯 COMPREHENSIVE SHOW INTEREST FUNCTIONALITY TESTING COMPLETE")
+        print("💬 COMPREHENSIVE MESSAGING SYSTEM API TESTING COMPLETE")
         print(f"✅ PASSED: {self.results['passed']}")
         print(f"❌ FAILED: {self.results['failed']}")
         success_rate = (self.results['passed'] / (self.results['passed'] + self.results['failed'])) * 100
@@ -1391,15 +1384,34 @@ class MessagingSystemTester:
             for error in self.results['errors']:
                 print(f"   - {error}")
         
-        # Provide specific diagnosis for show interest failures
-        print(f"\n🔍 SHOW INTEREST FAILURE DIAGNOSIS:")
+        # Provide specific diagnosis for messaging system
+        print(f"\n🔍 MESSAGING SYSTEM DIAGNOSIS:")
         if self.results['failed'] == 0:
-            print("   ✅ No issues found - show interest functionality is working correctly")
+            print("   ✅ No issues found - messaging system is fully functional")
+            print("   ✅ All API endpoints working correctly")
+            print("   ✅ Authentication and authorization properly enforced")
+            print("   ✅ Message exchange and conversation management operational")
         else:
-            print("   ❌ Issues identified that may cause 'showing interest for jobs failed' error:")
+            print("   ❌ Issues identified in messaging system:")
+            critical_issues = []
+            minor_issues = []
+            
             for error in self.results['errors']:
-                if 'show interest' in error.lower():
-                    print(f"      • {error}")
+                if any(keyword in error.lower() for keyword in ['conversation', 'message', 'authentication', 'access']):
+                    if any(critical in error.lower() for critical in ['failed to create', 'failed to send', 'unauthorized access']):
+                        critical_issues.append(error)
+                    else:
+                        minor_issues.append(error)
+            
+            if critical_issues:
+                print("   🚨 CRITICAL ISSUES:")
+                for issue in critical_issues:
+                    print(f"      • {issue}")
+            
+            if minor_issues:
+                print("   ⚠️  MINOR ISSUES:")
+                for issue in minor_issues:
+                    print(f"      • {issue}")
         
         return success_rate >= 85  # Consider 85%+ as successful
 
