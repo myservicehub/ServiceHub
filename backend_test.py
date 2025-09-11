@@ -319,7 +319,7 @@ class BackendAPITester:
             "trade_categories": ["Plumbing"],
             "experience_years": 5,
             "company_name": "Test Plumbing Services",
-            "description": "Professional plumbing services",
+            "description": "Professional plumbing services with over 5 years of experience in residential and commercial plumbing installations, repairs, and maintenance. Specialized in modern Nigerian plumbing systems.",
             "certifications": ["Licensed Plumber"]
         }
         
