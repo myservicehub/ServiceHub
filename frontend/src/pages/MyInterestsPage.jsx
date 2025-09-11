@@ -252,7 +252,7 @@ const MyInterestsPage = () => {
   const handleStartChatAfterPayment = async (interest) => {
     try {
       // Verify the interest status is now paid_access
-      if (interest.status !== 'paid') {
+      if (interest.status !== 'paid_access') {
         toast({
           title: "Payment Required",
           description: "Please complete payment before starting chat.",
