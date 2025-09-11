@@ -692,6 +692,9 @@ frontend:
       - working: "NA"
         agent: "main"
         comment: "🔍 BUG INVESTIGATION STARTED: Need to investigate trade category add functionality. Could be: 1) Frontend state not updating after successful add, 2) Backend not actually saving the category, 3) API response not matching frontend expectations, 4) List refresh not happening after add operation. Need to check AdminDashboard trade category management and associated API endpoints."
+      - working: true
+        agent: "main"
+        comment: "✅ TRADE CATEGORY ADD BUG FIXED: Root cause identified - admin API endpoint `/api/admin/trades` only returned static NIGERIAN_TRADE_CATEGORIES but not custom trades from database. Fixed by: 1) Added `get_custom_trades()` method to database.py to retrieve custom trades from `system_trades` collection, 2) Updated `/api/admin/trades` endpoint to combine static and custom trades, returning merged list of all available trades sorted alphabetically. Now when admin adds a trade category, it gets saved to database and appears in the trade list immediately after refresh."
 
 metadata:
   created_by: "main_agent"
