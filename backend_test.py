@@ -271,7 +271,7 @@ class ContactSharingBugTester:
             self.log_result("Show interest", False, 
                           f"Status: {response.status_code}, Response: {response.text}")
     
-    def test_show_interest_api_endpoint(self):
+    def test_contact_sharing_api_endpoint(self):
         """Test POST /api/interests/show-interest with various scenarios"""
         print("\n=== Testing Show Interest API Endpoint ===")
         
