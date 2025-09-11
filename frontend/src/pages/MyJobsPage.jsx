@@ -464,14 +464,15 @@ const MyJobsPage = () => {
               </Card>
             ) : (
               <Tabs defaultValue="all" className="space-y-6">
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList className="grid w-full grid-cols-5">
                   <TabsTrigger value="all">All Jobs</TabsTrigger>
                   <TabsTrigger value="active">Active</TabsTrigger>
                   <TabsTrigger value="in_progress">In Progress</TabsTrigger>
                   <TabsTrigger value="completed">Completed</TabsTrigger>
+                  <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
                 </TabsList>
 
-                {['all', 'active', 'in_progress', 'completed'].map(status => (
+                {['all', 'active', 'in_progress', 'completed', 'cancelled'].map(status => (
                   <TabsContent key={status} value={status} className="space-y-6">
                     {jobs
                       .filter(job => status === 'all' || job.status === status)
