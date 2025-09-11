@@ -588,6 +588,20 @@ const MyInterestsPage = () => {
         </div>
       )}
 
+      {/* Chat Modal */}
+      {showChatModal && selectedInterestForChat && (
+        <ChatModal
+          isOpen={showChatModal}
+          onClose={() => {
+            setShowChatModal(false);
+            setSelectedInterestForChat(null);
+          }}
+          jobId={selectedInterestForChat.jobId}
+          jobTitle={selectedInterestForChat.jobTitle}
+          otherParty={selectedInterestForChat.homeowner}
+        />
+      )}
+
       <Footer />
     </div>
   );
