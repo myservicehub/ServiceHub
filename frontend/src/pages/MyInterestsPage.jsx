@@ -120,12 +120,21 @@ const MyInterestsPage = () => {
       
       toast({
         title: "Payment Successful!",
-        description: "Contact details are now available for this job.",
+        description: "Opening chat with homeowner...",
       });
 
       // Refresh interests and wallet balance
-      loadMyInterests();
-      loadWalletBalance();
+      await loadMyInterests();
+      await loadWalletBalance();
+      
+      // Find the updated interest after payment
+      const updatedInterests = await interestsAPI.getMyInterests();
+      const paidInterest = updatedInterests.find(interest => interest.id === interestId);
+      
+      if (paidInterest) {
+        // Automatically open chat with homeowner after successful payment
+        await handleStartChatAfterPayment(paidInterest);
+      }
       
     } catch (error) {
       console.error('Payment failed:', error);
