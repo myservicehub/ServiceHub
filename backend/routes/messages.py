@@ -30,10 +30,10 @@ async def create_conversation(
             raise HTTPException(status_code=404, detail="Job not found")
         
         # Verify user is either the homeowner or an interested tradesperson
-        if current_user.account_type == "homeowner":
+        if current_user.role == "homeowner":
             if job.get("homeowner", {}).get("id") != current_user.id:
                 raise HTTPException(status_code=403, detail="You can only create conversations for your own jobs")
-        elif current_user.account_type == "tradesperson":
+        elif current_user.role == "tradesperson":
             # Check if tradesperson has paid access to this job
             interest = await database.get_interest_by_job_and_tradesperson(conversation_data.job_id, current_user.id)
             if not interest or interest.get("status") != "paid_access":
