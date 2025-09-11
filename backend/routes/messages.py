@@ -162,7 +162,7 @@ async def send_message(
             "conversation_id": conversation_id,
             "sender_id": current_user.id,
             "sender_name": current_user.name or current_user.business_name or "User",
-            "sender_type": current_user.account_type,
+            "sender_type": current_user.role,
             "message_type": message_data.message_type,
             "content": message_data.content,
             "attachment_url": message_data.attachment_url
