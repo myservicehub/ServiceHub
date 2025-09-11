@@ -5,6 +5,7 @@ import os
 backend_dir = os.path.dirname(os.path.dirname(__file__))
 sys.path.insert(0, backend_dir)
 import models
+from models.reviews import Review as AdvancedReview
 from database import database
 from datetime import datetime
 import uuid
