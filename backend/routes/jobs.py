@@ -499,6 +499,168 @@ async def get_public_contacts_by_type(contact_type: str):
         raise HTTPException(status_code=500, detail=f"Failed to get contacts: {str(e)}")
 
 
+@router.put("/{job_id}", response_model=Job)
+async def update_job(
+    job_id: str,
+    job_update: JobUpdate,
+    current_user: User = Depends(get_current_homeowner)
+):
+    """Update a job (homeowner only)"""
+    try:
+        # Verify job exists and ownership
+        job = await database.get_job_by_id(job_id)
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+        
+        if job["homeowner"]["id"] != current_user.id:
+            raise HTTPException(status_code=403, detail="Not authorized to update this job")
+        
+        # Check if job can be edited (only active jobs)
+        if job.get("status") != "active":
+            raise HTTPException(status_code=400, detail="Only active jobs can be edited")
+        
+        # Prepare update data
+        update_data = {}
+        update_fields = job_update.dict(exclude_unset=True)
+        
+        for field, value in update_fields.items():
+            if value is not None:
+                update_data[field] = value
+        
+        # Handle location field auto-population
+        if "state" in update_data:
+            update_data["location"] = update_data["state"]
+        if "zip_code" in update_data:
+            update_data["postcode"] = update_data["zip_code"]
+        
+        # Add updated timestamp
+        update_data["updated_at"] = datetime.utcnow()
+        
+        # Update job in database
+        success = await database.update_job(job_id, update_data)
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to update job")
+        
+        # Get updated job
+        updated_job = await database.get_job_by_id(job_id)
+        return Job(**updated_job)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating job {job_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.put("/{job_id}/close")
+async def close_job(
+    job_id: str,
+    close_request: JobCloseRequest,
+    current_user: User = Depends(get_current_homeowner)
+):
+    """Close/cancel a job with feedback (homeowner only)"""
+    try:
+        # Verify job exists and ownership
+        job = await database.get_job_by_id(job_id)
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+        
+        if job["homeowner"]["id"] != current_user.id:
+            raise HTTPException(status_code=403, detail="Not authorized to close this job")
+        
+        # Check if job can be closed (only active jobs)
+        if job.get("status") != "active":
+            raise HTTPException(status_code=400, detail="Only active jobs can be closed")
+        
+        # Update job status to cancelled with feedback
+        update_data = {
+            "status": JobStatus.CANCELLED,
+            "closure_reason": close_request.reason,
+            "closure_feedback": close_request.additional_feedback,
+            "closed_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+        
+        success = await database.update_job(job_id, update_data)
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to close job")
+        
+        return {
+            "message": "Job closed successfully",
+            "job_id": job_id,
+            "status": JobStatus.CANCELLED,
+            "closure_reason": close_request.reason
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error closing job {job_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.put("/{job_id}/reopen")
+async def reopen_job(
+    job_id: str,
+    current_user: User = Depends(get_current_homeowner)
+):
+    """Reopen a cancelled job (homeowner only)"""
+    try:
+        # Verify job exists and ownership
+        job = await database.get_job_by_id(job_id)
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+        
+        if job["homeowner"]["id"] != current_user.id:
+            raise HTTPException(status_code=403, detail="Not authorized to reopen this job")
+        
+        # Check if job can be reopened (only cancelled jobs)
+        if job.get("status") != "cancelled":
+            raise HTTPException(status_code=400, detail="Only cancelled jobs can be reopened")
+        
+        # Update job status to active and extend expiry, clear closure data
+        update_data = {
+            "status": JobStatus.ACTIVE,
+            "updated_at": datetime.utcnow(),
+            "expires_at": datetime.utcnow() + timedelta(days=30),  # Extend for 30 more days
+            "closure_reason": None,
+            "closure_feedback": None,
+            "closed_at": None
+        }
+        
+        success = await database.update_job(job_id, update_data)
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to reopen job")
+        
+        return {
+            "message": "Job reopened successfully",
+            "job_id": job_id,
+            "status": JobStatus.ACTIVE,
+            "expires_at": update_data["expires_at"].isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error reopening job {job_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/close-reasons")
+async def get_job_close_reasons():
+    """Get predefined reasons for closing jobs"""
+    return {
+        "reasons": [
+            "Found a suitable tradesperson",
+            "No longer need the service",
+            "Budget constraints",
+            "Decided to do it myself",
+            "Timeline no longer works",
+            "Too many unqualified responses",
+            "Poor quality of responses",
+            "Change in requirements",
+            "Property circumstances changed",
+            "Other"
+        ]
+    }
+
 @router.get("/{job_id}", response_model=Job)
 async def get_job(job_id: str):
     """Get a specific job by ID"""
