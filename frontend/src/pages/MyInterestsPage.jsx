@@ -249,6 +249,34 @@ const MyInterestsPage = () => {
     setShowChatModal(true);
   };
 
+  const handleStartChatAfterPayment = async (interest) => {
+    try {
+      // Load contact details for the paid interest
+      const contactDetails = await interestsAPI.getContactDetails(interest.job_id);
+      
+      // Set up chat with full contact details
+      setSelectedInterestForChat({
+        jobId: interest.job_id,
+        jobTitle: interest.job_title,
+        homeowner: {
+          id: interest.homeowner_id,
+          name: contactDetails.homeowner_name,
+          type: 'homeowner',
+          email: contactDetails.homeowner_email,
+          phone: contactDetails.homeowner_phone,
+          location: interest.job_location
+        },
+        contactDetails: contactDetails, // Include full contact details for chat modal
+        showContactDetails: true // Flag to show contact details in chat
+      });
+      setShowChatModal(true);
+    } catch (error) {
+      console.error('Failed to load contact details for chat:', error);
+      // Fall back to regular chat without contact details
+      handleStartChat(interest);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
