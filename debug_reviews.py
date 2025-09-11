@@ -10,6 +10,7 @@ os.environ['DB_NAME'] = 'test_database'
 
 from database import Database
 from models import Review
+from models.reviews import Review as AdvancedReview
 
 async def debug_reviews():
     """Debug the reviews featured endpoint"""
