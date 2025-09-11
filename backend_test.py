@@ -1054,13 +1054,23 @@ class MessagingSystemTester:
                               f"Failed to get interests: {response.status_code}")
         
         # Core messaging system testing
+        time.sleep(3)  # Add delay before core tests
         self.test_interest_status_verification()
+        
+        time.sleep(2)
         self.test_messaging_system_endpoints()
+        
+        time.sleep(2)
         self.test_message_sending()
+        
+        time.sleep(2)
         self.test_conversation_messages_retrieval()
         
         # Additional tests
+        time.sleep(2)
         self.test_paid_access_requirement()
+        
+        time.sleep(2)
         self.test_error_scenarios()
         
         # Summary
