@@ -286,7 +286,7 @@ const JobEditModal = ({
                     <SelectValue placeholder="Select state" />
                   </SelectTrigger>
                   <SelectContent>
-                    {states.map((state) => (
+                    {(states || []).map((state) => (
                       <SelectItem key={state} value={state}>
                         {state}
                       </SelectItem>
