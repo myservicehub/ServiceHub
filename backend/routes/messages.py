@@ -245,10 +245,10 @@ async def get_or_create_conversation_for_job(
             return {"conversation_id": conversation["id"], "exists": True}
         
         # Verify user can create this conversation
-        if current_user.account_type == "homeowner":
+        if current_user.role == "homeowner":
             if homeowner_id != current_user.id:
                 raise HTTPException(status_code=403, detail="You can only create conversations for your own jobs")
-        elif current_user.account_type == "tradesperson":
+        elif current_user.role == "tradesperson":
             if tradesperson_id != current_user.id:
                 raise HTTPException(status_code=403, detail="You can only create conversations for yourself")
             
