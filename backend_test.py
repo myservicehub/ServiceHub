@@ -987,32 +987,94 @@ class MessagingSystemTester:
             if response.status_code == 200:
                 self.log_result("Contact sharing", True, "Homeowner shared contact details")
                 
-                # Step 2: Fund tradesperson wallet (needed for payment)
+                # Step 2: Simulate wallet funding and admin approval
                 if 'tradesperson' in self.auth_tokens:
                     tradesperson_token = self.auth_tokens['tradesperson']
                     
-                    # Fund wallet with enough coins for access fee (default is 10 coins for ₦1000)
-                    wallet_funding_data = {
-                        "amount_naira": 2000,  # Fund with ₦2000 (20 coins)
-                        "payment_method": "test_funding"
-                    }
+                    # For testing, directly update wallet balance using database method
+                    # In production, this would be done through the funding request + admin approval flow
+                    print("   💰 Simulating wallet funding (adding 20 coins for testing)")
                     
-                    response = self.make_request("POST", "/wallet/fund", 
-                                               json=wallet_funding_data, auth_token=tradesperson_token)
-                    if response.status_code == 200:
-                        self.log_result("Wallet funding", True, "Wallet funded successfully")
+                    # Simulate adding coins directly to wallet for testing
+                    # This bypasses the normal funding request process for test purposes
+                    try:
+                        # We'll try to pay for access and see if it works
+                        # If it fails due to insufficient funds, we know the wallet system is working
                         
                         # Step 3: Tradesperson pays for access
                         response = self.make_request("POST", f"/interests/pay-access/{interest_id}", 
                                                    auth_token=tradesperson_token)
                         if response.status_code == 200:
                             self.log_result("Payment for access", True, "Payment successful - access granted")
+                        elif response.status_code == 400 and "Insufficient wallet balance" in response.text:
+                            # This is expected - wallet has no funds
+                            self.log_result("Wallet balance check", True, "Wallet system working - insufficient funds detected")
+                            
+                            # For testing purposes, let's create a simple funding transaction
+                            # and approve it to add coins to the wallet
+                            print("   🔧 Creating test funding transaction...")
+                            
+                            # Create a dummy image file for testing
+                            import tempfile
+                            import os
+                            from PIL import Image
+                            
+                            # Create a simple test image
+                            test_image = Image.new('RGB', (100, 100), color='white')
+                            with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as tmp_file:
+                                test_image.save(tmp_file.name, 'JPEG')
+                                
+                                # Submit funding request
+                                with open(tmp_file.name, 'rb') as img_file:
+                                    files = {'proof_image': ('test.jpg', img_file, 'image/jpeg')}
+                                    data = {'amount_naira': '2000'}
+                                    
+                                    response = self.make_request(
+                                        "POST", "/wallet/fund",
+                                        auth_token=tradesperson_token,
+                                        files=files,
+                                        data=data
+                                    )
+                                
+                                # Clean up temp file
+                                os.unlink(tmp_file.name)
+                            
+                            if response.status_code == 200:
+                                funding_response = response.json()
+                                transaction_id = funding_response.get('transaction_id')
+                                
+                                if transaction_id:
+                                    # Approve the funding request as admin
+                                    admin_data = {'admin_notes': 'Test funding approval'}
+                                    approve_response = self.make_request(
+                                        "POST", f"/admin/wallet/confirm-funding/{transaction_id}",
+                                        data=admin_data
+                                    )
+                                    
+                                    if approve_response.status_code == 200:
+                                        self.log_result("Wallet funding", True, "Wallet funded and approved successfully")
+                                        
+                                        # Now try payment again
+                                        response = self.make_request("POST", f"/interests/pay-access/{interest_id}", 
+                                                                   auth_token=tradesperson_token)
+                                        if response.status_code == 200:
+                                            self.log_result("Payment for access", True, "Payment successful - access granted")
+                                        else:
+                                            self.log_result("Payment for access", False, 
+                                                          f"Payment failed after funding: {response.status_code} - {response.text}")
+                                    else:
+                                        self.log_result("Admin funding approval", False, 
+                                                      f"Admin approval failed: {approve_response.status_code}")
+                                else:
+                                    self.log_result("Wallet funding", False, "No transaction ID returned")
+                            else:
+                                self.log_result("Wallet funding", False, 
+                                              f"Funding request failed: {response.status_code} - {response.text}")
                         else:
                             self.log_result("Payment for access", False, 
                                           f"Payment failed: {response.status_code} - {response.text}")
-                    else:
-                        self.log_result("Wallet funding", False, 
-                                      f"Wallet funding failed: {response.status_code} - {response.text}")
+                    except Exception as e:
+                        self.log_result("Wallet funding process", False, f"Exception during funding: {str(e)}")
             else:
                 self.log_result("Contact sharing", False, 
                               f"Contact sharing failed: {response.status_code} - {response.text}")
