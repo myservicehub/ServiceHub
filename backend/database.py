@@ -91,6 +91,18 @@ class Database:
         result = await self.database.jobs.insert_one(job_data)
         job_data['_id'] = str(result.inserted_id)
         return job_data
+    
+    async def update_job(self, job_id: str, update_data: dict) -> bool:
+        """Update a job by ID"""
+        try:
+            result = await self.database.jobs.update_one(
+                {"id": job_id},
+                {"$set": update_data}
+            )
+            return result.modified_count > 0
+        except Exception as e:
+            print(f"Error updating job: {e}")
+            return False
 
     async def get_job_by_id(self, job_id: str) -> Optional[dict]:
         job = await self.database.jobs.find_one({"id": job_id})
