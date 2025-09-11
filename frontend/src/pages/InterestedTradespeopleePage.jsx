@@ -199,16 +199,39 @@ const InterestedTradespeopleePage = () => {
     setShowImageModal(true);
   };
 
-  const handleStartChat = (tradesperson) => {
-    setSelectedTradespersonForChat({
-      id: tradesperson.tradesperson_id,
-      name: tradesperson.tradesperson_name,
-      type: 'tradesperson',
-      email: tradesperson.email,
-      phone: tradesperson.phone,
-      location: tradesperson.location
-    });
-    setShowChatModal(true);
+  const handleStartChat = async (tradesperson) => {
+    try {
+      // For homeowners, we can also show our own contact details in the chat
+      const homeownerContactDetails = {
+        homeowner_name: user?.name,
+        homeowner_email: user?.email,
+        homeowner_phone: user?.phone
+      };
+
+      setSelectedTradespersonForChat({
+        id: tradesperson.tradesperson_id,
+        name: tradesperson.tradesperson_name,
+        type: 'tradesperson',
+        email: tradesperson.email,
+        phone: tradesperson.phone,
+        location: tradesperson.location,
+        contactDetails: homeownerContactDetails,
+        showContactDetails: true // Show homeowner's own details in chat
+      });
+      setShowChatModal(true);
+    } catch (error) {
+      console.error('Failed to prepare chat:', error);
+      // Fall back to regular chat
+      setSelectedTradespersonForChat({
+        id: tradesperson.tradesperson_id,
+        name: tradesperson.tradesperson_name,
+        type: 'tradesperson',
+        email: tradesperson.email,
+        phone: tradesperson.phone,
+        location: tradesperson.location
+      });
+      setShowChatModal(true);
+    }
   };
 
   const formatCurrency = (amount) => {
