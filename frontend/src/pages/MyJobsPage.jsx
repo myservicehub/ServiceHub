@@ -615,6 +615,28 @@ const MyJobsPage = () => {
       </section>
 
       <Footer />
+      
+      {/* Job Edit Modal */}
+      <JobEditModal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setJobToEdit(null);
+        }}
+        job={jobToEdit}
+        onJobUpdated={handleJobUpdated}
+      />
+
+      {/* Job Close Modal */}
+      <JobCloseModal
+        isOpen={showCloseModal}
+        onClose={() => {
+          setShowCloseModal(false);
+          setJobToClose(null);
+        }}
+        job={jobToClose}
+        onJobClosed={handleJobClosed}
+      />
     </div>
   );
 };
