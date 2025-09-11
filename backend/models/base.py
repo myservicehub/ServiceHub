@@ -68,6 +68,26 @@ class JobCreate(BaseModel):
     homeowner_email: EmailStr
     homeowner_phone: str
 
+class JobUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=10, max_length=200)
+    description: Optional[str] = Field(None, min_length=50, max_length=2000)
+    category: Optional[str] = None
+    
+    # Enhanced location fields
+    state: Optional[str] = None  # Nigerian state
+    lga: Optional[str] = None    # Local Government Area
+    town: Optional[str] = None   # Town/area name
+    zip_code: Optional[str] = Field(None, min_length=6, max_length=6)  # Nigerian 6-digit postal code
+    home_address: Optional[str] = Field(None, min_length=10, max_length=500)  # Full home address
+    
+    budget_min: Optional[int] = Field(None, ge=0)
+    budget_max: Optional[int] = Field(None, ge=0)
+    timeline: Optional[str] = None
+    
+    # Access fee fields
+    access_fee_naira: Optional[int] = Field(None, ge=100, le=10000)  # ₦100 to ₦10,000
+    access_fee_coins: Optional[int] = Field(None, ge=1, le=100)     # 1 to 100 coins
+
 class Job(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     title: str
