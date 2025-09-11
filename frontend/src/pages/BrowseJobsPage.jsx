@@ -281,6 +281,26 @@ const BrowseJobsPage = () => {
       return;
     }
 
+    // Client-side validation: Check if job is still active
+    if (job.status && job.status !== "active") {
+      toast({
+        title: "Job no longer available",
+        description: "This job is no longer accepting new interest.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Client-side validation: Check if already interested
+    if (userInterests && userInterests.includes(job.id)) {
+      toast({
+        title: "Already interested",
+        description: "You have already shown interest in this job.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Check wallet balance for potential access fee
     const accessFeeCoins = job.access_fee_coins || 15;
     if (walletBalance && walletBalance.balance_coins < accessFeeCoins) {
@@ -297,6 +317,13 @@ const BrowseJobsPage = () => {
       setShowingInterest(job.id);
       await interestsAPI.showInterest(job.id);
       
+      // Update local state to reflect the new interest
+      if (userInterests) {
+        setUserInterests([...userInterests, job.id]);
+      } else {
+        setUserInterests([job.id]);
+      }
+      
       toast({
         title: "Interest registered!",
         description: "The homeowner will review your profile and may share their contact details.",
@@ -305,18 +332,35 @@ const BrowseJobsPage = () => {
     } catch (error) {
       console.error('Failed to show interest:', error);
       
-      // Handle different error response formats
+      // Handle different error response formats with more specific messages
       let errorMessage = "There was an error showing interest. Please try again.";
       
       if (error.response?.data?.detail) {
-        if (typeof error.response.data.detail === 'string') {
-          errorMessage = error.response.data.detail;
-        } else if (Array.isArray(error.response.data.detail)) {
+        const detail = error.response.data.detail;
+        
+        // Handle specific backend validation errors
+        if (typeof detail === 'string') {
+          if (detail.includes('already shown interest')) {
+            errorMessage = "You have already shown interest in this job.";
+            // Update local state to prevent future attempts
+            if (userInterests) {
+              setUserInterests([...userInterests, job.id]);
+            } else {
+              setUserInterests([job.id]);
+            }
+          } else if (detail.includes('no longer active')) {
+            errorMessage = "This job is no longer available.";
+          } else if (detail.includes('not found')) {
+            errorMessage = "This job could not be found.";
+          } else {
+            errorMessage = detail;
+          }
+        } else if (Array.isArray(detail)) {
           // Handle FastAPI validation errors which return an array
-          errorMessage = error.response.data.detail.map(err => err.msg || err.message || JSON.stringify(err)).join(', ');
-        } else if (typeof error.response.data.detail === 'object') {
+          errorMessage = detail.map(err => err.msg || err.message || JSON.stringify(err)).join(', ');
+        } else if (typeof detail === 'object') {
           // Handle object error details
-          errorMessage = error.response.data.detail.msg || error.response.data.detail.message || JSON.stringify(error.response.data.detail);
+          errorMessage = detail.msg || detail.message || JSON.stringify(detail);
         }
       }
       
