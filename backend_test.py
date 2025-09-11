@@ -231,7 +231,7 @@ class ContactSharingBugTester:
             self.log_result("Create contact sharing test job", False, 
                           f"Status: {response.status_code}, Response: {response.text}")
     
-    def test_jobs_for_tradesperson_endpoint(self):
+    def test_show_interest_for_contact_sharing(self):
         """Test GET /api/jobs/for-tradesperson to ensure jobs are available"""
         print("\n=== Testing Jobs for Tradesperson Endpoint ===")
         
