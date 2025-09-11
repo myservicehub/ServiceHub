@@ -43,8 +43,29 @@ const ReviewsSection = () => {
     }
   ];
 
-  // Use real reviews if available, otherwise use defaults
-  const displayReviews = reviews || defaultReviews;
+  // Transform API reviews to match expected format
+  const transformReview = (review) => {
+    // If it's already in the correct format (fallback data), return as-is
+    if (review.homeowner_name) {
+      return review;
+    }
+    
+    // Transform API review to expected format
+    // For homeowner reviews, use reviewer_name (the homeowner writing the review)
+    // For tradesperson reviews, use reviewee_name (the homeowner being reviewed)
+    const homeowner_name = review.review_type === 'homeowner_to_tradesperson' 
+      ? review.reviewer_name 
+      : review.reviewee_name;
+    
+    return {
+      ...review,
+      homeowner_name: homeowner_name || 'Unknown',
+      comment: review.content || review.comment, // Handle both content and comment fields
+      location: review.location || 'Unknown Location'
+    };
+  };
+
+  const displayReviews = loading ? defaultReviews : (reviews || defaultReviews).map(transformReview);
 
   if (error) {
     console.warn('Failed to load reviews, using defaults:', error);
