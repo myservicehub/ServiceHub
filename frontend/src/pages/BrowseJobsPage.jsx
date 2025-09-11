@@ -157,6 +157,10 @@ const BrowseJobsPage = () => {
 
       setJobs(response.data.jobs || []);
       setPagination(response.data.pagination || null);
+      
+      // Debug logging
+      console.log('Jobs data received:', response.data.jobs?.length || 0, 'jobs');
+      console.log('Jobs state should be updated with:', response.data.jobs?.slice(0, 2) || []);
     } catch (error) {
       console.error('Failed to load jobs:', error);
       toast({
