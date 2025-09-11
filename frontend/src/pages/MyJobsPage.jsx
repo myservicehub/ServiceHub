@@ -487,8 +487,7 @@ const MyJobsPage = () => {
                                 }
                               </div>
                               
-                              <div className="flex flex-wrap gap-2">
-                                {/* View Interested Button */}
+                              <div className="flex space-x-3">
                                 <Button
                                   onClick={() => handleViewInterestedTradespeople(job)}
                                   className="text-white font-lato"
@@ -498,59 +497,6 @@ const MyJobsPage = () => {
                                   <Users size={16} className="mr-2" />
                                   View Interested ({job.interests_count || 0})
                                 </Button>
-
-                                {/* Edit Button - Only for active jobs */}
-                                {job.status === 'active' && (
-                                  <Button
-                                    onClick={() => handleEditJob(job)}
-                                    variant="outline"
-                                    className="font-lato"
-                                  >
-                                    <Edit3 size={16} className="mr-2" />
-                                    Edit
-                                  </Button>
-                                )}
-
-                                {/* Close/Reopen Button */}
-                                {job.status === 'active' ? (
-                                  <Button
-                                    onClick={() => handleCloseJob(job.id)}
-                                    variant="outline"
-                                    className="font-lato text-red-600 border-red-200 hover:bg-red-50"
-                                    disabled={closingJobId === job.id}
-                                  >
-                                    {closingJobId === job.id ? (
-                                      <>
-                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600 mr-2"></div>
-                                        Closing...
-                                      </>
-                                    ) : (
-                                      <>
-                                        <X size={16} className="mr-2" />
-                                        Close Job
-                                      </>
-                                    )}
-                                  </Button>
-                                ) : job.status === 'cancelled' ? (
-                                  <Button
-                                    onClick={() => handleReopenJob(job.id)}
-                                    variant="outline"
-                                    className="font-lato text-green-600 border-green-200 hover:bg-green-50"
-                                    disabled={reopeningJobId === job.id}
-                                  >
-                                    {reopeningJobId === job.id ? (
-                                      <>
-                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600 mr-2"></div>
-                                        Reopening...
-                                      </>
-                                    ) : (
-                                      <>
-                                        <RotateCcw size={16} className="mr-2" />
-                                        Reopen Job
-                                      </>
-                                    )}
-                                  </Button>
-                                ) : null}
                               </div>
                             </div>
                           </CardContent>
