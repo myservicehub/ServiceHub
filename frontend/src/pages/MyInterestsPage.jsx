@@ -80,7 +80,7 @@ const MyInterestsPage = () => {
     try {
       setLoading(true);
       const response = await interestsAPI.getMyInterests();
-      setInterests(response.interests || []);
+      setInterests(response || []);
     } catch (error) {
       console.error('Failed to load interests:', error);
       toast({
