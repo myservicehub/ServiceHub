@@ -17,7 +17,9 @@ const ChatModal = ({
   jobId, 
   jobTitle, 
   otherParty, // { id, name, type: 'homeowner'|'tradesperson', email, phone, location }
-  conversationId: initialConversationId = null 
+  conversationId: initialConversationId = null,
+  contactDetails = null, // Optional contact details to display
+  showContactDetails = false // Flag to show contact details section
 }) => {
   const { user } = useAuth();
   const { toast } = useToast();
