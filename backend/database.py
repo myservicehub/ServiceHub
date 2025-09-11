@@ -2827,6 +2827,29 @@ class Database:
         except Exception as e:
             print(f"Error deleting trade: {e}")
             return False
+    
+    async def get_custom_trades(self):
+        """Get all custom trade categories added by admin"""
+        try:
+            trades = await self.database.system_trades.find({"active": True}).to_list(length=None)
+            trade_list = []
+            groups = {}
+            
+            for trade in trades:
+                trade_name = trade["name"]
+                trade_group = trade.get("group", "General Services")
+                
+                trade_list.append(trade_name)
+                
+                # Group trades by category
+                if trade_group not in groups:
+                    groups[trade_group] = []
+                groups[trade_group].append(trade_name)
+            
+            return {"trades": trade_list, "groups": groups}
+        except Exception as e:
+            print(f"Error getting custom trades: {e}")
+            return {"trades": [], "groups": {}}
 
     # Skills Test Questions Management
     async def get_all_skills_questions(self):
