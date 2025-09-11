@@ -157,6 +157,26 @@ export const jobsAPI = {
     return response.data;
   },
 
+  updateJob: async (jobId, jobData) => {
+    const response = await apiClient.put(`/jobs/${jobId}`, jobData);
+    return response.data;
+  },
+
+  closeJob: async (jobId, closeData) => {
+    const response = await apiClient.put(`/jobs/${jobId}/close`, closeData);
+    return response.data;
+  },
+
+  reopenJob: async (jobId) => {
+    const response = await apiClient.put(`/jobs/${jobId}/reopen`);
+    return response.data;
+  },
+
+  getCloseReasons: async () => {
+    const response = await apiClient.get('/jobs/close-reasons');
+    return response.data;
+  },
+
 
 };
 
