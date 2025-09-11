@@ -39,7 +39,7 @@ async def debug_reviews():
         print(f"Error: {e}")
     finally:
         # Close connection
-        if hasattr(db, 'client'):
+        if hasattr(db, 'client') and db.client:
             db.client.close()
 
 if __name__ == "__main__":
