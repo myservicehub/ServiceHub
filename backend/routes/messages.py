@@ -209,7 +209,7 @@ async def mark_conversation_as_read(
             current_user.id != conversation["tradesperson_id"]):
             raise HTTPException(status_code=403, detail="Access denied")
         
-        success = await database.mark_messages_as_read(conversation_id, current_user.account_type)
+        success = await database.mark_messages_as_read(conversation_id, current_user.role)
         if not success:
             raise HTTPException(status_code=500, detail="Failed to mark messages as read")
         
