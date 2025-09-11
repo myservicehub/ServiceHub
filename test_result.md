@@ -674,6 +674,24 @@ frontend:
       - working: "NA"
         agent: "main"
         comment: "🔍 BUG INVESTIGATION: Checked NotificationIndicator component - it's included in Header for all authenticated users (line 163) but missing from mobile menu section (lines 224-385). Backend logs show notifications are being sent successfully (SMS and email working). Issue likely: 1) Mobile users don't see notification icon, or 2) API calls failing to load notification data for tradespeople specifically. Need to investigate further and fix mobile notification display."
+      - working: "NA"
+        agent: "main"
+        comment: "✅ MOBILE NOTIFICATION ICON FIX: Added NotificationIndicator component to mobile menu section in Header.jsx (lines 337-340). Now both desktop and mobile users should see the notification bell icon when authenticated. However, testing agent confirmed broader authentication issues preventing proper testing. Need to fix authentication system first, then test notification icon visibility."
+
+  - task: "Trade Category Add Success But Not Showing In List Bug"
+    implemented: false
+    working: false
+    file: "/app/frontend/src/pages/AdminDashboard.jsx, /app/backend/routes/admin.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "❌ USER REPORTED BUG: When adding trade category, it shows successful message but the new trade category does not appear in the trade list. This suggests either a frontend state management issue (UI not refreshing) or backend issue (category not actually being saved)."
+      - working: "NA"
+        agent: "main"
+        comment: "🔍 BUG INVESTIGATION STARTED: Need to investigate trade category add functionality. Could be: 1) Frontend state not updating after successful add, 2) Backend not actually saving the category, 3) API response not matching frontend expectations, 4) List refresh not happening after add operation. Need to check AdminDashboard trade category management and associated API endpoints."
 
 metadata:
   created_by: "main_agent"
