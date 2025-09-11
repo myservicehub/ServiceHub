@@ -122,7 +122,7 @@ async def get_conversation_messages(
         )
         
         # Mark messages as read
-        await database.mark_messages_as_read(conversation_id, current_user.account_type)
+        await database.mark_messages_as_read(conversation_id, current_user.role)
         
         message_objects = [Message(**msg) for msg in messages]
         
