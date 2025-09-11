@@ -2851,6 +2851,170 @@ class Database:
             print(f"Error getting custom trades: {e}")
             return {"trades": [], "groups": {}}
 
+    # ==========================================
+    # MESSAGING SYSTEM METHODS
+    # ==========================================
+    
+    async def create_conversation(self, conversation_data: dict) -> dict:
+        """Create a new conversation between homeowner and tradesperson"""
+        try:
+            # Check if conversation already exists
+            existing = await self.database.conversations.find_one({
+                "job_id": conversation_data["job_id"],
+                "homeowner_id": conversation_data["homeowner_id"],
+                "tradesperson_id": conversation_data["tradesperson_id"]
+            })
+            
+            if existing:
+                existing['_id'] = str(existing['_id'])
+                return existing
+            
+            conversation_data["created_at"] = datetime.now()
+            conversation_data["updated_at"] = datetime.now()
+            conversation_data["unread_count_homeowner"] = 0
+            conversation_data["unread_count_tradesperson"] = 0
+            
+            result = await self.database.conversations.insert_one(conversation_data)
+            conversation_data['_id'] = str(result.inserted_id)
+            return conversation_data
+            
+        except Exception as e:
+            print(f"Error creating conversation: {e}")
+            return None
+    
+    async def get_conversation_by_id(self, conversation_id: str) -> Optional[dict]:
+        """Get conversation by ID"""
+        try:
+            conversation = await self.database.conversations.find_one({"id": conversation_id})
+            if conversation:
+                conversation['_id'] = str(conversation['_id'])
+            return conversation
+        except Exception as e:
+            print(f"Error getting conversation: {e}")
+            return None
+    
+    async def get_user_conversations(self, user_id: str, user_type: str, skip: int = 0, limit: int = 20) -> List[dict]:
+        """Get all conversations for a user"""
+        try:
+            if user_type == "homeowner":
+                query = {"homeowner_id": user_id}
+            else:
+                query = {"tradesperson_id": user_id}
+            
+            cursor = self.database.conversations.find(query).sort("last_message_at", -1).skip(skip).limit(limit)
+            conversations = await cursor.to_list(length=limit)
+            
+            for conv in conversations:
+                conv['_id'] = str(conv['_id'])
+            
+            return conversations
+        except Exception as e:
+            print(f"Error getting user conversations: {e}")
+            return []
+    
+    async def create_message(self, message_data: dict) -> dict:
+        """Create a new message"""
+        try:
+            message_data["created_at"] = datetime.now()
+            message_data["updated_at"] = datetime.now()
+            message_data["status"] = "sent"
+            
+            result = await self.database.messages.insert_one(message_data)
+            message_data['_id'] = str(result.inserted_id)
+            
+            # Update conversation last message and unread counts
+            await self._update_conversation_last_message(
+                message_data["conversation_id"], 
+                message_data["content"],
+                message_data["sender_type"]
+            )
+            
+            return message_data
+            
+        except Exception as e:
+            print(f"Error creating message: {e}")
+            return None
+    
+    async def get_conversation_messages(self, conversation_id: str, skip: int = 0, limit: int = 50) -> List[dict]:
+        """Get messages for a conversation"""
+        try:
+            cursor = self.database.messages.find(
+                {"conversation_id": conversation_id}
+            ).sort("created_at", 1).skip(skip).limit(limit)
+            
+            messages = await cursor.to_list(length=limit)
+            
+            for msg in messages:
+                msg['_id'] = str(msg['_id'])
+            
+            return messages
+        except Exception as e:
+            print(f"Error getting conversation messages: {e}")
+            return []
+    
+    async def mark_messages_as_read(self, conversation_id: str, user_type: str) -> bool:
+        """Mark all messages in a conversation as read for a user"""
+        try:
+            # Update message status to read for messages not sent by this user
+            other_type = "homeowner" if user_type == "tradesperson" else "tradesperson"
+            
+            await self.database.messages.update_many(
+                {
+                    "conversation_id": conversation_id,
+                    "sender_type": other_type,
+                    "status": {"$ne": "read"}
+                },
+                {"$set": {"status": "read", "updated_at": datetime.now()}}
+            )
+            
+            # Reset unread count for this user type
+            unread_field = f"unread_count_{user_type}"
+            await self.database.conversations.update_one(
+                {"id": conversation_id},
+                {"$set": {unread_field: 0}}
+            )
+            
+            return True
+        except Exception as e:
+            print(f"Error marking messages as read: {e}")
+            return False
+    
+    async def get_conversation_by_job_and_users(self, job_id: str, homeowner_id: str, tradesperson_id: str) -> Optional[dict]:
+        """Get conversation by job and user IDs"""
+        try:
+            conversation = await self.database.conversations.find_one({
+                "job_id": job_id,
+                "homeowner_id": homeowner_id,
+                "tradesperson_id": tradesperson_id
+            })
+            
+            if conversation:
+                conversation['_id'] = str(conversation['_id'])
+            return conversation
+        except Exception as e:
+            print(f"Error getting conversation by job and users: {e}")
+            return None
+    
+    async def _update_conversation_last_message(self, conversation_id: str, message_content: str, sender_type: str):
+        """Update conversation with last message info and increment unread count"""
+        try:
+            # Increment unread count for the recipient
+            recipient_unread_field = "unread_count_homeowner" if sender_type == "tradesperson" else "unread_count_tradesperson"
+            
+            await self.database.conversations.update_one(
+                {"id": conversation_id},
+                {
+                    "$set": {
+                        "last_message": message_content,
+                        "last_message_at": datetime.now(),
+                        "updated_at": datetime.now()
+                    },
+                    "$inc": {recipient_unread_field: 1}
+                }
+            )
+        except Exception as e:
+            print(f"Error updating conversation last message: {e}")
+
     # Skills Test Questions Management
     async def get_all_skills_questions(self):
         """Get all skills test questions grouped by trade"""
