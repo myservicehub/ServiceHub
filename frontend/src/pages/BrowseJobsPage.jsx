@@ -79,6 +79,7 @@ const BrowseJobsPage = () => {
     showInterest: {}
   });
   const [userInterests, setUserInterests] = useState(null);
+  const [userInterestsLoading, setUserInterestsLoading] = useState(false);
 
   const { user, isAuthenticated, isTradesperson } = useAuth();
   
