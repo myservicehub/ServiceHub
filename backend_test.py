@@ -975,7 +975,7 @@ class MessagingSystemTester:
         # Create test data with paid access
         self.test_show_interest_for_contact_sharing()
         
-        # Complete the workflow: share contact → pay for access
+        # Complete the workflow: share contact → fund wallet → pay for access
         if 'interest_id' in self.test_data and 'homeowner' in self.auth_tokens:
             print("\n--- Completing Contact Sharing Workflow ---")
             homeowner_token = self.auth_tokens['homeowner']
@@ -987,17 +987,32 @@ class MessagingSystemTester:
             if response.status_code == 200:
                 self.log_result("Contact sharing", True, "Homeowner shared contact details")
                 
-                # Step 2: Tradesperson pays for access
+                # Step 2: Fund tradesperson wallet (needed for payment)
                 if 'tradesperson' in self.auth_tokens:
                     tradesperson_token = self.auth_tokens['tradesperson']
                     
-                    response = self.make_request("POST", f"/interests/pay-access/{interest_id}", 
-                                               auth_token=tradesperson_token)
+                    # Fund wallet with enough coins for access fee (default is 10 coins for ₦1000)
+                    wallet_funding_data = {
+                        "amount_naira": 2000,  # Fund with ₦2000 (20 coins)
+                        "payment_method": "test_funding"
+                    }
+                    
+                    response = self.make_request("POST", "/wallet/fund", 
+                                               json=wallet_funding_data, auth_token=tradesperson_token)
                     if response.status_code == 200:
-                        self.log_result("Payment for access", True, "Payment successful - access granted")
+                        self.log_result("Wallet funding", True, "Wallet funded successfully")
+                        
+                        # Step 3: Tradesperson pays for access
+                        response = self.make_request("POST", f"/interests/pay-access/{interest_id}", 
+                                                   auth_token=tradesperson_token)
+                        if response.status_code == 200:
+                            self.log_result("Payment for access", True, "Payment successful - access granted")
+                        else:
+                            self.log_result("Payment for access", False, 
+                                          f"Payment failed: {response.status_code} - {response.text}")
                     else:
-                        self.log_result("Payment for access", False, 
-                                      f"Payment failed: {response.status_code} - {response.text}")
+                        self.log_result("Wallet funding", False, 
+                                      f"Wallet funding failed: {response.status_code} - {response.text}")
             else:
                 self.log_result("Contact sharing", False, 
                               f"Contact sharing failed: {response.status_code} - {response.text}")
