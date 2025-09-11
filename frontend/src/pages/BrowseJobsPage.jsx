@@ -274,6 +274,12 @@ const BrowseJobsPage = () => {
     }
 
     try {
+      console.log('Show interest debug:', {
+        jobId: job.id,
+        jobIdType: typeof job.id,
+        jobObject: job
+      });
+      
       setShowingInterest(job.id);
       await interestsAPI.showInterest(job.id);
       
