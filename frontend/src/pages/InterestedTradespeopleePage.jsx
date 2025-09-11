@@ -811,6 +811,20 @@ const InterestedTradespeopleePage = () => {
         </div>
       )}
 
+      {/* Chat Modal */}
+      {showChatModal && selectedTradespersonForChat && job && (
+        <ChatModal
+          isOpen={showChatModal}
+          onClose={() => {
+            setShowChatModal(false);
+            setSelectedTradespersonForChat(null);
+          }}
+          jobId={jobId}
+          jobTitle={job.title}
+          otherParty={selectedTradespersonForChat}
+        />
+      )}
+
       <Footer />
     </div>
   );
