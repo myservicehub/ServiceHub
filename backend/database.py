@@ -1025,6 +1025,8 @@ class Database:
                     "job_id": 1,
                     "status": 1,
                     "created_at": 1,
+                    "contact_shared_at": 1,
+                    "payment_made_at": 1,
                     "job_title": "$job.title",
                     "job_location": "$job.location",
                     "homeowner_name": "$job.homeowner.name",
