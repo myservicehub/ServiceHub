@@ -123,11 +123,27 @@ const ChatModal = ({
       
     } catch (error) {
       console.error('Failed to send message:', error);
-      toast({
-        title: "Error",
-        description: "Failed to send message. Please try again.",
-        variant: "destructive",
-      });
+      
+      // Handle specific error cases
+      if (error.response?.status === 403) {
+        toast({
+          title: "Access Denied",
+          description: "You need to complete payment before sending messages. Please pay for access first.",
+          variant: "destructive",
+        });
+      } else if (error.response?.status === 404) {
+        toast({
+          title: "Conversation Not Found",
+          description: "This conversation no longer exists. Please try again.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to send message. Please try again.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setSending(false);
     }
