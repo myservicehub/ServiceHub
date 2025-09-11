@@ -111,9 +111,21 @@
         agent: "testing"
         comment: "🔍 CRITICAL BUG ROOT CAUSE IDENTIFIED: Send button not working because messaging system correctly enforces payment workflow requirements. COMPREHENSIVE BACKEND TESTING RESULTS (76.9% success rate, 10/13 tests passed): ✅ BACKEND MESSAGING APIs WORKING CORRECTLY: All messaging endpoints functional with proper authentication and access control, conversation creation/retrieval working with paid access verification, message sending/retrieval APIs operational, error handling working correctly for invalid scenarios. ✅ PAYMENT WORKFLOW VERIFICATION: Show interest system working (✅), contact sharing system working (✅), payment access control working (✅ - correctly rejects unpaid access). ❌ ROOT CAUSE DISCOVERED: Frontend ChatModal attempting to send messages without completing payment workflow. The messaging system requires 'paid_access' status but frontend is trying to message with only 'contact_shared' status. CRITICAL FINDINGS: 1) Backend correctly rejects conversation creation without paid access (403 Forbidden), 2) Frontend payment flow incomplete - not reaching 'paid_access' status, 3) ChatModal opening before payment completion, 4) Send button fails because no valid conversation ID exists. SOLUTION REQUIRED: Fix frontend payment integration to ensure 'paid_access' status before opening ChatModal. Backend messaging system is production-ready and working correctly."
 
+  - task: "Homeowner Job Management - Edit and Close Jobs Feature"
+    implemented: false
+    working: false
+    file: "/app/backend/routes/jobs.py, /app/frontend/src/pages/MyJobsPage.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "🚀 NEW FEATURE REQUEST: Homeowners need ability to edit job details and close/cancel jobs. IMPLEMENTATION NEEDED: 1) Backend API endpoints for PUT /api/jobs/{job_id} (edit job) and PUT /api/jobs/{job_id}/close (close job), 2) Frontend job management interface with edit forms and close functionality, 3) Authorization checks (only job owner can edit/close), 4) Job status management (active, closed, cancelled), 5) UI updates to show job status and provide edit/close buttons."
+
 ## agent_communication:
     -agent: "main" 
-    -message: "✅ CRITICAL PAYMENT STATUS BUG RESOLVED: Fixed incorrect status checking in MyInterestsPage.jsx - was checking for 'paid' instead of 'paid_access'. CORRECTIONS APPLIED: Updated chat button condition (line 530), paid filter (line 226), and payment verification to use 'paid_access' status. BACKEND CONFIRMED: InterestStatus.PAID_ACCESS = 'paid_access' is set when payment completes. WORKFLOW NOW FUNCTIONAL: Show interest → Homeowner shares contact → Pay coins → Status updates to 'paid_access' → Chat button appears → Auto-redirect to chat with contact details → Send messages successfully. Payment and messaging integration fully operational."
+    -message: "🚀 IMPLEMENTING HOMEOWNER JOB MANAGEMENT: Adding edit and close job functionality as requested. FEATURES TO IMPLEMENT: Backend API endpoints for editing job details (PUT /api/jobs/{job_id}) and closing jobs (PUT /api/jobs/{job_id}/close), frontend job management interface with edit forms and close buttons, proper authorization (only job owner can edit/close), job status management system. This will complete the homeowner job lifecycle management allowing full control over their posted jobs."
     -agent: "testing"
     -message: "✅ CRITICAL CONTACT SHARING BUG RESOLVED: Comprehensive investigation completed with 100% test success rate. ROOT CAUSE: Database method `get_tradesperson_interests` was missing `contact_shared_at` field in MongoDB projection. FIXED: Updated database.py to include timestamp fields in projection. VERIFIED: Complete contact sharing workflow operational - API endpoints working, database updates correct, status synchronization functional, notifications delivered. The reported bug where tradesperson couldn't see contact sharing status has been completely resolved. All contact sharing functionality is now working correctly."
     -agent: "testing"
