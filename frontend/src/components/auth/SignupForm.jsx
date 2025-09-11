@@ -222,7 +222,10 @@ const SignupForm = ({ onClose, onSwitchToLogin, defaultTab = 'tradesperson', sho
             title: "Registration Complete!",
             description: "Welcome to ServiceHub! Your application is being reviewed.",
           });
+          // Close the modal first
           if (onClose) onClose();
+          // Redirect new tradespeople to Browse Jobs page
+          navigate('/browse-jobs');
         }}
       />
     );
