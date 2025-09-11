@@ -122,6 +122,69 @@ const MyJobsPage = () => {
     setShowInterestedModal(false);
   };
 
+  const handleEditJob = (job) => {
+    setJobToEdit(job);
+    setShowEditModal(true);
+  };
+
+  const handleJobUpdated = (updatedJob) => {
+    setJobs(prevJobs => 
+      prevJobs.map(job => 
+        job.id === updatedJob.id ? updatedJob : job
+      )
+    );
+  };
+
+  const handleCloseJob = async (jobId) => {
+    try {
+      setClosingJobId(jobId);
+      await jobsAPI.closeJob(jobId);
+      
+      toast({
+        title: "Job Closed",
+        description: "Your job has been closed successfully.",
+      });
+      
+      // Refresh jobs list
+      await loadMyJobs();
+      
+    } catch (error) {
+      console.error('Failed to close job:', error);
+      toast({
+        title: "Failed to Close Job",
+        description: error.response?.data?.detail || "There was an error closing the job.",
+        variant: "destructive",
+      });
+    } finally {
+      setClosingJobId(null);
+    }
+  };
+
+  const handleReopenJob = async (jobId) => {
+    try {
+      setReopeningJobId(jobId);
+      await jobsAPI.reopenJob(jobId);
+      
+      toast({
+        title: "Job Reopened",
+        description: "Your job has been reopened and is now active.",
+      });
+      
+      // Refresh jobs list
+      await loadMyJobs();
+      
+    } catch (error) {
+      console.error('Failed to reopen job:', error);
+      toast({
+        title: "Failed to Reopen Job",
+        description: error.response?.data?.detail || "There was an error reopening the job.",
+        variant: "destructive",
+      });
+    } finally {
+      setReopeningJobId(null);
+    }
+  };
+
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
