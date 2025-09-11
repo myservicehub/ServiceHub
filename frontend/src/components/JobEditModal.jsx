@@ -330,7 +330,7 @@ const JobEditModal = ({
                     <SelectValue placeholder="Select town" />
                   </SelectTrigger>
                   <SelectContent>
-                    {towns.map((town) => (
+                    {(towns || []).map((town) => (
                       <SelectItem key={town} value={town}>
                         {town}
                       </SelectItem>
