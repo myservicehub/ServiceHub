@@ -49,6 +49,7 @@ import { interestsAPI, portfolioAPI, tradespeopleAPI } from '../api/services';
 import { reviewsAPI } from '../api/reviews';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
+import ChatModal from '../components/ChatModal';
 
 const InterestedTradespeopleePage = () => {
   const { jobId } = useParams();
