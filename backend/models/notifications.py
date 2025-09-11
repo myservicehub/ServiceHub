@@ -10,6 +10,7 @@ class NotificationType(str, Enum):
     PAYMENT_CONFIRMATION = "payment_confirmation"
     JOB_EXPIRING = "job_expiring"
     NEW_MATCHING_JOB = "new_matching_job"
+    NEW_MESSAGE = "new_message"
 
 class NotificationChannel(str, Enum):
     EMAIL = "email"
