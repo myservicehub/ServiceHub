@@ -254,7 +254,7 @@ class ShowInterestTester:
             "category": "Electrical",
             "state": "Lagos",
             "lga": "Ikeja",
-            "town": "Victoria Island",
+            "town": "Ikeja",
             "zip_code": "101001",
             "home_address": "456 Broad Street, Victoria Island",
             "budget_min": 75000,
