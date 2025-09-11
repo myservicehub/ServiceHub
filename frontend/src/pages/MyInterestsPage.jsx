@@ -126,9 +126,22 @@ const MyInterestsPage = () => {
       
     } catch (error) {
       console.error('Payment failed:', error);
+      
+      // Handle different error response formats safely
+      let errorMessage = "Payment failed. Please try again.";
+      if (error.response?.data?.detail) {
+        if (typeof error.response.data.detail === 'string') {
+          errorMessage = error.response.data.detail;
+        } else if (Array.isArray(error.response.data.detail)) {
+          errorMessage = error.response.data.detail.map(err => err.msg || err.message || 'Validation error').join(', ');
+        } else if (typeof error.response.data.detail === 'object') {
+          errorMessage = error.response.data.detail.msg || error.response.data.detail.message || 'Unknown error';
+        }
+      }
+      
       toast({
         title: "Payment Failed",
-        description: error.response?.data?.detail || "Payment failed. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
