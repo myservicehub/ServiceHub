@@ -232,63 +232,44 @@ class ContactSharingBugTester:
                           f"Status: {response.status_code}, Response: {response.text}")
     
     def test_show_interest_for_contact_sharing(self):
-        """Test GET /api/jobs/for-tradesperson to ensure jobs are available"""
-        print("\n=== Testing Jobs for Tradesperson Endpoint ===")
+        """Test showing interest in the job (prerequisite for contact sharing)"""
+        print("\n=== Testing Show Interest (Prerequisite for Contact Sharing) ===")
         
-        if 'tradesperson' not in self.auth_tokens:
-            self.log_result("Jobs for tradesperson test", False, "No tradesperson authentication token")
+        if 'tradesperson' not in self.auth_tokens or 'test_job_id' not in self.test_data:
+            self.log_result("Show interest setup", False, "Missing tradesperson token or test job ID")
             return
         
         tradesperson_token = self.auth_tokens['tradesperson']
+        job_id = self.test_data['test_job_id']
         
-        # Test default parameters
-        response = self.make_request("GET", "/jobs/for-tradesperson", auth_token=tradesperson_token)
+        # Show interest in the job
+        interest_data = {"job_id": job_id}
+        
+        response = self.make_request("POST", "/interests/show-interest", 
+                                   json=interest_data, auth_token=tradesperson_token)
+        
         if response.status_code == 200:
-            jobs_data = response.json()
-            jobs_list = jobs_data.get('jobs', [])
-            total_jobs = jobs_data.get('total', 0)
+            interest_response = response.json()
+            required_fields = ['id', 'job_id', 'tradesperson_id', 'status', 'created_at']
+            missing_fields = [field for field in required_fields if field not in interest_response]
             
-            if total_jobs > 0:
-                self.log_result("Jobs for tradesperson - availability", True, 
-                              f"Found {total_jobs} jobs available")
+            if not missing_fields:
+                self.test_data['interest_id'] = interest_response.get('id')
+                self.test_data['interest_data'] = interest_response
                 
-                # Store some job IDs for testing
-                if jobs_list:
-                    self.test_data['available_job_ids'] = [job['id'] for job in jobs_list[:3]]
-                    
-                    # Verify job structure has required fields
-                    first_job = jobs_list[0]
-                    required_fields = ['id', 'title', 'description', 'category', 'status']
-                    missing_fields = [field for field in required_fields if field not in first_job]
-                    
-                    if not missing_fields:
-                        self.log_result("Job data structure validation", True, 
-                                      "All required fields present in job data")
-                    else:
-                        self.log_result("Job data structure validation", False, 
-                                      f"Missing fields: {missing_fields}")
+                # Verify initial status is 'interested'
+                if interest_response.get('status') == 'interested':
+                    self.log_result("Show interest - initial status", True, 
+                                  f"Interest created with ID: {interest_response.get('id')}, Status: interested")
+                else:
+                    self.log_result("Show interest - initial status", False, 
+                                  f"Expected status 'interested', got '{interest_response.get('status')}'")
             else:
-                self.log_result("Jobs for tradesperson - availability", False, 
-                              "No jobs available for testing")
+                self.log_result("Show interest - response structure", False, 
+                              f"Missing fields: {missing_fields}")
         else:
-            self.log_result("Jobs for tradesperson endpoint", False, 
+            self.log_result("Show interest", False, 
                           f"Status: {response.status_code}, Response: {response.text}")
-        
-        # Test with pagination parameters
-        response = self.make_request("GET", "/jobs/for-tradesperson?skip=0&limit=5", 
-                                   auth_token=tradesperson_token)
-        if response.status_code == 200:
-            jobs_data = response.json()
-            pagination = jobs_data.get('pagination', {})
-            if pagination.get('skip') == 0 and pagination.get('limit') == 5:
-                self.log_result("Jobs for tradesperson - pagination", True, 
-                              "Pagination parameters working correctly")
-            else:
-                self.log_result("Jobs for tradesperson - pagination", False, 
-                              f"Pagination incorrect: {pagination}")
-        else:
-            self.log_result("Jobs for tradesperson - pagination", False, 
-                          f"Status: {response.status_code}")
     
     def test_show_interest_api_endpoint(self):
         """Test POST /api/interests/show-interest with various scenarios"""
