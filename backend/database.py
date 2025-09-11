@@ -849,8 +849,15 @@ class Database:
 
     async def get_featured_reviews(self, limit: int = 6) -> List[dict]:
         """Get featured reviews for homepage"""
-        # Get recent high-rated reviews
-        filters = {'rating': {'$gte': 4}}
+        # Get recent high-rated reviews that match the advanced review format
+        # Filter for reviews that have the advanced format fields
+        filters = {
+            'rating': {'$gte': 4},
+            'reviewer_id': {'$exists': True},
+            'reviewee_id': {'$exists': True},
+            'content': {'$exists': True},
+            'review_type': {'$exists': True}
+        }
         
         reviews = await self.get_reviews(limit=limit, filters=filters)
         
