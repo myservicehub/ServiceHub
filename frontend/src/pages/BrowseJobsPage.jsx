@@ -618,10 +618,6 @@ const BrowseJobsPage = () => {
             {/* Jobs List View */}
             {viewMode === 'list' && (
               <>
-                {/* Debug logging */}
-                {console.log('Rendering jobs list. Jobs array length:', jobs.length)}
-                {console.log('Current jobs state:', jobs.slice(0, 2))}
-                
                 {loading ? (
                   <div className="space-y-6">
                     {Array.from({ length: 3 }).map((_, index) => (
