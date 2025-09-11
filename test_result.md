@@ -302,8 +302,8 @@ frontend:
         comment: "🔧 MODAL CLOSING BUG FIX: Identified issue where the job details modal closes immediately after clicking 'Show Interest' button, potentially before the API call completes. The handleShowInterest function handles errors internally but doesn't re-throw them, so the modal's try-catch never catches failures and always closes the modal. Need to modify handleShowInterest to re-throw errors so the modal stays open on API failures, providing proper user feedback."
 
   - task: "Show Interest Modal Bug Fix - Prevent Premature Modal Closure"
-    implemented: false
-    working: false
+    implemented: true
+    working: true
     file: "/app/frontend/src/pages/BrowseJobsPage.jsx"
     stuck_count: 0
     priority: "high"
@@ -312,6 +312,9 @@ frontend:
       - working: "NA"
         agent: "main"
         comment: "🔧 BUG IDENTIFIED: Job details modal closes immediately after clicking 'Show Interest' button instead of waiting for API call to complete. This prevents proper user feedback when the API call fails. Root cause: handleShowInterest function catches errors internally and doesn't re-throw them, so the modal's try-catch block never catches failures. Need to modify handleShowInterest to re-throw errors so modal stays open on failures and only closes on successful API calls."
+      - working: true
+        agent: "main"
+        comment: "✅ MODAL CLOSING BUG FIXED: Modified handleShowInterest function to re-throw errors after displaying toast notification. Now the job details modal's try-catch block (lines 852-861) can properly catch API failures and keep the modal open for user retry. The modal only closes on successful API calls. Added 'throw error;' at line 310 after error handling to ensure proper error propagation. This ensures user gets feedback through toast AND the modal remains available for retry on failures."
 
   - task: "React Child Rendering Error Fix - Show Interest System"
     implemented: true
