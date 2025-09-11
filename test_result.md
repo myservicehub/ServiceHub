@@ -265,7 +265,7 @@ frontend:
     file: "/app/frontend/src/pages/BrowseJobsPage.jsx"
     stuck_count: 1
     priority: "high" 
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
@@ -297,6 +297,9 @@ frontend:
       - working: false
         agent: "testing"
         comment: "❌ CRITICAL SHOW INTEREST FUNCTIONALITY FAILURE: Comprehensive frontend testing reveals the root cause of user-reported failures. AUTHENTICATION WORKING: ✅ Backend APIs fully functional (login, jobs, show-interest all working with 100% success rate via curl), ✅ JWT token generation and validation working correctly, ✅ User authentication successful (john.plumber.d553d0b3@tradework.com), ✅ Frontend authentication context working (user logged in as 'John' visible in header). CRITICAL ISSUE IDENTIFIED: ❌ Jobs not loading in frontend despite successful authentication - BrowseJobsPage shows authenticated user but displays 0 job cards, ❌ No jobs API calls being made by frontend (console shows /auth/me, /stats, /reviews calls but missing /jobs/for-tradesperson), ❌ Frontend not triggering job loading despite authentication success, ❌ Show Interest functionality cannot be tested because no jobs are displayed to interact with. ROOT CAUSE: Frontend job loading logic not executing properly after authentication. Backend confirmed working with 5+ active jobs available. BACKEND VERIFICATION: ✅ GET /api/jobs/for-tradesperson returns 5 jobs with proper structure, ✅ POST /api/interests/show-interest working correctly, ✅ All authentication and authorization working. FRONTEND ISSUE: The BrowseJobsPage component is not making the required API calls to load jobs despite successful authentication. This prevents users from seeing available jobs and therefore cannot show interest in any jobs."
+      - working: "NA"
+        agent: "main"
+        comment: "🔧 MODAL CLOSING BUG FIX: Identified issue where the job details modal closes immediately after clicking 'Show Interest' button, potentially before the API call completes. The handleShowInterest function handles errors internally but doesn't re-throw them, so the modal's try-catch never catches failures and always closes the modal. Need to modify handleShowInterest to re-throw errors so the modal stays open on API failures, providing proper user feedback."
 
   - task: "React Child Rendering Error Fix - Show Interest System"
     implemented: true
