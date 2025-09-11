@@ -1,36 +1,39 @@
 #!/usr/bin/env python3
 """
-COMPREHENSIVE MESSAGING SYSTEM API TESTING
+CRITICAL BUG INVESTIGATION: Contact sharing status not reflecting in tradesperson account
 
-Testing the new messaging system API endpoints for the lead generation marketplace.
+**Problem Description:**
+A homeowner shared contact with an interested tradesperson, but the status change is not appearing 
+in the tradesperson's account. This breaks the core workflow where the tradesperson should see 
+the status change from "interested" to "contact_shared" and be able to pay for access.
 
-Focus Areas:
-1. **Backend APIs to test:**
-   - POST /api/messages/conversations - Create conversation between homeowner and tradesperson
-   - GET /api/messages/conversations - Get user's conversations 
-   - GET /api/messages/conversations/{conversation_id}/messages - Get messages for a conversation
-   - POST /api/messages/conversations/{conversation_id}/messages - Send a message
-   - PUT /api/messages/conversations/{conversation_id}/read - Mark messages as read
-   - GET /api/messages/conversations/job/{job_id} - Get or create conversation for specific job
+**Specific API Endpoints to Test:**
+1. POST /api/interests/share-contact/{interest_id} - The main contact sharing endpoint
+2. GET /api/interests/my-interests - To verify tradesperson can see updated status
+3. GET /api/interests/job/{job_id} - To verify homeowner can see updated status
 
-2. **Test Scenarios:**
-   - Authentication: Test that all endpoints require authentication
-   - Homeowner Flow: After payment, both can create conversations and send messages
-   - Conversation Creation: Test creating conversations between homeowner and tradesperson
-   - Message Exchange: Test sending messages back and forth
-   - Message Status: Test marking messages as read
-   - Access Control: Ensure only conversation participants can access messages
+**Investigation Areas:**
+1. API Functionality - Test the share-contact endpoint with valid interest IDs
+2. Database Updates - Check if interest status is actually updating from "interested" to "contact_shared"
+3. Status Synchronization - Test that status changes are immediately visible via GET endpoints
+4. Notification System - Verify background notification task is triggered
 
-3. **Expected Behavior:**
-   - Only users with paid access can create conversations
-   - Messages are properly stored and retrieved
-   - Notifications are sent for new messages
-   - Unread counts are tracked correctly
-   - Proper access control for conversations
+**Test Scenarios:**
+1. Create a complete interest flow: job creation → show interest → share contact
+2. Test the share-contact API from homeowner perspective
+3. Immediately check status from tradesperson perspective
+4. Verify notification delivery
+5. Test edge cases (already shared, non-existent interest, wrong permissions)
 
-CRITICAL VALIDATION:
-Test the complete flow including the existing interest/payment system integration using 
-existing user credentials (john.plumber.d553d0b3@tradework.com for tradesperson and homeowner accounts).
+**Expected Behavior:**
+- Homeowner can successfully share contact details
+- Interest status updates from "interested" to "contact_shared" immediately
+- Tradesperson sees updated status in their interests list
+- Notification is sent to tradesperson
+- Tradesperson can then proceed to pay for access
+
+Using existing test credentials (john.plumber.d553d0b3@tradework.com) and create a complete test scenario 
+to identify where the breakdown is occurring.
 """
 
 import requests
