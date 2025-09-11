@@ -878,9 +878,8 @@ agent_communication:
 
 test_plan:
   current_focus:
-    - "Frontend States Integration - Dynamic States API"
-  stuck_tasks: 
-    - "Frontend States Integration - Dynamic States API"
+    - "Messaging System API - Comprehensive In-App Messaging for Lead Generation"
+  stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
