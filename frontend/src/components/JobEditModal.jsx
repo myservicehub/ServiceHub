@@ -221,7 +221,7 @@ const JobEditModal = ({
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map((category) => (
+                    {(categories || []).map((category) => (
                       <SelectItem key={category.name} value={category.name}>
                         {category.name}
                       </SelectItem>
