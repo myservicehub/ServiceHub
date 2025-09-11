@@ -116,6 +116,7 @@ const BrowseJobsPage = () => {
     }
     loadWalletBalance();
     loadUserLocationData();
+    loadUserInterests(); // Load user's existing interests
   }, [isAuthenticated, isTradesperson]); // Add authentication dependencies
 
   useEffect(() => {
