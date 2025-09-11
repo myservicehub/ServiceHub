@@ -284,9 +284,25 @@ const BrowseJobsPage = () => {
 
     } catch (error) {
       console.error('Failed to show interest:', error);
+      
+      // Handle different error response formats
+      let errorMessage = "There was an error showing interest. Please try again.";
+      
+      if (error.response?.data?.detail) {
+        if (typeof error.response.data.detail === 'string') {
+          errorMessage = error.response.data.detail;
+        } else if (Array.isArray(error.response.data.detail)) {
+          // Handle FastAPI validation errors which return an array
+          errorMessage = error.response.data.detail.map(err => err.msg || err.message || JSON.stringify(err)).join(', ');
+        } else if (typeof error.response.data.detail === 'object') {
+          // Handle object error details
+          errorMessage = error.response.data.detail.msg || error.response.data.detail.message || JSON.stringify(error.response.data.detail);
+        }
+      }
+      
       toast({
         title: "Failed to show interest",
-        description: error.response?.data?.detail || "There was an error showing interest. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
