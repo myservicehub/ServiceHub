@@ -1,11 +1,19 @@
 import React, { useState } from 'react';
 import { Button } from './ui/button';
-import { Menu, X, User, LogOut, Briefcase, Search, Star, Heart } from 'lucide-react';
+import { Menu, X, User, LogOut, Briefcase, Search, Star, Heart, ChevronDown, HelpCircle, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Logo from './Logo';
 import AuthModal from './auth/AuthModal';
 import NotificationIndicator from './NotificationIndicator';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
