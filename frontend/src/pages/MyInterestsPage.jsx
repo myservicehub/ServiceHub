@@ -224,6 +224,22 @@ const MyInterestsPage = () => {
     return filterInterests(interests, tab).length;
   };
 
+  const handleStartChat = (interest) => {
+    setSelectedInterestForChat({
+      jobId: interest.job_id,
+      jobTitle: interest.job_title,
+      homeowner: {
+        id: interest.homeowner_id,
+        name: interest.homeowner_name,
+        type: 'homeowner',
+        email: interest.homeowner_email,
+        phone: interest.homeowner_phone,
+        location: interest.job_location
+      }
+    });
+    setShowChatModal(true);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
