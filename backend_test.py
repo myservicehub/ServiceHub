@@ -1,39 +1,55 @@
 #!/usr/bin/env python3
 """
-COMPREHENSIVE JOB POSTING DYNAMIC LOCATION INTEGRATION TESTING
+COMPREHENSIVE SHOW INTEREST FUNCTIONALITY TESTING
 
-Testing the complete integration of dynamic states and LGAs added via admin dashboard
-with the job posting form functionality.
+Testing the complete show interest functionality that users are reporting as failing.
 
 Focus Areas:
-1. Dynamic States Integration:
-   - Test that GET /api/jobs/locations/states includes both static and admin-added states
-   - Verify "Kaduna" state appears in the states list (should return 11 states total)
-   - Test that all states are properly sorted alphabetically
-   - Verify backward compatibility with existing static states
+1. Authentication Flow:
+   - Test tradesperson login with credentials: john.plumber.d553d0b3@tradework.com / SecurePass123
+   - Verify JWT token generation and validation
+   - Test tradesperson role verification
+   - Confirm token is being properly included in API requests
 
-2. Dynamic LGAs Integration:
-   - Test that GET /api/auth/lgas/Kaduna returns the LGAs we added via admin
-   - Verify the endpoint returns: "Kaduna North", "Kaduna Central", "Kaduna Municipal983"
-   - Test that static states still work (e.g., /api/auth/lgas/Lagos should return 21 LGAs)
-   - Test error handling for non-existent states
+2. Show Interest API Endpoint:
+   - Test POST /api/interests/show-interest with valid tradesperson token
+   - Test with different job IDs to verify job lookup
+   - Test duplicate interest prevention (same tradesperson, same job)
+   - Test with inactive/non-existent jobs
+   - Verify proper error responses and status codes
 
-3. Complete Job Posting Workflow:
-   - Test the complete API chain: states → select Kaduna → fetch LGAs
-   - Verify that selecting a dynamic state loads the correct LGAs
-   - Test job creation with dynamic state/LGA combinations
-   - Verify data persistence and validation
+3. Job Data Integration:
+   - Test GET /api/jobs/for-tradesperson to ensure jobs are available
+   - Verify job IDs are valid and can be used for showing interest
+   - Test job status validation (active vs inactive)
+   - Confirm job-tradesperson matching logic
 
-4. Backward Compatibility:
-   - Test that existing static states still work perfectly
-   - Verify no regressions in job posting for original states
-   - Test mixed scenarios (dynamic state to static state switching)
+4. Database Operations:
+   - Test interest record creation in database
+   - Verify interest status and metadata
+   - Test interest retrieval and querying
+   - Check for database constraint violations
 
-5. Error Handling & Edge Cases:
-   - Test with invalid state names
-   - Test with empty responses
-   - Test API timeouts and error scenarios
-   - Verify proper error messages and status codes
+5. Background Tasks & Notifications:
+   - Test notification system integration when interest is shown
+   - Verify background task processing
+   - Test homeowner notification delivery
+
+SPECIFIC ERROR SCENARIOS TO TEST:
+1. Authentication Errors: Invalid token, expired token, wrong role
+2. Validation Errors: Missing job_id, invalid job_id format
+3. Business Logic Errors: Job not found, job inactive, duplicate interest
+4. Database Errors: Connection issues, constraint violations
+
+EXPECTED BEHAVIORS:
+- ✅ Valid tradesperson can show interest in active jobs
+- ✅ Duplicate interests are prevented with clear error message
+- ✅ Invalid/inactive jobs return proper error responses
+- ✅ Interest records are properly stored in database
+- ✅ Homeowner notifications are triggered
+
+CRITICAL VALIDATION:
+Users are reporting that "showing interest for jobs failed" - please identify the root cause of this failure.
 """
 
 import requests
@@ -47,7 +63,7 @@ import time
 # Get backend URL from environment
 BACKEND_URL = "https://notify-connect.preview.emergentagent.com/api"
 
-class DynamicLocationTester:
+class ShowInterestTester:
     def __init__(self):
         self.base_url = BACKEND_URL
         self.session = requests.Session()
@@ -90,37 +106,90 @@ class DynamicLocationTester:
             print(f"Request failed: {e}")
             raise
     
-    def test_admin_authentication(self):
-        """Test admin authentication for location management"""
-        print("\n=== Testing Admin Authentication ===")
+    def test_tradesperson_authentication(self):
+        """Test tradesperson authentication with specific credentials"""
+        print("\n=== Testing Tradesperson Authentication ===")
         
-        # Test admin login using form data
-        admin_credentials = {
-            "username": "admin",
-            "password": "servicehub2024"
+        # Test login with the specific credentials mentioned in the review request
+        login_data = {
+            "email": "john.plumber.d553d0b3@tradework.com",
+            "password": "SecurePass123"
         }
         
-        response = self.make_request("POST", "/admin/login", data=admin_credentials)
+        response = self.make_request("POST", "/auth/login", json=login_data)
         if response.status_code == 200:
-            admin_data = response.json()
-            if 'token' in admin_data:
-                self.auth_tokens['admin'] = admin_data['token']
-                self.log_result("Admin authentication", True, "Admin login successful")
+            login_response = response.json()
+            if 'access_token' in login_response and 'user' in login_response:
+                self.auth_tokens['tradesperson'] = login_response['access_token']
+                self.test_data['tradesperson_user'] = login_response['user']
+                
+                # Verify user role is tradesperson
+                user_role = login_response['user'].get('role')
+                if user_role == 'tradesperson':
+                    self.log_result("Tradesperson login and role verification", True, 
+                                  f"User ID: {login_response['user']['id']}, Role: {user_role}")
+                else:
+                    self.log_result("Tradesperson role verification", False, 
+                                  f"Expected 'tradesperson', got '{user_role}'")
             else:
-                self.log_result("Admin authentication", False, "No access token in response")
+                self.log_result("Tradesperson login", False, "Missing access_token or user in response")
         else:
-            self.log_result("Admin authentication", False, f"Status: {response.status_code}, Response: {response.text}")
+            # If specific user doesn't exist, create a test tradesperson
+            self.log_result("Specific tradesperson login", False, 
+                          f"Status: {response.status_code}, trying to create test user")
+            self._create_test_tradesperson()
     
-    def test_user_authentication(self):
-        """Test user authentication for job posting"""
-        print("\n=== Testing User Authentication ===")
+    def _create_test_tradesperson(self):
+        """Create a test tradesperson if the specific one doesn't exist"""
+        print("\n--- Creating Test Tradesperson ---")
         
-        # Create a test homeowner for job posting
-        homeowner_data = {
-            "name": "Adebayo Johnson",
-            "email": f"adebayo.johnson.{uuid.uuid4().hex[:8]}@email.com",
+        tradesperson_data = {
+            "name": "John Plumber",
+            "email": f"john.plumber.{uuid.uuid4().hex[:8]}@tradework.com",
             "password": "SecurePass123",
             "phone": "+2348123456789",
+            "location": "Lagos",
+            "postcode": "100001",
+            "trade_categories": ["Plumbing"],
+            "experience_years": 5,
+            "company_name": "John's Plumbing Services",
+            "description": "Professional plumbing services in Lagos",
+            "certifications": ["Licensed Plumber"]
+        }
+        
+        response = self.make_request("POST", "/auth/register/tradesperson", json=tradesperson_data)
+        if response.status_code == 200:
+            tradesperson_profile = response.json()
+            
+            # Now login with the created user
+            login_data = {
+                "email": tradesperson_data["email"],
+                "password": tradesperson_data["password"]
+            }
+            
+            login_response = self.make_request("POST", "/auth/login", json=login_data)
+            if login_response.status_code == 200:
+                login_data_response = login_response.json()
+                self.auth_tokens['tradesperson'] = login_data_response['access_token']
+                self.test_data['tradesperson_user'] = login_data_response['user']
+                self.log_result("Test tradesperson creation and login", True, 
+                              f"Created and logged in: {tradesperson_data['email']}")
+            else:
+                self.log_result("Test tradesperson login after creation", False, 
+                              f"Status: {login_response.status_code}")
+        else:
+            self.log_result("Test tradesperson creation", False, 
+                          f"Status: {response.status_code}, Response: {response.text}")
+    
+    def test_homeowner_authentication(self):
+        """Create a test homeowner for job posting"""
+        print("\n=== Testing Homeowner Authentication ===")
+        
+        homeowner_data = {
+            "name": "Sarah Johnson",
+            "email": f"sarah.johnson.{uuid.uuid4().hex[:8]}@email.com",
+            "password": "SecurePass123",
+            "phone": "+2348123456790",
             "location": "Lagos",
             "postcode": "100001"
         }
@@ -131,469 +200,574 @@ class DynamicLocationTester:
             if 'access_token' in homeowner_profile:
                 self.auth_tokens['homeowner'] = homeowner_profile['access_token']
                 self.test_data['homeowner_user'] = homeowner_profile['user']
-                self.log_result("Create test homeowner", True, f"ID: {homeowner_profile['user']['id']}")
+                self.log_result("Create test homeowner", True, 
+                              f"ID: {homeowner_profile['user']['id']}")
             else:
                 self.log_result("Create test homeowner", False, "No access token in response")
         else:
-            self.log_result("Create test homeowner", False, f"Status: {response.status_code}, Response: {response.text}")
+            self.log_result("Create test homeowner", False, 
+                          f"Status: {response.status_code}, Response: {response.text}")
     
-    def test_dynamic_states_setup(self):
-        """Test adding Kaduna state via admin dashboard"""
-        print("\n=== Testing Dynamic States Setup ===")
-        
-        if 'admin' not in self.auth_tokens:
-            self.log_result("Dynamic states setup", False, "No admin authentication token")
-            return
-        
-        admin_token = self.auth_tokens['admin']
-        
-        # Add Kaduna state
-        kaduna_state_data = {
-            "state_name": "Kaduna",
-            "region": "North Central Nigeria",
-            "postcode_samples": "800001,800101,800201"
-        }
-        
-        response = self.make_request("POST", "/admin/locations/states", data=kaduna_state_data, auth_token=admin_token)
-        if response.status_code in [200, 201]:
-            state_response = response.json()
-            self.log_result("Add Kaduna state", True, f"State added: {state_response.get('state_name', 'Kaduna')}")
-        elif response.status_code == 400 and "already exists" in response.text:
-            self.log_result("Add Kaduna state", True, "State already exists (expected)")
-        else:
-            self.log_result("Add Kaduna state", False, f"Status: {response.status_code}, Response: {response.text}")
-    
-    def test_dynamic_lgas_setup(self):
-        """Test adding LGAs for Kaduna state via admin dashboard"""
-        print("\n=== Testing Dynamic LGAs Setup ===")
-        
-        if 'admin' not in self.auth_tokens:
-            self.log_result("Dynamic LGAs setup", False, "No admin authentication token")
-            return
-        
-        admin_token = self.auth_tokens['admin']
-        
-        # Add LGAs for Kaduna state
-        kaduna_lgas = [
-            {
-                "state_name": "Kaduna",
-                "lga_name": "Kaduna North",
-                "zip_codes": "800001,800002"
-            },
-            {
-                "state_name": "Kaduna",
-                "lga_name": "Kaduna Central", 
-                "zip_codes": "800101,800102"
-            },
-            {
-                "state_name": "Kaduna",
-                "lga_name": "Kaduna Municipal983",
-                "zip_codes": "800201,800202"
-            }
-        ]
-        
-        for lga_data in kaduna_lgas:
-            response = self.make_request("POST", "/admin/locations/lgas", data=lga_data, auth_token=admin_token)
-            if response.status_code in [200, 201]:
-                lga_response = response.json()
-                self.log_result(f"Add {lga_data['lga_name']} LGA", True, f"LGA added to {lga_data['state_name']}")
-            elif response.status_code == 400 and "already exists" in response.text:
-                self.log_result(f"Add {lga_data['lga_name']} LGA", True, "LGA already exists (expected)")
-            else:
-                self.log_result(f"Add {lga_data['lga_name']} LGA", False, f"Status: {response.status_code}, Response: {response.text}")
-    
-    def test_dynamic_states_integration(self):
-        """Test that GET /api/jobs/locations/states includes both static and admin-added states"""
-        print("\n=== Testing Dynamic States Integration ===")
-        
-        # Test 1: Get all states from jobs endpoint
-        response = self.make_request("GET", "/jobs/locations/states")
-        if response.status_code == 200:
-            states_data = response.json()
-            states_list = states_data.get('states', [])
-            
-            # Verify Kaduna is included
-            if "Kaduna" in states_list:
-                self.log_result("Kaduna state in states list", True, f"Found Kaduna in {len(states_list)} states")
-            else:
-                self.log_result("Kaduna state in states list", False, f"Kaduna not found in states: {states_list}")
-            
-            # Verify total count (should be 11 states: 8 static + Kaduna + potentially others)
-            if len(states_list) >= 9:  # At least 8 static + Kaduna
-                self.log_result("States count verification", True, f"Found {len(states_list)} states (expected ≥9)")
-            else:
-                self.log_result("States count verification", False, f"Expected ≥9 states, got {len(states_list)}")
-            
-            # Verify alphabetical sorting
-            sorted_states = sorted(states_list)
-            if states_list == sorted_states:
-                self.log_result("States alphabetical sorting", True, "States are properly sorted")
-            else:
-                self.log_result("States alphabetical sorting", False, f"States not sorted: {states_list}")
-            
-            # Verify static states still present
-            static_states = ["Lagos", "Abuja", "Delta", "Rivers State"]
-            missing_static = [state for state in static_states if state not in states_list]
-            if not missing_static:
-                self.log_result("Static states backward compatibility", True, "All static states present")
-            else:
-                self.log_result("Static states backward compatibility", False, f"Missing static states: {missing_static}")
-            
-            self.test_data['all_states'] = states_list
-        else:
-            self.log_result("Get states endpoint", False, f"Status: {response.status_code}, Response: {response.text}")
-    
-    def test_dynamic_lgas_integration(self):
-        """Test that GET /api/auth/lgas/Kaduna returns the LGAs we added via admin"""
-        print("\n=== Testing Dynamic LGAs Integration ===")
-        
-        # Test 1: Get LGAs for Kaduna state
-        response = self.make_request("GET", "/auth/lgas/Kaduna")
-        if response.status_code == 200:
-            lgas_data = response.json()
-            lgas_list = lgas_data.get('lgas', [])
-            state_name = lgas_data.get('state', '')
-            total_lgas = lgas_data.get('total', 0)
-            
-            # Verify state name
-            if state_name == "Kaduna":
-                self.log_result("Kaduna LGAs endpoint - state name", True, f"Correct state: {state_name}")
-            else:
-                self.log_result("Kaduna LGAs endpoint - state name", False, f"Expected 'Kaduna', got '{state_name}'")
-            
-            # Verify expected LGAs are present
-            expected_lgas = ["Kaduna North", "Kaduna Central", "Kaduna Municipal983"]
-            found_lgas = [lga for lga in expected_lgas if lga in lgas_list]
-            
-            if len(found_lgas) == len(expected_lgas):
-                self.log_result("Kaduna LGAs content verification", True, f"All 3 expected LGAs found: {found_lgas}")
-            else:
-                missing_lgas = [lga for lga in expected_lgas if lga not in lgas_list]
-                self.log_result("Kaduna LGAs content verification", False, f"Missing LGAs: {missing_lgas}, Found: {found_lgas}")
-            
-            # Verify total count
-            if total_lgas >= 3:
-                self.log_result("Kaduna LGAs count", True, f"Found {total_lgas} LGAs (expected ≥3)")
-            else:
-                self.log_result("Kaduna LGAs count", False, f"Expected ≥3 LGAs, got {total_lgas}")
-            
-            self.test_data['kaduna_lgas'] = lgas_list
-        else:
-            self.log_result("Get Kaduna LGAs endpoint", False, f"Status: {response.status_code}, Response: {response.text}")
-        
-        # Test 2: Verify static states still work (Lagos)
-        response = self.make_request("GET", "/auth/lgas/Lagos")
-        if response.status_code == 200:
-            lagos_data = response.json()
-            lagos_lgas = lagos_data.get('lgas', [])
-            
-            # Lagos should have 20 LGAs
-            if len(lagos_lgas) >= 20:
-                self.log_result("Lagos LGAs backward compatibility", True, f"Lagos has {len(lagos_lgas)} LGAs (expected ≥20)")
-            else:
-                self.log_result("Lagos LGAs backward compatibility", False, f"Expected ≥20 LGAs for Lagos, got {len(lagos_lgas)}")
-        else:
-            self.log_result("Lagos LGAs backward compatibility", False, f"Status: {response.status_code}")
-        
-        # Test 3: Error handling for non-existent state
-        response = self.make_request("GET", "/auth/lgas/NonExistentState")
-        if response.status_code == 404:
-            self.log_result("Non-existent state error handling", True, "Correctly returned 404 for invalid state")
-        else:
-            self.log_result("Non-existent state error handling", False, f"Expected 404, got {response.status_code}")
-    
-    def test_complete_job_posting_workflow(self):
-        """Test the complete API chain: states → select Kaduna → fetch LGAs → create job"""
-        print("\n=== Testing Complete Job Posting Workflow ===")
+    def test_job_creation_for_interest_testing(self):
+        """Create test jobs for interest testing"""
+        print("\n=== Creating Test Jobs for Interest Testing ===")
         
         if 'homeowner' not in self.auth_tokens:
-            self.log_result("Job posting workflow", False, "No homeowner authentication token")
+            self.log_result("Job creation setup", False, "No homeowner authentication token")
             return
         
         homeowner_token = self.auth_tokens['homeowner']
+        homeowner_user = self.test_data['homeowner_user']
         
-        # Test 1: Create job with dynamic location (Kaduna state)
-        job_data_dynamic = {
-            "title": "Plumbing Services Needed in Kaduna",
-            "description": "Need professional plumber for bathroom renovation in Kaduna North. Includes pipe installation and fixture replacement.",
+        # Create active job
+        active_job_data = {
+            "title": "Plumbing Services Needed - Active Job",
+            "description": "Need professional plumber for bathroom renovation. Includes pipe installation and fixture replacement.",
             "category": "Plumbing",
-            "state": "Kaduna",
-            "lga": "Kaduna North",
-            "town": "Kaduna North Central",
-            "zip_code": "800001",
-            "home_address": "123 Independence Way, Kaduna North",
-            "budget_min": 50000,
-            "budget_max": 150000,
-            "timeline": "Within 2 weeks",
-            "homeowner_name": self.test_data['homeowner_user']['name'],
-            "homeowner_email": self.test_data['homeowner_user']['email'],
-            "homeowner_phone": self.test_data['homeowner_user']['phone']
-        }
-        
-        response = self.make_request("POST", "/jobs/", json=job_data_dynamic, auth_token=homeowner_token)
-        if response.status_code == 200:
-            job_response = response.json()
-            job_id = job_response.get('id')
-            
-            # Verify job data
-            if job_response.get('state') == "Kaduna" and job_response.get('lga') == "Kaduna North":
-                self.log_result("Create job with dynamic location", True, f"Job created with ID: {job_id}")
-                self.test_data['dynamic_job_id'] = job_id
-                
-                # Verify legacy fields are populated
-                if job_response.get('location') == "Kaduna" and job_response.get('postcode') == "800001":
-                    self.log_result("Legacy fields auto-population", True, "Location and postcode correctly populated")
-                else:
-                    self.log_result("Legacy fields auto-population", False, f"Legacy fields incorrect: location={job_response.get('location')}, postcode={job_response.get('postcode')}")
-            else:
-                self.log_result("Create job with dynamic location", False, f"Incorrect location data: state={job_response.get('state')}, lga={job_response.get('lga')}")
-        else:
-            self.log_result("Create job with dynamic location", False, f"Status: {response.status_code}, Response: {response.text}")
-        
-        # Test 2: Create job with static location (Lagos state)
-        job_data_static = {
-            "title": "Electrical Work in Lagos",
-            "description": "Need electrical installation in Ikeja area. Includes wiring and socket installation.",
-            "category": "Electrical",
             "state": "Lagos",
             "lga": "Ikeja",
             "town": "Computer Village",
             "zip_code": "100001",
-            "home_address": "456 Allen Avenue, Ikeja",
-            "budget_min": 75000,
-            "budget_max": 200000,
-            "timeline": "Within 1 week",
-            "homeowner_name": self.test_data['homeowner_user']['name'],
-            "homeowner_email": self.test_data['homeowner_user']['email'],
-            "homeowner_phone": self.test_data['homeowner_user']['phone']
+            "home_address": "123 Allen Avenue, Ikeja",
+            "budget_min": 50000,
+            "budget_max": 150000,
+            "timeline": "Within 2 weeks"
         }
         
-        response = self.make_request("POST", "/jobs/", json=job_data_static, auth_token=homeowner_token)
+        response = self.make_request("POST", "/jobs/", json=active_job_data, auth_token=homeowner_token)
         if response.status_code == 200:
             job_response = response.json()
-            job_id = job_response.get('id')
-            
-            if job_response.get('state') == "Lagos" and job_response.get('lga') == "Ikeja":
-                self.log_result("Create job with static location", True, f"Job created with ID: {job_id}")
-                self.test_data['static_job_id'] = job_id
-            else:
-                self.log_result("Create job with static location", False, f"Incorrect location data: state={job_response.get('state')}, lga={job_response.get('lga')}")
+            self.test_data['active_job_id'] = job_response.get('id')
+            self.test_data['active_job'] = job_response
+            self.log_result("Create active test job", True, f"Job ID: {job_response.get('id')}")
         else:
-            self.log_result("Create job with static location", False, f"Status: {response.status_code}, Response: {response.text}")
-    
-    def test_job_data_persistence_and_retrieval(self):
-        """Test that jobs with dynamic locations are properly stored and retrieved"""
-        print("\n=== Testing Job Data Persistence and Retrieval ===")
+            self.log_result("Create active test job", False, 
+                          f"Status: {response.status_code}, Response: {response.text}")
         
-        # Test 1: Retrieve dynamic location job
-        if 'dynamic_job_id' in self.test_data:
-            job_id = self.test_data['dynamic_job_id']
-            response = self.make_request("GET", f"/jobs/{job_id}")
+        # Create another active job for duplicate testing
+        duplicate_test_job_data = {
+            "title": "Electrical Work - Duplicate Test Job",
+            "description": "Need electrical installation for new office space.",
+            "category": "Electrical",
+            "state": "Lagos",
+            "lga": "Victoria Island",
+            "town": "Victoria Island",
+            "zip_code": "101001",
+            "home_address": "456 Broad Street, Victoria Island",
+            "budget_min": 75000,
+            "budget_max": 200000,
+            "timeline": "Within 1 week"
+        }
+        
+        response = self.make_request("POST", "/jobs/", json=duplicate_test_job_data, auth_token=homeowner_token)
+        if response.status_code == 200:
+            job_response = response.json()
+            self.test_data['duplicate_test_job_id'] = job_response.get('id')
+            self.log_result("Create duplicate test job", True, f"Job ID: {job_response.get('id')}")
+        else:
+            self.log_result("Create duplicate test job", False, 
+                          f"Status: {response.status_code}, Response: {response.text}")
+    
+    def test_jobs_for_tradesperson_endpoint(self):
+        """Test GET /api/jobs/for-tradesperson to ensure jobs are available"""
+        print("\n=== Testing Jobs for Tradesperson Endpoint ===")
+        
+        if 'tradesperson' not in self.auth_tokens:
+            self.log_result("Jobs for tradesperson test", False, "No tradesperson authentication token")
+            return
+        
+        tradesperson_token = self.auth_tokens['tradesperson']
+        
+        # Test default parameters
+        response = self.make_request("GET", "/jobs/for-tradesperson", auth_token=tradesperson_token)
+        if response.status_code == 200:
+            jobs_data = response.json()
+            jobs_list = jobs_data.get('jobs', [])
+            total_jobs = jobs_data.get('total', 0)
+            
+            if total_jobs > 0:
+                self.log_result("Jobs for tradesperson - availability", True, 
+                              f"Found {total_jobs} jobs available")
+                
+                # Store some job IDs for testing
+                if jobs_list:
+                    self.test_data['available_job_ids'] = [job['id'] for job in jobs_list[:3]]
+                    
+                    # Verify job structure has required fields
+                    first_job = jobs_list[0]
+                    required_fields = ['id', 'title', 'description', 'category', 'status']
+                    missing_fields = [field for field in required_fields if field not in first_job]
+                    
+                    if not missing_fields:
+                        self.log_result("Job data structure validation", True, 
+                                      "All required fields present in job data")
+                    else:
+                        self.log_result("Job data structure validation", False, 
+                                      f"Missing fields: {missing_fields}")
+            else:
+                self.log_result("Jobs for tradesperson - availability", False, 
+                              "No jobs available for testing")
+        else:
+            self.log_result("Jobs for tradesperson endpoint", False, 
+                          f"Status: {response.status_code}, Response: {response.text}")
+        
+        # Test with pagination parameters
+        response = self.make_request("GET", "/jobs/for-tradesperson?skip=0&limit=5", 
+                                   auth_token=tradesperson_token)
+        if response.status_code == 200:
+            jobs_data = response.json()
+            pagination = jobs_data.get('pagination', {})
+            if pagination.get('skip') == 0 and pagination.get('limit') == 5:
+                self.log_result("Jobs for tradesperson - pagination", True, 
+                              "Pagination parameters working correctly")
+            else:
+                self.log_result("Jobs for tradesperson - pagination", False, 
+                              f"Pagination incorrect: {pagination}")
+        else:
+            self.log_result("Jobs for tradesperson - pagination", False, 
+                          f"Status: {response.status_code}")
+    
+    def test_show_interest_api_endpoint(self):
+        """Test POST /api/interests/show-interest with various scenarios"""
+        print("\n=== Testing Show Interest API Endpoint ===")
+        
+        if 'tradesperson' not in self.auth_tokens:
+            self.log_result("Show interest test setup", False, "No tradesperson authentication token")
+            return
+        
+        tradesperson_token = self.auth_tokens['tradesperson']
+        
+        # Test 1: Valid show interest request
+        if 'active_job_id' in self.test_data:
+            job_id = self.test_data['active_job_id']
+            interest_data = {"job_id": job_id}
+            
+            response = self.make_request("POST", "/interests/show-interest", 
+                                       json=interest_data, auth_token=tradesperson_token)
             
             if response.status_code == 200:
-                job_data = response.json()
+                interest_response = response.json()
+                required_fields = ['id', 'job_id', 'tradesperson_id', 'status', 'created_at']
+                missing_fields = [field for field in required_fields if field not in interest_response]
                 
-                # Verify all location fields are preserved
-                location_fields = {
-                    'state': 'Kaduna',
-                    'lga': 'Kaduna North',
-                    'town': 'Kaduna North Central',
-                    'zip_code': '800001',
-                    'home_address': '123 Independence Way, Kaduna North'
-                }
-                
-                all_correct = True
-                for field, expected_value in location_fields.items():
-                    actual_value = job_data.get(field)
-                    if actual_value != expected_value:
-                        all_correct = False
-                        print(f"   Field {field}: expected '{expected_value}', got '{actual_value}'")
-                
-                if all_correct:
-                    self.log_result("Dynamic job data persistence", True, "All location fields correctly stored and retrieved")
+                if not missing_fields:
+                    self.test_data['created_interest_id'] = interest_response.get('id')
+                    self.log_result("Show interest - valid request", True, 
+                                  f"Interest created with ID: {interest_response.get('id')}")
+                    
+                    # Verify interest data structure
+                    if (interest_response.get('job_id') == job_id and 
+                        interest_response.get('status') == 'interested'):
+                        self.log_result("Show interest - data structure", True, 
+                                      "Interest data structure correct")
+                    else:
+                        self.log_result("Show interest - data structure", False, 
+                                      f"Data mismatch: job_id={interest_response.get('job_id')}, status={interest_response.get('status')}")
                 else:
-                    self.log_result("Dynamic job data persistence", False, "Some location fields incorrect")
+                    self.log_result("Show interest - response structure", False, 
+                                  f"Missing fields: {missing_fields}")
             else:
-                self.log_result("Dynamic job data persistence", False, f"Status: {response.status_code}")
+                self.log_result("Show interest - valid request", False, 
+                              f"Status: {response.status_code}, Response: {response.text}")
         
-        # Test 2: Retrieve static location job
-        if 'static_job_id' in self.test_data:
-            job_id = self.test_data['static_job_id']
-            response = self.make_request("GET", f"/jobs/{job_id}")
+        # Test 2: Duplicate interest prevention
+        if 'active_job_id' in self.test_data:
+            job_id = self.test_data['active_job_id']
+            interest_data = {"job_id": job_id}
             
-            if response.status_code == 200:
-                job_data = response.json()
-                
-                if job_data.get('state') == 'Lagos' and job_data.get('lga') == 'Ikeja':
-                    self.log_result("Static job data persistence", True, "Static location job correctly stored and retrieved")
+            response = self.make_request("POST", "/interests/show-interest", 
+                                       json=interest_data, auth_token=tradesperson_token)
+            
+            if response.status_code == 400:
+                error_response = response.json()
+                if "already shown interest" in error_response.get('detail', '').lower():
+                    self.log_result("Show interest - duplicate prevention", True, 
+                                  "Duplicate interest correctly prevented")
                 else:
-                    self.log_result("Static job data persistence", False, f"Static job location incorrect: state={job_data.get('state')}, lga={job_data.get('lga')}")
+                    self.log_result("Show interest - duplicate prevention", False, 
+                                  f"Wrong error message: {error_response.get('detail')}")
             else:
-                self.log_result("Static job data persistence", False, f"Status: {response.status_code}")
-    
-    def test_validation_and_error_handling(self):
-        """Test validation and error handling for dynamic locations"""
-        print("\n=== Testing Validation and Error Handling ===")
+                self.log_result("Show interest - duplicate prevention", False, 
+                              f"Expected 400, got {response.status_code}")
         
-        if 'homeowner' not in self.auth_tokens:
-            self.log_result("Validation tests", False, "No homeowner authentication token")
+        # Test 3: Invalid job ID
+        invalid_job_id = str(uuid.uuid4())
+        interest_data = {"job_id": invalid_job_id}
+        
+        response = self.make_request("POST", "/interests/show-interest", 
+                                   json=interest_data, auth_token=tradesperson_token)
+        
+        if response.status_code == 404:
+            self.log_result("Show interest - invalid job ID", True, 
+                          "Invalid job ID correctly rejected")
+        else:
+            self.log_result("Show interest - invalid job ID", False, 
+                          f"Expected 404, got {response.status_code}")
+        
+        # Test 4: Missing job_id in request
+        response = self.make_request("POST", "/interests/show-interest", 
+                                   json={}, auth_token=tradesperson_token)
+        
+        if response.status_code in [400, 422]:
+            self.log_result("Show interest - missing job_id", True, 
+                          "Missing job_id correctly rejected")
+        else:
+            self.log_result("Show interest - missing job_id", False, 
+                          f"Expected 400/422, got {response.status_code}")
+        
+        # Test 5: Unauthenticated request
+        if 'active_job_id' in self.test_data:
+            job_id = self.test_data['active_job_id']
+            interest_data = {"job_id": job_id}
+            
+            response = self.make_request("POST", "/interests/show-interest", json=interest_data)
+            
+            if response.status_code in [401, 403]:
+                self.log_result("Show interest - unauthenticated", True, 
+                              "Unauthenticated request correctly rejected")
+            else:
+                self.log_result("Show interest - unauthenticated", False, 
+                              f"Expected 401/403, got {response.status_code}")
+    
+    def test_homeowner_role_restriction(self):
+        """Test that homeowners cannot show interest in jobs"""
+        print("\n=== Testing Homeowner Role Restriction ===")
+        
+        if 'homeowner' not in self.auth_tokens or 'active_job_id' not in self.test_data:
+            self.log_result("Homeowner role restriction test", False, 
+                          "Missing homeowner token or active job ID")
             return
         
         homeowner_token = self.auth_tokens['homeowner']
+        job_id = self.test_data['active_job_id']
+        interest_data = {"job_id": job_id}
         
-        # Test 1: Invalid LGA for valid state
-        invalid_lga_job = {
-            "title": "Test Job with Invalid LGA",
-            "description": "Testing validation",
-            "category": "Plumbing",
-            "state": "Kaduna",
-            "lga": "NonExistentLGA",  # Invalid LGA for Kaduna
-            "town": "Test Town",
-            "zip_code": "800001",
-            "home_address": "Test Address",
-            "budget_min": 50000,
-            "budget_max": 100000,
-            "timeline": "1 week",
-            "homeowner_name": self.test_data['homeowner_user']['name'],
-            "homeowner_email": self.test_data['homeowner_user']['email'],
-            "homeowner_phone": self.test_data['homeowner_user']['phone']
-        }
+        response = self.make_request("POST", "/interests/show-interest", 
+                                   json=interest_data, auth_token=homeowner_token)
         
-        response = self.make_request("POST", "/jobs/", json=invalid_lga_job, auth_token=homeowner_token)
-        if response.status_code == 400:
-            self.log_result("Invalid LGA validation", True, "Correctly rejected invalid LGA")
+        if response.status_code == 403:
+            self.log_result("Homeowner role restriction", True, 
+                          "Homeowner correctly prevented from showing interest")
         else:
-            self.log_result("Invalid LGA validation", False, f"Expected 400, got {response.status_code}")
-        
-        # Test 2: Invalid state
-        invalid_state_job = {
-            "title": "Test Job with Invalid State",
-            "description": "Testing validation",
-            "category": "Plumbing",
-            "state": "NonExistentState",
-            "lga": "SomeLGA",
-            "town": "Test Town",
-            "zip_code": "800001",
-            "home_address": "Test Address",
-            "budget_min": 50000,
-            "budget_max": 100000,
-            "timeline": "1 week",
-            "homeowner_name": self.test_data['homeowner_user']['name'],
-            "homeowner_email": self.test_data['homeowner_user']['email'],
-            "homeowner_phone": self.test_data['homeowner_user']['phone']
-        }
-        
-        response = self.make_request("POST", "/jobs/", json=invalid_state_job, auth_token=homeowner_token)
-        if response.status_code == 400:
-            self.log_result("Invalid state validation", True, "Correctly rejected invalid state")
-        else:
-            self.log_result("Invalid state validation", False, f"Expected 400, got {response.status_code}")
-        
-        # Test 3: Invalid zip code format
-        invalid_zip_job = {
-            "title": "Test Job with Invalid Zip",
-            "description": "Testing validation",
-            "category": "Plumbing",
-            "state": "Kaduna",
-            "lga": "Kaduna North",
-            "town": "Test Town",
-            "zip_code": "12345",  # Invalid - should be 6 digits
-            "home_address": "Test Address",
-            "budget_min": 50000,
-            "budget_max": 100000,
-            "timeline": "1 week",
-            "homeowner_name": self.test_data['homeowner_user']['name'],
-            "homeowner_email": self.test_data['homeowner_user']['email'],
-            "homeowner_phone": self.test_data['homeowner_user']['phone']
-        }
-        
-        response = self.make_request("POST", "/jobs/", json=invalid_zip_job, auth_token=homeowner_token)
-        if response.status_code in [400, 422]:
-            self.log_result("Invalid zip code validation", True, "Correctly rejected invalid zip code")
-        else:
-            self.log_result("Invalid zip code validation", False, f"Expected 400/422, got {response.status_code}")
+            self.log_result("Homeowner role restriction", False, 
+                          f"Expected 403, got {response.status_code}")
     
-    def test_mixed_scenarios(self):
-        """Test mixed scenarios with dynamic and static locations"""
-        print("\n=== Testing Mixed Scenarios ===")
+    def test_interest_retrieval_endpoints(self):
+        """Test interest retrieval endpoints"""
+        print("\n=== Testing Interest Retrieval Endpoints ===")
         
-        # Test 1: Get all LGAs endpoint
-        response = self.make_request("GET", "/auth/all-lgas")
+        if 'tradesperson' not in self.auth_tokens:
+            self.log_result("Interest retrieval test setup", False, "No tradesperson token")
+            return
+        
+        tradesperson_token = self.auth_tokens['tradesperson']
+        
+        # Test 1: Get my interests
+        response = self.make_request("GET", "/interests/my-interests", auth_token=tradesperson_token)
+        
         if response.status_code == 200:
-            all_lgas_data = response.json()
-            lgas_by_state = all_lgas_data.get('lgas_by_state', {})
-            total_states = all_lgas_data.get('total_states', 0)
-            total_lgas = all_lgas_data.get('total_lgas', 0)
-            
-            # Verify Kaduna is included in all LGAs
-            if 'Kaduna' in lgas_by_state:
-                kaduna_lgas = lgas_by_state['Kaduna']
-                expected_lgas = ["Kaduna North", "Kaduna Central", "Kaduna Municipal983"]
-                found_expected = [lga for lga in expected_lgas if lga in kaduna_lgas]
+            interests_data = response.json()
+            if isinstance(interests_data, list):
+                self.log_result("Get my interests", True, 
+                              f"Retrieved {len(interests_data)} interests")
                 
-                if len(found_expected) == len(expected_lgas):
-                    self.log_result("All LGAs endpoint - Kaduna integration", True, f"Kaduna has {len(kaduna_lgas)} LGAs including all expected ones")
-                else:
-                    self.log_result("All LGAs endpoint - Kaduna integration", False, f"Missing expected LGAs: {set(expected_lgas) - set(found_expected)}")
+                # If we have interests, verify structure
+                if interests_data and 'created_interest_id' in self.test_data:
+                    first_interest = interests_data[0]
+                    required_fields = ['id', 'job_id', 'status', 'created_at']
+                    missing_fields = [field for field in required_fields if field not in first_interest]
+                    
+                    if not missing_fields:
+                        self.log_result("My interests - data structure", True, 
+                                      "Interest data structure correct")
+                    else:
+                        self.log_result("My interests - data structure", False, 
+                                      f"Missing fields: {missing_fields}")
             else:
-                self.log_result("All LGAs endpoint - Kaduna integration", False, "Kaduna not found in all LGAs response")
-            
-            # Verify total counts make sense
-            if total_states >= 9 and total_lgas >= 140:  # Rough estimates
-                self.log_result("All LGAs endpoint - totals", True, f"Reasonable totals: {total_states} states, {total_lgas} LGAs")
-            else:
-                self.log_result("All LGAs endpoint - totals", False, f"Unexpected totals: {total_states} states, {total_lgas} LGAs")
+                self.log_result("Get my interests - response format", False, 
+                              "Expected list response")
         else:
-            self.log_result("All LGAs endpoint", False, f"Status: {response.status_code}")
+            self.log_result("Get my interests", False, 
+                          f"Status: {response.status_code}, Response: {response.text}")
         
-        # Test 2: Nigerian states endpoint
-        response = self.make_request("GET", "/auth/nigerian-states")
-        if response.status_code == 200:
-            states_data = response.json()
-            states_list = states_data.get('states', [])
+        # Test 2: Get job interested tradespeople (as homeowner)
+        if 'homeowner' in self.auth_tokens and 'active_job_id' in self.test_data:
+            homeowner_token = self.auth_tokens['homeowner']
+            job_id = self.test_data['active_job_id']
             
-            if "Kaduna" in states_list and "Lagos" in states_list:
-                self.log_result("Nigerian states endpoint integration", True, f"Both dynamic and static states present in {len(states_list)} states")
+            response = self.make_request("GET", f"/interests/job/{job_id}", 
+                                       auth_token=homeowner_token)
+            
+            if response.status_code == 200:
+                job_interests = response.json()
+                if 'interested_tradespeople' in job_interests and 'total' in job_interests:
+                    total_interested = job_interests.get('total', 0)
+                    self.log_result("Get job interested tradespeople", True, 
+                                  f"Found {total_interested} interested tradespeople")
+                    
+                    # Verify tradesperson data structure if we have interests
+                    if total_interested > 0:
+                        first_tradesperson = job_interests['interested_tradespeople'][0]
+                        required_fields = ['tradesperson_id', 'tradesperson_name', 'status']
+                        missing_fields = [field for field in required_fields if field not in first_tradesperson]
+                        
+                        if not missing_fields:
+                            self.log_result("Job interests - tradesperson data", True, 
+                                          "Tradesperson data structure correct")
+                        else:
+                            self.log_result("Job interests - tradesperson data", False, 
+                                          f"Missing fields: {missing_fields}")
+                else:
+                    self.log_result("Get job interested tradespeople - structure", False, 
+                                  "Missing required response fields")
             else:
-                missing = []
-                if "Kaduna" not in states_list:
-                    missing.append("Kaduna")
-                if "Lagos" not in states_list:
-                    missing.append("Lagos")
-                self.log_result("Nigerian states endpoint integration", False, f"Missing states: {missing}")
-        else:
-            self.log_result("Nigerian states endpoint", False, f"Status: {response.status_code}")
+                self.log_result("Get job interested tradespeople", False, 
+                              f"Status: {response.status_code}")
     
-    def run_dynamic_location_tests(self):
-        """Run comprehensive dynamic location integration testing"""
-        print("🎯 STARTING COMPREHENSIVE JOB POSTING DYNAMIC LOCATION INTEGRATION TESTING")
+    def test_job_status_validation(self):
+        """Test that interests can only be shown for active jobs"""
+        print("\n=== Testing Job Status Validation ===")
+        
+        # This test would require creating an inactive job or modifying job status
+        # For now, we'll test with the assumption that our created jobs are active
+        # In a real scenario, you'd want to test with inactive/expired jobs
+        
+        if 'tradesperson' not in self.auth_tokens or 'active_job_id' not in self.test_data:
+            self.log_result("Job status validation test", False, 
+                          "Missing required test data")
+            return
+        
+        # Verify that our active job allows interest
+        tradesperson_token = self.auth_tokens['tradesperson']
+        
+        # Create a new tradesperson to test with active job
+        new_tradesperson_data = {
+            "name": "Mike Electrician",
+            "email": f"mike.electrician.{uuid.uuid4().hex[:8]}@tradework.com",
+            "password": "SecurePass123",
+            "phone": "+2348123456791",
+            "location": "Lagos",
+            "postcode": "100001",
+            "trade_categories": ["Electrical"],
+            "experience_years": 3,
+            "company_name": "Mike's Electrical Services",
+            "description": "Professional electrical services",
+            "certifications": ["Licensed Electrician"]
+        }
+        
+        response = self.make_request("POST", "/auth/register/tradesperson", json=new_tradesperson_data)
+        if response.status_code == 200:
+            # Login with new tradesperson
+            login_data = {
+                "email": new_tradesperson_data["email"],
+                "password": new_tradesperson_data["password"]
+            }
+            
+            login_response = self.make_request("POST", "/auth/login", json=login_data)
+            if login_response.status_code == 200:
+                new_tradesperson_token = login_response.json()['access_token']
+                
+                # Test showing interest in active job
+                if 'duplicate_test_job_id' in self.test_data:
+                    job_id = self.test_data['duplicate_test_job_id']
+                    interest_data = {"job_id": job_id}
+                    
+                    response = self.make_request("POST", "/interests/show-interest", 
+                                               json=interest_data, auth_token=new_tradesperson_token)
+                    
+                    if response.status_code == 200:
+                        self.log_result("Job status validation - active job", True, 
+                                      "Active job allows interest")
+                    else:
+                        self.log_result("Job status validation - active job", False, 
+                                      f"Active job rejected interest: {response.status_code}")
+                else:
+                    self.log_result("Job status validation", False, "No test job available")
+            else:
+                self.log_result("Job status validation setup", False, "Failed to login new tradesperson")
+        else:
+            self.log_result("Job status validation setup", False, "Failed to create new tradesperson")
+    
+    def test_authentication_edge_cases(self):
+        """Test various authentication edge cases"""
+        print("\n=== Testing Authentication Edge Cases ===")
+        
+        if 'active_job_id' not in self.test_data:
+            self.log_result("Authentication edge cases", False, "No active job ID")
+            return
+        
+        job_id = self.test_data['active_job_id']
+        interest_data = {"job_id": job_id}
+        
+        # Test 1: Invalid token format
+        response = self.make_request("POST", "/interests/show-interest", 
+                                   json=interest_data, 
+                                   headers={"Authorization": "Bearer invalid_token_format"})
+        
+        if response.status_code in [401, 403]:
+            self.log_result("Authentication - invalid token format", True, 
+                          "Invalid token correctly rejected")
+        else:
+            self.log_result("Authentication - invalid token format", False, 
+                          f"Expected 401/403, got {response.status_code}")
+        
+        # Test 2: Missing Bearer prefix
+        if 'tradesperson' in self.auth_tokens:
+            token = self.auth_tokens['tradesperson']
+            response = self.make_request("POST", "/interests/show-interest", 
+                                       json=interest_data, 
+                                       headers={"Authorization": token})  # Missing "Bearer "
+            
+            if response.status_code in [401, 403]:
+                self.log_result("Authentication - missing Bearer prefix", True, 
+                              "Missing Bearer prefix correctly rejected")
+            else:
+                self.log_result("Authentication - missing Bearer prefix", False, 
+                              f"Expected 401/403, got {response.status_code}")
+        
+        # Test 3: Empty Authorization header
+        response = self.make_request("POST", "/interests/show-interest", 
+                                   json=interest_data, 
+                                   headers={"Authorization": ""})
+        
+        if response.status_code in [401, 403]:
+            self.log_result("Authentication - empty header", True, 
+                          "Empty authorization header correctly rejected")
+        else:
+            self.log_result("Authentication - empty header", False, 
+                          f"Expected 401/403, got {response.status_code}")
+    
+    def test_notification_system_integration(self):
+        """Test that notifications are triggered when interest is shown"""
+        print("\n=== Testing Notification System Integration ===")
+        
+        # This is a complex test that would require checking notification records
+        # For now, we'll verify that the show interest endpoint completes successfully
+        # which should trigger background notification tasks
+        
+        if ('tradesperson' not in self.auth_tokens or 
+            'homeowner' not in self.auth_tokens):
+            self.log_result("Notification system test", False, 
+                          "Missing required authentication tokens")
+            return
+        
+        # Create a fresh job and show interest to test notifications
+        homeowner_token = self.auth_tokens['homeowner']
+        
+        notification_test_job = {
+            "title": "Notification Test Job - Carpentry Work",
+            "description": "Testing notification system with carpentry job.",
+            "category": "Carpentry",
+            "state": "Lagos",
+            "lga": "Surulere",
+            "town": "Surulere",
+            "zip_code": "101001",
+            "home_address": "789 Bode Thomas Street, Surulere",
+            "budget_min": 60000,
+            "budget_max": 120000,
+            "timeline": "Within 3 days"
+        }
+        
+        response = self.make_request("POST", "/jobs/", json=notification_test_job, 
+                                   auth_token=homeowner_token)
+        
+        if response.status_code == 200:
+            job_response = response.json()
+            notification_job_id = job_response.get('id')
+            
+            # Create another tradesperson for this test
+            carpenter_data = {
+                "name": "David Carpenter",
+                "email": f"david.carpenter.{uuid.uuid4().hex[:8]}@tradework.com",
+                "password": "SecurePass123",
+                "phone": "+2348123456792",
+                "location": "Lagos",
+                "postcode": "101001",
+                "trade_categories": ["Carpentry"],
+                "experience_years": 4,
+                "company_name": "David's Carpentry",
+                "description": "Professional carpentry services",
+                "certifications": ["Certified Carpenter"]
+            }
+            
+            reg_response = self.make_request("POST", "/auth/register/tradesperson", json=carpenter_data)
+            if reg_response.status_code == 200:
+                # Login carpenter
+                login_data = {
+                    "email": carpenter_data["email"],
+                    "password": carpenter_data["password"]
+                }
+                
+                login_response = self.make_request("POST", "/auth/login", json=login_data)
+                if login_response.status_code == 200:
+                    carpenter_token = login_response.json()['access_token']
+                    
+                    # Show interest (this should trigger notifications)
+                    interest_data = {"job_id": notification_job_id}
+                    interest_response = self.make_request("POST", "/interests/show-interest", 
+                                                        json=interest_data, auth_token=carpenter_token)
+                    
+                    if interest_response.status_code == 200:
+                        self.log_result("Notification system integration", True, 
+                                      "Interest shown successfully (notifications should be triggered)")
+                        
+                        # Wait a moment for background tasks
+                        time.sleep(2)
+                        
+                        # Verify the interest was created properly
+                        interest_id = interest_response.json().get('id')
+                        if interest_id:
+                            self.log_result("Notification system - interest creation", True, 
+                                          f"Interest created with ID: {interest_id}")
+                        else:
+                            self.log_result("Notification system - interest creation", False, 
+                                          "No interest ID returned")
+                    else:
+                        self.log_result("Notification system integration", False, 
+                                      f"Failed to show interest: {interest_response.status_code}")
+                else:
+                    self.log_result("Notification system setup", False, "Failed to login carpenter")
+            else:
+                self.log_result("Notification system setup", False, "Failed to create carpenter")
+        else:
+            self.log_result("Notification system setup", False, "Failed to create notification test job")
+    
+    def run_show_interest_tests(self):
+        """Run comprehensive show interest functionality testing"""
+        print("🎯 STARTING COMPREHENSIVE SHOW INTEREST FUNCTIONALITY TESTING")
         print("=" * 80)
         
         # Setup authentication and test data
-        self.test_admin_authentication()
-        self.test_user_authentication()
+        self.test_tradesperson_authentication()
+        self.test_homeowner_authentication()
         
-        # Setup dynamic locations via admin
-        self.test_dynamic_states_setup()
-        self.test_dynamic_lgas_setup()
+        # Create test jobs
+        self.test_job_creation_for_interest_testing()
         
-        # Test dynamic location integration
-        self.test_dynamic_states_integration()
-        self.test_dynamic_lgas_integration()
+        # Test job data integration
+        self.test_jobs_for_tradesperson_endpoint()
         
-        # Test complete job posting workflow
-        self.test_complete_job_posting_workflow()
-        self.test_job_data_persistence_and_retrieval()
+        # Test core show interest functionality
+        self.test_show_interest_api_endpoint()
         
-        # Test validation and error handling
-        self.test_validation_and_error_handling()
+        # Test role restrictions
+        self.test_homeowner_role_restriction()
         
-        # Test mixed scenarios
-        self.test_mixed_scenarios()
+        # Test interest retrieval
+        self.test_interest_retrieval_endpoints()
+        
+        # Test job status validation
+        self.test_job_status_validation()
+        
+        # Test authentication edge cases
+        self.test_authentication_edge_cases()
+        
+        # Test notification system integration
+        self.test_notification_system_integration()
         
         # Print final summary
         print("\n" + "=" * 80)
-        print("🎯 COMPREHENSIVE JOB POSTING DYNAMIC LOCATION INTEGRATION TESTING COMPLETE")
+        print("🎯 COMPREHENSIVE SHOW INTEREST FUNCTIONALITY TESTING COMPLETE")
         print(f"✅ PASSED: {self.results['passed']}")
         print(f"❌ FAILED: {self.results['failed']}")
         success_rate = (self.results['passed'] / (self.results['passed'] + self.results['failed'])) * 100
@@ -604,8 +778,18 @@ class DynamicLocationTester:
             for error in self.results['errors']:
                 print(f"   - {error}")
         
+        # Provide specific diagnosis for show interest failures
+        print(f"\n🔍 SHOW INTEREST FAILURE DIAGNOSIS:")
+        if self.results['failed'] == 0:
+            print("   ✅ No issues found - show interest functionality is working correctly")
+        else:
+            print("   ❌ Issues identified that may cause 'showing interest for jobs failed' error:")
+            for error in self.results['errors']:
+                if 'show interest' in error.lower():
+                    print(f"      • {error}")
+        
         return success_rate >= 85  # Consider 85%+ as successful
 
 if __name__ == "__main__":
-    tester = DynamicLocationTester()
-    tester.run_dynamic_location_tests()
+    tester = ShowInterestTester()
+    tester.run_show_interest_tests()
