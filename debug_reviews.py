@@ -4,6 +4,10 @@ import sys
 import os
 sys.path.append('/app/backend')
 
+# Set environment variables
+os.environ['MONGO_URL'] = 'mongodb://localhost:27017/servicehub'
+os.environ['DB_NAME'] = 'test_database'
+
 from database import Database
 from models import Review
 
