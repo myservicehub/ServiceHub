@@ -23,7 +23,7 @@ import {
   X,
   RotateCcw,
   AlertCircle
-} from 'luciele-react';
+} from 'lucide-react';
 import { jobsAPI, interestsAPI } from '../api/services';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
