@@ -251,6 +251,16 @@ const MyInterestsPage = () => {
 
   const handleStartChatAfterPayment = async (interest) => {
     try {
+      // Verify the interest status is now paid_access
+      if (interest.status !== 'paid') {
+        toast({
+          title: "Payment Required",
+          description: "Please complete payment before starting chat.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Load contact details for the paid interest
       const contactDetails = await interestsAPI.getContactDetails(interest.job_id);
       
@@ -272,8 +282,21 @@ const MyInterestsPage = () => {
       setShowChatModal(true);
     } catch (error) {
       console.error('Failed to load contact details for chat:', error);
-      // Fall back to regular chat without contact details
-      handleStartChat(interest);
+      
+      // Handle specific errors
+      if (error.response?.status === 403) {
+        toast({
+          title: "Access Required",
+          description: "Please complete payment before accessing contact details.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to load contact details. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
