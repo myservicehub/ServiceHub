@@ -200,6 +200,11 @@ const InterestedTradespeopleePage = () => {
   };
 
   const handleStartChat = async (tradesperson) => {
+    console.log('=== HOMEOWNER START CHAT DEBUG ===');
+    console.log('handleStartChat called with tradesperson:', tradesperson);
+    console.log('User data:', user);
+    console.log('Job data:', job);
+    
     try {
       // For homeowners, we can also show our own contact details in the chat
       const homeownerContactDetails = {
@@ -207,8 +212,10 @@ const InterestedTradespeopleePage = () => {
         homeowner_email: user?.email,
         homeowner_phone: user?.phone
       };
+      
+      console.log('✅ Homeowner contact details prepared:', homeownerContactDetails);
 
-      setSelectedTradespersonForChat({
+      const chatData = {
         id: tradesperson.tradesperson_id,
         name: tradesperson.tradesperson_name,
         type: 'tradesperson',
@@ -217,19 +224,34 @@ const InterestedTradespeopleePage = () => {
         location: tradesperson.location,
         contactDetails: homeownerContactDetails,
         showContactDetails: true // Show homeowner's own details in chat
-      });
+      };
+      
+      console.log('✅ Chat data prepared:', chatData);
+      console.log('✅ Setting selected tradesperson for chat...');
+      
+      setSelectedTradespersonForChat(chatData);
+      
+      console.log('✅ Setting show chat modal to true...');
       setShowChatModal(true);
+      
+      console.log('✅ Homeowner chat setup complete');
+      
     } catch (error) {
-      console.error('Failed to prepare chat:', error);
+      console.error('❌ Failed to prepare chat:', error);
+      
       // Fall back to regular chat
-      setSelectedTradespersonForChat({
+      const fallbackChatData = {
         id: tradesperson.tradesperson_id,
         name: tradesperson.tradesperson_name,
         type: 'tradesperson',
         email: tradesperson.email,
         phone: tradesperson.phone,
         location: tradesperson.location
-      });
+      };
+      
+      console.log('⚠️ Using fallback chat data:', fallbackChatData);
+      
+      setSelectedTradespersonForChat(fallbackChatData);
       setShowChatModal(true);
     }
   };
