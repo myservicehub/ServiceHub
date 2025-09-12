@@ -1344,7 +1344,8 @@ class BackendAPITester:
         print("\n=== 🎯 TEST 6: Authentication & Authorization ===")
         
         if 'conversation_id' not in self.test_data:
-            self.log_result("Messaging auth setup", False, "No conversation available for testing")
+            # Test authentication and authorization without conversation
+            self.test_messaging_auth_without_conversation()
             return
         
         homeowner_token = self.auth_tokens['homeowner']
