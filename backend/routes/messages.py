@@ -244,10 +244,18 @@ async def get_or_create_conversation_for_job(
         if conversation:
             return {"conversation_id": conversation["id"], "exists": True}
         
-        # Verify user can create this conversation
+        # Verify user can create this conversation and has proper access
         if current_user.role == "homeowner":
             if homeowner_id != current_user.id:
                 raise HTTPException(status_code=403, detail="You can only create conversations for your own jobs")
+            
+            # CRITICAL FIX: Homeowners can only create conversations with tradespeople who have paid access
+            interest = await database.get_interest_by_job_and_tradesperson(job_id, tradesperson_id)
+            if not interest:
+                raise HTTPException(status_code=403, detail="Tradesperson has not shown interest in this job")
+            if interest.get("status") != "paid_access":
+                raise HTTPException(status_code=403, detail="Tradesperson must pay for access before conversation can be started")
+                
         elif current_user.role == "tradesperson":
             if tradesperson_id != current_user.id:
                 raise HTTPException(status_code=403, detail="You can only create conversations for yourself")
@@ -256,10 +264,17 @@ async def get_or_create_conversation_for_job(
             interest = await database.get_interest_by_job_and_tradesperson(job_id, current_user.id)
             if not interest or interest.get("status") != "paid_access":
                 raise HTTPException(status_code=403, detail="You must pay for access before starting a conversation")
+        else:
+            raise HTTPException(status_code=403, detail="Invalid account type")
         
-        # Get user details
+        # CRITICAL FIX: Validate that both users exist before creating conversation
         homeowner = await database.get_user_by_id(homeowner_id)
         tradesperson = await database.get_user_by_id(tradesperson_id)
+        
+        if not homeowner:
+            raise HTTPException(status_code=404, detail="Homeowner not found")
+        if not tradesperson:
+            raise HTTPException(status_code=404, detail="Tradesperson not found")
         
         # Create new conversation
         conversation_data = {
