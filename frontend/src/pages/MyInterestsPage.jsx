@@ -257,6 +257,8 @@ const MyInterestsPage = () => {
     }
     setLoading(false);
   };
+
+  const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-NG', {
       year: 'numeric',
       month: 'short',
