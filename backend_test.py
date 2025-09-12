@@ -965,9 +965,14 @@ class BackendAPITester:
 
 if __name__ == "__main__":
     tester = BackendAPITester()
-    success = tester.run_comprehensive_messaging_tests()
+    success = tester.run_critical_messaging_access_control_tests()
     
     if success:
-        print("\n🎉 MESSAGING SYSTEM TESTING COMPLETE: All functionality operational!")
+        print("\n🎉 CRITICAL ACCESS CONTROL TESTING COMPLETE: All critical bugs fixed!")
+        print("✅ Messaging system properly secured with paid_access requirement")
+        print("✅ Homeowner bypass prevention working correctly")
+        print("✅ User validation returning proper error codes")
+        print("✅ Consistent access control enforced for all users")
     else:
-        print("\n⚠️  MESSAGING SYSTEM TESTING COMPLETE: Issues found - review above")
+        print("\n⚠️  CRITICAL ACCESS CONTROL TESTING COMPLETE: Issues found - review above")
+        print("🔧 Immediate action required to fix critical security bugs")
