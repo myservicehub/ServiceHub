@@ -889,34 +889,6 @@ const InterestedTradespeopleePage = () => {
         </div>
       )}
 
-      {/* Debug: Simple Modal Test */}
-      {showChatModal && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-          style={{ zIndex: 9999 }}
-        >
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h2 className="text-xl font-bold mb-4">Chat Modal Test</h2>
-            <p className="mb-4">If you can see this, the modal state is working!</p>
-            <div className="space-y-2">
-              <p className="text-sm">showChatModal: {showChatModal ? 'true' : 'false'}</p>
-              <p className="text-sm">selectedTradesperson: {selectedTradespersonForChat ? 'exists' : 'null'}</p>
-              <p className="text-sm">job: {job ? 'exists' : 'null'}</p>
-              <p className="text-sm">jobId: {jobId || 'null'}</p>
-            </div>
-            <button 
-              onClick={() => {
-                setShowChatModal(false);
-                setSelectedTradespersonForChat(null);
-              }}
-              className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Chat Modal - Fixed to work without full job object */}
       {showChatModal && selectedTradespersonForChat && jobId && (
         <>
