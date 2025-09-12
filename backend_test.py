@@ -406,15 +406,49 @@ class BackendAPITester:
             if share_response.status_code == 200:
                 self.log_result("Messaging setup - Contact sharing", True, "Contact shared successfully")
                 
+                # Try to fund wallet first for testing
+                self.fund_wallet_for_testing(tradesperson_token)
+                
                 # Simulate payment to get paid_access status
                 pay_response = self.make_request("POST", f"/interests/pay-access/{interest_response['id']}", auth_token=tradesperson_token)
                 if pay_response.status_code == 200:
                     self.log_result("Messaging setup - Payment simulation", True, "Payment completed - paid_access status achieved")
                     self.test_data['has_paid_access'] = True
+                    
+                    # Now try to create conversation for testing
+                    tradesperson_id = self.test_data['tradesperson_user']['id']
+                    conv_response = self.make_request("GET", f"/messages/conversations/job/{test_job_id}?tradesperson_id={tradesperson_id}", 
+                                                    auth_token=homeowner_token)
+                    
+                    if conv_response.status_code == 200:
+                        conv_data = conv_response.json()
+                        if 'conversation_id' in conv_data:
+                            self.test_data['conversation_id'] = conv_data['conversation_id']
+                            self.log_result("Messaging setup - Conversation creation", True, 
+                                          f"Conversation created for testing: {conv_data['conversation_id']}")
+                        else:
+                            self.log_result("Messaging setup - Conversation creation", False, 
+                                          "Missing conversation_id in response")
+                    else:
+                        self.log_result("Messaging setup - Conversation creation", False, 
+                                      f"Failed to create conversation: {conv_response.status_code}")
+                        
                 elif pay_response.status_code == 400:
                     # Insufficient balance is expected for new users
                     self.log_result("Messaging setup - Payment simulation", True, "Payment failed due to insufficient balance (expected)")
                     self.test_data['has_paid_access'] = False
+                    
+                    # For testing purposes, let's try to create a conversation anyway to test access control
+                    tradesperson_id = self.test_data['tradesperson_user']['id']
+                    conv_response = self.make_request("GET", f"/messages/conversations/job/{test_job_id}?tradesperson_id={tradesperson_id}", 
+                                                    auth_token=homeowner_token)
+                    
+                    if conv_response.status_code == 403:
+                        self.log_result("Messaging setup - Access control verification", True, 
+                                      "✅ Conversation creation correctly blocked without payment")
+                    else:
+                        self.log_result("Messaging setup - Access control verification", False, 
+                                      f"❌ Unexpected response: {conv_response.status_code}")
                 else:
                     self.log_result("Messaging setup - Payment simulation", False, f"Unexpected payment response: {pay_response.status_code}")
                     self.test_data['has_paid_access'] = False
@@ -422,6 +456,71 @@ class BackendAPITester:
                 self.log_result("Messaging setup - Contact sharing", False, f"Failed to share contact: {share_response.status_code}")
         else:
             self.log_result("Messaging setup - Interest creation", False, f"Failed to create interest: {response.status_code}")
+    
+    def create_test_conversation_for_messaging_tests(self):
+        """Create a test conversation by simulating the complete workflow"""
+        print("\n=== Creating Test Conversation for Messaging Tests ===")
+        
+        if 'messaging_job_id' not in self.test_data:
+            self.log_result("Test conversation creation", False, "No test job available")
+            return False
+        
+        homeowner_token = self.auth_tokens['homeowner']
+        tradesperson_token = self.auth_tokens['tradesperson']
+        job_id = self.test_data['messaging_job_id']
+        tradesperson_id = self.test_data['tradesperson_user']['id']
+        
+        # Check if we already have a conversation
+        if 'conversation_id' in self.test_data:
+            self.log_result("Test conversation creation", True, f"Using existing conversation: {self.test_data['conversation_id']}")
+            return True
+        
+        # Try to create conversation (this will work if tradesperson has paid_access)
+        response = self.make_request("GET", f"/messages/conversations/job/{job_id}?tradesperson_id={tradesperson_id}", 
+                                   auth_token=homeowner_token)
+        
+        if response.status_code == 200:
+            conv_data = response.json()
+            if 'conversation_id' in conv_data:
+                self.test_data['conversation_id'] = conv_data['conversation_id']
+                self.log_result("Test conversation creation", True, f"Conversation created: {conv_data['conversation_id']}")
+                return True
+        
+        # If conversation creation failed, let's try to simulate payment workflow
+        if 'messaging_interest_id' in self.test_data:
+            interest_id = self.test_data['messaging_interest_id']
+            
+            # Try to manually update interest status for testing (this is a test hack)
+            # In a real scenario, we would need proper wallet funding
+            print("Attempting to simulate paid_access status for testing...")
+            
+            # Check current wallet balance
+            wallet_response = self.make_request("GET", "/wallet/balance", auth_token=tradesperson_token)
+            if wallet_response.status_code == 200:
+                wallet_data = wallet_response.json()
+                current_balance = wallet_data.get('balance_coins', 0)
+                
+                if current_balance >= 15:  # Minimum required for payment
+                    # Try payment again
+                    pay_response = self.make_request("POST", f"/interests/pay-access/{interest_id}", 
+                                                   auth_token=tradesperson_token)
+                    
+                    if pay_response.status_code == 200:
+                        self.log_result("Test conversation creation - Payment retry", True, "Payment successful")
+                        
+                        # Try conversation creation again
+                        response = self.make_request("GET", f"/messages/conversations/job/{job_id}?tradesperson_id={tradesperson_id}", 
+                                                   auth_token=homeowner_token)
+                        
+                        if response.status_code == 200:
+                            conv_data = response.json()
+                            if 'conversation_id' in conv_data:
+                                self.test_data['conversation_id'] = conv_data['conversation_id']
+                                self.log_result("Test conversation creation", True, f"Conversation created after payment: {conv_data['conversation_id']}")
+                                return True
+        
+        self.log_result("Test conversation creation", False, "Unable to create test conversation - payment workflow incomplete")
+        return False
 
     def test_critical_homeowner_access_control_fix(self):
         """CRITICAL TEST: Verify homeowner access control fix - cannot create conversations without paid_access"""
