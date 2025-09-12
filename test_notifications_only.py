@@ -7,7 +7,7 @@ import requests
 import json
 import uuid
 
-BACKEND_URL = "https://servicehub-connect-1.preview.emergentagent.com/api"
+BACKEND_URL = "https://servicepatch.preview.emergentagent.com/api"
 
 def test_notifications():
     print("🚀 Testing Phase 4: Mock Notifications System")

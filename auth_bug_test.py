@@ -21,7 +21,7 @@ import uuid
 import time
 
 # Get backend URL from environment
-BACKEND_URL = "https://servicehub-connect-1.preview.emergentagent.com/api"
+BACKEND_URL = "https://servicepatch.preview.emergentagent.com/api"
 
 class AuthenticationBugTester:
     def __init__(self):
