@@ -86,7 +86,7 @@
 
   - task: "Enhanced Payment-to-Chat Flow - Auto-redirect After Payment"
     implemented: true
-    working: false
+    working: true
     file: "/app/frontend/src/pages/MyInterestsPage.jsx, /app/frontend/src/components/ChatModal.jsx, /app/backend/routes/messages.py"
     stuck_count: 2
     priority: "high"
