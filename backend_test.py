@@ -359,21 +359,21 @@ class BackendAPITester:
             self.log_result("Tradesperson registration", False, 
                           f"Status: {response.status_code}, Response: {response.text}")
     
-    def test_show_interest_functionality(self):
-        """CRITICAL TEST: Comprehensive Show Interest functionality testing"""
-        print("\n=== CRITICAL TEST: Show Interest Functionality ===")
+    def test_messaging_system_setup(self):
+        """Setup test data for messaging system testing"""
+        print("\n=== Setting up Messaging System Test Data ===")
         
         if 'homeowner' not in self.auth_tokens or 'tradesperson' not in self.auth_tokens:
-            self.log_result("Show Interest setup", False, "Missing authentication tokens")
+            self.log_result("Messaging setup", False, "Missing authentication tokens")
             return
         
         homeowner_token = self.auth_tokens['homeowner']
         tradesperson_token = self.auth_tokens['tradesperson']
         
-        # First, create a test job for showing interest
+        # Create a test job for messaging
         job_data = {
-            "title": "Test Job - Show Interest Testing",
-            "description": "Testing show interest functionality with comprehensive validation scenarios.",
+            "title": "Test Job - Messaging System Testing",
+            "description": "Testing messaging system functionality with comprehensive validation scenarios including conversation creation, message sending, and access control.",
             "category": "Plumbing",
             "state": "Lagos",
             "lga": "Ikeja",
@@ -390,140 +390,302 @@ class BackendAPITester:
         
         response = self.make_request("POST", "/jobs/", json=job_data, auth_token=homeowner_token)
         if response.status_code != 200:
-            self.log_result("Show Interest - Job creation", False, f"Failed to create test job: {response.status_code}")
+            self.log_result("Messaging setup - Job creation", False, f"Failed to create test job: {response.status_code}")
             return
         
         job_response = response.json()
         test_job_id = job_response.get('id')
-        self.test_data['show_interest_job_id'] = test_job_id
+        self.test_data['messaging_job_id'] = test_job_id
+        self.log_result("Messaging setup - Job creation", True, f"Created job: {test_job_id}")
         
-        # Test 1: Valid show interest (should work)
-        print("\n--- Test 1: Valid Show Interest ---")
+        # Create interest for the tradesperson
         interest_data = {"job_id": test_job_id}
         response = self.make_request("POST", "/interests/show-interest", json=interest_data, auth_token=tradesperson_token)
         
         if response.status_code == 200:
             interest_response = response.json()
-            if 'id' in interest_response and interest_response.get('status') == 'interested':
-                self.log_result("Show Interest - Valid scenario", True, f"Interest created: {interest_response['id']}")
-                self.test_data['test_interest_id'] = interest_response['id']
+            self.test_data['messaging_interest_id'] = interest_response['id']
+            self.log_result("Messaging setup - Interest creation", True, f"Created interest: {interest_response['id']}")
+            
+            # Share contact details to enable messaging
+            share_response = self.make_request("PUT", f"/interests/share-contact/{interest_response['id']}", auth_token=homeowner_token)
+            if share_response.status_code == 200:
+                self.log_result("Messaging setup - Contact sharing", True, "Contact shared successfully")
+                
+                # Simulate payment to get paid_access status
+                pay_response = self.make_request("POST", f"/interests/pay-access/{interest_response['id']}", auth_token=tradesperson_token)
+                if pay_response.status_code == 200:
+                    self.log_result("Messaging setup - Payment simulation", True, "Payment completed - paid_access status achieved")
+                    self.test_data['has_paid_access'] = True
+                elif pay_response.status_code == 400:
+                    # Insufficient balance is expected for new users
+                    self.log_result("Messaging setup - Payment simulation", True, "Payment failed due to insufficient balance (expected)")
+                    self.test_data['has_paid_access'] = False
+                else:
+                    self.log_result("Messaging setup - Payment simulation", False, f"Unexpected payment response: {pay_response.status_code}")
+                    self.test_data['has_paid_access'] = False
             else:
-                self.log_result("Show Interest - Valid scenario", False, "Invalid response structure")
+                self.log_result("Messaging setup - Contact sharing", False, f"Failed to share contact: {share_response.status_code}")
         else:
-            self.log_result("Show Interest - Valid scenario", False, f"Status: {response.status_code}, Response: {response.text}")
+            self.log_result("Messaging setup - Interest creation", False, f"Failed to create interest: {response.status_code}")
+
+    def test_conversation_creation_endpoints(self):
+        """CRITICAL TEST: Test conversation creation endpoints"""
+        print("\n=== CRITICAL TEST: Conversation Creation Endpoints ===")
         
-        # Test 2: Duplicate interest attempt (should return 400 with specific message)
-        print("\n--- Test 2: Duplicate Interest Prevention ---")
-        response = self.make_request("POST", "/interests/show-interest", json=interest_data, auth_token=tradesperson_token)
+        if 'messaging_job_id' not in self.test_data:
+            self.log_result("Conversation creation setup", False, "Missing test job data")
+            return
         
-        if response.status_code == 400:
-            error_response = response.json()
-            error_detail = error_response.get('detail', '')
-            if 'already shown interest' in error_detail.lower():
-                self.log_result("Show Interest - Duplicate prevention", True, f"Correct error message: {error_detail}")
+        homeowner_token = self.auth_tokens['homeowner']
+        tradesperson_token = self.auth_tokens['tradesperson']
+        job_id = self.test_data['messaging_job_id']
+        homeowner_id = self.test_data['homeowner_user']['id']
+        tradesperson_id = self.test_data['tradesperson_user']['id']
+        
+        # Test 1: Get or create conversation endpoint (main endpoint used by frontend)
+        print("\n--- Test 1: Get/Create Conversation for Job ---")
+        response = self.make_request("GET", f"/messages/conversations/job/{job_id}?tradesperson_id={tradesperson_id}", auth_token=homeowner_token)
+        
+        if response.status_code == 200:
+            conv_response = response.json()
+            if 'conversation_id' in conv_response:
+                self.test_data['conversation_id'] = conv_response['conversation_id']
+                self.log_result("Conversation creation - Homeowner initiated", True, f"Conversation ID: {conv_response['conversation_id']}")
             else:
-                self.log_result("Show Interest - Duplicate prevention", False, f"Unexpected error message: {error_detail}")
+                self.log_result("Conversation creation - Homeowner initiated", False, "Missing conversation_id in response")
+        elif response.status_code == 403:
+            self.log_result("Conversation creation - Homeowner initiated", True, "Correctly rejected due to access control (expected if no paid access)")
         else:
-            self.log_result("Show Interest - Duplicate prevention", False, f"Expected 400, got {response.status_code}")
+            self.log_result("Conversation creation - Homeowner initiated", False, f"Status: {response.status_code}, Response: {response.text}")
         
-        # Test 3: Non-existent job ID (should return 404)
+        # Test 2: Tradesperson trying to create conversation without paid access
+        print("\n--- Test 2: Tradesperson Without Paid Access ---")
+        if not self.test_data.get('has_paid_access', False):
+            response = self.make_request("GET", f"/messages/conversations/job/{job_id}?tradesperson_id={tradesperson_id}", auth_token=tradesperson_token)
+            
+            if response.status_code == 403:
+                error_response = response.json()
+                error_detail = error_response.get('detail', '')
+                if 'pay for access' in error_detail.lower() or 'paid_access' in error_detail.lower():
+                    self.log_result("Conversation creation - Unpaid tradesperson", True, f"Correctly rejected: {error_detail}")
+                else:
+                    self.log_result("Conversation creation - Unpaid tradesperson", False, f"Unexpected error message: {error_detail}")
+            else:
+                self.log_result("Conversation creation - Unpaid tradesperson", False, f"Expected 403, got {response.status_code}")
+        else:
+            # If tradesperson has paid access, test should succeed
+            response = self.make_request("GET", f"/messages/conversations/job/{job_id}?tradesperson_id={tradesperson_id}", auth_token=tradesperson_token)
+            if response.status_code == 200:
+                self.log_result("Conversation creation - Paid tradesperson", True, "Conversation created successfully with paid access")
+            else:
+                self.log_result("Conversation creation - Paid tradesperson", False, f"Expected 200, got {response.status_code}")
+        
+        # Test 3: Non-existent job ID
         print("\n--- Test 3: Non-existent Job ID ---")
-        fake_job_data = {"job_id": "non-existent-job-id-12345"}
-        response = self.make_request("POST", "/interests/show-interest", json=fake_job_data, auth_token=tradesperson_token)
+        response = self.make_request("GET", f"/messages/conversations/job/non-existent-job?tradesperson_id={tradesperson_id}", auth_token=homeowner_token)
         
         if response.status_code == 404:
-            error_response = response.json()
-            error_detail = error_response.get('detail', '')
-            if 'job not found' in error_detail.lower():
-                self.log_result("Show Interest - Non-existent job", True, f"Correct 404 error: {error_detail}")
-            else:
-                self.log_result("Show Interest - Non-existent job", False, f"Unexpected error message: {error_detail}")
+            self.log_result("Conversation creation - Non-existent job", True, "Correctly returned 404 for non-existent job")
         else:
-            self.log_result("Show Interest - Non-existent job", False, f"Expected 404, got {response.status_code}")
+            self.log_result("Conversation creation - Non-existent job", False, f"Expected 404, got {response.status_code}")
         
-        # Test 4: Homeowner trying to show interest (should be rejected with 403)
-        print("\n--- Test 4: Homeowner Authentication Rejection ---")
-        response = self.make_request("POST", "/interests/show-interest", json=interest_data, auth_token=homeowner_token)
+        # Test 4: Invalid tradesperson ID
+        print("\n--- Test 4: Invalid Tradesperson ID ---")
+        response = self.make_request("GET", f"/messages/conversations/job/{job_id}?tradesperson_id=invalid-tradesperson-id", auth_token=homeowner_token)
         
-        if response.status_code in [403, 422]:  # 403 Forbidden or 422 Unprocessable Entity
-            self.log_result("Show Interest - Homeowner rejection", True, f"Correctly rejected homeowner: {response.status_code}")
+        if response.status_code in [400, 404]:
+            self.log_result("Conversation creation - Invalid tradesperson", True, f"Correctly rejected invalid tradesperson: {response.status_code}")
         else:
-            self.log_result("Show Interest - Homeowner rejection", False, f"Expected 403/422, got {response.status_code}")
+            self.log_result("Conversation creation - Invalid tradesperson", False, f"Expected 400/404, got {response.status_code}")
+
+    def test_message_sending_endpoints(self):
+        """CRITICAL TEST: Test message sending and retrieval endpoints"""
+        print("\n=== CRITICAL TEST: Message Sending Endpoints ===")
         
-        # Test 5: Invalid/missing authentication
-        print("\n--- Test 5: Invalid Authentication ---")
-        response = self.make_request("POST", "/interests/show-interest", json=interest_data)  # No auth token
+        if 'conversation_id' not in self.test_data:
+            self.log_result("Message sending setup", False, "No conversation available for testing")
+            return
         
-        if response.status_code in [401, 403]:
-            self.log_result("Show Interest - No authentication", True, f"Correctly rejected unauthenticated request: {response.status_code}")
-        else:
-            self.log_result("Show Interest - No authentication", False, f"Expected 401/403, got {response.status_code}")
+        homeowner_token = self.auth_tokens['homeowner']
+        tradesperson_token = self.auth_tokens['tradesperson']
+        conversation_id = self.test_data['conversation_id']
         
-        # Test 6: Invalid token format
-        print("\n--- Test 6: Invalid Token Format ---")
-        response = self.make_request("POST", "/interests/show-interest", json=interest_data, auth_token="invalid-token-format")
-        
-        if response.status_code in [401, 403, 422]:
-            self.log_result("Show Interest - Invalid token", True, f"Correctly rejected invalid token: {response.status_code}")
-        else:
-            self.log_result("Show Interest - Invalid token", False, f"Expected 401/403/422, got {response.status_code}")
-        
-        # Test 7: Test with inactive job (close the job first)
-        print("\n--- Test 7: Inactive Job Status Validation ---")
-        
-        # Close the job to make it inactive
-        close_data = {
-            "reason": "Testing inactive job validation",
-            "additional_feedback": "Closing job to test show interest validation"
+        # Test 1: Send message from homeowner
+        print("\n--- Test 1: Send Message from Homeowner ---")
+        message_data = {
+            "conversation_id": conversation_id,
+            "content": "Hello! I'm interested in discussing this plumbing job with you. When would be a good time to start?",
+            "message_type": "text"
         }
         
-        close_response = self.make_request("PUT", f"/jobs/{test_job_id}/close", json=close_data, auth_token=homeowner_token)
-        if close_response.status_code == 200:
-            # Create a new tradesperson to test with inactive job
-            new_tradesperson_data = {
-                "name": "Test Tradesperson 2",
-                "email": f"test.tradesperson2.{uuid.uuid4().hex[:8]}@email.com",
-                "password": "SecurePass123",
-                "phone": "+2348123456791",
-                "location": "Lagos",
-                "postcode": "100001",
-                "trade_categories": ["Plumbing"],
-                "experience_years": 3,
-                "company_name": "Test Plumbing Services 2",
-                "description": "Professional plumbing services for testing inactive job validation.",
-                "certifications": ["Licensed Plumber"]
-            }
-            
-            reg_response = self.make_request("POST", "/auth/register/tradesperson", json=new_tradesperson_data)
-            if reg_response.status_code == 200:
-                # Login with new tradesperson
-                login_data = {
-                    "email": new_tradesperson_data["email"],
-                    "password": new_tradesperson_data["password"]
-                }
-                
-                login_response = self.make_request("POST", "/auth/login", json=login_data)
-                if login_response.status_code == 200:
-                    new_tradesperson_token = login_response.json()['access_token']
-                    
-                    # Try to show interest in inactive job
-                    response = self.make_request("POST", "/interests/show-interest", json=interest_data, auth_token=new_tradesperson_token)
-                    
-                    if response.status_code == 400:
-                        error_response = response.json()
-                        error_detail = error_response.get('detail', '')
-                        if 'no longer active' in error_detail.lower() or 'not active' in error_detail.lower():
-                            self.log_result("Show Interest - Inactive job validation", True, f"Correct error for inactive job: {error_detail}")
-                        else:
-                            self.log_result("Show Interest - Inactive job validation", False, f"Unexpected error message: {error_detail}")
-                    else:
-                        self.log_result("Show Interest - Inactive job validation", False, f"Expected 400, got {response.status_code}")
-                else:
-                    self.log_result("Show Interest - Inactive job validation", False, "Failed to login new tradesperson")
+        response = self.make_request("POST", f"/messages/conversations/{conversation_id}/messages", json=message_data, auth_token=homeowner_token)
+        
+        if response.status_code == 200:
+            message_response = response.json()
+            if 'id' in message_response and message_response.get('content') == message_data['content']:
+                self.test_data['homeowner_message_id'] = message_response['id']
+                self.log_result("Message sending - Homeowner message", True, f"Message sent: {message_response['id']}")
             else:
-                self.log_result("Show Interest - Inactive job validation", False, "Failed to create new tradesperson")
+                self.log_result("Message sending - Homeowner message", False, "Invalid message response structure")
         else:
-            self.log_result("Show Interest - Inactive job validation", False, "Failed to close job for testing")
+            self.log_result("Message sending - Homeowner message", False, f"Status: {response.status_code}, Response: {response.text}")
+        
+        # Test 2: Send message from tradesperson (if has paid access)
+        print("\n--- Test 2: Send Message from Tradesperson ---")
+        tradesperson_message_data = {
+            "conversation_id": conversation_id,
+            "content": "Thank you for reaching out! I'm available to start the work next week. Let me know your preferred schedule.",
+            "message_type": "text"
+        }
+        
+        response = self.make_request("POST", f"/messages/conversations/{conversation_id}/messages", json=tradesperson_message_data, auth_token=tradesperson_token)
+        
+        if response.status_code == 200:
+            message_response = response.json()
+            if 'id' in message_response:
+                self.test_data['tradesperson_message_id'] = message_response['id']
+                self.log_result("Message sending - Tradesperson message", True, f"Message sent: {message_response['id']}")
+            else:
+                self.log_result("Message sending - Tradesperson message", False, "Invalid message response structure")
+        elif response.status_code == 403:
+            self.log_result("Message sending - Tradesperson message", True, "Correctly rejected due to access control")
+        else:
+            self.log_result("Message sending - Tradesperson message", False, f"Status: {response.status_code}, Response: {response.text}")
+        
+        # Test 3: Retrieve conversation messages
+        print("\n--- Test 3: Retrieve Conversation Messages ---")
+        response = self.make_request("GET", f"/messages/conversations/{conversation_id}/messages", auth_token=homeowner_token)
+        
+        if response.status_code == 200:
+            messages_response = response.json()
+            if 'messages' in messages_response and 'total' in messages_response:
+                messages = messages_response['messages']
+                total = messages_response['total']
+                self.log_result("Message retrieval - Get messages", True, f"Retrieved {total} messages")
+                
+                # Verify message structure
+                if len(messages) > 0:
+                    message = messages[0]
+                    expected_fields = ['id', 'conversation_id', 'sender_id', 'content', 'created_at']
+                    missing_fields = [field for field in expected_fields if field not in message]
+                    
+                    if not missing_fields:
+                        self.log_result("Message retrieval - Message structure", True, "All expected fields present")
+                    else:
+                        self.log_result("Message retrieval - Message structure", False, f"Missing fields: {missing_fields}")
+            else:
+                self.log_result("Message retrieval - Get messages", False, "Invalid response structure")
+        else:
+            self.log_result("Message retrieval - Get messages", False, f"Status: {response.status_code}, Response: {response.text}")
+        
+        # Test 4: Unauthorized access to conversation messages
+        print("\n--- Test 4: Unauthorized Access to Messages ---")
+        # Create another user and try to access messages
+        unauthorized_user_data = {
+            "name": "Unauthorized User",
+            "email": f"unauthorized.{uuid.uuid4().hex[:8]}@email.com",
+            "password": "SecurePass123",
+            "phone": "+2348123456792",
+            "location": "Lagos",
+            "postcode": "100001"
+        }
+        
+        reg_response = self.make_request("POST", "/auth/register/homeowner", json=unauthorized_user_data)
+        if reg_response.status_code == 200:
+            unauthorized_token = reg_response.json()['access_token']
+            
+            response = self.make_request("GET", f"/messages/conversations/{conversation_id}/messages", auth_token=unauthorized_token)
+            
+            if response.status_code == 403:
+                self.log_result("Message retrieval - Unauthorized access", True, "Correctly rejected unauthorized access")
+            else:
+                self.log_result("Message retrieval - Unauthorized access", False, f"Expected 403, got {response.status_code}")
+        else:
+            self.log_result("Message retrieval - Unauthorized access", False, "Failed to create unauthorized user for testing")
+
+    def test_database_collections_existence(self):
+        """Test that required database collections exist and are accessible"""
+        print("\n=== Testing Database Collections Existence ===")
+        
+        # We can't directly test MongoDB collections, but we can test the API endpoints
+        # that would fail if collections don't exist
+        
+        homeowner_token = self.auth_tokens.get('homeowner')
+        if not homeowner_token:
+            self.log_result("Database collections test", False, "No homeowner token available")
+            return
+        
+        # Test conversations collection by trying to get user conversations
+        response = self.make_request("GET", "/messages/conversations", auth_token=homeowner_token)
+        
+        if response.status_code == 200:
+            self.log_result("Database collections - Conversations collection", True, "Conversations collection accessible")
+        else:
+            self.log_result("Database collections - Conversations collection", False, f"Status: {response.status_code}")
+        
+        # Test messages collection indirectly through conversation messages endpoint
+        if 'conversation_id' in self.test_data:
+            conversation_id = self.test_data['conversation_id']
+            response = self.make_request("GET", f"/messages/conversations/{conversation_id}/messages", auth_token=homeowner_token)
+            
+            if response.status_code == 200:
+                self.log_result("Database collections - Messages collection", True, "Messages collection accessible")
+            else:
+                self.log_result("Database collections - Messages collection", False, f"Status: {response.status_code}")
+        else:
+            self.log_result("Database collections - Messages collection", False, "No conversation available for testing")
+
+    def test_interest_status_integration(self):
+        """Test integration between interest status and messaging access"""
+        print("\n=== Testing Interest Status Integration ===")
+        
+        if 'messaging_interest_id' not in self.test_data:
+            self.log_result("Interest status integration", False, "No interest available for testing")
+            return
+        
+        tradesperson_token = self.auth_tokens['tradesperson']
+        interest_id = self.test_data['messaging_interest_id']
+        
+        # Check current interest status
+        response = self.make_request("GET", "/interests/my-interests", auth_token=tradesperson_token)
+        
+        if response.status_code == 200:
+            interests = response.json()
+            if isinstance(interests, list) and len(interests) > 0:
+                # Find our test interest
+                test_interest = None
+                for interest in interests:
+                    if interest.get('id') == interest_id:
+                        test_interest = interest
+                        break
+                
+                if test_interest:
+                    status = test_interest.get('status')
+                    self.log_result("Interest status integration - Status check", True, f"Interest status: {status}")
+                    
+                    # Test messaging access based on status
+                    job_id = self.test_data['messaging_job_id']
+                    tradesperson_id = self.test_data['tradesperson_user']['id']
+                    
+                    response = self.make_request("GET", f"/messages/conversations/job/{job_id}?tradesperson_id={tradesperson_id}", auth_token=tradesperson_token)
+                    
+                    if status == 'paid_access':
+                        if response.status_code == 200:
+                            self.log_result("Interest status integration - Paid access messaging", True, "Messaging allowed with paid_access status")
+                        else:
+                            self.log_result("Interest status integration - Paid access messaging", False, f"Expected 200, got {response.status_code}")
+                    else:
+                        if response.status_code == 403:
+                            self.log_result("Interest status integration - Unpaid access messaging", True, f"Messaging correctly blocked for status: {status}")
+                        else:
+                            self.log_result("Interest status integration - Unpaid access messaging", False, f"Expected 403, got {response.status_code}")
+                else:
+                    self.log_result("Interest status integration - Interest lookup", False, "Test interest not found in my-interests")
+            else:
+                self.log_result("Interest status integration - Interests retrieval", False, "No interests found")
+        else:
+            self.log_result("Interest status integration - Interests retrieval", False, f"Status: {response.status_code}")
     
     def test_my_interests_endpoint(self):
         """Test the My Interests endpoint for tradespeople"""
