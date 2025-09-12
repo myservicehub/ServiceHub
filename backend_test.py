@@ -3376,6 +3376,377 @@ class BackendAPITester:
         
         print("=" * 80)
 
+    def test_message_api_response_format_investigation(self):
+        """CRITICAL: Investigate exact message API response formats to debug frontend state update issue"""
+        print("\n🔍 URGENT MESSAGE API RESPONSE FORMAT INVESTIGATION")
+        print("=" * 80)
+        
+        if 'conversation_id' not in self.test_data:
+            # Try to create a test conversation for investigation
+            if not self.create_test_conversation_for_investigation():
+                self.log_result("Message API Investigation Setup", False, "Cannot create test conversation - will test error responses")
+                self.test_message_api_error_response_formats()
+                return
+        
+        conversation_id = self.test_data['conversation_id']
+        homeowner_token = self.auth_tokens['homeowner']
+        tradesperson_token = self.auth_tokens['tradesperson']
+        
+        print(f"\n🎯 INVESTIGATING CONVERSATION: {conversation_id}")
+        
+        # CRITICAL TEST 1: Message Sending API Response Format
+        print("\n--- CRITICAL TEST 1: Message Sending API Response Format ---")
+        
+        message_data = {
+            "conversation_id": conversation_id,
+            "content": "Test message for API response format investigation - sent at " + datetime.now().strftime("%H:%M:%S"),
+            "message_type": "text"
+        }
+        
+        response = self.make_request("POST", f"/messages/conversations/{conversation_id}/messages", 
+                                   json=message_data, auth_token=homeowner_token)
+        
+        if response.status_code == 200:
+            try:
+                message_response = response.json()
+                
+                print(f"✅ MESSAGE SENDING API RESPONSE (Status: {response.status_code}):")
+                print("=" * 60)
+                print(json.dumps(message_response, indent=2, default=str))
+                print("=" * 60)
+                
+                # Analyze response structure
+                expected_fields = ['id', 'conversation_id', 'sender_id', 'sender_name', 'sender_type', 
+                                 'message_type', 'content', 'created_at', 'updated_at']
+                
+                present_fields = []
+                missing_fields = []
+                
+                for field in expected_fields:
+                    if field in message_response:
+                        present_fields.append(field)
+                    else:
+                        missing_fields.append(field)
+                
+                self.log_result("Message Sending API - Response Structure", 
+                              len(missing_fields) == 0, 
+                              f"Present: {present_fields}, Missing: {missing_fields}")
+                
+                # Check datetime field formats
+                datetime_fields = ['created_at', 'updated_at']
+                datetime_formats = {}
+                
+                for field in datetime_fields:
+                    if field in message_response:
+                        value = message_response[field]
+                        datetime_formats[field] = f"{type(value).__name__}: {value}"
+                
+                self.log_result("Message Sending API - Datetime Formats", True, 
+                              f"Datetime fields: {datetime_formats}")
+                
+                # Store sent message for comparison
+                self.test_data['sent_message'] = message_response
+                
+            except json.JSONDecodeError as e:
+                self.log_result("Message Sending API - JSON Parsing", False, f"Invalid JSON: {e}")
+        else:
+            self.log_result("Message Sending API - Request Failed", False, 
+                          f"Status: {response.status_code}, Response: {response.text}")
+        
+        # CRITICAL TEST 2: Message Loading API Response Format
+        print("\n--- CRITICAL TEST 2: Message Loading API Response Format ---")
+        
+        response = self.make_request("GET", f"/messages/conversations/{conversation_id}/messages", 
+                                   auth_token=homeowner_token)
+        
+        if response.status_code == 200:
+            try:
+                messages_response = response.json()
+                
+                print(f"✅ MESSAGE LOADING API RESPONSE (Status: {response.status_code}):")
+                print("=" * 60)
+                print(json.dumps(messages_response, indent=2, default=str))
+                print("=" * 60)
+                
+                # Analyze response structure
+                if 'messages' in messages_response and isinstance(messages_response['messages'], list):
+                    messages = messages_response['messages']
+                    
+                    if len(messages) > 0:
+                        latest_message = messages[-1]  # Get the latest message
+                        
+                        print(f"🔍 LATEST MESSAGE FROM LOADING API:")
+                        print("=" * 60)
+                        print(json.dumps(latest_message, indent=2, default=str))
+                        print("=" * 60)
+                        
+                        # Compare with sent message format
+                        if 'sent_message' in self.test_data:
+                            self.compare_message_formats(self.test_data['sent_message'], latest_message)
+                        
+                        self.log_result("Message Loading API - Response Structure", True, 
+                                      f"Found {len(messages)} messages in conversation")
+                    else:
+                        self.log_result("Message Loading API - Empty Messages", True, 
+                                      "No messages found in conversation")
+                else:
+                    self.log_result("Message Loading API - Invalid Structure", False, 
+                                  "Response missing 'messages' array")
+                
+            except json.JSONDecodeError as e:
+                self.log_result("Message Loading API - JSON Parsing", False, f"Invalid JSON: {e}")
+        else:
+            self.log_result("Message Loading API - Request Failed", False, 
+                          f"Status: {response.status_code}, Response: {response.text}")
+        
+        # CRITICAL TEST 3: Database Storage Verification
+        print("\n--- CRITICAL TEST 3: Database Storage Verification ---")
+        
+        # Send another message and immediately retrieve to test persistence
+        test_message_content = f"Database persistence test - {datetime.now().strftime('%H:%M:%S.%f')}"
+        
+        message_data = {
+            "conversation_id": conversation_id,
+            "content": test_message_content,
+            "message_type": "text"
+        }
+        
+        # Send message
+        send_response = self.make_request("POST", f"/messages/conversations/{conversation_id}/messages", 
+                                        json=message_data, auth_token=tradesperson_token)
+        
+        if send_response.status_code == 200:
+            sent_message = send_response.json()
+            
+            # Immediately retrieve messages
+            retrieve_response = self.make_request("GET", f"/messages/conversations/{conversation_id}/messages", 
+                                                auth_token=tradesperson_token)
+            
+            if retrieve_response.status_code == 200:
+                retrieved_data = retrieve_response.json()
+                messages = retrieved_data.get('messages', [])
+                
+                # Find our test message
+                test_message_found = None
+                for msg in messages:
+                    if msg.get('content') == test_message_content:
+                        test_message_found = msg
+                        break
+                
+                if test_message_found:
+                    print(f"✅ DATABASE PERSISTENCE VERIFICATION:")
+                    print("=" * 60)
+                    print("SENT MESSAGE:")
+                    print(json.dumps(sent_message, indent=2, default=str))
+                    print("\nRETRIEVED MESSAGE:")
+                    print(json.dumps(test_message_found, indent=2, default=str))
+                    print("=" * 60)
+                    
+                    # Compare sent vs retrieved
+                    self.compare_message_formats(sent_message, test_message_found, "Database Persistence")
+                    
+                    self.log_result("Database Storage - Message Persistence", True, 
+                                  "Message successfully stored and retrieved")
+                else:
+                    self.log_result("Database Storage - Message Persistence", False, 
+                                  "Sent message not found in retrieved messages")
+            else:
+                self.log_result("Database Storage - Retrieval Failed", False, 
+                              f"Failed to retrieve messages: {retrieve_response.status_code}")
+        else:
+            self.log_result("Database Storage - Send Failed", False, 
+                          f"Failed to send test message: {send_response.status_code}")
+    
+    def compare_message_formats(self, sent_message, retrieved_message, context="Format Comparison"):
+        """Compare message formats between sent and retrieved messages"""
+        print(f"\n🔍 {context.upper()} - FIELD-BY-FIELD COMPARISON:")
+        print("=" * 60)
+        
+        all_fields = set(sent_message.keys()) | set(retrieved_message.keys())
+        
+        identical_fields = []
+        different_fields = []
+        missing_in_sent = []
+        missing_in_retrieved = []
+        
+        for field in all_fields:
+            if field not in sent_message:
+                missing_in_sent.append(field)
+            elif field not in retrieved_message:
+                missing_in_retrieved.append(field)
+            elif sent_message[field] == retrieved_message[field]:
+                identical_fields.append(field)
+            else:
+                different_fields.append(field)
+                print(f"❌ FIELD MISMATCH - {field}:")
+                print(f"   Sent:      {sent_message[field]} ({type(sent_message[field]).__name__})")
+                print(f"   Retrieved: {retrieved_message[field]} ({type(retrieved_message[field]).__name__})")
+        
+        print(f"✅ IDENTICAL FIELDS ({len(identical_fields)}): {identical_fields}")
+        
+        if different_fields:
+            print(f"❌ DIFFERENT FIELDS ({len(different_fields)}): {different_fields}")
+        
+        if missing_in_sent:
+            print(f"⚠️ MISSING IN SENT ({len(missing_in_sent)}): {missing_in_sent}")
+        
+        if missing_in_retrieved:
+            print(f"⚠️ MISSING IN RETRIEVED ({len(missing_in_retrieved)}): {missing_in_retrieved}")
+        
+        print("=" * 60)
+        
+        # Log overall comparison result
+        has_issues = len(different_fields) > 0 or len(missing_in_sent) > 0 or len(missing_in_retrieved) > 0
+        
+        self.log_result(f"{context} - Message Format Consistency", 
+                      not has_issues, 
+                      f"Identical: {len(identical_fields)}, Different: {len(different_fields)}, Missing: {len(missing_in_sent + missing_in_retrieved)}")
+    
+    def create_test_conversation_for_investigation(self):
+        """Create a test conversation specifically for API response format investigation"""
+        print("\n🔧 Creating Test Conversation for API Investigation...")
+        
+        if 'messaging_job_id' not in self.test_data or 'messaging_interest_id' not in self.test_data:
+            self.log_result("Investigation Setup", False, "Missing required test data")
+            return False
+        
+        homeowner_token = self.auth_tokens['homeowner']
+        tradesperson_token = self.auth_tokens['tradesperson']
+        job_id = self.test_data['messaging_job_id']
+        tradesperson_id = self.test_data['tradesperson_user']['id']
+        interest_id = self.test_data['messaging_interest_id']
+        
+        # Try to fund wallet for testing
+        self.fund_wallet_for_testing(tradesperson_token)
+        
+        # Try payment to get paid_access status
+        pay_response = self.make_request("POST", f"/interests/pay-access/{interest_id}", 
+                                       auth_token=tradesperson_token)
+        
+        if pay_response.status_code == 200:
+            self.log_result("Investigation Setup - Payment", True, "Payment successful")
+            
+            # Create conversation
+            conv_response = self.make_request("GET", f"/messages/conversations/job/{job_id}?tradesperson_id={tradesperson_id}", 
+                                            auth_token=homeowner_token)
+            
+            if conv_response.status_code == 200:
+                conv_data = conv_response.json()
+                if 'conversation_id' in conv_data:
+                    self.test_data['conversation_id'] = conv_data['conversation_id']
+                    self.log_result("Investigation Setup - Conversation", True, 
+                                  f"Created conversation: {conv_data['conversation_id']}")
+                    return True
+        
+        self.log_result("Investigation Setup", False, "Unable to create test conversation")
+        return False
+    
+    def test_message_api_error_response_formats(self):
+        """Test message API error response formats when no conversation is available"""
+        print("\n🔍 TESTING MESSAGE API ERROR RESPONSE FORMATS")
+        print("=" * 60)
+        
+        homeowner_token = self.auth_tokens['homeowner']
+        fake_conversation_id = "fake-conversation-for-format-testing"
+        
+        # Test 1: Message sending error response format
+        print("\n--- Test 1: Message Sending Error Response Format ---")
+        
+        message_data = {
+            "conversation_id": fake_conversation_id,
+            "content": "Test message for error response format investigation",
+            "message_type": "text"
+        }
+        
+        response = self.make_request("POST", f"/messages/conversations/{fake_conversation_id}/messages", 
+                                   json=message_data, auth_token=homeowner_token)
+        
+        print(f"MESSAGE SENDING ERROR RESPONSE (Status: {response.status_code}):")
+        print("=" * 60)
+        try:
+            error_response = response.json()
+            print(json.dumps(error_response, indent=2, default=str))
+        except:
+            print(f"Non-JSON Response: {response.text}")
+        print("=" * 60)
+        
+        # Test 2: Message loading error response format
+        print("\n--- Test 2: Message Loading Error Response Format ---")
+        
+        response = self.make_request("GET", f"/messages/conversations/{fake_conversation_id}/messages", 
+                                   auth_token=homeowner_token)
+        
+        print(f"MESSAGE LOADING ERROR RESPONSE (Status: {response.status_code}):")
+        print("=" * 60)
+        try:
+            error_response = response.json()
+            print(json.dumps(error_response, indent=2, default=str))
+        except:
+            print(f"Non-JSON Response: {response.text}")
+        print("=" * 60)
+        
+        self.log_result("Error Response Format Investigation", True, 
+                      "Error response formats documented for debugging")
+
+    def run_all_tests(self):
+        """Run focused message API response format investigation"""
+        print("🚀 URGENT MESSAGE DELIVERY DEBUG - API RESPONSE FORMAT INVESTIGATION")
+        print("=" * 80)
+        
+        # Test service health first
+        self.test_service_health()
+        
+        # Test authentication setup
+        self.test_authentication_endpoints()
+        
+        # Setup messaging test data
+        self.test_messaging_system_setup()
+        
+        # CRITICAL: Focus on API response format investigation
+        self.test_message_api_response_format_investigation()
+        
+        # Print final results
+        self.print_final_results()
+    
+    def print_final_results(self):
+        """Print investigation results focused on API response format findings"""
+        print("\n" + "=" * 80)
+        print("🔍 MESSAGE API RESPONSE FORMAT INVESTIGATION RESULTS")
+        print("=" * 80)
+        
+        total_tests = self.results['passed'] + self.results['failed']
+        success_rate = (self.results['passed'] / total_tests * 100) if total_tests > 0 else 0
+        
+        print(f"✅ PASSED: {self.results['passed']}")
+        print(f"❌ FAILED: {self.results['failed']}")
+        print(f"📊 SUCCESS RATE: {success_rate:.1f}% ({self.results['passed']}/{total_tests})")
+        
+        if self.results['errors']:
+            print(f"\n🚨 FAILED TESTS:")
+            for error in self.results['errors']:
+                print(f"   • {error}")
+        
+        print("\n🎯 KEY FINDINGS FOR FRONTEND STATE UPDATE ISSUE:")
+        print("=" * 60)
+        
+        if 'sent_message' in self.test_data:
+            print("✅ Message sending API response format captured and documented")
+            print("✅ Message loading API response format captured and documented")
+            print("✅ Database persistence verification completed")
+            print("✅ Field-by-field comparison between sent and loaded messages completed")
+        else:
+            print("⚠️ Unable to create test conversation - error response formats documented")
+            print("⚠️ Payment workflow may need investigation")
+        
+        print("\n📋 NEXT STEPS FOR MAIN AGENT:")
+        print("1. Review the exact JSON response formats printed above")
+        print("2. Compare with frontend expectations in React state management")
+        print("3. Check for datetime serialization issues (created_at, updated_at)")
+        print("4. Verify frontend is handling the correct response structure")
+        print("5. Look for field name mismatches between backend and frontend")
+        
+        print("=" * 80)
+
 if __name__ == "__main__":
     tester = BackendAPITester()
     tester.run_all_tests()
