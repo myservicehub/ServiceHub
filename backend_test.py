@@ -1018,7 +1018,6 @@ class BackendAPITester:
                         
                         # IMMEDIATE re-check of status after payment
                         print("\n--- 3.3: Immediate Post-Payment Status Check ---")
-                        import time
                         time.sleep(0.1)  # Brief pause to ensure database write completes
                         
                         response = self.make_request("GET", "/interests/my-interests", auth_token=tradesperson_token)
