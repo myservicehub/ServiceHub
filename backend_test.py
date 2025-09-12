@@ -1,42 +1,45 @@
 #!/usr/bin/env python3
 """
-HOMEOWNER-INITIATED CHAT FUNCTIONALITY TESTING
+MESSAGE DELIVERY VERIFICATION - COMPREHENSIVE TESTING
 
 **CRITICAL TESTING FOCUS:**
 
-### **1. Homeowner Chat Access Pattern**
-- Test homeowner accessing "Interested Tradespeople" page for their job
-- Verify tradespeople with status='paid_access' show "Start Chat" button  
-- Test that homeowners can successfully initiate conversations with paid tradespeople
+### **1. Message Sending API Testing**
+- Test POST `/api/messages/conversations/{conversation_id}/messages` endpoint
+- Verify message creation with proper data structure (id, conversation_id, sender_id, content, created_at)
+- Test message sending from both homeowner and tradesperson accounts
+- Verify proper authentication and authorization for message sending
 
-### **2. Conversation Creation API for Homeowners**
-- Test `/api/messages/conversations/job/{job_id}?tradesperson_id={tradesperson_id}` from homeowner account
-- Verify homeowners can create conversations when tradesperson has paid_access status
-- Check that homeowner role validation works correctly in conversation creation
+### **2. Message Retrieval Testing**
+- Test GET `/api/messages/conversations/{conversation_id}/messages` endpoint  
+- Verify messages are properly stored and retrievable
+- Test message ordering (chronological order)
+- Verify complete message data structure in response
 
-### **3. Homeowner vs Tradesperson Chat Flow**
-- **Homeowner Flow**: Homeowner clicks "Start Chat" → ChatModal opens with tradesperson data
-- **Tradesperson Flow**: Tradesperson clicks "Start Chat" → ChatModal opens with homeowner data
-- Verify both flows use correct user IDs in API calls
+### **3. Conversation Management**
+- Test conversation creation and retrieval
+- Verify proper linking between jobs, conversations, and messages
+- Test conversation access control (only participants can access)
 
-### **4. Recent ChatModal Fix Impact**
-The recent fix changed conversation initialization logic:
-```javascript  
-if (user?.role === 'tradesperson') {
-  tradespersonId = user.id; // Use current user ID
-} else if (user?.role === 'homeowner') {
-  tradespersonId = otherParty.id; // Use tradesperson ID from otherParty
-}
-```
+### **4. Message Persistence & Database**
+- Verify messages are being properly saved to MongoDB
+- Test message retrieval after storage
+- Verify database consistency for message data
 
-Test that this logic works correctly for both:
-- **Homeowners**: otherParty.id should be the tradesperson's ID ✅
-- **Tradespeople**: user.id should be the tradesperson's ID ✅
+### **5. Bi-directional Messaging**
+- Test homeowner → tradesperson message flow
+- Test tradesperson → homeowner message flow  
+- Verify both directions work correctly
 
-### **5. Access Control Consistency**
-- Verify homeowners can only chat with tradespeople who have paid_access status
-- Test that homeowners get proper error messages if trying to chat with unpaid tradespeople
-- Check that both homeowners and tradespeople are subject to same payment requirements
+### **6. Authentication & Authorization**
+- Verify proper authentication required for all message operations
+- Test access control (only conversation participants can send/view messages)
+- Verify role-based permissions are working
+
+### **7. Integration with Payment System**
+- Verify messaging only works after payment/paid_access status
+- Test access control with different interest statuses
+- Ensure messaging system enforces business rules
 """
 
 import requests
