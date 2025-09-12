@@ -281,11 +281,14 @@ const MyInterestsPage = () => {
 
   const handleStartChatAfterPayment = async (interest) => {
     try {
+      console.log(`Starting chat for interest: ${interest.id}, status: ${interest.status}`);
+      
       // Verify the interest status is now paid_access
       if (interest.status !== 'paid_access') {
+        console.error(`Chat failed: Interest status is '${interest.status}', expected 'paid_access'`);
         toast({
           title: "Payment Required",
-          description: "Please complete payment before starting chat.",
+          description: "Please complete payment before starting chat. If you just paid, please wait a moment and try again.",
           variant: "destructive",
         });
         return;
@@ -293,6 +296,8 @@ const MyInterestsPage = () => {
 
       // Load contact details for the paid interest
       const contactDetails = await interestsAPI.getContactDetails(interest.job_id);
+      
+      console.log('Contact details loaded successfully for chat');
       
       // Set up chat with full contact details
       setSelectedInterestForChat({
@@ -317,7 +322,7 @@ const MyInterestsPage = () => {
       if (error.response?.status === 403) {
         toast({
           title: "Access Required",
-          description: "Please complete payment before accessing contact details.",
+          description: "You need to complete payment before starting a conversation. Please pay for access first.",
           variant: "destructive",
         });
       } else {
