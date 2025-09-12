@@ -280,24 +280,39 @@ const MyInterestsPage = () => {
   };
 
   const handleStartChatAfterPayment = async (interest) => {
-    try {
-      console.log(`Starting chat for interest: ${interest.id}, status: ${interest.status}`);
+    console.log('=== START CHAT DEBUG ===');
+    console.log('Interest object:', interest);
+    console.log('Interest status:', interest.status);
+    console.log('Interest payment_made_at:', interest.payment_made_at);
+    console.log('Expected status for chat: paid_access');
+    console.log('Status match:', interest.status === 'paid_access');
+    
+    if (interest.status !== 'paid_access') {
+      console.error('❌ CHAT BLOCKED: Status check failed');
+      console.error(`Current status: '${interest.status}', Required: 'paid_access'`);
       
-      // Verify the interest status is now paid_access
-      if (interest.status !== 'paid_access') {
-        console.error(`Chat failed: Interest status is '${interest.status}', expected 'paid_access'`);
-        toast({
-          title: "Payment Required",
-          description: "Please complete payment before starting chat. If you just paid, please wait a moment and try again.",
-          variant: "destructive",
-        });
-        return;
+      // Provide specific guidance based on current status
+      let message = "Please complete payment before starting chat.";
+      if (interest.status === 'interested') {
+        message = "Please wait for the homeowner to share contact details, then complete payment.";
+      } else if (interest.status === 'contact_shared') {
+        message = "Please complete payment to start chatting with the homeowner.";
       }
+      
+      toast({
+        title: "Chat Access Required",
+        description: message,
+        variant: "destructive",
+      });
+      return;
+    }
 
+    try {
+      console.log('✅ CHAT ALLOWED: Status check passed, loading contact details...');
+      
       // Load contact details for the paid interest
       const contactDetails = await interestsAPI.getContactDetails(interest.job_id);
-      
-      console.log('Contact details loaded successfully for chat');
+      console.log('✅ Contact details loaded successfully');
       
       // Set up chat with full contact details
       setSelectedInterestForChat({
@@ -311,27 +326,41 @@ const MyInterestsPage = () => {
           phone: contactDetails.homeowner_phone,
           location: interest.job_location
         },
-        contactDetails: contactDetails, // Include full contact details for chat modal
-        showContactDetails: true // Flag to show contact details in chat
+        contactDetails: contactDetails,
+        showContactDetails: true
       });
       setShowChatModal(true);
+      console.log('✅ Chat modal opened successfully');
+      
     } catch (error) {
-      console.error('Failed to load contact details for chat:', error);
+      console.error('❌ CHAT ERROR:', error);
+      console.error('Full error object:', error.response || error);
+      
+      let errorMessage = "Failed to start chat. Please try again.";
       
       // Handle specific errors
       if (error.response?.status === 403) {
-        toast({
-          title: "Access Required",
-          description: "You need to complete payment before starting a conversation. Please pay for access first.",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to load contact details. Please try again.",
-          variant: "destructive",
-        });
+        const detail = error.response.data?.detail || "Access required";
+        console.error('❌ 403 ERROR:', detail);
+        errorMessage = "You need to complete payment before starting a conversation. Please pay for access first.";
+        
+        // If we got 403 but thought we had paid access, force a refresh
+        if (interest.status === 'paid_access') {
+          console.error('❌ CRITICAL: 403 error despite paid_access status - refreshing data...');
+          loadMyInterests(); // Refresh the interests list
+          errorMessage = "There was a synchronization issue. Please wait a moment and try again.";
+        }
+      } else if (error.response?.status === 400) {
+        const detail = error.response.data?.detail || "Bad request";
+        console.error('❌ 400 ERROR:', detail);
+        errorMessage = detail;
       }
+      
+      toast({
+        title: "Failed to Start Chat",
+        description: errorMessage,
+        variant: "destructive",
+      });
     }
   };
 
