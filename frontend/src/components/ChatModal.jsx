@@ -263,8 +263,8 @@ const ChatModal = ({
               )}
             </div>
 
-            {/* Contact Details Section */}
-            {showContactDetails && contactDetails && (
+            {/* Contact Details Section - Only show to tradespeople */}
+            {showContactDetails && contactDetails && user?.role === 'tradesperson' && (
               <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <CheckCircle2 className="w-4 h-4 text-green-600" />
