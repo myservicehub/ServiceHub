@@ -1962,15 +1962,17 @@ class BackendAPITester:
 
 if __name__ == "__main__":
     tester = BackendAPITester()
-    success = tester.run_urgent_payment_status_investigation()
+    success = tester.run_homeowner_chat_functionality_tests()
     
     if success:
-        print("\n🎉 PAYMENT STATUS INVESTIGATION COMPLETE: No critical issues found!")
-        print("✅ Payment workflow working correctly")
-        print("✅ Status updates persisting to database")
-        print("✅ Conversation creation working after payment")
-        print("✅ Message sending working after payment")
+        print("\n🎉 HOMEOWNER CHAT FUNCTIONALITY TESTING COMPLETE: All tests passed!")
+        print("✅ Homeowner chat access pattern working correctly")
+        print("✅ Conversation creation API working for homeowners")
+        print("✅ ChatModal user ID logic is correct")
+        print("✅ Access control is consistent")
+        print("✅ Complete homeowner chat workflow operational")
+        print("✅ No regression from recent ChatModal fixes")
     else:
-        print("\n⚠️  PAYMENT STATUS INVESTIGATION COMPLETE: Critical issues found!")
-        print("🔧 Immediate action required to fix payment workflow bugs")
+        print("\n⚠️  HOMEOWNER CHAT FUNCTIONALITY TESTING COMPLETE: Issues found!")
+        print("🔧 Action required to fix homeowner chat functionality")
         print("📋 Review the detailed analysis above for specific issues")
