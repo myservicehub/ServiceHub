@@ -53,8 +53,10 @@ async def create_conversation(
         homeowner = await database.get_user_by_id(conversation_data.homeowner_id)
         tradesperson = await database.get_user_by_id(conversation_data.tradesperson_id)
         
-        if not homeowner or not tradesperson:
-            raise HTTPException(status_code=404, detail="User not found")
+        if not homeowner:
+            raise HTTPException(status_code=404, detail="Homeowner not found")
+        if not tradesperson:
+            raise HTTPException(status_code=404, detail="Tradesperson not found")
         
         # Create conversation
         conversation = {
