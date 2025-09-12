@@ -205,54 +205,63 @@ const InterestedTradespeopleePage = () => {
     console.log('User data:', user);
     console.log('Job data:', job);
     
+    // Add immediate toast feedback for mobile users
+    toast({
+      title: "Opening Chat...",
+      description: `Starting conversation with ${tradesperson.tradesperson_name}`,
+    });
+    
     try {
-      // For homeowners, we can also show our own contact details in the chat
-      const homeownerContactDetails = {
-        homeowner_name: user?.name,
-        homeowner_email: user?.email,
-        homeowner_phone: user?.phone
-      };
-      
-      console.log('✅ Homeowner contact details prepared:', homeownerContactDetails);
-
+      // Simplified chat data setup
       const chatData = {
         id: tradesperson.tradesperson_id,
         name: tradesperson.tradesperson_name,
         type: 'tradesperson',
-        email: tradesperson.email,
-        phone: tradesperson.phone,
-        location: tradesperson.location,
-        contactDetails: homeownerContactDetails,
-        showContactDetails: true // Show homeowner's own details in chat
+        email: tradesperson.email || '',
+        phone: tradesperson.phone || '',
+        location: tradesperson.location || '',
+        contactDetails: {
+          homeowner_name: user?.name || '',
+          homeowner_email: user?.email || '',
+          homeowner_phone: user?.phone || ''
+        },
+        showContactDetails: true
       };
       
       console.log('✅ Chat data prepared:', chatData);
-      console.log('✅ Setting selected tradesperson for chat...');
       
       setSelectedTradespersonForChat(chatData);
-      
-      console.log('✅ Setting show chat modal to true...');
       setShowChatModal(true);
       
       console.log('✅ Homeowner chat setup complete');
       
+      // Success feedback
+      toast({
+        title: "Chat Opened!",
+        description: "You can now message the tradesperson.",
+      });
+      
     } catch (error) {
       console.error('❌ Failed to prepare chat:', error);
       
-      // Fall back to regular chat
-      const fallbackChatData = {
-        id: tradesperson.tradesperson_id,
-        name: tradesperson.tradesperson_name,
-        type: 'tradesperson',
-        email: tradesperson.email,
-        phone: tradesperson.phone,
-        location: tradesperson.location
-      };
+      // Error feedback
+      toast({
+        title: "Error Opening Chat",
+        description: "Please try again in a moment.",
+        variant: "destructive",
+      });
       
-      console.log('⚠️ Using fallback chat data:', fallbackChatData);
-      
-      setSelectedTradespersonForChat(fallbackChatData);
-      setShowChatModal(true);
+      // Fallback attempt
+      try {
+        setSelectedTradespersonForChat({
+          id: tradesperson.tradesperson_id,
+          name: tradesperson.tradesperson_name,
+          type: 'tradesperson'
+        });
+        setShowChatModal(true);
+      } catch (fallbackError) {
+        console.error('❌ Fallback also failed:', fallbackError);
+      }
     }
   };
 
