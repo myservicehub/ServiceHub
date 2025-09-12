@@ -1,45 +1,46 @@
 #!/usr/bin/env python3
 """
-MESSAGE DELIVERY VERIFICATION - COMPREHENSIVE TESTING
+URGENT MESSAGE DELIVERY DEBUG - API RESPONSE FORMAT INVESTIGATION
 
-**CRITICAL TESTING FOCUS:**
+**CRITICAL FOCUS:** 
+Investigate the exact response format from the message sending API to resolve the frontend state update issue.
 
-### **1. Message Sending API Testing**
-- Test POST `/api/messages/conversations/{conversation_id}/messages` endpoint
-- Verify message creation with proper data structure (id, conversation_id, sender_id, content, created_at)
-- Test message sending from both homeowner and tradesperson accounts
-- Verify proper authentication and authorization for message sending
+**SPECIFIC INVESTIGATION REQUIREMENTS:**
 
-### **2. Message Retrieval Testing**
-- Test GET `/api/messages/conversations/{conversation_id}/messages` endpoint  
-- Verify messages are properly stored and retrievable
-- Test message ordering (chronological order)
-- Verify complete message data structure in response
+1. **Message Sending API Response Format:**
+   - Test POST `/api/messages/conversations/{conversation_id}/messages` endpoint
+   - Capture the EXACT response format and structure
+   - Verify what fields are returned (id, conversation_id, sender_id, content, created_at, etc.)
+   - Document the complete response structure
 
-### **3. Conversation Management**
-- Test conversation creation and retrieval
-- Verify proper linking between jobs, conversations, and messages
-- Test conversation access control (only participants can access)
+2. **Message Loading API Response Format:**
+   - Test GET `/api/messages/conversations/{conversation_id}/messages` endpoint
+   - Compare response format between sending and loading
+   - Verify if message formats are consistent
 
-### **4. Message Persistence & Database**
-- Verify messages are being properly saved to MongoDB
-- Test message retrieval after storage
-- Verify database consistency for message data
+3. **Backend Response Investigation:**
+   - Check if backend returns `Message` object or dict
+   - Verify datetime field serialization (created_at, updated_at)
+   - Test if response includes all required fields for frontend
 
-### **5. Bi-directional Messaging**
-- Test homeowner → tradesperson message flow
-- Test tradesperson → homeowner message flow  
-- Verify both directions work correctly
+4. **Database Message Storage:**
+   - Verify messages are being stored correctly in MongoDB
+   - Check if all required fields are present in database
+   - Validate message data structure consistency
 
-### **6. Authentication & Authorization**
-- Verify proper authentication required for all message operations
-- Test access control (only conversation participants can send/view messages)
-- Verify role-based permissions are working
+**ROOT CAUSE HYPOTHESIS:**
+Frontend React state update is failing because:
+- Backend message response format doesn't match frontend expectations
+- Missing or incorrectly formatted fields (especially created_at/timestamps)
+- Response structure inconsistency between send and load operations
 
-### **7. Integration with Payment System**
-- Verify messaging only works after payment/paid_access status
-- Test access control with different interest statuses
-- Ensure messaging system enforces business rules
+**EXPECTED FINDINGS:**
+- Exact JSON response format from message sending API
+- Field-by-field comparison of sent vs loaded messages
+- Identification of format mismatches causing frontend state issues
+
+**DEBUGGING PRIORITY:**
+This is critical for fixing the user-reported message delivery failure. Focus on response format verification rather than comprehensive testing.
 """
 
 import requests
