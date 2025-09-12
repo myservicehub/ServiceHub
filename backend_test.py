@@ -873,11 +873,343 @@ class BackendAPITester:
             else:
                 self.log_result("My Interests - Homeowner access rejection", False, f"Expected 403/422, got {response.status_code}")
     
-    def run_critical_messaging_access_control_tests(self):
-        """Run CRITICAL messaging system access control bug fixes verification"""
-        print("🚀 STARTING CRITICAL MESSAGING SYSTEM ACCESS CONTROL TESTING")
+    def test_payment_status_investigation(self):
+        """URGENT: Investigate payment status issue - users paid but still getting Access Required error"""
+        print("\n=== 🚨 URGENT PAYMENT STATUS INVESTIGATION ===")
+        
+        if 'messaging_interest_id' not in self.test_data:
+            self.log_result("Payment status investigation setup", False, "Missing interest data")
+            return
+        
+        homeowner_token = self.auth_tokens['homeowner']
+        tradesperson_token = self.auth_tokens['tradesperson']
+        job_id = self.test_data['messaging_job_id']
+        tradesperson_id = self.test_data['tradesperson_user']['id']
+        interest_id = self.test_data['messaging_interest_id']
+        
+        print(f"🔍 Investigating Interest ID: {interest_id}")
+        print(f"🔍 Job ID: {job_id}")
+        print(f"🔍 Tradesperson ID: {tradesperson_id}")
+        
+        # Step 1: Check current interest status before payment
+        print("\n--- Step 1: Check Interest Status Before Payment ---")
+        response = self.make_request("GET", "/interests/my-interests", auth_token=tradesperson_token)
+        
+        if response.status_code == 200:
+            interests = response.json()
+            test_interest = None
+            for interest in interests:
+                if interest.get('id') == interest_id:
+                    test_interest = interest
+                    break
+            
+            if test_interest:
+                current_status = test_interest.get('status')
+                payment_made_at = test_interest.get('payment_made_at')
+                contact_shared_at = test_interest.get('contact_shared_at')
+                
+                self.log_result("Payment Investigation - Pre-payment status", True, 
+                              f"Status: {current_status}, Payment: {payment_made_at}, Contact Shared: {contact_shared_at}")
+                
+                # Step 2: Try conversation creation before payment (should fail)
+                print("\n--- Step 2: Test Conversation Creation Before Payment ---")
+                response = self.make_request("GET", f"/messages/conversations/job/{job_id}?tradesperson_id={tradesperson_id}", 
+                                           auth_token=homeowner_token)
+                
+                if response.status_code == 403:
+                    error_response = response.json()
+                    error_detail = error_response.get('detail', '')
+                    self.log_result("Payment Investigation - Pre-payment access control", True, 
+                                  f"✅ Correctly blocked: {error_detail}")
+                else:
+                    self.log_result("Payment Investigation - Pre-payment access control", False, 
+                                  f"❌ Expected 403, got {response.status_code}")
+                
+                # Step 3: Attempt payment
+                print("\n--- Step 3: Attempt Payment ---")
+                pay_response = self.make_request("POST", f"/interests/pay-access/{interest_id}", 
+                                               auth_token=tradesperson_token)
+                
+                if pay_response.status_code == 200:
+                    payment_result = pay_response.json()
+                    self.log_result("Payment Investigation - Payment attempt", True, 
+                                  f"✅ Payment successful: {payment_result.get('message', 'No message')}")
+                    
+                    # Step 4: Check interest status after payment
+                    print("\n--- Step 4: Check Interest Status After Payment ---")
+                    response = self.make_request("GET", "/interests/my-interests", auth_token=tradesperson_token)
+                    
+                    if response.status_code == 200:
+                        interests = response.json()
+                        updated_interest = None
+                        for interest in interests:
+                            if interest.get('id') == interest_id:
+                                updated_interest = interest
+                                break
+                        
+                        if updated_interest:
+                            new_status = updated_interest.get('status')
+                            new_payment_made_at = updated_interest.get('payment_made_at')
+                            
+                            self.log_result("Payment Investigation - Post-payment status", True, 
+                                          f"Status: {new_status}, Payment: {new_payment_made_at}")
+                            
+                            # CRITICAL CHECK: Verify status is exactly 'paid_access'
+                            if new_status == 'paid_access':
+                                self.log_result("Payment Investigation - Status verification", True, 
+                                              "✅ Status correctly set to 'paid_access'")
+                                
+                                # Step 5: Test conversation creation after payment
+                                print("\n--- Step 5: Test Conversation Creation After Payment ---")
+                                response = self.make_request("GET", f"/messages/conversations/job/{job_id}?tradesperson_id={tradesperson_id}", 
+                                                           auth_token=homeowner_token)
+                                
+                                if response.status_code == 200:
+                                    conv_response = response.json()
+                                    if 'conversation_id' in conv_response:
+                                        self.test_data['conversation_id'] = conv_response['conversation_id']
+                                        self.log_result("Payment Investigation - Post-payment conversation", True, 
+                                                      f"✅ Conversation created: {conv_response['conversation_id']}")
+                                        
+                                        # Step 6: Test message sending
+                                        print("\n--- Step 6: Test Message Sending ---")
+                                        self.test_message_sending_after_payment(conv_response['conversation_id'])
+                                        
+                                    else:
+                                        self.log_result("Payment Investigation - Post-payment conversation", False, 
+                                                      "❌ Missing conversation_id in response")
+                                elif response.status_code == 403:
+                                    error_response = response.json()
+                                    error_detail = error_response.get('detail', '')
+                                    self.log_result("Payment Investigation - Post-payment conversation", False, 
+                                                  f"❌ CRITICAL BUG: Still getting 403 after payment: {error_detail}")
+                                    
+                                    # Additional debugging - check what the backend is seeing
+                                    print("\n--- DEBUGGING: Check Backend Interest Status ---")
+                                    self.debug_backend_interest_status(job_id, tradesperson_id)
+                                    
+                                else:
+                                    self.log_result("Payment Investigation - Post-payment conversation", False, 
+                                                  f"❌ Unexpected status: {response.status_code}")
+                            else:
+                                self.log_result("Payment Investigation - Status verification", False, 
+                                              f"❌ CRITICAL BUG: Status is '{new_status}', expected 'paid_access'")
+                        else:
+                            self.log_result("Payment Investigation - Post-payment status", False, 
+                                          "❌ Interest not found after payment")
+                    else:
+                        self.log_result("Payment Investigation - Post-payment status", False, 
+                                      f"❌ Failed to get interests: {response.status_code}")
+                        
+                elif pay_response.status_code == 400:
+                    error_response = pay_response.json()
+                    error_detail = error_response.get('detail', '')
+                    if 'insufficient' in error_detail.lower():
+                        self.log_result("Payment Investigation - Payment attempt", True, 
+                                      f"Expected insufficient balance: {error_detail}")
+                        
+                        # For testing purposes, let's simulate a successful payment by manually funding wallet
+                        print("\n--- Step 3b: Fund Wallet and Retry Payment ---")
+                        self.fund_wallet_for_testing(tradesperson_token)
+                        
+                        # Retry payment
+                        pay_response = self.make_request("POST", f"/interests/pay-access/{interest_id}", 
+                                                       auth_token=tradesperson_token)
+                        
+                        if pay_response.status_code == 200:
+                            self.log_result("Payment Investigation - Payment retry", True, "✅ Payment successful after wallet funding")
+                            # Continue with post-payment testing...
+                        else:
+                            self.log_result("Payment Investigation - Payment retry", False, 
+                                          f"❌ Payment still failed: {pay_response.status_code}")
+                    else:
+                        self.log_result("Payment Investigation - Payment attempt", False, 
+                                      f"❌ Unexpected payment error: {error_detail}")
+                else:
+                    self.log_result("Payment Investigation - Payment attempt", False, 
+                                  f"❌ Payment failed: {pay_response.status_code}")
+            else:
+                self.log_result("Payment Investigation - Interest lookup", False, "❌ Test interest not found")
+        else:
+            self.log_result("Payment Investigation - Interest retrieval", False, 
+                          f"❌ Failed to get interests: {response.status_code}")
+
+    def debug_backend_interest_status(self, job_id: str, tradesperson_id: str):
+        """Debug what the backend is seeing for interest status"""
+        print("🔍 DEBUGGING: Backend Interest Status Check")
+        
+        # We can't directly query the database, but we can test the API endpoints
+        # that use the same database methods
+        
+        homeowner_token = self.auth_tokens['homeowner']
+        tradesperson_token = self.auth_tokens['tradesperson']
+        
+        # Test 1: Check what homeowner sees for this job's interests
+        print("\n--- Debug 1: Homeowner View of Job Interests ---")
+        response = self.make_request("GET", f"/interests/job/{job_id}", auth_token=homeowner_token)
+        
+        if response.status_code == 200:
+            job_interests = response.json()
+            interested_tradespeople = job_interests.get('interested_tradespeople', [])
+            
+            target_interest = None
+            for tp in interested_tradespeople:
+                if tp.get('tradesperson_id') == tradesperson_id:
+                    target_interest = tp
+                    break
+            
+            if target_interest:
+                status = target_interest.get('status')
+                payment_made_at = target_interest.get('payment_made_at')
+                self.log_result("Debug - Homeowner view status", True, 
+                              f"Homeowner sees status: {status}, Payment: {payment_made_at}")
+            else:
+                self.log_result("Debug - Homeowner view status", False, 
+                              "❌ Tradesperson not found in homeowner's job interests")
+        else:
+            self.log_result("Debug - Homeowner view status", False, 
+                          f"❌ Failed to get job interests: {response.status_code}")
+        
+        # Test 2: Check what tradesperson sees in their interests
+        print("\n--- Debug 2: Tradesperson View of Their Interests ---")
+        response = self.make_request("GET", "/interests/my-interests", auth_token=tradesperson_token)
+        
+        if response.status_code == 200:
+            my_interests = response.json()
+            target_interest = None
+            for interest in my_interests:
+                if interest.get('job_id') == job_id:
+                    target_interest = interest
+                    break
+            
+            if target_interest:
+                status = target_interest.get('status')
+                payment_made_at = target_interest.get('payment_made_at')
+                self.log_result("Debug - Tradesperson view status", True, 
+                              f"Tradesperson sees status: {status}, Payment: {payment_made_at}")
+            else:
+                self.log_result("Debug - Tradesperson view status", False, 
+                              "❌ Interest not found in tradesperson's interests")
+        else:
+            self.log_result("Debug - Tradesperson view status", False, 
+                          f"❌ Failed to get tradesperson interests: {response.status_code}")
+
+    def fund_wallet_for_testing(self, tradesperson_token: str):
+        """Fund wallet for testing purposes"""
+        print("💰 Funding wallet for testing...")
+        
+        # Check current wallet balance
+        response = self.make_request("GET", "/wallet/balance", auth_token=tradesperson_token)
+        if response.status_code == 200:
+            wallet_data = response.json()
+            current_balance = wallet_data.get('balance_coins', 0)
+            self.log_result("Wallet funding - Current balance", True, f"{current_balance} coins")
+            
+            if current_balance < 20:  # Need at least 20 coins for testing
+                # Try to fund wallet (this might fail in test environment, but we'll try)
+                funding_data = {
+                    "amount_naira": 2000,  # ₦2000 = 20 coins
+                    "proof_image": "test_payment_proof_base64_string"
+                }
+                
+                response = self.make_request("POST", "/wallet/fund", json=funding_data, auth_token=tradesperson_token)
+                if response.status_code == 200:
+                    self.log_result("Wallet funding - Fund request", True, "Funding request submitted")
+                else:
+                    self.log_result("Wallet funding - Fund request", False, 
+                                  f"Funding failed: {response.status_code}")
+        else:
+            self.log_result("Wallet funding - Balance check", False, 
+                          f"Failed to check balance: {response.status_code}")
+
+    def test_message_sending_after_payment(self, conversation_id: str):
+        """Test message sending after successful payment"""
+        print("💬 Testing message sending after payment...")
+        
+        homeowner_token = self.auth_tokens['homeowner']
+        tradesperson_token = self.auth_tokens['tradesperson']
+        
+        # Test 1: Send message from homeowner
+        message_data = {
+            "conversation_id": conversation_id,
+            "content": "Hello! Thank you for your interest. When can you start the work?",
+            "message_type": "text"
+        }
+        
+        response = self.make_request("POST", f"/messages/conversations/{conversation_id}/messages", 
+                                   json=message_data, auth_token=homeowner_token)
+        
+        if response.status_code == 200:
+            message_response = response.json()
+            self.log_result("Message sending - Homeowner message", True, 
+                          f"✅ Message sent: {message_response.get('id', 'No ID')}")
+        else:
+            self.log_result("Message sending - Homeowner message", False, 
+                          f"❌ Failed to send: {response.status_code}")
+        
+        # Test 2: Send message from tradesperson
+        tradesperson_message_data = {
+            "conversation_id": conversation_id,
+            "content": "Thank you for choosing me! I can start next week. Let me know your preferred time.",
+            "message_type": "text"
+        }
+        
+        response = self.make_request("POST", f"/messages/conversations/{conversation_id}/messages", 
+                                   json=tradesperson_message_data, auth_token=tradesperson_token)
+        
+        if response.status_code == 200:
+            message_response = response.json()
+            self.log_result("Message sending - Tradesperson message", True, 
+                          f"✅ Message sent: {message_response.get('id', 'No ID')}")
+        else:
+            self.log_result("Message sending - Tradesperson message", False, 
+                          f"❌ Failed to send: {response.status_code}")
+
+    def test_enum_consistency_check(self):
+        """Test InterestStatus enum consistency between backend and database"""
+        print("\n=== 🔍 ENUM CONSISTENCY CHECK ===")
+        
+        # We can't directly check the enum values, but we can test the API responses
+        # to see what status values are being used
+        
+        if 'tradesperson' not in self.auth_tokens:
+            self.log_result("Enum consistency check", False, "No tradesperson token available")
+            return
+        
+        tradesperson_token = self.auth_tokens['tradesperson']
+        
+        # Get all interests and check status values
+        response = self.make_request("GET", "/interests/my-interests", auth_token=tradesperson_token)
+        
+        if response.status_code == 200:
+            interests = response.json()
+            status_values = set()
+            
+            for interest in interests:
+                status = interest.get('status')
+                if status:
+                    status_values.add(status)
+            
+            self.log_result("Enum consistency - Status values found", True, 
+                          f"Status values in use: {list(status_values)}")
+            
+            # Check if we have the expected enum values
+            expected_statuses = ['interested', 'contact_shared', 'paid_access', 'cancelled']
+            
+            for status in status_values:
+                if status in expected_statuses:
+                    self.log_result(f"Enum consistency - {status}", True, "✅ Valid status value")
+                else:
+                    self.log_result(f"Enum consistency - {status}", False, f"❌ Unexpected status value: {status}")
+        else:
+            self.log_result("Enum consistency check", False, 
+                          f"Failed to get interests: {response.status_code}")
+
+    def run_urgent_payment_status_investigation(self):
+        """Run URGENT payment status investigation"""
+        print("🚨 STARTING URGENT PAYMENT STATUS INVESTIGATION")
         print("=" * 80)
-        print("🎯 FOCUS: Verifying critical access control bug fixes")
+        print("🎯 FOCUS: Users paid but still getting 'Access Required' error")
         print("=" * 80)
         
         # 1. Service Health Check
@@ -889,28 +1221,20 @@ class BackendAPITester:
         # 3. Messaging System Setup (create job, interest, contact sharing)
         self.test_messaging_system_setup()
         
-        # 4. CRITICAL: Homeowner Access Control Fix Testing
-        self.test_critical_homeowner_access_control_fix()
+        # 4. URGENT: Payment Status Investigation
+        self.test_payment_status_investigation()
         
-        # 5. CRITICAL: User Validation Fix Testing
-        self.test_critical_user_validation_fix()
+        # 5. Enum Consistency Check
+        self.test_enum_consistency_check()
         
-        # 6. CRITICAL: Consistent Access Control Testing
-        self.test_critical_consistent_access_control()
-        
-        # 7. CRITICAL: Complete Payment Workflow Integration Testing
-        self.test_complete_payment_workflow_integration()
-        
-        # 8. Message Sending Testing (if conversation was created)
-        if 'conversation_id' in self.test_data:
-            self.test_message_sending_endpoints()
-        
-        # 9. Database Collections Testing
-        self.test_database_collections_existence()
+        # 6. Additional debugging if needed
+        if 'conversation_id' not in self.test_data:
+            print("\n🔍 ADDITIONAL DEBUGGING: No conversation created - investigating further...")
+            self.debug_payment_workflow_issues()
         
         # Summary
         print("\n" + "=" * 80)
-        print("🔍 CRITICAL MESSAGING ACCESS CONTROL TESTING SUMMARY")
+        print("🚨 URGENT PAYMENT STATUS INVESTIGATION SUMMARY")
         print("=" * 80)
         print(f"✅ Tests Passed: {self.results['passed']}")
         print(f"❌ Tests Failed: {self.results['failed']}")
@@ -923,36 +1247,79 @@ class BackendAPITester:
             for error in self.results['errors']:
                 print(f"   • {error}")
         
-        print("\n🎯 CRITICAL BUG FIXES VERIFICATION:")
-        print("   1. ✅ Homeowner Access Control Fix (cannot bypass paid_access requirement)")
-        print("   2. ✅ User Validation Fix (proper 404 errors instead of 500)")
-        print("   3. ✅ Consistent Access Control (both homeowner and tradesperson)")
-        print("   4. ✅ Complete Payment Workflow Integration")
-        print("   5. ✅ Message sending and retrieval after proper access")
-        
         # Analysis
-        print("\n🔍 ANALYSIS:")
+        print("\n🔍 ROOT CAUSE ANALYSIS:")
         print("=" * 50)
         
-        critical_failures = [error for error in self.results['errors'] if 'CRITICAL' in error]
+        payment_failures = [error for error in self.results['errors'] if 'Payment Investigation' in error or 'payment' in error.lower()]
         
-        if len(critical_failures) == 0:
-            print("✅ ALL CRITICAL ACCESS CONTROL BUGS FIXED!")
-            print("   - Homeowner bypass prevention working correctly")
-            print("   - User validation returning proper 404 errors")
-            print("   - Consistent access control enforced")
-            print("   - Payment workflow integration operational")
-            print("   - Messaging system properly secured")
+        if len(payment_failures) == 0:
+            print("✅ PAYMENT WORKFLOW WORKING CORRECTLY!")
+            print("   - Payment processing updates status to 'paid_access'")
+            print("   - Conversation creation works after payment")
+            print("   - Message sending works after payment")
+            print("   - No status inconsistencies found")
         else:
-            print("⚠️  CRITICAL BUGS STILL PRESENT:")
-            for error in critical_failures:
+            print("⚠️  PAYMENT WORKFLOW ISSUES FOUND:")
+            for error in payment_failures:
                 print(f"   - {error}")
             print("\n🔧 IMMEDIATE ACTION REQUIRED:")
-            print("   - Review access control logic in /app/backend/routes/messages.py")
-            print("   - Verify paid_access status checking")
-            print("   - Check user validation in conversation creation")
+            print("   - Check payment endpoint in /app/backend/routes/interests.py")
+            print("   - Verify database update_interest_status method")
+            print("   - Check conversation access control logic")
+            print("   - Verify enum value consistency")
         
-        return len(critical_failures) == 0
+        return len(payment_failures) == 0
+
+    def debug_payment_workflow_issues(self):
+        """Additional debugging for payment workflow issues"""
+        print("\n=== 🔍 ADDITIONAL PAYMENT WORKFLOW DEBUGGING ===")
+        
+        # This method can be expanded based on what we find in the initial investigation
+        # For now, let's check some basic API endpoints
+        
+        if 'homeowner' in self.auth_tokens and 'tradesperson' in self.auth_tokens:
+            homeowner_token = self.auth_tokens['homeowner']
+            tradesperson_token = self.auth_tokens['tradesperson']
+            
+            # Check wallet endpoints
+            print("\n--- Debug: Wallet System ---")
+            response = self.make_request("GET", "/wallet/balance", auth_token=tradesperson_token)
+            if response.status_code == 200:
+                wallet_data = response.json()
+                self.log_result("Debug - Wallet balance", True, 
+                              f"Balance: {wallet_data.get('balance_coins', 0)} coins")
+            else:
+                self.log_result("Debug - Wallet balance", False, 
+                              f"Failed to get balance: {response.status_code}")
+            
+            # Check if there are any existing paid interests
+            print("\n--- Debug: Existing Paid Interests ---")
+            response = self.make_request("GET", "/interests/my-interests", auth_token=tradesperson_token)
+            if response.status_code == 200:
+                interests = response.json()
+                paid_interests = [i for i in interests if i.get('status') == 'paid_access']
+                self.log_result("Debug - Existing paid interests", True, 
+                              f"Found {len(paid_interests)} paid interests")
+                
+                if paid_interests:
+                    # Test conversation creation with existing paid interest
+                    paid_interest = paid_interests[0]
+                    job_id = paid_interest.get('job_id')
+                    tradesperson_id = self.test_data['tradesperson_user']['id']
+                    
+                    response = self.make_request("GET", f"/messages/conversations/job/{job_id}?tradesperson_id={tradesperson_id}", 
+                                               auth_token=homeowner_token)
+                    
+                    if response.status_code == 200:
+                        self.log_result("Debug - Existing paid interest conversation", True, 
+                                      "✅ Conversation creation works with existing paid interest")
+                    else:
+                        self.log_result("Debug - Existing paid interest conversation", False, 
+                                      f"❌ Conversation creation failed even with paid interest: {response.status_code}")
+            else:
+                self.log_result("Debug - Existing paid interests", False, 
+                              f"Failed to get interests: {response.status_code}")
 
 if __name__ == "__main__":
     tester = BackendAPITester()
