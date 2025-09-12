@@ -1,44 +1,51 @@
 #!/usr/bin/env python3
 """
-COMPREHENSIVE SHOW INTEREST FUNCTIONALITY TESTING - BUG FIXES VERIFICATION
+COMPREHENSIVE MESSAGING/CHAT SYSTEM TESTING
 
 **Review Request Focus Areas:**
 
-1. **Show Interest System Testing:**
-   - Test `/api/interests/show-interest` endpoint with various scenarios
-   - Test with valid authentication and job IDs
-   - Test validation responses for different error conditions
-   - Verify proper error messages for business logic validation
+1. **Messaging API Endpoints Testing:**
+   - Test `/api/messages/conversations/job/{job_id}?tradesperson_id={tradesperson_id}` endpoint
+   - Test conversation creation with different user roles (homeowner vs tradesperson)
+   - Test access control for paid_access status requirement
+   - Test message sending and receiving via `/api/messages/conversations/{conversation_id}/messages`
 
-2. **Error Scenario Testing:**
-   - Test showing interest in inactive/completed jobs (should return 400 with specific message)
-   - Test duplicate interest attempts (should return 400 with "already shown interest" message)
-   - Test with non-existent job IDs (should return 404)
-   - Test with insufficient wallet balance scenarios
+2. **Database Integration Testing:**
+   - Test `create_conversation` database method
+   - Test `get_conversation_by_job_and_users` method
+   - Test `create_message` and `get_conversation_messages` methods
+   - Verify conversations and messages collections exist and are accessible
 
-3. **User Authentication Flow:**
-   - Test with tradesperson authentication (should work)
-   - Test with homeowner authentication (should be rejected)
-   - Test with invalid/expired tokens
+3. **Authentication & Authorization Testing:**
+   - Test that homeowners can initiate conversations with interested tradespeople
+   - Test that tradespeople need `paid_access` status before starting conversations
+   - Test that users can only access their own conversations
+   - Verify proper error handling for unauthorized access attempts
 
-4. **Database Consistency:**
-   - Verify interest records are created correctly
-   - Test duplicate prevention at database level
-   - Verify job status validation
+4. **Interest Status Integration:**
+   - Test that tradespeople with `status: 'interested'` cannot start conversations (should get 403)
+   - Test that tradespeople with `status: 'paid_access'` can start conversations
+   - Verify the relationship between interests table and conversation access
 
-**Recent Fixes Applied:**
-- Enhanced frontend validation to check job status and duplicate interests before API calls
-- Added client-side interest tracking and loading
-- Improved error handling with specific messages for different 400 error types
-- Added local state updates to prevent repeated attempts
+5. **Error Scenarios Testing:**
+   - Test conversation creation with non-existent job IDs
+   - Test conversation creation with non-existent user IDs
+   - Test message sending to non-existent conversations
+   - Test access denied scenarios for unauthorized users
+
+**Common Issues to Check:**
+- Missing collections (`conversations`, `messages`) in MongoDB
+- Incorrect interest status checks (`paid_access` vs other statuses)
+- User authentication token issues
+- Database connection or query failures
+- Model validation errors in message creation
 
 **Expected Results:**
-- ✅ Show interest should work for valid scenarios (active jobs, authenticated tradespeople, sufficient balance)
-- ✅ 400 errors should return specific, helpful error messages
-- ✅ Frontend should handle and display appropriate error messages
-- ✅ No more uncaught JavaScript runtime errors
-- ✅ Duplicate attempts should be prevented both client-side and server-side
-- ✅ Job status validation should work correctly
+- ✅ Messaging API endpoints should work correctly with proper authentication
+- ✅ Database operations should succeed for conversations and messages
+- ✅ Access control should properly enforce paid_access requirement
+- ✅ Error handling should provide clear feedback for various failure scenarios
+- ✅ Interest status integration should work correctly
 """
 
 import requests
