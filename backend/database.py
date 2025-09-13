@@ -239,6 +239,73 @@ class Database:
         )
         return result.modified_count > 0
 
+    async def update_job_admin(self, job_id: str, update_data: dict) -> bool:
+        """Update job details (admin only)"""
+        result = await self.database.jobs.update_one(
+            {"id": job_id},
+            {"$set": update_data}
+        )
+        return result.modified_count > 0
+
+    async def get_job_interests_count(self, job_id: str) -> int:
+        """Get count of interests for a specific job"""
+        return await self.database.interests.count_documents({"job_id": job_id})
+
+    async def count_homeowner_jobs(self, homeowner_id: str) -> int:
+        """Count total jobs posted by a homeowner"""
+        return await self.database.jobs.count_documents({"homeowner.id": homeowner_id})
+
+    async def get_jobs_statistics_admin(self) -> dict:
+        """Get comprehensive job statistics for admin dashboard"""
+        pipeline = [
+            {
+                "$group": {
+                    "_id": None,
+                    "total_jobs": {"$sum": 1},
+                    "pending_jobs": {"$sum": {"$cond": [{"$eq": ["$status", "pending_approval"]}, 1, 0]}},
+                    "active_jobs": {"$sum": {"$cond": [{"$eq": ["$status", "active"]}, 1, 0]}},
+                    "rejected_jobs": {"$sum": {"$cond": [{"$eq": ["$status", "rejected"]}, 1, 0]}},
+                    "expired_jobs": {"$sum": {"$cond": [{"$eq": ["$status", "expired"]}, 1, 0]}},
+                    "completed_jobs": {"$sum": {"$cond": [{"$eq": ["$status", "completed"]}, 1, 0]}}
+                }
+            }
+        ]
+        
+        result = await self.database.jobs.aggregate(pipeline).to_list(1)
+        
+        if result:
+            stats = result[0]
+            
+            # Get today's approvals and rejections
+            today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+            today_end = today_start + timedelta(days=1)
+            
+            approved_today = await self.database.jobs.count_documents({
+                "status": "active",
+                "approved_at": {"$gte": today_start, "$lt": today_end}
+            })
+            
+            rejected_today = await self.database.jobs.count_documents({
+                "status": "rejected", 
+                "approved_at": {"$gte": today_start, "$lt": today_end}
+            })
+            
+            stats["approved_today"] = approved_today
+            stats["rejected_today"] = rejected_today
+            
+            return stats
+        else:
+            return {
+                "total_jobs": 0,
+                "pending_jobs": 0,
+                "active_jobs": 0,
+                "rejected_jobs": 0,
+                "expired_jobs": 0,
+                "completed_jobs": 0,
+                "approved_today": 0,
+                "rejected_today": 0
+            }
+
     async def get_jobs_count_admin(self, status: str = None) -> int:
         """Get total count of jobs for pagination"""
         query = {}
