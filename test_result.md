@@ -441,8 +441,8 @@ backend:
 
 frontend:
   - task: "Admin Dashboard CRUD Enhancement - Update, Edit, Delete Frontend"
-    implemented: false
-    working: "NA"
+    implemented: true
+    working: true
     file: "/app/frontend/src/pages/AdminDashboard.jsx, /app/frontend/src/api/wallet.js"
     stuck_count: 0
     priority: "high"
