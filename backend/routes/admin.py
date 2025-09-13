@@ -1,9 +1,12 @@
 from fastapi import APIRouter, HTTPException, Depends, Form
 from typing import List, Optional
 from datetime import datetime
+import logging
 
 from database import database
 from models.base import JobAccessFeeUpdate, TransactionStatus
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
