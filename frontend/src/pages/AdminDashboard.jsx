@@ -4074,26 +4074,32 @@ const AdminDashboard = () => {
                 title: formData.get('title'),
                 description: formData.get('description'),
                 category: formData.get('category'),
-                location: formData.get('location'),
+                state: formData.get('state'),
+                lga: formData.get('lga'),
+                town: formData.get('town'),
+                zip_code: formData.get('zip_code'),
+                home_address: formData.get('home_address'),
                 timeline: formData.get('timeline'),
                 budget_min: formData.get('budget_min') ? parseInt(formData.get('budget_min')) : null,
                 budget_max: formData.get('budget_max') ? parseInt(formData.get('budget_max')) : null,
                 access_fee_naira: formData.get('access_fee_naira') ? parseInt(formData.get('access_fee_naira')) : null,
-                status: formData.get('status')
+                access_fee_coins: formData.get('access_fee_coins') ? parseInt(formData.get('access_fee_coins')) : null,
+                admin_notes: formData.get('admin_notes')
               };
               
               try {
-                await adminAPI.updateJobAdmin(editingJobData.id, jobData);
+                // Use the new editJobAdmin API
+                await adminAPI.editJobAdmin(editingJobData.id, jobData);
                 toast({
                   title: "Success",
-                  description: "Job updated successfully",
+                  description: "Job updated successfully. Homeowner has been notified.",
                 });
                 setShowEditJobModal(false);
                 fetchData();
               } catch (error) {
                 toast({
                   title: "Error",
-                  description: "Failed to update job",
+                  description: error.response?.data?.detail || "Failed to update job",
                   variant: "destructive",
                 });
               }
