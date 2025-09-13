@@ -425,8 +425,8 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
       const jobResponse = await jobsAPI.createJob(jobData);
 
       toast({
-        title: "Success!",
-        description: "Your account has been created and job posted successfully! Welcome to ServiceHub!",
+        title: "Account Created & Job Submitted!",
+        description: "Welcome to ServiceHub! Your job has been submitted for admin review. You'll receive a notification once it's approved and goes live.",
       });
 
       if (onJobPosted) {
