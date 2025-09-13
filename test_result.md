@@ -238,7 +238,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Pivot from direct messaging system to lead generation marketplace where tradespeople show interest in jobs, homeowners review interested tradespeople, and payment system controls access to contact details."
+user_problem_statement: "ADMIN DASHBOARD CRUD ENHANCEMENT VERIFICATION: Comprehensive testing to verify the enhanced CRUD functionality in the admin dashboard, focusing on States management, reusable CRUD components, bulk actions, inline editing, and delete confirmation modals."
 
 backend:
   - task: "Referral System - Backend"
