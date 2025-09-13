@@ -591,7 +591,7 @@ class JobUpdateRequest(BaseModel):
     state: Optional[str] = None
     lga: Optional[str] = None
     town: Optional[str] = None
-    zip_code: Optional[str] = Field(None, regex=r'^\d{6}$')
+    zip_code: Optional[str] = Field(None, pattern=r'^\d{6}$')
     home_address: Optional[str] = Field(None, min_length=10, max_length=500)
     budget_min: Optional[int] = Field(None, ge=1000)
     budget_max: Optional[int] = Field(None, ge=1000)
