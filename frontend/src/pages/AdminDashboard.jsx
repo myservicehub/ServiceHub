@@ -399,7 +399,189 @@ const AdminDashboard = () => {
     if (isLoggedIn && activeTab === 'locations') {
       handleLocationDataLoad();
     }
+    if (isLoggedIn && activeTab === 'notifications') {
+      handleNotificationDataLoad();
+    }
   }, [isLoggedIn, activeTab]);
+
+  // ==========================================
+  // NOTIFICATION MANAGEMENT FUNCTIONS
+  // ==========================================
+
+  const handleNotificationDataLoad = async () => {
+    setLoading(true);
+    try {
+      // Load notifications with current filters
+      const notificationsData = await adminAPI.getAllNotifications(notificationFilters);
+      setNotifications(notificationsData.notifications || []);
+      setNotificationStats(notificationsData.stats || {});
+      
+      // Load templates and preferences based on active tab
+      if (activeNotificationTab === 'templates') {
+        const templatesData = await adminAPI.getNotificationTemplates();
+        setNotificationTemplates(templatesData.templates || []);
+      } else if (activeNotificationTab === 'preferences') {
+        const preferencesData = await adminAPI.getUserNotificationPreferences();
+        setUserPreferences(preferencesData.preferences || []);
+      }
+    } catch (error) {
+      console.error('Failed to load notification data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load notification data",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateNotificationStatus = async (notificationId, status, adminNotes = '') => {
+    try {
+      setIsProcessing(true);
+      await adminAPI.updateNotificationStatus(notificationId, status, adminNotes);
+      
+      toast({
+        title: "Success",
+        description: `Notification status updated to ${status}`
+      });
+      
+      // Refresh notifications
+      handleNotificationDataLoad();
+    } catch (error) {
+      console.error('Failed to update notification status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update notification status",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleResendNotification = async (notificationId) => {
+    try {
+      setIsProcessing(true);
+      await adminAPI.resendNotification(notificationId);
+      
+      toast({
+        title: "Success",
+        description: "Notification queued for resending"
+      });
+      
+      // Refresh notifications
+      handleNotificationDataLoad();
+    } catch (error) {
+      console.error('Failed to resend notification:', error);
+      toast({
+        title: "Error",
+        description: "Failed to resend notification",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleDeleteNotification = async (notificationId) => {
+    if (!window.confirm('Are you sure you want to delete this notification? This action cannot be undone.')) {
+      return;
+    }
+    
+    try {
+      setIsProcessing(true);
+      await adminAPI.deleteNotification(notificationId);
+      
+      toast({
+        title: "Success",
+        description: "Notification deleted successfully"
+      });
+      
+      // Refresh notifications
+      handleNotificationDataLoad();
+    } catch (error) {
+      console.error('Failed to delete notification:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete notification",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleUpdateTemplate = async (templateId, templateData) => {
+    try {
+      setIsProcessing(true);
+      await adminAPI.updateNotificationTemplate(templateId, templateData);
+      
+      toast({
+        title: "Success",
+        description: "Template updated successfully"
+      });
+      
+      // Refresh templates
+      const templatesData = await adminAPI.getNotificationTemplates();
+      setNotificationTemplates(templatesData.templates || []);
+      setEditingTemplate(null);
+    } catch (error) {
+      console.error('Failed to update template:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update template",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleTestTemplate = async (templateId, testData) => {
+    try {
+      const result = await adminAPI.testNotificationTemplate(templateId, testData);
+      
+      // Show test result in a modal or alert
+      alert(`Template Test Result:\n\nSubject: ${result.rendered_subject}\n\nContent:\n${result.rendered_content}`);
+    } catch (error) {
+      console.error('Failed to test template:', error);
+      toast({
+        title: "Error",
+        description: "Failed to test template",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const getNotificationStatusColor = (status) => {
+    switch (status) {
+      case 'sent':
+      case 'delivered':
+        return 'bg-green-100 text-green-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'failed':
+        return 'bg-red-100 text-red-800';
+      case 'cancelled':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getNotificationChannelIcon = (channel) => {
+    switch (channel) {
+      case 'email':
+        return '📧';
+      case 'sms':
+        return '📱';
+      case 'both':
+        return '📧📱';
+      default:
+        return '🔔';
+    }
+  };
 
   // Enhanced CRUD Operations
   const handleInlineEdit = async (item, formData, entityType) => {
