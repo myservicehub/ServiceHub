@@ -4139,25 +4139,68 @@ const AdminDashboard = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">Location</label>
+                    <label className="block text-sm font-medium mb-1">Timeline</label>
                     <input
-                      name="location"
+                      name="timeline"
                       type="text"
-                      defaultValue={editingJobData.location}
+                      defaultValue={editingJobData.timeline}
                       className="w-full px-3 py-2 border rounded-md"
-                      required
                     />
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium mb-1">Timeline</label>
-                  <input
-                    name="timeline"
-                    type="text"
-                    defaultValue={editingJobData.timeline}
-                    className="w-full px-3 py-2 border rounded-md"
-                  />
+                {/* Enhanced Location Fields */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">State</label>
+                    <input
+                      name="state"
+                      type="text"
+                      defaultValue={editingJobData.state}
+                      className="w-full px-3 py-2 border rounded-md"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">LGA</label>
+                    <input
+                      name="lga"
+                      type="text"
+                      defaultValue={editingJobData.lga}
+                      className="w-full px-3 py-2 border rounded-md"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Town</label>
+                    <input
+                      name="town"
+                      type="text"
+                      defaultValue={editingJobData.town}
+                      className="w-full px-3 py-2 border rounded-md"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Zip Code</label>
+                    <input
+                      name="zip_code"
+                      type="text"
+                      defaultValue={editingJobData.zip_code}
+                      className="w-full px-3 py-2 border rounded-md"
+                      pattern="[0-9]{6}"
+                      placeholder="6-digit postal code"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Home Address</label>
+                    <input
+                      name="home_address"
+                      type="text"
+                      defaultValue={editingJobData.home_address}
+                      className="w-full px-3 py-2 border rounded-md"
+                    />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
