@@ -4279,6 +4279,8 @@ def run_bi_directional_notification_tests(self):
     # Print final results
     self.print_final_results()
 
+BackendAPITester.run_bi_directional_notification_tests = run_bi_directional_notification_tests
+
 def print_final_results(self):
     """Print comprehensive test results"""
     print("\n" + "=" * 80)
