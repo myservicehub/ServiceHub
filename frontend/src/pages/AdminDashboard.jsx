@@ -1016,13 +1016,35 @@ const AdminDashboard = () => {
                       <div className="space-y-4">
                         <div className="flex justify-between items-center">
                           <h3 className="text-lg font-semibold">Nigerian States</h3>
-                          <button
-                            onClick={() => setShowAddForm(!showAddForm)}
-                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm"
-                          >
-                            {showAddForm ? 'Cancel' : 'Add New State'}
-                          </button>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => setShowAddForm(!showAddForm)}
+                              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm"
+                            >
+                              {showAddForm ? 'Cancel' : 'Add New State'}
+                            </button>
+                            <button
+                              onClick={fetchData}
+                              className="text-blue-600 hover:text-blue-700 px-3 py-2 border border-blue-600 rounded-lg text-sm"
+                            >
+                              Refresh
+                            </button>
+                          </div>
                         </div>
+
+                        {/* Bulk Actions Bar */}
+                        <BulkActionsBar
+                          selectedItems={selectedItems}
+                          totalItems={states.length}
+                          onSelectAll={() => handleSelectAll('states')}
+                          onClearSelection={handleClearSelection}
+                          onBulkDelete={(items) => setConfirmDelete({ 
+                            isOpen: true, 
+                            items: items.map(id => ({ name: id })), 
+                            type: 'bulk' 
+                          })}
+                          isProcessing={bulkActionInProgress}
+                        />
 
                         {showAddForm && (
                           <div className="bg-white p-4 rounded-lg border">
@@ -1031,10 +1053,11 @@ const AdminDashboard = () => {
                               e.preventDefault();
                               const formData = new FormData(e.target);
                               try {
+                                setIsProcessing(true);
                                 await adminAPI.addNewState(
                                   formData.get('state_name'),
                                   formData.get('region'),
-                                  formData.get('postcode_samples') // Fixed: use correct field name
+                                  formData.get('postcode_samples')
                                 );
                                 toast({ title: "State added successfully" });
                                 setShowAddForm(false);
@@ -1042,6 +1065,8 @@ const AdminDashboard = () => {
                               } catch (error) {
                                 console.error('Add state error:', error);
                                 toast({ title: "Failed to add state", variant: "destructive" });
+                              } finally {
+                                setIsProcessing(false);
                               }
                             }}>
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1053,8 +1078,9 @@ const AdminDashboard = () => {
                                     type="text"
                                     name="state_name"
                                     required
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                    placeholder="e.g., Ogun"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                    placeholder="Enter state name"
+                                    disabled={isProcessing}
                                   />
                                 </div>
                                 <div>
@@ -1064,8 +1090,9 @@ const AdminDashboard = () => {
                                   <input
                                     type="text"
                                     name="region"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                                     placeholder="e.g., South West"
+                                    disabled={isProcessing}
                                   />
                                 </div>
                                 <div>
@@ -1075,91 +1102,62 @@ const AdminDashboard = () => {
                                   <input
                                     type="text"
                                     name="postcode_samples"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                    placeholder="e.g., 110001,110002"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                    placeholder="e.g., 100001, 100234"
+                                    disabled={isProcessing}
                                   />
                                 </div>
                               </div>
-                              <div className="flex space-x-2 mt-4">
-                                <button
-                                  type="submit"
-                                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
-                                >
-                                  Add State
-                                </button>
+                              <div className="mt-4 flex justify-end space-x-2">
                                 <button
                                   type="button"
                                   onClick={() => setShowAddForm(false)}
-                                  className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm"
+                                  className="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                                  disabled={isProcessing}
                                 >
                                   Cancel
+                                </button>
+                                <button
+                                  type="submit"
+                                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                                  disabled={isProcessing}
+                                >
+                                  {isProcessing ? 'Adding...' : 'Add State'}
                                 </button>
                               </div>
                             </form>
                           </div>
                         )}
 
-                        {loading ? (
-                          <div className="space-y-2">
-                            {[...Array(5)].map((_, i) => (
-                              <div key={i} className="bg-white p-4 rounded-lg animate-pulse">
-                                <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="bg-white rounded-lg border overflow-hidden">
-                            <table className="min-w-full divide-y divide-gray-200">
-                              <thead className="bg-gray-50">
-                                <tr>
-                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    State Name
-                                  </th>
-                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Actions
-                                  </th>
-                                </tr>
-                              </thead>
-                              <tbody className="bg-white divide-y divide-gray-200">
-                                {states.map((state, index) => (
-                                  <tr key={index} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                      <div className="text-sm font-medium text-gray-900">
-                                        {state}
-                                      </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                      <div className="flex space-x-2">
-                                        <button
-                                          onClick={() => setEditingItem({ type: 'state', name: state })}
-                                          className="text-blue-600 hover:text-blue-900"
-                                        >
-                                          Edit
-                                        </button>
-                                        <button
-                                          onClick={async () => {
-                                            if (window.confirm(`Delete state "${state}"? This will also delete all its LGAs and towns.`)) {
-                                              try {
-                                                await adminAPI.deleteState(state);
-                                                toast({ title: "State deleted successfully" });
-                                                fetchData();
-                                              } catch (error) {
-                                                toast({ title: "Failed to delete state", variant: "destructive" });
-                                              }
-                                            }
-                                          }}
-                                          className="text-red-600 hover:text-red-900"
-                                        >
-                                          Delete
-                                        </button>
-                                      </div>
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
+                        {/* Enhanced States Table */}
+                        <AdminDataTable
+                          data={states.map(state => ({ name: state, id: state }))}
+                          columns={[
+                            { key: 'name', title: 'State Name', sortable: true }
+                          ]}
+                          entityName="state"
+                          entityNamePlural="states"
+                          onEdit={(item, formData) => handleInlineEdit(item, formData, 'state')}
+                          onDelete={(item) => setConfirmDelete({ 
+                            isOpen: true, 
+                            items: [item], 
+                            type: 'single' 
+                          })}
+                          allowInlineEdit={true}
+                          allowDelete={true}
+                          showSelection={true}
+                          selectedItems={selectedItems}
+                          onSelectionChange={handleSelectionChange}
+                          editFields={[
+                            { name: 'name', label: 'State Name', type: 'text', required: true },
+                            { name: 'region', label: 'Region', type: 'text' },
+                            { name: 'postcode_samples', label: 'Sample Postcodes', type: 'text' }
+                          ]}
+                          validationRules={{
+                            name: { minLength: 2, maxLength: 50 }
+                          }}
+                          isLoading={loading}
+                        />
                       </div>
                     )}
 
