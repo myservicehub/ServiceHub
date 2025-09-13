@@ -4233,73 +4233,73 @@ if __name__ == "__main__":
         print("🔧 Action required to fix message delivery system")
         print("📋 Review the detailed analysis above for specific issues")
 
-    def run_bi_directional_notification_tests(self):
-        """Run comprehensive bi-directional message notification tests"""
-        print("🚀 STARTING BI-DIRECTIONAL MESSAGE NOTIFICATIONS VERIFICATION")
-        print("=" * 80)
-        
-        # Test service health first
-        self.test_service_health()
-        
-        # Setup authentication and test data
-        self.test_authentication_endpoints()
-        
-        if 'homeowner' not in self.auth_tokens or 'tradesperson' not in self.auth_tokens:
-            print("❌ CRITICAL: Authentication setup failed - cannot proceed with notification tests")
-            return
-        
-        # Setup messaging system test data
-        self.test_messaging_system_setup()
-        
-        # Try to create test conversation for messaging tests
-        self.create_test_conversation_for_messaging_tests()
-        
-        # 1. NEW_MESSAGE Notification Template Verification
-        self.test_new_message_notification_templates()
-        self.test_template_rendering_with_sample_data()
-        
-        # 2. Message Sending Notification Flow
-        self.test_message_sending_notification_flow()
-        
-        # 3. Notification Service Integration
-        self.test_notification_service_integration()
-        
-        # 4. Database Integration
-        self.test_database_integration()
-        
-        # 5. Error Handling & Edge Cases
-        self.test_error_handling_edge_cases()
-        
-        # 6. Notification Content Verification
-        self.test_notification_content_verification()
-        
-        # 7. Performance Testing
-        self.test_performance_background_tasks()
-        
-        # Print final results
-        self.print_final_results()
+def run_bi_directional_notification_tests(self):
+    """Run comprehensive bi-directional message notification tests"""
+    print("🚀 STARTING BI-DIRECTIONAL MESSAGE NOTIFICATIONS VERIFICATION")
+    print("=" * 80)
     
-    def print_final_results(self):
-        """Print comprehensive test results"""
-        print("\n" + "=" * 80)
-        print("🎯 BI-DIRECTIONAL MESSAGE NOTIFICATIONS VERIFICATION RESULTS")
-        print("=" * 80)
-        
-        total_tests = self.results['passed'] + self.results['failed']
-        success_rate = (self.results['passed'] / total_tests * 100) if total_tests > 0 else 0
-        
-        print(f"✅ PASSED: {self.results['passed']}")
-        print(f"❌ FAILED: {self.results['failed']}")
-        print(f"📊 SUCCESS RATE: {success_rate:.1f}% ({self.results['passed']}/{total_tests})")
-        
-        if self.results['errors']:
-            print(f"\n🚨 FAILED TESTS:")
-            for error in self.results['errors']:
-                print(f"   • {error}")
-        
-        print("\n" + "=" * 80)
-        print("🎉 BI-DIRECTIONAL MESSAGE NOTIFICATIONS VERIFICATION COMPLETE")
-        print("=" * 80)
+    # Test service health first
+    self.test_service_health()
+    
+    # Setup authentication and test data
+    self.test_authentication_endpoints()
+    
+    if 'homeowner' not in self.auth_tokens or 'tradesperson' not in self.auth_tokens:
+        print("❌ CRITICAL: Authentication setup failed - cannot proceed with notification tests")
+        return
+    
+    # Setup messaging system test data
+    self.test_messaging_system_setup()
+    
+    # Try to create test conversation for messaging tests
+    self.create_test_conversation_for_messaging_tests()
+    
+    # 1. NEW_MESSAGE Notification Template Verification
+    self.test_new_message_notification_templates()
+    self.test_template_rendering_with_sample_data()
+    
+    # 2. Message Sending Notification Flow
+    self.test_message_sending_notification_flow()
+    
+    # 3. Notification Service Integration
+    self.test_notification_service_integration()
+    
+    # 4. Database Integration
+    self.test_database_integration()
+    
+    # 5. Error Handling & Edge Cases
+    self.test_error_handling_edge_cases()
+    
+    # 6. Notification Content Verification
+    self.test_notification_content_verification()
+    
+    # 7. Performance Testing
+    self.test_performance_background_tasks()
+    
+    # Print final results
+    self.print_final_results()
+
+def print_final_results(self):
+    """Print comprehensive test results"""
+    print("\n" + "=" * 80)
+    print("🎯 BI-DIRECTIONAL MESSAGE NOTIFICATIONS VERIFICATION RESULTS")
+    print("=" * 80)
+    
+    total_tests = self.results['passed'] + self.results['failed']
+    success_rate = (self.results['passed'] / total_tests * 100) if total_tests > 0 else 0
+    
+    print(f"✅ PASSED: {self.results['passed']}")
+    print(f"❌ FAILED: {self.results['failed']}")
+    print(f"📊 SUCCESS RATE: {success_rate:.1f}% ({self.results['passed']}/{total_tests})")
+    
+    if self.results['errors']:
+        print(f"\n🚨 FAILED TESTS:")
+        for error in self.results['errors']:
+            print(f"   • {error}")
+    
+    print("\n" + "=" * 80)
+    print("🎉 BI-DIRECTIONAL MESSAGE NOTIFICATIONS VERIFICATION COMPLETE")
+    print("=" * 80)
 
 if __name__ == "__main__":
     tester = BackendAPITester()
