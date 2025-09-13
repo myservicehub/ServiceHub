@@ -349,8 +349,8 @@ serviceHub Team
                 type=NotificationType.NEW_MESSAGE,
                 channel=NotificationChannel.SMS,
                 subject_template="New Message - serviceHub",
-                content_template="💬 New message from {sender_name} about {job_title}: {message_preview} Reply at: {conversation_url}",
-                variables=["sender_name", "job_title", "message_preview", "conversation_url"]
+                content_template="💬 {sender_name}: {message_preview} Reply: {conversation_url}",
+                variables=["sender_name", "message_preview", "conversation_url"]
             )
         }
         
