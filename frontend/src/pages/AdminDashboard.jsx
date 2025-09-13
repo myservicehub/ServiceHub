@@ -2317,7 +2317,7 @@ const AdminDashboard = () => {
               )}
 
               {/* Skills Questions Management Tab */}
-              {activeTab === 'questions' && (
+              {activeTab === 'skills' && (
                 <div className="space-y-6">
                   <div className="flex justify-between items-center">
                     <h2 className="text-xl font-semibold">Skills Test Questions Management</h2>
