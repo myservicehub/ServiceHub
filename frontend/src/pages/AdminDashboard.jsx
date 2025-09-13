@@ -507,6 +507,144 @@ const AdminDashboard = () => {
   };
 
   // ==========================================
+  // JOB EDITING FUNCTIONS
+  // ==========================================
+
+  const handleEditJob = async (job) => {
+    try {
+      setLoading(true);
+      
+      // Get detailed job information
+      const response = await adminAPI.getJobDetailsAdmin(job.id);
+      const jobDetails = response.job;
+      
+      // Initialize edit form with current values
+      setEditJobForm({
+        title: jobDetails.title || '',
+        description: jobDetails.description || '',
+        category: jobDetails.category || '',
+        state: jobDetails.state || '',
+        lga: jobDetails.lga || '',
+        town: jobDetails.town || '',
+        zip_code: jobDetails.zip_code || '',
+        home_address: jobDetails.home_address || '',
+        budget_min: jobDetails.budget_min || '',
+        budget_max: jobDetails.budget_max || '',
+        timeline: jobDetails.timeline || '',
+        access_fee_naira: jobDetails.access_fees?.naira || 1000,
+        access_fee_coins: jobDetails.access_fees?.coins || 10,
+        admin_notes: ''
+      });
+      
+      setEditJobModal(jobDetails);
+      setEditJobErrors({});
+      
+    } catch (error) {
+      console.error('Failed to load job details:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load job details for editing",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveJobEdit = async () => {
+    if (!editJobModal) return;
+    
+    // Validate form
+    const errors = {};
+    
+    if (editJobForm.title && editJobForm.title.length < 5) {
+      errors.title = 'Title must be at least 5 characters';
+    }
+    
+    if (editJobForm.description && editJobForm.description.length < 20) {
+      errors.description = 'Description must be at least 20 characters';
+    }
+    
+    if (editJobForm.access_fee_naira && (editJobForm.access_fee_naira < 500 || editJobForm.access_fee_naira > 10000)) {
+      errors.access_fee_naira = 'Access fee must be between ₦500 and ₦10,000';
+    }
+    
+    if (editJobForm.access_fee_coins && (editJobForm.access_fee_coins < 5 || editJobForm.access_fee_coins > 100)) {
+      errors.access_fee_coins = 'Access fee must be between 5 and 100 coins';
+    }
+    
+    if (editJobForm.budget_min && editJobForm.budget_max && 
+        parseInt(editJobForm.budget_min) > parseInt(editJobForm.budget_max)) {
+      errors.budget_max = 'Maximum budget must be greater than minimum budget';
+    }
+    
+    if (Object.keys(errors).length > 0) {
+      setEditJobErrors(errors);
+      return;
+    }
+    
+    try {
+      setProcessingEdit(true);
+      
+      // Prepare update data (only include changed fields)
+      const updateData = {};
+      const originalJob = editJobModal;
+      
+      Object.keys(editJobForm).forEach(key => {
+        const newValue = editJobForm[key];
+        const originalValue = key === 'access_fee_naira' ? originalJob.access_fees?.naira :
+                             key === 'access_fee_coins' ? originalJob.access_fees?.coins :
+                             originalJob[key];
+        
+        // Include field if it's different and not empty
+        if (newValue !== '' && newValue != originalValue) {
+          updateData[key] = newValue;
+        }
+      });
+      
+      if (Object.keys(updateData).length === 0) {
+        toast({
+          title: "No Changes",
+          description: "No changes were made to the job",
+        });
+        setEditJobModal(null);
+        return;
+      }
+      
+      await adminAPI.editJobAdmin(editJobModal.id, updateData);
+      
+      toast({
+        title: "Success",
+        description: `Job updated successfully. Homeowner has been notified of the changes.`
+      });
+      
+      // Refresh jobs list
+      handleJobApprovalsDataLoad();
+      setEditJobModal(null);
+      setEditJobForm({});
+      
+    } catch (error) {
+      console.error('Failed to update job:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update job",
+        variant: "destructive"
+      });
+    } finally {
+      setProcessingEdit(false);
+    }
+  };
+
+  const handleEditJobFormChange = (field, value) => {
+    setEditJobForm(prev => ({ ...prev, [field]: value }));
+    
+    // Clear error when user starts typing
+    if (editJobErrors[field]) {
+      setEditJobErrors(prev => ({ ...prev, [field]: null }));
+    }
+  };
+
+  // ==========================================
 
   // ==========================================
   // NOTIFICATION MANAGEMENT FUNCTIONS
