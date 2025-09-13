@@ -5,6 +5,10 @@ import { useToast } from '../hooks/use-toast';
 import ContactManagementTab from './ContactManagementTab';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import AdminDataTable from '../components/admin/AdminDataTable';
+import BulkActionsBar from '../components/admin/BulkActionsBar';
+import ConfirmDeleteModal from '../components/admin/ConfirmDeleteModal';
+import InlineEditForm from '../components/admin/InlineEditForm';
 
 const AdminDashboard = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
