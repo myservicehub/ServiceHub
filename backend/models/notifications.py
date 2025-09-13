@@ -13,6 +13,7 @@ class NotificationType(str, Enum):
     NEW_MESSAGE = "new_message"
     JOB_APPROVED = "job_approved"
     JOB_REJECTED = "job_rejected"
+    JOB_UPDATED = "job_updated"
 
 class NotificationChannel(str, Enum):
     EMAIL = "email"
