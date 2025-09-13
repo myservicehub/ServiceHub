@@ -11,6 +11,8 @@ class NotificationType(str, Enum):
     JOB_EXPIRING = "job_expiring"
     NEW_MATCHING_JOB = "new_matching_job"
     NEW_MESSAGE = "new_message"
+    JOB_APPROVED = "job_approved"
+    JOB_REJECTED = "job_rejected"
 
 class NotificationChannel(str, Enum):
     EMAIL = "email"
