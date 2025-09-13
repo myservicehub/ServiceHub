@@ -410,7 +410,110 @@ const AdminDashboard = () => {
     if (isLoggedIn && activeTab === 'notifications') {
       handleNotificationDataLoad();
     }
+    if (isLoggedIn && activeTab === 'approvals') {
+      handleJobApprovalsDataLoad();
+    }
   }, [isLoggedIn, activeTab]);
+
+  // ==========================================
+  // JOB APPROVAL MANAGEMENT FUNCTIONS
+  // ==========================================
+
+  const handleJobApprovalsDataLoad = async () => {
+    setLoading(true);
+    try {
+      // Load pending jobs
+      const pendingJobsData = await adminAPI.getPendingJobs();
+      setPendingJobs(pendingJobsData.jobs || []);
+      
+      // Get approval statistics
+      const statsData = await adminAPI.getJobStatistics();
+      setApprovalStats(statsData.statistics || {});
+      
+    } catch (error) {
+      console.error('Failed to load job approvals data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load job approvals data",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApproveJob = async (jobId, action, notes = '') => {
+    if (!window.confirm(`Are you sure you want to ${action} this job?`)) {
+      return;
+    }
+    
+    try {
+      setProcessingApproval(true);
+      
+      await adminAPI.approveJob(jobId, {
+        action: action,
+        notes: notes
+      });
+      
+      toast({
+        title: "Success",
+        description: `Job ${action}d successfully. Homeowner has been notified.`
+      });
+      
+      // Refresh pending jobs
+      handleJobApprovalsDataLoad();
+      setSelectedJob(null);
+      setApprovalNotes('');
+      
+    } catch (error) {
+      console.error(`Failed to ${action} job:`, error);
+      toast({
+        title: "Error",
+        description: `Failed to ${action} job`,
+        variant: "destructive"
+      });
+    } finally {
+      setProcessingApproval(false);
+    }
+  };
+
+  const getJobStatusColor = (status) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-100 text-green-800';
+      case 'pending_approval':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'rejected':
+        return 'bg-red-100 text-red-800';
+      case 'expired':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getJobPriorityLevel = (job) => {
+    // Calculate priority based on budget, location, and homeowner history
+    const budget = (job.budget_min || 0) + (job.budget_max || 0);
+    const totalJobs = job.homeowner?.total_jobs || 0;
+    
+    if (budget > 500000 || totalJobs > 5) return 'high';
+    if (budget > 200000 || totalJobs > 2) return 'medium';
+    return 'low';
+  };
+
+  const getPriorityColor = (priority) => {
+    switch (priority) {
+      case 'high':
+        return 'bg-red-100 text-red-800';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'low':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
 
   // ==========================================
   // NOTIFICATION MANAGEMENT FUNCTIONS
