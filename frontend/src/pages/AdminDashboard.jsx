@@ -477,21 +477,6 @@ const AdminDashboard = () => {
     }
   };
 
-  const getJobStatusColor = (status) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-800';
-      case 'pending_approval':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'rejected':
-        return 'bg-red-100 text-red-800';
-      case 'expired':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   const getJobPriorityLevel = (job) => {
     // Calculate priority based on budget, location, and homeowner history
     const budget = (job.budget_min || 0) + (job.budget_max || 0);
@@ -514,6 +499,8 @@ const AdminDashboard = () => {
         return 'bg-gray-100 text-gray-800';
     }
   };
+
+  // ==========================================
 
   // ==========================================
   // NOTIFICATION MANAGEMENT FUNCTIONS
