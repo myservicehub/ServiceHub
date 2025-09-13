@@ -385,6 +385,195 @@ const AdminDashboard = () => {
     }
   }, [isLoggedIn, activeTab]);
 
+  // Enhanced CRUD Operations
+  const handleInlineEdit = async (item, formData, entityType) => {
+    setIsProcessing(true);
+    try {
+      let success = false;
+      
+      switch (entityType) {
+        case 'state':
+          success = await adminAPI.updateState(item.name, formData.name, formData.region, formData.postcode_samples);
+          break;
+        case 'lga':
+          success = await adminAPI.updateLGA(formData.state_name, item.name, formData.name, formData.zip_codes);
+          break;
+        case 'town':
+          success = await adminAPI.updateTown(formData.state_name, formData.lga_name, item.name, formData.name, formData.zip_code);
+          break;
+        case 'trade':
+          success = await adminAPI.updateTrade(item.name, formData.name, formData.group, formData.description);
+          break;
+        case 'contact':
+          success = await adminAPI.updateContact(item.id, formData);
+          break;
+        case 'policy':
+          success = await adminAPI.updatePolicy(item.id, formData);
+          break;
+        case 'user':
+          success = await adminAPI.updateUserStatus(item.id, formData.status, formData.admin_notes);
+          break;
+        default:
+          throw new Error(`Unknown entity type: ${entityType}`);
+      }
+      
+      if (success) {
+        toast({
+          title: "Success",
+          description: `${entityType} updated successfully`
+        });
+        fetchData(); // Refresh the data
+        setEditingInline(null);
+      }
+    } catch (error) {
+      console.error(`Failed to update ${entityType}:`, error);
+      toast({
+        title: "Error",
+        description: `Failed to update ${entityType}`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleSingleDelete = async (item, entityType) => {
+    setIsProcessing(true);
+    try {
+      let success = false;
+      
+      switch (entityType) {
+        case 'state':
+          success = await adminAPI.deleteState(item.name);
+          break;
+        case 'lga':
+          success = await adminAPI.deleteLGA(item.state_name, item.name);
+          break;
+        case 'town':
+          success = await adminAPI.deleteTown(item.state_name, item.lga_name, item.name);
+          break;
+        case 'trade':
+          success = await adminAPI.deleteTrade(item.name);
+          break;
+        case 'contact':
+          success = await adminAPI.deleteContact(item.id);
+          break;
+        case 'policy':
+          success = await adminAPI.deletePolicy(item.id);
+          break;
+        case 'job':
+          success = await adminAPI.deleteJob(item.id);
+          break;
+        default:
+          throw new Error(`Unknown entity type: ${entityType}`);
+      }
+      
+      if (success) {
+        toast({
+          title: "Success",
+          description: `${entityType} deleted successfully`
+        });
+        fetchData(); // Refresh the data
+      }
+    } catch (error) {
+      console.error(`Failed to delete ${entityType}:`, error);
+      toast({
+        title: "Error",
+        description: `Failed to delete ${entityType}`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessing(false);
+      setConfirmDelete({ isOpen: false, items: [], type: 'single' });
+    }
+  };
+
+  const handleBulkDelete = async (items, entityType) => {
+    setBulkActionInProgress(true);
+    setIsProcessing(true);
+    
+    try {
+      const results = await Promise.allSettled(
+        items.map(async (item) => {
+          switch (entityType) {
+            case 'state':
+              return await adminAPI.deleteState(item.name);
+            case 'lga':
+              return await adminAPI.deleteLGA(item.state_name, item.name);
+            case 'town':
+              return await adminAPI.deleteTown(item.state_name, item.lga_name, item.name);
+            case 'trade':
+              return await adminAPI.deleteTrade(item.name);
+            case 'contact':
+              return await adminAPI.deleteContact(item.id);
+            case 'policy':
+              return await adminAPI.deletePolicy(item.id);
+            case 'job':
+              return await adminAPI.deleteJob(item.id);
+            default:
+              throw new Error(`Unknown entity type: ${entityType}`);
+          }
+        })
+      );
+      
+      const successful = results.filter(result => result.status === 'fulfilled').length;
+      const failed = results.length - successful;
+      
+      if (successful > 0) {
+        toast({
+          title: "Bulk Delete Completed",
+          description: `${successful} ${entityType}${successful !== 1 ? 's' : ''} deleted successfully${failed > 0 ? `, ${failed} failed` : ''}`
+        });
+        fetchData(); // Refresh the data
+        setSelectedItems([]); // Clear selection
+      }
+      
+      if (failed > 0 && successful === 0) {
+        toast({
+          title: "Bulk Delete Failed",
+          description: `Failed to delete ${failed} ${entityType}${failed !== 1 ? 's' : ''}`,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error(`Bulk delete failed:`, error);
+      toast({
+        title: "Error",
+        description: "Bulk delete operation failed",
+        variant: "destructive"
+      });
+    } finally {
+      setBulkActionInProgress(false);
+      setIsProcessing(false);
+      setConfirmDelete({ isOpen: false, items: [], type: 'bulk' });
+    }
+  };
+
+  const handleSelectionChange = (newSelection) => {
+    setSelectedItems(newSelection);
+  };
+
+  const handleSelectAll = (entityType) => {
+    let allItems = [];
+    switch (entityType) {
+      case 'states':
+        allItems = states.map(state => ({ name: state }));
+        break;
+      case 'trades':
+        allItems = trades.map(trade => ({ name: trade }));
+        break;
+      // Add more cases as needed
+      default:
+        allItems = [];
+    }
+    const allIds = allItems.map(item => item.name || item.id);
+    setSelectedItems(allIds);
+  };
+
+  const handleClearSelection = () => {
+    setSelectedItems([]);
+  };
+
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen bg-gray-50">
