@@ -43,5 +43,10 @@ __all__ = [
     'UserLogin', 'LoginResponse',
     'UserProfile', 'UserProfileUpdate', 'TradespersonProfileUpdate',
     'Token', 'TokenData',
-    'PasswordResetRequest', 'PasswordReset'
+    'PasswordResetRequest', 'PasswordReset',
+    # Notification models
+    'NotificationType', 'NotificationChannel', 'NotificationStatus',
+    'NotificationPreferences', 'NotificationTemplate', 'Notification',
+    'NotificationRequest', 'NotificationResponse', 'NotificationHistory',
+    'UpdatePreferencesRequest', 'NotificationStatsResponse'
 ]
