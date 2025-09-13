@@ -1190,6 +1190,170 @@ const AdminDashboard = () => {
                 </div>
               )}
 
+              {/* Job Approval Management Tab */}
+              {activeTab === 'approvals' && (
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-xl font-semibold">Job Approval Management</h2>
+                    <button
+                      onClick={handleJobApprovalsDataLoad}
+                      className="text-blue-600 hover:text-blue-700"
+                    >
+                      Refresh
+                    </button>
+                  </div>
+
+                  {/* Approval Statistics */}
+                  {approvalStats && Object.keys(approvalStats).length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div className="bg-white p-4 rounded-lg border">
+                        <div className="text-2xl font-bold text-yellow-600">{approvalStats.pending_jobs || 0}</div>
+                        <div className="text-sm text-gray-600">Pending Approval</div>
+                      </div>
+                      <div className="bg-white p-4 rounded-lg border">
+                        <div className="text-2xl font-bold text-green-600">{approvalStats.approved_today || 0}</div>
+                        <div className="text-sm text-gray-600">Approved Today</div>
+                      </div>
+                      <div className="bg-white p-4 rounded-lg border">
+                        <div className="text-2xl font-bold text-red-600">{approvalStats.rejected_today || 0}</div>
+                        <div className="text-sm text-gray-600">Rejected Today</div>
+                      </div>
+                      <div className="bg-white p-4 rounded-lg border">
+                        <div className="text-2xl font-bold text-blue-600">{approvalStats.total_jobs || 0}</div>
+                        <div className="text-sm text-gray-600">Total Jobs</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Pending Jobs Table */}
+                  <div className="bg-white rounded-lg border">
+                    <div className="px-6 py-4 border-b">
+                      <h3 className="text-lg font-semibold">Jobs Pending Approval ({pendingJobs.length})</h3>
+                    </div>
+                    
+                    {loading ? (
+                      <div className="p-8 text-center">
+                        <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                        <p className="mt-2 text-gray-600">Loading pending jobs...</p>
+                      </div>
+                    ) : pendingJobs.length === 0 ? (
+                      <div className="p-8 text-center text-gray-500">
+                        <div className="text-4xl mb-4">🎉</div>
+                        <h4 className="text-lg font-medium mb-2">All caught up!</h4>
+                        <p>No jobs are currently pending approval.</p>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Job Details
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Homeowner
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Budget & Location
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Priority
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Submitted
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Actions
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {pendingJobs.map((job) => {
+                              const priority = getJobPriorityLevel(job);
+                              return (
+                                <tr key={job.id} className="hover:bg-gray-50">
+                                  <td className="px-6 py-4">
+                                    <div>
+                                      <div className="font-medium text-gray-900 mb-1">{job.title}</div>
+                                      <div className="text-sm text-gray-600 line-clamp-2">{job.description}</div>
+                                      <div className="mt-1">
+                                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                          {job.category}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <div>
+                                      <div className="font-medium text-gray-900">{job.homeowner?.name || 'Unknown'}</div>
+                                      <div className="text-sm text-gray-600">{job.homeowner?.email}</div>
+                                      <div className="text-xs text-gray-500">
+                                        {job.homeowner?.total_jobs || 0} total jobs
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <div>
+                                      <div className="text-sm font-medium text-gray-900">
+                                        {job.budget_min && job.budget_max ? 
+                                          `₦${job.budget_min?.toLocaleString()} - ₦${job.budget_max?.toLocaleString()}` : 
+                                          'Budget not specified'
+                                        }
+                                      </div>
+                                      <div className="text-sm text-gray-600">
+                                        {job.state && job.lga ? `${job.lga}, ${job.state}` : job.location}
+                                      </div>
+                                      <div className="text-xs text-gray-500">{job.timeline}</div>
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPriorityColor(priority)}`}>
+                                      {priority.toUpperCase()}
+                                    </span>
+                                  </td>
+                                  <td className="px-6 py-4 text-sm text-gray-600">
+                                    {new Date(job.created_at).toLocaleDateString()}
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <div className="flex space-x-2">
+                                      <button
+                                        onClick={() => setSelectedJob(job)}
+                                        className="text-blue-600 hover:text-blue-900 text-sm font-medium"
+                                      >
+                                        Review
+                                      </button>
+                                      <button
+                                        onClick={() => handleApproveJob(job.id, 'approve')}
+                                        disabled={processingApproval}
+                                        className="text-green-600 hover:text-green-900 text-sm font-medium disabled:opacity-50"
+                                      >
+                                        Approve
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          const reason = prompt('Reason for rejection (required):');
+                                          if (reason && reason.trim()) {
+                                            handleApproveJob(job.id, 'reject', reason.trim());
+                                          }
+                                        }}
+                                        disabled={processingApproval}
+                                        className="text-red-600 hover:text-red-900 text-sm font-medium disabled:opacity-50"
+                                      >
+                                        Reject
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Verifications Tab */}
               {activeTab === 'verifications' && (
                 <div className="space-y-6">
