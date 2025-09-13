@@ -3180,7 +3180,7 @@ class Database:
             
             return questions_by_trade
         except Exception as e:
-            print(f"Error getting skills questions: {e}")
+            logger.error(f"Error getting skills questions: {str(e)}")
             return {}
     
     async def get_questions_for_trade(self, trade_category: str):
