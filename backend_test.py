@@ -4232,3 +4232,7 @@ if __name__ == "__main__":
         print("\n⚠️  MESSAGE DELIVERY VERIFICATION COMPLETE: Issues found!")
         print("🔧 Action required to fix message delivery system")
         print("📋 Review the detailed analysis above for specific issues")
+
+if __name__ == "__main__":
+    tester = BackendAPITester()
+    tester.run_bi_directional_notification_tests()
