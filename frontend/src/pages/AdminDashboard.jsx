@@ -844,12 +844,13 @@ const AdminDashboard = () => {
               <nav className="-mb-px flex space-x-8">
                 {[
                   { id: 'funding', label: 'Funding Requests', icon: '💰' },
-                  { id: 'jobs', label: 'Job Access Fees', icon: '🔧' },
+                  { id: 'fees', label: 'Job Access Fees', icon: '💳' },
+                  { id: 'approvals', label: 'Job Approvals', icon: '✅' },
                   { id: 'verifications', label: 'ID Verifications', icon: '🆔' },
                   { id: 'users', label: 'User Management', icon: '👥' },
-                  { id: 'locations', label: 'Locations & Trades', icon: '🌍' },
-                  { id: 'questions', label: 'Skills Questions', icon: '📝' },
-                  { id: 'policies', label: 'Policy Management', icon: '📄' },
+                  { id: 'locations', label: 'Locations & Trades', icon: '🗺️' },
+                  { id: 'skills', label: 'Skills Questions', icon: '❓' },
+                  { id: 'policies', label: 'Policy Management', icon: '📋' },
                   { id: 'contacts', label: 'Contact Management', icon: '📞' },
                   { id: 'notifications', label: 'Notifications', icon: '🔔' },
                   { id: 'stats', label: 'Dashboard Stats', icon: '📊' }
