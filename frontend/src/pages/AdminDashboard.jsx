@@ -81,6 +81,14 @@ const AdminDashboard = () => {
   const [selectedNotification, setSelectedNotification] = useState(null);
   const [editingTemplate, setEditingTemplate] = useState(null);
   
+  // Job Approval Management state
+  const [pendingJobs, setPendingJobs] = useState([]);
+  const [approvalStats, setApprovalStats] = useState({});
+  const [selectedJob, setSelectedJob] = useState(null);
+  const [approvalAction, setApprovalAction] = useState('');
+  const [approvalNotes, setApprovalNotes] = useState('');
+  const [processingApproval, setProcessingApproval] = useState(false);
+  
   // Jobs Management state
   const [jobsFilter, setJobsFilter] = useState('');
   const [editingJobStatus, setEditingJobStatus] = useState(null);
