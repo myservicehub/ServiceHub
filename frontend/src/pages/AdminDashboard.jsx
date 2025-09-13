@@ -2506,6 +2506,367 @@ const AdminDashboard = () => {
                 </div>
               )}
 
+              {/* Notifications Management Tab */}
+              {activeTab === 'notifications' && (
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-xl font-semibold">Notifications Management</h2>
+                    <button
+                      onClick={handleNotificationDataLoad}
+                      className="text-blue-600 hover:text-blue-700"
+                    >
+                      Refresh
+                    </button>
+                  </div>
+
+                  {/* Sub-tabs for notifications */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="flex space-x-4 mb-6">
+                      {[
+                        { id: 'notifications', label: 'All Notifications', icon: '📋' },
+                        { id: 'templates', label: 'Templates', icon: '📝' },
+                        { id: 'preferences', label: 'User Preferences', icon: '⚙️' },
+                        { id: 'analytics', label: 'Analytics', icon: '📊' }
+                      ].map((subTab) => (
+                        <button
+                          key={subTab.id}
+                          onClick={() => {
+                            setActiveNotificationTab(subTab.id);
+                            handleNotificationDataLoad();
+                          }}
+                          className={`py-2 px-4 rounded-lg font-medium text-sm transition-colors ${
+                            activeNotificationTab === subTab.id
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-white text-gray-600 hover:bg-gray-100'
+                          }`}
+                        >
+                          <span className="mr-2">{subTab.icon}</span>
+                          {subTab.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* All Notifications Tab */}
+                    {activeNotificationTab === 'notifications' && (
+                      <div className="space-y-4">
+                        {/* Filters */}
+                        <div className="bg-white p-4 rounded-lg border">
+                          <h4 className="font-semibold mb-3">Filters</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                              <select
+                                value={notificationFilters.type}
+                                onChange={(e) => setNotificationFilters(prev => ({...prev, type: e.target.value}))}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                              >
+                                <option value="">All Types</option>
+                                <option value="new_interest">New Interest</option>
+                                <option value="contact_shared">Contact Shared</option>
+                                <option value="payment_confirmation">Payment Confirmation</option>
+                                <option value="new_message">New Message</option>
+                                <option value="job_posted">Job Posted</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                              <select
+                                value={notificationFilters.status}
+                                onChange={(e) => setNotificationFilters(prev => ({...prev, status: e.target.value}))}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                              >
+                                <option value="">All Status</option>
+                                <option value="pending">Pending</option>
+                                <option value="sent">Sent</option>
+                                <option value="delivered">Delivered</option>
+                                <option value="failed">Failed</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Channel</label>
+                              <select
+                                value={notificationFilters.channel}
+                                onChange={(e) => setNotificationFilters(prev => ({...prev, channel: e.target.value}))}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                              >
+                                <option value="">All Channels</option>
+                                <option value="email">Email</option>
+                                <option value="sms">SMS</option>
+                                <option value="both">Both</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">From Date</label>
+                              <input
+                                type="date"
+                                value={notificationFilters.date_from}
+                                onChange={(e) => setNotificationFilters(prev => ({...prev, date_from: e.target.value}))}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">To Date</label>
+                              <input
+                                type="date"
+                                value={notificationFilters.date_to}
+                                onChange={(e) => setNotificationFilters(prev => ({...prev, date_to: e.target.value}))}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                              />
+                            </div>
+                          </div>
+                          <div className="mt-4">
+                            <button
+                              onClick={handleNotificationDataLoad}
+                              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
+                            >
+                              Apply Filters
+                            </button>
+                            <button
+                              onClick={() => {
+                                setNotificationFilters({
+                                  type: '',
+                                  status: '',
+                                  channel: '',
+                                  date_from: '',
+                                  date_to: ''
+                                });
+                                handleNotificationDataLoad();
+                              }}
+                              className="ml-2 text-gray-600 hover:text-gray-800 px-4 py-2 border border-gray-300 rounded-lg text-sm"
+                            >
+                              Clear Filters
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Notifications Stats */}
+                        {notificationStats && Object.keys(notificationStats).length > 0 && (
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div className="bg-white p-4 rounded-lg border">
+                              <div className="text-2xl font-bold text-blue-600">{notificationStats.total_notifications || 0}</div>
+                              <div className="text-sm text-gray-600">Total Notifications</div>
+                            </div>
+                            <div className="bg-white p-4 rounded-lg border">
+                              <div className="text-2xl font-bold text-green-600">{notificationStats.sent_count || 0}</div>
+                              <div className="text-sm text-gray-600">Successfully Sent</div>
+                            </div>
+                            <div className="bg-white p-4 rounded-lg border">
+                              <div className="text-2xl font-bold text-red-600">{notificationStats.failed_count || 0}</div>
+                              <div className="text-sm text-gray-600">Failed</div>
+                            </div>
+                            <div className="bg-white p-4 rounded-lg border">
+                              <div className="text-2xl font-bold text-yellow-600">{notificationStats.pending_count || 0}</div>
+                              <div className="text-sm text-gray-600">Pending</div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Notifications Table */}
+                        <AdminDataTable
+                          data={notifications}
+                          columns={[
+                            { 
+                              key: 'type', 
+                              title: 'Type', 
+                              sortable: true,
+                              render: (value) => (
+                                <span className="font-medium">{value?.replace('_', ' ').toUpperCase()}</span>
+                              )
+                            },
+                            { 
+                              key: 'user_name', 
+                              title: 'User', 
+                              sortable: true,
+                              render: (value, item) => (
+                                <div>
+                                  <div className="font-medium">{value}</div>
+                                  <div className="text-xs text-gray-500">{item.user_email}</div>
+                                </div>
+                              )
+                            },
+                            { 
+                              key: 'channel', 
+                              title: 'Channel', 
+                              sortable: true,
+                              render: (value) => (
+                                <span className="flex items-center">
+                                  <span className="mr-1">{getNotificationChannelIcon(value)}</span>
+                                  {value.toUpperCase()}
+                                </span>
+                              )
+                            },
+                            { 
+                              key: 'status', 
+                              title: 'Status', 
+                              sortable: true,
+                              render: (value) => (
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getNotificationStatusColor(value)}`}>
+                                  {value.toUpperCase()}
+                                </span>
+                              )
+                            },
+                            { 
+                              key: 'subject', 
+                              title: 'Subject', 
+                              sortable: false,
+                              render: (value) => (
+                                <span className="truncate max-w-xs block" title={value}>
+                                  {value || 'No subject'}
+                                </span>
+                              )
+                            },
+                            { 
+                              key: 'created_at', 
+                              title: 'Created', 
+                              sortable: true,
+                              render: (value) => new Date(value).toLocaleDateString()
+                            }
+                          ]}
+                          entityName="notification"
+                          entityNamePlural="notifications"
+                          onView={(notification) => setSelectedNotification(notification)}
+                          onDelete={(notification) => handleDeleteNotification(notification.id)}
+                          allowInlineEdit={false}
+                          allowDelete={true}
+                          allowView={true}
+                          customActions={[
+                            {
+                              id: 'resend',
+                              icon: ({ className }) => <span className={className}>🔄</span>,
+                              onClick: (notification) => handleResendNotification(notification.id),
+                              title: 'Resend',
+                              className: 'text-blue-600 hover:text-blue-900'
+                            },
+                            {
+                              id: 'update_status',
+                              icon: ({ className }) => <span className={className}>✏️</span>,
+                              onClick: (notification) => {
+                                const newStatus = prompt('Enter new status (pending, sent, delivered, failed, cancelled):', notification.status);
+                                if (newStatus && ['pending', 'sent', 'delivered', 'failed', 'cancelled'].includes(newStatus)) {
+                                  const adminNotes = prompt('Admin notes (optional):') || '';
+                                  handleUpdateNotificationStatus(notification.id, newStatus, adminNotes);
+                                }
+                              },
+                              title: 'Update Status',
+                              className: 'text-green-600 hover:text-green-900'
+                            }
+                          ]}
+                          isLoading={loading}
+                        />
+                      </div>
+                    )}
+
+                    {/* Templates Tab */}
+                    {activeNotificationTab === 'templates' && (
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <h3 className="text-lg font-semibold">Notification Templates</h3>
+                        </div>
+
+                        <AdminDataTable
+                          data={notificationTemplates}
+                          columns={[
+                            { key: 'type', title: 'Type', sortable: true },
+                            { key: 'channel', title: 'Channel', sortable: true },
+                            { 
+                              key: 'subject_template', 
+                              title: 'Subject Template', 
+                              sortable: false,
+                              render: (value) => (
+                                <span className="truncate max-w-xs block" title={value}>
+                                  {value}
+                                </span>
+                              )
+                            },
+                            { 
+                              key: 'variables', 
+                              title: 'Variables', 
+                              sortable: false,
+                              render: (value) => (
+                                <span className="text-xs bg-gray-100 px-2 py-1 rounded">
+                                  {value?.length || 0} vars
+                                </span>
+                              )
+                            }
+                          ]}
+                          entityName="template"
+                          entityNamePlural="templates"
+                          onView={(template) => setEditingTemplate(template)}
+                          allowInlineEdit={false}
+                          allowDelete={false}
+                          allowView={true}
+                          customActions={[
+                            {
+                              id: 'test',
+                              icon: ({ className }) => <span className={className}>🧪</span>,
+                              onClick: (template) => {
+                                const testData = {};
+                                template.variables?.forEach(variable => {
+                                  testData[variable] = prompt(`Enter value for ${variable}:`) || `[${variable}]`;
+                                });
+                                handleTestTemplate(template.id, testData);
+                              },
+                              title: 'Test Template',
+                              className: 'text-purple-600 hover:text-purple-900'
+                            }
+                          ]}
+                          isLoading={loading}
+                        />
+                      </div>
+                    )}
+
+                    {/* User Preferences Tab */}
+                    {activeNotificationTab === 'preferences' && (
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <h3 className="text-lg font-semibold">User Notification Preferences</h3>
+                        </div>
+
+                        <AdminDataTable
+                          data={userPreferences}
+                          columns={[
+                            { key: 'user_name', title: 'User Name', sortable: true },
+                            { key: 'user_email', title: 'Email', sortable: true },
+                            { key: 'user_role', title: 'Role', sortable: true },
+                            { key: 'new_interest', title: 'New Interest', sortable: false },
+                            { key: 'new_message', title: 'New Message', sortable: false },
+                            { key: 'payment_confirmation', title: 'Payment', sortable: false }
+                          ]}
+                          entityName="preference"
+                          entityNamePlural="preferences"
+                          allowInlineEdit={false}
+                          allowDelete={false}
+                          allowView={true}
+                          isLoading={loading}
+                        />
+                      </div>
+                    )}
+
+                    {/* Analytics Tab */}
+                    {activeNotificationTab === 'analytics' && (
+                      <div className="space-y-6">
+                        <div className="flex justify-between items-center">
+                          <h3 className="text-lg font-semibold">Notification Analytics</h3>
+                        </div>
+
+                        <div className="bg-white p-6 rounded-lg border">
+                          <h4 className="font-semibold mb-4">Coming Soon</h4>
+                          <p className="text-gray-600">
+                            Advanced analytics and reporting features will be available here, including:
+                          </p>
+                          <ul className="list-disc list-inside mt-2 text-gray-600 space-y-1">
+                            <li>Delivery rates by channel and type</li>
+                            <li>User engagement metrics</li>
+                            <li>Failed notification trends</li>
+                            <li>Performance optimization insights</li>
+                          </ul>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Contact Management Tab */}
               {activeTab === 'contacts' && (
                 <ContactManagementTab
