@@ -1,46 +1,71 @@
 #!/usr/bin/env python3
 """
-URGENT MESSAGE DELIVERY DEBUG - API RESPONSE FORMAT INVESTIGATION
+BI-DIRECTIONAL MESSAGE NOTIFICATIONS VERIFICATION
 
-**CRITICAL FOCUS:** 
-Investigate the exact response format from the message sending API to resolve the frontend state update issue.
+**CRITICAL TESTING REQUIREMENTS:**
 
-**SPECIFIC INVESTIGATION REQUIREMENTS:**
+1. **NEW_MESSAGE Notification Template Verification:**
+   - Verify NEW_MESSAGE templates exist in NotificationTemplateService
+   - Test both EMAIL and SMS template rendering with proper variables
+   - Verify template variables: recipient_name, sender_name, job_title, message_preview, conversation_url
+   - Test template rendering with sample data
 
-1. **Message Sending API Response Format:**
+2. **Message Sending Notification Flow:**
    - Test POST `/api/messages/conversations/{conversation_id}/messages` endpoint
-   - Capture the EXACT response format and structure
-   - Verify what fields are returned (id, conversation_id, sender_id, content, created_at, etc.)
-   - Document the complete response structure
+   - Verify background task `_notify_new_message` is triggered after message sending
+   - Test notification sending for both directions:
+     - Tradesperson sends message → Homeowner receives notification
+     - Homeowner sends message → Tradesperson receives notification
 
-2. **Message Loading API Response Format:**
-   - Test GET `/api/messages/conversations/{conversation_id}/messages` endpoint
-   - Compare response format between sending and loading
-   - Verify if message formats are consistent
+3. **Notification Service Integration:**
+   - Verify NotificationService.send_notification is called with correct parameters
+   - Test user preference fetching (email, SMS, both)
+   - Verify notification record creation in database
+   - Test SendGrid email service integration (mock or real)
+   - Test Termii SMS service integration (mock or real)
 
-3. **Backend Response Investigation:**
-   - Check if backend returns `Message` object or dict
-   - Verify datetime field serialization (created_at, updated_at)
-   - Test if response includes all required fields for frontend
+4. **Database Integration:**
+   - Test notification record saving to notifications collection
+   - Verify notification preferences creation/retrieval
+   - Test notification status tracking (pending, sent, failed)
+   - Verify user lookup for recipient details
 
-4. **Database Message Storage:**
-   - Verify messages are being stored correctly in MongoDB
-   - Check if all required fields are present in database
-   - Validate message data structure consistency
+5. **Error Handling & Edge Cases:**
+   - Test notification when recipient user not found
+   - Test notification when email/phone missing
+   - Test notification service failures (SendGrid/Termii unavailable)
+   - Test background task error handling
 
-**ROOT CAUSE HYPOTHESIS:**
-Frontend React state update is failing because:
-- Backend message response format doesn't match frontend expectations
-- Missing or incorrectly formatted fields (especially created_at/timestamps)
-- Response structure inconsistency between send and load operations
+6. **Notification Content Verification:**
+   - Verify email subject and content formatting
+   - Test SMS message character limits and formatting
+   - Verify message preview truncation (100 characters)
+   - Test conversation URL generation
 
-**EXPECTED FINDINGS:**
-- Exact JSON response format from message sending API
-- Field-by-field comparison of sent vs loaded messages
-- Identification of format mismatches causing frontend state issues
+7. **Performance Testing:**
+   - Test background task execution (should not block message sending)
+   - Verify notification delivery doesn't affect message API response time
+   - Test concurrent message notifications
 
-**DEBUGGING PRIORITY:**
-This is critical for fixing the user-reported message delivery failure. Focus on response format verification rather than comprehensive testing.
+**EXPECTED RESULTS:**
+- ✅ NEW_MESSAGE templates properly defined and functional
+- ✅ Background notifications triggered for both directions
+- ✅ Email notifications sent to recipients (mock or real)
+- ✅ SMS notifications sent to recipients (mock or real)
+- ✅ Notification records saved to database
+- ✅ User preferences respected (email/SMS/both)
+- ✅ Proper error handling for failed notifications
+- ✅ Message sending remains fast (background processing)
+
+**TEST SCENARIOS:**
+1. Tradesperson sends message → Verify homeowner notification
+2. Homeowner replies → Verify tradesperson notification  
+3. Multiple messages in conversation → Verify all notifications
+4. Missing recipient data → Verify graceful error handling
+5. Service failures → Verify fallback behavior
+
+**FOCUS AREAS:**
+Verify the complete bi-directional notification flow as requested by user: "When tradesperson send message to homeowner, I want notifications to be sent to them via email and sms and when they reply I want notifications to be sent to homeowners."
 """
 
 import requests
