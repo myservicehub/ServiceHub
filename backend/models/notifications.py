@@ -91,6 +91,7 @@ class UpdatePreferencesRequest(BaseModel):
     payment_confirmation: Optional[NotificationChannel] = None
     job_expiring: Optional[NotificationChannel] = None
     new_matching_job: Optional[NotificationChannel] = None
+    new_message: Optional[NotificationChannel] = None
 
 class NotificationStatsResponse(BaseModel):
     """Notification statistics for admin/monitoring"""
