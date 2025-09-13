@@ -583,6 +583,30 @@ class JobApprovalResponse(BaseModel):
     notes: Optional[str] = None
     message: str
 
+# Job Update Models
+class JobUpdateRequest(BaseModel):
+    title: Optional[str] = Field(None, min_length=5, max_length=200)
+    description: Optional[str] = Field(None, min_length=20, max_length=2000)
+    category: Optional[str] = None
+    state: Optional[str] = None
+    lga: Optional[str] = None
+    town: Optional[str] = None
+    zip_code: Optional[str] = Field(None, regex=r'^\d{6}$')
+    home_address: Optional[str] = Field(None, min_length=10, max_length=500)
+    budget_min: Optional[int] = Field(None, ge=1000)
+    budget_max: Optional[int] = Field(None, ge=1000)
+    timeline: Optional[str] = None
+    access_fee_naira: Optional[int] = Field(None, ge=500, le=10000, description="Access fee in Naira (500-10000)")
+    access_fee_coins: Optional[int] = Field(None, ge=5, le=100, description="Access fee in coins (5-100)")
+    admin_notes: Optional[str] = Field(None, max_length=1000, description="Admin notes for the edit")
+
+class JobUpdateResponse(BaseModel):
+    job_id: str
+    updated_fields: List[str]
+    message: str
+    updated_by: str
+    updated_at: datetime
+
 # Contact Management Models
 class ContactType(str, Enum):
     PHONE_SUPPORT = "phone_support"
