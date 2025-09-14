@@ -8,8 +8,8 @@ import { adminAPI } from '../api/wallet';
 import { useToast } from '../hooks/use-toast';
 import useStates from '../hooks/useStates';
 
-// Nigerian Trade Categories
-const NIGERIAN_TRADE_CATEGORIES = [
+// Fallback trade categories (used while loading or if API fails)
+const FALLBACK_TRADE_CATEGORIES = [
   "Building",
   "Concrete Works", 
   "Tiling",
@@ -46,9 +46,38 @@ const HeroSection = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [showJobDropdown, setShowJobDropdown] = useState(false);
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+  const [tradeCategories, setTradeCategories] = useState(FALLBACK_TRADE_CATEGORIES);
+  const [loadingTrades, setLoadingTrades] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { states: nigerianStates, loading: statesLoading } = useStates();
+
+  // Fetch trade categories from API
+  useEffect(() => {
+    const fetchTradeCategories = async () => {
+      try {
+        setLoadingTrades(true);
+        const response = await adminAPI.getAllTrades();
+        
+        if (response && response.trades) {
+          // Extract trade names from API response
+          const tradeNames = response.trades.map(trade => trade.name || trade.trade_name).filter(Boolean);
+          setTradeCategories(tradeNames);
+          console.log('✅ Loaded trade categories from API:', tradeNames.length);
+        } else {
+          console.log('⚠️ No trade data in API response, using fallback');
+          setTradeCategories(FALLBACK_TRADE_CATEGORIES);
+        }
+      } catch (error) {
+        console.error('❌ Error fetching trade categories:', error);
+        setTradeCategories(FALLBACK_TRADE_CATEGORIES);
+      } finally {
+        setLoadingTrades(false);
+      }
+    };
+
+    fetchTradeCategories();
+  }, []);
 
   const handleJobSelect = (selectedJob) => {
     setJob(selectedJob);
