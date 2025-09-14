@@ -895,7 +895,7 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
                 <textarea
                   rows={4}
                   value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  onChange={(e) => updateFormData('description', e.target.value)}
                   placeholder="Describe the work you need done in detail..."
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato resize-none ${
                     errors.description ? 'border-red-500' : 'border-gray-300'
