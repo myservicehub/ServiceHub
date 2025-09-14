@@ -47,12 +47,12 @@
 ##   test_sequence: 0
 ##   run_ui: false
 ##
-## test_plan:
-##   current_focus:
-##     - "Contact Sharing Status Update Bug - Not Reflecting in Tradesperson Account"
-##   stuck_tasks: []
-##   test_all: false
-##   test_priority: "critical_first"
+test_plan:
+  current_focus:
+    - "Trade Category Questions API Testing - Dynamic Questions System"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
 ##
 backend:
   - task: "Trade Category Questions API Testing - Dynamic Questions System"
