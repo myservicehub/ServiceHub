@@ -136,14 +136,18 @@ async def update_job_access_fee(
     """Update access fee for a specific job"""
     
     try:
+        logger.info(f"Updating access fee for job {job_id} to ₦{access_fee_naira}")
+        
         # Validate fee is positive and reasonable
         if access_fee_naira <= 0:
+            logger.warning(f"Invalid access fee: {access_fee_naira} (must be > 0)")
             raise HTTPException(
                 status_code=400, 
                 detail="Access fee must be greater than ₦0"
             )
         
         if access_fee_naira > 10000:
+            logger.warning(f"Invalid access fee: {access_fee_naira} (must be <= 10000)")
             raise HTTPException(
                 status_code=400, 
                 detail="Access fee cannot exceed ₦10,000"
@@ -152,20 +156,27 @@ async def update_job_access_fee(
         # Check if job exists
         job = await database.get_job_by_id(job_id)
         if not job:
+            logger.warning(f"Job not found: {job_id}")
             raise HTTPException(status_code=404, detail="Job not found")
+        
+        logger.info(f"Found job: {job.get('title', 'Unknown')} for access fee update")
         
         # Update access fee
         success = await database.update_job_access_fee(job_id, access_fee_naira)
         
         if not success:
+            logger.error(f"Failed to update access fee in database for job {job_id}")
             raise HTTPException(status_code=500, detail="Failed to update access fee")
         
         access_fee_coins = access_fee_naira // 100
         
+        logger.info(f"Successfully updated access fee for job {job_id}: ₦{access_fee_naira} ({access_fee_coins} coins)")
+        
         return {
+            "success": True,
             "message": "Access fee updated successfully",
             "job_id": job_id,
-            "job_title": job["title"],
+            "job_title": job.get("title", "Unknown"),
             "new_access_fee_naira": access_fee_naira,
             "new_access_fee_coins": access_fee_coins
         }
@@ -173,7 +184,7 @@ async def update_job_access_fee(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error updating job access fee: {str(e)}")
+        logger.error(f"Unexpected error updating job access fee: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 # ==========================================
