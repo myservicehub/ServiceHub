@@ -54,9 +54,42 @@ const TradeCategoryQuestionsManager = () => {
   ];
 
   useEffect(() => {
+    loadTradeCategories();
     loadQuestions();
     loadCategoriesWithQuestions();
   }, [selectedCategory]);
+
+  const loadTradeCategories = async () => {
+    try {
+      setLoadingCategories(true);
+      const response = await adminAPI.getAllTrades();
+      
+      if (response && response.trades && Array.isArray(response.trades)) {
+        // Extract just the names from the trade objects
+        const categoryNames = response.trades.map(trade => trade.name || trade);
+        setTradeCategories(categoryNames);
+        console.log('✅ Trade Questions Manager: Loaded trade categories:', categoryNames.length, 'categories');
+      } else {
+        console.log('⚠️ Trade Questions Manager: Invalid API response, using fallback');
+        // Fallback categories if API fails
+        setTradeCategories([
+          'Plumbing', 'Electrical', 'Carpentry', 'Painting', 'Roofing',
+          'HVAC', 'Landscaping', 'Cleaning', 'Handyman', 'Masonry',
+          'Welding', 'Tiling', 'Security', 'Interior Design', 'Moving'
+        ]);
+      }
+    } catch (error) {
+      console.error('❌ Trade Questions Manager: Error fetching trade categories:', error);
+      // Fallback categories on error
+      setTradeCategories([
+        'Plumbing', 'Electrical', 'Carpentry', 'Painting', 'Roofing',
+        'HVAC', 'Landscaping', 'Cleaning', 'Handyman', 'Masonry',
+        'Welding', 'Tiling', 'Security', 'Interior Design', 'Moving'
+      ]);
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
 
   const loadQuestions = async () => {
     try {
