@@ -104,6 +104,7 @@ const AdminDashboard = () => {
   const [deletingUser, setDeletingUser] = useState(false);
   const [editingJobFee, setEditingJobFee] = useState(null);
   const [feeUpdateInProgress, setFeeUpdateInProgress] = useState(false);
+  const [feesLoading, setFeesLoading] = useState(false);
   
   // Jobs Management state
   const [jobsFilter, setJobsFilter] = useState('');
