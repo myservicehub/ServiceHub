@@ -23,6 +23,8 @@ import { useToast } from '../../hooks/use-toast';
 const TradeCategoryQuestionsManager = () => {
   const [questions, setQuestions] = useState([]);
   const [categoriesWithQuestions, setCategoriesWithQuestions] = useState([]);
+  const [tradeCategories, setTradeCategories] = useState([]);
+  const [loadingCategories, setLoadingCategories] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [loading, setLoading] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
