@@ -1564,7 +1564,7 @@ const AdminDashboard = () => {
                       <p>• <strong>Minimum Fee:</strong> ₦500 (5 coins)</p>
                       <p>• <strong>Maximum Fee:</strong> ₦10,000 (100 coins)</p>
                       <p>• <strong>Standard Fee:</strong> ₦1,000 (10 coins) for most jobs</p>
-                      <p>• <strong>Premium Jobs:</strong> Higher fees for jobs with budgets >₦500,000</p>
+                      <p>• <strong>Premium Jobs:</strong> Higher fees for jobs with budgets &gt;₦500,000</p>
                       <p>• <strong>Conversion Rate:</strong> 1 Naira = 0.1 Coins</p>
                     </div>
                   </div>
