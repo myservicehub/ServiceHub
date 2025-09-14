@@ -371,9 +371,11 @@ const TradeCategoryQuestionsManager = () => {
                   value={formData.trade_category}
                   onChange={(e) => setFormData(prev => ({ ...prev, trade_category: e.target.value }))}
                   className="w-full px-3 py-2 border rounded-md"
-                  disabled={editingQuestion} // Can't change category when editing
+                  disabled={editingQuestion || loadingCategories} // Can't change category when editing
                 >
-                  <option value="">Select Category</option>
+                  <option value="">
+                    {loadingCategories ? 'Loading categories...' : 'Select Category'}
+                  </option>
                   {tradeCategories.map(category => (
                     <option key={category} value={category}>{category}</option>
                   ))}
