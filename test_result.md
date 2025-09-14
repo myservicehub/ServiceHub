@@ -55,20 +55,20 @@
 ##   test_priority: "critical_first"
 ##
 backend:
-  - task: "Tradespeople API Duplication Investigation - Emeka Okafor Repeated Multiple Times"
+  - task: "Tradespeople Count Investigation - Critical Data Loss Analysis"
     implemented: true
     working: false
-    file: "/app/backend/routes/tradespeople.py, /app/backend/database.py"
+    file: "/app/backend/routes/tradespeople.py, /app/backend/database.py, /app/backend/cleanup_duplicates.py"
     stuck_count: 0
     priority: "critical"
     needs_retesting: false
     status_history:
       - working: "NA"
         agent: "user"
-        comment: "❌ CRITICAL DUPLICATION BUG REPORTED: Tradespeople API endpoint is showing 'Emeka Okafor' repeated multiple times instead of displaying diverse tradespeople from the 276+ registered users. This breaks the user experience as users see the same person repeated instead of a variety of available tradespeople. Need to investigate: 1) GET /api/tradespeople/ endpoint response data, 2) Database query logic for duplicates, 3) API data transformation creating duplicates, 4) Data quality issues in users collection, 5) Pagination and filtering logic."
+        comment: "🚨 CRITICAL DATA LOSS INVESTIGATION: Only 11 tradespeople showing when there should be 99 total tradespeople in the database. Need to investigate: 1) Database count verification, 2) API response analysis with different limits, 3) Data status investigation, 4) API parameter testing to identify what's causing the restriction to only 11 results."
       - working: false
         agent: "testing"
-        comment: "🚨 CRITICAL DUPLICATION ISSUE CONFIRMED: Comprehensive testing reveals 'Emeka Okafor' appears 25 times out of 98 total tradespeople records (25.5% duplication rate). ROOT CAUSE IDENTIFIED: Multiple users with identical name 'Emeka Okafor' but unique IDs and emails, indicating data quality issue rather than database query problem. DETAILED FINDINGS: ✅ Database query working correctly (no duplicate IDs, proper pagination), ✅ API transformation working correctly (unique user IDs maintained), ❌ CRITICAL DATA QUALITY ISSUES: 25 'Emeka Okafor' entries with different IDs/emails (emeka.okafor.xxxxx@tradework.com pattern), 14 'Chinedu Okoro' duplicates, 34 'Test Tradesperson' entries, 53 test/placeholder records, 98 records missing profession/trade data. IMPACT: Users see repetitive names instead of diverse tradespeople, poor user experience, appears like system malfunction. SOLUTION REQUIRED: Database cleanup to remove duplicate/test entries and improve data quality validation during user registration."
+        comment: "🚨 CRITICAL DATA LOSS CONFIRMED: Comprehensive investigation reveals catastrophic 90% data loss in tradespeople records. ROOT CAUSE IDENTIFIED: cleanup_duplicates.py script was too aggressive and removed legitimate users. DETAILED FINDINGS: ❌ CRITICAL DATA LOSS: Only 11 tradespeople remain in database (expected 99), representing 89 missing records (90% loss), ❌ CLEANUP SCRIPT IMPACT: /app/backend/cleanup_duplicates.py created today (2025-09-14 19:01) removed legitimate tradespeople along with duplicates, ❌ API CORRECTLY FILTERING: API shows 10 tradespeople because it filters for status='active' (1 tradesperson has status='pending_verification'), ✅ DATABASE STRUCTURE INTACT: Users collection has 188 total users (177 homeowners, 11 tradespeople), ✅ API FUNCTIONALITY WORKING: Tradespeople API correctly queries and filters data, no technical issues with endpoints. IMPACT: Massive loss of legitimate tradesperson accounts, severely reduced marketplace functionality, users cannot find adequate service providers. URGENT ACTION REQUIRED: 1) Stop cleanup script execution, 2) Restore tradespeople data from backup, 3) Review cleanup script logic to prevent future data loss, 4) Implement safer data cleanup procedures with manual review."
 
   - task: "Contact Sharing Status Update Bug - Not Reflecting in Tradesperson Account"
     implemented: true
