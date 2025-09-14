@@ -384,9 +384,28 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
 
     try {
       // Create the job using authenticated user's data
+      // Create job data with proper description
+      let jobDescription = formData.description;
+      
+      // If using admin questions instead of manual description, generate description from answers
+      if (formData.category && tradeQuestions.length > 0 && Object.keys(questionAnswers).length > 0) {
+        const answerTexts = tradeQuestions.map(question => {
+          const answer = questionAnswers[question.id];
+          if (answer !== undefined && answer !== null && answer !== '') {
+            const answerText = formatAnswerText(question, answer);
+            return `${question.question_text}: ${answerText}`;
+          }
+          return null;
+        }).filter(Boolean);
+        
+        jobDescription = answerTexts.length > 0 
+          ? answerTexts.join('\n\n') 
+          : `${formData.category} work requested. Details provided through structured questions.`;
+      }
+
       const jobData = {
         title: formData.title,
-        description: formData.description,
+        description: jobDescription,
         category: formData.category,
         state: formData.state,
         lga: formData.lga,
