@@ -181,7 +181,7 @@ const HeroSection = () => {
                   {/* Job Categories Dropdown */}
                   {showJobDropdown && (
                     <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
-                      {NIGERIAN_TRADE_CATEGORIES.map((category, index) => (
+                      {tradeCategories.map((category, index) => (
                         <button
                           key={index}
                           type="button"
