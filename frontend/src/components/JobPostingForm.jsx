@@ -58,18 +58,11 @@ const FALLBACK_TRADE_CATEGORIES = [
   "Locksmithing",
   "Recycling"
 ];
-  "Solar & Inverter Installation",
-  "Plumbing",
-  "Welding",
-  "Furniture Making",
-  "Interior Design",
-  "Roofing",
-  "Locksmithing",
-  "Recycling"
-];
 
 const JobPostingForm = ({ onClose, onJobPosted }) => {
   const [currentStep, setCurrentStep] = useState(1);
+  const [tradeCategories, setTradeCategories] = useState(FALLBACK_TRADE_CATEGORIES);
+  const [loadingTrades, setLoadingTrades] = useState(true);
   const [formData, setFormData] = useState({
     // Step 1: Job Details
     title: '',
