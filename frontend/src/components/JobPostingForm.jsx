@@ -586,6 +586,29 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
 
       const jobResponse = await jobsAPI.createJob(jobData);
 
+      // Save question answers if there are any
+      if (tradeQuestions.length > 0 && Object.keys(questionAnswers).length > 0) {
+        try {
+          const answersData = {
+            job_id: jobResponse.job_id || jobResponse.id,
+            trade_category: formData.category,
+            answers: tradeQuestions.map(question => ({
+              question_id: question.id,
+              question_text: question.question_text,
+              question_type: question.question_type,
+              answer_value: questionAnswers[question.id],
+              answer_text: formatAnswerText(question, questionAnswers[question.id])
+            }))
+          };
+
+          await tradeCategoryQuestionsAPI.saveJobQuestionAnswers(answersData);
+          console.log('✅ Question answers saved successfully');
+        } catch (answerError) {
+          console.error('⚠️ Failed to save question answers, but job was created:', answerError);
+          // Don't fail the job posting if answers can't be saved
+        }
+      }
+
       toast({
         title: "Account Created & Job Submitted!",
         description: "Welcome to ServiceHub! Your job has been submitted for admin review. You'll receive a notification once it's approved and goes live.",
