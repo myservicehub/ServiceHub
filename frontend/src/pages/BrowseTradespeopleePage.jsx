@@ -58,8 +58,12 @@ const BrowseTradespeopleePage = () => {
   ];
 
   useEffect(() => {
-    // Load trade categories
-    loadTradeCategories();
+    // Initialize trade categories with fallback
+    setTradeCategories([
+      'Plumbing', 'Electrical', 'Carpentry', 'Painting', 'Roofing', 
+      'HVAC', 'Landscaping', 'Cleaning', 'Handyman', 'Masonry',
+      'Welding', 'Tiling', 'Security', 'Interior Design', 'Moving'
+    ]);
     
     // Get initial search params from URL or location state
     const searchParams = new URLSearchParams(location.search);
@@ -73,23 +77,6 @@ const BrowseTradespeopleePage = () => {
 
     loadTradespeople();
   }, [location]);
-
-  const loadTradeCategories = async () => {
-    try {
-      const response = await adminAPI.getAllTradeCategories();
-      if (response && response.length > 0) {
-        setTradeCategories(response.map(trade => trade.name || trade));
-      }
-    } catch (error) {
-      console.error('Failed to load trade categories:', error);
-      // Fallback to hardcoded categories
-      setTradeCategories([
-        'Plumbing', 'Electrical', 'Carpentry', 'Painting', 'Roofing', 
-        'HVAC', 'Landscaping', 'Cleaning', 'Handyman', 'Masonry',
-        'Welding', 'Tiling', 'Security', 'Interior Design', 'Moving'
-      ]);
-    }
-  };
 
   useEffect(() => {
     loadTradespeople();
