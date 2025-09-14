@@ -21,7 +21,7 @@ import json
 import uuid
 import time
 
-BACKEND_URL = "https://admin-dashboard-202.preview.emergentagent.com/api"
+BACKEND_URL = "https://servicehub-connect-2.preview.emergentagent.com/api"
 
 class FinalUserManagementTest:
     def __init__(self):

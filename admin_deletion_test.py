@@ -9,7 +9,7 @@ import requests
 import json
 import uuid
 
-BACKEND_URL = "https://admin-dashboard-202.preview.emergentagent.com/api"
+BACKEND_URL = "https://servicehub-connect-2.preview.emergentagent.com/api"
 
 def test_admin_deletion_protection():
     """Test that admin users cannot be deleted"""
