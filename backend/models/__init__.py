@@ -40,6 +40,9 @@ __all__ = [
     'Homeowner', 'Location',
     'PortfolioItemCreate', 'PortfolioItem', 'PortfolioResponse', 'PortfolioItemCategory',
     'InterestCreate', 'Interest', 'InterestedTradesperson', 'InterestResponse', 'InterestStatus', 'ContactDetails', 'ShareContactResponse',
+    # Trade Category Questions
+    'QuestionType', 'QuestionOption', 'TradeCategoryQuestionCreate', 'TradeCategoryQuestion', 
+    'TradeCategoryQuestionUpdate', 'QuestionAnswer', 'JobQuestionAnswer', 'TradeCategoryQuestionsResponse',
     # Auth models
     'User', 'UserRole', 'UserStatus',
     'HomeownerRegistration', 'TradespersonRegistration',
