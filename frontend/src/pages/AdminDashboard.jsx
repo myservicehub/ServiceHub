@@ -4351,7 +4351,7 @@ const AdminDashboard = () => {
                     <input
                       name="category"
                       type="text"
-                      defaultValue={editingJobData.category}
+                      defaultValue={editJobModal.category}
                       className="w-full px-3 py-2 border rounded-md"
                       required
                     />
