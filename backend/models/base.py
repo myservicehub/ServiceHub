@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, EmailStr
-from typing import List, Optional
+from typing import List, Optional, Union, Any, Dict
 from datetime import datetime
 import uuid
 from enum import Enum
@@ -17,6 +17,14 @@ class QuoteStatus(str, Enum):
     PENDING = "pending"
     ACCEPTED = "accepted"
     REJECTED = "rejected"
+
+class QuestionType(str, Enum):
+    MULTIPLE_CHOICE_SINGLE = "multiple_choice_single"
+    MULTIPLE_CHOICE_MULTIPLE = "multiple_choice_multiple"
+    TEXT_INPUT = "text_input"
+    TEXT_AREA = "text_area"
+    NUMBER_INPUT = "number_input"
+    YES_NO = "yes_no"
 
 class PortfolioItemCategory(str, Enum):
     PLUMBING = "plumbing"
