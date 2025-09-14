@@ -383,7 +383,7 @@ const ChatModal = ({
         </div>
 
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div key={forceUpdate} className="flex-1 overflow-y-auto p-4 space-y-4">
           {loading && initialLoad ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
