@@ -278,15 +278,18 @@ const Header = () => {
         {isMenuOpen && (
           <div className="md:hidden border-t bg-white py-4">
             <nav className="flex flex-col space-y-4">
-              <a 
-                onClick={() => {
-                  navigate('/about');
-                  setIsMenuOpen(false);
-                }}
-                className="text-gray-700 font-lato transition-colors hover:text-[#2F8140] cursor-pointer"
-              >
-                About us
-              </a>
+              {/* Hide About us from tradespeople */}
+              {!isTradesperson() && (
+                <a 
+                  onClick={() => {
+                    navigate('/about');
+                    setIsMenuOpen(false);
+                  }}
+                  className="text-gray-700 font-lato transition-colors hover:text-[#2F8140] cursor-pointer"
+                >
+                  About us
+                </a>
+              )}
               {/* Hide these navigation items when homeowner or tradesperson is logged in */}
               {!isHomeowner() && !isTradesperson() && (
                 <>
