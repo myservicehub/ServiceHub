@@ -21,13 +21,14 @@ import {
   Star
 } from 'lucide-react';
 import { jobsAPI, authAPI } from '../api/services';
+import { adminAPI } from '../api/wallet';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
 import useStates from '../hooks/useStates';
 import LocationPicker from './maps/LocationPicker';
 
-// Trade categories remain hardcoded as they're not frequently changed by admins
-const NIGERIAN_TRADE_CATEGORIES = [
+// Fallback trade categories (used while loading or if API fails)
+const FALLBACK_TRADE_CATEGORIES = [
   "Building",
   "Concrete Works", 
   "Tiling",
@@ -48,6 +49,15 @@ const NIGERIAN_TRADE_CATEGORIES = [
   "Plastering/POP",
   "Cleaning",
   "Electrical Repairs",
+  "Solar & Inverter Installation",
+  "Plumbing",
+  "Welding",
+  "Furniture Making",
+  "Interior Design",
+  "Roofing",
+  "Locksmithing",
+  "Recycling"
+];
   "Solar & Inverter Installation",
   "Plumbing",
   "Welding",
