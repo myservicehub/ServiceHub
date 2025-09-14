@@ -668,6 +668,162 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
                 <p className="text-gray-500 text-sm">{formData.description.length}/2000</p>
               </div>
             </div>
+
+            {/* Dynamic Trade Category Questions */}
+            {formData.category && (
+              <div className="border-t pt-6">
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold font-montserrat mb-2" style={{color: '#121E3C'}}>
+                    Additional Details for {formData.category}
+                  </h3>
+                  <p className="text-gray-600 font-lato text-sm">
+                    Please answer these specific questions to help tradespeople better understand your requirements.
+                  </p>
+                </div>
+
+                {loadingQuestions ? (
+                  <div className="space-y-4">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="animate-pulse">
+                        <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
+                        <div className="h-10 bg-gray-100 rounded"></div>
+                      </div>
+                    ))}
+                  </div>
+                ) : tradeQuestions.length > 0 ? (
+                  <div className="space-y-6">
+                    {tradeQuestions.map((question, index) => (
+                      <div key={question.id} className="space-y-2">
+                        <label className="block text-sm font-medium font-lato" style={{color: '#121E3C'}}>
+                          {question.question_text}
+                          {question.is_required && <span className="text-red-500 ml-1">*</span>}
+                        </label>
+                        
+                        {question.help_text && (
+                          <p className="text-gray-500 text-xs font-lato">{question.help_text}</p>
+                        )}
+
+                        {/* Multiple Choice Single */}
+                        {question.question_type === 'multiple_choice_single' && (
+                          <div className="space-y-2">
+                            {question.options?.map((option, optIndex) => (
+                              <label key={optIndex} className="flex items-center space-x-2 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name={`question_${question.id}`}
+                                  value={option.value}
+                                  checked={questionAnswers[question.id] === option.value}
+                                  onChange={(e) => handleQuestionAnswer(question.id, e.target.value, question.question_type)}
+                                  className="text-green-600 focus:ring-green-500"
+                                />
+                                <span className="text-sm font-lato">{option.text}</span>
+                              </label>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Multiple Choice Multiple */}
+                        {question.question_type === 'multiple_choice_multiple' && (
+                          <div className="space-y-2">
+                            {question.options?.map((option, optIndex) => (
+                              <label key={optIndex} className="flex items-center space-x-2 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  value={option.value}
+                                  checked={(questionAnswers[question.id] || []).includes(option.value)}
+                                  onChange={(e) => handleQuestionAnswer(question.id, option.value, question.question_type)}
+                                  className="text-green-600 focus:ring-green-500 rounded"
+                                />
+                                <span className="text-sm font-lato">{option.text}</span>
+                              </label>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Text Input */}
+                        {question.question_type === 'text_input' && (
+                          <input
+                            type="text"
+                            value={questionAnswers[question.id] || ''}
+                            onChange={(e) => handleQuestionAnswer(question.id, e.target.value, question.question_type)}
+                            placeholder={question.placeholder_text || 'Enter your answer...'}
+                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
+                              errors[`question_${question.id}`] ? 'border-red-500' : 'border-gray-300'
+                            }`}
+                          />
+                        )}
+
+                        {/* Text Area */}
+                        {question.question_type === 'text_area' && (
+                          <textarea
+                            rows={4}
+                            value={questionAnswers[question.id] || ''}
+                            onChange={(e) => handleQuestionAnswer(question.id, e.target.value, question.question_type)}
+                            placeholder={question.placeholder_text || 'Enter your detailed answer...'}
+                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato resize-none ${
+                              errors[`question_${question.id}`] ? 'border-red-500' : 'border-gray-300'
+                            }`}
+                          />
+                        )}
+
+                        {/* Number Input */}
+                        {question.question_type === 'number_input' && (
+                          <input
+                            type="number"
+                            value={questionAnswers[question.id] || ''}
+                            onChange={(e) => handleQuestionAnswer(question.id, e.target.value, question.question_type)}
+                            placeholder={question.placeholder_text || 'Enter number...'}
+                            min={question.min_value}
+                            max={question.max_value}
+                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
+                              errors[`question_${question.id}`] ? 'border-red-500' : 'border-gray-300'
+                            }`}
+                          />
+                        )}
+
+                        {/* Yes/No */}
+                        {question.question_type === 'yes_no' && (
+                          <div className="flex space-x-6">
+                            <label className="flex items-center space-x-2 cursor-pointer">
+                              <input
+                                type="radio"
+                                name={`question_${question.id}`}
+                                value="true"
+                                checked={questionAnswers[question.id] === true}
+                                onChange={(e) => handleQuestionAnswer(question.id, true, question.question_type)}
+                                className="text-green-600 focus:ring-green-500"
+                              />
+                              <span className="text-sm font-lato">Yes</span>
+                            </label>
+                            <label className="flex items-center space-x-2 cursor-pointer">
+                              <input
+                                type="radio"
+                                name={`question_${question.id}`}
+                                value="false"
+                                checked={questionAnswers[question.id] === false}
+                                onChange={(e) => handleQuestionAnswer(question.id, false, question.question_type)}
+                                className="text-green-600 focus:ring-green-500"
+                              />
+                              <span className="text-sm font-lato">No</span>
+                            </label>
+                          </div>
+                        )}
+
+                        {/* Question Error */}
+                        {errors[`question_${question.id}`] && (
+                          <p className="text-red-500 text-sm">{errors[`question_${question.id}`]}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : formData.category && !loadingQuestions ? (
+                  <div className="text-center py-4 text-gray-500 font-lato">
+                    <p>No specific questions available for {formData.category}.</p>
+                    <p className="text-sm">You can provide additional details in the job description above.</p>
+                  </div>
+                ) : null}
+              </div>
+            )}
           </div>
         );
 
