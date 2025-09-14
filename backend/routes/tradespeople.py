@@ -43,7 +43,7 @@ async def create_tradesperson(tradesperson_data: models.TradespersonCreate):
 @router.get("/", response_model=dict)
 async def get_tradespeople(
     page: int = Query(1, ge=1),
-    limit: int = Query(12, ge=1, le=50),
+    limit: int = Query(50, ge=1, le=100),  # Increased default limit from 12 to 50
     search: Optional[str] = None,
     trade: Optional[str] = None,
     location: Optional[str] = None,
