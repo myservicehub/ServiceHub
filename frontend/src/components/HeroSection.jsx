@@ -79,9 +79,21 @@ const HeroSection = () => {
     fetchTradeCategories();
   }, []);
 
+  // Filter trade categories based on search input
+  const filteredTradeCategories = tradeCategories.filter(category =>
+    category.toLowerCase().includes(job.toLowerCase())
+  );
+
   const handleJobSelect = (selectedJob) => {
     setJob(selectedJob);
     setShowJobDropdown(false);
+  };
+
+  const handleJobInputChange = (e) => {
+    setJob(e.target.value);
+    if (!showJobDropdown) {
+      setShowJobDropdown(true);
+    }
   };
 
   const handleLocationSelect = (selectedLocation) => {
