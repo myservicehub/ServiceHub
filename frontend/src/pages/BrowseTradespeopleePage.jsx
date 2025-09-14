@@ -29,6 +29,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { tradespeopleAPI } from '../api/services';
+import * as adminAPI from '../api/wallet';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
 
