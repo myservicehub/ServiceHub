@@ -1,45 +1,32 @@
 #!/usr/bin/env python3
 """
-TRADE CATEGORY QUESTIONS API TESTING
+GOOGLE MAPS INTEGRATION BACKEND TESTING
 
 **COMPREHENSIVE TESTING REQUIREMENTS:**
 
-**1. Admin API Endpoints Testing:**
-- POST /api/admin/trade-questions - Create new trade category questions
-- GET /api/admin/trade-questions - Get all questions (with optional trade category filter)
-- GET /api/admin/trade-questions/category/{trade_category} - Get questions by category
-- GET /api/admin/trade-questions/{question_id} - Get specific question
-- PUT /api/admin/trade-questions/{question_id} - Update question
-- DELETE /api/admin/trade-questions/{question_id} - Delete question
-- PUT /api/admin/trade-questions/reorder/{trade_category} - Reorder questions
-- GET /api/admin/trade-categories-with-questions - Get categories with questions
+**1. Location-Related Backend API Endpoints Testing:**
+- GET /api/locations/states - Get available states
+- GET /api/locations/lgas/{state} - Get LGAs for a state
+- PUT /api/jobs/{job_id}/location - Update job location coordinates
+- GET /api/jobs/near-location - Get jobs near a specific location
+- GET /api/jobs/by-location - Get jobs filtered by tradesperson's location
+- POST /api/jobs/search-with-location - Search jobs with location filtering
 
-**2. Job Posting API Endpoints Testing:**
-- GET /api/jobs/trade-questions/{trade_category} - Get questions for job posting
-- POST /api/jobs/trade-questions/answers - Save job question answers
-- GET /api/jobs/trade-questions/answers/{job_id} - Get job question answers
+**2. Location Data Validation Testing:**
+- Latitude/longitude coordinate validation
+- State and LGA data integrity
+- Location search functionality
+- Distance calculation accuracy
 
-**3. Question Types Testing:**
-Test all supported question types:
-- multiple_choice_single (radio buttons)
-- multiple_choice_multiple (checkboxes)
-- text_input (short text)
-- text_area (long text)
-- number_input (numeric)
-- yes_no (boolean)
+**3. Google Maps API Key Environment Testing:**
+- Verify backend can access location services
+- Test coordinate processing
+- Validate location-based job filtering
 
-**4. Data Validation Testing:**
-- Required fields validation
-- Question options validation
-- Answer format validation
-- Trade category validation
-- Display order handling
-
-**5. Integration Testing:**
-- Create questions for "Plumbing" trade category
-- Create questions for "Electrical" trade category
-- Test question ordering and reordering
-- Test answer saving and retrieval
+**4. Integration Testing:**
+- Location-based job search
+- Coordinate updates for jobs
+- Geographic filtering functionality
 """
 
 import requests
