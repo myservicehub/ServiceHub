@@ -55,20 +55,28 @@ import time
 from datetime import datetime, timedelta
 from typing import Dict, List, Any
 import uuid
+from collections import Counter
 
 # Get backend URL from environment
 BACKEND_URL = "https://admin-dashboard-202.preview.emergentagent.com/api"
 
-class UserManagementTester:
+class TradespeopleAPITester:
     def __init__(self):
         self.base_url = BACKEND_URL
         self.session = requests.Session()
         self.test_data = {}
-        self.auth_tokens = {}  # Store auth tokens for different users
         self.results = {
             'passed': 0,
             'failed': 0,
             'errors': []
+        }
+        self.duplicate_analysis = {
+            'duplicate_names': {},
+            'duplicate_ids': {},
+            'emeka_okafor_count': 0,
+            'total_unique_users': 0,
+            'total_returned_records': 0,
+            'all_tradespeople_data': []
         }
     
     def log_result(self, test_name: str, success: bool, message: str = ""):
@@ -120,532 +128,431 @@ class UserManagementTester:
         else:
             self.log_result("Service health check", False, f"Status: {response.status_code}")
     
-    def setup_test_users(self):
-        """Create test users for user management testing"""
-        print("\n=== Setting up Test Users ===")
+    def test_tradespeople_api_basic(self):
+        """Test basic tradespeople API functionality"""
+        print("\n=== 1. Testing Tradespeople API Basic Functionality ===")
         
-        # Create test homeowner
-        homeowner_data = {
-            "name": "Test Homeowner User",
-            "email": f"test.homeowner.{uuid.uuid4().hex[:8]}@email.com",
-            "password": "SecurePass123",
-            "phone": "+2348123456789",
-            "location": "Lagos",
-            "postcode": "100001"
-        }
+        # Test 1.1: Basic GET request
+        print("\n--- Test 1.1: Basic GET /api/tradespeople/ ---")
+        response = self.make_request("GET", "/tradespeople/")
         
-        response = self.make_request("POST", "/auth/register/homeowner", json=homeowner_data)
         if response.status_code == 200:
-            homeowner_profile = response.json()
-            if 'access_token' in homeowner_profile and 'user' in homeowner_profile:
-                self.auth_tokens['homeowner'] = homeowner_profile['access_token']
-                self.test_data['homeowner_user'] = homeowner_profile['user']
-                self.test_data['homeowner_id'] = homeowner_profile['user']['id']
-                self.log_result("Test homeowner creation", True, 
-                              f"ID: {homeowner_profile['user']['id']}")
-            else:
-                self.log_result("Test homeowner creation", False, "Missing access_token or user")
+            try:
+                data = response.json()
+                self.log_result("Tradespeople API - Basic GET", True, 
+                              f"Status: {response.status_code}, Response received")
+                
+                # Store response for analysis
+                self.test_data['basic_response'] = data
+                
+                # Check response structure
+                self.verify_response_structure(data)
+                
+            except json.JSONDecodeError:
+                self.log_result("Tradespeople API - Basic GET", False, "Invalid JSON response")
         else:
-            self.log_result("Test homeowner creation", False, 
+            self.log_result("Tradespeople API - Basic GET", False, 
                           f"Status: {response.status_code}, Response: {response.text}")
-        
-        # Create test tradesperson
-        tradesperson_data = {
-            "name": "Test Tradesperson User",
-            "email": f"test.tradesperson.{uuid.uuid4().hex[:8]}@email.com",
-            "password": "SecurePass123",
-            "phone": "+2348123456790",
-            "location": "Lagos",
-            "postcode": "100001",
-            "trade_categories": ["Plumbing"],
-            "experience_years": 5,
-            "company_name": "Test Plumbing Services",
-            "description": "Professional plumbing services with over 5 years of experience in residential and commercial plumbing installations, repairs, and maintenance. Specialized in modern Nigerian plumbing systems.",
-            "certifications": ["Licensed Plumber"]
-        }
-        
-        response = self.make_request("POST", "/auth/register/tradesperson", json=tradesperson_data)
-        if response.status_code == 200:
-            tradesperson_profile = response.json()
-            
-            # Login with the created tradesperson
-            login_data = {
-                "email": tradesperson_data["email"],
-                "password": tradesperson_data["password"]
-            }
-            
-            login_response = self.make_request("POST", "/auth/login", json=login_data)
-            if login_response.status_code == 200:
-                login_data_response = login_response.json()
-                self.auth_tokens['tradesperson'] = login_data_response['access_token']
-                self.test_data['tradesperson_user'] = login_data_response['user']
-                self.test_data['tradesperson_id'] = login_data_response['user']['id']
-                self.log_result("Test tradesperson creation", True, 
-                              f"ID: {login_data_response['user']['id']}")
-            else:
-                self.log_result("Test tradesperson login", False, 
-                              f"Status: {login_response.status_code}")
-        else:
-            self.log_result("Test tradesperson creation", False, 
-                          f"Status: {response.status_code}, Response: {response.text}")
-        
-        # Create admin user for testing (if possible)
-        admin_data = {
-            "name": "Test Admin User",
-            "email": f"test.admin.{uuid.uuid4().hex[:8]}@email.com",
-            "password": "AdminPass123",
-            "phone": "+2348123456791",
-            "location": "Lagos",
-            "postcode": "100001",
-            "role": "admin"
-        }
-        
-        # Try to create admin user (this might not work depending on system setup)
-        response = self.make_request("POST", "/auth/register/admin", json=admin_data)
-        if response.status_code == 200:
-            admin_profile = response.json()
-            if 'access_token' in admin_profile and 'user' in admin_profile:
-                self.auth_tokens['admin'] = admin_profile['access_token']
-                self.test_data['admin_user'] = admin_profile['user']
-                self.test_data['admin_id'] = admin_profile['user']['id']
-                self.log_result("Test admin creation", True, 
-                              f"ID: {admin_profile['user']['id']}")
-            else:
-                self.log_result("Test admin creation", False, "Missing access_token or user")
-        else:
-            # Admin creation might not be available, try to use existing admin credentials
-            self.log_result("Test admin creation", True, 
-                          "Admin creation not available - will use mock admin for testing")
-            # Create mock admin data for testing deletion prevention
-            self.test_data['admin_id'] = "mock-admin-id-for-testing"
     
-    def test_user_details_api(self):
-        """Test GET /api/admin/users/{user_id}/details endpoint"""
-        print("\n=== 1. Testing User Details API ===")
+    def verify_response_structure(self, data: dict):
+        """Verify the structure of tradespeople API response"""
+        print("\n--- Verifying Response Structure ---")
         
-        # Test 1.1: Get homeowner details
-        if 'homeowner_id' in self.test_data:
-            print("\n--- Test 1.1: Get homeowner user details ---")
-            homeowner_id = self.test_data['homeowner_id']
-            
-            response = self.make_request("GET", f"/admin/users/{homeowner_id}/details")
-            
-            if response.status_code == 200:
-                user_details = response.json()
-                self.log_result("User details API - Homeowner", True, 
-                              f"Retrieved homeowner details successfully")
-                
-                # Verify response structure for homeowner
-                self.verify_homeowner_details_structure(user_details)
-                
-            else:
-                self.log_result("User details API - Homeowner", False, 
-                              f"Failed to get homeowner details: {response.status_code}")
-        
-        # Test 1.2: Get tradesperson details
-        if 'tradesperson_id' in self.test_data:
-            print("\n--- Test 1.2: Get tradesperson user details ---")
-            tradesperson_id = self.test_data['tradesperson_id']
-            
-            response = self.make_request("GET", f"/admin/users/{tradesperson_id}/details")
-            
-            if response.status_code == 200:
-                user_details = response.json()
-                self.log_result("User details API - Tradesperson", True, 
-                              f"Retrieved tradesperson details successfully")
-                
-                # Verify response structure for tradesperson
-                self.verify_tradesperson_details_structure(user_details)
-                
-            else:
-                self.log_result("User details API - Tradesperson", False, 
-                              f"Failed to get tradesperson details: {response.status_code}")
-        
-        # Test 1.3: Get details for non-existent user
-        print("\n--- Test 1.3: Get details for non-existent user ---")
-        fake_user_id = "non-existent-user-id-12345"
-        
-        response = self.make_request("GET", f"/admin/users/{fake_user_id}/details")
-        
-        if response.status_code == 404:
-            self.log_result("User details API - Non-existent user", True, 
-                          "✅ Correctly returned 404 for non-existent user")
-        else:
-            self.log_result("User details API - Non-existent user", False, 
-                          f"Expected 404, got {response.status_code}")
-        
-        # Test 1.4: Authentication requirement (if admin auth is required)
-        print("\n--- Test 1.4: Authentication requirement ---")
-        if 'homeowner_id' in self.test_data:
-            homeowner_id = self.test_data['homeowner_id']
-            
-            # Test without authentication
-            response = self.make_request("GET", f"/admin/users/{homeowner_id}/details")
-            
-            # Note: This endpoint might not require authentication in current implementation
-            # We'll test and report the actual behavior
-            if response.status_code in [401, 403]:
-                self.log_result("User details API - Authentication", True, 
-                              f"✅ Correctly required authentication: {response.status_code}")
-            elif response.status_code == 200:
-                self.log_result("User details API - Authentication", True, 
-                              "✅ Endpoint accessible without authentication (current implementation)")
-            else:
-                self.log_result("User details API - Authentication", False, 
-                              f"Unexpected response: {response.status_code}")
-    
-    def verify_homeowner_details_structure(self, user_details: dict):
-        """Verify homeowner user details response structure"""
-        print("\n--- Verifying Homeowner Details Structure ---")
-        
-        # Basic user fields
-        basic_fields = ['id', 'name', 'email', 'phone', 'role', 'created_at', 'status']
-        missing_basic = [field for field in basic_fields if field not in user_details]
-        
-        if not missing_basic:
-            self.log_result("Homeowner details - Basic fields", True, 
-                          "✅ All basic user fields present")
-        else:
-            self.log_result("Homeowner details - Basic fields", False, 
-                          f"❌ Missing basic fields: {missing_basic}")
-        
-        # Homeowner-specific fields
-        homeowner_fields = ['jobs_posted', 'active_jobs', 'completed_jobs', 'total_interests_received']
-        missing_homeowner = [field for field in homeowner_fields if field not in user_details]
-        
-        if not missing_homeowner:
-            self.log_result("Homeowner details - Homeowner fields", True, 
-                          "✅ All homeowner-specific fields present")
-        else:
-            self.log_result("Homeowner details - Homeowner fields", False, 
-                          f"❌ Missing homeowner fields: {missing_homeowner}")
-        
-        # Activity stats fields
-        activity_fields = ['last_login', 'total_logins', 'account_age_days']
-        present_activity = [field for field in activity_fields if field in user_details]
-        
-        if present_activity:
-            self.log_result("Homeowner details - Activity stats", True, 
-                          f"✅ Activity stats present: {present_activity}")
-        else:
-            self.log_result("Homeowner details - Activity stats", True, 
-                          "✅ Activity stats may be optional")
-        
-        # Recent activity
-        if 'recent_jobs' in user_details:
-            recent_jobs = user_details['recent_jobs']
-            if isinstance(recent_jobs, list):
-                self.log_result("Homeowner details - Recent jobs", True, 
-                              f"✅ Recent jobs array with {len(recent_jobs)} items")
-            else:
-                self.log_result("Homeowner details - Recent jobs", False, 
-                              f"❌ Recent jobs is not array: {type(recent_jobs)}")
-        
-        # Verification status
-        verification_fields = ['verification_status', 'verified_at']
-        present_verification = [field for field in verification_fields if field in user_details]
-        
-        if present_verification:
-            self.log_result("Homeowner details - Verification info", True, 
-                          f"✅ Verification info present: {present_verification}")
-        
-        # Log sample structure
-        print(f"🔍 Sample homeowner details structure:")
-        sample_fields = {k: v for k, v in list(user_details.items())[:10]}
-        print(json.dumps(sample_fields, indent=2, default=str))
-    
-    def verify_tradesperson_details_structure(self, user_details: dict):
-        """Verify tradesperson user details response structure"""
-        print("\n--- Verifying Tradesperson Details Structure ---")
-        
-        # Basic user fields
-        basic_fields = ['id', 'name', 'email', 'phone', 'role', 'created_at', 'status']
-        missing_basic = [field for field in basic_fields if field not in user_details]
-        
-        if not missing_basic:
-            self.log_result("Tradesperson details - Basic fields", True, 
-                          "✅ All basic user fields present")
-        else:
-            self.log_result("Tradesperson details - Basic fields", False, 
-                          f"❌ Missing basic fields: {missing_basic}")
-        
-        # Tradesperson-specific fields
-        tradesperson_fields = ['wallet_balance_coins', 'wallet_balance_naira', 'interests_shown', 
-                             'paid_interests', 'portfolio_items', 'reviews_count', 'average_rating']
-        missing_tradesperson = [field for field in tradesperson_fields if field not in user_details]
-        
-        if not missing_tradesperson:
-            self.log_result("Tradesperson details - Tradesperson fields", True, 
-                          "✅ All tradesperson-specific fields present")
-        else:
-            self.log_result("Tradesperson details - Tradesperson fields", False, 
-                          f"❌ Missing tradesperson fields: {missing_tradesperson}")
-        
-        # Wallet information
-        wallet_fields = ['wallet_balance_coins', 'wallet_balance_naira']
-        present_wallet = [field for field in wallet_fields if field in user_details]
-        
-        if len(present_wallet) == 2:
-            self.log_result("Tradesperson details - Wallet info", True, 
-                          f"✅ Wallet info complete: {user_details.get('wallet_balance_coins', 0)} coins, "
-                          f"₦{user_details.get('wallet_balance_naira', 0)}")
-        else:
-            self.log_result("Tradesperson details - Wallet info", False, 
-                          f"❌ Incomplete wallet info: {present_wallet}")
-        
-        # Recent transactions
-        if 'recent_transactions' in user_details:
-            transactions = user_details['recent_transactions']
-            if isinstance(transactions, list):
-                self.log_result("Tradesperson details - Recent transactions", True, 
-                              f"✅ Recent transactions array with {len(transactions)} items")
-                
-                # Verify transaction structure if transactions exist
-                if len(transactions) > 0:
-                    sample_tx = transactions[0]
-                    tx_fields = ['id', 'type', 'amount_coins', 'amount_naira', 'description', 'status', 'created_at']
-                    missing_tx_fields = [field for field in tx_fields if field not in sample_tx]
-                    
-                    if not missing_tx_fields:
-                        self.log_result("Tradesperson details - Transaction structure", True, 
-                                      "✅ Transaction structure complete")
-                    else:
-                        self.log_result("Tradesperson details - Transaction structure", False, 
-                                      f"❌ Missing transaction fields: {missing_tx_fields}")
-            else:
-                self.log_result("Tradesperson details - Recent transactions", False, 
-                              f"❌ Recent transactions is not array: {type(transactions)}")
-        
-        # Recent interests
-        if 'recent_interests' in user_details:
-            interests = user_details['recent_interests']
-            if isinstance(interests, list):
-                self.log_result("Tradesperson details - Recent interests", True, 
-                              f"✅ Recent interests array with {len(interests)} items")
-            else:
-                self.log_result("Tradesperson details - Recent interests", False, 
-                              f"❌ Recent interests is not array: {type(interests)}")
-        
-        # Log sample structure
-        print(f"🔍 Sample tradesperson details structure:")
-        sample_fields = {k: v for k, v in list(user_details.items())[:10]}
-        print(json.dumps(sample_fields, indent=2, default=str))
-    
-    def test_user_deletion_api(self):
-        """Test DELETE /api/admin/users/{user_id} endpoint"""
-        print("\n=== 2. Testing User Deletion API ===")
-        
-        # Test 2.1: Delete non-existent user
-        print("\n--- Test 2.1: Delete non-existent user ---")
-        fake_user_id = "non-existent-user-id-12345"
-        
-        response = self.make_request("DELETE", f"/admin/users/{fake_user_id}")
-        
-        if response.status_code == 404:
-            self.log_result("User deletion API - Non-existent user", True, 
-                          "✅ Correctly returned 404 for non-existent user")
-        else:
-            self.log_result("User deletion API - Non-existent user", False, 
-                          f"Expected 404, got {response.status_code}")
-        
-        # Test 2.2: Attempt to delete admin user (should be prevented)
-        print("\n--- Test 2.2: Attempt to delete admin user ---")
-        if 'admin_id' in self.test_data:
-            admin_id = self.test_data['admin_id']
-            
-            response = self.make_request("DELETE", f"/admin/users/{admin_id}")
-            
-            # Admin deletion should be prevented (either 403 or 400)
-            if response.status_code in [400, 403]:
-                self.log_result("User deletion API - Admin protection", True, 
-                              f"✅ Correctly prevented admin deletion: {response.status_code}")
-            elif response.status_code == 404:
-                # Mock admin ID doesn't exist, which is expected
-                self.log_result("User deletion API - Admin protection", True, 
-                              "✅ Mock admin ID correctly returned 404")
-            else:
-                self.log_result("User deletion API - Admin protection", False, 
-                              f"Expected 400/403, got {response.status_code}")
-        
-        # Test 2.3: Delete regular homeowner user
-        print("\n--- Test 2.3: Delete homeowner user ---")
-        if 'homeowner_id' in self.test_data:
-            homeowner_id = self.test_data['homeowner_id']
-            
-            # First verify user exists
-            details_response = self.make_request("GET", f"/admin/users/{homeowner_id}/details")
-            if details_response.status_code == 200:
-                # User exists, proceed with deletion
-                response = self.make_request("DELETE", f"/admin/users/{homeowner_id}")
-                
-                if response.status_code == 200:
-                    deletion_result = response.json()
-                    self.log_result("User deletion API - Homeowner deletion", True, 
-                                  f"✅ Homeowner deleted successfully")
-                    
-                    # Verify response structure
-                    self.verify_deletion_response_structure(deletion_result, "homeowner")
-                    
-                    # Verify user is actually deleted
-                    verify_response = self.make_request("GET", f"/admin/users/{homeowner_id}/details")
-                    if verify_response.status_code == 404:
-                        self.log_result("User deletion API - Homeowner verification", True, 
-                                      "✅ Homeowner user successfully removed from database")
-                    else:
-                        self.log_result("User deletion API - Homeowner verification", False, 
-                                      f"❌ User still exists after deletion: {verify_response.status_code}")
-                    
-                    # Mark homeowner as deleted for cleanup
-                    self.test_data['homeowner_deleted'] = True
-                    
-                else:
-                    self.log_result("User deletion API - Homeowner deletion", False, 
-                                  f"Failed to delete homeowner: {response.status_code}")
-            else:
-                self.log_result("User deletion API - Homeowner deletion", False, 
-                              "Homeowner user not found for deletion test")
-        
-        # Test 2.4: Delete regular tradesperson user
-        print("\n--- Test 2.4: Delete tradesperson user ---")
-        if 'tradesperson_id' in self.test_data:
-            tradesperson_id = self.test_data['tradesperson_id']
-            
-            # First verify user exists
-            details_response = self.make_request("GET", f"/admin/users/{tradesperson_id}/details")
-            if details_response.status_code == 200:
-                # User exists, proceed with deletion
-                response = self.make_request("DELETE", f"/admin/users/{tradesperson_id}")
-                
-                if response.status_code == 200:
-                    deletion_result = response.json()
-                    self.log_result("User deletion API - Tradesperson deletion", True, 
-                                  f"✅ Tradesperson deleted successfully")
-                    
-                    # Verify response structure
-                    self.verify_deletion_response_structure(deletion_result, "tradesperson")
-                    
-                    # Verify user is actually deleted
-                    verify_response = self.make_request("GET", f"/admin/users/{tradesperson_id}/details")
-                    if verify_response.status_code == 404:
-                        self.log_result("User deletion API - Tradesperson verification", True, 
-                                      "✅ Tradesperson user successfully removed from database")
-                    else:
-                        self.log_result("User deletion API - Tradesperson verification", False, 
-                                      f"❌ User still exists after deletion: {verify_response.status_code}")
-                    
-                    # Mark tradesperson as deleted for cleanup
-                    self.test_data['tradesperson_deleted'] = True
-                    
-                else:
-                    self.log_result("User deletion API - Tradesperson deletion", False, 
-                                  f"Failed to delete tradesperson: {response.status_code}")
-            else:
-                self.log_result("User deletion API - Tradesperson deletion", False, 
-                              "Tradesperson user not found for deletion test")
-        
-        # Test 2.5: Authentication requirement (if admin auth is required)
-        print("\n--- Test 2.5: Authentication requirement ---")
-        fake_user_id = "test-user-for-auth-check"
-        
-        # Test without authentication
-        response = self.make_request("DELETE", f"/admin/users/{fake_user_id}")
-        
-        # Note: This endpoint might not require authentication in current implementation
-        if response.status_code in [401, 403]:
-            self.log_result("User deletion API - Authentication", True, 
-                          f"✅ Correctly required authentication: {response.status_code}")
-        elif response.status_code == 404:
-            self.log_result("User deletion API - Authentication", True, 
-                          "✅ Endpoint accessible without authentication (current implementation)")
-        else:
-            self.log_result("User deletion API - Authentication", False, 
-                          f"Unexpected response: {response.status_code}")
-    
-    def verify_deletion_response_structure(self, deletion_result: dict, user_type: str):
-        """Verify user deletion response structure"""
-        print(f"\n--- Verifying Deletion Response Structure ({user_type}) ---")
-        
-        # Required fields in deletion response
-        required_fields = ['message', 'user_id', 'deleted_user']
-        missing_fields = [field for field in required_fields if field not in deletion_result]
+        # Check for expected top-level fields
+        expected_fields = ['tradespeople', 'data', 'total', 'total_pages', 'current_page', 'limit']
+        missing_fields = [field for field in expected_fields if field not in data]
         
         if not missing_fields:
-            self.log_result(f"Deletion response - {user_type} - Required fields", True, 
-                          "✅ All required fields present")
+            self.log_result("Response structure - Top level fields", True, 
+                          "✅ All expected top-level fields present")
         else:
-            self.log_result(f"Deletion response - {user_type} - Required fields", False, 
+            self.log_result("Response structure - Top level fields", False, 
                           f"❌ Missing fields: {missing_fields}")
         
-        # Verify deleted_user structure
-        if 'deleted_user' in deletion_result:
-            deleted_user = deletion_result['deleted_user']
-            user_fields = ['name', 'email', 'role']
-            missing_user_fields = [field for field in user_fields if field not in deleted_user]
+        # Check tradespeople array
+        if 'tradespeople' in data and isinstance(data['tradespeople'], list):
+            tradespeople_count = len(data['tradespeople'])
+            self.log_result("Response structure - Tradespeople array", True, 
+                          f"✅ Tradespeople array with {tradespeople_count} items")
             
-            if not missing_user_fields:
-                self.log_result(f"Deletion response - {user_type} - User info", True, 
-                              f"✅ Deleted user info complete: {deleted_user.get('name', 'N/A')} ({deleted_user.get('role', 'N/A')})")
-            else:
-                self.log_result(f"Deletion response - {user_type} - User info", False, 
-                              f"❌ Missing user fields: {missing_user_fields}")
-        
-        # Log complete response structure
-        print(f"🔍 Complete {user_type} deletion response:")
-        print(json.dumps(deletion_result, indent=2, default=str))
-    
-    def test_data_cleanup_verification(self):
-        """Test that related data is properly cleaned up after user deletion"""
-        print("\n=== 3. Testing Data Cleanup Verification ===")
-        
-        # This test would ideally verify that all related data is cleaned up
-        # However, without direct database access, we can only test API endpoints
-        
-        print("\n--- Test 3.1: Related data cleanup verification ---")
-        
-        # Note: In a real implementation, we would:
-        # 1. Create jobs, interests, wallet transactions, etc. for test users
-        # 2. Delete the users
-        # 3. Verify that all related data is also deleted
-        
-        # For now, we'll just verify that the deletion API claims to clean up data
-        if self.test_data.get('homeowner_deleted') or self.test_data.get('tradesperson_deleted'):
-            self.log_result("Data cleanup verification", True, 
-                          "✅ User deletion API includes comprehensive data cleanup (based on database method analysis)")
+            # Store count for analysis
+            self.duplicate_analysis['total_returned_records'] = tradespeople_count
+            
         else:
-            self.log_result("Data cleanup verification", True, 
-                          "✅ Data cleanup verification skipped - no users were deleted")
+            self.log_result("Response structure - Tradespeople array", False, 
+                          "❌ Tradespeople field missing or not an array")
         
-        # List of collections that should be cleaned up (based on database method)
-        cleanup_collections = [
-            "jobs", "interests", "wallets", "wallet_transactions", 
-            "portfolio", "reviews", "conversations", "messages", 
-            "notifications", "notification_preferences", "user_verifications"
-        ]
+        # Check total count
+        if 'total' in data:
+            total_count = data['total']
+            self.log_result("Response structure - Total count", True, 
+                          f"✅ Total count: {total_count}")
+            print(f"🔍 API reports {total_count} total tradespeople in database")
+        else:
+            self.log_result("Response structure - Total count", False, 
+                          "❌ Total count field missing")
+    
+    def test_duplicate_detection(self):
+        """Test for duplicate entries in tradespeople response"""
+        print("\n=== 2. Testing Duplicate Detection ===")
         
-        print(f"📋 Collections cleaned up during user deletion: {', '.join(cleanup_collections)}")
-        self.log_result("Data cleanup scope", True, 
-                      f"✅ Comprehensive cleanup covers {len(cleanup_collections)} collections")
+        if 'basic_response' not in self.test_data:
+            self.log_result("Duplicate detection", False, "No basic response data available")
+            return
+        
+        data = self.test_data['basic_response']
+        tradespeople = data.get('tradespeople', [])
+        
+        if not tradespeople:
+            self.log_result("Duplicate detection", False, "No tradespeople data to analyze")
+            return
+        
+        # Store all tradespeople data for analysis
+        self.duplicate_analysis['all_tradespeople_data'] = tradespeople
+        
+        print(f"\n--- Analyzing {len(tradespeople)} tradespeople records ---")
+        
+        # Check for duplicate IDs
+        ids = [tp.get('id', '') for tp in tradespeople]
+        id_counts = Counter(ids)
+        duplicate_ids = {id_val: count for id_val, count in id_counts.items() if count > 1}
+        
+        if duplicate_ids:
+            self.log_result("Duplicate detection - IDs", False, 
+                          f"❌ Found duplicate IDs: {duplicate_ids}")
+            self.duplicate_analysis['duplicate_ids'] = duplicate_ids
+        else:
+            self.log_result("Duplicate detection - IDs", True, 
+                          f"✅ All {len(ids)} IDs are unique")
+            self.duplicate_analysis['total_unique_users'] = len(set(ids))
+        
+        # Check for duplicate names
+        names = [tp.get('name', '').strip() for tp in tradespeople]
+        name_counts = Counter(names)
+        duplicate_names = {name: count for name, count in name_counts.items() if count > 1}
+        
+        if duplicate_names:
+            self.log_result("Duplicate detection - Names", False, 
+                          f"❌ Found duplicate names: {duplicate_names}")
+            self.duplicate_analysis['duplicate_names'] = duplicate_names
+            
+            # Check specifically for "Emeka Okafor"
+            emeka_count = name_counts.get('Emeka Okafor', 0)
+            if emeka_count > 0:
+                self.duplicate_analysis['emeka_okafor_count'] = emeka_count
+                print(f"🔍 CRITICAL FINDING: 'Emeka Okafor' appears {emeka_count} times")
+                
+                # Find all Emeka Okafor entries
+                emeka_entries = [tp for tp in tradespeople if tp.get('name', '').strip() == 'Emeka Okafor']
+                print(f"🔍 Emeka Okafor entries details:")
+                for i, entry in enumerate(emeka_entries, 1):
+                    print(f"   {i}. ID: {entry.get('id', 'N/A')}, Email: {entry.get('email', 'N/A')}, "
+                          f"Trade: {entry.get('main_trade', 'N/A')}, Location: {entry.get('location', 'N/A')}")
+        else:
+            self.log_result("Duplicate detection - Names", True, 
+                          f"✅ All {len(names)} names are unique")
+        
+        # Check for duplicate emails
+        emails = [tp.get('email', '').strip().lower() for tp in tradespeople if tp.get('email')]
+        email_counts = Counter(emails)
+        duplicate_emails = {email: count for email, count in email_counts.items() if count > 1}
+        
+        if duplicate_emails:
+            self.log_result("Duplicate detection - Emails", False, 
+                          f"❌ Found duplicate emails: {duplicate_emails}")
+        else:
+            self.log_result("Duplicate detection - Emails", True, 
+                          f"✅ All {len(emails)} emails are unique")
+    
+    def test_pagination_and_limits(self):
+        """Test pagination and limit parameters"""
+        print("\n=== 3. Testing Pagination and Limits ===")
+        
+        # Test 3.1: Different page sizes
+        print("\n--- Test 3.1: Different page sizes ---")
+        page_sizes = [5, 10, 20, 50]
+        
+        for limit in page_sizes:
+            response = self.make_request("GET", f"/tradespeople/?limit={limit}")
+            
+            if response.status_code == 200:
+                data = response.json()
+                returned_count = len(data.get('tradespeople', []))
+                
+                if returned_count <= limit:
+                    self.log_result(f"Pagination - Limit {limit}", True, 
+                                  f"✅ Returned {returned_count} records (≤ {limit})")
+                else:
+                    self.log_result(f"Pagination - Limit {limit}", False, 
+                                  f"❌ Returned {returned_count} records (> {limit})")
+            else:
+                self.log_result(f"Pagination - Limit {limit}", False, 
+                              f"❌ Status: {response.status_code}")
+        
+        # Test 3.2: Multiple pages
+        print("\n--- Test 3.2: Multiple pages ---")
+        pages_to_test = [1, 2, 3]
+        page_data = {}
+        
+        for page in pages_to_test:
+            response = self.make_request("GET", f"/tradespeople/?page={page}&limit=10")
+            
+            if response.status_code == 200:
+                data = response.json()
+                tradespeople = data.get('tradespeople', [])
+                page_data[page] = tradespeople
+                
+                self.log_result(f"Pagination - Page {page}", True, 
+                              f"✅ Page {page} returned {len(tradespeople)} records")
+            else:
+                self.log_result(f"Pagination - Page {page}", False, 
+                              f"❌ Status: {response.status_code}")
+        
+        # Check for overlapping data between pages
+        if len(page_data) >= 2:
+            page1_ids = set(tp.get('id', '') for tp in page_data.get(1, []))
+            page2_ids = set(tp.get('id', '') for tp in page_data.get(2, []))
+            
+            overlap = page1_ids.intersection(page2_ids)
+            if overlap:
+                self.log_result("Pagination - Page overlap", False, 
+                              f"❌ Found overlapping IDs between pages: {overlap}")
+            else:
+                self.log_result("Pagination - Page overlap", True, 
+                              "✅ No overlapping records between pages")
+    
+    def test_comprehensive_data_analysis(self):
+        """Perform comprehensive analysis of all available tradespeople data"""
+        print("\n=== 4. Comprehensive Data Analysis ===")
+        
+        # Collect data from multiple pages to get a comprehensive view
+        print("\n--- Collecting comprehensive dataset ---")
+        all_tradespeople = []
+        page = 1
+        max_pages = 10  # Limit to prevent infinite loop
+        
+        while page <= max_pages:
+            response = self.make_request("GET", f"/tradespeople/?page={page}&limit=50")
+            
+            if response.status_code == 200:
+                data = response.json()
+                tradespeople = data.get('tradespeople', [])
+                
+                if not tradespeople:  # No more data
+                    break
+                
+                all_tradespeople.extend(tradespeople)
+                print(f"   Page {page}: {len(tradespeople)} records")
+                page += 1
+            else:
+                print(f"   Page {page}: Failed with status {response.status_code}")
+                break
+        
+        print(f"🔍 Collected {len(all_tradespeople)} total records from {page-1} pages")
+        
+        # Analyze the comprehensive dataset
+        self.analyze_comprehensive_dataset(all_tradespeople)
+    
+    def analyze_comprehensive_dataset(self, all_tradespeople: List[dict]):
+        """Analyze the comprehensive tradespeople dataset"""
+        print("\n--- Comprehensive Dataset Analysis ---")
+        
+        if not all_tradespeople:
+            self.log_result("Comprehensive analysis", False, "No data to analyze")
+            return
+        
+        # Update duplicate analysis with comprehensive data
+        self.duplicate_analysis['all_tradespeople_data'] = all_tradespeople
+        self.duplicate_analysis['total_returned_records'] = len(all_tradespeople)
+        
+        # Analyze unique IDs
+        ids = [tp.get('id', '') for tp in all_tradespeople]
+        unique_ids = set(ids)
+        self.duplicate_analysis['total_unique_users'] = len(unique_ids)
+        
+        print(f"📊 COMPREHENSIVE ANALYSIS RESULTS:")
+        print(f"   Total records collected: {len(all_tradespeople)}")
+        print(f"   Unique user IDs: {len(unique_ids)}")
+        print(f"   Duplicate records: {len(all_tradespeople) - len(unique_ids)}")
+        
+        # Check for ID duplicates
+        id_counts = Counter(ids)
+        duplicate_ids = {id_val: count for id_val, count in id_counts.items() if count > 1}
+        
+        if duplicate_ids:
+            self.log_result("Comprehensive analysis - ID duplicates", False, 
+                          f"❌ Found {len(duplicate_ids)} duplicate IDs affecting {sum(duplicate_ids.values()) - len(duplicate_ids)} extra records")
+            
+            print(f"🔍 DUPLICATE ID DETAILS:")
+            for duplicate_id, count in list(duplicate_ids.items())[:5]:  # Show first 5
+                print(f"   ID '{duplicate_id}' appears {count} times")
+                
+                # Show details of duplicated entries
+                duplicated_entries = [tp for tp in all_tradespeople if tp.get('id') == duplicate_id]
+                for i, entry in enumerate(duplicated_entries, 1):
+                    print(f"      {i}. Name: {entry.get('name', 'N/A')}, Email: {entry.get('email', 'N/A')}")
+        else:
+            self.log_result("Comprehensive analysis - ID duplicates", True, 
+                          "✅ No duplicate IDs found in comprehensive dataset")
+        
+        # Analyze names
+        names = [tp.get('name', '').strip() for tp in all_tradespeople]
+        name_counts = Counter(names)
+        duplicate_names = {name: count for name, count in name_counts.items() if count > 1}
+        
+        if duplicate_names:
+            self.log_result("Comprehensive analysis - Name duplicates", False, 
+                          f"❌ Found {len(duplicate_names)} duplicate names")
+            
+            print(f"🔍 DUPLICATE NAME DETAILS:")
+            for name, count in list(duplicate_names.items())[:10]:  # Show first 10
+                print(f"   '{name}' appears {count} times")
+                
+                # Special focus on Emeka Okafor
+                if name == 'Emeka Okafor':
+                    self.duplicate_analysis['emeka_okafor_count'] = count
+                    print(f"   🚨 CRITICAL: 'Emeka Okafor' appears {count} times!")
+                    
+                    # Show all Emeka Okafor entries
+                    emeka_entries = [tp for tp in all_tradespeople if tp.get('name', '').strip() == 'Emeka Okafor']
+                    for i, entry in enumerate(emeka_entries, 1):
+                        print(f"      {i}. ID: {entry.get('id', 'N/A')}, Email: {entry.get('email', 'N/A')}, "
+                              f"Trade: {entry.get('main_trade', 'N/A')}, Location: {entry.get('location', 'N/A')}")
+        else:
+            self.log_result("Comprehensive analysis - Name duplicates", True, 
+                          "✅ No duplicate names found in comprehensive dataset")
+        
+        # Analyze data quality
+        self.analyze_data_quality(all_tradespeople)
+    
+    def analyze_data_quality(self, all_tradespeople: List[dict]):
+        """Analyze data quality issues"""
+        print("\n--- Data Quality Analysis ---")
+        
+        # Check for missing required fields
+        required_fields = ['id', 'name', 'email']
+        missing_data_count = 0
+        
+        for field in required_fields:
+            missing_count = sum(1 for tp in all_tradespeople if not tp.get(field))
+            if missing_count > 0:
+                print(f"   ⚠️  {missing_count} records missing '{field}' field")
+                missing_data_count += missing_count
+        
+        if missing_data_count == 0:
+            self.log_result("Data quality - Required fields", True, 
+                          "✅ All records have required fields")
+        else:
+            self.log_result("Data quality - Required fields", False, 
+                          f"❌ {missing_data_count} field values missing")
+        
+        # Check for empty or placeholder data
+        placeholder_patterns = ['test', 'example', 'dummy', 'placeholder', 'sample']
+        placeholder_count = 0
+        
+        for tp in all_tradespeople:
+            name = tp.get('name', '').lower()
+            email = tp.get('email', '').lower()
+            
+            if any(pattern in name or pattern in email for pattern in placeholder_patterns):
+                placeholder_count += 1
+        
+        if placeholder_count > 0:
+            print(f"   ⚠️  {placeholder_count} records appear to be test/placeholder data")
+        
+        # Check profession/trade data
+        profession_data = [tp.get('main_trade', '') for tp in all_tradespeople]
+        empty_professions = sum(1 for prof in profession_data if not prof)
+        
+        if empty_professions > 0:
+            print(f"   ⚠️  {empty_professions} records missing profession/trade information")
+        
+        # Summary
+        total_quality_issues = missing_data_count + placeholder_count + empty_professions
+        if total_quality_issues == 0:
+            self.log_result("Data quality - Overall", True, 
+                          "✅ No significant data quality issues found")
+        else:
+            self.log_result("Data quality - Overall", False, 
+                          f"❌ Found {total_quality_issues} data quality issues")
+    
+    def test_database_query_investigation(self):
+        """Investigate potential database query issues"""
+        print("\n=== 5. Database Query Investigation ===")
+        
+        # Test different sorting options
+        print("\n--- Testing different sort options ---")
+        sort_options = ['rating', 'reviews', 'experience', 'recent']
+        
+        for sort_by in sort_options:
+            response = self.make_request("GET", f"/tradespeople/?sort_by={sort_by}&limit=10")
+            
+            if response.status_code == 200:
+                data = response.json()
+                tradespeople = data.get('tradespeople', [])
+                
+                self.log_result(f"Sort option - {sort_by}", True, 
+                              f"✅ Sort by {sort_by} returned {len(tradespeople)} records")
+                
+                # Check if sorting is actually working
+                if sort_by == 'rating' and len(tradespeople) > 1:
+                    ratings = [tp.get('average_rating', 0) for tp in tradespeople]
+                    is_sorted = all(ratings[i] >= ratings[i+1] for i in range(len(ratings)-1))
+                    if is_sorted:
+                        print(f"      ✅ Records properly sorted by rating (descending)")
+                    else:
+                        print(f"      ⚠️  Records may not be properly sorted by rating")
+                        
+            else:
+                self.log_result(f"Sort option - {sort_by}", False, 
+                              f"❌ Status: {response.status_code}")
+        
+        # Test filtering options
+        print("\n--- Testing filter options ---")
+        
+        # Test trade filter
+        response = self.make_request("GET", "/tradespeople/?trade=plumbing&limit=10")
+        if response.status_code == 200:
+            data = response.json()
+            tradespeople = data.get('tradespeople', [])
+            self.log_result("Filter - Trade", True, 
+                          f"✅ Trade filter returned {len(tradespeople)} records")
+        else:
+            self.log_result("Filter - Trade", False, f"❌ Status: {response.status_code}")
+        
+        # Test location filter
+        response = self.make_request("GET", "/tradespeople/?location=lagos&limit=10")
+        if response.status_code == 200:
+            data = response.json()
+            tradespeople = data.get('tradespeople', [])
+            self.log_result("Filter - Location", True, 
+                          f"✅ Location filter returned {len(tradespeople)} records")
+        else:
+            self.log_result("Filter - Location", False, f"❌ Status: {response.status_code}")
     
     def run_all_tests(self):
-        """Run all user management API tests"""
-        print("🚀 Starting User Management API Testing")
-        print("=" * 60)
+        """Run all tradespeople API tests"""
+        print("🚀 Starting Tradespeople API Duplication Investigation")
+        print("=" * 70)
         
         try:
             # Test service health
             self.test_service_health()
             
-            # Setup test users
-            self.setup_test_users()
+            # Test basic API functionality
+            self.test_tradespeople_api_basic()
             
-            # Test user details API
-            self.test_user_details_api()
+            # Test for duplicates
+            self.test_duplicate_detection()
             
-            # Test user deletion API
-            self.test_user_deletion_api()
+            # Test pagination
+            self.test_pagination_and_limits()
             
-            # Test data cleanup verification
-            self.test_data_cleanup_verification()
+            # Comprehensive data analysis
+            self.test_comprehensive_data_analysis()
+            
+            # Database query investigation
+            self.test_database_query_investigation()
             
         except Exception as e:
             print(f"❌ Critical error during testing: {str(e)}")
@@ -656,10 +563,10 @@ class UserManagementTester:
         self.print_final_results()
     
     def print_final_results(self):
-        """Print comprehensive test results"""
-        print("\n" + "=" * 60)
-        print("🏁 USER MANAGEMENT API TESTING RESULTS")
-        print("=" * 60)
+        """Print comprehensive test results and analysis"""
+        print("\n" + "=" * 70)
+        print("🏁 TRADESPEOPLE API DUPLICATION INVESTIGATION RESULTS")
+        print("=" * 70)
         
         total_tests = self.results['passed'] + self.results['failed']
         success_rate = (self.results['passed'] / total_tests * 100) if total_tests > 0 else 0
@@ -668,26 +575,76 @@ class UserManagementTester:
         print(f"❌ FAILED: {self.results['failed']}")
         print(f"📊 SUCCESS RATE: {success_rate:.1f}% ({self.results['passed']}/{total_tests} tests passed)")
         
-        if self.results['errors']:
+        # Print duplicate analysis results
+        print(f"\n🔍 DUPLICATE ANALYSIS SUMMARY:")
+        analysis = self.duplicate_analysis
+        print(f"• Total records analyzed: {analysis['total_returned_records']}")
+        print(f"• Unique user IDs: {analysis['total_unique_users']}")
+        print(f"• Emeka Okafor appearances: {analysis['emeka_okafor_count']}")
+        print(f"• Duplicate names found: {len(analysis['duplicate_names'])}")
+        print(f"• Duplicate IDs found: {len(analysis['duplicate_ids'])}")
+        
+        # Key findings
+        print(f"\n🎯 KEY FINDINGS:")
+        
+        if analysis['emeka_okafor_count'] > 1:
+            print(f"🚨 CRITICAL: 'Emeka Okafor' appears {analysis['emeka_okafor_count']} times - DUPLICATION CONFIRMED")
+        elif analysis['emeka_okafor_count'] == 1:
+            print(f"✅ 'Emeka Okafor' appears only once - no duplication for this name")
+        else:
+            print(f"ℹ️  'Emeka Okafor' not found in current dataset")
+        
+        if analysis['duplicate_ids']:
+            print(f"🚨 CRITICAL: Found duplicate user IDs - database integrity issue")
+            for dup_id, count in list(analysis['duplicate_ids'].items())[:3]:
+                print(f"   • ID '{dup_id}' appears {count} times")
+        
+        if analysis['duplicate_names'] and not analysis['duplicate_ids']:
+            print(f"⚠️  Found duplicate names but unique IDs - possible legitimate users with same names")
+        
+        # Root cause analysis
+        print(f"\n🔬 ROOT CAUSE ANALYSIS:")
+        
+        if analysis['duplicate_ids']:
+            print(f"❌ PRIMARY ISSUE: Database query returning duplicate records with same IDs")
+            print(f"   • This indicates a problem with the database query logic")
+            print(f"   • The API transformation is not deduplicating results")
+            print(f"   • Recommendation: Add DISTINCT clause or deduplication logic")
+        elif analysis['duplicate_names'] and not analysis['duplicate_ids']:
+            print(f"⚠️  SECONDARY ISSUE: Multiple users with same names but different IDs")
+            print(f"   • This could be legitimate (common names) or data quality issue")
+            print(f"   • Recommendation: Investigate user registration process")
+        else:
+            print(f"✅ NO DUPLICATION ISSUES: API appears to be working correctly")
+        
+        # Recommendations
+        print(f"\n💡 RECOMMENDATIONS:")
+        
+        if analysis['duplicate_ids']:
+            print(f"1. 🔧 IMMEDIATE: Fix database query to prevent duplicate IDs")
+            print(f"2. 🔧 IMMEDIATE: Add deduplication logic in API response transformation")
+            print(f"3. 🔍 INVESTIGATE: Check MongoDB aggregation pipeline for issues")
+            print(f"4. 🔍 INVESTIGATE: Verify database indexes and query performance")
+        
+        if analysis['emeka_okafor_count'] > 1:
+            print(f"5. 🔍 INVESTIGATE: Specific case of 'Emeka Okafor' duplication")
+            print(f"6. 🧹 CLEANUP: Remove or merge duplicate 'Emeka Okafor' entries")
+        
+        if self.results['failed'] > 0:
             print(f"\n🔍 FAILED TESTS DETAILS:")
             for i, error in enumerate(self.results['errors'], 1):
                 print(f"{i}. {error}")
         
-        print(f"\n📋 TEST SUMMARY:")
-        print(f"• Service health and availability: {'✅' if 'Service health check: PASSED' in str(self.results) else '❌'}")
-        print(f"• User details API functionality: {'✅' if self.results['passed'] > 5 else '❌'}")
-        print(f"• User deletion API functionality: {'✅' if self.results['passed'] > 8 else '❌'}")
-        print(f"• Data cleanup verification: {'✅' if 'Data cleanup' in str(self.results) else '❌'}")
-        
-        if success_rate >= 80:
-            print(f"\n🎉 OVERALL RESULT: USER MANAGEMENT APIs are working correctly!")
-        elif success_rate >= 60:
-            print(f"\n⚠️  OVERALL RESULT: USER MANAGEMENT APIs have some issues that need attention.")
+        # Overall assessment
+        if analysis['duplicate_ids'] or analysis['emeka_okafor_count'] > 1:
+            print(f"\n❌ OVERALL RESULT: DUPLICATION ISSUE CONFIRMED - Immediate action required")
+        elif analysis['duplicate_names']:
+            print(f"\n⚠️  OVERALL RESULT: POTENTIAL ISSUES FOUND - Investigation recommended")
         else:
-            print(f"\n❌ OVERALL RESULT: USER MANAGEMENT APIs have significant issues requiring immediate fixes.")
+            print(f"\n✅ OVERALL RESULT: NO DUPLICATION ISSUES DETECTED - API working correctly")
         
-        print("=" * 60)
+        print("=" * 70)
 
 if __name__ == "__main__":
-    tester = UserManagementTester()
+    tester = TradespeopleAPITester()
     tester.run_all_tests()
