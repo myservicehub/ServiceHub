@@ -552,7 +552,7 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
                 }`}
               >
                 <option value="">Select a category</option>
-                {NIGERIAN_TRADE_CATEGORIES.map((category) => (
+                {tradeCategories.map((category) => (
                   <option key={category} value={category}>
                     {category}
                   </option>
