@@ -39,10 +39,24 @@ const JobsMap = ({
 
   const initializeMap = async () => {
     try {
+      // Debug environment variables
+      console.log('JobsMap: Environment debugging:', {
+        'process.env keys': Object.keys(process.env || {}),
+        'NODE_ENV': process.env.NODE_ENV,
+        'REACT_APP vars': Object.keys(process.env || {}).filter(key => key.startsWith('REACT_APP_'))
+      });
+      
       // Access environment variable the correct way for React
       let apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
       
       console.log('Google Maps API Key available:', !!apiKey);
+      
+      // Fallback to hardcoded key if environment variable is not available
+      // This ensures the maps work while we debug the environment variable issue
+      if (!apiKey) {
+        apiKey = 'AIzaSyDf53OPDNVCQVti3M6enDzNiNIssWl3EUU';
+        console.log('JobsMap: Using fallback API key');
+      }
       
       if (!apiKey) {
         console.error('Google Maps API key not found. Checked import.meta.env and process.env.');
