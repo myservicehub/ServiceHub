@@ -59,6 +59,9 @@ const BrowseTradespeopleePage = () => {
   ];
 
   useEffect(() => {
+    // Load trade categories
+    loadTradeCategories();
+    
     // Get initial search params from URL or location state
     const searchParams = new URLSearchParams(location.search);
     const trade = searchParams.get('trade') || location.state?.trade || '';
@@ -71,6 +74,23 @@ const BrowseTradespeopleePage = () => {
 
     loadTradespeople();
   }, [location]);
+
+  const loadTradeCategories = async () => {
+    try {
+      const response = await adminAPI.getAllTrades();
+      if (response && response.trades) {
+        setTradeCategories(response.trades.map(trade => trade.name));
+      }
+    } catch (error) {
+      console.error('Failed to load trade categories:', error);
+      // Fallback to hardcoded categories
+      setTradeCategories([
+        'Plumbing', 'Electrical', 'Carpentry', 'Painting', 'Roofing', 
+        'HVAC', 'Landscaping', 'Cleaning', 'Handyman', 'Masonry',
+        'Welding', 'Tiling', 'Security', 'Interior Design', 'Moving'
+      ]);
+    }
+  };
 
   useEffect(() => {
     loadTradespeople();
