@@ -21,7 +21,7 @@ import {
   Star
 } from 'lucide-react';
 import { jobsAPI, authAPI } from '../api/services';
-import { adminAPI } from '../api/wallet';
+import { adminAPI, tradeCategoryQuestionsAPI } from '../api/wallet';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
 import useStates from '../hooks/useStates';
