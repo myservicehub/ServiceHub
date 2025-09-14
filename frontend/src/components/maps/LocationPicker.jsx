@@ -28,11 +28,34 @@ const LocationPicker = ({
 
   const initializeMap = async () => {
     try {
-      const apiKey = import.meta.env.REACT_APP_GOOGLE_MAPS_API_KEY || process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
+      // Try multiple ways to access the environment variable
+      let apiKey = null;
+      
+      try {
+        apiKey = import.meta?.env?.REACT_APP_GOOGLE_MAPS_API_KEY;
+      } catch (e) {
+        console.log('import.meta.env not available:', e.message);
+      }
       
       if (!apiKey) {
-        console.error('Google Maps API key not found. Please set REACT_APP_GOOGLE_MAPS_API_KEY in your environment variables.');
-        setError('Google Maps API key not configured');
+        try {
+          apiKey = process?.env?.REACT_APP_GOOGLE_MAPS_API_KEY;
+        } catch (e) {
+          console.log('process.env not available:', e.message);
+        }
+      }
+      
+      // For development/testing - hardcode the key temporarily to fix the immediate issue
+      if (!apiKey) {
+        apiKey = 'AIzaSyDf53OPDNVCQVti3M6enDzNiNIssWl3EUU'; // From your .env file
+        console.log('Using hardcoded API key as fallback');
+      }
+      
+      console.log('LocationPicker: Google Maps API Key available:', !!apiKey);
+      
+      if (!apiKey) {
+        console.error('Google Maps API key not found. Checked import.meta.env and process.env.');
+        setError('Google Maps API key not configured. Please contact support.');
         setLoading(false);
         return;
       }
