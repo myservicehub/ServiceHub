@@ -30,6 +30,7 @@ const ChatModal = ({
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [initialLoad, setInitialLoad] = useState(true);
+  const [forceUpdate, setForceUpdate] = useState(0); // Force update counter
 
   // Auto-scroll to bottom when new messages arrive
   const scrollToBottom = useCallback(() => {
