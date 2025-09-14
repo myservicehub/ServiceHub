@@ -92,8 +92,25 @@ const JobsMap = ({
 
       setLoading(false);
     } catch (err) {
-      console.error('Error initializing map:', err);
-      setError('Failed to load map. Please check your internet connection.');
+      console.error('Error initializing Google Maps:', err);
+      
+      // Provide specific error messages
+      let errorMessage = 'Failed to load Google Maps';
+      if (err.message) {
+        if (err.message.includes('API key')) {
+          errorMessage = 'Invalid Google Maps API key';
+        } else if (err.message.includes('quota')) {
+          errorMessage = 'Google Maps quota exceeded';
+        } else if (err.message.includes('billing')) {
+          errorMessage = 'Google Maps billing issue';
+        } else if (err.message.includes('referer')) {
+          errorMessage = 'Domain not authorized for this API key';
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      
+      setError(errorMessage);
       setLoading(false);
     }
   };
