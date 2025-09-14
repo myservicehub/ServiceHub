@@ -1489,8 +1489,9 @@ const AdminDashboard = () => {
                                 </td>
                                 <td className="px-6 py-4">
                                   <div>
-                                    <div className="font-medium text-gray-900">{job.homeowner?.name || 'Unknown'}</div>
-                                    <div className="text-sm text-gray-600">{job.homeowner?.email}</div>
+                                    <div className="font-medium text-gray-900">{job.homeowner_name || 'Unknown'}</div>
+                                    <div className="text-sm text-gray-600">{job.homeowner_email || ''}</div>
+                                    <div className="text-xs text-gray-500">{job.homeowner_total_jobs || 0} total jobs</div>
                                   </div>
                                 </td>
                                 <td className="px-6 py-4">
