@@ -104,12 +104,17 @@ async def get_jobs_with_access_fees(skip: int = 0, limit: int = 20):
     # Format jobs for admin view
     formatted_jobs = []
     for job in jobs:
+        # Debug logging to see homeowner data
+        logger.info(f"Processing job {job['id']}: homeowner = {job.get('homeowner', 'NO_HOMEOWNER')}")
+        
         formatted_job = {
             "id": job["id"],
             "title": job["title"],
             "category": job["category"],
             "location": job["location"],
             "homeowner_name": job["homeowner"]["name"],
+            "homeowner_email": job["homeowner"].get("email", ""),
+            "homeowner_total_jobs": job["homeowner"].get("total_jobs", 0),
             "access_fee_naira": job.get("access_fee_naira", 1500),
             "access_fee_coins": job.get("access_fee_coins", 15),
             "interests_count": job.get("interests_count", 0),
@@ -117,6 +122,8 @@ async def get_jobs_with_access_fees(skip: int = 0, limit: int = 20):
             "status": job.get("status", "active")
         }
         formatted_jobs.append(formatted_job)
+    
+    logger.info(f"Returning {len(formatted_jobs)} jobs with access fees")
     
     return {
         "jobs": formatted_jobs,
