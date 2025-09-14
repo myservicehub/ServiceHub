@@ -150,9 +150,26 @@ const LocationPicker = ({
       }
 
       setLoading(false);
-    } catch (err) {
-      console.error('Error initializing map:', err);
-      setError('Failed to load map. Please check your internet connection.');
+    } catch (error) {
+      console.error('Error initializing Google Maps:', error);
+      
+      // Provide specific error messages
+      let errorMessage = 'Failed to load Google Maps';
+      if (error.message) {
+        if (error.message.includes('API key')) {
+          errorMessage = 'Invalid Google Maps API key';
+        } else if (error.message.includes('quota')) {
+          errorMessage = 'Google Maps quota exceeded';
+        } else if (error.message.includes('billing')) {
+          errorMessage = 'Google Maps billing issue';
+        } else if (error.message.includes('referer')) {
+          errorMessage = 'Domain not authorized for this API key';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      setError(errorMessage);
       setLoading(false);
     }
   };
