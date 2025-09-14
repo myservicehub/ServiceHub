@@ -4361,7 +4361,7 @@ const AdminDashboard = () => {
                     <input
                       name="timeline"
                       type="text"
-                      defaultValue={editingJobData.timeline}
+                      defaultValue={editJobModal.timeline}
                       className="w-full px-3 py-2 border rounded-md"
                     />
                   </div>
