@@ -53,12 +53,6 @@ const TradeCategoryQuestionsManager = () => {
     { value: 'yes_no', label: 'Yes/No Question' }
   ];
 
-  const tradeCategories = [
-    'Plumbing', 'Electrical', 'Carpentry', 'Painting', 'Roofing',
-    'HVAC', 'Landscaping', 'Cleaning', 'Handyman', 'Masonry',
-    'Welding', 'Tiling', 'Security', 'Interior Design', 'Moving'
-  ];
-
   useEffect(() => {
     loadQuestions();
     loadCategoriesWithQuestions();
