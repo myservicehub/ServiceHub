@@ -663,3 +663,70 @@ class ContactResponse(BaseModel):
 class ContactsByType(BaseModel):
     contact_type: ContactType
     contacts: List[Contact]
+
+# Trade Category Questions Models
+class QuestionOption(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    text: str = Field(..., min_length=1, max_length=200)
+    value: str = Field(..., min_length=1, max_length=100)
+    display_order: int = Field(default=0)
+
+class TradeCategoryQuestionCreate(BaseModel):
+    trade_category: str = Field(..., min_length=1, max_length=100)
+    question_text: str = Field(..., min_length=5, max_length=500)
+    question_type: QuestionType
+    options: Optional[List[QuestionOption]] = []
+    is_required: bool = Field(default=True)
+    placeholder_text: Optional[str] = Field(None, max_length=200)
+    help_text: Optional[str] = Field(None, max_length=300)
+    display_order: int = Field(default=0)
+    min_value: Optional[float] = None  # For number inputs
+    max_value: Optional[float] = None  # For number inputs
+    is_active: bool = Field(default=True)
+
+class TradeCategoryQuestion(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    trade_category: str
+    question_text: str
+    question_type: QuestionType
+    options: Optional[List[QuestionOption]] = []
+    is_required: bool = True
+    placeholder_text: Optional[str] = None
+    help_text: Optional[str] = None
+    display_order: int = 0
+    min_value: Optional[float] = None
+    max_value: Optional[float] = None
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_by: Optional[str] = None
+
+class TradeCategoryQuestionUpdate(BaseModel):
+    question_text: Optional[str] = Field(None, min_length=5, max_length=500)
+    question_type: Optional[QuestionType] = None
+    options: Optional[List[QuestionOption]] = None
+    is_required: Optional[bool] = None
+    placeholder_text: Optional[str] = Field(None, max_length=200)
+    help_text: Optional[str] = Field(None, max_length=300)
+    display_order: Optional[int] = None
+    min_value: Optional[float] = None
+    max_value: Optional[float] = None
+    is_active: Optional[bool] = None
+
+class QuestionAnswer(BaseModel):
+    question_id: str
+    question_text: str
+    question_type: QuestionType
+    answer_value: Union[str, int, float, bool, List[str]]  # Flexible answer type
+    answer_text: Optional[str] = None  # Human readable answer
+
+class JobQuestionAnswer(BaseModel):
+    job_id: str
+    trade_category: str
+    answers: List[QuestionAnswer]
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class TradeCategoryQuestionsResponse(BaseModel):
+    trade_category: str
+    questions: List[TradeCategoryQuestion]
+    total_count: int
