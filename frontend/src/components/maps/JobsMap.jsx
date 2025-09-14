@@ -39,28 +39,8 @@ const JobsMap = ({
 
   const initializeMap = async () => {
     try {
-      // Try multiple ways to access the environment variable
-      let apiKey = null;
-      
-      try {
-        apiKey = import.meta?.env?.REACT_APP_GOOGLE_MAPS_API_KEY;
-      } catch (e) {
-        console.log('import.meta.env not available:', e.message);
-      }
-      
-      if (!apiKey) {
-        try {
-          apiKey = process?.env?.REACT_APP_GOOGLE_MAPS_API_KEY;
-        } catch (e) {
-          console.log('process.env not available:', e.message);
-        }
-      }
-      
-      // For development/testing - hardcode the key temporarily to fix the immediate issue
-      if (!apiKey) {
-        apiKey = 'AIzaSyDf53OPDNVCQVti3M6enDzNiNIssWl3EUU'; // From your .env file
-        console.log('Using hardcoded API key as fallback');
-      }
+      // Access environment variable the correct way for React
+      let apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
       
       console.log('Google Maps API Key available:', !!apiKey);
       
