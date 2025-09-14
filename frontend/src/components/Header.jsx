@@ -93,15 +93,6 @@ const Header = () => {
                 {isHomeowner() && (
                   <>
                     <Button 
-                      variant="ghost"
-                      onClick={() => navigate('/browse-tradespeople')}
-                      className="text-gray-700 font-lato hover:text-[#2F8140] flex items-center space-x-1"
-                    >
-                      <Search size={16} />
-                      <span>Find Tradespeople</span>
-                    </Button>
-                    
-                    <Button 
                       onClick={() => navigate('/post-job')}
                       className="font-lato text-white hover:opacity-90" 
                       style={{backgroundColor: '#2F8140'}}
