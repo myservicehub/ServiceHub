@@ -701,7 +701,7 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
               </label>
               <select
                 value={formData.category}
-                onChange={(e) => setFormData({...formData, category: e.target.value})}
+                onChange={(e) => updateFormData('category', e.target.value)}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
                   errors.category ? 'border-red-500' : 'border-gray-300'
                 }`}
