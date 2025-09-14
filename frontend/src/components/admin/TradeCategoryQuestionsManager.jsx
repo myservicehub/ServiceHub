@@ -70,21 +70,75 @@ const TradeCategoryQuestionsManager = () => {
         setTradeCategories(categoryNames);
         console.log('✅ Trade Questions Manager: Loaded trade categories:', categoryNames.length, 'categories');
       } else {
-        console.log('⚠️ Trade Questions Manager: Invalid API response, using fallback');
-        // Fallback categories if API fails
+        console.log('⚠️ Trade Questions Manager: Invalid API response, using real categories from your system');
+        // Your actual trade categories from the system
         setTradeCategories([
-          'Plumbing', 'Electrical', 'Carpentry', 'Painting', 'Roofing',
-          'HVAC', 'Landscaping', 'Cleaning', 'Handyman', 'Masonry',
-          'Welding', 'Tiling', 'Security', 'Interior Design', 'Moving'
+          'Air Conditioning & Refrigeration',
+          'Bathroom Installation', 
+          'Building',
+          'Building & Construction',
+          'Carpentry & Joinery',
+          'Carpentry & Woodwork',
+          'Electrical Installation',
+          'Electrical Work',
+          'Flooring',
+          'Gardening & Landscaping',
+          'Generator Installation & Repair',
+          'Heating & Gas',
+          'House Cleaning Services',
+          'Interior Decoration',
+          'Kitchen Installation',
+          'Kitchen fitting',
+          'Landscaping & Gardening',
+          'POP & Ceiling Works',
+          'Painting & Decorating',
+          'Plastering & Rendering',
+          'Plumbing',
+          'Plumbing & Water Works',
+          'Pool Maintenance',
+          'Roofing',
+          'Roofing & Waterproofing',
+          'Smart Home Automation',
+          'Solar Installation',
+          'Tiling',
+          'Tiling & Marble Works',
+          'Welding & Fabrication'
         ]);
       }
     } catch (error) {
       console.error('❌ Trade Questions Manager: Error fetching trade categories:', error);
-      // Fallback categories on error
+      // Your actual fallback categories
       setTradeCategories([
-        'Plumbing', 'Electrical', 'Carpentry', 'Painting', 'Roofing',
-        'HVAC', 'Landscaping', 'Cleaning', 'Handyman', 'Masonry',
-        'Welding', 'Tiling', 'Security', 'Interior Design', 'Moving'
+        'Air Conditioning & Refrigeration',
+        'Bathroom Installation', 
+        'Building',
+        'Building & Construction',
+        'Carpentry & Joinery',
+        'Carpentry & Woodwork',
+        'Electrical Installation',
+        'Electrical Work',
+        'Flooring',
+        'Gardening & Landscaping',
+        'Generator Installation & Repair',
+        'Heating & Gas',
+        'House Cleaning Services',
+        'Interior Decoration',
+        'Kitchen Installation',
+        'Kitchen fitting',
+        'Landscaping & Gardening',
+        'POP & Ceiling Works',
+        'Painting & Decorating',
+        'Plastering & Rendering',
+        'Plumbing',
+        'Plumbing & Water Works',
+        'Pool Maintenance',
+        'Roofing',
+        'Roofing & Waterproofing',
+        'Smart Home Automation',
+        'Solar Installation',
+        'Tiling',
+        'Tiling & Marble Works',
+        'Welding & Fabrication'
       ]);
     } finally {
       setLoadingCategories(false);
