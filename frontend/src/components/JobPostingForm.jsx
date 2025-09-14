@@ -102,6 +102,11 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  // Trade category questions state
+  const [tradeQuestions, setTradeQuestions] = useState([]);
+  const [questionAnswers, setQuestionAnswers] = useState({});
+  const [loadingQuestions, setLoadingQuestions] = useState(false);
+
   const { loginWithToken, isAuthenticated, user: currentUser, loading } = useAuth();
   const { toast } = useToast();
   const { states: nigerianStates, loading: statesLoading, error: statesError } = useStates();
