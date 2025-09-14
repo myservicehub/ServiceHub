@@ -672,6 +672,64 @@ const AdminDashboard = () => {
   };
 
   // ==========================================
+  // JOB ACCESS FEES MANAGEMENT FUNCTIONS
+  // ==========================================
+
+  const handleJobAccessFeesDataLoad = async () => {
+    setFeesLoading(true);
+    try {
+      const feesData = await adminAPI.getJobsWithAccessFees();
+      setJobsWithFees(feesData.jobs || []);
+      
+    } catch (error) {
+      console.error('Failed to load job access fees data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load job access fees data",
+        variant: "destructive"
+      });
+    } finally {
+      setFeesLoading(false);
+    }
+  };
+
+  const handleUpdateJobAccessFee = async (jobId, newFee) => {
+    if (!newFee || newFee < 500 || newFee > 10000) {
+      toast({
+        title: "Invalid Fee",
+        description: "Access fee must be between ₦500 and ₦10,000",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setFeeUpdateInProgress(true);
+      
+      await adminAPI.updateJobAccessFee(jobId, newFee);
+      
+      toast({
+        title: "Success",
+        description: "Job access fee updated successfully"
+      });
+      
+      // Refresh the jobs list
+      handleJobAccessFeesDataLoad();
+      setEditingJobFee(null);
+      
+    } catch (error) {
+      console.error('Failed to update job access fee:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update job access fee",
+        variant: "destructive"
+      });
+    } finally {
+      setFeeUpdateInProgress(false);
+    }
+  };
+
+  // ==========================================
   // ENHANCED CRUD OPERATIONS
 
   // ==========================================
