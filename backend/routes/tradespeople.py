@@ -55,7 +55,7 @@ async def get_tradespeople(
         skip = (page - 1) * limit
         
         # Build filters for users collection where role is tradesperson
-        filters = {"role": "tradesperson", "status": "active"}
+        filters = {"role": "tradesperson"}  # Removed status filter to show all tradespeople
         
         # Search across name, business_name, bio, profession fields
         if search:
