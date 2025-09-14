@@ -4522,6 +4522,147 @@ const AdminDashboard = () => {
         </div>
       )}
 
+      {/* Job Review Modal */}
+      {selectedJob && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center p-6 border-b">
+              <h3 className="text-xl font-semibold">Job Review - {selectedJob.title}</h3>
+              <button
+                onClick={() => setSelectedJob(null)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              {/* Job Basic Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="text-lg font-medium mb-3">Job Details</h4>
+                  <div className="space-y-2">
+                    <div><strong>Title:</strong> {selectedJob.title}</div>
+                    <div><strong>Category:</strong> 
+                      <span className="inline-flex px-2 py-1 ml-2 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                        {selectedJob.category}
+                      </span>
+                    </div>
+                    <div><strong>Status:</strong> 
+                      <span className={`inline-flex px-2 py-1 ml-2 text-xs font-semibold rounded-full ${selectedJob.status === 'pending_approval' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
+                        {selectedJob.status}
+                      </span>
+                    </div>
+                    <div><strong>Timeline:</strong> {selectedJob.timeline || 'Not specified'}</div>
+                    <div><strong>Budget:</strong> {selectedJob.budget_min && selectedJob.budget_max ? 
+                      `₦${selectedJob.budget_min?.toLocaleString()} - ₦${selectedJob.budget_max?.toLocaleString()}` : 
+                      'Budget not specified'
+                    }</div>
+                    <div><strong>Submitted:</strong> {new Date(selectedJob.created_at).toLocaleDateString()}</div>
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="text-lg font-medium mb-3">Homeowner Info</h4>
+                  <div className="space-y-2">
+                    <div><strong>Name:</strong> {selectedJob.homeowner?.name || 'Unknown'}</div>
+                    <div><strong>Email:</strong> {selectedJob.homeowner?.email || 'Not provided'}</div>
+                    <div><strong>Total Jobs:</strong> {selectedJob.homeowner?.total_jobs || 0}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Job Description */}
+              <div>
+                <h4 className="text-lg font-medium mb-3">Description</h4>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-gray-700">{selectedJob.description}</p>
+                </div>
+              </div>
+
+              {/* Location Details */}
+              <div>
+                <h4 className="text-lg font-medium mb-3">Location Details</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div><strong>State:</strong> {selectedJob.state || 'Not specified'}</div>
+                  <div><strong>LGA:</strong> {selectedJob.lga || 'Not specified'}</div>
+                  <div><strong>Town:</strong> {selectedJob.town || 'Not specified'}</div>
+                </div>
+                {selectedJob.home_address && (
+                  <div className="mt-2"><strong>Address:</strong> {selectedJob.home_address}</div>
+                )}
+                {selectedJob.zip_code && (
+                  <div className="mt-2"><strong>Zip Code:</strong> {selectedJob.zip_code}</div>
+                )}
+              </div>
+
+              {/* Access Fees */}
+              {(selectedJob.access_fees || selectedJob.access_fee_naira) && (
+                <div>
+                  <h4 className="text-lg font-medium mb-3">Access Fees</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-green-50 p-3 rounded-lg">
+                      <div className="text-sm text-gray-600">Naira Fee</div>
+                      <div className="text-lg font-semibold text-green-600">
+                        ₦{(selectedJob.access_fees?.naira || selectedJob.access_fee_naira || 1000).toLocaleString()}
+                      </div>
+                    </div>
+                    <div className="bg-blue-50 p-3 rounded-lg">
+                      <div className="text-sm text-gray-600">Coins Fee</div>
+                      <div className="text-lg font-semibold text-blue-600">
+                        {selectedJob.access_fees?.coins || selectedJob.access_fee_coins || 10} coins
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex justify-end space-x-3 pt-4 border-t">
+                <button
+                  onClick={() => setSelectedJob(null)}
+                  className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedJob(null);
+                    handleOpenJobEditor(selectedJob);
+                  }}
+                  className="px-4 py-2 text-purple-600 bg-purple-100 rounded-lg hover:bg-purple-200"
+                >
+                  Edit Job
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedJob(null);
+                    handleApproveJob(selectedJob.id, 'approve');
+                  }}
+                  disabled={processingApproval}
+                  className="px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50"
+                >
+                  Approve
+                </button>
+                <button
+                  onClick={() => {
+                    const reason = prompt('Reason for rejection (required):');
+                    if (reason && reason.trim()) {
+                      setSelectedJob(null);
+                      handleApproveJob(selectedJob.id, 'reject', reason.trim());
+                    }
+                  }}
+                  disabled={processingApproval}
+                  className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50"
+                >
+                  Reject
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Confirm Delete Modal */}
       <ConfirmDeleteModal
         isOpen={confirmDelete.isOpen}
