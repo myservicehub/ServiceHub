@@ -138,20 +138,52 @@ async def update_job_access_fee(
     try:
         logger.info(f"Raw request received for job {job_id}")
         
-        # Try to get form data
-        form_data = await request.form()
-        logger.info(f"Form data received: {dict(form_data)}")
+        access_fee_naira = None
         
-        # Extract access_fee_naira from form data
-        access_fee_naira_str = form_data.get('access_fee_naira')
-        if not access_fee_naira_str:
-            logger.error("access_fee_naira not found in form data")
+        # Try to get data from multiple sources
+        content_type = request.headers.get("content-type", "")
+        logger.info(f"Request content-type: {content_type}")
+        
+        if "application/json" in content_type:
+            # Handle JSON data
+            try:
+                json_data = await request.json()
+                logger.info(f"JSON data received: {json_data}")
+                access_fee_naira = json_data.get('access_fee_naira')
+            except Exception as e:
+                logger.error(f"Failed to parse JSON: {str(e)}")
+        elif "multipart/form-data" in content_type or "application/x-www-form-urlencoded" in content_type:
+            # Handle form data
+            try:
+                form_data = await request.form()
+                logger.info(f"Form data received: {dict(form_data)}")
+                access_fee_naira = form_data.get('access_fee_naira')
+            except Exception as e:
+                logger.error(f"Failed to parse form data: {str(e)}")
+        else:
+            # Try both methods
+            try:
+                form_data = await request.form()
+                logger.info(f"Form data received: {dict(form_data)}")
+                access_fee_naira = form_data.get('access_fee_naira')
+                
+                if not access_fee_naira:
+                    # Try JSON as fallback
+                    await request.stream().__anext__()  # Reset stream
+                    json_data = await request.json()
+                    logger.info(f"Fallback JSON data received: {json_data}")
+                    access_fee_naira = json_data.get('access_fee_naira')
+            except Exception as e:
+                logger.error(f"Failed to parse request data: {str(e)}")
+        
+        if not access_fee_naira:
+            logger.error("access_fee_naira not found in request data")
             raise HTTPException(status_code=400, detail="access_fee_naira is required")
         
         try:
-            access_fee_naira = int(access_fee_naira_str)
-        except ValueError:
-            logger.error(f"Invalid access_fee_naira format: {access_fee_naira_str}")
+            access_fee_naira = int(access_fee_naira)
+        except (ValueError, TypeError):
+            logger.error(f"Invalid access_fee_naira format: {access_fee_naira}")
             raise HTTPException(status_code=400, detail="access_fee_naira must be a valid integer")
         
         logger.info(f"Updating access fee for job {job_id} to ₦{access_fee_naira}")
