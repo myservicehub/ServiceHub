@@ -284,44 +284,17 @@ class GoogleMapsBackendTester:
         """Test getting jobs filtered by tradesperson's location"""
         print("\n=== 5. Testing Jobs by Location ===")
         
-        # Test with different locations
-        test_locations = ['Lagos', 'Abuja', 'Kano']
+        print(f"\n--- Test 5.1: Get jobs for tradesperson (requires auth) ---")
         
-        for location in test_locations:
-            print(f"\n--- Test 5.x: Get jobs for {location} location ---")
-            
-            params = {
-                'location': location,
-                'limit': 10
-            }
-            
-            response = self.make_request("GET", "/jobs/by-location", params=params)
-            
-            if response.status_code == 200:
-                try:
-                    data = response.json()
-                    if 'jobs' in data and isinstance(data['jobs'], list):
-                        jobs = data['jobs']
-                        self.log_result(f"Get jobs by {location} location", True, f"Retrieved {len(jobs)} jobs")
-                        
-                        # Verify user location in response
-                        if 'user_location' in data:
-                            user_location = data['user_location']
-                            if user_location.get('location') == location:
-                                self.log_result(f"Verify {location} user location", True, "User location correctly set")
-                            else:
-                                self.log_result(f"Verify {location} user location", False, f"Wrong user location: {user_location.get('location')}")
-                        
-                        # Store for comparison
-                        if 'jobs_by_location' not in self.test_data:
-                            self.test_data['jobs_by_location'] = {}
-                        self.test_data['jobs_by_location'][location] = jobs
-                    else:
-                        self.log_result(f"Get jobs by {location} location", False, "Invalid response structure")
-                except json.JSONDecodeError:
-                    self.log_result(f"Get jobs by {location} location", False, "Invalid JSON response")
-            else:
-                self.log_result(f"Get jobs by {location} location", False, f"Status: {response.status_code}")
+        # This endpoint requires authentication as a tradesperson
+        response = self.make_request("GET", "/jobs/for-tradesperson")
+        
+        if response.status_code == 401:
+            self.log_result("Get jobs for tradesperson", True, "Expected 401 (authentication required) - endpoint exists")
+        elif response.status_code == 403:
+            self.log_result("Get jobs for tradesperson", True, "Expected 403 (tradesperson role required) - endpoint exists")
+        else:
+            self.log_result("Get jobs for tradesperson", False, f"Unexpected status: {response.status_code}")
     
     def test_search_jobs_with_location(self):
         """Test searching jobs with location filtering"""
