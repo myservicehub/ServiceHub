@@ -2856,6 +2856,200 @@ class Database:
         result = await self.database.reviews.aggregate(pipeline).to_list(length=1)
         return round(result[0]["avg_rating"], 1) if result else 0
     
+    async def get_user_details_admin(self, user_id: str):
+        """Get comprehensive user details for admin management"""
+        
+        try:
+            # Get basic user information
+            user = await self.get_user_by_id(user_id)
+            if not user:
+                return None
+            
+            # Remove password hash for security
+            user.pop("password_hash", None)
+            user["_id"] = str(user.get("_id", ""))
+            
+            # Get activity statistics
+            activity_stats = await self.get_user_activity_stats(user_id)
+            
+            # Get role-specific details
+            if user.get("role") == "homeowner":
+                # Get homeowner-specific data
+                jobs_posted = await self.database.jobs.count_documents({"homeowner.id": user_id})
+                active_jobs = await self.database.jobs.count_documents({
+                    "homeowner.id": user_id,
+                    "status": {"$in": ["active", "open"]}
+                })
+                completed_jobs = await self.database.jobs.count_documents({
+                    "homeowner.id": user_id,
+                    "status": "completed"
+                })
+                total_interests_received = await self.database.interests.count_documents({
+                    "homeowner_id": user_id
+                })
+                
+                user.update({
+                    "jobs_posted": jobs_posted,
+                    "active_jobs": active_jobs,
+                    "completed_jobs": completed_jobs,
+                    "total_interests_received": total_interests_received
+                })
+                
+            elif user.get("role") == "tradesperson":
+                # Get tradesperson-specific data
+                wallet = await self.database.wallets.find_one({"user_id": user_id})
+                interests_shown = await self.database.interests.count_documents({"tradesperson_id": user_id})
+                paid_interests = await self.database.interests.count_documents({
+                    "tradesperson_id": user_id,
+                    "status": "paid_access"
+                })
+                portfolio_items = await self.database.portfolio.count_documents({"tradesperson_id": user_id})
+                reviews_count = await self.database.reviews.count_documents({"reviewee_id": user_id})
+                average_rating = await self._get_tradesperson_average_rating(user_id)
+                
+                # Get recent transactions
+                transactions = await self.database.wallet_transactions.find(
+                    {"user_id": user_id}
+                ).sort("created_at", -1).limit(10).to_list(length=10)
+                
+                user.update({
+                    "wallet_balance_coins": wallet.get("balance_coins", 0) if wallet else 0,
+                    "wallet_balance_naira": wallet.get("balance_naira", 0) if wallet else 0,
+                    "interests_shown": interests_shown,
+                    "paid_interests": paid_interests,
+                    "portfolio_items": portfolio_items,
+                    "reviews_count": reviews_count,
+                    "average_rating": average_rating,
+                    "recent_transactions": [
+                        {
+                            "id": str(tx.get("_id", "")),
+                            "type": tx.get("transaction_type", ""),
+                            "amount_coins": tx.get("amount_coins", 0),
+                            "amount_naira": tx.get("amount_naira", 0),
+                            "description": tx.get("description", ""),
+                            "status": tx.get("status", ""),
+                            "created_at": tx.get("created_at")
+                        } for tx in transactions
+                    ]
+                })
+            
+            # Add verification status
+            verification = await self.database.user_verifications.find_one({"user_id": user_id})
+            if verification:
+                user.update({
+                    "verification_status": verification.get("verification_status", "unverified"),
+                    "document_type": verification.get("document_type", ""),
+                    "verified_at": verification.get("verified_at"),
+                    "verification_notes": verification.get("admin_notes", "")
+                })
+            else:
+                user.update({
+                    "verification_status": "unverified",
+                    "document_type": "",
+                    "verified_at": None,
+                    "verification_notes": ""
+                })
+            
+            # Get recent activity based on role
+            if user.get("role") == "homeowner":
+                recent_jobs = await self.database.jobs.find(
+                    {"homeowner.id": user_id}
+                ).sort("created_at", -1).limit(5).to_list(length=5)
+                
+                user["recent_jobs"] = [
+                    {
+                        "id": job.get("id", ""),
+                        "title": job.get("title", ""),
+                        "category": job.get("category", ""),
+                        "status": job.get("status", ""),
+                        "created_at": job.get("created_at"),
+                        "interests_count": await self.database.interests.count_documents({"job_id": job.get("id", "")})
+                    } for job in recent_jobs
+                ]
+            
+            elif user.get("role") == "tradesperson":
+                recent_interests = await self.database.interests.find(
+                    {"tradesperson_id": user_id}
+                ).sort("created_at", -1).limit(5).to_list(length=5)
+                
+                user["recent_interests"] = [
+                    {
+                        "id": str(interest.get("_id", "")),
+                        "job_title": interest.get("job_title", ""),
+                        "job_category": interest.get("job_category", ""),
+                        "status": interest.get("status", ""),
+                        "created_at": interest.get("created_at"),
+                        "contact_shared_at": interest.get("contact_shared_at"),
+                        "payment_made_at": interest.get("payment_made_at")
+                    } for interest in recent_interests
+                ]
+            
+            # Combine with activity stats
+            user.update(activity_stats)
+            
+            return user
+            
+        except Exception as e:
+            logger.error(f"Error getting user details for admin: {str(e)}")
+            return None
+    
+    async def delete_user_completely(self, user_id: str):
+        """Permanently delete user and all associated data"""
+        
+        try:
+            # Get user details first for logging
+            user = await self.get_user_by_id(user_id)
+            if not user:
+                return False
+            
+            # Check if user is admin - prevent deletion of admin accounts
+            if user.get("role") == "admin":
+                logger.warning(f"Attempted to delete admin user: {user.get('email', 'Unknown')}")
+                return False
+            
+            # Delete from all related collections
+            collections_to_clean = [
+                ("jobs", {"homeowner.id": user_id}),
+                ("jobs", {"$or": [{"homeowner_id": user_id}, {"homeowner.id": user_id}]}),
+                ("interests", {"tradesperson_id": user_id}),
+                ("interests", {"homeowner_id": user_id}),
+                ("wallets", {"user_id": user_id}),
+                ("wallet_transactions", {"user_id": user_id}),
+                ("portfolio", {"tradesperson_id": user_id}),
+                ("reviews", {"reviewer_id": user_id}),
+                ("reviews", {"reviewee_id": user_id}),
+                ("conversations", {"participants": user_id}),
+                ("messages", {"sender_id": user_id}),
+                ("notifications", {"user_id": user_id}),
+                ("notification_preferences", {"user_id": user_id}),
+                ("user_verifications", {"user_id": user_id})
+            ]
+            
+            # Delete from all related collections
+            for collection_name, query in collections_to_clean:
+                try:
+                    collection = getattr(self.database, collection_name)
+                    result = await collection.delete_many(query)
+                    if result.deleted_count > 0:
+                        logger.info(f"Deleted {result.deleted_count} records from {collection_name} for user {user_id}")
+                except Exception as e:
+                    logger.warning(f"Error deleting from {collection_name}: {str(e)}")
+                    # Continue with deletion even if some collections fail
+            
+            # Finally delete the user account
+            result = await self.users_collection.delete_one({"id": user_id})
+            
+            if result.deleted_count > 0:
+                logger.info(f"Successfully deleted user account: {user.get('email', 'Unknown')} (ID: {user_id})")
+                return True
+            else:
+                logger.error(f"Failed to delete user account: {user_id}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error deleting user completely: {str(e)}")
+            return False
+    
     # ==========================================
     # LOCATION MANAGEMENT METHODS (Admin)
     # ==========================================
