@@ -15,7 +15,7 @@ import uuid
 from datetime import datetime
 
 # Get backend URL from environment
-BACKEND_URL = "https://tradie-marketplace.preview.emergentagent.com/api"
+BACKEND_URL = "https://admin-dashboard-202.preview.emergentagent.com/api"
 
 class NotificationTester:
     def __init__(self):

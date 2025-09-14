@@ -21,7 +21,7 @@ import uuid
 import time
 
 # Get backend URL from environment
-BACKEND_URL = "https://tradie-marketplace.preview.emergentagent.com/api"
+BACKEND_URL = "https://admin-dashboard-202.preview.emergentagent.com/api"
 
 class AuthenticationBugTester:
     def __init__(self):

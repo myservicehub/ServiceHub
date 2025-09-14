@@ -6,7 +6,7 @@ Debug Policy Issue
 import requests
 import json
 
-BACKEND_URL = "https://tradie-marketplace.preview.emergentagent.com/api"
+BACKEND_URL = "https://admin-dashboard-202.preview.emergentagent.com/api"
 
 def test_policy_endpoints():
     print("=== Debugging Policy Endpoints ===")
