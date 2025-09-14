@@ -1,53 +1,42 @@
 #!/usr/bin/env python3
 """
-MESSAGING SYSTEM FUNCTIONALITY TESTING
+USER MANAGEMENT API TESTING
 
 **CRITICAL TESTING REQUIREMENTS:**
 
-1. **Message Sending API Testing:**
-   - Test POST /api/messages/conversations/{conversation_id}/messages endpoint
-   - Verify API response format with id, content, sender_id, created_at fields
-   - Test message persistence to MongoDB database
-   - Verify authentication and authorization requirements
+1. **GET /api/admin/users/{user_id}/details - User Details API Testing:**
+   - Test getting detailed user information for homeowners
+   - Test getting detailed user information for tradespeople
+   - Test getting user details for non-existent user (should return 404)
+   - Verify response includes all expected fields (activity stats, wallet info, recent transactions, etc.)
+   - Test authentication and authorization requirements
 
-2. **Message Retrieval API Testing:**
-   - Test GET /api/messages/conversations/{conversation_id}/messages endpoint
-   - Verify proper message list structure and pagination
-   - Test message ordering and filtering
-   - Verify access control for conversation participants only
+2. **DELETE /api/admin/users/{user_id} - User Deletion API Testing:**
+   - Test deleting regular user accounts (homeowner/tradesperson)
+   - Test attempting to delete admin user (should be prevented)
+   - Test deleting non-existent user (should return 404)
+   - Verify that all related data is cleaned up when user is deleted
+   - Test proper error handling and response messages
 
-3. **Conversation Creation Testing:**
-   - Test GET /api/messages/conversations/job/{job_id} endpoint with tradesperson_id parameter
-   - Verify conversation creation workflow and access control
-   - Test payment workflow integration (paid_access requirement)
-   - Verify proper error handling for unauthorized access
+3. **Data Integrity Verification:**
+   - Verify user details include comprehensive information (profile, activity stats, wallet, recent activity)
+   - Verify user deletion removes all related data from jobs, interests, wallets, portfolio, reviews, etc.
+   - Verify admin users are NOT deletable
+   - Test proper error handling for invalid user IDs
 
 4. **API Response Format Verification:**
-   - Verify Message object structure: id, content, sender_id, created_at, conversation_id
-   - Test response consistency across different endpoints
-   - Verify proper JSON serialization of datetime fields
-   - Test error response formats and status codes
+   - Verify user details response structure and required fields
+   - Test response consistency and proper JSON serialization
+   - Verify proper HTTP status codes (200, 404, 403, etc.)
+   - Test error response formats and messages
 
-5. **Database Integration Testing:**
-   - Verify messages are properly stored in MongoDB conversations collection
-   - Test message retrieval from database with proper filtering
-   - Verify conversation metadata updates (last_message, timestamps)
-   - Test database consistency and transaction handling
-
-6. **Authentication & Authorization Testing:**
-   - Verify proper user access control for messaging endpoints
-   - Test role-based permissions (homeowner vs tradesperson)
-   - Verify conversation participant validation
+5. **Authentication & Authorization Testing:**
+   - Verify proper admin access control for user management endpoints
    - Test unauthorized access scenarios and error responses
-
-7. **Error Handling Testing:**
-   - Test invalid conversation IDs (404 responses)
-   - Test unauthorized access attempts (403 responses)
-   - Test malformed request data (400 responses)
-   - Verify proper error message formatting
+   - Verify role-based permissions for admin operations
 
 **PRIORITY FOCUS:**
-Test the sendMessage API response format since the frontend relies on the response.id field to update the UI properly.
+Test the new user management API endpoints to ensure they work correctly and provide comprehensive user information while maintaining proper security controls.
 """
 
 import requests
