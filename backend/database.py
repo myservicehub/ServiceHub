@@ -4661,6 +4661,167 @@ class Database:
             }
         
         return report
+    
+    # ==========================================
+    # TRADE CATEGORY QUESTIONS METHODS
+    # ==========================================
+    
+    async def create_trade_category_question(self, question_data: dict) -> dict:
+        """Create a new trade category question"""
+        try:
+            question_data['created_at'] = datetime.utcnow()
+            question_data['updated_at'] = datetime.utcnow()
+            
+            result = await self.database.trade_category_questions.insert_one(question_data)
+            if result.inserted_id:
+                question_data['_id'] = str(result.inserted_id)
+                return question_data
+            return None
+        except Exception as e:
+            logger.error(f"Error creating trade category question: {str(e)}")
+            return None
+    
+    async def get_questions_by_trade_category(self, trade_category: str) -> List[dict]:
+        """Get all active questions for a specific trade category"""
+        try:
+            questions = await self.database.trade_category_questions.find({
+                "trade_category": trade_category,
+                "is_active": True
+            }).sort("display_order", 1).to_list(length=None)
+            
+            for question in questions:
+                question['_id'] = str(question['_id'])
+            
+            return questions
+        except Exception as e:
+            logger.error(f"Error getting questions for trade category {trade_category}: {str(e)}")
+            return []
+    
+    async def get_all_trade_category_questions(self, trade_category: str = None) -> List[dict]:
+        """Get all questions (admin view) with optional trade category filter"""
+        try:
+            filters = {}
+            if trade_category:
+                filters["trade_category"] = trade_category
+            
+            questions = await self.database.trade_category_questions.find(filters).sort([
+                ("trade_category", 1), 
+                ("display_order", 1)
+            ]).to_list(length=None)
+            
+            for question in questions:
+                question['_id'] = str(question['_id'])
+            
+            return questions
+        except Exception as e:
+            logger.error(f"Error getting all trade category questions: {str(e)}")
+            return []
+    
+    async def get_trade_category_question_by_id(self, question_id: str) -> dict:
+        """Get a specific trade category question by ID"""
+        try:
+            question = await self.database.trade_category_questions.find_one({"id": question_id})
+            if question:
+                question['_id'] = str(question['_id'])
+            return question
+        except Exception as e:
+            logger.error(f"Error getting trade category question {question_id}: {str(e)}")
+            return None
+    
+    async def update_trade_category_question(self, question_id: str, update_data: dict) -> dict:
+        """Update a trade category question"""
+        try:
+            update_data['updated_at'] = datetime.utcnow()
+            
+            result = await self.database.trade_category_questions.update_one(
+                {"id": question_id},
+                {"$set": update_data}
+            )
+            
+            if result.modified_count > 0:
+                return await self.get_trade_category_question_by_id(question_id)
+            return None
+        except Exception as e:
+            logger.error(f"Error updating trade category question {question_id}: {str(e)}")
+            return None
+    
+    async def delete_trade_category_question(self, question_id: str) -> bool:
+        """Delete a trade category question"""
+        try:
+            result = await self.database.trade_category_questions.delete_one({"id": question_id})
+            return result.deleted_count > 0
+        except Exception as e:
+            logger.error(f"Error deleting trade category question {question_id}: {str(e)}")
+            return False
+    
+    async def reorder_trade_category_questions(self, trade_category: str, question_orders: List[dict]) -> bool:
+        """Reorder questions for a trade category"""
+        try:
+            # question_orders should be [{"id": "question_id", "display_order": int}, ...]
+            for item in question_orders:
+                await self.database.trade_category_questions.update_one(
+                    {"id": item["id"], "trade_category": trade_category},
+                    {"$set": {"display_order": item["display_order"], "updated_at": datetime.utcnow()}}
+                )
+            return True
+        except Exception as e:
+            logger.error(f"Error reordering questions for {trade_category}: {str(e)}")
+            return False
+    
+    async def save_job_question_answers(self, answers_data: dict) -> dict:
+        """Save answers to trade category questions for a job"""
+        try:
+            answers_data['created_at'] = datetime.utcnow()
+            
+            # Remove any existing answers for this job
+            await self.database.job_question_answers.delete_many({"job_id": answers_data["job_id"]})
+            
+            # Insert new answers
+            result = await self.database.job_question_answers.insert_one(answers_data)
+            if result.inserted_id:
+                answers_data['_id'] = str(result.inserted_id)
+                return answers_data
+            return None
+        except Exception as e:
+            logger.error(f"Error saving job question answers: {str(e)}")
+            return None
+    
+    async def get_job_question_answers(self, job_id: str) -> dict:
+        """Get answers to trade category questions for a job"""
+        try:
+            answers = await self.database.job_question_answers.find_one({"job_id": job_id})
+            if answers:
+                answers['_id'] = str(answers['_id'])
+            return answers
+        except Exception as e:
+            logger.error(f"Error getting job question answers for {job_id}: {str(e)}")
+            return None
+    
+    async def get_trade_categories_with_questions(self) -> List[dict]:
+        """Get all trade categories that have questions defined"""
+        try:
+            pipeline = [
+                {"$match": {"is_active": True}},
+                {"$group": {
+                    "_id": "$trade_category",
+                    "question_count": {"$sum": 1}
+                }},
+                {"$sort": {"_id": 1}}
+            ]
+            
+            results = await self.database.trade_category_questions.aggregate(pipeline).to_list(length=None)
+            
+            categories = []
+            for result in results:
+                categories.append({
+                    "trade_category": result["_id"],
+                    "question_count": result["question_count"]
+                })
+            
+            return categories
+        except Exception as e:
+            logger.error(f"Error getting trade categories with questions: {str(e)}")
+            return []
 
 # Global database instance
 database = Database()
