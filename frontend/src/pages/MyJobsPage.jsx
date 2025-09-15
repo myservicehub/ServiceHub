@@ -42,6 +42,8 @@ const MyJobsPage = () => {
   const [tradespersonToReview, setTradespersonToReview] = useState(null);
   const [submittingReview, setSubmittingReview] = useState(false);
   const [jobReviews, setJobReviews] = useState({});
+  const [showTradespersonSelectionModal, setShowTradespersonSelectionModal] = useState(false);
+  const [availableTradespeoplePorReview, setAvailableTradespeoplePorReview] = useState([]);
   const [jobHiringStatuses, setJobHiringStatuses] = useState({});
   const [pendingReviewJobs, setPendingReviewJobs] = useState(new Set());
 
