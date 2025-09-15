@@ -1365,5 +1365,5 @@ class HiringStatusTester:
         print("=" * 80)
 
 if __name__ == "__main__":
-    tester = ReviewSystemTester()
+    tester = HiringStatusTester()
     tester.run_all_tests()
