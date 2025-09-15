@@ -376,7 +376,7 @@ const Header = () => {
                         <Button 
                           variant="ghost"
                           onClick={() => {
-                            navigate('/reviews');
+                            navigate('/my-reviews');
                             setIsMenuOpen(false);
                           }}
                           className="text-gray-700 font-lato hover:text-[#2F8140] justify-start flex items-center space-x-1"
@@ -497,7 +497,7 @@ const Header = () => {
                         <Button 
                           variant="ghost"
                           onClick={() => {
-                            navigate('/reviews');
+                            navigate('/my-reviews');
                             setIsMenuOpen(false);
                           }}
                           className="text-gray-700 font-lato hover:text-[#2F8140] justify-start flex items-center space-x-1"
