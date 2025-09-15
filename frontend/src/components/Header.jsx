@@ -133,7 +133,7 @@ const Header = () => {
                           <span>My Jobs</span>
                         </DropdownMenuItem>
                         
-                        <DropdownMenuItem onClick={() => navigate('/reviews')}>
+                        <DropdownMenuItem onClick={() => navigate('/my-reviews')}>
                           <Star size={16} />
                           <span>My Reviews</span>
                         </DropdownMenuItem>
@@ -208,7 +208,7 @@ const Header = () => {
                           <span>Referrals</span>
                         </DropdownMenuItem>
                         
-                        <DropdownMenuItem onClick={() => navigate('/reviews')}>
+                        <DropdownMenuItem onClick={() => navigate('/my-reviews')}>
                           <Star size={16} />
                           <span>My Reviews</span>
                         </DropdownMenuItem>
