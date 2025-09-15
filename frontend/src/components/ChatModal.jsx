@@ -288,6 +288,33 @@ const ChatModal = ({
     }
   }, [newMessage, conversationId, sending, messages.length, toast, scrollToBottom, setForceUpdate]);
 
+  // Hiring status handlers
+  const handleStatusUpdate = async (statusData) => {
+    try {
+      await messagesAPI.updateHiringStatus(statusData);
+      toast({
+        title: "Status Updated",
+        description: "Your hiring status has been updated successfully.",
+      });
+    } catch (error) {
+      console.error('Error updating hiring status:', error);
+      throw error; // Re-throw so the modal can handle it
+    }
+  };
+
+  const handleFeedbackSubmit = async (feedbackData) => {
+    try {
+      await messagesAPI.submitHiringFeedback(feedbackData);
+      toast({
+        title: "Feedback Submitted",
+        description: "Thank you for your feedback.",
+      });
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      throw error; // Re-throw so the modal can handle it
+    }
+  };
+
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
