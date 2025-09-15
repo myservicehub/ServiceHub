@@ -633,7 +633,6 @@ async def complete_job(
         updated_job = await database.get_job_by_id(job_id)
         
         # Send notification to tradespeople who worked on this job about potential reviews
-        background_tasks = BackgroundTasks()
         background_tasks.add_task(
             notify_job_completion,
             job_id,
