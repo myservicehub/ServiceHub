@@ -17,6 +17,7 @@ import { interestsAPI } from '../api/interests';
 import { reviewsAPI } from '../api/reviews';
 import { useToast } from '../hooks/use-toast';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const MyJobsPage = () => {
   const [jobs, setJobs] = useState([]);
