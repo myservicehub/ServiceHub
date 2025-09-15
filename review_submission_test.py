@@ -75,6 +75,7 @@ class ReviewSubmissionFixTester:
         self.test_job_id = None
         self.test_review_id = None
         self.hiring_status_id = None
+        self.admin_token = None
         
     def log_result(self, test_name: str, success: bool, message: str = ""):
         """Log test result"""
