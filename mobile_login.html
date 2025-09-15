@@ -134,7 +134,7 @@
                 // Step 3: Verify the token works
                 updateStatus('Step 3: Verifying authentication...', 'info');
                 
-                const verifyResponse = await fetch('http://localhost:8001/api/auth/me', {
+                const verifyResponse = await fetch('http://10.219.64.152:8001/api/auth/me', {
                     headers: {
                         'Authorization': `Bearer ${loginData.access_token}`
                     }
