@@ -40,8 +40,8 @@ class PasswordUpdateTester:
             'failed': 0,
             'errors': []
         }
-        self.target_email = "francisdaniel4jb@gmail.com"
-        self.new_password = "Servicehub..1"
+        self.target_email = "john.plumber@gmail.com"
+        self.new_password = "Password123!"
         self.user_data = None
         
     def log_result(self, test_name: str, success: bool, message: str = ""):
