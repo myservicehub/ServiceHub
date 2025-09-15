@@ -856,6 +856,317 @@ const ContentManagement = () => {
               )}
             </div>
           )}
+
+          {/* Jobs & Careers Tab */}
+          {activeTab === 'jobs' && (
+            <div className="space-y-6">
+              {/* Jobs Sub-tabs */}
+              <div className="border-b border-gray-200">
+                <nav className="-mb-px flex space-x-8">
+                  {[
+                    { id: 'postings', label: 'Job Postings', icon: Briefcase },
+                    { id: 'applications', label: 'Applications', icon: Users },
+                    { id: 'statistics', label: 'Statistics', icon: BarChart3 }
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setJobsSubTab(tab.id)}
+                      className={`py-3 px-4 border-b-2 font-medium text-sm transition-colors flex items-center space-x-2 ${
+                        jobsSubTab === tab.id
+                          ? 'border-green-500 text-green-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      <tab.icon className="w-4 h-4" />
+                      <span>{tab.label}</span>
+                    </button>
+                  ))}
+                </nav>
+              </div>
+
+              {/* Job Postings Sub-tab */}
+              {jobsSubTab === 'postings' && (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold text-gray-900">Job Postings</h3>
+                    <button
+                      onClick={() => setShowCreateJobModal(true)}
+                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Create Job Posting</span>
+                    </button>
+                  </div>
+
+                  <div className="grid gap-4">
+                    {jobPostings.map((job) => (
+                      <div key={job.id} className="bg-white border rounded-lg p-6">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-3 mb-2">
+                              <h3 className="text-lg font-semibold text-gray-900">{job.title}</h3>
+                              <span className={`px-2 py-1 text-xs rounded-full ${
+                                job.status === 'published' ? 'bg-green-100 text-green-800' :
+                                job.status === 'draft' ? 'bg-gray-100 text-gray-800' :
+                                'bg-blue-100 text-blue-800'
+                              }`}>
+                                {job.status}
+                              </span>
+                              {job.settings?.is_featured && (
+                                <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
+                                  Featured
+                                </span>
+                              )}
+                            </div>
+                            
+                            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-3">
+                              {job.settings?.department && (
+                                <span className="flex items-center">
+                                  <Building className="w-4 h-4 mr-1" />
+                                  {job.settings.department}
+                                </span>
+                              )}
+                              {job.settings?.location && (
+                                <span className="flex items-center">
+                                  <MapPin className="w-4 h-4 mr-1" />
+                                  {job.settings.location}
+                                </span>
+                              )}
+                              {job.settings?.job_type && (
+                                <span className="flex items-center">
+                                  <Clock className="w-4 h-4 mr-1" />
+                                  {job.settings.job_type.replace('_', ' ')}
+                                </span>
+                              )}
+                              {job.settings?.experience_level && (
+                                <span className="flex items-center">
+                                  <User className="w-4 h-4 mr-1" />
+                                  {job.settings.experience_level}
+                                </span>
+                              )}
+                            </div>
+                            
+                            <p className="text-gray-700 text-sm mb-3 line-clamp-2">{job.content}</p>
+                            
+                            <div className="flex items-center space-x-4 text-sm text-gray-500">
+                              <span>{job.settings?.applications_count || 0} applications</span>
+                              <span>Created {new Date(job.created_at).toLocaleDateString()}</span>
+                              {job.settings?.expires_at && (
+                                <span>Expires {new Date(job.settings.expires_at).toLocaleDateString()}</span>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="flex space-x-2 ml-4">
+                            <button 
+                              onClick={() => window.open(`/careers/${job.slug}`, '_blank')}
+                              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded"
+                              title="Preview"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={() => {
+                                setSelectedJob(job);
+                                setShowEditJobModal(true);
+                              }}
+                              className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded"
+                              title="Edit"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            {job.status === 'draft' && (
+                              <button 
+                                onClick={() => handlePublishJob(job.id)}
+                                className="p-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded"
+                                title="Publish"
+                              >
+                                <Send className="w-4 h-4" />
+                              </button>
+                            )}
+                            <button 
+                              onClick={() => handleDeleteJob(job.id)}
+                              className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {jobPostings.length === 0 && !loading && (
+                    <div className="text-center py-12">
+                      <Briefcase className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No job postings</h3>
+                      <p className="text-gray-500 mb-4">Create your first job posting to get started.</p>
+                      <button
+                        onClick={() => setShowCreateJobModal(true)}
+                        className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium"
+                      >
+                        Create Job Posting
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Job Applications Sub-tab */}
+              {jobsSubTab === 'applications' && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Job Applications</h3>
+                  
+                  <div className="grid gap-4">
+                    {jobApplications.map((application) => (
+                      <div key={application.id} className="bg-white border rounded-lg p-6">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="flex items-center space-x-3 mb-2">
+                              <h3 className="text-lg font-semibold text-gray-900">{application.name}</h3>
+                              <span className={`px-2 py-1 text-xs rounded-full ${
+                                application.status === 'new' ? 'bg-blue-100 text-blue-800' :
+                                application.status === 'reviewed' ? 'bg-yellow-100 text-yellow-800' :
+                                application.status === 'shortlisted' ? 'bg-green-100 text-green-800' :
+                                application.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                                {application.status}
+                              </span>
+                            </div>
+                            
+                            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-3">
+                              <span>{application.job_title}</span>
+                              <span>{application.email}</span>
+                              {application.phone && <span>{application.phone}</span>}
+                              {application.experience_level && <span>{application.experience_level}</span>}
+                            </div>
+                            
+                            <p className="text-gray-700 text-sm mb-3 line-clamp-2">{application.message}</p>
+                            
+                            <div className="flex items-center space-x-4 text-sm text-gray-500">
+                              <span>Applied {new Date(application.applied_at).toLocaleDateString()}</span>
+                              <span>Source: {application.source}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex space-x-2 ml-4">
+                            <button className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded">
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            <button className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded">
+                              <Edit className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {jobApplications.length === 0 && !loading && (
+                    <div className="text-center py-12">
+                      <Users className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No applications yet</h3>
+                      <p className="text-gray-500">Applications will appear here once people start applying to your job postings.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Job Statistics Sub-tab */}
+              {jobsSubTab === 'statistics' && (
+                <div className="space-y-6">
+                  <h3 className="text-lg font-semibold text-gray-900">Jobs Statistics</h3>
+                  
+                  {/* Summary Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div className="bg-white p-6 rounded-lg border">
+                      <div className="flex items-center">
+                        <div className="p-2 bg-blue-100 rounded-lg">
+                          <Briefcase className="w-6 h-6 text-blue-600" />
+                        </div>
+                        <div className="ml-4">
+                          <p className="text-sm font-medium text-gray-600">Total Jobs</p>
+                          <p className="text-2xl font-semibold text-gray-900">{jobStatistics.total_jobs || 0}</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-white p-6 rounded-lg border">
+                      <div className="flex items-center">
+                        <div className="p-2 bg-green-100 rounded-lg">
+                          <CheckCircle className="w-6 h-6 text-green-600" />
+                        </div>
+                        <div className="ml-4">
+                          <p className="text-sm font-medium text-gray-600">Active Jobs</p>
+                          <p className="text-2xl font-semibold text-gray-900">{jobStatistics.active_jobs || 0}</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-white p-6 rounded-lg border">
+                      <div className="p-2 bg-yellow-100 rounded-lg">
+                        <Users className="w-6 h-6 text-yellow-600" />
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-gray-600">Total Applications</p>
+                        <p className="text-2xl font-semibold text-gray-900">{jobStatistics.total_applications || 0}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-white p-6 rounded-lg border">
+                      <div className="flex items-center">
+                        <div className="p-2 bg-gray-100 rounded-lg">
+                          <Edit className="w-6 h-6 text-gray-600" />
+                        </div>
+                        <div className="ml-4">
+                          <p className="text-sm font-medium text-gray-600">Draft Jobs</p>
+                          <p className="text-2xl font-semibold text-gray-900">{jobStatistics.draft_jobs || 0}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Jobs by Department */}
+                  {jobStatistics.jobs_by_department && Object.keys(jobStatistics.jobs_by_department).length > 0 && (
+                    <div className="bg-white p-6 rounded-lg border">
+                      <h4 className="text-lg font-semibold mb-4">Jobs by Department</h4>
+                      <div className="space-y-3">
+                        {Object.entries(jobStatistics.jobs_by_department).map(([department, count]) => (
+                          <div key={department} className="flex items-center justify-between">
+                            <span className="text-gray-700">{department}</span>
+                            <span className="font-semibold text-gray-900">{count}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Top Jobs */}
+                  {jobStatistics.top_jobs && jobStatistics.top_jobs.length > 0 && (
+                    <div className="bg-white p-6 rounded-lg border">
+                      <h4 className="text-lg font-semibold mb-4">Top Jobs by Applications</h4>
+                      <div className="space-y-3">
+                        {jobStatistics.top_jobs.map((job, index) => (
+                          <div key={job.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div className="flex items-center space-x-3">
+                              <span className="flex items-center justify-center w-6 h-6 bg-green-100 text-green-600 rounded-full text-sm font-medium">
+                                {index + 1}
+                              </span>
+                              <span className="font-medium">{job.title}</span>
+                              <span className="text-sm text-gray-500">({job.department})</span>
+                            </div>
+                            <span className="text-sm text-gray-600">{job.applications_count || 0} applications</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
