@@ -296,7 +296,11 @@ async def get_public_job_postings(
         filters = {
             "content_type": "job_posting",
             "status": ContentStatus.PUBLISHED.value,
-            "publish_date": {"$lte": datetime.utcnow()}
+            "$or": [
+                {"publish_date": {"$lte": datetime.utcnow()}},
+                {"published_at": {"$lte": datetime.utcnow()}},
+                {"publish_date": {"$exists": False}, "published_at": {"$exists": False}}
+            ]
         }
         
         # Add optional filters based on job settings
