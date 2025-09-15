@@ -50,7 +50,7 @@ app.get('/proxy-test', (req, res) => {
 app.use(express.static(path.join(__dirname, 'frontend/build')));
 
 // Handle React Router - send index.html for all non-API routes
-app.get('*', (req, res) => {
+app.get('/*', (req, res) => {
   if (!req.url.startsWith('/api')) {
     res.sendFile(path.join(__dirname, 'frontend/build', 'index.html'));
   }
