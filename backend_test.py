@@ -1289,7 +1289,7 @@ class HiringStatusTester:
     def print_final_results(self):
         """Print comprehensive test results"""
         print("\n" + "=" * 80)
-        print("🏁 COMPREHENSIVE REVIEW SYSTEM TESTING RESULTS")
+        print("🏁 COMPREHENSIVE HIRING STATUS AND FEEDBACK SYSTEM TESTING RESULTS")
         print("=" * 80)
         
         total_tests = self.results['passed'] + self.results['failed']
