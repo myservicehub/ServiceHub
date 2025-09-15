@@ -684,5 +684,5 @@ class AdminPermissionsInvestigator:
         print("=" * 80)
 
 if __name__ == "__main__":
-    tester = AdminManagementAPITester()
-    tester.run_all_tests()
+    investigator = AdminPermissionsInvestigator()
+    investigator.run_all_tests()
