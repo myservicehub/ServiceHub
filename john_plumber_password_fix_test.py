@@ -158,7 +158,7 @@ class JohnPlumberPasswordFixTester:
         """Update user's password hash to use 'TestPassword123!'"""
         print("\n=== Updating Password Hash ===")
         
-        if not user or not self.database:
+        if not user or self.database is None:
             self.log_result("Password hash update", False, "No user data or database connection")
             return False
         
