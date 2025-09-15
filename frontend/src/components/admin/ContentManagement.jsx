@@ -487,6 +487,366 @@ const ContentManagement = () => {
     );
   };
 
+  // Job Creation/Edit Modal
+  const JobModal = ({ isEdit = false, job = null, onClose, onSave }) => {
+    const [formData, setFormData] = useState({
+      title: job?.title || '',
+      description: job?.content || '',
+      department: job?.settings?.department || '',
+      location: job?.settings?.location || '',
+      job_type: job?.settings?.job_type || 'full_time',
+      experience_level: job?.settings?.experience_level || '1-3 years',
+      requirements: job?.settings?.requirements?.join('\n') || '',
+      benefits: job?.settings?.benefits?.join('\n') || '',
+      responsibilities: job?.settings?.responsibilities?.join('\n') || '',
+      salary_min: job?.settings?.salary_min || '',
+      salary_max: job?.settings?.salary_max || '',
+      salary_currency: job?.settings?.salary_currency || 'NGN',
+      is_salary_public: job?.settings?.is_salary_public || false,
+      is_featured: job?.settings?.is_featured || false,
+      is_urgent: job?.settings?.is_urgent || false,
+      expires_at: job?.settings?.expires_at ? new Date(job.settings.expires_at).toISOString().split('T')[0] : '',
+      status: job?.status || 'draft',
+      meta_title: job?.meta_title || '',
+      meta_description: job?.meta_description || '',
+      keywords: job?.keywords?.join(', ') || ''
+    });
+
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+      try {
+        const submitData = {
+          title: formData.title,
+          description: formData.description,
+          department: formData.department,
+          location: formData.location,
+          job_type: formData.job_type,
+          experience_level: formData.experience_level,
+          requirements: formData.requirements.split('\n').map(r => r.trim()).filter(r => r),
+          benefits: formData.benefits.split('\n').map(b => b.trim()).filter(b => b),
+          responsibilities: formData.responsibilities.split('\n').map(r => r.trim()).filter(r => r),
+          salary_min: formData.salary_min ? parseInt(formData.salary_min) : null,
+          salary_max: formData.salary_max ? parseInt(formData.salary_max) : null,
+          salary_currency: formData.salary_currency,
+          is_salary_public: formData.is_salary_public,
+          is_featured: formData.is_featured,
+          is_urgent: formData.is_urgent,
+          expires_at: formData.expires_at || null,
+          status: formData.status,
+          meta_title: formData.meta_title,
+          meta_description: formData.meta_description,
+          keywords: formData.keywords.split(',').map(k => k.trim()).filter(k => k)
+        };
+
+        if (isEdit) {
+          await careersAPI.admin.updateJobPosting(job.id, submitData);
+        } else {
+          await careersAPI.admin.createJobPosting(submitData);
+        }
+
+        onSave();
+        onClose();
+      } catch (error) {
+        console.error('Error saving job:', error);
+        alert('Failed to save job posting.');
+      }
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="p-6 border-b border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-900">
+              {isEdit ? 'Edit Job Posting' : 'Create Job Posting'}
+            </h2>
+          </div>
+
+          <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            {/* Basic Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Job Title *</label>
+                <input
+                  type="text"
+                  value={formData.title}
+                  onChange={(e) => setFormData({...formData, title: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Department</label>
+                <select
+                  value={formData.department}
+                  onChange={(e) => setFormData({...formData, department: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                >
+                  <option value="">Select Department</option>
+                  <option value="engineering">Engineering</option>
+                  <option value="marketing">Marketing</option>
+                  <option value="design">Design</option>
+                  <option value="sales">Sales</option>
+                  <option value="customer_success">Customer Success</option>
+                  <option value="operations">Operations</option>
+                  <option value="finance">Finance</option>
+                  <option value="hr">HR</option>
+                  <option value="legal">Legal</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                <input
+                  type="text"
+                  value={formData.location}
+                  onChange={(e) => setFormData({...formData, location: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  placeholder="e.g., Lagos, Nigeria"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Job Type</label>
+                <select
+                  value={formData.job_type}
+                  onChange={(e) => setFormData({...formData, job_type: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                >
+                  <option value="full_time">Full Time</option>
+                  <option value="part_time">Part Time</option>
+                  <option value="contract">Contract</option>
+                  <option value="remote">Remote</option>
+                  <option value="hybrid">Hybrid</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Experience Level</label>
+                <select
+                  value={formData.experience_level}
+                  onChange={(e) => setFormData({...formData, experience_level: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                >
+                  <option value="0-1 years">0-1 years</option>
+                  <option value="1-3 years">1-3 years</option>
+                  <option value="3-5 years">3-5 years</option>
+                  <option value="5-10 years">5-10 years</option>
+                  <option value="10+ years">10+ years</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Job Description */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Job Description *</label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                rows="4"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                required
+              />
+            </div>
+
+            {/* Requirements, Benefits, Responsibilities */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Requirements (one per line)</label>
+                <textarea
+                  value={formData.requirements}
+                  onChange={(e) => setFormData({...formData, requirements: e.target.value})}
+                  rows="4"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  placeholder="Bachelor's degree required&#10;3+ years experience&#10;Strong communication skills"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Benefits (one per line)</label>
+                <textarea
+                  value={formData.benefits}
+                  onChange={(e) => setFormData({...formData, benefits: e.target.value})}
+                  rows="4"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  placeholder="Health insurance&#10;Flexible working hours&#10;Learning budget"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Responsibilities (one per line)</label>
+                <textarea
+                  value={formData.responsibilities}
+                  onChange={(e) => setFormData({...formData, responsibilities: e.target.value})}
+                  rows="4"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  placeholder="Develop and maintain features&#10;Collaborate with team&#10;Write clean code"
+                />
+              </div>
+            </div>
+
+            {/* Salary Information */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Min Salary</label>
+                <input
+                  type="number"
+                  value={formData.salary_min}
+                  onChange={(e) => setFormData({...formData, salary_min: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Max Salary</label>
+                <input
+                  type="number"
+                  value={formData.salary_max}
+                  onChange={(e) => setFormData({...formData, salary_max: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
+                <select
+                  value={formData.salary_currency}
+                  onChange={(e) => setFormData({...formData, salary_currency: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                >
+                  <option value="NGN">NGN</option>
+                  <option value="USD">USD</option>
+                  <option value="EUR">EUR</option>
+                  <option value="GBP">GBP</option>
+                </select>
+              </div>
+              
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="is_salary_public"
+                  checked={formData.is_salary_public}
+                  onChange={(e) => setFormData({...formData, is_salary_public: e.target.checked})}
+                  className="mr-2"
+                />
+                <label htmlFor="is_salary_public" className="text-sm text-gray-700">Show salary publicly</label>
+              </div>
+            </div>
+
+            {/* Settings */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({...formData, status: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                >
+                  <option value="draft">Draft</option>
+                  <option value="published">Published</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Expires At</label>
+                <input
+                  type="date"
+                  value={formData.expires_at}
+                  onChange={(e) => setFormData({...formData, expires_at: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="is_featured"
+                    checked={formData.is_featured}
+                    onChange={(e) => setFormData({...formData, is_featured: e.target.checked})}
+                    className="mr-2"
+                  />
+                  <label htmlFor="is_featured" className="text-sm text-gray-700">Featured</label>
+                </div>
+                
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="is_urgent"
+                    checked={formData.is_urgent}
+                    onChange={(e) => setFormData({...formData, is_urgent: e.target.checked})}
+                    className="mr-2"
+                  />
+                  <label htmlFor="is_urgent" className="text-sm text-gray-700">Urgent</label>
+                </div>
+              </div>
+            </div>
+
+            {/* SEO */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-900">SEO Settings</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Meta Title</label>
+                  <input
+                    type="text"
+                    value={formData.meta_title}
+                    onChange={(e) => setFormData({...formData, meta_title: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    maxLength="60"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Keywords (comma-separated)</label>
+                  <input
+                    type="text"
+                    value={formData.keywords}
+                    onChange={(e) => setFormData({...formData, keywords: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="job, career, hiring"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Meta Description</label>
+                <textarea
+                  value={formData.meta_description}
+                  onChange={(e) => setFormData({...formData, meta_description: e.target.value})}
+                  rows="2"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  maxLength="160"
+                />
+              </div>
+            </div>
+
+            {/* Submit Buttons */}
+            <div className="flex space-x-4 pt-6 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg"
+              >
+                {isEdit ? 'Update Job' : 'Create Job'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
