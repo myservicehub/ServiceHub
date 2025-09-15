@@ -29,11 +29,12 @@ const MyReviewsPage = () => {
   const { toast } = useToast();
   const { user, isAuthenticated } = useAuth();
 
-  // Helper function to check if user is homeowner
+  // Helper function to check if user is homeowner or tradesperson
   const isHomeowner = () => user?.role === 'homeowner';
+  const isTradesperson = () => user?.role === 'tradesperson';
 
   useEffect(() => {
-    if (isAuthenticated && isHomeowner()) {
+    if (isAuthenticated && (isHomeowner() || isTradesperson())) {
       loadMyReviews();
     }
   }, [isAuthenticated, user]);
@@ -41,7 +42,19 @@ const MyReviewsPage = () => {
   const loadMyReviews = async () => {
     try {
       setLoading(true);
-      const response = await reviewsAPI.getMyReviews({ limit: 50 });
+      console.log('📊 Loading reviews for user role:', user?.role);
+      
+      let response;
+      if (isTradesperson()) {
+        // Tradespeople see reviews they received
+        response = await reviewsAPI.getReceivedReviews({ limit: 50 });
+        console.log('✅ Received reviews loaded for tradesperson:', response);
+      } else {
+        // Homeowners see reviews they wrote
+        response = await reviewsAPI.getMyReviews({ limit: 50 });
+        console.log('✅ Written reviews loaded for homeowner:', response);
+      }
+      
       setReviews(response.reviews || []);
       
       // Calculate stats
