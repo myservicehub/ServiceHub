@@ -142,7 +142,7 @@ async def create_job_posting(
 @router.get("/postings/{job_id}")
 async def get_job_posting(
     job_id: str,
-    admin: dict = Depends(require_permission(AdminPermission.MANAGE_POLICIES))
+    admin: dict = Depends(require_permission(AdminPermission.MANAGE_JOBS))
 ):
     """Get a specific job posting (Admin only)"""
     
@@ -156,7 +156,7 @@ async def get_job_posting(
 async def update_job_posting(
     job_id: str,
     update_data: dict,
-    admin: dict = Depends(require_permission(AdminPermission.MANAGE_POLICIES))
+    admin: dict = Depends(require_permission(AdminPermission.MANAGE_JOBS))
 ):
     """Update a job posting (Admin only)"""
     
@@ -235,7 +235,7 @@ async def update_job_posting(
 @router.delete("/postings/{job_id}")
 async def delete_job_posting(
     job_id: str,
-    admin: dict = Depends(require_permission(AdminPermission.MANAGE_POLICIES))
+    admin: dict = Depends(require_permission(AdminPermission.MANAGE_JOBS))
 ):
     """Delete a job posting (Admin only)"""
     
@@ -278,7 +278,7 @@ async def get_job_applications(
     limit: int = Query(50, ge=1, le=100),
     job_id: Optional[str] = None,
     status: Optional[str] = None,
-    admin: dict = Depends(require_permission(AdminPermission.MANAGE_POLICIES))
+    admin: dict = Depends(require_permission(AdminPermission.MANAGE_JOBS))
 ):
     """Get job applications (Admin only)"""
     
@@ -308,7 +308,7 @@ async def get_job_applications(
 async def update_job_application(
     application_id: str,
     update_data: JobApplicationUpdate,
-    admin: dict = Depends(require_permission(AdminPermission.MANAGE_POLICIES))
+    admin: dict = Depends(require_permission(AdminPermission.MANAGE_JOBS))
 ):
     """Update job application status (Admin only)"""
     
@@ -359,7 +359,7 @@ async def get_job_statistics(
 @router.post("/postings/{job_id}/publish")
 async def publish_job_posting(
     job_id: str,
-    admin: dict = Depends(require_permission(AdminPermission.MANAGE_POLICIES))
+    admin: dict = Depends(require_permission(AdminPermission.MANAGE_JOBS))
 ):
     """Publish a job posting (Admin only)"""
     
