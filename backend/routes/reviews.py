@@ -10,7 +10,7 @@ from models.reviews import Review as AdvancedReview
 from database import database
 from datetime import datetime
 import uuid
-import auth
+from auth.dependencies import get_current_user
 
 logger = logging.getLogger(__name__)
 
