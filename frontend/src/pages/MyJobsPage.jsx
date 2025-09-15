@@ -62,10 +62,19 @@ const MyJobsPage = () => {
     try {
       setLoading(true);
       const response = await jobsAPI.getMyJobs({ limit: 50 });
+      console.log('🔍 Jobs API Response:', response);
       if (response?.jobs) {
+        console.log('🔍 Total jobs loaded:', response.jobs.length);
+        console.log('🔍 Jobs by status:', response.jobs.reduce((acc, job) => {
+          acc[job.status] = (acc[job.status] || 0) + 1;
+          return acc;
+        }, {}));
+        console.log('🔍 Completed jobs:', response.jobs.filter(job => job.status === 'completed'));
         setJobs(response.jobs);
         // Load hiring status for each job
         await loadHiringStatuses(response.jobs);
+      } else {
+        console.log('🔍 No jobs in response:', response);
       }
     } catch (error) {
       console.error('Failed to load jobs:', error);
