@@ -16,7 +16,7 @@ import { jobsAPI } from '../api/jobs';
 import { interestsAPI } from '../api/interests';
 import { reviewsAPI } from '../api/reviews';
 import { useToast } from '../hooks/use-toast';
-import { isAuthenticated, isHomeowner, getCurrentUser } from '../auth/authHelpers';
+import { useAuth } from '../contexts/AuthContext';
 
 const MyJobsPage = () => {
   const [jobs, setJobs] = useState([]);
