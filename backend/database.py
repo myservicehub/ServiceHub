@@ -5254,5 +5254,26 @@ class Database:
         }
         await self.database.admin_activities.insert_one(activity_data)
 
+    async def increment_content_view_count(self, content_id: str):
+        """Increment view count for content item"""
+        await self.database.content_items.update_one(
+            {"id": content_id},
+            {"$inc": {"view_count": 1}}
+        )
+
+    async def increment_content_like_count(self, content_id: str):
+        """Increment like count for content item"""
+        await self.database.content_items.update_one(
+            {"id": content_id},
+            {"$inc": {"like_count": 1}}
+        )
+
+    async def increment_content_share_count(self, content_id: str):
+        """Increment share count for content item"""
+        await self.database.content_items.update_one(
+            {"id": content_id},
+            {"$inc": {"share_count": 1}}
+        )
+
 # Create global database instance
 database = Database()
