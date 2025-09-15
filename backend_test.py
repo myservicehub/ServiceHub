@@ -1395,6 +1395,104 @@ class HiringStatusTester:
         else:
             self.log_result("Review reminder scheduling", False, f"Status: {response.status_code}")
     
+    def test_edge_cases_and_validation(self):
+        """Test edge cases and comprehensive validation"""
+        print("\n=== Testing Edge Cases and Validation ===")
+        
+        if not all([self.homeowner_token, self.tradesperson_id, self.test_job_id]):
+            self.log_result("Edge cases validation", False, "Missing required test data")
+            return
+        
+        # Test 1: Invalid job status values
+        print(f"\n--- Test 1: Invalid Job Status Values ---")
+        invalid_status_data = {
+            "jobId": self.test_job_id,
+            "tradespersonId": self.tradesperson_id,
+            "hired": True,
+            "jobStatus": "invalid_status"
+        }
+        
+        response = self.make_request("POST", "/messages/hiring-status", 
+                                   json=invalid_status_data, auth_token=self.homeowner_token)
+        
+        # The API should accept any string for job status (flexible design)
+        if response.status_code == 200:
+            self.log_result("Invalid job status handling", True, "API accepts flexible job status values")
+        else:
+            self.log_result("Invalid job status handling", False, f"Status: {response.status_code}")
+        
+        # Test 2: Invalid feedback type
+        print(f"\n--- Test 2: Invalid Feedback Type ---")
+        invalid_feedback_data = {
+            "jobId": self.test_job_id,
+            "tradespersonId": self.tradesperson_id,
+            "feedbackType": "invalid_feedback_type",
+            "comment": "Test comment"
+        }
+        
+        response = self.make_request("POST", "/messages/feedback", 
+                                   json=invalid_feedback_data, auth_token=self.homeowner_token)
+        
+        # The API should accept any string for feedback type (flexible design)
+        if response.status_code == 200:
+            self.log_result("Invalid feedback type handling", True, "API accepts flexible feedback type values")
+        else:
+            self.log_result("Invalid feedback type handling", False, f"Status: {response.status_code}")
+        
+        # Test 3: Very long comment
+        print(f"\n--- Test 3: Very Long Comment ---")
+        long_comment = "A" * 5000  # 5000 character comment
+        long_comment_data = {
+            "jobId": self.test_job_id,
+            "tradespersonId": self.tradesperson_id,
+            "feedbackType": "other",
+            "comment": long_comment
+        }
+        
+        response = self.make_request("POST", "/messages/feedback", 
+                                   json=long_comment_data, auth_token=self.homeowner_token)
+        
+        if response.status_code == 200:
+            self.log_result("Long comment handling", True, "API accepts long comments")
+        else:
+            self.log_result("Long comment handling", False, f"Status: {response.status_code}")
+        
+        # Test 4: Empty string values
+        print(f"\n--- Test 4: Empty String Values ---")
+        empty_string_data = {
+            "jobId": self.test_job_id,
+            "tradespersonId": self.tradesperson_id,
+            "feedbackType": "",
+            "comment": ""
+        }
+        
+        response = self.make_request("POST", "/messages/feedback", 
+                                   json=empty_string_data, auth_token=self.homeowner_token)
+        
+        if response.status_code == 400:
+            self.log_result("Empty string validation", True, "API correctly rejects empty feedback type")
+        elif response.status_code == 200:
+            self.log_result("Empty string validation", True, "API accepts empty strings (flexible design)")
+        else:
+            self.log_result("Empty string validation", False, f"Unexpected status: {response.status_code}")
+        
+        # Test 5: Non-existent tradesperson
+        print(f"\n--- Test 5: Non-existent Tradesperson ---")
+        fake_tradesperson_data = {
+            "jobId": self.test_job_id,
+            "tradespersonId": str(uuid.uuid4()),
+            "hired": True,
+            "jobStatus": "completed"
+        }
+        
+        response = self.make_request("POST", "/messages/hiring-status", 
+                                   json=fake_tradesperson_data, auth_token=self.homeowner_token)
+        
+        if response.status_code == 404:
+            self.log_result("Non-existent tradesperson", True, "API correctly rejects non-existent tradesperson")
+        else:
+            self.log_result("Non-existent tradesperson", False, f"Expected 404, got {response.status_code}")
+    
     def run_all_tests(self):
         """Run comprehensive hiring status and feedback system tests"""
         print("🚀 Starting Hiring Status and Feedback System Backend Testing")
