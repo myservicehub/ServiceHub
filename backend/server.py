@@ -9,6 +9,7 @@ from pathlib import Path
 # Import database and routes
 from database import database
 from routes import jobs, tradespeople, quotes, reviews, stats, auth
+from routes.admin_management import router as admin_management_router
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
