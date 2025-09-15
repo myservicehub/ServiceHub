@@ -53,6 +53,8 @@ test_plan:
   stuck_tasks: 
     - "Job Creation API Endpoint - 404 Not Found Error"
     - "My Reviews Endpoint - 404 Not Found Error"
+  completed_tasks:
+    - "My Jobs Page Navigation Fix - View Interested Tradespeople"
   test_all: false
   test_priority: "high_first"
 ##
