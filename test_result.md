@@ -49,13 +49,14 @@
 ##
 test_plan:
   current_focus:
-    - "Hiring Status and Feedback System Backend Testing"
+    - "Job Completion Functionality Backend Testing"
   stuck_tasks: 
     []
   completed_tasks:
     - "My Jobs Page Navigation Fix - View Interested Tradespeople"
     - "Review System Backend Testing"
     - "Hiring Status and Feedback System Backend Testing"
+    - "Job Completion Functionality Backend Testing"
   test_all: false
   test_priority: "high_first"
 ##
