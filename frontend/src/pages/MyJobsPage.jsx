@@ -646,8 +646,30 @@ const MyJobsPage = () => {
                                   </Button>
                                 )}
 
-                                {/* Close/Reopen Button */}
-                                {job.status === 'active' ? (
+                                {/* Mark as Completed Button - For active/in-progress jobs */}
+                                {(job.status === 'active' || job.status === 'in_progress') && (
+                                  <Button
+                                    onClick={() => handleCompleteJob(job.id)}
+                                    className="font-lato text-white"
+                                    style={{backgroundColor: '#2F8140'}}
+                                    disabled={completingJobId === job.id}
+                                  >
+                                    {completingJobId === job.id ? (
+                                      <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                        Completing...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <CheckCircle size={16} className="mr-2" />
+                                        Mark as Completed
+                                      </>
+                                    )}
+                                  </Button>
+                                )}
+
+                                {/* Close Job Button - Only for active jobs */}
+                                {job.status === 'active' && (
                                   <Button
                                     onClick={() => handleCloseJob(job)}
                                     variant="outline"
@@ -656,7 +678,10 @@ const MyJobsPage = () => {
                                     <X size={16} className="mr-2" />
                                     Close Job
                                   </Button>
-                                ) : job.status === 'cancelled' ? (
+                                )}
+
+                                {/* Reopen Button - Only for cancelled jobs */}
+                                {job.status === 'cancelled' && (
                                   <Button
                                     onClick={() => handleReopenJob(job.id)}
                                     variant="outline"
@@ -675,7 +700,7 @@ const MyJobsPage = () => {
                                       </>
                                     )}
                                   </Button>
-                                ) : null}
+                                )}
                               </div>
                             </div>
                           </CardContent>
