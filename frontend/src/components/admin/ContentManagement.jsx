@@ -162,6 +162,9 @@ const ContentManagement = () => {
           const statsData = await contentAPI.getStatistics();
           setStatistics(statsData.statistics || {});
           break;
+        case 'jobs':
+          await loadJobsData();
+          break;
       }
     } catch (error) {
       console.error('Error loading data:', error);
