@@ -1665,6 +1665,10 @@ class HiringStatusTester:
             self.test_api_structure_and_validation()
             self.test_hiring_status_endpoints()
             self.test_feedback_endpoints()
+            
+            # Test NEW GET hiring status endpoint
+            self.test_get_hiring_status_endpoint()
+            
             self.test_authentication_permissions()
             self.test_database_integration()
             self.test_notification_integration()
