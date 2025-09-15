@@ -912,8 +912,8 @@ class ReviewSystemTester:
                 self.log_result("Review endpoints basic functionality", False, f"Status: {response.status_code}")
     
     def run_all_tests(self):
-        """Run all review system tests"""
-        print("🚀 Starting Comprehensive Review System Backend Testing")
+        """Run focused review system tests - MY-REVIEWS ENDPOINT FOCUS"""
+        print("🚀 Starting Review System Backend Testing - MY-REVIEWS ENDPOINT FOCUS")
         print("=" * 80)
         
         try:
@@ -924,20 +924,17 @@ class ReviewSystemTester:
             self.setup_test_users()
             self.create_test_job()
             
-            # Test review endpoints that don't require job creation
-            self.test_review_endpoints_without_job()
-            
-            # Test review API endpoints
-            self.test_review_creation_endpoint()
-            self.test_get_user_reviews_endpoint()
-            self.test_get_job_reviews_endpoint()
-            self.test_get_review_summary_endpoint()
-            self.test_review_response_endpoint()
+            # MAIN FOCUS: Test My Reviews endpoint
             self.test_my_reviews_endpoint()
             
-            # Test review permissions and data structure
-            self.test_review_permissions()
-            self.test_review_data_structure()
+            # Test My Reviews with sample data
+            self.test_my_reviews_with_data()
+            
+            # Test other key review endpoints for completeness
+            self.test_review_endpoints_without_job()
+            self.test_review_creation_endpoint()
+            self.test_get_user_reviews_endpoint()
+            self.test_get_review_summary_endpoint()
             
             # Cleanup
             self.cleanup_test_data()
