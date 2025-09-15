@@ -167,6 +167,73 @@ const MyJobsPage = () => {
     }
   };
 
+  // Review handling functions
+  const handleLeaveReview = (job, tradesperson = null) => {
+    setJobToReview(job);
+    setTradespersonToReview(tradesperson);
+    setShowReviewModal(true);
+  };
+
+  const handleSubmitReview = async (reviewData) => {
+    try {
+      setSubmittingReview(true);
+      
+      const reviewPayload = {
+        job_id: jobToReview.id,
+        reviewee_id: tradespersonToReview?.id || 'placeholder-tradesperson-id', // This would come from selected tradesperson
+        rating: reviewData.rating,
+        title: reviewData.title,
+        content: reviewData.content,
+        category_ratings: reviewData.categoryRatings,
+        photos: reviewData.photos || [],
+        would_recommend: reviewData.wouldRecommend
+      };
+
+      await reviewsAPI.createReview(reviewPayload);
+      
+      toast({
+        title: "Review Submitted",
+        description: "Thank you for your feedback! Your review has been submitted successfully.",
+      });
+      
+      setShowReviewModal(false);
+      setJobToReview(null);
+      setTradespersonToReview(null);
+      
+      // Optionally refresh reviews for this job
+      await loadJobReviews(jobToReview.id);
+      
+    } catch (error) {
+      console.error('Failed to submit review:', error);
+      toast({
+        title: "Failed to Submit Review",
+        description: error.response?.data?.detail || "There was an error submitting your review.",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
+  const loadJobReviews = async (jobId) => {
+    try {
+      const reviews = await reviewsAPI.getJobReviews(jobId);
+      setJobReviews(prev => ({
+        ...prev,
+        [jobId]: reviews
+      }));
+    } catch (error) {
+      console.error('Failed to load job reviews:', error);
+    }
+  };
+
+  const canLeaveReview = (job) => {
+    // Can leave review if job is completed and user hasn't already reviewed
+    return job.status === 'completed' && !jobReviews[job.id]?.some(review => 
+      review.reviewer_id === currentUser?.id
+    );
+  };
+
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
