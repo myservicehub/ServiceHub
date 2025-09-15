@@ -600,6 +600,53 @@ async def close_job(
         logger.error(f"Error closing job {job_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.put("/{job_id}/complete")
+async def complete_job(
+    job_id: str,
+    current_user: User = Depends(get_current_homeowner)
+):
+    """Mark a job as completed (homeowner only)"""
+    try:
+        # Verify job exists and ownership
+        job = await database.get_job_by_id(job_id)
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+        
+        if job["homeowner"]["id"] != current_user.id:
+            raise HTTPException(status_code=403, detail="Not authorized to complete this job")
+        
+        # Check if job can be completed (active or in-progress jobs)
+        if job.get("status") not in ["active", "in_progress"]:
+            raise HTTPException(status_code=400, detail="Only active or in-progress jobs can be marked as completed")
+        
+        # Update job status to completed
+        update_data = {
+            "status": JobStatus.COMPLETED,
+            "completed_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+        
+        await database.update_job(job_id, update_data)
+        
+        # Get updated job
+        updated_job = await database.get_job_by_id(job_id)
+        
+        # Send notification to tradespeople who worked on this job about potential reviews
+        background_tasks = BackgroundTasks()
+        background_tasks.add_task(
+            notify_job_completion,
+            job_id,
+            updated_job,
+            current_user
+        )
+        
+        return updated_job
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error completing job: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 @router.put("/{job_id}/reopen")
 async def reopen_job(
     job_id: str,
