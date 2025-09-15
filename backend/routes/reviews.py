@@ -110,7 +110,7 @@ async def get_featured_reviews(limit: int = Query(6, ge=1, le=20)):
 
 @router.get("/my-reviews")
 async def get_my_reviews(
-    current_user: models.User = Depends(auth.get_current_user),
+    current_user: models.User = Depends(get_current_user),
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1, le=50)
 ):
