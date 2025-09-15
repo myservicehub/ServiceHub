@@ -52,11 +52,16 @@ const MyJobsPage = () => {
     }
   }, [isAuthenticated, user]);
 
+  // Load my jobs and hiring status data
   const loadMyJobs = async () => {
     try {
       setLoading(true);
       const response = await jobsAPI.getMyJobs({ limit: 50 });
-      setJobs(response.jobs || []);
+      if (response?.jobs) {
+        setJobs(response.jobs);
+        // Load hiring status for each job
+        await loadHiringStatuses(response.jobs);
+      }
     } catch (error) {
       console.error('Failed to load jobs:', error);
       toast({
@@ -66,6 +71,41 @@ const MyJobsPage = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Load hiring status data for jobs
+  const loadHiringStatuses = async (jobsList) => {
+    try {
+      // For each job, check if there's hiring status data
+      const statusPromises = jobsList.map(async (job) => {
+        try {
+          const statusResponse = await messagesAPI.getHiringStatus(job.id);
+          return {
+            jobId: job.id,
+            hasAnswered: true,
+            hired: statusResponse.hired,
+            jobStatus: statusResponse.job_status
+          };
+        } catch (error) {
+          // If no hiring status found, return default
+          return {
+            jobId: job.id,
+            hasAnswered: false,
+            hired: false,
+            jobStatus: null
+          };
+        }
+      });
+
+      const statuses = await Promise.all(statusPromises);
+      const statusMap = {};
+      statuses.forEach(status => {
+        statusMap[status.jobId] = status;
+      });
+      setJobHiringStatuses(statusMap);
+    } catch (error) {
+      console.error('Error loading hiring statuses:', error);
     }
   };
 
