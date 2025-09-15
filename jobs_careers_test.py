@@ -849,7 +849,7 @@ class JobsCareersAPITester:
                         total_applications = statistics.get('total_applications', 0)
                         
                         self.log_result("Admin job statistics details", True, 
-                                      f"Total jobs: {total_jobs}, Published: {published_jobs}, Applications: {total_applications}")
+                                      f"Total jobs: {total_jobs}, Active: {active_jobs}, Applications: {total_applications}")
                         
                         # Verify our test job and application are counted
                         if total_jobs > 0 and total_applications > 0:
