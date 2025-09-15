@@ -16,6 +16,7 @@ class ContentType(str, Enum):
     PUSH_NOTIFICATION = "push_notification"
     PROMOTION = "promotion"
     TESTIMONIAL = "testimonial"
+    JOB_POSTING = "job_posting"
 
 class ContentStatus(str, Enum):
     DRAFT = "draft"
