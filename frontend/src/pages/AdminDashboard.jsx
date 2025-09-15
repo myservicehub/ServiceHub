@@ -264,18 +264,23 @@ const AdminDashboard = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    console.log('🔑 Attempting admin login...', { username: loginForm.username });
+    
     try {
-      await adminAPI.login(loginForm.username, loginForm.password);
+      const result = await adminAPI.login(loginForm.username, loginForm.password);
+      console.log('✅ Login successful:', result);
+      
       setIsLoggedIn(true);
       toast({
         title: "Login Successful",
         description: "Welcome to Admin Dashboard"
       });
     } catch (error) {
+      console.error('❌ Login failed:', error);
       toast({
         title: "Login Failed",
-        description: "Invalid credentials",
-        variant: "destructive"
+        description: error.message || "Invalid credentials. Please try again.",
+        variant: "destructive",
       });
     }
   };
