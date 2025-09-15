@@ -438,9 +438,9 @@ class AdminPermissionsInvestigator:
                               f"Expected 400/422, got {response.status_code}")
     
     def run_all_tests(self):
-        """Run all admin management API tests"""
-        print("🚀 Starting Admin Management Login API Testing")
-        print("=" * 70)
+        """Run all admin permissions investigation tests"""
+        print("🚀 Starting Admin User Permissions Investigation for Job Posting Management")
+        print("=" * 80)
         
         try:
             # Test service health
@@ -452,29 +452,20 @@ class AdminPermissionsInvestigator:
             # Test admin me endpoint with token
             self.test_admin_me_endpoint()
             
-            # Test admin me endpoint without token
-            self.test_admin_me_without_token()
+            # Investigate admin user permissions
+            self.investigate_admin_permissions()
             
-            # Test admin me endpoint with invalid token
-            self.test_admin_me_with_invalid_token()
+            # Test job management endpoints access
+            self.test_job_management_endpoints()
             
-            # Test super admin account creation
-            self.test_super_admin_account_creation()
+            # Test job creation with proper permissions
+            self.test_job_creation()
             
-            # Test login statistics update
-            self.test_login_statistics_update()
-            
-            # Test multiple login attempts
-            self.test_multiple_login_attempts()
-            
-            # Test invalid credentials
-            self.test_invalid_credentials()
-            
-            # Test malformed requests
-            self.test_malformed_login_requests()
+            # Provide recommendations
+            self.provide_recommendations()
             
         except Exception as e:
-            print(f"❌ Critical error during testing: {str(e)}")
+            print(f"❌ Critical error during investigation: {str(e)}")
             self.results['failed'] += 1
             self.results['errors'].append(f"Critical error: {str(e)}")
         
