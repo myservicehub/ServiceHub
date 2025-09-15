@@ -228,7 +228,7 @@ class ReviewSystemTester:
             "completion_notes": "Job completed successfully for review testing"
         }
         
-        response = self.make_request("PUT", f"/jobs/{self.test_job_id}", 
+        response = self.make_request("PUT", f"/api/jobs/{self.test_job_id}", 
                                    json=update_data, auth_token=self.homeowner_token)
         
         if response.status_code == 200:
