@@ -14,6 +14,8 @@ class NotificationType(str, Enum):
     JOB_APPROVED = "job_approved"
     JOB_REJECTED = "job_rejected"
     JOB_UPDATED = "job_updated"
+    NEW_JOB_POSTED = "new_job_posted"  # For career page job postings
+    NEW_APPLICATION = "new_application"  # For job applications
 
 class NotificationChannel(str, Enum):
     EMAIL = "email"
