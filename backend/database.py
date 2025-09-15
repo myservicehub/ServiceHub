@@ -4824,5 +4824,189 @@ class Database:
             logger.error(f"Error getting trade categories with questions: {str(e)}")
             return []
 
+    # ==========================================
+    # ADMIN MANAGEMENT METHODS
+    # ==========================================
+
+    async def create_admin(self, admin_data: dict) -> str:
+        """Create a new admin"""
+        result = await self.database.admins.insert_one(admin_data)
+        return admin_data["id"]
+
+    async def get_admin_by_id(self, admin_id: str) -> Optional[dict]:
+        """Get admin by ID"""
+        admin = await self.database.admins.find_one({"id": admin_id})
+        if admin:
+            admin['_id'] = str(admin['_id'])
+        return admin
+
+    async def get_admin_by_username(self, username: str) -> Optional[dict]:
+        """Get admin by username"""
+        admin = await self.database.admins.find_one({"username": username})
+        if admin:
+            admin['_id'] = str(admin['_id'])
+        return admin
+
+    async def get_admin_by_email(self, email: str) -> Optional[dict]:
+        """Get admin by email"""
+        admin = await self.database.admins.find_one({"email": email})
+        if admin:
+            admin['_id'] = str(admin['_id'])
+        return admin
+
+    async def get_all_admins(
+        self, 
+        skip: int = 0, 
+        limit: int = 50, 
+        role: Optional[AdminRole] = None, 
+        status: Optional[AdminStatus] = None
+    ) -> List[dict]:
+        """Get all admins with filtering"""
+        query = {}
+        if role:
+            query["role"] = role.value
+        if status:
+            query["status"] = status.value
+
+        cursor = self.database.admins.find(query).sort("created_at", -1).skip(skip).limit(limit)
+        admins = await cursor.to_list(length=limit)
+        
+        for admin in admins:
+            admin['_id'] = str(admin['_id'])
+        return admins
+
+    async def get_admins_count(
+        self, 
+        role: Optional[AdminRole] = None, 
+        status: Optional[AdminStatus] = None
+    ) -> int:
+        """Get total count of admins"""
+        query = {}
+        if role:
+            query["role"] = role.value
+        if status:
+            query["status"] = status.value
+        
+        return await self.database.admins.count_documents(query)
+
+    async def update_admin(self, admin_id: str, update_data: dict) -> bool:
+        """Update admin data"""
+        result = await self.database.admins.update_one(
+            {"id": admin_id},
+            {"$set": update_data}
+        )
+        return result.modified_count > 0
+
+    async def update_admin_login(self, admin_id: str):
+        """Update admin's last login and increment login count"""
+        await self.database.admins.update_one(
+            {"id": admin_id},
+            {
+                "$set": {"last_login": datetime.utcnow()},
+                "$inc": {"login_count": 1}
+            }
+        )
+
+    async def increment_admin_failed_attempts(self, admin_id: str):
+        """Increment failed login attempts"""
+        result = await self.database.admins.find_one_and_update(
+            {"id": admin_id},
+            {"$inc": {"failed_login_attempts": 1}},
+            return_document=True
+        )
+        
+        # Lock account after 5 failed attempts
+        if result and result.get("failed_login_attempts", 0) >= 5:
+            lock_until = datetime.utcnow() + timedelta(minutes=30)
+            await self.database.admins.update_one(
+                {"id": admin_id},
+                {"$set": {"locked_until": lock_until}}
+            )
+
+    async def create_admin_activity(self, activity_data: dict):
+        """Create admin activity log entry"""
+        await self.database.admin_activities.insert_one(activity_data)
+
+    async def get_admin_activities(
+        self,
+        skip: int = 0,
+        limit: int = 50,
+        admin_id: Optional[str] = None,
+        activity_type: Optional[AdminActivityType] = None
+    ) -> List[dict]:
+        """Get admin activity logs"""
+        query = {}
+        if admin_id:
+            query["admin_id"] = admin_id
+        if activity_type:
+            query["activity_type"] = activity_type.value
+
+        cursor = self.database.admin_activities.find(query).sort("created_at", -1).skip(skip).limit(limit)
+        activities = await cursor.to_list(length=limit)
+        
+        for activity in activities:
+            activity['_id'] = str(activity['_id'])
+        return activities
+
+    async def get_admin_activities_count(
+        self,
+        admin_id: Optional[str] = None,
+        activity_type: Optional[AdminActivityType] = None
+    ) -> int:
+        """Get count of admin activities"""
+        query = {}
+        if admin_id:
+            query["admin_id"] = admin_id
+        if activity_type:
+            query["activity_type"] = activity_type.value
+        
+        return await self.database.admin_activities.count_documents(query)
+
+    async def get_admin_stats(self) -> dict:
+        """Get admin statistics"""
+        # Total admins by role
+        pipeline = [
+            {"$group": {
+                "_id": "$role",
+                "count": {"$sum": 1}
+            }}
+        ]
+        
+        role_counts = {}
+        async for doc in self.database.admins.aggregate(pipeline):
+            role_counts[doc["_id"]] = doc["count"]
+        
+        # Active vs inactive admins
+        active_admins = await self.database.admins.count_documents({"status": AdminStatus.ACTIVE.value})
+        total_admins = await self.database.admins.count_documents({})
+        
+        # Recent activities
+        recent_activities = await self.database.admin_activities.count_documents({
+            "created_at": {"$gte": datetime.utcnow() - timedelta(days=7)}
+        })
+        
+        # Login statistics
+        pipeline = [
+            {"$group": {
+                "_id": None,
+                "total_logins": {"$sum": "$login_count"},
+                "avg_logins": {"$avg": "$login_count"}
+            }}
+        ]
+        
+        login_stats = await self.database.admins.aggregate(pipeline).to_list(1)
+        total_logins = login_stats[0]["total_logins"] if login_stats else 0
+        avg_logins = login_stats[0]["avg_logins"] if login_stats else 0
+
+        return {
+            "total_admins": total_admins,
+            "active_admins": active_admins,
+            "inactive_admins": total_admins - active_admins,
+            "role_distribution": role_counts,
+            "recent_activities": recent_activities,
+            "total_logins": total_logins,
+            "average_logins_per_admin": round(avg_logins, 1)
+        }
+
 # Create global database instance
 database = Database()
