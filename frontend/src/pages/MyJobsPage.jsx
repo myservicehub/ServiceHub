@@ -42,11 +42,10 @@ const MyJobsPage = () => {
   const { user, isAuthenticated } = useAuth();
 
   useEffect(() => {
-    if (!isAuthenticated() || !isHomeowner()) {
-      return;
+    if (isAuthenticated && user?.role === 'homeowner') {
+      loadMyJobs();
     }
-    loadMyJobs();
-  }, []);
+  }, [isAuthenticated, user]);
 
   const loadMyJobs = async () => {
     try {
