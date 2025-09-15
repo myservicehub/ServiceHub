@@ -163,8 +163,11 @@ class ReviewSystemTester:
             try:
                 data = response.json()
                 self.tradesperson_token = data.get('access_token')
-                self.tradesperson_id = data.get('user', {}).get('id')
+                # Try different possible locations for user ID
+                user_data = data.get('user', {})
+                self.tradesperson_id = user_data.get('id') or user_data.get('user_id') or data.get('user_id')
                 self.log_result("Tradesperson creation", True, f"ID: {self.tradesperson_id}")
+                print(f"    Tradesperson response: {data}")  # Debug info
             except json.JSONDecodeError:
                 self.log_result("Tradesperson creation", False, "Invalid JSON response")
         else:
