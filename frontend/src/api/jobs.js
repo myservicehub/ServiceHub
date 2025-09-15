@@ -50,6 +50,12 @@ export const jobsAPI = {
     return response.data;
   },
 
+  // Complete a job
+  completeJob: async (jobId) => {
+    const response = await apiClient.put(`/jobs/${jobId}/complete`);
+    return response.data;
+  },
+
   // Get job statistics
   getJobStats: async () => {
     const response = await apiClient.get('/jobs/stats');
