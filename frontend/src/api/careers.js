@@ -47,43 +47,33 @@ const careersAPI = {
       if (params.search) queryParams.append('search', params.search);
       
       const queryString = queryParams.toString();
-      return await apiCall(`/api/admin/jobs/postings${queryString ? '?' + queryString : ''}`);
+      const response = await apiClient.get(`/admin/jobs/postings${queryString ? '?' + queryString : ''}`);
+      return response.data;
     },
 
     createJobPosting: async (jobData) => {
-      return await apiCall('/api/admin/jobs/postings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(jobData),
-      });
+      const response = await apiClient.post('/admin/jobs/postings', jobData);
+      return response.data;
     },
 
     getJobPosting: async (jobId) => {
-      return await apiCall(`/api/admin/jobs/postings/${jobId}`);
+      const response = await apiClient.get(`/admin/jobs/postings/${jobId}`);
+      return response.data;
     },
 
     updateJobPosting: async (jobId, updateData) => {
-      return await apiCall(`/api/admin/jobs/postings/${jobId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updateData),
-      });
+      const response = await apiClient.put(`/admin/jobs/postings/${jobId}`, updateData);
+      return response.data;
     },
 
     deleteJobPosting: async (jobId) => {
-      return await apiCall(`/api/admin/jobs/postings/${jobId}`, {
-        method: 'DELETE',
-      });
+      const response = await apiClient.delete(`/admin/jobs/postings/${jobId}`);
+      return response.data;
     },
 
     publishJobPosting: async (jobId) => {
-      return await apiCall(`/api/admin/jobs/postings/${jobId}/publish`, {
-        method: 'POST',
-      });
+      const response = await apiClient.post(`/admin/jobs/postings/${jobId}/publish`);
+      return response.data;
     },
 
     getJobApplications: async (params = {}) => {
@@ -94,21 +84,18 @@ const careersAPI = {
       if (params.status) queryParams.append('status', params.status);
       
       const queryString = queryParams.toString();
-      return await apiCall(`/api/admin/jobs/applications${queryString ? '?' + queryString : ''}`);
+      const response = await apiClient.get(`/admin/jobs/applications${queryString ? '?' + queryString : ''}`);
+      return response.data;
     },
 
     updateJobApplication: async (applicationId, updateData) => {
-      return await apiCall(`/api/admin/jobs/applications/${applicationId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updateData),
-      });
+      const response = await apiClient.put(`/admin/jobs/applications/${applicationId}`, updateData);
+      return response.data;
     },
 
     getJobStatistics: async () => {
-      return await apiCall('/api/admin/jobs/statistics');
+      const response = await apiClient.get('/admin/jobs/statistics');
+      return response.data;
     },
   }
 };
