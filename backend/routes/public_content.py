@@ -550,6 +550,13 @@ async def apply_to_job(
         # Increment applications count for the job
         await database.increment_job_applications_count(job_id)
         
+        # Send notification to admins about new application (in background)
+        try:
+            await _send_application_notification(application, job_posting)
+        except Exception as e:
+            logger.error(f"Failed to send application notification: {str(e)}")
+            # Don't fail the application submission due to notification errors
+        
         return {
             "message": "Application submitted successfully",
             "application_id": application_id
