@@ -125,7 +125,7 @@ class ReviewSystemTester:
             "email": f"homeowner.review.{uuid.uuid4().hex[:8]}@test.com",
             "password": "TestPassword123!",
             "phone": "+2348012345678",
-            "location": "Lagos, Ikeja, Computer Village",
+            "location": "Lagos",
             "postcode": "100001"
         }
         
@@ -149,7 +149,7 @@ class ReviewSystemTester:
             "email": f"tradesperson.review.{uuid.uuid4().hex[:8]}@test.com",
             "password": "TestPassword123!",
             "phone": "+2348087654321",
-            "location": "Lagos, Ikeja, Computer Village",
+            "location": "Lagos",
             "postcode": "100001",
             "trade_categories": ["Electrical Repairs"],
             "experience_years": 5,
