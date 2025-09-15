@@ -12,6 +12,7 @@ from models.reviews import (
     Review, ReviewCreate, ReviewSummary, ReviewRequest, 
     ReviewStats, ReviewType, ReviewStatus
 )
+from models.admin import AdminRole, AdminStatus, AdminActivityType
 
 logger = logging.getLogger(__name__)
 
