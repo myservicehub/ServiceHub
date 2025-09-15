@@ -5476,5 +5476,123 @@ class Database:
             logger.error(f"Error getting admin users: {str(e)}")
             return []
 
+    # Hiring Status and Feedback Database Methods
+
+    async def create_hiring_status(self, hiring_status_data: dict) -> dict:
+        """Create a hiring status record"""
+        try:
+            result = await self.database.hiring_status.insert_one(hiring_status_data)
+            hiring_status_data['_id'] = str(result.inserted_id)
+            return hiring_status_data
+        except Exception as e:
+            logger.error(f"Error creating hiring status: {str(e)}")
+            raise
+
+    async def get_hiring_status_by_job_and_tradesperson(self, job_id: str, tradesperson_id: str) -> Optional[dict]:
+        """Get hiring status for specific job and tradesperson"""
+        try:
+            status = await self.database.hiring_status.find_one({
+                "job_id": job_id,
+                "tradesperson_id": tradesperson_id
+            })
+            if status:
+                status['_id'] = str(status['_id'])
+            return status
+        except Exception as e:
+            logger.error(f"Error getting hiring status: {str(e)}")
+            return None
+
+    async def update_hiring_status(self, status_id: str, update_data: dict) -> bool:
+        """Update hiring status"""
+        try:
+            update_data['updated_at'] = datetime.utcnow()
+            result = await self.database.hiring_status.update_one(
+                {"id": status_id},
+                {"$set": update_data}
+            )
+            return result.modified_count > 0
+        except Exception as e:
+            logger.error(f"Error updating hiring status: {str(e)}")
+            return False
+
+    async def create_hiring_feedback(self, feedback_data: dict) -> dict:
+        """Create a hiring feedback record"""
+        try:
+            result = await self.database.hiring_feedback.insert_one(feedback_data)
+            feedback_data['_id'] = str(result.inserted_id)
+            return feedback_data
+        except Exception as e:
+            logger.error(f"Error creating hiring feedback: {str(e)}")
+            raise
+
+    async def get_hiring_feedback_by_job_and_tradesperson(self, job_id: str, tradesperson_id: str) -> Optional[dict]:
+        """Get hiring feedback for specific job and tradesperson"""
+        try:
+            feedback = await self.database.hiring_feedback.find_one({
+                "job_id": job_id,
+                "tradesperson_id": tradesperson_id
+            })
+            if feedback:
+                feedback['_id'] = str(feedback['_id'])
+            return feedback
+        except Exception as e:
+            logger.error(f"Error getting hiring feedback: {str(e)}")
+            return None
+
+    async def get_hiring_statistics(self) -> dict:
+        """Get hiring statistics for analytics"""
+        try:
+            # Count total hiring status records
+            total_interactions = await self.database.hiring_status.count_documents({})
+            
+            # Count hired vs not hired
+            hired_count = await self.database.hiring_status.count_documents({"hired": True})
+            not_hired_count = await self.database.hiring_status.count_documents({"hired": False})
+            
+            # Count by job status
+            pipeline = [
+                {"$match": {"hired": True}},
+                {"$group": {
+                    "_id": "$job_status",
+                    "count": {"$sum": 1}
+                }}
+            ]
+            job_status_counts = {}
+            async for doc in self.database.hiring_status.aggregate(pipeline):
+                if doc["_id"]:
+                    job_status_counts[doc["_id"]] = doc["count"]
+            
+            # Count feedback by type
+            pipeline = [
+                {"$group": {
+                    "_id": "$feedback_type",
+                    "count": {"$sum": 1}
+                }}
+            ]
+            feedback_type_counts = {}
+            async for doc in self.database.hiring_feedback.aggregate(pipeline):
+                if doc["_id"]:
+                    feedback_type_counts[doc["_id"]] = doc["count"]
+            
+            return {
+                "total_interactions": total_interactions,
+                "hired_count": hired_count,
+                "not_hired_count": not_hired_count,
+                "job_status_distribution": job_status_counts,
+                "feedback_type_distribution": feedback_type_counts,
+                "hiring_rate": hired_count / total_interactions if total_interactions > 0 else 0
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting hiring statistics: {str(e)}")
+            return {
+                "total_interactions": 0,
+                "hired_count": 0,
+                "not_hired_count": 0,
+                "job_status_distribution": {},
+                "feedback_type_distribution": {},
+                "hiring_rate": 0
+            }
+
 # Create global database instance
 database = Database()
