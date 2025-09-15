@@ -854,6 +854,8 @@ const MyJobsPage = () => {
                 <Button
                   onClick={() => {
                     setShowReviewPrompt(false);
+                    // Add to pending review jobs
+                    setPendingReviewJobs(prev => new Set([...prev, completedJob.id]));
                     setCompletedJob(null);
                     toast({
                       title: "Review Reminder Set",
