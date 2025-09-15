@@ -350,6 +350,42 @@ async def _notify_new_message(sender: User, recipient_id: str, conversation: dic
 
 # Hiring Status and Feedback Endpoints
 
+@router.get("/hiring-status/{job_id}")
+async def get_hiring_status(
+    job_id: str,
+    current_user: User = Depends(get_current_homeowner)
+):
+    """Get hiring status for a specific job"""
+    try:
+        # Verify job exists and belongs to current user
+        job = await database.get_job_by_id(job_id)
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+        
+        if job.get("homeowner", {}).get("id") != current_user.id:
+            raise HTTPException(status_code=403, detail="You can only view status for your own jobs")
+        
+        # Get hiring status records for this job
+        cursor = database.hiring_status_collection.find(
+            {"job_id": job_id, "homeowner_id": current_user.id}
+        ).sort("created_at", -1).limit(1)
+        
+        hiring_status = await cursor.to_list(length=1)
+        
+        if not hiring_status:
+            raise HTTPException(status_code=404, detail="No hiring status found for this job")
+        
+        status = hiring_status[0]
+        status['_id'] = str(status['_id'])
+        
+        return status
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting hiring status: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to get hiring status")
+
 @router.post("/hiring-status")
 async def update_hiring_status(
     hiring_data: dict,
