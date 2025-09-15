@@ -1215,6 +1215,161 @@ class HiringStatusTester:
         else:
             self.log_result("Feedback unauthorized", False, f"Expected 401/403, got {response.status_code}")
     
+    def test_get_hiring_status_endpoint(self):
+        """Test GET /api/messages/hiring-status/{job_id} endpoint - NEW FEATURE"""
+        print("\n=== Testing GET Hiring Status Endpoint (NEW FEATURE) ===")
+        
+        if not all([self.homeowner_token, self.tradesperson_id, self.test_job_id]):
+            self.log_result("GET hiring status endpoint", False, "Missing required test data")
+            return
+        
+        # First, create a hiring status record to test retrieval
+        print(f"\n--- Setup: Creating Hiring Status Record ---")
+        hiring_data = {
+            "jobId": self.test_job_id,
+            "tradespersonId": self.tradesperson_id,
+            "hired": True,
+            "jobStatus": "completed"
+        }
+        
+        create_response = self.make_request("POST", "/messages/hiring-status", 
+                                          json=hiring_data, auth_token=self.homeowner_token)
+        
+        if create_response.status_code != 200:
+            self.log_result("GET hiring status setup", False, f"Failed to create hiring status: {create_response.status_code}")
+            return
+        
+        # Test 1: Get hiring status for job with existing status
+        print(f"\n--- Test 1: Get Hiring Status for Job with Status ---")
+        response = self.make_request("GET", f"/messages/hiring-status/{self.test_job_id}", 
+                                   auth_token=self.homeowner_token)
+        
+        if response.status_code == 200:
+            try:
+                data = response.json()
+                
+                # Verify response structure
+                required_fields = ['id', 'job_id', 'homeowner_id', 'tradesperson_id', 'hired', 'job_status']
+                missing_fields = [field for field in required_fields if field not in data]
+                
+                if not missing_fields:
+                    self.log_result("GET hiring status structure", True, 
+                                  f"All required fields present: hired={data.get('hired')}, job_status={data.get('job_status')}")
+                    
+                    # Verify data matches what we created
+                    if (data.get('hired') == True and 
+                        data.get('job_status') == 'completed' and 
+                        data.get('job_id') == self.test_job_id):
+                        self.log_result("GET hiring status data verification", True, "Data matches created record")
+                    else:
+                        self.log_result("GET hiring status data verification", False, "Data mismatch")
+                        
+                else:
+                    self.log_result("GET hiring status structure", False, f"Missing fields: {missing_fields}")
+                    
+            except json.JSONDecodeError:
+                self.log_result("GET hiring status for existing job", False, "Invalid JSON response")
+        else:
+            self.log_result("GET hiring status for existing job", False, f"Status: {response.status_code}, Response: {response.text}")
+        
+        # Test 2: Get hiring status for job without status (should return 404)
+        print(f"\n--- Test 2: Get Hiring Status for Job Without Status ---")
+        fake_job_id = str(uuid.uuid4())
+        response = self.make_request("GET", f"/messages/hiring-status/{fake_job_id}", 
+                                   auth_token=self.homeowner_token)
+        
+        if response.status_code == 404:
+            self.log_result("GET hiring status non-existent job", True, "Correctly returned 404 for job without status")
+        else:
+            self.log_result("GET hiring status non-existent job", False, f"Expected 404, got {response.status_code}")
+        
+        # Test 3: Test authentication (no token)
+        print(f"\n--- Test 3: GET Hiring Status Without Authentication ---")
+        response = self.make_request("GET", f"/messages/hiring-status/{self.test_job_id}")
+        
+        if response.status_code in [401, 403]:
+            self.log_result("GET hiring status no auth", True, "Correctly rejected unauthenticated request")
+        else:
+            self.log_result("GET hiring status no auth", False, f"Expected 401/403, got {response.status_code}")
+        
+        # Test 4: Test homeowner-only access (tradesperson should be rejected)
+        print(f"\n--- Test 4: GET Hiring Status with Tradesperson Token ---")
+        if self.tradesperson_token:
+            response = self.make_request("GET", f"/messages/hiring-status/{self.test_job_id}", 
+                                       auth_token=self.tradesperson_token)
+            
+            if response.status_code == 403:
+                self.log_result("GET hiring status tradesperson access", True, "Correctly rejected tradesperson access")
+            else:
+                self.log_result("GET hiring status tradesperson access", False, f"Expected 403, got {response.status_code}")
+        else:
+            self.log_result("GET hiring status tradesperson access", False, "No tradesperson token available")
+        
+        # Test 5: Test authorization (only homeowner's own jobs)
+        print(f"\n--- Test 5: GET Hiring Status for Another Homeowner's Job ---")
+        # Create another homeowner
+        other_homeowner_data = {
+            "name": "Other Test Homeowner",
+            "email": f"other.homeowner.{uuid.uuid4().hex[:8]}@test.com",
+            "password": "TestPassword123!",
+            "phone": "+2348012345679",
+            "location": "Lagos",
+            "postcode": "100001"
+        }
+        
+        other_response = self.make_request("POST", "/auth/register/homeowner", json=other_homeowner_data)
+        
+        if other_response.status_code == 200:
+            try:
+                other_data = other_response.json()
+                other_token = other_data.get('access_token')
+                
+                # Try to access original homeowner's job hiring status
+                response = self.make_request("GET", f"/messages/hiring-status/{self.test_job_id}", 
+                                           auth_token=other_token)
+                
+                if response.status_code == 403:
+                    self.log_result("GET hiring status authorization", True, "Correctly rejected access to other homeowner's job")
+                else:
+                    self.log_result("GET hiring status authorization", False, f"Expected 403, got {response.status_code}")
+                    
+            except json.JSONDecodeError:
+                self.log_result("GET hiring status authorization", False, "Failed to create other homeowner")
+        else:
+            self.log_result("GET hiring status authorization", False, "Could not create other homeowner for test")
+        
+        # Test 6: Test with multiple hiring status records (should return latest)
+        print(f"\n--- Test 6: GET Latest Hiring Status (Multiple Records) ---")
+        # Create another hiring status record
+        updated_hiring_data = {
+            "jobId": self.test_job_id,
+            "tradespersonId": self.tradesperson_id,
+            "hired": True,
+            "jobStatus": "in_progress"
+        }
+        
+        update_response = self.make_request("POST", "/messages/hiring-status", 
+                                          json=updated_hiring_data, auth_token=self.homeowner_token)
+        
+        if update_response.status_code == 200:
+            # Now get the hiring status - should return the latest one
+            response = self.make_request("GET", f"/messages/hiring-status/{self.test_job_id}", 
+                                       auth_token=self.homeowner_token)
+            
+            if response.status_code == 200:
+                try:
+                    data = response.json()
+                    if data.get('job_status') == 'in_progress':
+                        self.log_result("GET latest hiring status", True, "Correctly returned latest status record")
+                    else:
+                        self.log_result("GET latest hiring status", False, f"Expected 'in_progress', got {data.get('job_status')}")
+                except json.JSONDecodeError:
+                    self.log_result("GET latest hiring status", False, "Invalid JSON response")
+            else:
+                self.log_result("GET latest hiring status", False, f"Status: {response.status_code}")
+        else:
+            self.log_result("GET latest hiring status", False, "Could not create second hiring status record")
+
     def test_authentication_permissions(self):
         """Test authentication and permission requirements"""
         print("\n=== Testing Authentication & Permissions ===")
