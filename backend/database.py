@@ -1602,19 +1602,61 @@ class Database:
         if existing_review:
             return False
         
-        # Check if job exists and is completed
+        # Check if job exists
         job = await self.get_job_by_id(job_id)
         if not job:
             return False
         
-        # Check if there's a completed interest (indicating job interaction)
-        interest = await self.interests_collection.find_one({
-            "job_id": job_id,
-            "tradesperson_id": reviewee_id if reviewer_id == job["homeowner"]["id"] else reviewer_id,
-            "status": {"$in": ["contact_shared", "paid_access"]}
-        })
+        # Check if job is completed
+        if job.get("status") != "completed":
+            return False
         
-        return interest is not None
+        # Check if reviewer is the homeowner who posted the job
+        if reviewer_id == job.get("homeowner", {}).get("id"):
+            # Homeowner can review any tradesperson for their completed job
+            # Check if there's hiring status indicating they hired this tradesperson
+            hiring_status = await self.database.hiring_status.find_one({
+                "job_id": job_id,
+                "homeowner_id": reviewer_id,
+                "tradesperson_id": reviewee_id,
+                "hired": True
+            })
+            
+            if hiring_status:
+                return True
+            
+            # If no hiring status, fall back to checking interests (for backward compatibility)
+            interest = await self.interests_collection.find_one({
+                "job_id": job_id,
+                "tradesperson_id": reviewee_id,
+                "status": {"$in": ["contact_shared", "paid_access"]}
+            })
+            
+            return interest is not None
+        
+        # For tradesperson reviewing homeowner (less common case)
+        if reviewee_id == job.get("homeowner", {}).get("id"):
+            # Check if there's hiring status indicating homeowner hired this tradesperson
+            hiring_status = await self.database.hiring_status.find_one({
+                "job_id": job_id,
+                "homeowner_id": reviewee_id,
+                "tradesperson_id": reviewer_id,
+                "hired": True
+            })
+            
+            if hiring_status:
+                return True
+            
+            # Fall back to interests check
+            interest = await self.interests_collection.find_one({
+                "job_id": job_id,
+                "tradesperson_id": reviewer_id,
+                "status": {"$in": ["contact_shared", "paid_access"]}
+            })
+            
+            return interest is not None
+        
+        return False
 
     async def _update_user_review_summary(self, user_id: str):
         """Update cached review summary for user (internal method)"""
