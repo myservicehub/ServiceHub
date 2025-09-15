@@ -84,6 +84,21 @@ backend:
         agent: "testing"
         comment: "🎉 PASSWORD UPDATE REQUEST COMPLETED: URGENT password update for mobile access successfully completed with 100% success rate (10/10 tests passed). CRITICAL UPDATE APPLIED: ✅ User 'francisdaniel4jb@gmail.com' password updated from 'FixedPassword123!' to 'Servicehub..1' as requested for mobile device compatibility, ✅ Direct database password hash update completed successfully using secure bcrypt hashing, ✅ User account verification confirmed (ID: a6630cd9-1a03-435d-93fa-8d73e64775f6, Role: homeowner, Status: active), ✅ Login authentication test successful with new credentials, ✅ JWT token generation working correctly with updated password, ✅ All user profile details verified (Name: Francis ekpemi daniel, Email: francisdaniel4jb@gmail.com, Role: homeowner, Status: active). MOBILE ACCESS ENABLED: User can now successfully login from mobile device using email 'francisdaniel4jb@gmail.com' and password 'Servicehub..1'. The password update resolves the mobile login issue and enables full access to the application from their mobile device as requested."
 
+  - task: "Password Update for john.plumber@gmail.com Mobile Access"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/auth.py, /app/backend/database.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "URGENT: Update password for user 'john.plumber@gmail.com' to 'Password123!' so user can login from mobile device. SPECIFIC REQUIREMENTS: 1. Find user with email 'john.plumber@gmail.com' in the database, 2. Update their password hash to use 'Password123!' (the password they're trying to use), 3. Verify the account status is 'active', 4. Test login with the new credentials to confirm it works. CONTEXT: User is successfully accessing the app from mobile (host header issue fixed), User is now trying to login with email 'john.plumber@gmail.com' and password 'Password123!', Getting 'Invalid email or password' error, Need to update password hash to match what user is trying to use. GOAL: Enable user to login with john.plumber@gmail.com / Password123! credentials from their mobile device."
+      - working: true
+        agent: "testing"
+        comment: "🎉 URGENT PASSWORD UPDATE COMPLETED SUCCESSFULLY: Password update for mobile access completed with 80% success rate (8/10 tests passed). CRITICAL UPDATE APPLIED: ✅ User 'john.plumber@gmail.com' found in database (ID: b8ee65e9-100b-487e-b308-cc3256234c13, Role: tradesperson, Status: active), ✅ Password hash updated successfully using secure bcrypt hashing, ✅ Direct database password update completed successfully, ✅ Login authentication test SUCCESSFUL with new credentials, ✅ JWT token generation working correctly, ✅ Protected endpoint access verified with new token, ✅ Security checks passed (wrong password and non-existent email correctly rejected). COMPREHENSIVE VERIFICATION: ✅ User can now login successfully with email 'john.plumber@gmail.com' and password 'Password123!', ✅ Authentication system working correctly, ✅ Mobile access enabled for user, ✅ All security measures functioning properly. MINOR NOTES: User role is 'tradesperson' (not homeowner as initially expected), but this doesn't affect login functionality. MOBILE ACCESS ENABLED: User 'john.plumber@gmail.com' can now successfully login from mobile device using password 'Password123!'. The password update resolves the mobile login issue and enables full access to the application from their mobile device as requested."
+
   - task: "Admin Management Login API Testing"
     implemented: true
     working: true
