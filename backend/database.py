@@ -5008,5 +5008,251 @@ class Database:
             "average_logins_per_admin": round(avg_logins, 1)
         }
 
+    # ==========================================
+    # CONTENT MANAGEMENT METHODS
+    # ==========================================
+
+    async def create_content_item(self, content_data: dict) -> str:
+        """Create a new content item"""
+        result = await self.database.content_items.insert_one(content_data)
+        return content_data["id"]
+
+    async def get_content_items(self, filters: dict = None, skip: int = 0, limit: int = 50) -> List[dict]:
+        """Get content items with filtering"""
+        query = filters or {}
+        cursor = self.database.content_items.find(query).sort("created_at", -1).skip(skip).limit(limit)
+        content_items = await cursor.to_list(length=limit)
+        
+        for item in content_items:
+            item['_id'] = str(item['_id'])
+        return content_items
+
+    async def get_content_items_count(self, filters: dict = None) -> int:
+        """Get count of content items"""
+        query = filters or {}
+        return await self.database.content_items.count_documents(query)
+
+    async def get_content_item_by_id(self, content_id: str) -> Optional[dict]:
+        """Get content item by ID"""
+        item = await self.database.content_items.find_one({"id": content_id})
+        if item:
+            item['_id'] = str(item['_id'])
+        return item
+
+    async def get_content_item_by_slug(self, slug: str) -> Optional[dict]:
+        """Get content item by slug"""
+        item = await self.database.content_items.find_one({"slug": slug})
+        if item:
+            item['_id'] = str(item['_id'])
+        return item
+
+    async def update_content_item(self, content_id: str, update_data: dict) -> bool:
+        """Update content item"""
+        result = await self.database.content_items.update_one(
+            {"id": content_id},
+            {"$set": update_data}
+        )
+        return result.modified_count > 0
+
+    async def bulk_update_content_items(self, content_ids: List[str], update_data: dict) -> int:
+        """Bulk update content items"""
+        result = await self.database.content_items.update_many(
+            {"id": {"$in": content_ids}},
+            {"$set": update_data}
+        )
+        return result.modified_count
+
+    async def get_content_statistics(self) -> dict:
+        """Get content statistics"""
+        try:
+            # Total counts by status
+            total_content = await self.database.content_items.count_documents({})
+            published_content = await self.database.content_items.count_documents({"status": "published"})
+            draft_content = await self.database.content_items.count_documents({"status": "draft"})
+            scheduled_content = await self.database.content_items.count_documents({"status": "scheduled"})
+            archived_content = await self.database.content_items.count_documents({"status": "archived"})
+
+            # Content by type
+            type_pipeline = [
+                {"$group": {"_id": "$content_type", "count": {"$sum": 1}}}
+            ]
+            content_by_type = {}
+            async for doc in self.database.content_items.aggregate(type_pipeline):
+                content_by_type[doc["_id"]] = doc["count"]
+
+            # Content by category
+            category_pipeline = [
+                {"$group": {"_id": "$category", "count": {"$sum": 1}}}
+            ]
+            content_by_category = {}
+            async for doc in self.database.content_items.aggregate(category_pipeline):
+                content_by_category[doc["_id"]] = doc["count"]
+
+            # Top performing content (by view count)
+            top_performing_cursor = self.database.content_items.find(
+                {"status": "published"},
+                {"title": 1, "content_type": 1, "view_count": 1, "created_at": 1}
+            ).sort("view_count", -1).limit(5)
+            
+            top_performing = []
+            async for doc in top_performing_cursor:
+                doc['_id'] = str(doc['_id'])
+                top_performing.append(doc)
+
+            # Recent activity (last 10 content items)
+            recent_cursor = self.database.content_items.find(
+                {},
+                {"title": 1, "content_type": 1, "status": 1, "created_at": 1, "updated_at": 1}
+            ).sort("updated_at", -1).limit(10)
+            
+            recent_activity = []
+            async for doc in recent_cursor:
+                doc['_id'] = str(doc['_id'])
+                recent_activity.append(doc)
+
+            return {
+                "total_content": total_content,
+                "published_content": published_content,
+                "draft_content": draft_content,
+                "scheduled_content": scheduled_content,
+                "archived_content": archived_content,
+                "content_by_type": content_by_type,
+                "content_by_category": content_by_category,
+                "top_performing": top_performing,
+                "recent_activity": recent_activity
+            }
+
+        except Exception as e:
+            logger.error(f"Error getting content statistics: {str(e)}")
+            return {
+                "total_content": 0,
+                "published_content": 0,
+                "draft_content": 0,
+                "scheduled_content": 0,
+                "archived_content": 0,
+                "content_by_type": {},
+                "content_by_category": {},
+                "top_performing": [],
+                "recent_activity": []
+            }
+
+    async def get_content_analytics(self, content_id: str, days: int = 30) -> dict:
+        """Get analytics for a specific content item"""
+        try:
+            from datetime import timedelta
+            start_date = datetime.utcnow() - timedelta(days=days)
+            
+            # Get analytics data (placeholder implementation)
+            analytics = await self.database.content_analytics.find({
+                "content_id": content_id,
+                "date": {"$gte": start_date}
+            }).to_list(length=None)
+            
+            # Aggregate data
+            total_views = sum(item.get("views", 0) for item in analytics)
+            total_unique_views = sum(item.get("unique_views", 0) for item in analytics)
+            total_likes = sum(item.get("likes", 0) for item in analytics)
+            total_shares = sum(item.get("shares", 0) for item in analytics)
+            
+            return {
+                "content_id": content_id,
+                "period_days": days,
+                "total_views": total_views,
+                "total_unique_views": total_unique_views,
+                "total_likes": total_likes,
+                "total_shares": total_shares,
+                "daily_data": analytics
+            }
+        except Exception as e:
+            logger.error(f"Error getting content analytics: {str(e)}")
+            return {
+                "content_id": content_id,
+                "period_days": days,
+                "total_views": 0,
+                "total_unique_views": 0,
+                "total_likes": 0,
+                "total_shares": 0,
+                "daily_data": []
+            }
+
+    async def create_content_template(self, template_data: dict) -> str:
+        """Create content template"""
+        result = await self.database.content_templates.insert_one(template_data)
+        return template_data["id"]
+
+    async def get_content_templates(self, content_type: str = None) -> List[dict]:
+        """Get content templates"""
+        query = {"is_active": True}
+        if content_type:
+            query["content_type"] = content_type
+        
+        cursor = self.database.content_templates.find(query).sort("created_at", -1)
+        templates = await cursor.to_list(length=None)
+        
+        for template in templates:
+            template['_id'] = str(template['_id'])
+        return templates
+
+    async def create_media_file(self, media_data: dict) -> str:
+        """Create media file record"""
+        result = await self.database.media_files.insert_one(media_data)
+        return media_data["id"]
+
+    async def get_media_files(self, filters: dict = None, skip: int = 0, limit: int = 50) -> List[dict]:
+        """Get media files with filtering"""
+        query = filters or {}
+        cursor = self.database.media_files.find(query).sort("upload_date", -1).skip(skip).limit(limit)
+        media_files = await cursor.to_list(length=limit)
+        
+        for file in media_files:
+            file['_id'] = str(file['_id'])
+        return media_files
+
+    async def get_media_files_count(self, filters: dict = None) -> int:
+        """Get count of media files"""
+        query = filters or {}
+        return await self.database.media_files.count_documents(query)
+
+    async def save_uploaded_file(self, file, folder: str = "general") -> str:
+        """Save uploaded file and return URL (placeholder implementation)"""
+        # This is a placeholder implementation
+        # In a real system, you would save to cloud storage (S3, etc.)
+        import os
+        import uuid
+        
+        # Create uploads directory if it doesn't exist
+        upload_dir = f"/app/uploads/{folder}"
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        # Generate unique filename
+        file_extension = file.filename.split('.')[-1]
+        unique_filename = f"{uuid.uuid4()}.{file_extension}"
+        file_path = os.path.join(upload_dir, unique_filename)
+        
+        # Save file
+        with open(file_path, "wb") as buffer:
+            content = await file.read()
+            buffer.write(content)
+        
+        # Return URL (in production, this would be a CDN URL)
+        return f"/uploads/{folder}/{unique_filename}"
+
+    async def log_admin_activity(self, admin_id: str, admin_username: str, activity_type: str, 
+                                description: str, target_id: str = None, target_type: str = None, 
+                                metadata: dict = None):
+        """Log admin activity"""
+        activity_data = {
+            "id": str(uuid.uuid4()),
+            "admin_id": admin_id,
+            "admin_username": admin_username,
+            "activity_type": activity_type,
+            "description": description,
+            "target_id": target_id,
+            "target_type": target_type,
+            "metadata": metadata,
+            "created_at": datetime.utcnow()
+        }
+        await self.database.admin_activities.insert_one(activity_data)
+
 # Create global database instance
 database = Database()
