@@ -655,6 +655,7 @@ class ReviewSubmissionFixTester:
         try:
             # Basic setup
             self.test_service_health()
+            self.setup_admin_access()
             self.setup_test_users()
             self.create_test_job()
             self.mark_job_completed()
