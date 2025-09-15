@@ -4824,5 +4824,5 @@ class Database:
             logger.error(f"Error getting trade categories with questions: {str(e)}")
             return []
 
-# Global database instance
+# Create global database instance
 database = Database()
