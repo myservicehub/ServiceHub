@@ -104,6 +104,49 @@ async def get_featured_reviews(limit: int = Query(6, ge=1, le=20)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/my-reviews")
+async def get_my_reviews(
+    current_user: models.User = Depends(auth.get_current_user),
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=50)
+):
+    """Get reviews written by current user"""
+    try:
+        # Get reviews written by current user
+        skip = (page - 1) * limit
+        
+        # Get reviews from database
+        reviews_cursor = database.reviews_collection.find(
+            {"reviewer_id": current_user.id}
+        ).sort("created_at", -1).skip(skip).limit(limit)
+        
+        reviews = []
+        async for doc in reviews_cursor:
+            # Convert ObjectId to string and remove _id
+            doc["id"] = str(doc["_id"])
+            del doc["_id"]
+            reviews.append(doc)
+        
+        # Get total count
+        total = await database.reviews_collection.count_documents(
+            {"reviewer_id": current_user.id}
+        )
+        
+        # Calculate pagination info
+        total_pages = (total + limit - 1) // limit
+        
+        return {
+            "reviews": reviews,
+            "total": total,
+            "page": page,
+            "limit": limit,
+            "total_pages": total_pages
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting user reviews: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to get reviews")
+
 @router.get("/{review_id}", response_model=models.Review)
 async def get_review(review_id: str):
     """Get a specific review by ID"""
