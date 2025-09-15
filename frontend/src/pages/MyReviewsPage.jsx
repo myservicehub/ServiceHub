@@ -29,6 +29,17 @@ const MyReviewsPage = () => {
   const { toast } = useToast();
   const currentUser = getCurrentUser();
 
+  // Debug logging
+  useEffect(() => {
+    console.log('🔍 MyReviewsPage Debug:', {
+      isAuth: isAuthenticated(),
+      isHomeowner: isHomeowner(),
+      currentUser: currentUser,
+      userRole: currentUser?.role,
+      token: !!localStorage.getItem('token')
+    });
+  }, []);
+
   useEffect(() => {
     if (isAuthenticated() && isHomeowner()) {
       loadMyReviews();
