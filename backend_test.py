@@ -201,7 +201,7 @@ class ReviewSystemTester:
             "urgency": "medium"
         }
         
-        response = self.make_request("POST", "/jobs", json=job_data, auth_token=self.homeowner_token)
+        response = self.make_request("POST", "/api/jobs", json=job_data, auth_token=self.homeowner_token)
         
         if response.status_code == 200:
             try:
