@@ -1303,13 +1303,13 @@ class HiringStatusTester:
         print(f"\n🎯 KEY TESTING FINDINGS:")
         
         if success_rate >= 90:
-            print(f"✅ EXCELLENT: Review system is working excellently")
+            print(f"✅ EXCELLENT: Hiring status and feedback system is working excellently")
         elif success_rate >= 80:
-            print(f"✅ GOOD: Review system is working well with minor issues")
+            print(f"✅ GOOD: Hiring status and feedback system is working well with minor issues")
         elif success_rate >= 70:
-            print(f"⚠️  FAIR: Review system has some issues that need attention")
+            print(f"⚠️  FAIR: Hiring status and feedback system has some issues that need attention")
         else:
-            print(f"❌ POOR: Review system has significant issues requiring fixes")
+            print(f"❌ POOR: Hiring status and feedback system has significant issues requiring fixes")
         
         # Categorize failures
         if self.results['failed'] > 0:
