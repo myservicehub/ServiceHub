@@ -60,6 +60,7 @@ test_plan:
     - "GET Hiring Status Endpoint Testing - Mark as Completed Button Workflow"
     - "Review Prompt Modal After Job Completion Testing"
     - "Review Submission Fix Testing - Cannot Review Error Resolution"
+    - "Completed Jobs Display Backend Testing"
   test_all: false
   test_priority: "high_first"
 ##
