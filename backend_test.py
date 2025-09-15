@@ -1,33 +1,32 @@
 #!/usr/bin/env python3
 """
-ADMIN MANAGEMENT LOGIN API TESTING
+ADMIN USER PERMISSIONS INVESTIGATION FOR JOB POSTING MANAGEMENT
 
-**COMPREHENSIVE TESTING REQUIREMENTS:**
+**INVESTIGATION REQUIREMENTS:**
 
-**1. Admin Management Login API Testing:**
-- POST /api/admin-management/login - Admin login with legacy credentials
-- GET /api/admin-management/me - Get current admin info with JWT token
-- Verify JWT token generation and validation
-- Test legacy admin credentials (admin/servicehub2024)
-- Verify super admin account creation
-- Test login statistics update
+**1. Admin User Setup Investigation:**
+- Query admin users collection to see what admin users exist and their roles/permissions
+- Check if admin user has proper role (SUPER_ADMIN or CONTENT_ADMIN)
+- Verify admin user permissions include MANAGE_JOBS
 
-**2. Authentication and Authorization Testing:**
-- JWT token validation
-- Admin role and permissions verification
-- Access control for protected endpoints
-- Token expiration handling
+**2. Admin Login Flow Testing:**
+- Test admin login with credentials admin/servicehub2024
+- Check returned user profile and permissions
+- Verify JWT token contains proper role information
 
-**3. Legacy Credentials Handling:**
-- Handle legacy admin credentials (admin/servicehub2024)
-- Create super admin account if it doesn't exist
-- Return proper JWT token and admin info
+**3. Permission Checking:**
+- Verify if current admin user has MANAGE_JOBS permission
+- Test access to job management endpoints
+- Check role configuration and permission mapping
 
-**4. Response Structure Validation:**
-- Verify access_token in response
-- Validate admin object structure
-- Check permissions array
-- Confirm login statistics update
+**4. Job Management API Testing:**
+- GET /api/admin/jobs/postings (verify permission access)
+- POST /api/admin/jobs/postings (test job creation)
+- Verify 403 Forbidden errors are resolved
+
+**5. Fix Permission Issues:**
+- Update admin user role/permissions if needed
+- Create new admin user with proper job management permissions if required
 """
 
 import requests
