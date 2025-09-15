@@ -5459,5 +5459,22 @@ class Database:
                 "recent_applications": []
             }
 
+    async def get_admin_users(self) -> List[dict]:
+        """Get list of admin users for notifications"""
+        try:
+            cursor = self.database.admins.find(
+                {"status": "active"}, 
+                {"id": 1, "username": 1, "email": 1, "full_name": 1, "role": 1}
+            )
+            admins = await cursor.to_list(length=None)
+            
+            for admin in admins:
+                admin['_id'] = str(admin['_id'])
+            
+            return admins
+        except Exception as e:
+            logger.error(f"Error getting admin users: {str(e)}")
+            return []
+
 # Create global database instance
 database = Database()
