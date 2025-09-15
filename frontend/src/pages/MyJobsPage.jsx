@@ -815,6 +815,74 @@ const MyJobsPage = () => {
         onJobClosed={handleJobClosed}
       />
 
+      {/* Review Prompt Modal */}
+      {showReviewPrompt && completedJob && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-lg max-w-md w-full">
+            <div className="p-6">
+              <div className="text-center">
+                <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                <h2 className="text-xl font-bold text-gray-900 mb-2">Job Completed! 🎉</h2>
+                <p className="text-gray-600 mb-6">
+                  Great! Your job "<strong>{completedJob.title}</strong>" has been marked as completed.
+                </p>
+                <div className="bg-blue-50 p-4 rounded-lg mb-6">
+                  <Star className="w-6 h-6 text-blue-600 mx-auto mb-2" />
+                  <h3 className="font-semibold text-blue-900 mb-2">Leave a Review</h3>
+                  <p className="text-sm text-blue-700">
+                    Help other homeowners by sharing your experience. Your review helps build trust in our community.
+                  </p>
+                </div>
+                <p className="text-gray-600 mb-6">
+                  Would you like to leave a review now, or save it for later?
+                </p>
+              </div>
+              
+              <div className="flex flex-col space-y-3">
+                <Button
+                  onClick={() => {
+                    setShowReviewPrompt(false);
+                    handleLeaveReview(completedJob);
+                  }}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3"
+                >
+                  <Star className="w-5 h-5 mr-2" />
+                  Leave Review Now
+                </Button>
+                
+                <Button
+                  onClick={() => {
+                    setShowReviewPrompt(false);
+                    setCompletedJob(null);
+                    toast({
+                      title: "Review Reminder Set",
+                      description: "We'll remind you to leave a review later. You can also find completed jobs in the 'Completed' tab.",
+                    });
+                  }}
+                  variant="outline"
+                  className="w-full font-semibold py-3"
+                >
+                  <Clock className="w-5 h-5 mr-2" />
+                  Maybe Later
+                </Button>
+              </div>
+              
+              <div className="mt-4 text-center">
+                <button
+                  onClick={() => {
+                    setShowReviewPrompt(false);
+                    setCompletedJob(null);
+                  }}
+                  className="text-sm text-gray-500 hover:text-gray-700"
+                >
+                  Skip for now
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Review Modal */}
       {showReviewModal && jobToReview && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
