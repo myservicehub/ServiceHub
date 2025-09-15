@@ -57,6 +57,7 @@ function App() {
             <Route path="/reviews" element={<ReviewsPage />} />
             <Route path="/reviews/:userId" element={<ReviewsPage />} />
             <Route path="/my-reviews" element={<MyReviewsPage />} />
+            <Route path="/my-received-reviews" element={<MyReceivedReviewsPage />} />
             <Route path="/wallet" element={<WalletPage />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/referrals" element={<ReferralsPage />} />
