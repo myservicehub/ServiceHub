@@ -76,6 +76,7 @@ app.include_router(admin.router)
 app.include_router(admin_management_router)
 app.include_router(content_router)
 app.include_router(public_content_router)
+app.include_router(jobs_management_router)
 app.include_router(referrals.router)
 app.include_router(messages.router)
 
