@@ -87,6 +87,7 @@ async def create_job_posting(
         
         # Create job posting as content item
         job_content = {
+            "id": str(uuid.uuid4()),
             "content_type": "job_posting",
             "title": job_data["title"],
             "slug": job_data["slug"],
