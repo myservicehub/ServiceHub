@@ -30,9 +30,17 @@ const MyJobsPage = () => {
   const [jobToEdit, setJobToEdit] = useState(null);
   const [jobToClose, setJobToClose] = useState(null);
   const [reopeningJobId, setReopeningJobId] = useState(null);
+  
+  // Review state
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [jobToReview, setJobToReview] = useState(null);
+  const [tradespersonToReview, setTradespersonToReview] = useState(null);
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [jobReviews, setJobReviews] = useState({});
 
   const { user, isAuthenticated, isHomeowner } = useAuth();
   const { toast } = useToast();
+  const currentUser = getCurrentUser();
   const navigate = useNavigate();
 
   useEffect(() => {
