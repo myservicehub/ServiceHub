@@ -366,7 +366,7 @@ async def get_hiring_status(
             raise HTTPException(status_code=403, detail="You can only view status for your own jobs")
         
         # Get hiring status records for this job
-        cursor = database.database.hiring_status.find(
+        cursor = database.hiring_status_collection.find(
             {"job_id": job_id, "homeowner_id": current_user.id}
         ).sort("created_at", -1).limit(1)
         
