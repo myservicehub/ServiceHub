@@ -666,31 +666,32 @@ async def reopen_job(
         if job.get("status") != "cancelled":
             raise HTTPException(status_code=400, detail="Only cancelled jobs can be reopened")
         
-        # Update job status to active and extend expiry, clear closure data
+        # Update job status back to active
         update_data = {
             "status": JobStatus.ACTIVE,
-            "updated_at": datetime.utcnow(),
-            "expires_at": datetime.utcnow() + timedelta(days=30),  # Extend for 30 more days
-            "closure_reason": None,
-            "closure_feedback": None,
-            "closed_at": None
+            "reopened_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
         }
         
-        success = await database.update_job(job_id, update_data)
-        if not success:
-            raise HTTPException(status_code=500, detail="Failed to reopen job")
+        await database.update_job(job_id, update_data)
         
-        return {
-            "message": "Job reopened successfully",
-            "job_id": job_id,
-            "status": JobStatus.ACTIVE,
-            "expires_at": update_data["expires_at"].isoformat()
-        }
+        # Get updated job
+        updated_job = await database.get_job_by_id(job_id)
+        
+        # Send notifications to interested tradespeople
+        background_tasks = BackgroundTasks()
+        background_tasks.add_task(
+            notify_interested_tradespeople_job_reopened,
+            job_id,
+            updated_job
+        )
+        
+        return updated_job
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error reopening job {job_id}: {str(e)}")
+        logger.error(f"Error reopening job: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/close-reasons")
