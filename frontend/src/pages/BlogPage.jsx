@@ -140,7 +140,7 @@ const BlogPage = () => {
       const post = await blogAPI.getPostBySlug(postSlug);
       if (post) {
         setSelectedPost(post);
-        await blogAPI.incrementView(post.id);
+        // View count is automatically incremented by the API
       }
     } catch (error) {
       console.error('Error loading blog post:', error);
