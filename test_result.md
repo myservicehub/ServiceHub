@@ -49,12 +49,13 @@
 ##
 test_plan:
   current_focus:
-    - "Review System Backend Testing"
+    - "Hiring Status and Feedback System Backend Testing"
   stuck_tasks: 
-    - "Job Creation API Endpoint - 404 Not Found Error"
-    - "My Reviews Endpoint - 404 Not Found Error"
+    []
   completed_tasks:
     - "My Jobs Page Navigation Fix - View Interested Tradespeople"
+    - "Review System Backend Testing"
+    - "Hiring Status and Feedback System Backend Testing"
   test_all: false
   test_priority: "high_first"
 ##
