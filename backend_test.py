@@ -125,11 +125,8 @@ class ReviewSystemTester:
             "email": f"homeowner.review.{uuid.uuid4().hex[:8]}@test.com",
             "password": "TestPassword123!",
             "phone": "+2348012345678",
-            "location": {
-                "state": "Lagos",
-                "lga": "Ikeja",
-                "town": "Computer Village"
-            }
+            "location": "Lagos, Ikeja, Computer Village",
+            "postcode": "100001"
         }
         
         print(f"\n--- Creating Test Homeowner ---")
