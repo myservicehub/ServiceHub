@@ -39,7 +39,7 @@ const MyJobsPage = () => {
   const [jobReviews, setJobReviews] = useState({});
 
   const { toast } = useToast();
-  const currentUser = getCurrentUser();
+  const { user, isAuthenticated } = useAuth();
 
   useEffect(() => {
     if (!isAuthenticated() || !isHomeowner()) {
