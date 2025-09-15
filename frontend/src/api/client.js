@@ -19,10 +19,17 @@ apiClient.interceptors.request.use(
   (config) => {
     console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`);
     
-    // Add auth token if available
+    // Add auth token if available - check both regular token and admin token
     const token = localStorage.getItem('token');
-    if (token) {
+    const adminToken = localStorage.getItem('admin_token');
+    
+    // Use admin token for admin endpoints, regular token for others
+    if (config.url?.includes('/admin') && adminToken) {
+      config.headers.Authorization = `Bearer ${adminToken}`;
+      console.log('🔑 Using admin token for admin endpoint');
+    } else if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log('🔑 Using regular token');
     }
     
     return config;
