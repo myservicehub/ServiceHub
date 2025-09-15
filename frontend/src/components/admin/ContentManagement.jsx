@@ -14,6 +14,9 @@ const ContentManagement = () => {
   const [templates, setTemplates] = useState([]);
   const [mediaFiles, setMediaFiles] = useState([]);
   const [statistics, setStatistics] = useState({});
+  const [jobPostings, setJobPostings] = useState([]);
+  const [jobApplications, setJobApplications] = useState([]);
+  const [jobStatistics, setJobStatistics] = useState({});
   const [loading, setLoading] = useState(false);
   
   // Filter and search states
