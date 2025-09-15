@@ -3,10 +3,11 @@ import {
   Briefcase, MapPin, Clock, Users, Heart, TrendingUp, 
   Award, Coffee, Laptop, Globe, Mail, Phone, Send,
   ChevronRight, Star, Building, Target, Zap, Shield,
-  ArrowRight, CheckCircle, User, Calendar
+  ArrowRight, CheckCircle, User, Calendar, AlertCircle
 } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import careersAPI from '../api/careers';
 
 const CareersPage = () => {
   const [openPositions, setOpenPositions] = useState([]);
