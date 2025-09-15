@@ -229,7 +229,7 @@ const MyJobsPage = () => {
   const canLeaveReview = (job) => {
     // Can leave review if job is completed and user hasn't already reviewed
     return job.status === 'completed' && !jobReviews[job.id]?.some(review => 
-      review.reviewer_id === currentUser?.id
+      review.reviewer_id === user?.id
     );
   };
 
