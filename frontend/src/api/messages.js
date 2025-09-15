@@ -35,6 +35,11 @@ export const messagesAPI = {
   },
 
   // Hiring Status and Feedback
+  getHiringStatus: async (jobId) => {
+    const response = await apiClient.get(`/messages/hiring-status/${jobId}`);
+    return response.data;
+  },
+
   updateHiringStatus: async (statusData) => {
     const response = await apiClient.post('/messages/hiring-status', statusData);
     return response.data;
