@@ -32,6 +32,11 @@ const ChatModal = ({
   const [sending, setSending] = useState(false);
   const [initialLoad, setInitialLoad] = useState(true);
   const [forceUpdate, setForceUpdate] = useState(0); // Force update counter
+  
+  // Hiring status modal state
+  const [showHiringStatusModal, setShowHiringStatusModal] = useState(false);
+  const [messageCount, setMessageCount] = useState(0);
+  const [hasShownHiringModal, setHasShownHiringModal] = useState(false);
 
   // Auto-scroll to bottom when new messages arrive
   const scrollToBottom = useCallback(() => {
