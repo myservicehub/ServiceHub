@@ -194,6 +194,31 @@ const ContentManagement = () => {
     }
   };
 
+  // Job management handlers
+  const handlePublishJob = async (jobId) => {
+    try {
+      await careersAPI.admin.publishJobPosting(jobId);
+      loadJobsData();
+      alert('Job posting published successfully!');
+    } catch (error) {
+      console.error('Error publishing job:', error);
+      alert('Failed to publish job posting.');
+    }
+  };
+
+  const handleDeleteJob = async (jobId) => {
+    if (window.confirm('Are you sure you want to delete this job posting?')) {
+      try {
+        await careersAPI.admin.deleteJobPosting(jobId);
+        loadJobsData();
+        alert('Job posting deleted successfully!');
+      } catch (error) {
+        console.error('Error deleting job:', error);
+        alert('Failed to delete job posting.');
+      }
+    }
+  };
+
   // Content type icons and labels
   const contentTypeConfig = {
     banner: { icon: Megaphone, label: 'Banner', color: 'bg-red-100 text-red-800' },
