@@ -713,14 +713,22 @@ const MyJobsPage = () => {
 
                                 {/* Leave Review Button - Only for completed jobs */}
                                 {job.status === 'completed' && canLeaveReview(job) && (
-                                  <Button
-                                    onClick={() => handleLeaveReview(job)}
-                                    className="font-lato text-white"
-                                    style={{backgroundColor: '#2F8140'}}
-                                  >
-                                    <Star size={16} className="mr-2" />
-                                    Leave Review
-                                  </Button>
+                                  <div className="flex flex-col space-y-2">
+                                    <Button
+                                      onClick={() => handleLeaveReview(job)}
+                                      className="font-lato text-white"
+                                      style={{backgroundColor: '#2F8140'}}
+                                    >
+                                      <Star size={16} className="mr-2" />
+                                      Leave Review
+                                    </Button>
+                                    {pendingReviewJobs.has(job.id) && (
+                                      <div className="flex items-center text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
+                                        <Clock size={12} className="mr-1" />
+                                        Review pending
+                                      </div>
+                                    )}
+                                  </div>
                                 )}
 
                                 {/* Mark as Completed Button - Only show after hiring status answered */}
