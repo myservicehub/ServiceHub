@@ -26,16 +26,12 @@ const BlogPage = () => {
   const blogAPI = {
     getPosts: async (params = {}) => {
       try {
-        // Get published blog posts from content management system
-        const query = new URLSearchParams({
-          content_type: 'blog_post',
-          status: 'published',
-          ...params
-        }).toString();
+        // Get published blog posts from public API
+        const query = new URLSearchParams(params).toString();
         
-        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/admin/content/items?${query}`);
+        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/public/content/blog?${query}`);
         const data = await response.json();
-        return data.content_items || [];
+        return data.blog_posts || [];
       } catch (error) {
         console.error('Error fetching blog posts:', error);
         return [];
@@ -44,10 +40,10 @@ const BlogPage = () => {
 
     getPostBySlug: async (slug) => {
       try {
-        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/admin/content/preview/${slug}`);
+        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/public/content/blog/${slug}`);
         if (response.ok) {
           const data = await response.json();
-          return data.content;
+          return data.blog_post;
         }
         return null;
       } catch (error) {
@@ -56,12 +52,45 @@ const BlogPage = () => {
       }
     },
 
-    incrementView: async (postId) => {
+    getFeaturedPosts: async () => {
       try {
-        // In a real implementation, this would increment view count
-        console.log('Incrementing view for post:', postId);
+        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/public/content/blog/featured`);
+        const data = await response.json();
+        return data.featured_posts || [];
       } catch (error) {
-        console.error('Error incrementing view:', error);
+        console.error('Error fetching featured posts:', error);
+        return [];
+      }
+    },
+
+    getCategories: async () => {
+      try {
+        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/public/content/blog/categories`);
+        const data = await response.json();
+        return data.categories || [];
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        return [];
+      }
+    },
+
+    likePost: async (postId) => {
+      try {
+        await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/public/content/blog/${postId}/like`, {
+          method: 'POST'
+        });
+      } catch (error) {
+        console.error('Error liking post:', error);
+      }
+    },
+
+    sharePost: async (postId) => {
+      try {
+        await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/public/content/blog/${postId}/share`, {
+          method: 'POST'
+        });
+      } catch (error) {
+        console.error('Error sharing post:', error);
       }
     }
   };
