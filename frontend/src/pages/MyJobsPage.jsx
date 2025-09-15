@@ -191,15 +191,21 @@ const MyJobsPage = () => {
   const handleCompleteJob = async (jobId) => {
     try {
       setCompletingJobId(jobId);
-      await jobsAPI.completeJob(jobId);
+      const updatedJob = await jobsAPI.completeJob(jobId);
       
       toast({
         title: "Job Completed",
-        description: "Your job has been marked as completed. You can now leave a review for the tradesperson.",
+        description: "Your job has been marked as completed successfully.",
       });
       
       // Refresh jobs list
       await loadMyJobs();
+      
+      // Show review prompt after a short delay
+      setTimeout(() => {
+        setCompletedJob(updatedJob);
+        setShowReviewPrompt(true);
+      }, 1000);
       
     } catch (error) {
       console.error('Failed to complete job:', error);
