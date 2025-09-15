@@ -66,6 +66,40 @@ export const adminAPI = {
     return response.data;
   },
 
+  // Admin logout
+  async logout() {
+    try {
+      const token = localStorage.getItem('admin_token');
+      if (token) {
+        await apiClient.post('/admin-management/logout', {}, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+      }
+    } catch (error) {
+      console.log('Logout API call failed, but clearing local storage anyway');
+    } finally {
+      // Always clear local storage
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('admin_info');
+    }
+  },
+
+  // Check if admin is logged in
+  isLoggedIn() {
+    const token = localStorage.getItem('admin_token');
+    const adminInfo = localStorage.getItem('admin_info');
+    return !!(token && adminInfo);
+  },
+
+  // Get current admin info
+  getCurrentAdmin() {
+    const adminInfo = localStorage.getItem('admin_info');
+    return adminInfo ? JSON.parse(adminInfo) : null;
+  },
+
   // Get pending funding requests
   async getFundingRequests(skip = 0, limit = 20) {
     const response = await apiClient.get(`/admin/wallet/funding-requests?skip=${skip}&limit=${limit}`);
