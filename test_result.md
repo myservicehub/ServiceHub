@@ -57,6 +57,7 @@ test_plan:
     - "Review System Backend Testing"
     - "Hiring Status and Feedback System Backend Testing"
     - "Job Completion Functionality Backend Testing"
+    - "GET Hiring Status Endpoint Testing - Mark as Completed Button Workflow"
   test_all: false
   test_priority: "high_first"
 ##
