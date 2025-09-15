@@ -310,7 +310,7 @@ class LoginDebugTester:
         """Analyze database collections for any related data"""
         print(f"\n=== Analyzing Database Collections ===")
         
-        if not self.database:
+        if self.database is None:
             self.log_result("Database analysis", False, "No database connection")
             return
         
