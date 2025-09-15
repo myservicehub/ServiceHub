@@ -3,6 +3,7 @@ from fastapi.security import HTTPBearer
 from typing import List, Optional
 from datetime import datetime
 import logging
+import uuid
 
 from database import database
 from models.content import (
