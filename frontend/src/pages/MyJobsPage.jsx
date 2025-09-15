@@ -283,7 +283,7 @@ const MyJobsPage = () => {
     );
   }
 
-  if (!isHomeowner()) {
+  if (user?.role !== 'homeowner') {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
