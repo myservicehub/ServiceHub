@@ -216,6 +216,17 @@ const ChatModal = ({
           console.log('New messages:', newMessages.length);
           console.log('Added message:', response);
           
+          // Update message count and check if we should show hiring modal
+          setMessageCount(newMessages.length);
+          
+          // Show hiring status modal after 5 messages if homeowner and hasn't been shown yet
+          if (user?.role === 'homeowner' && newMessages.length >= 5 && !hasShownHiringModal) {
+            setTimeout(() => {
+              setShowHiringStatusModal(true);
+              setHasShownHiringModal(true);
+            }, 2000); // Show after 2 seconds delay
+          }
+          
           // Force component re-render and scroll
           setForceUpdate(prev => prev + 1);
           setTimeout(() => {
