@@ -142,6 +142,13 @@ const ContentManagement = () => {
     loadData();
   }, [activeTab, filters]);
 
+  // Load jobs data when jobs sub-tab changes
+  useEffect(() => {
+    if (activeTab === 'jobs') {
+      loadJobsData();
+    }
+  }, [jobsSubTab]);
+
   const loadData = async () => {
     setLoading(true);
     try {
