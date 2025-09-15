@@ -25,117 +25,29 @@ const CareersPage = () => {
     message: '',
     resume: null
   });
-    {
-      id: 1,
-      title: 'Senior Frontend Developer',
-      department: 'Engineering',
-      location: 'Lagos, Nigeria',
-      type: 'Full-time',
-      experience: '3-5 years',
-      description: 'Join our engineering team to build the next generation of home improvement platform using React, TypeScript, and modern web technologies.',
-      requirements: [
-        '3+ years of React.js experience',
-        'Strong TypeScript and JavaScript skills',
-        'Experience with modern CSS frameworks',
-        'Understanding of RESTful APIs',
-        'Experience with testing frameworks'
-      ],
-      benefits: ['Competitive salary', 'Health insurance', 'Flexible working hours', 'Learning budget'],
-      posted: '2024-01-15'
-    },
-    {
-      id: 2,
-      title: 'Product Marketing Manager',
-      department: 'Marketing',
-      location: 'Abuja, Nigeria',
-      type: 'Full-time',
-      experience: '2-4 years',
-      description: 'Drive product marketing strategies and campaigns to grow our platform across Nigeria. Work closely with product and engineering teams.',
-      requirements: [
-        '2+ years in product marketing',
-        'Experience with digital marketing',
-        'Strong analytical skills',
-        'Excellent communication skills',
-        'Understanding of Nigerian market'
-      ],
-      benefits: ['Competitive salary', 'Performance bonus', 'Health insurance', 'Professional development'],
-      posted: '2024-01-10'
-    },
-    {
-      id: 3,
-      title: 'Customer Success Manager',
-      department: 'Customer Success',
-      location: 'Remote',
-      type: 'Full-time',
-      experience: '1-3 years',
-      description: 'Help our customers succeed by providing exceptional support and building long-term relationships with tradespeople and homeowners.',
-      requirements: [
-        '1+ years in customer success',
-        'Excellent communication skills',
-        'Problem-solving mindset',
-        'Experience with CRM tools',
-        'Fluent in English and local languages'
-      ],
-      benefits: ['Remote work', 'Flexible hours', 'Health insurance', 'Career growth opportunities'],
-      posted: '2024-01-08'
-    },
-    {
-      id: 4,
-      title: 'Backend Developer',
-      department: 'Engineering',
-      location: 'Lagos, Nigeria',
-      type: 'Full-time',
-      experience: '2-4 years',
-      description: 'Build scalable backend systems using Python, FastAPI, and MongoDB to support millions of users across Nigeria.',
-      requirements: [
-        '2+ years Python development',
-        'Experience with FastAPI or Django',
-        'MongoDB or NoSQL experience',
-        'Understanding of microservices',
-        'API design experience'
-      ],
-      benefits: ['Competitive salary', 'Stock options', 'Health insurance', 'Tech allowance'],
-      posted: '2024-01-05'
-    },
-    {
-      id: 5,
-      title: 'UX/UI Designer',
-      department: 'Design',
-      location: 'Lagos, Nigeria',
-      type: 'Full-time',
-      experience: '2-5 years',
-      description: 'Create beautiful, intuitive user experiences for our platform. Work on both web and mobile applications.',
-      requirements: [
-        '2+ years in UX/UI design',
-        'Proficiency in Figma, Sketch',
-        'Understanding of user research',
-        'Mobile-first design experience',
-        'Portfolio showcasing digital products'
-      ],
-      benefits: ['Creative environment', 'Design tools budget', 'Health insurance', 'Flexible working'],
-      posted: '2024-01-03'
-    },
-    {
-      id: 6,
-      title: 'Business Development Manager',
-      department: 'Sales',
-      location: 'Multiple Locations',
-      type: 'Full-time',
-      experience: '3-6 years',
-      description: 'Drive business growth by building partnerships with contractors, suppliers, and other key stakeholders in the construction industry.',
-      requirements: [
-        '3+ years in business development',
-        'Experience in construction/home improvement',
-        'Strong networking skills',
-        'Proven track record in sales',
-        'Understanding of Nigerian market dynamics'
-      ],
-      benefits: ['Base + commission', 'Travel allowances', 'Health insurance', 'Performance bonuses'],
-      posted: '2024-01-01'
+  // Load job positions from API
+  const loadJobPositions = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await careersAPI.getJobPostings({ limit: 50 });
+      const jobs = response?.job_postings || [];
+      
+      setOpenPositions(jobs);
+      
+      // Extract unique departments
+      const uniqueDepartments = ['all', ...new Set(jobs.map(job => job.department).filter(Boolean))];
+      setDepartments(uniqueDepartments);
+      
+    } catch (err) {
+      console.error('Error loading job positions:', err);
+      setError('Failed to load job positions. Please try again later.');
+      setOpenPositions([]);
+    } finally {
+      setLoading(false);
     }
-  ];
-
-  const departments = ['all', ...new Set(jobPositions.map(job => job.department))];
+  };
 
   const companyValues = [
     {
