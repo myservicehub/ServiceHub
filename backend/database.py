@@ -5275,5 +5275,189 @@ class Database:
             {"$inc": {"share_count": 1}}
         )
 
+    # Job Management Database Methods
+
+    async def get_job_postings(self, filters: dict = None, skip: int = 0, limit: int = 50) -> List[dict]:
+        """Get job postings with filtering"""
+        query = filters or {}
+        cursor = self.database.content_items.find(query).sort("created_at", -1).skip(skip).limit(limit)
+        job_postings = await cursor.to_list(length=limit)
+        
+        for job in job_postings:
+            job['_id'] = str(job['_id'])
+        return job_postings
+
+    async def get_job_postings_count(self, filters: dict = None) -> int:
+        """Get count of job postings"""
+        query = filters or {}
+        return await self.database.content_items.count_documents(query)
+
+    async def get_job_by_slug(self, slug: str) -> Optional[dict]:
+        """Get job posting by slug"""
+        job = await self.database.content_items.find_one({"slug": slug, "content_type": "job_posting"})
+        if job:
+            job['_id'] = str(job['_id'])
+        return job
+
+    async def create_job_application(self, application_data: dict) -> str:
+        """Create a new job application"""
+        result = await self.database.job_applications.insert_one(application_data)
+        return application_data["id"]
+
+    async def get_job_applications(self, filters: dict = None, skip: int = 0, limit: int = 50) -> List[dict]:
+        """Get job applications with filtering"""
+        query = filters or {}
+        cursor = self.database.job_applications.find(query).sort("applied_at", -1).skip(skip).limit(limit)
+        applications = await cursor.to_list(length=limit)
+        
+        for app in applications:
+            app['_id'] = str(app['_id'])
+        return applications
+
+    async def get_job_applications_count(self, filters: dict = None) -> int:
+        """Get count of job applications"""
+        query = filters or {}
+        return await self.database.job_applications.count_documents(query)
+
+    async def get_job_application_by_id(self, application_id: str) -> Optional[dict]:
+        """Get job application by ID"""
+        application = await self.database.job_applications.find_one({"id": application_id})
+        if application:
+            application['_id'] = str(application['_id'])
+        return application
+
+    async def update_job_application(self, application_id: str, update_data: dict) -> bool:
+        """Update job application"""
+        update_data['updated_at'] = datetime.utcnow()
+        result = await self.database.job_applications.update_one(
+            {"id": application_id},
+            {"$set": update_data}
+        )
+        return result.modified_count > 0
+
+    async def increment_job_applications_count(self, job_id: str):
+        """Increment applications count for a job posting"""
+        await self.database.content_items.update_one(
+            {"id": job_id, "content_type": "job_posting"},
+            {"$inc": {"settings.applications_count": 1}}
+        )
+
+    async def get_job_statistics(self) -> dict:
+        """Get job posting and application statistics"""
+        try:
+            # Job statistics
+            total_jobs = await self.database.content_items.count_documents({"content_type": "job_posting"})
+            active_jobs = await self.database.content_items.count_documents({
+                "content_type": "job_posting", 
+                "status": "published"
+            })
+            draft_jobs = await self.database.content_items.count_documents({
+                "content_type": "job_posting", 
+                "status": "draft"
+            })
+            
+            # Application statistics
+            total_applications = await self.database.job_applications.count_documents({})
+            
+            # Jobs by department aggregation
+            pipeline = [
+                {"$match": {"content_type": "job_posting"}},
+                {"$group": {
+                    "_id": "$settings.department",
+                    "count": {"$sum": 1}
+                }},
+                {"$sort": {"count": -1}}
+            ]
+            
+            jobs_by_department = {}
+            async for doc in self.database.content_items.aggregate(pipeline):
+                if doc["_id"]:
+                    jobs_by_department[doc["_id"]] = doc["count"]
+            
+            # Jobs by type aggregation
+            pipeline = [
+                {"$match": {"content_type": "job_posting"}},
+                {"$group": {
+                    "_id": "$settings.job_type",
+                    "count": {"$sum": 1}
+                }},
+                {"$sort": {"count": -1}}
+            ]
+            
+            jobs_by_type = {}
+            async for doc in self.database.content_items.aggregate(pipeline):
+                if doc["_id"]:
+                    jobs_by_type[doc["_id"]] = doc["count"]
+            
+            # Applications by status aggregation
+            pipeline = [
+                {"$group": {
+                    "_id": "$status",
+                    "count": {"$sum": 1}
+                }},
+                {"$sort": {"count": -1}}
+            ]
+            
+            applications_by_status = {}
+            async for doc in self.database.job_applications.aggregate(pipeline):
+                if doc["_id"]:
+                    applications_by_status[doc["_id"]] = doc["count"]
+            
+            # Top jobs by application count
+            pipeline = [
+                {"$match": {"content_type": "job_posting"}},
+                {"$sort": {"settings.applications_count": -1}},
+                {"$limit": 5},
+                {"$project": {
+                    "title": 1,
+                    "slug": 1,
+                    "department": "$settings.department",
+                    "applications_count": "$settings.applications_count",
+                    "status": 1,
+                    "created_at": 1
+                }}
+            ]
+            
+            top_jobs = []
+            async for job in self.database.content_items.aggregate(pipeline):
+                job["_id"] = str(job["_id"])
+                top_jobs.append(job)
+            
+            # Recent applications
+            recent_applications = await self.database.job_applications.find(
+                {}, 
+                {"name": 1, "job_title": 1, "status": 1, "applied_at": 1}
+            ).sort("applied_at", -1).limit(10).to_list(length=10)
+            
+            for app in recent_applications:
+                app["_id"] = str(app["_id"])
+            
+            return {
+                "total_jobs": total_jobs,
+                "active_jobs": active_jobs,
+                "draft_jobs": draft_jobs,
+                "expired_jobs": 0,  # Will implement expired logic later
+                "total_applications": total_applications,
+                "jobs_by_department": jobs_by_department,
+                "jobs_by_type": jobs_by_type,
+                "applications_by_status": applications_by_status,
+                "top_jobs": top_jobs,
+                "recent_applications": recent_applications
+            }
+        except Exception as e:
+            logger.error(f"Error getting job statistics: {str(e)}")
+            return {
+                "total_jobs": 0,
+                "active_jobs": 0,
+                "draft_jobs": 0,
+                "expired_jobs": 0,
+                "total_applications": 0,
+                "jobs_by_department": {},
+                "jobs_by_type": {},
+                "applications_by_status": {},
+                "top_jobs": [],
+                "recent_applications": []
+            }
+
 # Create global database instance
 database = Database()
