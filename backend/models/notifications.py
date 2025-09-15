@@ -42,6 +42,8 @@ class NotificationPreferences(BaseModel):
     job_approved: NotificationChannel = NotificationChannel.BOTH
     job_rejected: NotificationChannel = NotificationChannel.BOTH
     job_updated: NotificationChannel = NotificationChannel.EMAIL
+    new_job_posted: NotificationChannel = NotificationChannel.EMAIL  # Career job notifications
+    new_application: NotificationChannel = NotificationChannel.EMAIL  # Application notifications
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
