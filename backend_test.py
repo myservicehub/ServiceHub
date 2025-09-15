@@ -149,14 +149,11 @@ class ReviewSystemTester:
             "email": f"tradesperson.review.{uuid.uuid4().hex[:8]}@test.com",
             "password": "TestPassword123!",
             "phone": "+2348087654321",
-            "trade_category": "Electrical Repairs",
+            "location": "Lagos, Ikeja, Computer Village",
+            "postcode": "100001",
+            "trade_categories": ["Electrical Repairs"],
             "experience_years": 5,
-            "location": {
-                "state": "Lagos",
-                "lga": "Ikeja",
-                "town": "Computer Village"
-            },
-            "bio": "Experienced electrician for review testing"
+            "description": "Experienced electrician for review testing with over 5 years of experience in residential and commercial electrical work."
         }
         
         print(f"\n--- Creating Test Tradesperson ---")
