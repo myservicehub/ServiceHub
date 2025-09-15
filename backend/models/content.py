@@ -32,6 +32,7 @@ class ContentCategory(str, Enum):
     GENERAL = "general"
     TUTORIAL = "tutorial"
     NEWS = "news"
+    CAREERS = "careers"
 
 class ContentVisibility(str, Enum):
     PUBLIC = "public"
