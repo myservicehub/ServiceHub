@@ -392,6 +392,87 @@ serviceHub Admin Team
             )
         }
         
+        # New Job Posted templates (for subscribers/users)
+        templates[NotificationType.NEW_JOB_POSTED] = {
+            NotificationChannel.EMAIL: NotificationTemplate(
+                id=str(uuid.uuid4()),
+                type=NotificationType.NEW_JOB_POSTED,
+                channel=NotificationChannel.EMAIL,
+                subject_template="New Job Opportunity: {job_title}",
+                content_template="""
+Hello {recipient_name},
+
+A new job opportunity has been posted on serviceHub that might interest you!
+
+📋 Job Title: {job_title}
+🏢 Department: {department}
+📍 Location: {location}
+💼 Job Type: {job_type}
+📈 Experience Level: {experience_level}
+📅 Posted: {posted_date}
+
+{job_description}
+
+To apply for this position, visit:
+{application_url}
+
+Don't miss out on this opportunity!
+
+Best regards,
+serviceHub Careers Team
+                """,
+                variables=["recipient_name", "job_title", "department", "location", "job_type", "experience_level", "posted_date", "job_description", "application_url"]
+            ),
+            NotificationChannel.SMS: NotificationTemplate(
+                id=str(uuid.uuid4()),
+                type=NotificationType.NEW_JOB_POSTED,
+                channel=NotificationChannel.SMS,
+                subject_template="New Job - serviceHub",
+                content_template="💼 New job posted: {job_title} in {department}. Location: {location}. Apply now: {application_url}",
+                variables=["job_title", "department", "location", "application_url"]
+            )
+        }
+        
+        # New Job Application templates (for admins)
+        templates[NotificationType.NEW_APPLICATION] = {
+            NotificationChannel.EMAIL: NotificationTemplate(
+                id=str(uuid.uuid4()),
+                type=NotificationType.NEW_APPLICATION,
+                channel=NotificationChannel.EMAIL,
+                subject_template="New Job Application: {job_title}",
+                content_template="""
+Hello Admin Team,
+
+A new job application has been submitted for:
+
+📋 Job Title: {job_title}
+👤 Applicant: {applicant_name}
+📧 Email: {applicant_email}
+📱 Phone: {applicant_phone}
+📈 Experience Level: {experience_level}
+📅 Applied: {applied_date}
+
+Cover Letter:
+{cover_letter}
+
+To review this application and contact the applicant, visit the admin dashboard:
+{admin_dashboard_url}
+
+Best regards,
+serviceHub System
+                """,
+                variables=["job_title", "applicant_name", "applicant_email", "applicant_phone", "experience_level", "applied_date", "cover_letter", "admin_dashboard_url"]
+            ),
+            NotificationChannel.SMS: NotificationTemplate(
+                id=str(uuid.uuid4()),
+                type=NotificationType.NEW_APPLICATION,
+                channel=NotificationChannel.SMS,
+                subject_template="New Application - serviceHub",
+                content_template="📋 New application for {job_title} from {applicant_name}. Review at admin dashboard.",
+                variables=["job_title", "applicant_name"]
+            )
+        }
+
         # Job Rejection templates
         templates[NotificationType.JOB_REJECTED] = {
             NotificationChannel.EMAIL: NotificationTemplate(
