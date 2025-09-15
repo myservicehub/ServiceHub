@@ -173,6 +173,27 @@ const ContentManagement = () => {
     }
   };
 
+  const loadJobsData = async () => {
+    try {
+      switch (jobsSubTab) {
+        case 'postings':
+          const jobsData = await careersAPI.admin.getJobPostings({ limit: 50 });
+          setJobPostings(jobsData.job_postings || []);
+          break;
+        case 'applications':
+          const applicationsData = await careersAPI.admin.getJobApplications({ limit: 50 });
+          setJobApplications(applicationsData.applications || []);
+          break;
+        case 'statistics':
+          const jobStatsData = await careersAPI.admin.getJobStatistics();
+          setJobStatistics(jobStatsData.statistics || {});
+          break;
+      }
+    } catch (error) {
+      console.error('Error loading jobs data:', error);
+    }
+  };
+
   // Content type icons and labels
   const contentTypeConfig = {
     banner: { icon: Megaphone, label: 'Banner', color: 'bg-red-100 text-red-800' },
