@@ -301,12 +301,14 @@ class ReviewSubmissionFixTester:
                 current_status = job_data.get('status', 'unknown')
                 print(f"Current job status: {current_status}")
                 
-                # If job is not active, we need to understand why
-                if current_status not in ['active', 'in_progress']:
-                    self.log_result("Job status check", False, f"Job status is '{current_status}', expected 'active' or 'in_progress'")
-                    # For testing purposes, let's try to manually set it to completed in the database
-                    # This is a workaround for testing the review functionality
-                    print("Attempting direct job completion for testing...")
+                # If job is pending approval, approve it first
+                if current_status == 'pending_approval':
+                    print("Job is pending approval, attempting to approve...")
+                    if self.approve_job(self.test_job_id):
+                        print("Job approved, now attempting completion...")
+                    else:
+                        print("Job approval failed, cannot complete job")
+                        return
                     
             except json.JSONDecodeError:
                 print("Could not parse job data")
@@ -319,9 +321,6 @@ class ReviewSubmissionFixTester:
             self.log_result("Job completion", True, "Job marked as completed")
         else:
             self.log_result("Job completion", False, f"Status: {response.status_code}, Response: {response.text}")
-            
-            # For testing purposes, let's assume the job is completed and continue
-            print("⚠️  Job completion failed, but continuing test assuming job is completed for review testing")
     
     def test_hiring_status_creation(self):
         """Test creating hiring status records"""
