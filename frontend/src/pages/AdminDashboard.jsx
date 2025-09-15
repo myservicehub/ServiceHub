@@ -3874,6 +3874,11 @@ const AdminDashboard = () => {
                   )}
                 </div>
               )}
+
+              {/* Admin Management Tab */}
+              {activeTab === 'admin-management' && (
+                <AdminManagement />
+              )}
             </div>
           </div>
         </div>
