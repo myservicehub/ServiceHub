@@ -148,9 +148,11 @@ const ChatModal = ({
       
       if (response.messages) {
         setMessages(response.messages);
+        setMessageCount(response.messages.length);
         console.log('✅ Messages set to state:', response.messages.length);
       } else {
         setMessages(response || []);
+        setMessageCount((response || []).length);
         console.log('✅ Messages set to state (fallback):', (response || []).length);
       }
       
