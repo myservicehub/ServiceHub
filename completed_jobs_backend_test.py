@@ -168,17 +168,34 @@ class CompletedJobsBackendTester:
         if response.status_code == 200:
             try:
                 data = response.json()
-                self.tradesperson_token = data.get('access_token')
+                # Tradesperson registration returns different structure
                 self.tradesperson_id = data.get('id')
                 
-                if self.tradesperson_token and self.tradesperson_id:
+                if self.tradesperson_id:
                     self.log_result("Tradesperson registration", True, f"ID: {self.tradesperson_id}")
+                    
+                    # Now login to get token
+                    login_data = {
+                        "email": tradesperson_email,
+                        "password": "TestPassword123!"
+                    }
+                    login_response = self.make_request("POST", "/auth/login", json=login_data)
+                    
+                    if login_response.status_code == 200:
+                        login_result = login_response.json()
+                        self.tradesperson_token = login_result.get('access_token')
+                        if self.tradesperson_token:
+                            self.log_result("Tradesperson login", True, "Token obtained")
+                        else:
+                            self.log_result("Tradesperson login", False, "No token in login response")
+                    else:
+                        self.log_result("Tradesperson login", False, f"Login failed: {login_response.status_code}")
                 else:
-                    self.log_result("Tradesperson registration", False, "Missing token or ID")
+                    self.log_result("Tradesperson registration", False, "No tradesperson ID returned")
             except json.JSONDecodeError:
                 self.log_result("Tradesperson registration", False, "Invalid JSON response")
         else:
-            self.log_result("Tradesperson registration", False, f"Status: {response.status_code}")
+            self.log_result("Tradesperson registration", False, f"Status: {response.status_code}, Response: {response.text}")
         
         # Test 3: JWT Token Validation
         print("\n--- Test 3: JWT Token Validation ---")
