@@ -70,6 +70,7 @@ function App() {
             <Route path="/help-centre" element={<HelpCentrePage />} />
             <Route path="/blog" element={<BlogPage />} />
             <Route path="/blog/:slug" element={<BlogPage />} />
+            <Route path="/careers" element={<CareersPage />} />
             <Route path="/tradesperson-registration-demo" element={<TradespersonRegistrationDemo />} />
           </Routes>
           <Toaster />
