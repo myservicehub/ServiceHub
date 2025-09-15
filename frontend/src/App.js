@@ -55,6 +55,7 @@ function App() {
             <Route path="/notifications/history" element={<NotificationHistoryPage />} />
             <Route path="/reviews" element={<ReviewsPage />} />
             <Route path="/reviews/:userId" element={<ReviewsPage />} />
+            <Route path="/my-reviews" element={<MyReviewsPage />} />
             <Route path="/wallet" element={<WalletPage />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/referrals" element={<ReferralsPage />} />
