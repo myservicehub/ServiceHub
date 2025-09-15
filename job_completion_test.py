@@ -265,6 +265,9 @@ class JobCompletionTester:
             "town": "Computer Village",
             "zip_code": "100001",
             "home_address": "789 Test Road, Computer Village",
+            "homeowner_name": "Test Homeowner Job Completion",
+            "homeowner_email": f"homeowner.completion.{uuid.uuid4().hex[:8]}@test.com",
+            "homeowner_phone": "+2348012345678",
             "questions": [],
             "photos": []
         }
