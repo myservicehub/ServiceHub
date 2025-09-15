@@ -680,7 +680,6 @@ async def reopen_job(
         updated_job = await database.get_job_by_id(job_id)
         
         # Send notifications to interested tradespeople
-        background_tasks = BackgroundTasks()
         background_tasks.add_task(
             notify_interested_tradespeople_job_reopened,
             job_id,
