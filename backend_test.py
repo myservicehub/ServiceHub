@@ -1513,6 +1513,7 @@ class HiringStatusTester:
             self.test_authentication_permissions()
             self.test_database_integration()
             self.test_notification_integration()
+            self.test_edge_cases_and_validation()
             
             # Cleanup
             self.cleanup_test_data()
