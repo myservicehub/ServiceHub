@@ -629,10 +629,10 @@ class AdminPermissionsInvestigator:
         self.print_final_results()
     
     def print_final_results(self):
-        """Print comprehensive test results"""
-        print("\n" + "=" * 70)
-        print("🏁 ADMIN MANAGEMENT LOGIN API TEST RESULTS")
-        print("=" * 70)
+        """Print comprehensive investigation results"""
+        print("\n" + "=" * 80)
+        print("🏁 ADMIN USER PERMISSIONS INVESTIGATION RESULTS")
+        print("=" * 80)
         
         total_tests = self.results['passed'] + self.results['failed']
         success_rate = (self.results['passed'] / total_tests * 100) if total_tests > 0 else 0
@@ -642,32 +642,46 @@ class AdminPermissionsInvestigator:
         print(f"📊 SUCCESS RATE: {success_rate:.1f}% ({self.results['passed']}/{total_tests} tests passed)")
         
         # Print key findings
-        print(f"\n🎯 KEY FINDINGS:")
+        print(f"\n🎯 KEY INVESTIGATION FINDINGS:")
         
-        if self.results['passed'] > 0:
-            print(f"✅ Successfully tested {self.results['passed']} API endpoints and features")
-            print(f"✅ Admin login API endpoint is functional")
-            print(f"✅ Legacy credentials (admin/servicehub2024) are working")
-            print(f"✅ JWT token generation and validation is operational")
-            print(f"✅ Admin authentication and authorization is working")
-            print(f"✅ Super admin account creation is functional")
+        if self.admin_info:
+            admin_role = self.admin_info.get('role', 'Unknown')
+            print(f"✅ Admin login successful with role: {admin_role}")
+            print(f"✅ Admin account status: {self.admin_info.get('status', 'Unknown')}")
+            
+            # Check if permissions-related failures exist
+            permission_failures = [error for error in self.results['errors'] 
+                                 if 'MANAGE_JOBS' in error or '403 Forbidden' in error]
+            
+            if permission_failures:
+                print(f"❌ PERMISSION ISSUES IDENTIFIED:")
+                for error in permission_failures:
+                    print(f"   - {error}")
+                print(f"❌ Root cause: Admin user lacks MANAGE_JOBS permission")
+                print(f"❌ Impact: Cannot create job postings via admin dashboard")
+            else:
+                print(f"✅ Admin permissions appear to be correctly configured")
+                print(f"✅ Job management endpoints should be accessible")
         
         if self.results['failed'] > 0:
-            print(f"\n🔍 FAILED TESTS DETAILS:")
+            print(f"\n🔍 DETAILED FAILURE ANALYSIS:")
             for i, error in enumerate(self.results['errors'], 1):
                 print(f"{i}. {error}")
         
         # Overall assessment
-        if success_rate >= 90:
-            print(f"\n✅ OVERALL RESULT: EXCELLENT - Admin management login API is fully functional")
-        elif success_rate >= 75:
-            print(f"\n⚠️  OVERALL RESULT: GOOD - Admin management login API is mostly functional with minor issues")
-        elif success_rate >= 50:
-            print(f"\n⚠️  OVERALL RESULT: FAIR - Admin management login API has some functionality but needs fixes")
-        else:
-            print(f"\n❌ OVERALL RESULT: POOR - Admin management login API has significant issues requiring attention")
+        permission_issues = len([e for e in self.results['errors'] if 'permission' in e.lower() or '403' in e])
         
-        print("=" * 70)
+        if permission_issues == 0 and success_rate >= 80:
+            print(f"\n✅ OVERALL RESULT: PERMISSIONS CONFIGURED CORRECTLY")
+            print(f"   Admin user should be able to manage job postings without 403 errors")
+        elif permission_issues > 0:
+            print(f"\n❌ OVERALL RESULT: PERMISSION CONFIGURATION ISSUE IDENTIFIED")
+            print(f"   Admin user needs role/permission updates to manage job postings")
+        else:
+            print(f"\n⚠️  OVERALL RESULT: INVESTIGATION INCOMPLETE")
+            print(f"   Some tests failed - manual verification may be required")
+        
+        print("=" * 80)
 
 if __name__ == "__main__":
     tester = AdminManagementAPITester()
