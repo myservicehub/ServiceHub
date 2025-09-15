@@ -144,6 +144,8 @@ const Footer = () => {
                             navigate('/help-centre');
                           } else if (link === 'Blog') {
                             navigate('/blog');
+                          } else if (link === 'Careers') {
+                            navigate('/careers');
                           }
                         }}
                         className="text-gray-300 hover:text-white transition-colors text-sm font-lato cursor-pointer"
