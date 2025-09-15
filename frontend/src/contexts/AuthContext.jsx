@@ -40,19 +40,58 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
+      console.log('🔐 Starting login attempt for:', email);
+      console.log('🌐 Backend URL:', process.env.REACT_APP_BACKEND_URL);
+      
       const response = await authAPI.login(email, password);
+      console.log('✅ Login API response received:', response);
+      
+      if (!response.access_token) {
+        console.error('❌ No access token in response:', response);
+        return { 
+          success: false, 
+          error: 'Login response missing access token' 
+        };
+      }
+      
+      if (!response.user) {
+        console.error('❌ No user data in response:', response);
+        return { 
+          success: false, 
+          error: 'Login response missing user data' 
+        };
+      }
       
       // Store token and user data
       localStorage.setItem('token', response.access_token);
       setToken(response.access_token);
       setUser(response.user);
       
+      console.log('✅ Login successful for user:', response.user.name);
       return { success: true, user: response.user };
     } catch (error) {
-      console.error('Login failed:', error);
+      console.error('❌ Login failed - Full error:', error);
+      console.error('❌ Error message:', error.message);
+      console.error('❌ Error response:', error.response);
+      console.error('❌ Error response data:', error.response?.data);
+      console.error('❌ Error status:', error.response?.status);
+      
+      // Detailed error messages based on error type
+      let errorMessage = 'Login failed. Please try again.';
+      
+      if (error.code === 'NETWORK_ERROR' || error.message.includes('Network Error')) {
+        errorMessage = 'Network error. Please check your connection.';
+      } else if (error.response?.status === 401) {
+        errorMessage = 'Invalid email or password.';
+      } else if (error.response?.status === 500) {
+        errorMessage = 'Server error. Please try again later.';
+      } else if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      }
+      
       return { 
         success: false, 
-        error: error.response?.data?.detail || 'Login failed. Please try again.' 
+        error: errorMessage
       };
     }
   };
