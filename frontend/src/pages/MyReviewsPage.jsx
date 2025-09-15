@@ -150,6 +150,17 @@ const MyReviewsPage = () => {
     return <Badge className={config.className}>{config.label}</Badge>;
   };
 
+  // Temporary debug view
+  const debugInfo = {
+    isAuthenticated,
+    user,
+    userRole: user?.role,
+    isHomeownerCheck: isHomeowner(),
+    hasToken: !!localStorage.getItem('token'),
+    hasUser: !!localStorage.getItem('user'),
+    userString: localStorage.getItem('user')
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -162,6 +173,9 @@ const MyReviewsPage = () => {
             <p className="text-gray-600 font-lato mb-6">
               Please sign in to view your reviews.
             </p>
+            <div className="text-xs text-left bg-gray-100 p-4 rounded mt-4">
+              <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
+            </div>
           </div>
         </div>
         <Footer />
@@ -181,6 +195,9 @@ const MyReviewsPage = () => {
             <p className="text-gray-600 font-lato mb-6">
               This page is only available to homeowners.
             </p>
+            <div className="text-xs text-left bg-gray-100 p-4 rounded mt-4">
+              <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
+            </div>
           </div>
         </div>
         <Footer />
