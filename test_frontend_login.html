@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Frontend Login</title>
+</head>
+<body>
+    <h1>Direct Frontend Login Test</h1>
+    <div id="result"></div>
+    
+    <script>
+        // Test the frontend login directly
+        async function testLogin() {
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                const response = await fetch('http://localhost:8001/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'francisdaniel4jb@gmail.com',
+                        password: 'FixedPassword123!'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <h2>✅ LOGIN SUCCESS</h2>
+                        <p>Status: ${response.status}</p>
+                        <p>Token: ${data.access_token ? data.access_token.substring(0, 50) + '...' : 'No token'}</p>
+                        <p>User: ${data.user ? data.user.name : 'No user data'}</p>
+                        <p>Email: ${data.user ? data.user.email : 'No email'}</p>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <h2>❌ LOGIN FAILED</h2>
+                        <p>Status: ${response.status}</p>
+                        <p>Error: ${data.detail || JSON.stringify(data)}</p>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h2>❌ NETWORK ERROR</h2>
+                    <p>Error: ${error.message}</p>
+                `;
+            }
+        }
+        
+        // Run the test on page load
+        testLogin();
+    </script>
+</body>
+</html>
