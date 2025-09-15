@@ -123,19 +123,55 @@ const CareersPage = () => {
     ? openPositions 
     : openPositions.filter(job => job.department === selectedDepartment);
 
-  const handleApplicationSubmit = (e) => {
+  const handleApplicationSubmit = async (e) => {
     e.preventDefault();
-    // In a real implementation, this would submit to an API
-    alert('Thank you for your application! We\'ll be in touch soon.');
-    setApplicationForm({
-      name: '',
-      email: '',
-      phone: '',
-      position: '',
-      experience: '',
-      message: '',
-      resume: null
-    });
+    
+    if (!applicationForm.name || !applicationForm.email || !applicationForm.message) {
+      alert('Please fill in all required fields.');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      
+      // For general applications, we'll use a placeholder job ID
+      // In a real implementation, you might have a specific endpoint for general applications
+      const applicationData = {
+        name: applicationForm.name,
+        email: applicationForm.email,
+        phone: applicationForm.phone || undefined,
+        experience_level: applicationForm.experience || undefined,
+        message: applicationForm.message,
+        resume_filename: applicationForm.resume?.name || undefined
+      };
+
+      // If a specific position is selected, find that job and apply
+      if (applicationForm.position && applicationForm.position !== 'General Application') {
+        const selectedJob = openPositions.find(job => job.title === applicationForm.position);
+        if (selectedJob) {
+          await careersAPI.applyToJob(selectedJob.id, applicationData);
+        }
+      }
+      
+      alert('Thank you for your application! We\'ll be in touch soon.');
+      
+      // Reset form
+      setApplicationForm({
+        name: '',
+        email: '',
+        phone: '',
+        position: '',
+        experience: '',
+        message: '',
+        resume: null
+      });
+      
+    } catch (err) {
+      console.error('Error submitting application:', err);
+      alert('Failed to submit application. Please try again or contact us directly.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const JobCard = ({ job }) => (
