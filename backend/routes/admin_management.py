@@ -49,7 +49,7 @@ async def get_current_admin(credentials: HTTPAuthorizationCredentials = Depends(
     except jwt.JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-async def require_permission(permission: AdminPermission):
+def require_permission(permission: AdminPermission):
     """Dependency to require specific permission"""
     def check_permission(admin: dict = Depends(get_current_admin)):
         admin_role = AdminRole(admin["role"])
