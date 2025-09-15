@@ -1,32 +1,40 @@
 #!/usr/bin/env python3
 """
-ADMIN USER PERMISSIONS INVESTIGATION FOR JOB POSTING MANAGEMENT
+COMPREHENSIVE REVIEW SYSTEM BACKEND TESTING
 
-**INVESTIGATION REQUIREMENTS:**
+**TESTING REQUIREMENTS:**
 
-**1. Admin User Setup Investigation:**
-- Query admin users collection to see what admin users exist and their roles/permissions
-- Check if admin user has proper role (SUPER_ADMIN or CONTENT_ADMIN)
-- Verify admin user permissions include MANAGE_JOBS
+**1. Review API Endpoints Testing:**
+- POST /api/reviews/create - Create a new review
+- GET /api/reviews/user/{userId} - Get reviews for a user  
+- GET /api/reviews/job/{jobId} - Get reviews for a job
+- GET /api/reviews/summary/{userId} - Get review summary
+- POST /api/reviews/respond/{reviewId} - Respond to review
+- GET /api/reviews/my-reviews - Get current user's reviews
 
-**2. Admin Login Flow Testing:**
-- Test admin login with credentials admin/servicehub2024
-- Check returned user profile and permissions
-- Verify JWT token contains proper role information
+**2. Review Creation Workflow Testing:**
+- Test creating a review for a completed job
+- Verify all required fields (job_id, reviewee_id, rating, title, content)
+- Test category ratings (quality, timeliness, communication, etc.)
+- Test photo upload functionality
+- Test recommendation toggle
 
-**3. Permission Checking:**
-- Verify if current admin user has MANAGE_JOBS permission
-- Test access to job management endpoints
-- Check role configuration and permission mapping
+**3. Review Data Structure Testing:**
+- Verify review models work correctly
+- Test homeowner_to_tradesperson review type
+- Check review status handling (pending, published, etc.)
+- Test review metadata (dates, job info, etc.)
 
-**4. Job Management API Testing:**
-- GET /api/admin/jobs/postings (verify permission access)
-- POST /api/admin/jobs/postings (test job creation)
-- Verify 403 Forbidden errors are resolved
+**4. Review Retrieval Testing:**
+- Test getting reviews for specific tradespeople
+- Test getting reviews for specific jobs
+- Test review summary calculations
+- Test pagination for review lists
 
-**5. Fix Permission Issues:**
-- Update admin user role/permissions if needed
-- Create new admin user with proper job management permissions if required
+**5. Review Permissions Testing:**
+- Verify only homeowners who hired a tradesperson can review them
+- Test that users can't review the same job/tradesperson twice
+- Check review editing permissions
 """
 
 import requests
