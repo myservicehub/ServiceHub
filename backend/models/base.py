@@ -707,6 +707,7 @@ class TradeCategoryQuestion(BaseModel):
     min_value: Optional[float] = None
     max_value: Optional[float] = None
     is_active: bool = True
+    conditional_logic: Optional[ConditionalLogic] = None  # New conditional logic field
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     created_by: Optional[str] = None
