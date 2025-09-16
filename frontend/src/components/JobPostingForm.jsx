@@ -928,7 +928,7 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
                 </div>
 
                 {loadingQuestions ? (
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     {[1, 2, 3].map((i) => (
                       <div key={i} className="animate-pulse">
                         <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
@@ -938,129 +938,140 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
                   </div>
                 ) : tradeQuestions.length > 0 ? (
                   <div className="space-y-6">
-                    {tradeQuestions.map((question, index) => (
-                      <div key={question.id} className="space-y-2">
-                        <label className="block text-sm font-medium font-lato" style={{color: '#121E3C'}}>
-                          {question.question_text}
-                          {question.is_required && <span className="text-red-500 ml-1">*</span>}
-                        </label>
+                    {/* Progress indicator */}
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium text-gray-600">
+                          Question {currentQuestionIndex + 1} of {tradeQuestions.length}
+                        </span>
+                        <div className="flex items-center space-x-1">
+                          {tradeQuestions.map((_, index) => (
+                            <div
+                              key={index}
+                              className={`w-2 h-2 rounded-full ${
+                                index <= currentQuestionIndex ? 'bg-green-500' :
+                                index === currentQuestionIndex + 1 ? 'bg-green-300' : 'bg-gray-300'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      
+                      {/* View all questions toggle */}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowQuestionsOneByOne(!showQuestionsOneByOne)}
+                        className="text-xs"
+                      >
+                        {showQuestionsOneByOne ? 'View All' : 'One by One'}
+                      </Button>
+                    </div>
+
+                    {showQuestionsOneByOne ? (
+                      // Show current question only
+                      <div className="space-y-4">
+                        {tradeQuestions.length > 0 && tradeQuestions[currentQuestionIndex] && (
+                          <div className="bg-white border-2 border-green-200 rounded-lg p-6 shadow-sm">
+                            <div className="space-y-4">
+                              <label className="block text-lg font-medium font-lato" style={{color: '#121E3C'}}>
+                                {tradeQuestions[currentQuestionIndex].question_text}
+                                {tradeQuestions[currentQuestionIndex].is_required && <span className="text-red-500 ml-1">*</span>}
+                              </label>
+                              
+                              {tradeQuestions[currentQuestionIndex].help_text && (
+                                <p className="text-gray-500 text-sm font-lato">{tradeQuestions[currentQuestionIndex].help_text}</p>
+                              )}
+
+                              {/* Render the current question input */}
+                              {renderQuestionInput(tradeQuestions[currentQuestionIndex])}
+
+                              {/* Error message */}
+                              {errors[`question_${tradeQuestions[currentQuestionIndex].id}`] && (
+                                <p className="text-red-500 text-sm font-lato mt-1">
+                                  {errors[`question_${tradeQuestions[currentQuestionIndex].id}`]}
+                                </p>
+                              )}
+                            </div>
+                            
+                            {/* Navigation buttons */}
+                            <div className="flex justify-between items-center mt-6">
+                              <Button
+                                type="button" 
+                                variant="outline"
+                                onClick={goToPreviousQuestion}
+                                disabled={currentQuestionIndex === 0}
+                                className="flex items-center space-x-2"
+                              >
+                                <ArrowLeft size={16} />
+                                <span>Previous</span>
+                              </Button>
+                              
+                              <div className="text-center">
+                                {tradeQuestions[currentQuestionIndex].question_type !== 'multiple_choice_multiple' && (
+                                  <p className="text-sm text-green-600 font-medium">
+                                    ✨ Answer to continue automatically
+                                  </p>
+                                )}
+                              </div>
+                              
+                              <Button
+                                type="button"
+                                onClick={goToNextQuestion}
+                                disabled={currentQuestionIndex === tradeQuestions.length - 1}
+                                className="flex items-center space-x-2 text-white"
+                                style={{backgroundColor: '#2F8140'}}
+                              >
+                                <span>Next</span>
+                                <ArrowRight size={16} />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
                         
-                        {question.help_text && (
-                          <p className="text-gray-500 text-xs font-lato">{question.help_text}</p>
-                        )}
-
-                        {/* Multiple Choice Single */}
-                        {question.question_type === 'multiple_choice_single' && (
-                          <div className="space-y-2">
-                            {question.options?.map((option, optIndex) => (
-                              <label key={optIndex} className="flex items-center space-x-2 cursor-pointer">
-                                <input
-                                  type="radio"
-                                  name={`question_${question.id}`}
-                                  value={option.value}
-                                  checked={questionAnswers[question.id] === option.value}
-                                  onChange={(e) => handleQuestionAnswer(question.id, e.target.value, question.question_type)}
-                                  className="text-green-600 focus:ring-green-500"
-                                />
-                                <span className="text-sm font-lato">{option.text}</span>
-                              </label>
-                            ))}
+                        {/* Show answered questions summary */}
+                        {currentQuestionIndex > 0 && (
+                          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                            <h4 className="text-sm font-medium text-gray-700 mb-3">Previously Answered:</h4>
+                            <div className="space-y-2">
+                              {tradeQuestions.slice(0, currentQuestionIndex).map((question, index) => (
+                                <div key={question.id} className="flex justify-between items-start text-sm">
+                                  <span className="text-gray-600 flex-1 pr-4">{question.question_text}</span>
+                                  <span className="text-gray-800 font-medium">
+                                    {formatAnswerText(question, questionAnswers[question.id])}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        )}
-
-                        {/* Multiple Choice Multiple */}
-                        {question.question_type === 'multiple_choice_multiple' && (
-                          <div className="space-y-2">
-                            {question.options?.map((option, optIndex) => (
-                              <label key={optIndex} className="flex items-center space-x-2 cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  value={option.value}
-                                  checked={(questionAnswers[question.id] || []).includes(option.value)}
-                                  onChange={(e) => handleQuestionAnswer(question.id, option.value, question.question_type)}
-                                  className="text-green-600 focus:ring-green-500 rounded"
-                                />
-                                <span className="text-sm font-lato">{option.text}</span>
-                              </label>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Text Input */}
-                        {question.question_type === 'text_input' && (
-                          <input
-                            type="text"
-                            value={questionAnswers[question.id] || ''}
-                            onChange={(e) => handleQuestionAnswer(question.id, e.target.value, question.question_type)}
-                            placeholder={question.placeholder_text || 'Enter your answer...'}
-                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
-                              errors[`question_${question.id}`] ? 'border-red-500' : 'border-gray-300'
-                            }`}
-                          />
-                        )}
-
-                        {/* Text Area */}
-                        {question.question_type === 'text_area' && (
-                          <textarea
-                            rows={4}
-                            value={questionAnswers[question.id] || ''}
-                            onChange={(e) => handleQuestionAnswer(question.id, e.target.value, question.question_type)}
-                            placeholder={question.placeholder_text || 'Enter your detailed answer...'}
-                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato resize-none ${
-                              errors[`question_${question.id}`] ? 'border-red-500' : 'border-gray-300'
-                            }`}
-                          />
-                        )}
-
-                        {/* Number Input */}
-                        {question.question_type === 'number_input' && (
-                          <input
-                            type="number"
-                            value={questionAnswers[question.id] || ''}
-                            onChange={(e) => handleQuestionAnswer(question.id, e.target.value, question.question_type)}
-                            placeholder={question.placeholder_text || 'Enter number...'}
-                            min={question.min_value}
-                            max={question.max_value}
-                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
-                              errors[`question_${question.id}`] ? 'border-red-500' : 'border-gray-300'
-                            }`}
-                          />
-                        )}
-
-                        {/* Yes/No */}
-                        {question.question_type === 'yes_no' && (
-                          <div className="flex space-x-6">
-                            <label className="flex items-center space-x-2 cursor-pointer">
-                              <input
-                                type="radio"
-                                name={`question_${question.id}`}
-                                value="true"
-                                checked={questionAnswers[question.id] === true}
-                                onChange={(e) => handleQuestionAnswer(question.id, true, question.question_type)}
-                                className="text-green-600 focus:ring-green-500"
-                              />
-                              <span className="text-sm font-lato">Yes</span>
-                            </label>
-                            <label className="flex items-center space-x-2 cursor-pointer">
-                              <input
-                                type="radio"
-                                name={`question_${question.id}`}
-                                value="false"
-                                checked={questionAnswers[question.id] === false}
-                                onChange={(e) => handleQuestionAnswer(question.id, false, question.question_type)}
-                                className="text-green-600 focus:ring-green-500"
-                              />
-                              <span className="text-sm font-lato">No</span>
-                            </label>
-                          </div>
-                        )}
-
-                        {/* Question Error */}
-                        {errors[`question_${question.id}`] && (
-                          <p className="text-red-500 text-sm">{errors[`question_${question.id}`]}</p>
                         )}
                       </div>
-                    ))}
+                    ) : (
+                      // Show all questions (original view)
+                      <div className="space-y-6">
+                        {tradeQuestions.map((question, index) => (
+                          <div key={question.id} className="space-y-2">
+                            <label className="block text-sm font-medium font-lato" style={{color: '#121E3C'}}>
+                              {question.question_text}
+                              {question.is_required && <span className="text-red-500 ml-1">*</span>}
+                            </label>
+                            
+                            {question.help_text && (
+                              <p className="text-gray-500 text-xs font-lato">{question.help_text}</p>
+                            )}
+
+                            {renderQuestionInput(question)}
+
+                            {errors[`question_${question.id}`] && (
+                              <p className="text-red-500 text-sm font-lato">
+                                {errors[`question_${question.id}`]}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
