@@ -101,6 +101,53 @@ const ProfilePage = () => {
     }
   };
 
+  const loadReceivedReviews = async () => {
+    try {
+      setReviewsLoading(true);
+      console.log('📊 Loading received reviews for tradesperson profile...');
+      
+      const response = await reviewsAPI.getReceivedReviews({ limit: 50 });
+      console.log('✅ Profile reviews loaded:', response);
+      
+      const reviewsData = response.reviews || [];
+      setReviews(reviewsData);
+      calculateReviewStats(reviewsData);
+    } catch (error) {
+      console.error('❌ Failed to load reviews:', error);
+      toast({
+        title: "Failed to load reviews",
+        description: "There was an error loading your reviews.",
+        variant: "destructive",
+      });
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  const calculateReviewStats = (reviewsData) => {
+    const total = reviewsData.length;
+    const ratingCounts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    let totalRating = 0;
+
+    reviewsData.forEach(review => {
+      const rating = review.rating;
+      ratingCounts[rating]++;
+      totalRating += rating;
+    });
+
+    const average = total > 0 ? (totalRating / total).toFixed(1) : 0;
+
+    setReviewStats({
+      totalReviews: total,
+      averageRating: average,
+      fiveStars: ratingCounts[5],
+      fourStars: ratingCounts[4],
+      threeStars: ratingCounts[3],
+      twoStars: ratingCounts[2],
+      oneStar: ratingCounts[1]
+    });
+  };
+
   const handlePortfolioUploadSuccess = (newItem) => {
     setPortfolioItems(prev => [newItem, ...prev]);
     setShowUploadForm(false);
