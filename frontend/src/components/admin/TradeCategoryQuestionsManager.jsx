@@ -700,7 +700,7 @@ const TradeCategoryQuestionsManager = () => {
                           <div className="flex justify-between items-center mb-4">
                             <h6 className="text-sm font-medium text-gray-700">
                               Rule #{ruleIndex + 1}
-                              {formData.conditional_logic.rules.length > 1 && (
+                              {formData.conditional_logic.rules && formData.conditional_logic.rules.length > 1 && (
                                 <span className="ml-2 text-xs text-blue-600">
                                   ({formData.conditional_logic.logic_operator === 'AND' ? 'All rules must match' : 'Any rule can match'})
                                 </span>
