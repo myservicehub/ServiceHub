@@ -486,6 +486,7 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
     if (!category) {
       setTradeQuestions([]);
       setQuestionAnswers({});
+      resetQuestionNavigation();
       return;
     }
 
@@ -507,10 +508,14 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
       });
       setQuestionAnswers(initialAnswers);
       
+      // Reset to first question
+      resetQuestionNavigation();
+      
     } catch (error) {
       console.error('Failed to load trade questions:', error);
       setTradeQuestions([]);
       setQuestionAnswers({});
+      resetQuestionNavigation();
     } finally {
       setLoadingQuestions(false);
     }
