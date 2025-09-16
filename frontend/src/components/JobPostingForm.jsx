@@ -2055,7 +2055,7 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
               {renderStep()}
               
               {/* Navigation Buttons - Hide when in one-by-one questions mode */}
-              {!(currentStep === 1 && tradeQuestions.length > 0 && showQuestionsOneByOne) && (
+              {!(currentStep === 1 && tradeQuestions.length > 0 && showQuestionsOneByOne && getVisibleQuestions().length > 0) && (
                 <div className="flex justify-between pt-8 border-t">
                   <Button
                     type="button"
