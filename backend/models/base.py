@@ -723,6 +723,7 @@ class TradeCategoryQuestionUpdate(BaseModel):
     min_value: Optional[float] = None
     max_value: Optional[float] = None
     is_active: Optional[bool] = None
+    conditional_logic: Optional[ConditionalLogic] = None  # New conditional logic field
 
 class QuestionAnswer(BaseModel):
     question_id: str
