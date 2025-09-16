@@ -604,7 +604,7 @@ const MyInterestsPage = () => {
                             {/* Action Buttons */}
                             <div className="flex justify-between items-center pt-4 border-t">
                               <div className="text-sm text-gray-500">
-                                Access Fee: {interest.access_fee_coins} coins ({formatCurrency(interest.access_fee_naira)})
+                                Access Fee: {interest.access_fee_coins || 0} coins ({formatCurrency(interest.access_fee_naira || 0)})
                               </div>
                               
                               <div className="flex gap-2">
