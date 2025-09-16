@@ -39,7 +39,16 @@ const TradeCategoryQuestionsManager = () => {
     help_text: '',
     min_value: null,
     max_value: null,
-    is_active: true
+    is_active: true,
+    // New conditional logic fields
+    conditional_logic: {
+      enabled: false,
+      parent_question_id: '',
+      trigger_condition: 'equals',
+      trigger_value: '',
+      yes_follow_up_questions: [],
+      no_follow_up_questions: []
+    }
   });
   
   const { toast } = useToast();
