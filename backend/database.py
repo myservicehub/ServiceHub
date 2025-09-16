@@ -2399,6 +2399,21 @@ class Database:
             print(f"Error getting jobs near location with skills: {str(e)}")
             return []
 
+    async def _process_job_data(self, job: dict) -> dict:
+        """Process and enrich job data with additional information"""
+        try:
+            # Convert ObjectId to string
+            if "_id" in job:
+                job["_id"] = str(job["_id"])
+            
+            # Add any additional processing here if needed
+            # For example: enrich with homeowner info, interests count, etc.
+            
+            return job
+        except Exception as e:
+            print(f"Error processing job data: {str(e)}")
+            return job
+
     # ==========================================
     # REFERRAL SYSTEM METHODS
     # ==========================================
