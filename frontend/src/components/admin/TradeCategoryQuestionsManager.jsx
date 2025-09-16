@@ -321,11 +321,8 @@ const TradeCategoryQuestionsManager = () => {
       // Populate conditional logic data
       conditional_logic: question.conditional_logic || {
         enabled: false,
-        parent_question_id: '',
-        trigger_condition: 'equals',
-        trigger_value: '',
-        trigger_values: [],
-        follow_up_questions: []
+        logic_operator: 'AND',
+        rules: []
       }
     });
     setShowCreateForm(true);
