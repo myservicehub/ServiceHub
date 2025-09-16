@@ -320,7 +320,16 @@ const TradeCategoryQuestionsManager = () => {
       help_text: question.help_text || '',
       min_value: question.min_value,
       max_value: question.max_value,
-      is_active: question.is_active
+      is_active: question.is_active,
+      // Populate conditional logic data
+      conditional_logic: question.conditional_logic || {
+        enabled: false,
+        parent_question_id: '',
+        trigger_condition: 'equals',
+        trigger_value: '',
+        yes_follow_up_questions: [],
+        no_follow_up_questions: []
+      }
     });
     setShowCreateForm(true);
   };
