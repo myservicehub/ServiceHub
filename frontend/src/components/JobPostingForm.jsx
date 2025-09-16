@@ -539,8 +539,41 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
     });
   };
 
-  // Navigate to next question
+  // Navigate to next question (with validation)
   const goToNextQuestion = () => {
+    // Check if current question is answered
+    const currentQuestion = tradeQuestions[currentQuestionIndex];
+    if (!currentQuestion) return;
+    
+    const answer = questionAnswers[currentQuestion.id];
+    
+    // Validate based on question type
+    let isAnswered = false;
+    if (currentQuestion.question_type === 'multiple_choice_multiple') {
+      isAnswered = Array.isArray(answer) && answer.length > 0;
+    } else if (currentQuestion.question_type === 'yes_no') {
+      isAnswered = answer === true || answer === false;
+    } else {
+      isAnswered = answer !== undefined && answer !== null && answer !== '';
+    }
+    
+    if (!isAnswered && currentQuestion.is_required) {
+      // Show error for current question
+      setErrors(prev => ({
+        ...prev,
+        [`question_${currentQuestion.id}`]: 'This question is required'
+      }));
+      return;
+    }
+    
+    // Clear any errors for this question
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[`question_${currentQuestion.id}`];
+      return newErrors;
+    });
+    
+    // Move to next question
     if (currentQuestionIndex < tradeQuestions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
     }
