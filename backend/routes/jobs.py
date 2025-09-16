@@ -198,7 +198,7 @@ async def get_jobs_for_tradesperson(
     limit: int = Query(50, ge=1, le=100, description="Number of items to return"),
     current_user: User = Depends(get_current_active_user)
 ):
-    """Get jobs filtered by tradesperson's location and travel preferences"""
+    """Get jobs filtered by tradesperson's skills and location preferences"""
     try:
         # Ensure user is a tradesperson
         if current_user.role != "tradesperson":
@@ -210,14 +210,23 @@ async def get_jobs_for_tradesperson(
             limit=limit
         )
         
+        # Get tradesperson details for response
+        tradesperson_info = {
+            "trade_categories": current_user.trade_categories if hasattr(current_user, 'trade_categories') else [],
+            "location": current_user.location if hasattr(current_user, 'location') else None,
+            "travel_distance_km": current_user.travel_distance_km if hasattr(current_user, 'travel_distance_km') else 25
+        }
+        
         return {
             "jobs": jobs,
             "total": len(jobs),
-            "user_location": {
-                "latitude": current_user.latitude,
-                "longitude": current_user.longitude,
-                "travel_distance_km": current_user.travel_distance_km
-            } if current_user.latitude and current_user.longitude else None,
+            "filtering_info": {
+                "skills_filter": len(tradesperson_info["trade_categories"]) > 0,
+                "location_filter": current_user.latitude is not None and current_user.longitude is not None,
+                "filtered_by_skills": tradesperson_info["trade_categories"],
+                "max_distance_km": tradesperson_info["travel_distance_km"]
+            },
+            "tradesperson_info": tradesperson_info,
             "pagination": {
                 "skip": skip,
                 "limit": limit
@@ -228,7 +237,7 @@ async def get_jobs_for_tradesperson(
         raise
     except Exception as e:
         logger.error(f"Error getting jobs for tradesperson: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to get jobs for tradesperson: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get filtered jobs for tradesperson: {str(e)}")
 
 @router.get("/search")
 async def search_jobs_with_location(
