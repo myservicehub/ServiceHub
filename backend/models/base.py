@@ -671,6 +671,15 @@ class QuestionOption(BaseModel):
     value: str = Field(..., min_length=1, max_length=100)
     display_order: int = Field(default=0)
 
+class ConditionalLogic(BaseModel):
+    """Conditional logic for questions based on previous answers"""
+    enabled: bool = Field(default=False)
+    parent_question_id: Optional[str] = None
+    trigger_condition: Optional[str] = None  # 'equals', 'not_equals', 'contains', etc.
+    trigger_value: Optional[str] = None  # The value that triggers this logic
+    yes_follow_up_questions: Optional[List[str]] = []  # Question IDs to show if condition is Yes/True
+    no_follow_up_questions: Optional[List[str]] = []   # Question IDs to show if condition is No/False
+
 class TradeCategoryQuestionCreate(BaseModel):
     trade_category: str = Field(..., min_length=1, max_length=100)
     question_text: str = Field(..., min_length=5, max_length=500)
@@ -683,6 +692,7 @@ class TradeCategoryQuestionCreate(BaseModel):
     min_value: Optional[float] = None  # For number inputs
     max_value: Optional[float] = None  # For number inputs
     is_active: bool = Field(default=True)
+    conditional_logic: Optional[ConditionalLogic] = None  # New conditional logic field
 
 class TradeCategoryQuestion(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
