@@ -218,16 +218,16 @@
             }
         }
 
-        function goToReviews() {
+        function goToMyJobs() {
             const token = localStorage.getItem('token');
             if (!token) {
-                updateStatus('Not Authenticated', 'error', 'Please login first using the Emergency Login button.');
+                updateStatus('Not Authenticated', 'error', 'Please login first using one of the login buttons above.');
                 return;
             }
             
-            updateStatus('Navigating...', 'info', 'Opening your reviews page...');
+            updateStatus('Navigating...', 'info', 'Opening My Jobs page to test completed jobs functionality...');
             setTimeout(() => {
-                window.location.href = '/my-received-reviews';
+                window.location.href = '/my-jobs';
             }, 1000);
         }
 
