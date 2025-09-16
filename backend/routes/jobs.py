@@ -752,6 +752,203 @@ async def _notify_job_posted_successfully(homeowner: dict, job: dict):
             logger.warning("No homeowner ID found in homeowner data")
             return
         
+        # Get user preferences for notifications
+        preferences = await database.get_user_notification_preferences(homeowner_id)
+        
+        # Prepare notification template data
+        template_data = {
+            "homeowner_name": homeowner.get("name", "Homeowner"),
+            "job_title": job.get("title", "Untitled Job"),
+            "job_location": job.get("location", ""),
+            "job_category": job.get("category", ""),
+            "job_budget": f"₦{job.get('budget_min', 0):,} - ₦{job.get('budget_max', 0):,}" if job.get('budget_min') and job.get('budget_max') else "Budget not specified",
+            "post_date": "Today",
+            "manage_url": "https://servicehub.ng/my-jobs"
+        }
+        
+        # Send notification
+        notification = await notification_service.send_notification(
+            user_id=homeowner_id,
+            notification_type=NotificationType.JOB_POSTED,
+            template_data=template_data,
+            user_preferences=preferences,
+            recipient_email=homeowner.get("email"),
+            recipient_phone=homeowner.get("phone")
+        )
+        
+        # Save notification to database
+        await database.create_notification(notification)
+        
+        logger.info(f"✅ Job posted notification sent to homeowner {homeowner_id} for job {job.get('id')}")
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to send job posted notification for job {job.get('id')}: {str(e)}")
+
+@router.post("/create-sample-data")
+async def create_sample_data(current_user: User = Depends(get_current_homeowner)):
+    """Create sample jobs for testing - TEMPORARY ENDPOINT"""
+    try:
+        from datetime import datetime, timedelta
+        import uuid
+        
+        # Sample jobs data for the current homeowner
+        sample_jobs = [
+            {
+                "id": str(uuid.uuid4()),
+                "title": "Kitchen Plumbing Repair - COMPLETED",
+                "description": "Fixed leaky faucet and improved water pressure. Job completed successfully with excellent results.",
+                "category": "Plumbing",
+                "location": "Lagos",
+                "state": "Lagos",
+                "lga": "Lagos Island", 
+                "town": "Victoria Island",
+                "zip_code": "101241",
+                "home_address": "15 Ahmadu Bello Way, Victoria Island, Lagos",
+                "budget_min": 15000,
+                "budget_max": 25000,
+                "timeline": "Within 1 week",
+                "status": "completed",
+                "homeowner": {
+                    "id": current_user.id,
+                    "name": current_user.name,
+                    "email": current_user.email,
+                    "phone": current_user.phone
+                },
+                "homeowner_id": current_user.id,
+                "completed_at": (datetime.utcnow() - timedelta(days=5)).isoformat(),
+                "final_cost": 20000,
+                "hired_tradesperson": {
+                    "id": "b8ee65e9-100b-487e-b308-cc3256234c13",
+                    "name": "John Plumber",
+                    "rating": 4.5
+                },
+                "created_at": (datetime.utcnow() - timedelta(days=7)).isoformat(),
+                "updated_at": (datetime.utcnow() - timedelta(days=5)).isoformat(),
+                "expires_at": (datetime.utcnow() + timedelta(days=23)).isoformat(),
+                "interests_count": 5,
+                "quotes_count": 3
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "title": "Bathroom Tile Installation - COMPLETED",
+                "description": "Installed new ceramic tiles in master bathroom. Work completed to high standards.",
+                "category": "Tiling",
+                "location": "Lagos",
+                "state": "Lagos",
+                "lga": "Lagos Island",
+                "town": "Victoria Island", 
+                "zip_code": "101241",
+                "home_address": "15 Ahmadu Bello Way, Victoria Island, Lagos",
+                "budget_min": 50000,
+                "budget_max": 80000,
+                "timeline": "Within 2 weeks",
+                "status": "completed",
+                "homeowner": {
+                    "id": current_user.id,
+                    "name": current_user.name,
+                    "email": current_user.email,
+                    "phone": current_user.phone
+                },
+                "homeowner_id": current_user.id,
+                "completed_at": (datetime.utcnow() - timedelta(days=10)).isoformat(),
+                "final_cost": 65000,
+                "hired_tradesperson": {
+                    "id": "tradesperson-2-id",
+                    "name": "Mike Tiler", 
+                    "rating": 4.8
+                },
+                "created_at": (datetime.utcnow() - timedelta(days=15)).isoformat(),
+                "updated_at": (datetime.utcnow() - timedelta(days=10)).isoformat(),
+                "expires_at": (datetime.utcnow() + timedelta(days=15)).isoformat(),
+                "interests_count": 8,
+                "quotes_count": 5
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "title": "Electrical Wiring Upgrade - ACTIVE",
+                "description": "Need to upgrade electrical wiring in living room for new appliances.",
+                "category": "Electrical",
+                "location": "Lagos", 
+                "state": "Lagos",
+                "lga": "Lagos Island",
+                "town": "Victoria Island",
+                "zip_code": "101241",
+                "home_address": "15 Ahmadu Bello Way, Victoria Island, Lagos",
+                "budget_min": 30000,
+                "budget_max": 50000,
+                "timeline": "Within 1 week",
+                "status": "active",
+                "homeowner": {
+                    "id": current_user.id,
+                    "name": current_user.name,
+                    "email": current_user.email,
+                    "phone": current_user.phone
+                },
+                "homeowner_id": current_user.id,
+                "created_at": (datetime.utcnow() - timedelta(days=2)).isoformat(),
+                "updated_at": (datetime.utcnow() - timedelta(days=2)).isoformat(),
+                "expires_at": (datetime.utcnow() + timedelta(days=28)).isoformat(),
+                "interests_count": 3,
+                "quotes_count": 1
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "title": "Painting and Wall Repair - IN PROGRESS",
+                "description": "Painting exterior walls and fixing cracks. Work currently in progress.",
+                "category": "Painting",
+                "location": "Lagos",
+                "state": "Lagos", 
+                "lga": "Lagos Island",
+                "town": "Victoria Island",
+                "zip_code": "101241",
+                "home_address": "15 Ahmadu Bello Way, Victoria Island, Lagos",
+                "budget_min": 25000,
+                "budget_max": 40000, 
+                "timeline": "Within 2 weeks",
+                "status": "in_progress",
+                "homeowner": {
+                    "id": current_user.id,
+                    "name": current_user.name,
+                    "email": current_user.email,
+                    "phone": current_user.phone
+                },
+                "homeowner_id": current_user.id,
+                "created_at": (datetime.utcnow() - timedelta(days=5)).isoformat(),
+                "updated_at": (datetime.utcnow() - timedelta(days=1)).isoformat(),
+                "expires_at": (datetime.utcnow() + timedelta(days=25)).isoformat(),
+                "interests_count": 4,
+                "quotes_count": 2
+            }
+        ]
+        
+        # Insert sample jobs into database
+        created_jobs = []
+        for job_data in sample_jobs:
+            result = await database.database.jobs.insert_one(job_data)
+            job_data["_id"] = str(result.inserted_id)
+            created_jobs.append(job_data)
+        
+        return {
+            "message": f"Successfully created {len(created_jobs)} sample jobs",
+            "jobs_created": len(created_jobs),
+            "completed_jobs": len([j for j in created_jobs if j['status'] == 'completed']),
+            "active_jobs": len([j for j in created_jobs if j['status'] == 'active']),
+            "in_progress_jobs": len([j for j in created_jobs if j['status'] == 'in_progress'])
+        }
+        
+    except Exception as e:
+        logger.error(f"Error creating sample data: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to create sample data: {str(e)}")
+
+async def _notify_job_posted_successfully_old(homeowner: dict, job: dict):
+    """Background task to notify homeowner that job was posted successfully"""
+    try:
+        # Get homeowner ID
+        homeowner_id = homeowner.get("id")
+        if not homeowner_id:
+            logger.warning("No homeowner ID found in homeowner data")
+            return
+        
         # Get homeowner preferences
         preferences = await database.get_user_notification_preferences(homeowner_id)
         
