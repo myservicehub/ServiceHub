@@ -960,16 +960,27 @@ const TradeCategoryQuestionsManager = () => {
 
                       {question.conditional_logic?.enabled && (
                         <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-2">
-                          <p className="text-sm font-medium text-purple-800 mb-1">Conditional Logic:</p>
-                          <div className="text-sm text-purple-700">
-                            <p>• Triggered by: {questions.find(q => q.id === question.conditional_logic.parent_question_id)?.question_text?.substring(0, 40) || 'Unknown question'}...</p>
-                            <p>• Condition: {question.conditional_logic.trigger_condition} 
-                              {question.conditional_logic.trigger_value ? ` "${question.conditional_logic.trigger_value}"` : ''}
-                              {question.conditional_logic.trigger_values?.length > 0 ? ` [${question.conditional_logic.trigger_values.join(', ')}]` : ''}
-                            </p>
-                            {question.conditional_logic.follow_up_questions?.length > 0 && (
-                              <p>• Shows {question.conditional_logic.follow_up_questions.length} follow-up questions when condition is met</p>
+                          <p className="text-sm font-medium text-purple-800 mb-1">
+                            Conditional Logic ({question.conditional_logic.rules?.length || 0} rules):
+                          </p>
+                          <div className="text-sm text-purple-700 space-y-1">
+                            {question.conditional_logic.rules?.length > 1 && (
+                              <p className="font-medium">• Logic: {question.conditional_logic.logic_operator} (All rules must match)</p>
                             )}
+                            {question.conditional_logic.rules?.map((rule, index) => {
+                              const parentQuestion = questions.find(q => q.id === rule.parent_question_id);
+                              return (
+                                <div key={rule.id} className="ml-2">
+                                  <p>• Rule {index + 1}: {parentQuestion?.question_text?.substring(0, 30) || 'Unknown'}...</p>
+                                  <p className="ml-4 text-xs">
+                                    {rule.trigger_condition} 
+                                    {rule.trigger_value ? ` "${rule.trigger_value}"` : ''}
+                                    {rule.trigger_values?.length > 0 ? ` [${rule.trigger_values.join(', ')}]` : ''}
+                                    → {rule.follow_up_questions?.length || 0} follow-ups
+                                  </p>
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
                       )}
