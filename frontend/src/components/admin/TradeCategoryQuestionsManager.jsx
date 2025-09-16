@@ -614,7 +614,7 @@ const TradeCategoryQuestionsManager = () => {
               </label>
             </div>
 
-            {/* Conditional Logic Section */}
+            {/* Enhanced Conditional Logic Section */}
             <div className="border rounded-lg p-4 bg-gray-50">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-lg font-medium text-gray-900">Conditional Logic</h4>
@@ -632,212 +632,253 @@ const TradeCategoryQuestionsManager = () => {
               </div>
 
               {formData.conditional_logic.enabled && (
-                <div className="space-y-4">
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <p className="text-sm text-blue-800">
-                      <strong>How it works:</strong> This question will only be shown when the selected parent question 
-                      meets the specified condition. Works with all question types including multiple choice, text input, 
-                      number input, and Yes/No questions.
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Parent Question</label>
-                      <select
-                        value={formData.conditional_logic.parent_question_id}
-                        onChange={(e) => {
-                          const parentQuestion = questions.find(q => q.id === e.target.value);
-                          setFormData(prev => ({
-                            ...prev,
-                            conditional_logic: { 
-                              ...prev.conditional_logic, 
-                              parent_question_id: e.target.value,
-                              // Reset trigger values when parent changes
-                              trigger_value: '',
-                              trigger_values: []
-                            }
-                          }));
-                        }}
-                        className="w-full px-3 py-2 border rounded-md"
-                      >
-                        <option value="">Select parent question</option>
-                        {questions
-                          .filter(q => q.id !== editingQuestion?.id)
-                          .map(question => (
-                            <option key={question.id} value={question.id}>
-                              [{questionTypes.find(t => t.value === question.question_type)?.label}] {question.question_text.substring(0, 50)}...
-                            </option>
-                          ))}
-                      </select>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Any question type can be used as a parent question
-                      </p>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Trigger Condition</label>
-                      <select
-                        value={formData.conditional_logic.trigger_condition}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          conditional_logic: { ...prev.conditional_logic, trigger_condition: e.target.value }
-                        }))}
-                        className="w-full px-3 py-2 border rounded-md"
-                      >
-                        <option value="equals">Equals</option>
-                        <option value="not_equals">Not Equals</option>
-                        <option value="contains">Contains</option>
-                        <option value="not_contains">Does Not Contain</option>
-                        <option value="greater_than">Greater Than</option>
-                        <option value="less_than">Less Than</option>
-                        <option value="is_empty">Is Empty</option>
-                        <option value="is_not_empty">Is Not Empty</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Dynamic Trigger Value Input based on parent question type */}
-                  {(() => {
-                    const parentQuestion = questions.find(q => q.id === formData.conditional_logic.parent_question_id);
-                    
-                    if (!parentQuestion) {
-                      return (
-                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                          <p className="text-sm text-yellow-800">
-                            Please select a parent question first to configure trigger values.
-                          </p>
-                        </div>
-                      );
-                    }
-
-                    // For multiple choice questions - show checkboxes for options
-                    if (parentQuestion.question_type.includes('multiple_choice')) {
-                      return (
-                        <div>
-                          <label className="block text-sm font-medium mb-2">
-                            Trigger Values (select which options trigger this question)
-                          </label>
-                          <div className="space-y-2 max-h-32 overflow-y-auto border rounded-md p-3">
-                            {parentQuestion.options?.map(option => (
-                              <label key={option.id} className="flex items-center space-x-2 text-sm">
-                                <input
-                                  type="checkbox"
-                                  checked={formData.conditional_logic.trigger_values.includes(option.value)}
-                                  onChange={(e) => {
-                                    const optionValue = option.value;
-                                    setFormData(prev => ({
-                                      ...prev,
-                                      conditional_logic: {
-                                        ...prev.conditional_logic,
-                                        trigger_values: e.target.checked
-                                          ? [...prev.conditional_logic.trigger_values, optionValue]
-                                          : prev.conditional_logic.trigger_values.filter(val => val !== optionValue)
-                                      }
-                                    }));
-                                  }}
-                                />
-                                <span>{option.text}</span>
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    // For Yes/No questions - show yes/no options
-                    if (parentQuestion.question_type === 'yes_no') {
-                      return (
-                        <div>
-                          <label className="block text-sm font-medium mb-2">Trigger Value</label>
-                          <select
-                            value={formData.conditional_logic.trigger_value}
+                <div className="space-y-6">
+                  {/* Logic Operator Selection */}
+                  {formData.conditional_logic.rules.length > 1 && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <label className="block text-sm font-medium text-blue-800 mb-2">
+                        How should multiple rules be combined?
+                      </label>
+                      <div className="flex space-x-4">
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            name="logic_operator"
+                            value="AND"
+                            checked={formData.conditional_logic.logic_operator === 'AND'}
                             onChange={(e) => setFormData(prev => ({
                               ...prev,
-                              conditional_logic: { ...prev.conditional_logic, trigger_value: e.target.value }
+                              conditional_logic: { ...prev.conditional_logic, logic_operator: e.target.value }
                             }))}
-                            className="w-full px-3 py-2 border rounded-md"
-                          >
-                            <option value="">Select trigger value</option>
-                            <option value="yes">Yes</option>
-                            <option value="no">No</option>
-                          </select>
-                        </div>
-                      );
-                    }
-
-                    // For text input, number input, and text area - show text input
-                    return (
-                      <div>
-                        <label className="block text-sm font-medium mb-2">
-                          Trigger Value 
-                          {parentQuestion.question_type === 'number_input' && ' (enter number)'}
+                            className="text-blue-600"
+                          />
+                          <span className="text-sm text-blue-700">
+                            <strong>AND</strong> - All conditions must be met
+                          </span>
                         </label>
-                        <input
-                          type={parentQuestion.question_type === 'number_input' ? 'number' : 'text'}
-                          value={formData.conditional_logic.trigger_value}
-                          onChange={(e) => setFormData(prev => ({
-                            ...prev,
-                            conditional_logic: { ...prev.conditional_logic, trigger_value: e.target.value }
-                          }))}
-                          className="w-full px-3 py-2 border rounded-md"
-                          placeholder={
-                            parentQuestion.question_type === 'number_input' ? 'Enter number value' :
-                            formData.conditional_logic.trigger_condition.includes('contains') ? 'Enter text to search for' :
-                            'Enter exact value to match'
-                          }
-                        />
-                        <p className="text-xs text-gray-500 mt-1">
-                          {parentQuestion.question_type === 'number_input' ? 
-                            'Enter the number value that should trigger this question' :
-                            formData.conditional_logic.trigger_condition.includes('contains') ?
-                            'This question will show if the parent answer contains this text' :
-                            'This question will show if the parent answer matches this value exactly'
-                          }
-                        </p>
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            name="logic_operator"
+                            value="OR"
+                            checked={formData.conditional_logic.logic_operator === 'OR'}
+                            onChange={(e) => setFormData(prev => ({
+                              ...prev,
+                              conditional_logic: { ...prev.conditional_logic, logic_operator: e.target.value }
+                            }))}
+                            className="text-blue-600"
+                          />
+                          <span className="text-sm text-blue-700">
+                            <strong>OR</strong> - Any condition can be met
+                          </span>
+                        </label>
                       </div>
-                    );
-                  })()}
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Follow-up Questions</label>
-                    <div className="space-y-2 max-h-32 overflow-y-auto border rounded-md p-3">
-                      {questions
-                        .filter(q => q.id !== editingQuestion?.id && q.trade_category === formData.trade_category)
-                        .map(question => (
-                          <label key={question.id} className="flex items-center space-x-2 text-sm">
-                            <input
-                              type="checkbox"
-                              checked={formData.conditional_logic.follow_up_questions.includes(question.id)}
-                              onChange={(e) => {
-                                const questionId = question.id;
-                                setFormData(prev => ({
-                                  ...prev,
-                                  conditional_logic: {
-                                    ...prev.conditional_logic,
-                                    follow_up_questions: e.target.checked
-                                      ? [...prev.conditional_logic.follow_up_questions, questionId]
-                                      : prev.conditional_logic.follow_up_questions.filter(id => id !== questionId)
-                                  }
-                                }));
-                              }}
-                            />
-                            <span className="truncate">
-                              [{questionTypes.find(t => t.value === question.question_type)?.label}] {question.question_text.substring(0, 40)}...
-                            </span>
-                          </label>
-                        ))}
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Select which questions should be shown when the condition is met
-                    </p>
+                  )}
+
+                  {/* Conditional Logic Rules */}
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <h5 className="text-md font-medium text-gray-800">Conditional Rules</h5>
+                      <button
+                        type="button"
+                        onClick={addConditionalLogicRule}
+                        className="px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700"
+                      >
+                        Add Rule
+                      </button>
+                    </div>
+
+                    {formData.conditional_logic.rules.length === 0 ? (
+                      <div className="text-center py-6 text-gray-500">
+                        <p>No conditional rules added yet.</p>
+                        <p className="text-sm">Click "Add Rule" to create your first conditional logic rule.</p>
+                      </div>
+                    ) : (
+                      formData.conditional_logic.rules.map((rule, ruleIndex) => (
+                        <div key={rule.id} className="border border-gray-300 rounded-lg p-4 bg-white">
+                          <div className="flex justify-between items-center mb-4">
+                            <h6 className="text-sm font-medium text-gray-700">
+                              Rule #{ruleIndex + 1}
+                              {formData.conditional_logic.rules.length > 1 && (
+                                <span className="ml-2 text-xs text-blue-600">
+                                  ({formData.conditional_logic.logic_operator === 'AND' ? 'All rules must match' : 'Any rule can match'})
+                                </span>
+                              )}
+                            </h6>
+                            <button
+                              type="button"
+                              onClick={() => removeConditionalLogicRule(rule.id)}
+                              className="text-red-600 hover:text-red-800 text-sm"
+                            >
+                              Remove Rule
+                            </button>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            {/* Parent Question Selection */}
+                            <div>
+                              <label className="block text-sm font-medium mb-2">Parent Question</label>
+                              <select
+                                value={rule.parent_question_id}
+                                onChange={(e) => updateConditionalLogicRule(rule.id, 'parent_question_id', e.target.value)}
+                                className="w-full px-3 py-2 border rounded-md text-sm"
+                              >
+                                <option value="">Select parent question</option>
+                                {questions
+                                  .filter(q => q.id !== editingQuestion?.id)
+                                  .map(question => (
+                                    <option key={question.id} value={question.id}>
+                                      [{questionTypes.find(t => t.value === question.question_type)?.label}] {question.question_text.substring(0, 40)}...
+                                    </option>
+                                  ))}
+                              </select>
+                            </div>
+
+                            {/* Trigger Condition */}
+                            <div>
+                              <label className="block text-sm font-medium mb-2">Condition</label>
+                              <select
+                                value={rule.trigger_condition}
+                                onChange={(e) => updateConditionalLogicRule(rule.id, 'trigger_condition', e.target.value)}
+                                className="w-full px-3 py-2 border rounded-md text-sm"
+                              >
+                                <option value="equals">Equals</option>
+                                <option value="not_equals">Not Equals</option>
+                                <option value="contains">Contains</option>
+                                <option value="not_contains">Does Not Contain</option>
+                                <option value="greater_than">Greater Than</option>
+                                <option value="less_than">Less Than</option>
+                                <option value="is_empty">Is Empty</option>
+                                <option value="is_not_empty">Is Not Empty</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          {/* Dynamic Trigger Value Input */}
+                          {(() => {
+                            const parentQuestion = questions.find(q => q.id === rule.parent_question_id);
+                            
+                            if (!parentQuestion) {
+                              return (
+                                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                                  <p className="text-sm text-yellow-800">
+                                    Please select a parent question first to configure trigger values.
+                                  </p>
+                                </div>
+                              );
+                            }
+
+                            // For multiple choice questions
+                            if (parentQuestion.question_type.includes('multiple_choice')) {
+                              return (
+                                <div className="mb-4">
+                                  <label className="block text-sm font-medium mb-2">
+                                    Trigger Values (select which options trigger this rule)
+                                  </label>
+                                  <div className="space-y-1 max-h-24 overflow-y-auto border rounded-md p-2">
+                                    {parentQuestion.options?.map(option => (
+                                      <label key={option.id} className="flex items-center space-x-2 text-sm">
+                                        <input
+                                          type="checkbox"
+                                          checked={rule.trigger_values.includes(option.value)}
+                                          onChange={(e) => {
+                                            const newValues = e.target.checked
+                                              ? [...rule.trigger_values, option.value]
+                                              : rule.trigger_values.filter(val => val !== option.value);
+                                            updateConditionalLogicRule(rule.id, 'trigger_values', newValues);
+                                          }}
+                                        />
+                                        <span>{option.text}</span>
+                                      </label>
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            }
+
+                            // For Yes/No questions
+                            if (parentQuestion.question_type === 'yes_no') {
+                              return (
+                                <div className="mb-4">
+                                  <label className="block text-sm font-medium mb-2">Trigger Value</label>
+                                  <select
+                                    value={rule.trigger_value}
+                                    onChange={(e) => updateConditionalLogicRule(rule.id, 'trigger_value', e.target.value)}
+                                    className="w-full px-3 py-2 border rounded-md text-sm"
+                                  >
+                                    <option value="">Select trigger value</option>
+                                    <option value="yes">Yes</option>
+                                    <option value="no">No</option>
+                                  </select>
+                                </div>
+                              );
+                            }
+
+                            // For text input, number input, and text area
+                            return (
+                              <div className="mb-4">
+                                <label className="block text-sm font-medium mb-2">
+                                  Trigger Value 
+                                  {parentQuestion.question_type === 'number_input' && ' (enter number)'}
+                                </label>
+                                <input
+                                  type={parentQuestion.question_type === 'number_input' ? 'number' : 'text'}
+                                  value={rule.trigger_value}
+                                  onChange={(e) => updateConditionalLogicRule(rule.id, 'trigger_value', e.target.value)}
+                                  className="w-full px-3 py-2 border rounded-md text-sm"
+                                  placeholder={
+                                    parentQuestion.question_type === 'number_input' ? 'Enter number value' :
+                                    rule.trigger_condition.includes('contains') ? 'Enter text to search for' :
+                                    'Enter exact value to match'
+                                  }
+                                />
+                              </div>
+                            );
+                          })()}
+
+                          {/* Follow-up Questions */}
+                          <div>
+                            <label className="block text-sm font-medium mb-2">
+                              Questions to show when this rule matches
+                            </label>
+                            <div className="space-y-1 max-h-24 overflow-y-auto border rounded-md p-2">
+                              {questions
+                                .filter(q => q.id !== editingQuestion?.id && q.trade_category === formData.trade_category)
+                                .map(question => (
+                                  <label key={question.id} className="flex items-center space-x-2 text-sm">
+                                    <input
+                                      type="checkbox"
+                                      checked={rule.follow_up_questions.includes(question.id)}
+                                      onChange={(e) => {
+                                        const newQuestions = e.target.checked
+                                          ? [...rule.follow_up_questions, question.id]
+                                          : rule.follow_up_questions.filter(id => id !== question.id);
+                                        updateConditionalLogicRule(rule.id, 'follow_up_questions', newQuestions);
+                                      }}
+                                    />
+                                    <span className="truncate">
+                                      [{questionTypes.find(t => t.value === question.question_type)?.label}] {question.question_text.substring(0, 30)}...
+                                    </span>
+                                  </label>
+                                ))}
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
 
+                  {/* Help Section */}
                   <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                    <p className="text-sm text-green-800">
-                      <strong>Tip:</strong> You can create complex question flows by chaining conditional logic. 
-                      Create all your questions first, then set up the conditional relationships.
-                    </p>
+                    <h6 className="text-sm font-medium text-green-800 mb-2">💡 Multiple Conditional Logic Tips:</h6>
+                    <ul className="text-sm text-green-700 space-y-1">
+                      <li>• <strong>Add multiple rules</strong> to create complex conditional flows</li>
+                      <li>• <strong>AND logic:</strong> All rules must be true for questions to show</li>
+                      <li>• <strong>OR logic:</strong> Any rule being true will show the questions</li>
+                      <li>• <strong>Chain rules:</strong> Create questions that depend on multiple previous answers</li>
+                      <li>• <strong>Example:</strong> Show emergency questions only if service type is "Emergency" AND urgency is "High"</li>
+                    </ul>
                   </div>
                 </div>
               )}
