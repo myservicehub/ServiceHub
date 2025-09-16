@@ -931,37 +931,6 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
                   </div>
                 ) : tradeQuestions.length > 0 ? (
                   <div className="space-y-6">
-                    {/* Progress indicator */}
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium text-gray-600">
-                          Question {currentQuestionIndex + 1} of {tradeQuestions.length}
-                        </span>
-                        <div className="flex items-center space-x-1">
-                          {tradeQuestions.map((_, index) => (
-                            <div
-                              key={index}
-                              className={`w-2 h-2 rounded-full ${
-                                index <= currentQuestionIndex ? 'bg-green-500' :
-                                index === currentQuestionIndex + 1 ? 'bg-green-300' : 'bg-gray-300'
-                              }`}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                      
-                      {/* View all questions toggle */}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowQuestionsOneByOne(!showQuestionsOneByOne)}
-                        className="text-xs"
-                      >
-                        {showQuestionsOneByOne ? 'View All' : 'One by One'}
-                      </Button>
-                    </div>
-
                     {showQuestionsOneByOne ? (
                       // Show current question only
                       <div className="space-y-4">
@@ -1000,14 +969,6 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
                                 <ArrowLeft size={16} />
                                 <span>Previous</span>
                               </Button>
-                              
-                              <div className="text-center">
-                                {tradeQuestions[currentQuestionIndex].question_type !== 'multiple_choice_multiple' && (
-                                  <p className="text-sm text-green-600 font-medium">
-                                    ✨ Answer to continue automatically
-                                  </p>
-                                )}
-                              </div>
                               
                               <Button
                                 type="button"
