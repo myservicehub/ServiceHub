@@ -1047,6 +1047,7 @@ class Database:
         }
         
         reviews = await self.get_reviews(limit=limit, filters=filters)
+        print(f"🔍 Featured reviews found: {len(reviews)}")
         
         # Enhance reviews with job location information
         for review in reviews:
@@ -1054,10 +1055,20 @@ class Database:
                 review['_id'] = str(review['_id'])
             
             # Get job details for location
-            if review.get("job_id"):
-                job = await self.get_job_by_id(review["job_id"])
+            job_id = review.get("job_id")
+            print(f"🔍 Processing review with job_id: {job_id}")
+            
+            if job_id:
+                job = await self.get_job_by_id(job_id)
+                print(f"🔍 Job found: {job is not None}")
                 if job:
-                    review["job_location"] = job.get("location", "")
+                    job_location = job.get("location", "")
+                    print(f"🔍 Job location: {job_location}")
+                    review["job_location"] = job_location
+                else:
+                    print(f"🔍 Job not found for job_id: {job_id}")
+            else:
+                print(f"🔍 No job_id in review: {review.get('id', 'unknown')}")
         
         return reviews
 
