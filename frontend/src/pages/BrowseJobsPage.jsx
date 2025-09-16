@@ -669,6 +669,31 @@ const BrowseJobsPage = () => {
               )}
             </div>
 
+            {/* Jobs Filtering Info */}
+            {isTradesperson() && user?.trade_categories && (
+              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <Filter className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-800">Smart Job Filtering Active</span>
+                </div>
+                <div className="text-sm text-blue-700">
+                  <p className="mb-1">
+                    <strong>Skills Match:</strong> Showing jobs that match your skills: {user.trade_categories.join(', ')}
+                  </p>
+                  {filters.useLocation && userLocation && (
+                    <p>
+                      <strong>Location Filter:</strong> Within {filters.maxDistance}km of your location
+                    </p>
+                  )}
+                  {!filters.useLocation && (
+                    <p className="text-orange-600">
+                      💡 <strong>Tip:</strong> Enable location filtering to see jobs near you first
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Map View */}
             {viewMode === 'map' && (
               <div className="mb-6">
