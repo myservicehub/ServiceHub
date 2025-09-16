@@ -539,10 +539,12 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
     });
   };
 
-  // Navigate to next question (with validation)
+  // Navigate to next question (with validation and conditional logic)
   const goToNextQuestion = () => {
+    const visibleQuestions = getVisibleQuestions();
+    
     // Check if current question is answered
-    const currentQuestion = tradeQuestions[currentQuestionIndex];
+    const currentQuestion = visibleQuestions[currentQuestionIndex];
     if (!currentQuestion) return;
     
     const answer = questionAnswers[currentQuestion.id];
@@ -574,12 +576,12 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
     });
     
     // Move to next question
-    if (currentQuestionIndex < tradeQuestions.length - 1) {
+    if (currentQuestionIndex < visibleQuestions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
     }
   };
 
-  // Navigate to previous question
+  // Navigate to previous question (with conditional logic)
   const goToPreviousQuestion = () => {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(prev => prev - 1);
