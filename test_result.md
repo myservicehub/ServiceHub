@@ -66,6 +66,7 @@ test_plan:
     - "Enhanced Trade Category Questions API with Conditional Logic Testing"
     - "Enhanced Jobs Filtering System Testing for Tradespeople"
     - "Enhanced Job Posting Form with Validation and Single Navigation Testing"
+    - "Enhanced Multiple Conditional Logic Functionality Testing"
   test_all: false
   test_priority: "high_first"
 ##
