@@ -671,14 +671,20 @@ class QuestionOption(BaseModel):
     value: str = Field(..., min_length=1, max_length=100)
     display_order: int = Field(default=0)
 
-class ConditionalLogic(BaseModel):
-    """Conditional logic for questions based on previous answers"""
-    enabled: bool = Field(default=False)
-    parent_question_id: Optional[str] = None
-    trigger_condition: Optional[str] = None  # 'equals', 'not_equals', 'contains', 'greater_than', 'less_than'
-    trigger_value: Optional[str] = None  # The value that triggers this logic
-    trigger_values: Optional[List[str]] = []  # Multiple trigger values for multiple choice
+class ConditionalLogicRule(BaseModel):
+    """Individual conditional logic rule"""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    parent_question_id: str = Field(..., min_length=1)
+    trigger_condition: str = Field(..., pattern="^(equals|not_equals|contains|not_contains|greater_than|less_than|is_empty|is_not_empty)$")
+    trigger_value: Optional[str] = None
+    trigger_values: Optional[List[str]] = []  # For multiple choice questions
     follow_up_questions: Optional[List[str]] = []  # Question IDs to show when condition is met
+
+class ConditionalLogic(BaseModel):
+    """Enhanced conditional logic supporting multiple rules"""
+    enabled: bool = Field(default=False)
+    logic_operator: str = Field(default="AND", pattern="^(AND|OR)$")  # How to combine multiple rules
+    rules: List[ConditionalLogicRule] = Field(default=[])  # Multiple conditional logic rules
 
 class TradeCategoryQuestionCreate(BaseModel):
     trade_category: str = Field(..., min_length=1, max_length=100)
