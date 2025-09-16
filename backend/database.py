@@ -1254,10 +1254,16 @@ class Database:
         
         interests = await self.interests_collection.aggregate(pipeline).to_list(length=None)
         
-        # Convert ObjectId to string
+        # Convert ObjectId to string and set default access fees
         for interest in interests:
             if '_id' in interest:
                 interest['_id'] = str(interest['_id'])
+            
+            # Set default access fees if not present
+            if not interest.get("access_fee_naira"):
+                interest["access_fee_naira"] = 1000
+            if not interest.get("access_fee_coins"):
+                interest["access_fee_coins"] = 10
         
         return interests
 
