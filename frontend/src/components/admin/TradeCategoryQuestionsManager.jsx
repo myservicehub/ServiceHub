@@ -46,8 +46,8 @@ const TradeCategoryQuestionsManager = () => {
       parent_question_id: '',
       trigger_condition: 'equals',
       trigger_value: '',
-      yes_follow_up_questions: [],
-      no_follow_up_questions: []
+      trigger_values: [],
+      follow_up_questions: []
     }
   });
   
