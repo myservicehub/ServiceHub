@@ -49,7 +49,7 @@
 ##
 test_plan:
   current_focus:
-    []
+    - "Enhanced Job Posting Form with Validation and Single Navigation Testing"
   stuck_tasks: 
     []
   completed_tasks:
