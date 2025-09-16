@@ -1048,10 +1048,16 @@ class Database:
         
         reviews = await self.get_reviews(limit=limit, filters=filters)
         
-        # Convert ObjectId to string for each review
+        # Enhance reviews with job location information
         for review in reviews:
             if '_id' in review:
                 review['_id'] = str(review['_id'])
+            
+            # Get job details for location
+            if review.get("job_id"):
+                job = await self.get_job_by_id(review["job_id"])
+                if job:
+                    review["job_location"] = job.get("location", "")
         
         return reviews
 
