@@ -319,10 +319,10 @@ const TradeCategoryQuestionsManager = () => {
       max_value: question.max_value,
       is_active: question.is_active,
       // Populate conditional logic data
-      conditional_logic: question.conditional_logic || {
-        enabled: false,
-        logic_operator: 'AND',
-        rules: []
+      conditional_logic: {
+        enabled: question.conditional_logic?.enabled || false,
+        logic_operator: question.conditional_logic?.logic_operator || 'AND',
+        rules: question.conditional_logic?.rules || []
       }
     });
     setShowCreateForm(true);
