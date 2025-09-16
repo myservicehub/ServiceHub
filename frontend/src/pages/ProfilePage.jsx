@@ -704,6 +704,158 @@ const ProfilePage = () => {
                 </TabsContent>
               )}
 
+              {/* Reviews Tab - Only for Tradespeople */}
+              {isTradesperson() && (
+                <TabsContent value="reviews" className="space-y-6">
+                  {/* Reviews Stats Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="text-center">
+                          <div className="text-2xl font-bold font-montserrat" style={{color: '#121E3C'}}>
+                            {reviewStats.totalReviews}
+                          </div>
+                          <div className="text-sm text-gray-600 font-lato">Total Reviews</div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="text-center">
+                          <div className="flex items-center justify-center gap-1 mb-1">
+                            <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
+                            <div className="text-2xl font-bold font-montserrat text-yellow-600">
+                              {reviewStats.averageRating}
+                            </div>
+                          </div>
+                          <div className="text-sm text-gray-600 font-lato">Average Rating</div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="text-center">
+                          <div className="text-2xl font-bold font-montserrat text-green-600">
+                            {reviewStats.fiveStars}
+                          </div>
+                          <div className="text-sm text-gray-600 font-lato">5-Star Reviews</div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="text-center">
+                          <div className="text-sm text-gray-600 font-lato mb-1">Rating Breakdown</div>
+                          <div className="text-xs text-gray-500 font-lato">
+                            <div>5★: {reviewStats.fiveStars} • 4★: {reviewStats.fourStars}</div>
+                            <div>3★: {reviewStats.threeStars} • 2★: {reviewStats.twoStars} • 1★: {reviewStats.oneStar}</div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Reviews List */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center font-montserrat" style={{color: '#121E3C'}}>
+                        <Star size={20} className="mr-2" style={{color: '#2F8140'}} />
+                        Customer Reviews
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {reviewsLoading ? (
+                        <div className="text-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+                          <p className="text-gray-600 font-lato">Loading your reviews...</p>
+                        </div>
+                      ) : reviews.length === 0 ? (
+                        <div className="text-center py-12">
+                          <Star className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                          <h3 className="text-lg font-semibold font-montserrat mb-2">No Reviews Yet</h3>
+                          <p className="text-gray-600 font-lato max-w-md mx-auto">
+                            You haven't received any reviews from homeowners yet. 
+                            Complete jobs and provide excellent service to start receiving reviews!
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-6">
+                          {reviews.map((review) => (
+                            <div key={review.id} className="border-b border-gray-200 pb-6 last:border-b-0">
+                              <div className="flex items-start justify-between mb-3">
+                                <div className="flex items-center gap-3">
+                                  <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                                    <User className="h-5 w-5 text-gray-600" />
+                                  </div>
+                                  <div>
+                                    <div className="font-semibold font-montserrat" style={{color: '#121E3C'}}>
+                                      {review.reviewer_name || 'Anonymous Homeowner'}
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <div className="flex">
+                                        {Array.from({ length: 5 }, (_, index) => (
+                                          <Star
+                                            key={index}
+                                            className={`h-4 w-4 ${
+                                              index < review.rating 
+                                                ? 'text-yellow-400 fill-yellow-400' 
+                                                : 'text-gray-300'
+                                            }`}
+                                          />
+                                        ))}
+                                      </div>
+                                      <Badge className={`
+                                        ${review.rating >= 4.5 ? 'bg-green-100 text-green-800' : ''}
+                                        ${review.rating >= 3.5 && review.rating < 4.5 ? 'bg-blue-100 text-blue-800' : ''}
+                                        ${review.rating >= 2.5 && review.rating < 3.5 ? 'bg-yellow-100 text-yellow-800' : ''}
+                                        ${review.rating < 2.5 ? 'bg-red-100 text-red-800' : ''}
+                                      `}>
+                                        {review.rating} Stars
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="text-right text-sm text-gray-500 font-lato">
+                                  <div className="flex items-center gap-1">
+                                    <Calendar className="h-4 w-4" />
+                                    {new Date(review.created_at).toLocaleDateString()}
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {review.comment && (
+                                <div className="mb-3">
+                                  <p className="text-gray-700 font-lato leading-relaxed bg-gray-50 p-3 rounded-lg">
+                                    "{review.comment}"
+                                  </p>
+                                </div>
+                              )}
+                              
+                              {review.job_title && (
+                                <div className="flex items-center gap-2 text-sm text-gray-600 font-lato">
+                                  <Briefcase className="h-4 w-4" />
+                                  <span>Job: {review.job_title}</span>
+                                  {review.job_location && (
+                                    <>
+                                      <span>•</span>
+                                      <MapPin className="h-4 w-4" />
+                                      <span>{review.job_location}</span>
+                                    </>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              )}
+
               {/* Account Settings Tab */}
               <TabsContent value="account" className="space-y-6">
                 <Card>
