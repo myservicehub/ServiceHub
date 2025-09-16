@@ -646,7 +646,67 @@ const MyJobsPage = () => {
                 </CardContent>
               </Card>
             ) : (
-              <Tabs defaultValue="all" className="space-y-6">
+              <>
+                {/* Jobs Summary Statistics */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600 font-lato">Total Jobs</p>
+                          <p className="text-2xl font-bold font-montserrat" style={{color: '#121E3C'}}>
+                            {jobs.length}
+                          </p>
+                        </div>
+                        <Briefcase className="h-8 w-8 text-blue-600" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600 font-lato">Completed</p>
+                          <p className="text-2xl font-bold font-montserrat text-green-600">
+                            {jobs.filter(job => job.status === 'completed').length}
+                          </p>
+                        </div>
+                        <CheckCircle className="h-8 w-8 text-green-600" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600 font-lato">Active</p>
+                          <p className="text-2xl font-bold font-montserrat text-blue-600">
+                            {jobs.filter(job => job.status === 'active').length}
+                          </p>
+                        </div>
+                        <TrendingUp className="h-8 w-8 text-blue-600" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600 font-lato">In Progress</p>
+                          <p className="text-2xl font-bold font-montserrat text-orange-600">
+                            {jobs.filter(job => job.status === 'in_progress').length}
+                          </p>
+                        </div>
+                        <Clock className="h-8 w-8 text-orange-600" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <Tabs defaultValue="all" className="space-y-6">
                 <TabsList className="grid w-full grid-cols-5">
                   <TabsTrigger value="all">All Jobs</TabsTrigger>
                   <TabsTrigger value="active">Active</TabsTrigger>
