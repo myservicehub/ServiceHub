@@ -103,10 +103,12 @@ const MyInterestsPage = () => {
   };
 
   const handlePayForAccess = async (interestId, accessFeeCoins) => {
-    if (walletBalance < accessFeeCoins) {
+    const feeAmount = accessFeeCoins || 0;
+    
+    if (walletBalance < feeAmount) {
       toast({
         title: "Insufficient Balance",
-        description: `You need ${accessFeeCoins} coins to access contact details. Please fund your wallet.`,
+        description: `You need ${feeAmount} coins to access contact details. Please fund your wallet.`,
         variant: "destructive",
       });
       navigate('/wallet');
