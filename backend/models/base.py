@@ -675,10 +675,10 @@ class ConditionalLogic(BaseModel):
     """Conditional logic for questions based on previous answers"""
     enabled: bool = Field(default=False)
     parent_question_id: Optional[str] = None
-    trigger_condition: Optional[str] = None  # 'equals', 'not_equals', 'contains', etc.
+    trigger_condition: Optional[str] = None  # 'equals', 'not_equals', 'contains', 'greater_than', 'less_than'
     trigger_value: Optional[str] = None  # The value that triggers this logic
-    yes_follow_up_questions: Optional[List[str]] = []  # Question IDs to show if condition is Yes/True
-    no_follow_up_questions: Optional[List[str]] = []   # Question IDs to show if condition is No/False
+    trigger_values: Optional[List[str]] = []  # Multiple trigger values for multiple choice
+    follow_up_questions: Optional[List[str]] = []  # Question IDs to show when condition is met
 
 class TradeCategoryQuestionCreate(BaseModel):
     trade_category: str = Field(..., min_length=1, max_length=100)
