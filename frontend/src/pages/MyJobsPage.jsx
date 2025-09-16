@@ -766,6 +766,75 @@ const MyJobsPage = () => {
                                   </Button>
                                 )}
 
+                                {/* Completed Job Details - Only for completed jobs */}
+                                {job.status === 'completed' && (
+                                  <div className="bg-green-50 p-4 rounded-lg space-y-3">
+                                    <div className="flex items-center text-green-700">
+                                      <CheckCircle size={16} className="mr-2" />
+                                      <span className="font-semibold font-montserrat">Job Completed Successfully</span>
+                                    </div>
+                                    
+                                    {job.completed_at && (
+                                      <div className="flex items-center text-sm text-gray-600 font-lato">
+                                        <Calendar size={14} className="mr-2" />
+                                        <span>Completed on: {new Date(job.completed_at).toLocaleDateString()}</span>
+                                      </div>
+                                    )}
+                                    
+                                    {job.hired_tradesperson && (
+                                      <div className="flex items-center text-sm text-gray-600 font-lato">
+                                        <User size={14} className="mr-2" />
+                                        <span>Hired: {job.hired_tradesperson.name || 'Tradesperson'}</span>
+                                        {job.hired_tradesperson.rating && (
+                                          <div className="flex items-center ml-2">
+                                            <Star size={12} className="text-yellow-400 fill-yellow-400" />
+                                            <span className="ml-1">{job.hired_tradesperson.rating}</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                    
+                                    {job.final_cost && (
+                                      <div className="flex items-center text-sm text-gray-600 font-lato">
+                                        <DollarSign size={14} className="mr-2" />
+                                        <span>Final Cost: ₦{job.final_cost.toLocaleString()}</span>
+                                      </div>
+                                    )}
+                                    
+                                    <div className="flex items-center justify-between pt-2 border-t border-green-200">
+                                      <div className="flex items-center text-sm">
+                                        {job.review_given ? (
+                                          <div className="flex items-center text-green-600">
+                                            <CheckCircle size={14} className="mr-1" />
+                                            <span>Review given</span>
+                                          </div>
+                                        ) : canLeaveReview(job) ? (
+                                          <div className="flex items-center text-amber-600">
+                                            <Clock size={14} className="mr-1" />
+                                            <span>Review pending</span>
+                                          </div>
+                                        ) : (
+                                          <div className="flex items-center text-gray-500">
+                                            <MessageSquare size={14} className="mr-1" />
+                                            <span>Review not available</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                      
+                                      {job.hired_tradesperson && (
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          className="text-xs font-lato"
+                                          onClick={() => {/* Handle view tradesperson profile */}}
+                                        >
+                                          View Profile
+                                        </Button>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+
                                 {/* Leave Review Button - Only for completed jobs */}
                                 {job.status === 'completed' && canLeaveReview(job) && (
                                   <div className="flex flex-col space-y-2">
