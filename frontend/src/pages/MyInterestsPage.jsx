@@ -629,7 +629,7 @@ const MyInterestsPage = () => {
                                     ) : (
                                       <>
                                         <CreditCard className="w-4 h-4 mr-2" />
-                                        Pay {interest.access_fee_coins} coins
+                                        Pay {interest.access_fee_coins || 0} coins
                                       </>
                                     )}
                                   </Button>
