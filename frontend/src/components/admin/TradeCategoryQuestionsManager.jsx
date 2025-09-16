@@ -376,7 +376,7 @@ const TradeCategoryQuestionsManager = () => {
       ...prev,
       conditional_logic: {
         ...prev.conditional_logic,
-        rules: prev.conditional_logic.rules.filter(rule => rule.id !== ruleId)
+        rules: (prev.conditional_logic.rules || []).filter(rule => rule.id !== ruleId)
       }
     }));
   };
