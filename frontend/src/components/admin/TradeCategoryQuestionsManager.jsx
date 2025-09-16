@@ -351,6 +351,48 @@ const TradeCategoryQuestionsManager = () => {
     setEditingQuestion(null);
   };
 
+  // Helper functions for managing multiple conditional logic rules
+  const addConditionalLogicRule = () => {
+    const newRule = {
+      id: Date.now().toString(), // Simple ID generation
+      parent_question_id: '',
+      trigger_condition: 'equals',
+      trigger_value: '',
+      trigger_values: [],
+      follow_up_questions: []
+    };
+    
+    setFormData(prev => ({
+      ...prev,
+      conditional_logic: {
+        ...prev.conditional_logic,
+        rules: [...prev.conditional_logic.rules, newRule]
+      }
+    }));
+  };
+
+  const removeConditionalLogicRule = (ruleId) => {
+    setFormData(prev => ({
+      ...prev,
+      conditional_logic: {
+        ...prev.conditional_logic,
+        rules: prev.conditional_logic.rules.filter(rule => rule.id !== ruleId)
+      }
+    }));
+  };
+
+  const updateConditionalLogicRule = (ruleId, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      conditional_logic: {
+        ...prev.conditional_logic,
+        rules: prev.conditional_logic.rules.map(rule =>
+          rule.id === ruleId ? { ...rule, [field]: value } : rule
+        )
+      }
+    }));
+  };
+
   const addOption = () => {
     setFormData(prev => ({
       ...prev,
