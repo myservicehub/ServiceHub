@@ -2351,62 +2351,58 @@ class Database:
             # Fallback to general available jobs
             return await self.get_available_jobs(skip=skip, limit=limit)
 
-    async def search_jobs_with_location(self, search_query: str = None, category: str = None, 
-                                       user_latitude: float = None, user_longitude: float = None, 
-                                       max_distance_km: int = None, skip: int = 0, limit: int = 50) -> List[dict]:
-        """Search jobs with optional location filtering"""
-        # Build search filter
-        search_filter = {"status": "active"}
-        
-        if search_query:
-            search_filter["$or"] = [
-                {"title": {"$regex": search_query, "$options": "i"}},
-                {"description": {"$regex": search_query, "$options": "i"}},
-                {"location": {"$regex": search_query, "$options": "i"}}
-            ]
-        
-        if category:
-            search_filter["category"] = category
-        
-        # If location-based filtering is requested
-        if (user_latitude is not None and user_longitude is not None and max_distance_km is not None):
-            search_filter.update({
+    async def get_jobs_near_location_with_skills(self, latitude: float, longitude: float, 
+                                               max_distance_km: float, skill_categories: List[str],
+                                               skip: int = 0, limit: int = 50) -> List[dict]:
+        """Get jobs near location that match tradesperson's skills"""
+        try:
+            # Build skills filter
+            skills_filter = {}
+            if skill_categories:
+                category_regex_patterns = [{"category": {"$regex": f"^{category}$", "$options": "i"}} for category in skill_categories]
+                skills_filter["$or"] = category_regex_patterns
+            
+            # Base filter for active jobs with location data
+            base_filter = {
+                "status": "active",
                 "latitude": {"$exists": True, "$ne": None},
                 "longitude": {"$exists": True, "$ne": None}
-            })
+            }
             
-            cursor = self.database.jobs.find(search_filter).skip(skip).limit(limit * 2)
+            # Combine skills and base filters
+            combined_filter = {"$and": [base_filter, skills_filter]} if skills_filter else base_filter
             
-            jobs_with_distance = []
+            # Get jobs matching skills filter first
+            cursor = self.database.jobs.find(combined_filter).skip(skip).limit(limit * 2)  # Get extra to account for distance filtering
+            jobs = await cursor.to_list(length=None)
             
-            async for job in cursor:
-                job["_id"] = str(job["_id"])
+            # Calculate distances and filter by location
+            jobs_within_distance = []
+            for job in jobs:
+                job_lat = job.get("latitude")
+                job_lng = job.get("longitude")
                 
-                # Calculate distance
-                distance = self.calculate_distance(
-                    user_latitude, user_longitude,
-                    job["latitude"], job["longitude"]
-                )
-                
-                # Only include jobs within max distance
-                if distance <= max_distance_km:
-                    job["distance_km"] = round(distance, 1)
-                    jobs_with_distance.append(job)
+                if job_lat is not None and job_lng is not None:
+                    distance = self._calculate_distance(latitude, longitude, job_lat, job_lng)
+                    if distance <= max_distance_km:
+                        job["distance_km"] = round(distance, 2)
+                        jobs_within_distance.append(job)
             
-            # Sort by distance
-            jobs_with_distance.sort(key=lambda x: x["distance_km"])
-            return jobs_with_distance[:limit]
-        
-        else:
-            # Regular search without location filtering
-            cursor = self.database.jobs.find(search_filter).sort("created_at", -1).skip(skip).limit(limit)
+            # Sort by distance (closest first) and limit results
+            jobs_within_distance.sort(key=lambda x: x.get("distance_km", float('inf')))
+            limited_jobs = jobs_within_distance[:limit]
             
-            jobs = []
-            async for job in cursor:
-                job["_id"] = str(job["_id"])
-                jobs.append(job)
+            # Process and enrich jobs data
+            processed_jobs = []
+            for job in limited_jobs:
+                processed_job = await self._process_job_data(job)
+                processed_jobs.append(processed_job)
             
-            return jobs
+            return processed_jobs
+            
+        except Exception as e:
+            print(f"Error getting jobs near location with skills: {str(e)}")
+            return []
 
     # ==========================================
     # REFERRAL SYSTEM METHODS
