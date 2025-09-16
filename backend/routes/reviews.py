@@ -104,7 +104,8 @@ async def get_featured_reviews(limit: int = Query(6, ge=1, le=20)):
     """Get featured reviews for homepage"""
     try:
         reviews = await database.get_featured_reviews(limit=limit)
-        return [AdvancedReview(**review) for review in reviews]
+        # Return raw dict to preserve job_location field
+        return reviews
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
