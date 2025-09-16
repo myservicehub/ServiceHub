@@ -1854,139 +1854,69 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
 
   return (
     <>
-      {/* MyBuilder-style Job Posting Form */}
-      <div className="min-h-screen bg-white">
-        {/* Header */}
-        <header className="border-b border-gray-200 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              {/* Logo */}
-              <div className="flex items-center">
-                <span className="text-2xl font-bold text-gray-900">ServiceHub</span>
-              </div>
-              
-              {/* Navigation */}
-              <div className="flex items-center space-x-6">
-                <button 
-                  onClick={onClose}
-                  className="text-gray-600 hover:text-gray-900 font-medium text-sm"
-                >
-                  Back to Home
-                </button>
-                <span className="text-gray-300">|</span>
-                <a href="/login" className="text-gray-600 hover:text-gray-900 font-medium text-sm">
-                  Log in
-                </a>
-                <a href="/register?role=tradesperson" className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 font-medium text-sm">
-                  Sign up as a tradesperson
-                </a>
-              </div>
+      <div className="max-w-2xl mx-auto p-6">
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle className="text-2xl font-bold font-montserrat" style={{color: '#121E3C'}}>
+                Post a Job
+              </CardTitle>
+              <button
+                onClick={onClose}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
             </div>
-          </div>
-        </header>
+          </CardHeader>
 
-        {/* Main Content */}
-        <main className="max-w-2xl mx-auto px-4 py-16">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">
-              What would you like to have done?
-            </h1>
-            <p className="text-lg text-gray-600 mb-8">
-              Tell us about your project and we'll help you find the right tradespeople
-            </p>
+          <CardContent>
+            {renderProgressBar()}
             
-            {/* Progress indicator for multi-step */}
-            {currentStep > 1 && (
-              <div className="flex justify-center mb-8">
-                <div className="flex items-center space-x-2">
-                  {Array.from({ length: totalSteps }, (_, i) => (
-                    <div
-                      key={i}
-                      className={`w-3 h-3 rounded-full ${
-                        i + 1 <= currentStep ? 'bg-purple-600' : 'bg-gray-300'
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Form Content */}
-          <div className="bg-white rounded-lg">
-            <form onSubmit={handleSubmit} className="space-y-8">
+            <form onSubmit={handleSubmit}>
               {renderStep()}
               
-              {/* Navigation */}
-              <div className="flex justify-between items-center pt-6">
-                {currentStep > 1 ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={prevStep}
-                    className="flex items-center px-6 py-3 text-gray-600 border-gray-300 hover:bg-gray-50"
-                  >
-                    <ArrowLeft size={18} className="mr-2" />
-                    Back
-                  </Button>
-                ) : <div></div>}
+              {/* Navigation Buttons */}
+              <div className="flex justify-between pt-8 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={prevStep}
+                  disabled={currentStep === 1}
+                  className="flex items-center font-lato"
+                >
+                  <ArrowLeft size={16} className="mr-2" />
+                  Previous
+                </Button>
 
                 {currentStep < totalSteps ? (
                   <Button
                     type="button"
                     onClick={nextStep}
                     disabled={submitting}
-                    className="flex items-center px-8 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-md text-lg"
+                    className="flex items-center text-white font-lato"
+                    style={{backgroundColor: '#2F8140'}}
                   >
                     Next
-                    <ArrowRight size={18} className="ml-2" />
+                    <ArrowRight size={16} className="ml-2" />
                   </Button>
                 ) : (
                   <Button
                     type="submit"
                     disabled={submitting}
-                    className="flex items-center px-8 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-md text-lg"
+                    className="flex items-center text-white font-lato"
+                    style={{backgroundColor: '#2F8140'}}
                   >
-                    {submitting ? 'Submitting...' : 'Post Job'}
-                    <CheckCircle size={18} className="ml-2" />
+                    {submitting ? 'Submitting...' : (isUserAuthenticated() ? 'Post Job' : 'Create Account & Post Job')}
+                    <CheckCircle size={16} className="ml-2" />
                   </Button>
                 )}
               </div>
             </form>
-          </div>
-
-          {/* Benefits Section - Only show on first step */}
-          {currentStep === 1 && (
-            <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <FileText className="w-8 h-8 text-purple-600" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Post for free</h3>
-                <p className="text-gray-600">It's completely free to post your job and receive quotes</p>
-              </div>
-              
-              <div className="text-center">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Users className="w-8 h-8 text-green-600" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">1,000+ tradespeople</h3>
-                <p className="text-gray-600">Connect with qualified professionals in your area</p>
-              </div>
-              
-              <div className="text-center">
-                <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <ThumbsUp className="w-8 h-8 text-yellow-600" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">50,000+ reviews</h3>
-                <p className="text-gray-600">Read reviews from real customers to find the right tradesperson</p>
-              </div>
-            </div>
-          )}
-        </main>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Modals */}
       <AccountCreationModal />
       <LoginModal />
     </>
