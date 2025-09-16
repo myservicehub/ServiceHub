@@ -784,6 +784,11 @@ const TradeCategoryQuestionsManager = () => {
                           {question.is_active ? 'Active' : 'Inactive'}
                         </Badge>
                         {question.is_required && <Badge variant="destructive">Required</Badge>}
+                        {question.conditional_logic?.enabled && (
+                          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                            🔀 Conditional
+                          </Badge>
+                        )}
                       </div>
                       
                       <h4 className="font-medium text-lg mb-2">{question.question_text}</h4>
