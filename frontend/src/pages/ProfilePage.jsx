@@ -44,6 +44,19 @@ const ProfilePage = () => {
   const [portfolioLoading, setPortfolioLoading] = useState(false);
   const [showUploadForm, setShowUploadForm] = useState(false);
   
+  // Reviews states
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewStats, setReviewStats] = useState({
+    totalReviews: 0,
+    averageRating: 0,
+    fiveStars: 0,
+    fourStars: 0,
+    threeStars: 0,
+    twoStars: 0,
+    oneStar: 0
+  });
+  
   const { user, loading: authLoading, isAuthenticated, isHomeowner, isTradesperson, updateUser } = useAuth();
   const { toast } = useToast();
 
