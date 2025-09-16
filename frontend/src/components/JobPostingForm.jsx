@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Button } from './ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Badge } from './ui/badge';
 import { 
   ArrowLeft, 
   ArrowRight, 
@@ -17,10 +18,7 @@ import {
   Coins,
   Users,
   Bell,
-  Star,
-  FileText,
-  Award,
-  ThumbsUp
+  Star
 } from 'lucide-react';
 import { jobsAPI, authAPI } from '../api/services';
 import { adminAPI, tradeCategoryQuestionsAPI } from '../api/wallet';
