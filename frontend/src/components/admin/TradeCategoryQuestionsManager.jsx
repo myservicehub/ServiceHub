@@ -386,7 +386,7 @@ const TradeCategoryQuestionsManager = () => {
       ...prev,
       conditional_logic: {
         ...prev.conditional_logic,
-        rules: prev.conditional_logic.rules.map(rule =>
+        rules: (prev.conditional_logic.rules || []).map(rule =>
           rule.id === ruleId ? { ...rule, [field]: value } : rule
         )
       }
