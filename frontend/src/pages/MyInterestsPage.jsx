@@ -229,6 +229,9 @@ const MyInterestsPage = () => {
   };
 
   const formatCurrency = (amount) => {
+    if (amount === null || amount === undefined || isNaN(amount)) {
+      return '₦0'; // Default to ₦0 for null/undefined values
+    }
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
       currency: 'NGN',
