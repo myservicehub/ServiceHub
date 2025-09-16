@@ -616,7 +616,7 @@ const MyInterestsPage = () => {
                                 
                                 {interest.status === 'contact_shared' && (
                                   <Button
-                                    onClick={() => handlePayForAccess(interest.id, interest.access_fee_coins)}
+                                    onClick={() => handlePayForAccess(interest.id, interest.access_fee_coins || 0)}
                                     disabled={paymentLoading[interest.id]}
                                     className="text-white"
                                     style={{backgroundColor: '#2F8140'}}
