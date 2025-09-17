@@ -331,7 +331,7 @@ const InterestedTradespeopleePage = () => {
 
     // Hide "Paid Access" badge from homeowners while preserving backend functionality
     if (status === 'paid_access') {
-      return null;
+      return <></>;
     }
 
     const config = statusConfig[status] || statusConfig['interested'];
