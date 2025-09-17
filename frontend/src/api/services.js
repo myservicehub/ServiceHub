@@ -126,6 +126,11 @@ export const interestsAPI = {
     const response = await apiClient.get(`/interests/contact-details/${jobId}`);
     return response.data;
   },
+
+  getCompletedJobs: async () => {
+    const response = await apiClient.get('/interests/completed-jobs');
+    return response.data;
+  },
 };
 
 // Jobs API
