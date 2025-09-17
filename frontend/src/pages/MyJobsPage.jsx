@@ -886,7 +886,9 @@ const MyJobsPage = () => {
                       </CardContent>
                     </Card>
                   ) : (
-                    getFilteredJobs().map((job) => (
+                    getFilteredJobs()
+                      .filter(job => job && job.id) // Additional safety check
+                      .map((job) => (
                         <Card key={job.id} className="hover:shadow-lg transition-shadow duration-300">
                           <CardHeader>
                             <div className="flex items-start justify-between">
