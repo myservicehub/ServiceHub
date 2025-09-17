@@ -73,6 +73,7 @@ test_plan:
     - "Infinite Loop Fix Testing - InterestedTradespeopleePage Maximum Update Depth Exceeded Error Resolution"
     - "Edit Button Functionality Fix Testing - MyJobsPage Authentication and Modal Opening Resolution"
     - "Town Field Change from Dropdown to Text Input - JobEditModal"
+    - "Access Fee Fields Removal from JobEditModal - Homeowner View"
 agent_communication:
   - agent: "user"
     message: "🔧 EDIT BUTTON FUNCTIONALITY TESTING REQUEST: Test the Edit button functionality on the My Jobs page to identify why it's not working. ISSUE REPORTED: The Edit button in the My Jobs page is not working. SPECIFIC TESTING REQUIREMENTS: 1) Authentication and Navigation (Login with homeowner credentials francisdaniel4jb@gmail.com / Servicehub..1, Navigate to My Jobs page, Verify page loads correctly with job listings), 2) Edit Button Testing (Locate Edit button on active job cards, Click Edit button, Verify JobEditModal opens, Check for JavaScript errors), 3) Modal Functionality Testing (Test modal content, form fields, Cancel/Close functionality), 4) Error Detection (Monitor JavaScript console, Check handleEditJob function, Verify showEditModal state, Look for component rendering issues), 5) Job Status Verification (Confirm Edit buttons only appear on active jobs, Verify job data structure). Expected: Edit button should open JobEditModal with job editing form populated with current data."
