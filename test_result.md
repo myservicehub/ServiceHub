@@ -70,6 +70,7 @@ test_plan:
     - "Enhanced Profile Page Dropdown Navigation Testing"
     - "Paid Access UI Element Hiding Implementation Testing"
     - "Job Details Fix Testing - Blank Category and Location Fields on InterestedTradespeopleePage"
+    - "Infinite Loop Fix Testing - InterestedTradespeopleePage Maximum Update Depth Exceeded Error Resolution"
   test_all: false
   test_priority: "high_first"
 ##
