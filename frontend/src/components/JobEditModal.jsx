@@ -169,7 +169,7 @@ const JobEditModal = ({
         <div className="border-b p-6 flex justify-between items-center sticky top-0 bg-white">
           <div>
             <h2 className="text-xl font-semibold font-montserrat">Edit Job</h2>
-            <p className="text-gray-600 text-sm">Update your job details</p>
+            <p className="text-gray-600 text-sm">Only budget can be modified</p>
           </div>
           
           <Button
