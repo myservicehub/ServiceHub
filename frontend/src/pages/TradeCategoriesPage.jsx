@@ -392,14 +392,15 @@ const TradeCategoriesPage = () => {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button 
-                  className="bg-white text-green-600 hover:bg-gray-100 px-8 py-3 text-lg font-semibold font-lato"
+                  variant="outline"
+                  className="!bg-white !text-green-600 !border-white hover:!bg-gray-100 hover:!text-green-600 px-8 py-3 text-lg font-semibold font-lato"
                   onClick={() => window.location.href = '/post-job'}
                 >
                   Post a Job
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="border-white text-white hover:bg-white hover:text-green-600 px-8 py-3 text-lg font-semibold font-lato"
+                  className="!border-white !text-white !bg-transparent hover:!bg-white hover:!text-green-600 px-8 py-3 text-lg font-semibold font-lato"
                   onClick={() => window.location.href = '/browse-jobs'}
                 >
                   Browse Jobs
