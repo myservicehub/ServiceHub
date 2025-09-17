@@ -18,6 +18,8 @@ class NotificationType(str, Enum):
     NEW_APPLICATION = "new_application"  # For job applications
     REVIEW_INVITATION = "review_invitation"  # Invite homeowners to leave reviews
     REVIEW_REMINDER = "review_reminder"  # Remind homeowners to leave reviews
+    JOB_COMPLETED = "job_completed"  # Notify tradespeople when job is completed
+    JOB_CANCELLED = "job_cancelled"  # Notify tradespeople when job is cancelled
 
 class NotificationChannel(str, Enum):
     EMAIL = "email"
