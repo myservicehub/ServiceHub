@@ -1253,6 +1253,7 @@ class Database:
                     "payment_made_at": 1,
                     "job_title": "$job.title",
                     "job_location": "$job.location",
+                    "job_status": "$job.status",
                     "homeowner_name": "$job.homeowner.name",
                     "contact_shared": {"$eq": ["$status", "contact_shared"]},
                     "payment_made": {"$eq": ["$status", "paid_access"]},
