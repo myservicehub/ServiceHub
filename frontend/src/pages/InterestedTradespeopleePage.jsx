@@ -441,9 +441,28 @@ const InterestedTradespeopleePage = () => {
                 )}
 
                 {tradesperson.status === 'contact_shared' && (
-                  <Badge className="bg-green-50 text-green-700 border-green-200">
-                    Contact details shared, waiting for feedback
-                  </Badge>
+                  <div className="space-y-2">
+                    <Badge className="bg-green-50 text-green-700 border-green-200">
+                      Contact details shared, waiting for feedback
+                    </Badge>
+                    <Button
+                      onClick={() => handleStartChat(tradesperson)}
+                      className="text-white font-lato bg-blue-600 hover:bg-blue-700 w-full"
+                    >
+                      <MessageCircle size={16} className="mr-2" />
+                      Start Chat
+                    </Button>
+                  </div>
+                )}
+
+                {tradesperson.status === 'interested' && (
+                  <Button
+                    onClick={() => handleStartChat(tradesperson)}
+                    className="text-white font-lato bg-green-600 hover:bg-green-700 w-full"
+                  >
+                    <MessageCircle size={16} className="mr-2" />
+                    Chat with Tradesperson
+                  </Button>
                 )}
               </div>
             </div>
