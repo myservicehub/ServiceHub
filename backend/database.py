@@ -550,12 +550,13 @@ class Database:
         query = filters or {}
         
         # Only return active jobs by default for public queries
-        # Don't apply default status filter if homeowner.email is in query (My Jobs)
-        if 'status' not in query and 'homeowner.email' not in query:
-            query['status'] = 'active'
-            
-        # Add expiration check only for public job listings, not for homeowner's own jobs
-        if 'homeowner.email' not in query:
+        # Don't apply default filters for homeowner's own jobs (My Jobs queries)
+        is_homeowner_query = 'homeowner.email' in query or 'homeowner_id' in query
+        
+        if not is_homeowner_query:
+            # For public job listings, only show active and non-expired jobs
+            if 'status' not in query:
+                query['status'] = 'active'
             query['expires_at'] = {'$gt': datetime.utcnow()}
             
         return await self.database.jobs.count_documents(query)
