@@ -329,6 +329,11 @@ const InterestedTradespeopleePage = () => {
       'cancelled': { color: 'bg-gray-100 text-gray-800', icon: AlertCircle, label: 'Cancelled' }
     };
 
+    // Hide "Paid Access" badge from homeowners while preserving backend functionality
+    if (status === 'paid_access') {
+      return null;
+    }
+
     const config = statusConfig[status] || statusConfig['interested'];
     const IconComponent = config.icon;
 
