@@ -68,6 +68,7 @@ test_plan:
     - "Enhanced Job Posting Form with Validation and Single Navigation Testing"
     - "Enhanced Multiple Conditional Logic Functionality Testing"
     - "Enhanced Profile Page Dropdown Navigation Testing"
+    - "Paid Access UI Element Hiding Implementation Testing"
   test_all: false
   test_priority: "high_first"
 ##
