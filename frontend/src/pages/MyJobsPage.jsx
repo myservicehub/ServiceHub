@@ -60,6 +60,41 @@ const MyJobsPage = () => {
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
+  // Helper function to get job status display text
+  const getJobStatusDisplayText = (statusValue) => {
+    switch (statusValue) {
+      case 'all':
+        return 'All Jobs';
+      case 'active':
+        return 'Active';
+      case 'in_progress':
+        return 'In Progress';
+      case 'completed':
+        return 'Completed';
+      case 'cancelled':
+        return 'Cancelled';
+      default:
+        return 'All Jobs';
+    }
+  };
+
+  // Get available job status options
+  const getJobStatusOptions = () => [
+    { value: 'all', label: 'All Jobs', icon: Briefcase },
+    { value: 'active', label: 'Active', icon: Clock },
+    { value: 'in_progress', label: 'In Progress', icon: TrendingUp },
+    { value: 'completed', label: 'Completed', icon: CheckCircle },
+    { value: 'cancelled', label: 'Cancelled', icon: X }
+  ];
+
+  // Filter jobs based on selected status
+  const getFilteredJobs = () => {
+    if (activeJobStatus === 'all') {
+      return jobs;
+    }
+    return jobs.filter(job => job.status === activeJobStatus);
+  };
+
   useEffect(() => {
     if (isAuthenticated && user?.role === 'homeowner') {
       loadMyJobs();
