@@ -304,6 +304,7 @@ const InterestedTradespeopleePage = () => {
     const statusConfig = {
       'interested': { color: 'bg-blue-100 text-blue-800', icon: Heart, label: 'Interested' },
       'contact_shared': { color: 'bg-green-100 text-green-800', icon: UserCheck, label: 'Contact Shared' },
+      'paid_access': { color: 'bg-purple-100 text-purple-800', icon: CheckCircle, label: 'Paid Access' },
       'cancelled': { color: 'bg-gray-100 text-gray-800', icon: AlertCircle, label: 'Cancelled' }
     };
 
