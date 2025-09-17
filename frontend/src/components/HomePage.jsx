@@ -15,25 +15,10 @@ const HomePage = () => {
       <Header />
       <HeroSection />
       <StatsSection />
-      <div style={{backgroundColor: 'red', padding: '20px', margin: '20px'}}>
-        <h2>DEBUG: Before HowItWorks</h2>
-      </div>
       <HowItWorks />
-      <div style={{backgroundColor: 'blue', padding: '20px', margin: '20px', color: 'white'}}>
-        <h2>DEBUG: Before PopularTrades</h2>
-      </div>
       <PopularTrades />
-      <div style={{backgroundColor: 'green', padding: '20px', margin: '20px', color: 'white'}}>
-        <h2>DEBUG: Before ReviewsSection</h2>
-      </div>
       <ReviewsSection />
-      <div style={{backgroundColor: 'orange', padding: '20px', margin: '20px'}}>
-        <h2>DEBUG: Before TradespeopleCTA</h2>
-      </div>
       <TradespeopleCTA />
-      <div style={{backgroundColor: 'purple', padding: '20px', margin: '20px', color: 'white'}}>
-        <h2>DEBUG: After TradespeopleCTA, Before AppSection</h2>
-      </div>
       <AppSection />
       <Footer />
     </div>
