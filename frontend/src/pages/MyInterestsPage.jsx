@@ -617,7 +617,7 @@ const MyInterestsPage = () => {
                             <h3 className="text-lg font-semibold font-montserrat">
                               {interest.job_title}
                             </h3>
-                            {getStatusBadge(interest.status)}
+                            {getStatusBadge(interest)}
                           </div>
                           
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
