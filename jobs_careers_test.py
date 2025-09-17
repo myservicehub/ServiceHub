@@ -41,7 +41,7 @@ import uuid
 from collections import Counter
 
 # Get backend URL from environment
-BACKEND_URL = "https://tradepro-connect-1.preview.emergentagent.com/api"
+BACKEND_URL = "https://homefix-beta.preview.emergentagent.com/api"
 
 class JobsCareersAPITester:
     def __init__(self):

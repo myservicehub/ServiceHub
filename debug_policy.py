@@ -6,7 +6,7 @@ Debug Policy Issue
 import requests
 import json
 
-BACKEND_URL = "https://tradepro-connect-1.preview.emergentagent.com/api"
+BACKEND_URL = "https://homefix-beta.preview.emergentagent.com/api"
 
 def test_policy_endpoints():
     print("=== Debugging Policy Endpoints ===")
