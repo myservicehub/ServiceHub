@@ -405,3 +405,21 @@ async def _notify_payment_confirmation(tradesperson: dict, job: dict, interest_i
         
     except Exception as e:
         logger.error(f"❌ Failed to send payment confirmation notification for {interest_id}: {str(e)}")
+
+@router.get("/completed-jobs", response_model=List[dict])
+async def get_completed_jobs(
+    current_user: User = Depends(get_current_tradesperson)
+):
+    """Get all completed jobs for the current tradesperson"""
+    try:
+        # Get all interests where the job is completed and tradesperson has access
+        completed_jobs = await database.get_completed_jobs_for_tradesperson(current_user.id)
+        
+        return completed_jobs
+        
+    except Exception as e:
+        logger.error(f"Failed to get completed jobs for user {current_user.id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve completed jobs"
+        )
