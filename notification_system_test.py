@@ -74,12 +74,15 @@ import uuid
 from collections import Counter
 
 # Get backend URL from environment
-with open('/app/frontend/.env', 'r') as f:
-    for line in f:
-        if line.startswith('REACT_APP_BACKEND_URL='):
-            BACKEND_URL = line.split('=')[1].strip() + '/api'
-            break
-else:
+try:
+    with open('/app/frontend/.env', 'r') as f:
+        for line in f:
+            if line.startswith('REACT_APP_BACKEND_URL='):
+                BACKEND_URL = line.split('=')[1].strip() + '/api'
+                break
+        else:
+            BACKEND_URL = "http://localhost:8001/api"
+except FileNotFoundError:
     BACKEND_URL = "http://localhost:8001/api"
 
 class NotificationSystemTester:
