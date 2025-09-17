@@ -290,6 +290,20 @@ const MyInterestsPage = () => {
     return filterInterests(interests, tab).length;
   };
 
+  // Helper function to check if chat should be disabled based on job status
+  const isChatDisabled = (interest) => {
+    if (!interest.job_status) return false; // If job status is not available, don't disable
+    return interest.job_status === 'cancelled' || interest.job_status === 'completed';
+  };
+
+  // Get message for why chat is disabled
+  const getChatDisabledMessage = (interest) => {
+    if (!interest.job_status) return '';
+    if (interest.job_status === 'cancelled') return 'Chat disabled - Job has been cancelled';
+    if (interest.job_status === 'completed') return 'Chat disabled - Job has been completed';
+    return '';
+  };
+
   const handleStartChat = (interest) => {
     setSelectedInterestForChat({
       jobId: interest.job_id,
