@@ -103,7 +103,6 @@ const InterestedTradespeopleePage = () => {
     }
 
     loadInterestedTradespeople();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobId]);
 
   const loadInterestedTradespeople = async () => {
