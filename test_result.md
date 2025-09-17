@@ -136,6 +136,21 @@ frontend:
         agent: "main"
         comment: "BUTTON STYLING FIX APPLIED SUCCESSFULLY: Applied comprehensive button styling fix to resolve white text on white background issue in TradespeopleCTA component. CHANGES MADE: 1) Changed button variant from 'default' to 'outline' to remove conflicting default background styles, 2) Added !important prefixes (!bg-white !text-[#121E3C] !border-white) to ensure styles override any conflicting CSS custom properties, 3) Enhanced hover states (hover:!bg-gray-100 hover:!text-[#121E3C]) to maintain proper contrast, 4) Preserved all existing functionality while improving text readability. TECHNICAL DETAILS: Root cause was Button component's default variant applying CSS custom properties (--primary, --primary-foreground) that overrode explicit styling classes. Solution uses outline variant with important-prefixed styles to ensure white background with dark blue text (#121E3C) for optimal contrast. Button now displays clearly readable dark text on white background as intended."
 
+  - task: "Trade Categories Page CTA Buttons Readability Fix"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/TradeCategoriesPage.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "Fix these buttons as well in the trade categories page. User provided IMG_9133.png showing white buttons with unreadable text."
+      - working: true
+        agent: "main"
+        comment: "CTA BUTTONS STYLING FIX APPLIED SUCCESSFULLY: Applied same button readability fixes to TradeCategoriesPage CTA section buttons. CHANGES MADE: 1) 'Post a Job' Button: Changed to outline variant with !important prefixes (!bg-white !text-green-600 !border-white) to ensure white background with green text, added proper hover states (hover:!bg-gray-100 hover:!text-green-600), 2) 'Browse Jobs' Button: Applied outline variant with !important prefixes (!border-white !text-white !bg-transparent) for white border and text on transparent background, enhanced hover states (hover:!bg-white hover:!text-green-600) for proper contrast. TECHNICAL DETAILS: Same root cause as homepage - Button component default variant overriding explicit styles. Solution ensures proper contrast ratios: Post a Job button now has white background with green text, Browse Jobs button has transparent background with white text and white border, both maintain readability on gradient background. Both buttons now display clearly readable text resolving the white-on-white visibility issues identified in user screenshot."
+
 frontend:
   - task: "Job Status Synchronization Fix in MyInterestsPage"
     implemented: true
