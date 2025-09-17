@@ -566,23 +566,36 @@ const InterestedTradespeopleePage = () => {
                 )}
 
                 {tradesperson.status === 'interested' && (
-                  <Button
-                    onClick={() => {
-                      if (!job) {
-                        toast({
-                          title: "Loading...",
-                          description: "Please wait for job details to load before starting chat",
-                          variant: "default",
-                        });
-                        return;
-                      }
-                      handleStartChat(tradesperson);
-                    }}
-                    className="text-white font-lato bg-green-600 hover:bg-green-700 w-full"
-                  >
-                    <MessageCircle size={16} className="mr-2" />
-                    Chat with Tradesperson
-                  </Button>
+                  isChatDisabled() ? (
+                    <div className="space-y-1">
+                      <Button
+                        disabled
+                        className="text-gray-400 bg-gray-100 cursor-not-allowed w-full"
+                      >
+                        <MessageCircle size={16} className="mr-2" />
+                        Chat with Tradesperson
+                      </Button>
+                      <p className="text-xs text-gray-500 text-center">{getChatDisabledMessage()}</p>
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={() => {
+                        if (!job) {
+                          toast({
+                            title: "Loading...",
+                            description: "Please wait for job details to load before starting chat",
+                            variant: "default",
+                          });
+                          return;
+                        }
+                        handleStartChat(tradesperson);
+                      }}
+                      className="text-white font-lato bg-green-600 hover:bg-green-700 w-full"
+                    >
+                      <MessageCircle size={16} className="mr-2" />
+                      Chat with Tradesperson
+                    </Button>
+                  )
                 )}
               </div>
             </div>
