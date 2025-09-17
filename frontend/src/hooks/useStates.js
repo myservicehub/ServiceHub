@@ -44,7 +44,7 @@ export const useStates = () => {
     fetchStates();
   }, []);
 
-  const loadLGAs = async (state) => {
+  const loadLGAs = useCallback(async (state) => {
     try {
       setLgas([]); // Clear previous LGAs
       if (!state) return;
@@ -55,9 +55,9 @@ export const useStates = () => {
       console.error('Failed to fetch LGAs:', err);
       setLgas([]); // Set empty array on error
     }
-  };
+  }, []);
 
-  const loadTowns = async (state, lga) => {
+  const loadTowns = useCallback(async (state, lga) => {
     try {
       setTowns([]); // Clear previous towns
       if (!state || !lga) return;
@@ -77,7 +77,7 @@ export const useStates = () => {
       console.error('Failed to fetch towns:', err);
       setTowns([]); // Set empty array on error
     }
-  };
+  }, []);
 
   return { 
     states: states || [], 
