@@ -1,49 +1,49 @@
 #!/usr/bin/env python3
 """
-COMPREHENSIVE REVIEW SUBMISSION FIX TESTING
+JOB CANCELLATION FUNCTIONALITY TESTING
 
 **TESTING REQUIREMENTS FROM REVIEW REQUEST:**
 
-**ISSUES FIXED:**
-1. **Database validation bug**: Fixed `can_user_review` method to check hiring status records
-2. **Tradesperson identification**: Added endpoint to get hired tradespeople for jobs  
-3. **Review workflow**: Enhanced to automatically determine which tradesperson to review
+**ISSUE REPORTED:** 
+User cancelled a job but it's not appearing in the "Cancelled" tab of their My Jobs page. 
+The page shows "No cancelled found" even after cancelling a job.
 
 **CRITICAL TESTING NEEDED:**
 
-**1. Review Validation Fix:**
-- Test the updated `can_user_review` database method
-- Create a hiring status record with hired=true for a job/tradesperson pair
-- Test that homeowner can now review that tradesperson for that job
-- Verify completed job status requirement still works
+**1. Job Cancellation API Testing:**
+- Test the PUT /api/jobs/{job_id}/close endpoint
+- Verify that when a job is closed, its status is correctly updated to "cancelled" in the database
+- Test with homeowner credentials (francisdaniel4jb@gmail.com / Servicehub..1)
+- Verify the job close request includes proper reason and feedback
 
-**2. Hired Tradespeople Endpoint:**
-- Test GET /api/messages/hired-tradespeople/{job_id}
-- Create hiring status records for a job with multiple tradespeople
-- Verify endpoint returns correct tradesperson details
-- Test authentication and job ownership validation
+**2. Database Status Update Verification:**
+- Check that JobStatus.CANCELLED maps to "cancelled" string value
+- Verify the database update_job function correctly sets status to "cancelled"
+- Test that jobs collection in MongoDB gets the correct status value
 
-**3. End-to-End Review Workflow:**
-- Create a job and mark it completed
-- Create hiring status indicating homeowner hired a tradesperson
-- Test that review submission now works without "cannot review" error
-- Verify proper tradesperson identification and review creation
+**3. My Jobs API Testing:**
+- Test the GET /api/jobs/my-jobs endpoint after job cancellation
+- Verify that cancelled jobs are included in the response
+- Check that the job status field is correctly set to "cancelled" in the API response
+- Test filtering/querying of jobs by status
 
-**4. Database Integration:**
-- Test hiring_status collection queries work correctly
-- Verify hiring status records are properly created and queried
-- Test both single and multiple hired tradespeople scenarios
+**4. Job Status Flow Testing:**
+- Create/find an active job for the test homeowner
+- Cancel the job using the close job API
+- Immediately query my-jobs to verify the cancelled job appears
+- Check that the job has proper cancelled status fields (closed_at, closure_reason, etc.)
 
-**5. Backward Compatibility:**
-- Test that old interest-based reviews still work
-- Verify new hiring status system doesn't break existing functionality
-- Test edge cases where no hiring status exists
+**5. Data Consistency Verification:**
+- Verify job closure timestamps are set correctly
+- Check that closure_reason and closure_feedback are saved
+- Test that job status transitions work correctly (active → cancelled)
 
 **EXPECTED RESULTS:**
-- ✅ Review submission should work for completed jobs with hiring status
-- ✅ Proper tradesperson identification from hiring records
-- ✅ No more "You cannot review this user for this job" errors
-- ✅ Database validation correctly checks hiring relationships
+- ✅ Job close API should successfully update job status to "cancelled"
+- ✅ Database should contain the job with status="cancelled"
+- ✅ My jobs API should return cancelled jobs in the response
+- ✅ Job should have proper closure metadata (reason, feedback, timestamp)
+- ✅ No data synchronization issues between close and retrieve operations
 """
 
 import requests
