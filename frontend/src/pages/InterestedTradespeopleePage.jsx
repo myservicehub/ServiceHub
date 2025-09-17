@@ -524,44 +524,44 @@ const InterestedTradespeopleePage = () => {
                     <Badge className="bg-purple-50 text-purple-700 border-purple-200">
                       Access granted - Tradesperson can contact you
                     </Badge>
-                    <Button
-                      onClick={() => {
-                        console.log('🔥 HOMEOWNER START CHAT BUTTON CLICKED!');
-                        console.log('Button click event for tradesperson:', tradesperson);
-                        console.log('Job data for chat:', job);
-                        
-                        // Safety check for job object
-                        if (!job) {
-                          console.error('Job object is null:', job);
-                          toast({
-                            title: "Loading...",
-                            description: "Please wait for job details to load before starting chat",
-                            variant: "default",
-                          });
-                          return;
-                        }
-                        
-                        const chatData = {
-                          type: 'start_chat',
-                          participants: [
-                            { id: user.id, name: user.name, role: 'homeowner' },
-                            { id: tradesperson.tradesperson_id, name: tradesperson.name, role: 'tradesperson' }
-                          ],
-                          jobId: job.id || jobId, // Use jobId from URL as fallback
-                          jobTitle: job.title || 'Job Chat',
-                          chatContext: 'paid_access'
-                        };
-                        
-                        console.log('Chat data being passed:', chatData);
-                        
-                        // Start chat
-                        handleStartChat(tradesperson);
-                      }}
-                      className="text-white font-lato bg-blue-600 hover:bg-blue-700 w-full"
-                    >
-                      <MessageCircle size={16} className="mr-2" />
-                      Start Chat
-                    </Button>
+                    {isChatDisabled() ? (
+                      <div className="space-y-1">
+                        <Button
+                          disabled
+                          className="text-gray-400 bg-gray-100 cursor-not-allowed w-full"
+                        >
+                          <MessageCircle size={16} className="mr-2" />
+                          Start Chat
+                        </Button>
+                        <p className="text-xs text-gray-500 text-center">{getChatDisabledMessage()}</p>
+                      </div>
+                    ) : (
+                      <Button
+                        onClick={() => {
+                          console.log('🔥 HOMEOWNER START CHAT BUTTON CLICKED!');
+                          console.log('Button click event for tradesperson:', tradesperson);
+                          console.log('Job data for chat:', job);
+                          
+                          // Safety check for job object
+                          if (!job) {
+                            console.error('Job object is null:', job);
+                            toast({
+                              title: "Loading...",
+                              description: "Please wait for job details to load before starting chat",
+                              variant: "default",
+                            });
+                            return;
+                          }
+                          
+                          // Start chat
+                          handleStartChat(tradesperson);
+                        }}
+                        className="text-white font-lato bg-blue-600 hover:bg-blue-700 w-full"
+                      >
+                        <MessageCircle size={16} className="mr-2" />
+                        Start Chat
+                      </Button>
+                    )}
                   </div>
                 )}
 
