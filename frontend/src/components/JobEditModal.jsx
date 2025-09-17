@@ -325,13 +325,13 @@ const JobEditModal = ({
           <div className="space-y-4">
             <h3 className="text-lg font-medium flex items-center gap-2">
               <DollarSign className="w-5 h-5" />
-              Budget & Access Fee
+              Budget (Editable)
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Minimum Budget (₦)
+                  Minimum Budget (₦) *
                 </label>
                 <Input
                   type="number"
@@ -339,12 +339,13 @@ const JobEditModal = ({
                   onChange={(e) => handleInputChange('budget_min', e.target.value)}
                   placeholder="e.g., 50000"
                   min="0"
+                  className="border-green-300 focus:border-green-500 focus:ring-green-500"
                 />
               </div>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Maximum Budget (₦)
+                  Maximum Budget (₦) *
                 </label>
                 <Input
                   type="number"
@@ -352,6 +353,7 @@ const JobEditModal = ({
                   onChange={(e) => handleInputChange('budget_max', e.target.value)}
                   placeholder="e.g., 100000"
                   min="0"
+                  className="border-green-300 focus:border-green-500 focus:ring-green-500"
                 />
               </div>
               
@@ -362,10 +364,9 @@ const JobEditModal = ({
                 <Input
                   type="number"
                   value={formData.access_fee_naira}
-                  onChange={(e) => handleInputChange('access_fee_naira', e.target.value)}
                   placeholder="e.g., 1000"
-                  min="100"
-                  max="10000"
+                  readOnly
+                  className="bg-gray-50 cursor-not-allowed"
                 />
               </div>
               
@@ -376,10 +377,9 @@ const JobEditModal = ({
                 <Input
                   type="number"
                   value={formData.access_fee_coins}
-                  onChange={(e) => handleInputChange('access_fee_coins', e.target.value)}
                   placeholder="e.g., 10"
-                  min="1"
-                  max="100"
+                  readOnly
+                  className="bg-gray-50 cursor-not-allowed"
                 />
               </div>
             </div>
