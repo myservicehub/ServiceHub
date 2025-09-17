@@ -411,6 +411,8 @@ const HelpFAQsPage = () => {
           </div>
         </div>
       </div>
+      
+      <Footer />
     </div>
   );
 };
