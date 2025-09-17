@@ -468,7 +468,17 @@ const InterestedTradespeopleePage = () => {
                       Contact details shared, waiting for feedback
                     </Badge>
                     <Button
-                      onClick={() => handleStartChat(tradesperson)}
+                      onClick={() => {
+                        if (!job) {
+                          toast({
+                            title: "Loading...",
+                            description: "Please wait for job details to load before starting chat",
+                            variant: "default",
+                          });
+                          return;
+                        }
+                        handleStartChat(tradesperson);
+                      }}
                       className="text-white font-lato bg-blue-600 hover:bg-blue-700 w-full"
                     >
                       <MessageCircle size={16} className="mr-2" />
@@ -525,7 +535,17 @@ const InterestedTradespeopleePage = () => {
 
                 {tradesperson.status === 'interested' && (
                   <Button
-                    onClick={() => handleStartChat(tradesperson)}
+                    onClick={() => {
+                      if (!job) {
+                        toast({
+                          title: "Loading...",
+                          description: "Please wait for job details to load before starting chat",
+                          variant: "default",
+                        });
+                        return;
+                      }
+                      handleStartChat(tradesperson);
+                    }}
                     className="text-white font-lato bg-green-600 hover:bg-green-700 w-full"
                   >
                     <MessageCircle size={16} className="mr-2" />
