@@ -119,7 +119,7 @@ class Job(BaseModel):
     
     # Legacy fields (keep for compatibility)
     location: str  # Auto-populated from state
-    postcode: str  # Auto-populated from zip_code
+    postcode: Optional[str] = None  # Auto-populated from zip_code, made optional
     
     budget_min: Optional[int] = None
     budget_max: Optional[int] = None
