@@ -570,7 +570,7 @@ const InterestedTradespeopleePage = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center">
@@ -605,20 +605,6 @@ const InterestedTradespeopleePage = () => {
                   <p className="text-sm font-medium text-gray-600">Contact Shared</p>
                   <p className="text-2xl font-bold">
                     {interestedTradespeople.filter(tp => tp.status === 'contact_shared').length}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <CheckCircle className="w-8 h-8 text-purple-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Paid Access</p>
-                  <p className="text-2xl font-bold">
-                    {interestedTradespeople.filter(tp => tp.status === 'paid_access').length}
                   </p>
                 </div>
               </div>
