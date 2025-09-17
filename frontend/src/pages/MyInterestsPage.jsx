@@ -661,14 +661,27 @@ const MyInterestsPage = () => {
                           )}
                           
                           {interest.status === 'paid_access' && (
-                            <Button
-                              onClick={() => handleStartChatAfterPayment(interest)}
-                              className="text-white"
-                              style={{backgroundColor: '#2F8140'}}
-                            >
-                              <MessageCircle className="w-4 h-4 mr-2" />
-                              Chat with Homeowner
-                            </Button>
+                            isChatDisabled(interest) ? (
+                              <div className="space-y-1">
+                                <Button
+                                  disabled
+                                  className="text-gray-400 bg-gray-100 cursor-not-allowed w-full"
+                                >
+                                  <MessageCircle className="w-4 h-4 mr-2" />
+                                  Chat with Homeowner
+                                </Button>
+                                <p className="text-xs text-gray-500 text-center">{getChatDisabledMessage(interest)}</p>
+                              </div>
+                            ) : (
+                              <Button
+                                onClick={() => handleStartChatAfterPayment(interest)}
+                                className="text-white"
+                                style={{backgroundColor: '#2F8140'}}
+                              >
+                                <MessageCircle className="w-4 h-4 mr-2" />
+                                Chat with Homeowner
+                              </Button>
+                            )
                           )}
                         </div>
                       </div>
