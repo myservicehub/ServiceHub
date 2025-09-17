@@ -979,6 +979,17 @@ const MyJobsPage = () => {
                                   View Interested ({job.interests_count || 0})
                                 </Button>
 
+                                {/* Start Chat Button - Show if there are interested tradespeople */}
+                                {job.interests_count > 0 && (
+                                  <Button
+                                    onClick={() => handleStartQuickChat(job)}
+                                    className="text-white font-lato bg-blue-600 hover:bg-blue-700"
+                                  >
+                                    <MessageCircle size={16} className="mr-2" />
+                                    Start Chat
+                                  </Button>
+                                )}
+
                                 {/* Edit Button - Only for active jobs */}
                                 {job.status === 'active' && (
                                   <Button
