@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import ChatModal from '../components/ChatModal';
 import JobEditModal from '../components/JobEditModal';
 import JobCloseModal from '../components/JobCloseModal';
 import ReviewForm from '../components/reviews/ReviewForm';
