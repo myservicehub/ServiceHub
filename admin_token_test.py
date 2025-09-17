@@ -11,7 +11,7 @@ import requests
 import json
 
 # Get backend URL from environment
-BACKEND_URL = "https://tradepro-connect-1.preview.emergentagent.com/api"
+BACKEND_URL = "https://tradesman-connect.preview.emergentagent.com/api"
 
 def test_admin_token_issue():
     """Test the admin token authentication issue"""

@@ -10,7 +10,7 @@ import base64
 import io
 from PIL import Image
 
-BACKEND_URL = "https://tradepro-connect-1.preview.emergentagent.com/api"
+BACKEND_URL = "https://tradesman-connect.preview.emergentagent.com/api"
 
 def make_request(method, endpoint, auth_token=None, **kwargs):
     """Make HTTP request with error handling"""

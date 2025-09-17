@@ -9,7 +9,7 @@ import requests
 import json
 import uuid
 
-BACKEND_URL = "https://tradepro-connect-1.preview.emergentagent.com/api"
+BACKEND_URL = "https://tradesman-connect.preview.emergentagent.com/api"
 
 def test_admin_deletion_protection():
     """Test that admin users cannot be deleted"""

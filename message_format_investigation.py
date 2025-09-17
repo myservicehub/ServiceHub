@@ -9,7 +9,7 @@ import json
 from datetime import datetime
 
 # Backend URL
-BACKEND_URL = "https://tradepro-connect-1.preview.emergentagent.com/api"
+BACKEND_URL = "https://tradesman-connect.preview.emergentagent.com/api"
 
 def investigate_existing_conversation():
     """Investigate the existing conversation to capture API response formats"""
