@@ -737,12 +737,65 @@ async def get_job(job_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 async def notify_job_completion(job_id: str, job: dict, homeowner: User):
-    """Background task to notify about job completion"""
+    """Background task to notify interested tradespeople about job completion"""
     try:
         logger.info(f"Job {job_id} marked as completed by homeowner {homeowner.id}")
-        # Add any specific notification logic here if needed
+        
+        # Get all interested tradespeople for this job
+        interested_tradespeople = await database.get_interested_tradespeople_for_job(job_id)
+        
+        if not interested_tradespeople:
+            logger.info(f"No interested tradespeople found for completed job {job_id}")
+            return
+        
+        logger.info(f"Found {len(interested_tradespeople)} interested tradespeople for completed job {job_id}")
+        
+        # Iterate through each interested tradesperson and send notifications
+        for interest in interested_tradespeople:
+            try:
+                tradesperson_id = interest.get("tradesperson_id")
+                tradesperson_info = interest.get("tradesperson", {})
+                
+                if not tradesperson_id:
+                    logger.warning(f"Missing tradesperson_id in interest: {interest}")
+                    continue
+                
+                # Get tradesperson notification preferences
+                preferences = await database.get_user_notification_preferences(tradesperson_id)
+                
+                # Prepare notification template data
+                template_data = {
+                    "tradesperson_name": tradesperson_info.get("name", "Tradesperson"),
+                    "job_title": job.get("title", "Untitled Job"),
+                    "job_location": job.get("location", ""),
+                    "homeowner_name": homeowner.name,
+                    "completion_date": datetime.utcnow().strftime("%B %d, %Y"),
+                    "interests_url": "https://servicehub.ng/my-interests"
+                }
+                
+                # Send notification
+                notification = await notification_service.send_notification(
+                    user_id=tradesperson_id,
+                    notification_type=NotificationType.JOB_COMPLETED,
+                    template_data=template_data,
+                    user_preferences=preferences,
+                    recipient_email=tradesperson_info.get("email"),
+                    recipient_phone=tradesperson_info.get("phone")
+                )
+                
+                # Save notification to database
+                await database.create_notification(notification)
+                
+                logger.info(f"✅ Job completion notification sent to tradesperson {tradesperson_id}")
+                
+            except Exception as e:
+                logger.error(f"❌ Failed to send job completion notification to tradesperson {tradesperson_id}: {str(e)}")
+                continue
+        
+        logger.info(f"✅ Job completion notifications sent to all interested tradespeople for job {job_id}")
+        
     except Exception as e:
-        logger.error(f"Error in job completion notification: {str(e)}")
+        logger.error(f"❌ Error in job completion notification: {str(e)}")
 
 async def notify_interested_tradespeople_job_reopened(job_id: str, job: dict):
     """Background task to notify interested tradespeople about job reopening"""
