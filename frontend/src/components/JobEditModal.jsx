@@ -194,69 +194,53 @@ const JobEditModal = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Job Title *
+                  Job Title
                 </label>
                 <Input
                   type="text"
                   value={formData.title}
-                  onChange={(e) => handleInputChange('title', e.target.value)}
                   placeholder="Enter job title"
-                  required
+                  readOnly
+                  className="bg-gray-50 cursor-not-allowed"
                 />
               </div>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Category *
+                  Category
                 </label>
-                <Select 
-                  value={formData.category} 
-                  onValueChange={(value) => handleInputChange('category', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(categories || []).map((category) => (
-                      <SelectItem key={category.name} value={category.name}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Input
+                  type="text"
+                  value={formData.category}
+                  placeholder="Select category"
+                  readOnly
+                  className="bg-gray-50 cursor-not-allowed"
+                />
               </div>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Timeline *
+                  Timeline
                 </label>
-                <Select 
-                  value={formData.timeline} 
-                  onValueChange={(value) => handleInputChange('timeline', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select timeline" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ASAP">ASAP</SelectItem>
-                    <SelectItem value="Within 1 week">Within 1 week</SelectItem>
-                    <SelectItem value="Within 2 weeks">Within 2 weeks</SelectItem>
-                    <SelectItem value="Within 1 month">Within 1 month</SelectItem>
-                    <SelectItem value="Flexible">Flexible</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Input
+                  type="text"
+                  value={formData.timeline}
+                  placeholder="Select timeline"
+                  readOnly
+                  className="bg-gray-50 cursor-not-allowed"
+                />
               </div>
               
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description *
+                  Description
                 </label>
                 <Textarea
                   value={formData.description}
-                  onChange={(e) => handleInputChange('description', e.target.value)}
                   placeholder="Describe your job requirements in detail..."
                   rows={4}
-                  required
+                  readOnly
+                  className="bg-gray-50 cursor-not-allowed resize-none"
                 />
               </div>
             </div>
