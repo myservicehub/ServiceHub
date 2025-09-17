@@ -211,15 +211,35 @@ const MyInterestsPage = () => {
     }
   };
 
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (interest) => {
+    // First check if the job itself is completed or cancelled - this takes priority
+    if (interest.job_status === 'completed') {
+      return (
+        <Badge className="bg-green-100 text-green-800 flex items-center gap-1">
+          <CheckCircle size={12} />
+          Job Completed
+        </Badge>
+      );
+    }
+    
+    if (interest.job_status === 'cancelled') {
+      return (
+        <Badge className="bg-red-100 text-red-800 flex items-center gap-1">
+          <XCircle size={12} />
+          Job Cancelled
+        </Badge>
+      );
+    }
+    
+    // If job is still active, show the interest status
     const statusConfig = {
       'pending': { color: 'bg-yellow-100 text-yellow-800', icon: Clock, label: 'Pending' },
       'contact_shared': { color: 'bg-blue-100 text-blue-800', icon: MessageCircle, label: 'Contact Shared' },
-      'paid': { color: 'bg-green-100 text-green-800', icon: CheckCircle, label: 'Paid Access' },
+      'paid_access': { color: 'bg-purple-100 text-purple-800', icon: CheckCircle, label: 'Paid Access' },
       'expired': { color: 'bg-gray-100 text-gray-800', icon: XCircle, label: 'Expired' }
     };
 
-    const config = statusConfig[status] || statusConfig['pending'];
+    const config = statusConfig[interest.status] || statusConfig['pending'];
     const IconComponent = config.icon;
 
     return (
