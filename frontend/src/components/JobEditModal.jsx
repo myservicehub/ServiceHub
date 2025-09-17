@@ -20,7 +20,7 @@ const JobEditModal = ({
   onJobUpdated
 }) => {
   const { toast } = useToast();
-  const { states, lgas, towns, loadLGAs, loadTowns } = useStates();
+  const { states, lgas, loadLGAs } = useStates();
   
   const [formData, setFormData] = useState({
     title: '',
