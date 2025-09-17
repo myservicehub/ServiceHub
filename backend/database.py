@@ -114,12 +114,14 @@ class Database:
     async def get_jobs(self, skip: int = 0, limit: int = 10, filters: dict = None) -> List[dict]:
         query = filters or {}
         
-        # Only return active jobs by default
-        if 'status' not in query:
+        # Only return active jobs by default for public queries
+        # Don't apply default status filter if homeowner.email is in query (My Jobs)
+        if 'status' not in query and 'homeowner.email' not in query:
             query['status'] = 'active'
             
-        # Add expiration check
-        query['expires_at'] = {'$gt': datetime.utcnow()}
+        # Add expiration check only for public job listings, not for homeowner's own jobs
+        if 'homeowner.email' not in query:
+            query['expires_at'] = {'$gt': datetime.utcnow()}
         
         cursor = self.database.jobs.find(query).sort("created_at", -1).skip(skip).limit(limit)
         jobs = await cursor.to_list(length=limit)
