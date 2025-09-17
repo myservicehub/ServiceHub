@@ -567,6 +567,7 @@ async def update_job(
 async def close_job(
     job_id: str,
     close_request: JobCloseRequest,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_homeowner)
 ):
     """Close/cancel a job with feedback (homeowner only)"""
@@ -595,6 +596,19 @@ async def close_job(
         success = await database.update_job(job_id, update_data)
         if not success:
             raise HTTPException(status_code=500, detail="Failed to close job")
+        
+        # Get updated job for notifications
+        updated_job = await database.get_job_by_id(job_id)
+        
+        # Send notification to interested tradespeople about job cancellation
+        background_tasks.add_task(
+            notify_job_cancellation,
+            job_id,
+            updated_job,
+            current_user,
+            close_request.reason,
+            close_request.additional_feedback
+        )
         
         return {
             "message": "Job closed successfully",
