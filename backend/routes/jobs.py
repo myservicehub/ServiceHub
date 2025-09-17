@@ -846,6 +846,69 @@ async def _notify_job_posted_successfully(homeowner: dict, job: dict):
     except Exception as e:
         logger.error(f"❌ Failed to send job posted notification for job {job.get('id')}: {str(e)}")
 
+async def notify_job_cancellation(job_id: str, job: dict, homeowner: User, reason: str, feedback: str):
+    """Background task to notify interested tradespeople about job cancellation"""
+    try:
+        logger.info(f"Job {job_id} cancelled by homeowner {homeowner.id} - Reason: {reason}")
+        
+        # Get all interested tradespeople for this job
+        interested_tradespeople = await database.get_interested_tradespeople_for_job(job_id)
+        
+        if not interested_tradespeople:
+            logger.info(f"No interested tradespeople found for cancelled job {job_id}")
+            return
+        
+        logger.info(f"Found {len(interested_tradespeople)} interested tradespeople for cancelled job {job_id}")
+        
+        # Iterate through each interested tradesperson and send notifications
+        for interest in interested_tradespeople:
+            try:
+                tradesperson_id = interest.get("tradesperson_id")
+                tradesperson_info = interest.get("tradesperson", {})
+                
+                if not tradesperson_id:
+                    logger.warning(f"Missing tradesperson_id in interest: {interest}")
+                    continue
+                
+                # Get tradesperson notification preferences
+                preferences = await database.get_user_notification_preferences(tradesperson_id)
+                
+                # Prepare notification template data
+                template_data = {
+                    "tradesperson_name": tradesperson_info.get("name", "Tradesperson"),
+                    "job_title": job.get("title", "Untitled Job"),
+                    "job_location": job.get("location", ""),
+                    "homeowner_name": homeowner.name,
+                    "cancellation_reason": reason,
+                    "additional_feedback": feedback if feedback else "No additional feedback provided",
+                    "cancellation_date": datetime.utcnow().strftime("%B %d, %Y"),
+                    "browse_jobs_url": "https://servicehub.ng/jobs"
+                }
+                
+                # Send notification
+                notification = await notification_service.send_notification(
+                    user_id=tradesperson_id,
+                    notification_type=NotificationType.JOB_CANCELLED,
+                    template_data=template_data,
+                    user_preferences=preferences,
+                    recipient_email=tradesperson_info.get("email"),
+                    recipient_phone=tradesperson_info.get("phone")
+                )
+                
+                # Save notification to database
+                await database.create_notification(notification)
+                
+                logger.info(f"✅ Job cancellation notification sent to tradesperson {tradesperson_id}")
+                
+            except Exception as e:
+                logger.error(f"❌ Failed to send job cancellation notification to tradesperson {tradesperson_id}: {str(e)}")
+                continue
+        
+        logger.info(f"✅ Job cancellation notifications sent to all interested tradespeople for job {job_id}")
+        
+    except Exception as e:
+        logger.error(f"❌ Error in job cancellation notification: {str(e)}")
+
 @router.post("/create-sample-data")
 async def create_sample_data(current_user: User = Depends(get_current_homeowner)):
     """Create sample jobs for testing - TEMPORARY ENDPOINT"""
