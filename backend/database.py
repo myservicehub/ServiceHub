@@ -547,9 +547,16 @@ class Database:
 
     async def get_jobs_count(self, filters: dict = None) -> int:
         query = filters or {}
-        if 'status' not in query:
+        
+        # Only return active jobs by default for public queries
+        # Don't apply default status filter if homeowner.email is in query (My Jobs)
+        if 'status' not in query and 'homeowner.email' not in query:
             query['status'] = 'active'
-        query['expires_at'] = {'$gt': datetime.utcnow()}
+            
+        # Add expiration check only for public job listings, not for homeowner's own jobs
+        if 'homeowner.email' not in query:
+            query['expires_at'] = {'$gt': datetime.utcnow()}
+            
         return await self.database.jobs.count_documents(query)
 
     async def update_job_quotes_count(self, job_id: str):
