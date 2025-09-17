@@ -31,6 +31,7 @@ const MyJobsPage = () => {
   const [jobs, setJobs] = useState([]);
   const [selectedJob, setSelectedJob] = useState(null);
   const [interestedTradespeople, setInterestedTradespeople] = useState([]);
+  const [activeJobStatus, setActiveJobStatus] = useState('all'); // Added state for job status filter
   const [loading, setLoading] = useState(true);
   const [interestsLoading, setInterestsLoading] = useState(false);
   const [showInterestedModal, setShowInterestedModal] = useState(false);
