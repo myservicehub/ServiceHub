@@ -54,7 +54,12 @@ def test_detailed_data_structure():
             print(f"   Job Status: {first_job.get('job_status')}")
             print(f"   Interest Status: {first_job.get('status')}")
             print(f"   Homeowner: {first_job.get('homeowner_name')} ({first_job.get('homeowner_email')})")
-            print(f"   Budget: ₦{first_job.get('job_budget_min'):,} - ₦{first_job.get('job_budget_max'):,}")
+            budget_min = first_job.get('job_budget_min')
+            budget_max = first_job.get('job_budget_max')
+            if budget_min is not None and budget_max is not None:
+                print(f"   Budget: ₦{budget_min:,} - ₦{budget_max:,}")
+            else:
+                print(f"   Budget: ₦{budget_min} - ₦{budget_max}")
             print(f"   Access Fee: ₦{first_job.get('access_fee_naira')} ({first_job.get('access_fee_coins')} coins)")
             print(f"   Completed At: {first_job.get('completed_at')}")
             print(f"   Payment Made At: {first_job.get('payment_made_at')}")
