@@ -72,17 +72,11 @@ const CompletedJobsPage = () => {
     try {
       setLoading(true);
       
-      // For now, we'll use the interests API and filter for completed jobs
-      // In a real implementation, you'd have a dedicated completed jobs API
-      const response = await interestsAPI.getMyInterests();
-      
-      // Filter for completed jobs only
-      const completed = response.interests?.filter(interest => 
-        interest.job_status === 'completed' || interest.status === 'completed'
-      ) || [];
+      // Use the dedicated completed jobs API
+      const completedJobsData = await interestsAPI.getCompletedJobs();
       
       // Sort the jobs based on sortBy
-      const sortedJobs = sortCompletedJobs(completed, sortBy);
+      const sortedJobs = sortCompletedJobs(completedJobsData, sortBy);
       
       // Apply filtering
       const filteredJobs = filterCompletedJobs(sortedJobs, filterBy);
@@ -90,7 +84,7 @@ const CompletedJobsPage = () => {
       setCompletedJobs(filteredJobs);
       
       // Calculate stats
-      calculateStats(completed);
+      calculateStats(completedJobsData);
       
     } catch (error) {
       console.error('Failed to load completed jobs:', error);
