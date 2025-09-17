@@ -321,22 +321,13 @@ const JobEditModal = ({
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Town *
                 </label>
-                <Select 
-                  value={formData.town} 
-                  onValueChange={(value) => handleInputChange('town', value)}
-                  disabled={!formData.lga}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select town" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(towns || []).map((town) => (
-                      <SelectItem key={town} value={town}>
-                        {town}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Input
+                  type="text"
+                  value={formData.town}
+                  onChange={(e) => handleInputChange('town', e.target.value)}
+                  placeholder="Enter town name"
+                  required
+                />
               </div>
               
               <div>
