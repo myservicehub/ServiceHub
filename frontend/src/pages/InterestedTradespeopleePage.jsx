@@ -123,7 +123,7 @@ const InterestedTradespeopleePage = () => {
         console.log('No job data in response, attempting to fetch job details separately');
         // If job details aren't included, we need to fetch them separately
         try {
-          const jobResponse = await jobsAPI.getJobById(jobId);
+          const jobResponse = await jobsAPI.getJob(jobId);
           console.log('Separate job API response:', jobResponse);
           setJob(jobResponse);
         } catch (jobError) {
