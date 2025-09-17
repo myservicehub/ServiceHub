@@ -198,6 +198,11 @@ const Header = () => {
                           <span>My Interests</span>
                         </DropdownMenuItem>
                         
+                        <DropdownMenuItem onClick={() => navigate('/completed-jobs')}>
+                          <CheckCircle size={16} />
+                          <span>Completed Jobs</span>
+                        </DropdownMenuItem>
+                        
                         <DropdownMenuItem onClick={() => navigate('/wallet')}>
                           <span className="mr-2">💰</span>
                           <span>Wallet</span>
