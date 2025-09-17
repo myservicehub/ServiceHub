@@ -12,6 +12,7 @@ class JobStatus(str, Enum):
     CANCELLED = "cancelled"
     EXPIRED = "expired"
     REJECTED = "rejected"
+    DELETED = "deleted"  # For soft-deleted jobs
 
 class QuoteStatus(str, Enum):
     PENDING = "pending"
