@@ -5,6 +5,7 @@ import HomePage from "./components/HomePage";
 import PostJobPage from "./pages/PostJobPage";
 import MyJobsPage from "./pages/MyJobsPage";
 import MyInterestsPage from "./pages/MyInterestsPage";
+import CompletedJobsPage from "./pages/CompletedJobsPage";
 import TradespersonProfilePage from "./pages/TradespersonProfilePage";
 import BrowseTradespeopleePage from "./pages/BrowseTradespeopleePage";
 import InterestedTradespeopleePage from "./pages/InterestedTradespeopleePage";
