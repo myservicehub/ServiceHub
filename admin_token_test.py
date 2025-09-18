@@ -11,7 +11,7 @@ import requests
 import json
 
 # Get backend URL from environment
-BACKEND_URL = "https://homefix-beta.preview.emergentagent.com/api"
+BACKEND_URL = "https://servicenow-3.preview.emergentagent.com/api"
 
 def test_admin_token_issue():
     """Test the admin token authentication issue"""

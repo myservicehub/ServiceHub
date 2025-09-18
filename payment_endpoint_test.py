@@ -7,7 +7,7 @@ import requests
 import json
 
 # Get backend URL from environment
-BACKEND_URL = "https://homefix-beta.preview.emergentagent.com/api"
+BACKEND_URL = "https://servicenow-3.preview.emergentagent.com/api"
 
 def make_request(method: str, endpoint: str, auth_token: str = None, **kwargs):
     """Make HTTP request with error handling and optional authentication"""

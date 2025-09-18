@@ -21,7 +21,7 @@ import json
 import uuid
 import time
 
-BACKEND_URL = "https://homefix-beta.preview.emergentagent.com/api"
+BACKEND_URL = "https://servicenow-3.preview.emergentagent.com/api"
 
 class FinalUserManagementTest:
     def __init__(self):

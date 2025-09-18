@@ -7,7 +7,7 @@ import requests
 import json
 import uuid
 
-BACKEND_URL = "https://homefix-beta.preview.emergentagent.com/api"
+BACKEND_URL = "https://servicenow-3.preview.emergentagent.com/api"
 
 def make_request(method, endpoint, auth_token=None, **kwargs):
     """Make HTTP request with error handling"""

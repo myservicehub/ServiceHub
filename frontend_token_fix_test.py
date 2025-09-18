@@ -10,7 +10,7 @@ import requests
 import json
 
 # Get backend URL from environment
-BACKEND_URL = "https://homefix-beta.preview.emergentagent.com/api"
+BACKEND_URL = "https://servicenow-3.preview.emergentagent.com/api"
 
 def simulate_frontend_behavior():
     """Simulate the frontend behavior with the token fix"""

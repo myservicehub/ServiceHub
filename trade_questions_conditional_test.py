@@ -53,7 +53,7 @@ import uuid
 from collections import Counter
 
 # Get backend URL from frontend environment
-BACKEND_URL = "https://homefix-beta.preview.emergentagent.com/api"
+BACKEND_URL = "https://servicenow-3.preview.emergentagent.com/api"
 
 class TradeQuestionsConditionalTester:
     def __init__(self):

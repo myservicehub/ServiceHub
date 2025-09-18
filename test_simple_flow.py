@@ -14,7 +14,7 @@ import json
 import uuid
 
 # Get backend URL from environment
-BACKEND_URL = "https://homefix-beta.preview.emergentagent.com/api"
+BACKEND_URL = "https://servicenow-3.preview.emergentagent.com/api"
 
 class SimpleFlowTester:
     def __init__(self):
