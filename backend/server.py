@@ -123,6 +123,69 @@ async def get_database_info():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
+@api_router.get("/api/users-summary")
+async def get_users_summary():
+    """Get user statistics for mobile viewing"""
+    try:
+        db = database.database
+        
+        # Count users by role
+        total_users = await db.users.count_documents({})
+        homeowners = await db.users.count_documents({"role": "homeowner"})
+        tradespeople = await db.users.count_documents({"role": "tradesperson"})
+        
+        # Get recent users
+        recent_users = []
+        async for user in db.users.find({}, {"password_hash": 0}).sort("created_at", -1).limit(5):
+            recent_users.append({
+                "name": user.get("name"),
+                "email": user.get("email"),
+                "role": user.get("role"),
+                "created_at": str(user.get("created_at"))
+            })
+        
+        return {
+            "total_users": total_users,
+            "homeowners": homeowners,
+            "tradespeople": tradespeople,
+            "recent_users": recent_users,
+            "mobile_friendly": True
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/api/jobs-summary") 
+async def get_jobs_summary():
+    """Get job statistics for mobile viewing"""
+    try:
+        db = database.database
+        
+        total_jobs = await db.jobs.count_documents({})
+        active_jobs = await db.jobs.count_documents({"status": "active"})
+        completed_jobs = await db.jobs.count_documents({"status": "completed"})
+        
+        # Get recent jobs
+        recent_jobs = []
+        async for job in db.jobs.find({}).sort("created_at", -1).limit(5):
+            recent_jobs.append({
+                "title": job.get("title"),
+                "category": job.get("category"),
+                "location": job.get("location"),
+                "status": job.get("status"),
+                "budget": job.get("budget"),
+                "created_at": str(job.get("created_at"))
+            })
+        
+        return {
+            "total_jobs": total_jobs,
+            "active_jobs": active_jobs,
+            "completed_jobs": completed_jobs,
+            "recent_jobs": recent_jobs,
+            "mobile_friendly": True
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Include route modules
 from routes import auth, jobs, tradespeople, quotes, reviews, stats, portfolio, interests, notifications, reviews_advanced, wallet, admin, referrals, messages
 
