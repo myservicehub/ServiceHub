@@ -938,10 +938,14 @@ const WalletSetup = ({ formData, updateFormData }) => (
     </div>
 
     <Button
-      onClick={() => updateFormData('walletSetup', true)}
+      onClick={() => {
+        updateFormData('walletSetup', true);
+        handleFinalSubmit();
+      }}
+      disabled={isLoading}
       className="w-full bg-green-600 hover:bg-green-700 text-white py-3"
     >
-      Set Up Wallet Later
+      {isLoading ? 'Completing Registration...' : 'Set Up Wallet Later & Complete Registration'}
     </Button>
   </div>
 );
