@@ -173,6 +173,17 @@ const PaymentPage = ({ formData, onBack, onRegistrationComplete }) => {
             variant: "warning",
           });
 
+          // Still redirect to dashboard even if wallet funding failed
+          setTimeout(() => {
+            navigate('/browse-jobs', { 
+              state: { 
+                welcomeMessage: `Welcome to ServiceHub, ${fullName}! Your account has been created successfully.`,
+                walletFunded: false,
+                walletError: walletError.message
+              }
+            });
+          }, 2000);
+
           if (onRegistrationComplete) {
             onRegistrationComplete({
               ...registrationResult,
