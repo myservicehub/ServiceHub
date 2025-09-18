@@ -342,6 +342,7 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
         if (formData.selectedTrades.length > 5) {
           newErrors.selectedTrades = 'Please select maximum 5 professions';
         }
+        if (!formData.experienceYears) newErrors.experienceYears = 'Experience level is required';
         if (!formData.businessType) newErrors.businessType = 'Business type is required';
         if (!formData.tradingName.trim()) newErrors.tradingName = 'Trading name is required';
         if (!formData.state) newErrors.state = 'State is required';
