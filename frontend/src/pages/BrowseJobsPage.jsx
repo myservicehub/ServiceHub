@@ -152,6 +152,19 @@ const BrowseJobsPage = () => {
             variant: "info",
           });
         }, 1000);
+      } else if (location.state?.showWalletReminder) {
+        // Show reminder for users who chose "Set Up Wallet Later"
+        setTimeout(() => {
+          toast({
+            title: "Complete Your Setup",
+            description: "Ready to start applying for jobs? Fund your wallet from the Wallet page to access homeowner contact details.",
+            duration: 6000,
+            action: {
+              label: "Fund Wallet",
+              onClick: () => navigate('/wallet')
+            }
+          });
+        }, 2000);
       }
 
       // Clear the state to prevent showing message again on refresh
