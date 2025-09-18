@@ -1014,6 +1014,12 @@ const ProfileSetup = ({ formData, updateFormData }) => (
 
 // Wallet Setup Component (Step 6)
 const WalletSetup = ({ formData, updateFormData, handleFinalSubmit, isLoading, showPaymentPage, setShowPaymentPage }) => {
+  console.log('🔧 WalletSetup component rendered with props:', { 
+    formData: !!formData, 
+    updateFormData: !!updateFormData, 
+    handleFinalSubmit: !!handleFinalSubmit, 
+    isLoading 
+  });
   if (showPaymentPage) {
     return (
       <PaymentPage
