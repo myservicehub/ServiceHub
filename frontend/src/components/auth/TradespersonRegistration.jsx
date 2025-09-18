@@ -939,7 +939,55 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
             />
           )}
           {currentStep === 5 && <ProfileSetup formData={formData} updateFormData={updateFormData} />}
-          {currentStep === 6 && <WalletSetup formData={formData} updateFormData={updateFormData} handleFinalSubmit={handleFinalSubmit} isLoading={isLoading} showPaymentPage={showPaymentPage} setShowPaymentPage={setShowPaymentPage} />}
+          {currentStep === 6 && (
+            <div className="bg-gradient-to-br from-green-600 to-blue-600 rounded-lg p-8 text-white">
+              <div className="text-center mb-6">
+                <Wallet className="h-16 w-16 mx-auto mb-4 text-white" />
+                <h3 className="text-2xl font-bold mb-2">Fund your wallet to get set up for success</h3>
+                <p className="text-green-100">
+                  Your wallet allows you to access homeowner contact details when you're interested in jobs
+                </p>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <h4 className="font-medium text-blue-800 mb-2">How it works:</h4>
+                <ul className="text-sm text-blue-700 space-y-1 list-disc ml-4">
+                  <li>1 coin = ₦100</li>
+                  <li>Each job contact costs coins (typically 1-3 coins)</li>
+                  <li>Fund once, access multiple job contacts</li>
+                  <li>Unused coins remain in your wallet</li>
+                </ul>
+              </div>
+
+              <div className="space-y-3">
+                <button
+                  onClick={() => {
+                    console.log('🔵 FUND NOW BUTTON CLICKED (DIRECT)');
+                    updateFormData('walletSetup', 'fund_now');
+                    setShowPaymentPage(true);
+                  }}
+                  disabled={isLoading}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium disabled:opacity-50"
+                  type="button"
+                >
+                  {isLoading ? 'Processing...' : 'Fund Now & Complete Registration'}
+                </button>
+                
+                <button
+                  onClick={() => {
+                    console.log('🔘 SET UP WALLET LATER BUTTON CLICKED (DIRECT)');
+                    updateFormData('walletSetup', 'later');
+                    handleFinalSubmit();
+                  }}
+                  disabled={isLoading}
+                  className="w-full border-2 border-white text-white hover:bg-white hover:text-green-600 transition-colors py-3 px-6 rounded-lg font-medium disabled:opacity-50"
+                  type="button"
+                >
+                  {isLoading ? 'Completing Registration...' : 'Set Up Wallet Later & Complete Registration'}
+                </button>
+              </div>
+            </div>
+          )}
           {/* Debug current step */}
           <div style={{position: 'fixed', top: '10px', right: '10px', background: 'green', color: 'white', padding: '5px', zIndex: 9999}}>
             Step {currentStep}
