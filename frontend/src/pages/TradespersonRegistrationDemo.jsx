@@ -18,12 +18,6 @@ const TradespersonRegistrationDemo = () => {
   // Add debugging
   console.log('🔍 TradespersonRegistrationDemo state:', { showRegistration, registrationType });
 
-  // Test function to verify React is working
-  const testClick = () => {
-    console.log('🎯 TEST BUTTON CLICKED - React is working!');
-    alert('Test button clicked - React is working!');
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
