@@ -116,7 +116,7 @@ async def register_homeowner(registration_data: HomeownerRegistration):
             detail=f"Failed to create account: {str(e)}"
         )
 
-@router.post("/register/tradesperson", response_model=UserProfile)
+@router.post("/register/tradesperson", response_model=LoginResponse)
 async def register_tradesperson(registration_data: TradespersonRegistration):
     """Register a new tradesperson account"""
     try:
@@ -198,9 +198,25 @@ async def register_tradesperson(registration_data: TradespersonRegistration):
         if registration_data.referral_code:
             await database.record_referral(registration_data.referral_code, created_user["id"])
         
-        # Remove password hash from response
-        user_response = User(**created_user)
-        return UserProfile(**user_response.dict())
+        # Create access token for automatic login
+        access_token_expires = timedelta(minutes=60 * 24)  # 24 hours
+        access_token = create_access_token(
+            data={"sub": created_user["id"], "email": created_user["email"]},
+            expires_delta=access_token_expires
+        )
+
+        # Update last login
+        await database.update_user_last_login(created_user["id"])
+
+        # Prepare user data for response (remove password hash)
+        user_response = {k: v for k, v in created_user.items() if k != "password_hash"}
+        
+        return LoginResponse(
+            access_token=access_token,
+            token_type="bearer",
+            user=user_response,
+            expires_in=60 * 60 * 24  # 24 hours in seconds
+        )
 
     except HTTPException:
         raise
