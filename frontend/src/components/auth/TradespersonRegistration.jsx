@@ -64,6 +64,7 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
     
     // Step 2: Work Details
     selectedTrades: [],
+    experienceYears: '',
     travelDistance: 10,
     businessType: '',
     tradingName: '',
