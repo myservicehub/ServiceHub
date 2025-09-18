@@ -54,7 +54,7 @@ const TradespersonRegistrationDemo = () => {
                     >
                       <span className="text-lg font-semibold">Multi-Step Registration</span>
                       <span className="text-sm opacity-90">Complete 6-step process with skills test</span>
-                    </Button>
+                    </button>
                     
                     <Button
                       onClick={() => {
