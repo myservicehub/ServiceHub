@@ -304,7 +304,14 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
         setErrors({ submit: errorMessage });
       }
     } catch (error) {
-      setErrors({ submit: 'Registration failed. Please try again.' });
+      console.error('❌ Registration error:', error);
+      const errorMessage = error.response?.data?.detail || error.message || 'Registration failed. Please try again.';
+      setErrors({ submit: errorMessage });
+      toast({
+        title: "Registration Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
