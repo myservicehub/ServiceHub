@@ -15,6 +15,9 @@ const TradespersonRegistrationDemo = () => {
     setShowRegistration(false);
   };
 
+  // Add debugging
+  console.log('🔍 TradespersonRegistrationDemo state:', { showRegistration, registrationType });
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
