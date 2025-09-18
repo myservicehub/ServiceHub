@@ -974,10 +974,21 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
                 </button>
                 
                 <button
-                  onClick={() => {
-                    console.log('🔘 SET UP WALLET LATER BUTTON CLICKED (DIRECT)');
-                    updateFormData('walletSetup', 'later');
-                    handleFinalSubmit();
+                  onMouseDown={() => console.log('🖱️ MOUSE DOWN on Set Up Wallet Later button')}
+                  onMouseUp={() => console.log('🖱️ MOUSE UP on Set Up Wallet Later button')}
+                  onClick={(e) => {
+                    console.log('🔘 SET UP WALLET LATER BUTTON CLICKED (DIRECT) - EVENT:', e.type);
+                    console.log('🔘 Current target:', e.currentTarget);
+                    console.log('🔘 Event prevented?', e.defaultPrevented);
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // Add timeout to see if this helps
+                    setTimeout(() => {
+                      console.log('🔘 Executing after timeout...');
+                      updateFormData('walletSetup', 'later');
+                      handleFinalSubmit();
+                    }, 100);
                   }}
                   disabled={isLoading}
                   className="w-full border-2 border-white text-white hover:bg-white hover:text-green-600 transition-colors py-3 px-6 rounded-lg font-medium disabled:opacity-50"
