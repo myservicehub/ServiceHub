@@ -312,9 +312,18 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
 
         // Redirect to Browse Jobs page immediately after modal closes
         console.log('🚀 Attempting redirect to /browse-jobs after modal close');
+        console.log('🚀 Registration result:', result);
+        
         setTimeout(() => {
           console.log('🚀 Executing navigate to /browse-jobs');
           console.log('🚀 Current location before navigate:', window.location.href);
+          
+          // Check authentication state before redirecting
+          console.log('🔐 Auth state before redirect:', {
+            user: user,
+            isAuthenticated: isAuthenticated(),
+            isTradesperson: isTradesperson()
+          });
           
           navigate('/browse-jobs', { 
             state: { 
@@ -326,7 +335,13 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
             replace: true  // Use replace to avoid going back to demo page
           });
           
-          console.log('🚀 Navigate called, new location should be /browse-jobs');
+          console.log('🚀 Navigate called, checking if redirect happened...');
+          
+          // Check if redirect worked after a brief delay
+          setTimeout(() => {
+            console.log('🚀 Current location after navigate:', window.location.href);
+          }, 500);
+          
         }, 1000); // Shorter delay
       } else {
         // Ensure error is a string, not an object
