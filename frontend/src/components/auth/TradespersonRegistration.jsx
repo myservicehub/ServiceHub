@@ -1064,6 +1064,17 @@ const WalletSetup = ({ formData, updateFormData, handleFinalSubmit, isLoading, s
       <div className="space-y-3">
         <button
           onClick={() => {
+            alert('TEST BUTTON WORKS!');
+            console.log('🧪 TEST BUTTON CLICKED - React works in WalletSetup');
+          }}
+          className="w-full bg-red-500 hover:bg-red-600 text-white py-2 px-6 rounded-lg font-medium mb-2"
+          type="button"
+        >
+          TEST BUTTON - CLICK ME
+        </button>
+        
+        <button
+          onClick={() => {
             console.log('🔵 FUND NOW BUTTON CLICKED');
             setShowPaymentPage(true);
           }}
