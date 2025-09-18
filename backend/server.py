@@ -67,8 +67,8 @@ async def health_check():
 async def get_database_info():
     """Get database information for mobile access"""
     try:
-        # Get database stats
-        db = database.get_database()
+        # Get database instance
+        db = database.database
         
         # Count documents in collections
         collections_info = {}
@@ -80,6 +80,7 @@ async def get_database_info():
             collections_info["interests"] = await db.interests.count_documents({})
             collections_info["reviews"] = await db.reviews.count_documents({})
             collections_info["messages"] = await db.messages.count_documents({})
+            collections_info["notifications"] = await db.notifications.count_documents({})
         except Exception as e:
             collections_info["error"] = str(e)
         
@@ -94,7 +95,7 @@ async def get_database_info():
                         "name": sample_user.get("name"),
                         "email": sample_user.get("email"),
                         "role": sample_user.get("role"),
-                        "created_at": sample_user.get("created_at")
+                        "created_at": str(sample_user.get("created_at"))
                     }
             
             if collections_info.get("jobs", 0) > 0:
@@ -112,10 +113,11 @@ async def get_database_info():
             sample_data["error"] = str(e)
         
         return {
-            "database": "servicehub",
+            "database": "servicehub (via test_database)",
             "collections": collections_info,
             "sample_data": sample_data,
-            "timestamp": str(database.datetime.datetime.utcnow())
+            "timestamp": str(datetime.utcnow()),
+            "mobile_access": True
         }
         
     except Exception as e:
