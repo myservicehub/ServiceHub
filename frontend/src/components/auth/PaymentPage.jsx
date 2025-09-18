@@ -145,7 +145,18 @@ const PaymentPage = ({ formData, onBack, onRegistrationComplete }) => {
             description: `Welcome to ServiceHub, ${fullName}! Your account has been created and payment proof submitted. You'll be notified once your payment is verified.`,
           });
 
-          // Call the completion handler to redirect to logged-in tradespeople page
+          // Redirect to tradespeople dashboard (Browse Jobs page)
+          setTimeout(() => {
+            navigate('/browse-jobs', { 
+              state: { 
+                welcomeMessage: `Welcome to ServiceHub, ${fullName}! Your account has been created and payment proof submitted.`,
+                walletFunded: true,
+                fundingAmount: amount
+              }
+            });
+          }, 2000);
+
+          // Also call the completion handler to close modal
           if (onRegistrationComplete) {
             onRegistrationComplete({
               ...registrationResult,
