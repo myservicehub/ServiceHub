@@ -7,7 +7,7 @@ import TradespersonRegistration from '../components/auth/TradespersonRegistratio
 import SignupForm from '../components/auth/SignupForm';
 
 const TradespersonRegistrationDemo = () => {
-  const [showRegistration, setShowRegistration] = useState(false);
+  const [showRegistration, setShowRegistration] = useState(true); // Temporarily set to true for testing
   const [registrationType, setRegistrationType] = useState('multi-step');
 
   const handleRegistrationComplete = (result) => {
