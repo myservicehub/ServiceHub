@@ -112,6 +112,15 @@ export const AuthProvider = ({ children }) => {
   const registerTradesperson = async (registrationData) => {
     try {
       const userData = await authAPI.registerTradesperson(registrationData);
+      
+      // If registration successful and returns token, automatically log user in
+      if (userData.token) {
+        localStorage.setItem('token', userData.token);
+        setToken(userData.token);
+        setUser(userData.user || userData);
+        console.log('🎉 User automatically logged in after registration');
+      }
+      
       return { success: true, user: userData };
     } catch (error) {
       console.error('Registration failed:', error);
