@@ -49,7 +49,7 @@ import uuid
 from collections import Counter
 
 # Get backend URL from environment
-BACKEND_URL = "http://localhost:8001/api"
+BACKEND_URL = "https://servicenow-3.preview.emergentagent.com/api"
 
 class ReviewSubmissionFixTester:
     def __init__(self):
