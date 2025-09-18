@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  # Frontend Service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_BACKEND_URL=http://localhost:8001
+      - REACT_APP_GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY}
+    depends_on:
+      - backend
+    networks:
+      - servicehub-network
+
+  # Backend Service  
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - MONGO_URL=mongodb://mongodb:27017/servicehub
+      - TERMII_API_KEY=${TERMII_API_KEY}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+      - SENDER_EMAIL=${SENDER_EMAIL}
+      - DB_NAME=servicehub
+      - CORS_ORIGINS=http://localhost:3000
+    depends_on:
+      - mongodb
+    volumes:
+      - ./backend:/app
+    networks:
+      - servicehub-network
+
+  # MongoDB Service
+  mongodb:
+    image: mongo:7.0
+    container_name: servicehub-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongodb-init:/docker-entrypoint-initdb.d
+    environment:
+      - MONGO_INITDB_DATABASE=servicehub
+    networks:
+      - servicehub-network
+
+  # MongoDB Admin Interface (optional)
+  mongo-express:
+    image: mongo-express
+    container_name: servicehub-mongo-express
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+      - ME_CONFIG_MONGODB_PORT=27017
+      - ME_CONFIG_MONGODB_ENABLE_ADMIN=true
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=admin123
+    depends_on:
+      - mongodb
+    networks:
+      - servicehub-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  servicehub-network:
+    driver: bridge
