@@ -34,6 +34,9 @@ const TradespersonRegistrationDemo = () => {
             <h1 className="text-3xl font-bold text-gray-800 mb-4">
               Tradesperson Registration Demo
             </h1>
+            <button onClick={testClick} className="mb-4 px-4 py-2 bg-red-500 text-white rounded">
+              TEST REACT CLICK
+            </button>
             <p className="text-gray-600 mb-6">
               Experience the new comprehensive 6-step registration process with skills testing
             </p>
