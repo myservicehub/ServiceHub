@@ -678,7 +678,7 @@ export const adminAPI = {
 // Public API for skills test (no admin required)
 export const skillsAPI = {
   async getQuestionsForTrade(tradeCategory) {
-    const response = await apiClient.get(`/skills-questions/${encodeURIComponent(tradeCategory)}`);
+    const response = await apiClient.get(`/jobs/skills-questions/${encodeURIComponent(tradeCategory)}`);
     return response.data;
   }
 };
