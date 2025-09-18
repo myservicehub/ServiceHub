@@ -25,7 +25,7 @@ import { jobsAPI, interestsAPI } from '../api/services';
 import { walletAPI } from '../api/wallet';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import JobsMap from '../components/maps/JobsMap';
 import LocationSettingsModal from '../components/LocationSettingsModal';
 import { authAPI } from '../api/services';
