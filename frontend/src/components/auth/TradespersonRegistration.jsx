@@ -284,7 +284,7 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
         name: fullName,
         email: formData.email, // Use the actual email from the form
         password: formData.password,
-        phone: formData.phone, // Use the correct field name
+        phone: `+234${formData.phone}`, // Ensure Nigerian format
         location: formData.state,
         postcode: '000000', // Placeholder postcode
         trade_categories: formData.selectedTrades,
