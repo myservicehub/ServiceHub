@@ -444,6 +444,20 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
+          Email address *
+        </label>
+        <Input
+          type="email"
+          placeholder="your.email@example.com"
+          value={formData.email}
+          onChange={(e) => updateFormData('email', e.target.value)}
+          className={errors.email ? 'border-red-500' : ''}
+        />
+        {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
           +234 Phone number *
         </label>
         <div className="flex">
