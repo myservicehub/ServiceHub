@@ -114,9 +114,10 @@ export const AuthProvider = ({ children }) => {
       const userData = await authAPI.registerTradesperson(registrationData);
       
       // If registration successful and returns token, automatically log user in
-      if (userData.token) {
-        localStorage.setItem('token', userData.token);
-        setToken(userData.token);
+      if (userData.access_token || userData.token) {
+        const authToken = userData.access_token || userData.token;
+        localStorage.setItem('token', authToken);
+        setToken(authToken);
         setUser(userData.user || userData);
         console.log('🎉 User automatically logged in after registration');
       }
