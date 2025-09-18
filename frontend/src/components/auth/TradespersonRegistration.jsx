@@ -916,7 +916,7 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
             />
           )}
           {currentStep === 5 && <ProfileSetup formData={formData} updateFormData={updateFormData} />}
-          {currentStep === 6 && <WalletSetup formData={formData} updateFormData={updateFormData} handleFinalSubmit={handleFinalSubmit} isLoading={isLoading} />}
+          {currentStep === 6 && <WalletSetup formData={formData} updateFormData={updateFormData} handleFinalSubmit={handleFinalSubmit} isLoading={isLoading} showPaymentPage={showPaymentPage} setShowPaymentPage={setShowPaymentPage} />}
         </div>
 
         <div className="flex justify-between pt-6 border-t mt-8">
