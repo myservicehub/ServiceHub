@@ -1065,7 +1065,7 @@ const WalletSetup = ({ formData, updateFormData, handleFinalSubmit, isLoading, s
           className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium disabled:opacity-50"
           type="button"
         >
-          Fund Now
+          {isLoading ? 'Completing Registration...' : 'Fund Now & Complete Registration'}
         </button>
         
         <button
