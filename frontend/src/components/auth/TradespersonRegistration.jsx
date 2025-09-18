@@ -31,6 +31,7 @@ import { useToast } from '../../hooks/use-toast';
 import useStates from '../../hooks/useStates';
 import SkillsTestComponent from './SkillsTestComponent';
 import { adminAPI } from '../../api/wallet';
+import PaymentPage from './PaymentPage';
 
 // Fallback trade categories (used while loading or if API fails)
 const FALLBACK_TRADE_CATEGORIES = [
