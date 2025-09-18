@@ -156,13 +156,9 @@ const BrowseJobsPage = () => {
         // Show reminder for users who chose "Set Up Wallet Later"
         setTimeout(() => {
           toast({
-            title: "Complete Your Setup",
-            description: "Ready to start applying for jobs? Fund your wallet from the Wallet page to access homeowner contact details.",
+            title: "Complete Your Setup 💳",
+            description: "Ready to start applying for jobs? Visit the Wallet page to fund your account and access homeowner contact details.",
             duration: 6000,
-            action: {
-              label: "Fund Wallet",
-              onClick: () => navigate('/wallet')
-            }
           });
         }, 2000);
       }
