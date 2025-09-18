@@ -253,22 +253,32 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
     try {
       const fullName = `${formData.firstName} ${formData.lastName}`;
       
+      // Ensure description meets minimum length requirement
+      const description = formData.profileDescription && formData.profileDescription.length >= 50 
+        ? formData.profileDescription 
+        : `Professional ${formData.selectedTrades[0]} services. Experienced tradesperson committed to quality work and customer satisfaction. Contact me for reliable and affordable services.`;
+
+      // Map experience years from string to number
+      const experienceMapping = {
+        '0-1': 1,
+        '1-3': 2,
+        '3-5': 4,
+        '5-10': 7,
+        '10+': 15
+      };
+
       const result = await registerTradesperson({
         name: fullName,
         email: formData.email || `${formData.phone}@servicehub.temp`, // Generate email if not provided
         password: formData.password,
-        phone: formData.phone,
+        phone: formData.phoneNumber, // Use phoneNumber instead of phone
         location: formData.state,
         postcode: '000000', // Placeholder postcode
         trade_categories: formData.selectedTrades,
-        experience_years: 1, // Default experience
+        experience_years: experienceMapping[formData.experienceYears] || 1,
         company_name: formData.tradingName,
-        description: formData.profileDescription,
-        certifications: formData.certifications,
-        business_type: formData.businessType,
-        travel_distance: formData.travelDistance,
-        skills_test_passed: formData.skillsTestPassed,
-        test_scores: formData.testScores
+        description: description,
+        certifications: formData.certifications || []
       });
 
       if (result.success) {
