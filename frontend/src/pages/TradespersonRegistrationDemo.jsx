@@ -22,12 +22,6 @@ const TradespersonRegistrationDemo = () => {
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      {/* Temporary debug info */}
-      <div style={{position: 'fixed', top: '10px', right: '10px', background: 'red', color: 'white', padding: '10px', zIndex: 9999, fontSize: '12px'}}>
-        showRegistration: {String(showRegistration)}<br/>
-        registrationType: {registrationType}
-      </div>
-      
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-8">
