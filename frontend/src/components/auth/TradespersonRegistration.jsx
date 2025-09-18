@@ -922,6 +922,23 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
     </div>
   );
 
+  // Render PaymentPage if it's active
+  if (showPaymentPage) {
+    return (
+      <PaymentPage
+        formData={formData}
+        onBack={() => setShowPaymentPage(false)}
+        onRegistrationComplete={(result) => {
+          console.log('Payment & Registration completed:', result);
+          // Handle successful registration with payment
+          if (result.success && onComplete) {
+            onComplete(result);
+          }
+        }}
+      />
+    );
+  }
+
   return (
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader className="text-center">
