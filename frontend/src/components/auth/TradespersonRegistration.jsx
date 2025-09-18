@@ -305,23 +305,29 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
           duration: 3000,
         });
 
-        // Redirect to Browse Jobs page after a brief delay
-        console.log('🚀 Attempting redirect to /browse-jobs');
+        // Close the modal first
+        if (onComplete) {
+          onComplete(result);
+        }
+
+        // Redirect to Browse Jobs page immediately after modal closes
+        console.log('🚀 Attempting redirect to /browse-jobs after modal close');
         setTimeout(() => {
           console.log('🚀 Executing navigate to /browse-jobs');
+          console.log('🚀 Current location before navigate:', window.location.href);
+          
           navigate('/browse-jobs', { 
             state: { 
               welcomeMessage: `Welcome to ServiceHub, ${fullName}! Your account has been created successfully.`,
               walletFunded: false,
               walletSetupLater: walletSetupChoice === 'later',
               showWalletReminder: walletSetupChoice === 'later'
-            }
+            },
+            replace: true  // Use replace to avoid going back to demo page
           });
-        }, 2000);
-        
-        if (onComplete) {
-          onComplete(result);
-        }
+          
+          console.log('🚀 Navigate called, new location should be /browse-jobs');
+        }, 1000); // Shorter delay
       } else {
         // Ensure error is a string, not an object
         const errorMessage = typeof result.error === 'string' 
