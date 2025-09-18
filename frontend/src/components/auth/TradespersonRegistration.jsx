@@ -299,7 +299,15 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
 
       if (result.success) {
         const walletSetupChoice = formData.walletSetup;
+        const fullName = `${formData.firstName} ${formData.lastName}`;
         
+        console.log('✅ Registration successful, result:', result);
+        console.log('🔐 Current auth state:', { 
+          isAuthenticated: isAuthenticated(), 
+          user: user,
+          resultUser: result.user 
+        });
+
         toast({
           title: "Registration Successful! 🎉",
           description: `Welcome to ServiceHub, ${fullName}! Your account has been created successfully.`,
@@ -311,39 +319,31 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
           onComplete(result);
         }
 
-        // Redirect to Browse Jobs page immediately after modal closes
-        console.log('🚀 Attempting redirect to /browse-jobs after modal close');
-        console.log('🚀 Registration result:', result);
-        
-        setTimeout(() => {
-          console.log('🚀 Executing navigate to /browse-jobs');
-          console.log('🚀 Current location before navigate:', window.location.href);
-          
-          // Check authentication state before redirecting
-          console.log('🔐 Auth state before redirect:', {
-            user: user,
+        // Wait for authentication context to update, then redirect
+        const redirectToTradespersonDashboard = () => {
+          console.log('🚀 Redirecting to tradesperson dashboard (/browse-jobs)');
+          console.log('🔐 Final auth state before redirect:', {
             isAuthenticated: isAuthenticated(),
-            isTradesperson: isTradesperson()
+            isTradesperson: isTradesperson(),
+            user: user
           });
           
           navigate('/browse-jobs', { 
             state: { 
-              welcomeMessage: `Welcome to ServiceHub, ${fullName}! Your account has been created successfully.`,
+              welcomeMessage: `Welcome to ServiceHub, ${fullName}! Your registration is complete.`,
               walletFunded: false,
               walletSetupLater: walletSetupChoice === 'later',
-              showWalletReminder: walletSetupChoice === 'later'
+              showWalletReminder: walletSetupChoice === 'later',
+              newRegistration: true
             },
-            replace: true  // Use replace to avoid going back to demo page
+            replace: true
           });
           
-          console.log('🚀 Navigate called, checking if redirect happened...');
-          
-          // Check if redirect worked after a brief delay
-          setTimeout(() => {
-            console.log('🚀 Current location after navigate:', window.location.href);
-          }, 500);
-          
-        }, 1000); // Shorter delay
+          console.log('✅ Redirect to tradesperson dashboard completed');
+        };
+
+        // Give more time for authentication context to update
+        setTimeout(redirectToTradespersonDashboard, 1500);
       } else {
         // Ensure error is a string, not an object
         const errorMessage = typeof result.error === 'string' 
