@@ -101,7 +101,7 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
   const [dragActive, setDragActive] = useState(false);
   const [showPaymentPage, setShowPaymentPage] = useState(false);
 
-  const { registerTradesperson } = useAuth();
+  const { registerTradesperson, user, isAuthenticated, isTradesperson } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const { states: nigerianStates, loading: statesLoading } = useStates();
