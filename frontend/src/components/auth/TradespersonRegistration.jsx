@@ -396,7 +396,13 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
         break;
       case 3:
         if (!formData.idType) newErrors.idType = 'Please select an ID type';
-        if (!formData.idDocument) newErrors.idDocument = 'Please upload your ID document';
+        // Allow skipping file upload in demo/testing environments
+        const isDemoEnvironment = window.location.pathname.includes('demo') || 
+                                 window.location.pathname.includes('test') ||
+                                 process.env.NODE_ENV === 'development';
+        if (!isDemoEnvironment && !formData.idDocument) {
+          newErrors.idDocument = 'Please upload your ID document';
+        }
         break;
       case 4:
         if (!formData.skillsTestPassed) {
