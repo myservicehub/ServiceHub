@@ -989,10 +989,17 @@ const WalletSetup = ({ formData, updateFormData, handleFinalSubmit, isLoading, s
   if (showPaymentPage) {
     return (
       <PaymentPage
+        formData={formData}
         onBack={() => setShowPaymentPage(false)}
-        onPaymentComplete={() => {
-          updateFormData('walletSetup', 'fund_now');
-          handleFinalSubmit();
+        onRegistrationComplete={(result) => {
+          console.log('Payment & Registration completed:', result);
+          // Handle successful registration with payment
+          if (result.success) {
+            // Close the registration modal/form
+            if (onComplete) {
+              onComplete(result);
+            }
+          }
         }}
       />
     );
