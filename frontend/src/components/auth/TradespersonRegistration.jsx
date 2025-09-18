@@ -1048,10 +1048,6 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
               </div>
             </div>
           )}
-          {/* Debug current step */}
-          <div style={{position: 'fixed', top: '10px', right: '10px', background: 'green', color: 'white', padding: '5px', zIndex: 9999}}>
-            Step {currentStep}
-          </div>
         </div>
 
         <div className="flex justify-between pt-6 border-t mt-8">
