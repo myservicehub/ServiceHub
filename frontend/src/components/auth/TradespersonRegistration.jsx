@@ -1064,7 +1064,7 @@ const WalletSetup = ({ formData, updateFormData, handleFinalSubmit, isLoading, s
           Fund Now
         </Button>
         
-        <Button
+        <button
           onClick={() => {
             console.log('🔘 SET UP WALLET LATER BUTTON CLICKED');
             alert('Set Up Wallet Later button clicked! Check console for details.');
@@ -1074,11 +1074,11 @@ const WalletSetup = ({ formData, updateFormData, handleFinalSubmit, isLoading, s
             handleFinalSubmit();
           }}
           disabled={isLoading}
-          variant="outline"
-          className="w-full border-green-600 text-green-600 hover:bg-green-50 py-3"
+          className="w-full border-2 border-green-600 text-green-600 hover:bg-green-50 py-3 px-6 rounded-lg font-medium disabled:opacity-50"
+          type="button"
         >
           {isLoading ? 'Completing Registration...' : 'Set Up Wallet Later & Complete Registration'}
-        </Button>
+        </button>
       </div>
     </div>
   );
