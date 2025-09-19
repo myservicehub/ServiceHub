@@ -10,7 +10,25 @@ import { Button } from '../components/ui/button';
 const PostJobPage = () => {
   const [isJobPosted, setIsJobPosted] = useState(false);
   const [postedJob, setPostedJob] = useState(null);
+  const [prefilledData, setPrefilledData] = useState({});
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Extract URL parameters to prefill the form
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const category = urlParams.get('category') || '';
+    const state = urlParams.get('location') || '';
+    const jobType = urlParams.get('q') || '';
+    
+    if (category || state || jobType) {
+      setPrefilledData({
+        category: category || jobType, // Use category if provided, otherwise use the job query
+        state: state,
+        title: jobType ? `${jobType} needed` : '' // Pre-fill title based on job type
+      });
+    }
+  }, [location.search]);
 
   const handleJobComplete = (jobData) => {
     setPostedJob(jobData);
