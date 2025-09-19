@@ -856,6 +856,45 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
     }
   };
 
+  // Helper function to extract error message from API response
+  const getErrorMessage = (error) => {
+    if (typeof error === 'string') {
+      return error;
+    }
+    
+    if (error?.response?.data?.detail) {
+      const detail = error.response.data.detail;
+      
+      // If detail is an array of validation errors
+      if (Array.isArray(detail)) {
+        return detail.map(err => {
+          if (typeof err === 'string') return err;
+          if (err.msg) return `${err.loc ? err.loc.join('.') + ': ' : ''}${err.msg}`;
+          return JSON.stringify(err);
+        }).join(', ');
+      }
+      
+      // If detail is a single validation error object
+      if (typeof detail === 'object' && detail.msg) {
+        return `${detail.loc ? detail.loc.join('.') + ': ' : ''}${detail.msg}`;
+      }
+      
+      // If detail is a string
+      if (typeof detail === 'string') {
+        return detail;
+      }
+      
+      // Fallback for objects
+      return JSON.stringify(detail);
+    }
+    
+    if (error?.message) {
+      return error.message;
+    }
+    
+    return "An unexpected error occurred. Please try again.";
+  };
+
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
     
