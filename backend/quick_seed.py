@@ -100,6 +100,9 @@ async def quick_seed():
             homeowner = random.choice(homeowners)
             category = random.choice(trade_categories)
             
+            # Determine job status and approval
+            job_status = random.choice(["pending_approval", "pending_approval", "active", "completed", "in_progress"])  # Most jobs should be pending approval
+
             job_data = {
                 "id": str(uuid.uuid4()),
                 "title": f"{random.choice(job_titles)} - {category}",
@@ -109,7 +112,7 @@ async def quick_seed():
                 "homeowner_name": homeowner["name"],
                 "location": homeowner["location"],
                 "postcode": homeowner["postcode"],
-                "status": random.choice(["pending_approval", "pending_approval", "active", "completed", "in_progress"]),  # Most jobs should be pending approval
+                "status": job_status,
                 "budget": random.randint(5000, 100000),
                 "currency": "NGN",
                 "urgency": random.choice(["low", "medium", "high"]),
@@ -119,6 +122,12 @@ async def quick_seed():
                 "updated_at": datetime.utcnow(),
                 "expires_at": datetime.utcnow() + timedelta(days=30)
             }
+            
+            # Add admin approval fields for approved jobs
+            if job_status in ["active", "completed", "in_progress"]:
+                job_data["approved_by"] = "admin_seed"  # Indicate these were auto-approved during seeding
+                job_data["approved_at"] = job_data["created_at"] + timedelta(hours=random.randint(1, 24))
+                job_data["approval_notes"] = "Auto-approved during database seeding"
             await db.jobs.insert_one(job_data)
         
         # Get all jobs for reviews
