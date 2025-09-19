@@ -109,7 +109,7 @@ async def quick_seed():
                 "homeowner_name": homeowner["name"],
                 "location": homeowner["location"],
                 "postcode": homeowner["postcode"],
-                "status": random.choice(["active", "completed", "in_progress"]),
+                "status": random.choice(["pending_approval", "pending_approval", "active", "completed", "in_progress"]),  # Most jobs should be pending approval
                 "budget": random.randint(5000, 100000),
                 "currency": "NGN",
                 "urgency": random.choice(["low", "medium", "high"]),
