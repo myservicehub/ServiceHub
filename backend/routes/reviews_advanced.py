@@ -378,7 +378,7 @@ async def _notify_review_received(
             "job_title": job_title,
             "rating": rating,
             "star_display": "⭐" * rating,
-            "review_url": f"https://servicehub.ng/reviews/{review_id}"
+            "review_url": f"{os.environ.get('FRONTEND_URL', 'https://servicehub.ng')}/reviews/{review_id}"
         }
         
         # Send notification
