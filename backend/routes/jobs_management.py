@@ -4,6 +4,7 @@ from typing import List, Optional
 from datetime import datetime
 import logging
 import uuid
+import os
 
 from database import database
 from models.content import (
