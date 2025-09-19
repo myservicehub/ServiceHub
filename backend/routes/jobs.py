@@ -243,7 +243,6 @@ async def get_jobs_for_tradesperson(
 @router.get("/search")
 async def search_jobs_with_location(
     q: Optional[str] = Query(None, description="Search query"),
-    location: Optional[str] = Query(None, description="Location name (state/city)"),
     category: Optional[str] = Query(None, description="Job category filter"),
     latitude: Optional[float] = Query(None, ge=-90, le=90, description="User latitude for location filtering"),
     longitude: Optional[float] = Query(None, ge=-180, le=180, description="User longitude for location filtering"),
@@ -255,7 +254,6 @@ async def search_jobs_with_location(
     try:
         jobs = await database.search_jobs_with_location(
             search_query=q,
-            location_name=location,
             category=category,
             user_latitude=latitude,
             user_longitude=longitude,
