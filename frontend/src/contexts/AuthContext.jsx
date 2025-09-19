@@ -98,7 +98,9 @@ export const AuthProvider = ({ children }) => {
 
   const registerHomeowner = async (registrationData) => {
     try {
+      console.log('🏠 Starting homeowner registration for:', registrationData.name);
       const response = await authAPI.registerHomeowner(registrationData);
+      console.log('✅ Homeowner registration API response:', response);
       
       // If registration successful and returns token, automatically log user in
       if (response.access_token) {
@@ -110,9 +112,10 @@ export const AuthProvider = ({ children }) => {
         return { success: true, user: response.user };
       }
       
+      console.log('⚠️ No access token in response, returning user data only');
       return { success: true, user: response };
     } catch (error) {
-      console.error('Registration failed:', error);
+      console.error('❌ Homeowner registration failed:', error);
       return { 
         success: false, 
         error: error.response?.data?.detail || 'Registration failed. Please try again.' 
