@@ -111,6 +111,7 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/search" element={<SearchResultsPage />} />
             <Route path="/post-job" element={<PostJobPage />} />
             <Route path="/my-jobs" element={<MyJobsPage />} />
             <Route path="/my-interests" element={<MyInterestsPage />} />
