@@ -132,6 +132,16 @@ const JobPostingForm = ({ onClose, onJobPosted, prefilledData = {} }) => {
     }
   }, [currentUser, loading]);
 
+  // Effect to handle prefilled data changes
+  useEffect(() => {
+    if (prefilledData && Object.keys(prefilledData).length > 0) {
+      setFormData(prevData => ({
+        ...prevData,
+        ...prefilledData
+      }));
+    }
+  }, [prefilledData]);
+
   // Fetch trade categories from API
   useEffect(() => {
     const fetchTradeCategories = async () => {
