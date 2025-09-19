@@ -271,6 +271,22 @@ const HeroSection = () => {
               >
                 {isSearching ? 'Searching...' : 'Find tradespeople'}
               </Button>
+              
+              <Button 
+                type="button"
+                onClick={() => {
+                  // Navigate to post job with prefilled data
+                  const params = new URLSearchParams();
+                  if (job) params.append('q', job);
+                  if (location) params.append('location', location);
+                  navigate(`/post-job?${params.toString()}`);
+                }}
+                className="text-white h-12 px-8 text-lg font-semibold font-lato hover:opacity-90"
+                style={{backgroundColor: '#2F8140'}}
+              >
+                <Plus size={20} className="mr-2" />
+                Post Job
+              </Button>
             </div>
           </form>
 
