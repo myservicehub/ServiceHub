@@ -12,6 +12,7 @@ from database import database
 from services.notifications import notification_service
 from datetime import datetime, timedelta
 import logging
+import os
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
