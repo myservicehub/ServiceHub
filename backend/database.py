@@ -2718,7 +2718,7 @@ class Database:
             "verified_referrals": verified_referrals,
             "total_coins_earned": total_coins_earned,
             "referral_code": referral_code,
-            "referral_link": f"https://servicehub.ng/signup?ref={referral_code}"
+            "referral_link": f"{os.environ.get('FRONTEND_URL', 'https://servicehub.ng')}/signup?ref={referral_code}"
         }
 
     async def get_pending_verifications(self, skip: int = 0, limit: int = 20) -> List[dict]:
