@@ -130,11 +130,23 @@ const MyJobsPage = () => {
       }
     } catch (error) {
       console.error('Failed to load jobs:', error);
-      toast({
-        title: "Failed to load jobs",
-        description: "There was an error loading your jobs. Please try again.",
-        variant: "destructive",
-      });
+      
+      // Check if it's an authentication error
+      if (error.response?.status === 401 || error.response?.data?.detail === "Not authenticated") {
+        toast({
+          title: "Sign in required",
+          description: "Please sign in to view your jobs.",
+          variant: "destructive",
+        });
+        // Optionally redirect to login or homepage
+        navigate('/');
+      } else {
+        toast({
+          title: "Failed to load jobs",
+          description: "There was an error loading your jobs. Please try again.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
