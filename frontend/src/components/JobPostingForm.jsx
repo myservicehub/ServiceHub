@@ -59,18 +59,18 @@ const FALLBACK_TRADE_CATEGORIES = [
   "Recycling"
 ];
 
-const JobPostingForm = ({ onClose, onJobPosted, prefilledData = {} }) => {
+const JobPostingForm = ({ onClose, onJobPosted }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [tradeCategories, setTradeCategories] = useState(FALLBACK_TRADE_CATEGORIES);
   const [loadingTrades, setLoadingTrades] = useState(true);
   const [formData, setFormData] = useState({
     // Step 1: Job Details
-    title: prefilledData.title || '',
+    title: '',
     description: '',
-    category: prefilledData.category || '',
+    category: '',
     
     // Step 2: Location & Timeline
-    state: prefilledData.state || '', 
+    state: '', 
     lga: '',
     town: '',
     zip_code: '',
