@@ -138,7 +138,7 @@ class JobsAuthTester:
                           f"Status: {response.status_code}, Response: {response.text}")
             return False
     
-    def authenticate_tradesperson(self, email: str = "john.plumber@gmail.com", password: str = "Password123!"):
+    def authenticate_tradesperson(self, email: str = "tradesperson1@example.com", password: str = "password123"):
         """Authenticate as tradesperson user"""
         print(f"\n=== Authenticating Tradesperson: {email} ===")
         
