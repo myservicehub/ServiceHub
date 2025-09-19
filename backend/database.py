@@ -5848,6 +5848,7 @@ class Database:
     async def search_jobs_with_location(
         self,
         search_query: str = None,
+        location_name: str = None,
         category: str = None,
         user_latitude: float = None,
         user_longitude: float = None,
@@ -5865,15 +5866,30 @@ class Database:
             # Only search active jobs
             search_filter["status"] = "active"
             
+            # Build OR conditions for text search
+            or_conditions = []
+            
             # Text search on title, description, or category
             if search_query:
-                search_filter["$or"] = [
+                or_conditions.extend([
                     {"title": {"$regex": search_query, "$options": "i"}},
                     {"description": {"$regex": search_query, "$options": "i"}},
                     {"category": {"$regex": search_query, "$options": "i"}}
-                ]
+                ])
             
-            # Category filter
+            # Location search
+            if location_name:
+                or_conditions.extend([
+                    {"location": {"$regex": location_name, "$options": "i"}},
+                    {"state": {"$regex": location_name, "$options": "i"}},
+                    {"lga": {"$regex": location_name, "$options": "i"}}
+                ])
+            
+            # Add OR conditions if any exist
+            if or_conditions:
+                search_filter["$or"] = or_conditions
+            
+            # Category filter (exact match or contains)
             if category:
                 search_filter["category"] = {"$regex": category, "$options": "i"}
             
@@ -5882,14 +5898,6 @@ class Database:
             if user_latitude and user_longitude and max_distance_km:
                 # For now, we'll do a simple text search on location
                 # In production, you'd implement proper geospatial indexing
-                pass
-            elif search_query or category:
-                # If we have other search terms, continue with those
-                pass
-            
-            # If no search query but we want to show some results for location-only searches
-            if not search_query and not category:
-                # Remove the empty OR clause if no text search
                 pass
             
             # Execute the search
@@ -5902,7 +5910,7 @@ class Database:
                 cleaned_job = self._clean_job_data(job)
                 cleaned_jobs.append(cleaned_job)
             
-            logger.info(f"Job search completed: {len(cleaned_jobs)} jobs found with query '{search_query}', category '{category}'")
+            logger.info(f"Job search completed: {len(cleaned_jobs)} jobs found with query '{search_query}', location '{location_name}', category '{category}'")
             return cleaned_jobs
             
         except Exception as e:
