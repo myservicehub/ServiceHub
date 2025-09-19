@@ -466,8 +466,6 @@ const MyJobsPage = () => {
   // Create sample data for testing
   const createSampleData = async () => {
     try {
-      setCreatingData(true);
-      
       // Call the backend endpoint to create sample jobs
       const response = await fetch('/api/jobs/create-sample-data', {
         method: 'POST',
@@ -498,8 +496,6 @@ const MyJobsPage = () => {
         description: "There was an error creating sample jobs. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setCreatingData(false);
     }
   };
 
