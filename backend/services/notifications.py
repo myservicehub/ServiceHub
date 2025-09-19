@@ -375,7 +375,7 @@ Great news! Your job posting has been approved and is now live on serviceHub.
 
 Your job is now visible to all qualified tradespeople in your area. You should start receiving interest notifications soon.
 
-To view your job and manage applications, visit: https://app.emergent.sh/my-jobs
+To view your job and manage applications, visit: {os.environ.get('FRONTEND_URL', 'https://app.emergent.sh')}/my-jobs
 
 Best regards,
 serviceHub Admin Team
