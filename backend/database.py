@@ -969,27 +969,30 @@ class Database:
             "status": "active"
         })
         
-        # Get total available categories from admin trades
+        # Get total available categories from static trade categories
         try:
-            trades_response = await self.get_all_trades()
-            if trades_response and 'trades' in trades_response:
-                total_categories = len(trades_response['trades'])
-            else:
-                # Fallback: count unique categories from tradespeople
-                users_with_categories = await self.database.users.find(
-                    {"role": "tradesperson", "trade_categories": {"$exists": True, "$ne": None}},
-                    {"trade_categories": 1}
-                ).to_list(length=None)
-                
-                all_categories = set()
-                for user in users_with_categories:
-                    trade_categories = user.get("trade_categories", [])
-                    if trade_categories:
-                        all_categories.update(trade_categories)
-                total_categories = len(all_categories)
+            from models.trade_categories import NIGERIAN_TRADE_CATEGORIES
+            # Get custom trades from database
+            custom_data = await self.get_custom_trades()
+            custom_trades = custom_data.get("trades", []) if custom_data else []
+            
+            # Combine static and custom trades
+            all_trades = list(set(NIGERIAN_TRADE_CATEGORIES + custom_trades))
+            total_categories = len(all_trades)
         except Exception as e:
             logger.error(f"Error getting categories count: {e}")
-            total_categories = 0
+            # Fallback: count unique categories from tradespeople
+            users_with_categories = await self.database.users.find(
+                {"role": "tradesperson", "trade_categories": {"$exists": True, "$ne": None}},
+                {"trade_categories": 1}
+            ).to_list(length=None)
+            
+            all_categories = set()
+            for user in users_with_categories:
+                trade_categories = user.get("trade_categories", [])
+                if trade_categories:
+                    all_categories.update(trade_categories)
+            total_categories = len(all_categories)
 
         return {
             "total_tradespeople": total_tradespeople,
