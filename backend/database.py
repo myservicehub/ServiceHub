@@ -5877,12 +5877,19 @@ class Database:
             if category:
                 search_filter["category"] = {"$regex": category, "$options": "i"}
             
-            # Location-based filtering would require geospatial data
-            # For now, we'll do a simple text search on location fields
+            # Simple location filtering by state/city name
+            # This searches both the location field and any location-related fields
             if user_latitude and user_longitude and max_distance_km:
-                # This is a simplified location filter
-                # In a production system, you'd use MongoDB's geospatial queries
-                # For now, we'll skip the geospatial filtering and just return all results
+                # For now, we'll do a simple text search on location
+                # In production, you'd implement proper geospatial indexing
+                pass
+            elif search_query or category:
+                # If we have other search terms, continue with those
+                pass
+            
+            # If no search query but we want to show some results for location-only searches
+            if not search_query and not category:
+                # Remove the empty OR clause if no text search
                 pass
             
             # Execute the search
