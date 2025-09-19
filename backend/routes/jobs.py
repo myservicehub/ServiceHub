@@ -785,7 +785,7 @@ async def notify_job_completion(job_id: str, job: dict, homeowner: User):
                     "job_location": job.get("location", ""),
                     "homeowner_name": homeowner.name,
                     "completion_date": datetime.utcnow().strftime("%B %d, %Y"),
-                    "interests_url": "https://servicehub.ng/my-interests"
+                    "interests_url": f"{os.environ.get('FRONTEND_URL', 'https://servicehub.ng')}/my-interests"
                 }
                 
                 # Send notification
