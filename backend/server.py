@@ -215,16 +215,3 @@ if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8001))
     uvicorn.run(app, host="0.0.0.0", port=port)
-
-
-      collections_info["error"] = str(e)
-        
-        # Get sample data
-        sample_data = {}
-        try:
-            if collections_info.get("users", 0) > 0:
-                sample_user = await db.users.find_one({}, {"password_hash": 0})
-                if sample_user:
-                    sample_data["sample_user"] = {
-                        "id": sample_user.get("id"),
-                        "name": sample_user.get("name"),
