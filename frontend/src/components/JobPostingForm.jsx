@@ -473,7 +473,7 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
       console.error('Job posting failed:', error);
       toast({
         title: "Error",
-        description: error.response?.data?.detail || "Failed to post job. Please try again.",
+        description: getErrorMessage(error),
         variant: "destructive",
       });
     } finally {
