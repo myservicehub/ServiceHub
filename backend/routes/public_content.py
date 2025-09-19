@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from typing import List, Optional
 from datetime import datetime
 import logging
+import os
 import uuid
 
 from database import database
