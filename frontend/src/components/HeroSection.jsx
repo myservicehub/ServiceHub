@@ -281,7 +281,13 @@ const HeroSection = () => {
           {/* Alternative CTA */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button 
-              onClick={() => navigate('/post-job')}
+              onClick={() => {
+                // Navigate to post job with prefilled data
+                const params = new URLSearchParams();
+                if (job) params.append('q', job);
+                if (location) params.append('location', location);
+                navigate(`/post-job?${params.toString()}`);
+              }}
               className="text-white px-8 py-3 text-lg font-lato font-semibold hover:opacity-90"
               style={{backgroundColor: '#2F8140'}}
             >
