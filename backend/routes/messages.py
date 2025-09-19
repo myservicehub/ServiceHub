@@ -327,7 +327,7 @@ async def _notify_new_message(sender: User, recipient_id: str, conversation: dic
             "sender_name": sender.name or sender.business_name or "User",
             "job_title": conversation.get("job_title", "Job"),
             "message_preview": message_content[:100] + "..." if len(message_content) > 100 else message_content,
-            "conversation_url": f"https://servicehub.ng/messages/{conversation['id']}"
+            "conversation_url": f"{os.environ.get('FRONTEND_URL', 'https://servicehub.ng')}/messages/{conversation['id']}"
         }
         
         # Send notification
