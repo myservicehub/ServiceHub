@@ -11,6 +11,7 @@ from models.notifications import (
 )
 from services.notifications import notification_service
 import logging
+import os
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
