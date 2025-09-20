@@ -505,7 +505,7 @@ const InterestedTradespeopleePage = () => {
                     <Badge className="bg-green-50 text-green-700 border-green-200">
                       Contact details shared, waiting for feedback
                     </Badge>
-                    {isChatDisabled() ? (
+                    {isChatDisabled(tradesperson) ? (
                       <div className="space-y-1">
                         <Button
                           disabled
