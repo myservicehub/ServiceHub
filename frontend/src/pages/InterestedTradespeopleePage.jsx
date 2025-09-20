@@ -594,7 +594,7 @@ const InterestedTradespeopleePage = () => {
                         <MessageCircle size={16} className="mr-2" />
                         Chat with Tradesperson
                       </Button>
-                      <p className="text-xs text-gray-500 text-center">{getChatDisabledMessage()}</p>
+                      <p className="text-xs text-gray-500 text-center">{getChatDisabledMessage(tradesperson)}</p>
                     </div>
                   ) : (
                     <Button
