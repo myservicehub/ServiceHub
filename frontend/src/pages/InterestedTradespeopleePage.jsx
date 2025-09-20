@@ -220,17 +220,36 @@ const InterestedTradespeopleePage = () => {
     setShowImageModal(true);
   };
 
-  // Helper function to check if chat should be disabled based on job status
-  const isChatDisabled = () => {
+  // Helper function to check if chat should be disabled based on job status and payment
+  const isChatDisabled = (tradesperson = null) => {
     if (!job) return false; // If job is not loaded yet, don't disable
-    return job.status === 'cancelled' || job.status === 'completed';
+    
+    // Check job status first
+    if (job.status === 'cancelled' || job.status === 'completed') {
+      return true;
+    }
+    
+    // Check if tradesperson has paid access fee
+    if (tradesperson && tradesperson.status !== 'paid_access') {
+      return true;
+    }
+    
+    return false;
   };
 
   // Get message for why chat is disabled
-  const getChatDisabledMessage = () => {
+  const getChatDisabledMessage = (tradesperson = null) => {
     if (!job) return '';
+    
+    // Job status messages take priority
     if (job.status === 'cancelled') return 'Chat disabled - Job has been cancelled';
     if (job.status === 'completed') return 'Chat disabled - Job has been completed';
+    
+    // Payment status messages
+    if (tradesperson && tradesperson.status !== 'paid_access') {
+      return 'Chat available after tradesperson pays access fee';
+    }
+    
     return '';
   };
 
