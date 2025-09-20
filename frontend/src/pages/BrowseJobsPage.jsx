@@ -987,24 +987,6 @@ const BrowseJobsPage = () => {
                 </div>
               )}
 
-              {/* Additional Details */}
-              {(selectedJobDetails.town || selectedJobDetails.zip_code || selectedJobDetails.home_address) && (
-                <div className="mb-6">
-                  <h3 className="font-semibold mb-3 font-montserrat">Additional Location Details</h3>
-                  <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm">
-                    {selectedJobDetails.town && (
-                      <div><strong>Town/Area:</strong> {selectedJobDetails.town}</div>
-                    )}
-                    {selectedJobDetails.zip_code && (
-                      <div><strong>Zip Code:</strong> {selectedJobDetails.zip_code}</div>
-                    )}
-                    {selectedJobDetails.home_address && (
-                      <div><strong>Address:</strong> {selectedJobDetails.home_address}</div>
-                    )}
-                  </div>
-                </div>
-              )}
-
               {/* Action Buttons */}
               <div className="flex justify-between items-center pt-6 border-t">
                 <div className="text-sm text-gray-500 font-lato">
