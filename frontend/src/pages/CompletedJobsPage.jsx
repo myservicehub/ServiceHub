@@ -35,7 +35,6 @@ const CompletedJobsPage = () => {
   const [filterBy, setFilterBy] = useState('all');
   const [stats, setStats] = useState({
     totalCompleted: 0,
-    totalEarnings: 0,
     avgRating: 0,
     thisMonth: 0
   });
