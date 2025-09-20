@@ -347,7 +347,13 @@ class JohnProfileTester:
             
             if interests_response.status_code == 200:
                 interests_data = interests_response.json()
-                interests = interests_data.get('interests', [])
+                
+                # Handle both list and dict response formats
+                if isinstance(interests_data, list):
+                    interests = interests_data
+                else:
+                    interests = interests_data.get('interests', [])
+                    
                 actual_completed_jobs = len([i for i in interests if i.get('job_status') == 'completed'])
                 
                 # Compare profile total_jobs with actual completed jobs count
