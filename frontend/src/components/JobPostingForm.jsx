@@ -1313,28 +1313,7 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
               </div>
             )}
 
-            {/* Fallback Description Field - Only show if no category selected or no questions available */}
-            {!formData.category && (
-              <div>
-                <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
-                  Job Description *
-                </label>
-                <textarea
-                  rows={4}
-                  value={formData.description}
-                  onChange={(e) => updateFormData('description', e.target.value)}
-                  placeholder="Describe the work you need done in detail..."
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato resize-none ${
-                    errors.description ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                />
-                <div className="flex justify-between items-center mt-1">
-                  <span className="text-gray-500 text-xs">Minimum 50 characters</span>
-                  <p className="text-gray-500 text-sm">{formData.description.length}/2000</p>
-                </div>
-                {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
-              </div>
-            )}
+            {/* Job Description field removed as requested */}
           </div>
         );
 
