@@ -436,7 +436,7 @@ const BrowseJobsPage = () => {
     
     // Fetch job question answers
     try {
-      const answers = await walletAPI.tradeCategoryQuestionsAPI.getJobQuestionAnswers(job.id);
+      const answers = await tradeCategoryQuestionsAPI.getJobQuestionAnswers(job.id);
       if (answers && answers.answers && answers.answers.length > 0) {
         setSelectedJobAnswers(answers);
       }
