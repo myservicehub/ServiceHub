@@ -110,7 +110,7 @@ nano .env
 
 Add this variable:
 ```env
-REACT_APP_BACKEND_URL=http://your-domain.com
+REACT_APP_BACKEND_URL=https://myservicehub.co
 ```
 
 ### Step 6: Install Dependencies & Build
