@@ -371,7 +371,7 @@ class ContactDetails(BaseModel):
     homeowner_email: str
     homeowner_phone: str
     job_title: str
-    job_description: str
+    job_description: Optional[str] = None
     job_location: str
     budget_range: Optional[str] = None
 
