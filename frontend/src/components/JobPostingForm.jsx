@@ -217,9 +217,10 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
 
         // If category is selected, validate admin questions instead of description
         if (formData.category) {
-          if (tradeQuestions.length > 0) {
-            // Validate trade category questions
-            tradeQuestions.forEach(question => {
+          const visibleQuestions = getVisibleQuestions();
+          if (visibleQuestions.length > 0) {
+            // Validate only visible trade category questions (after conditional logic)
+            visibleQuestions.forEach(question => {
               if (question.is_required) {
                 const answer = questionAnswers[question.id];
                 
@@ -239,12 +240,14 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
                 }
               }
             });
+          } else if (tradeQuestions.length > 0) {
+            // If there are questions configured but none are visible due to conditional logic,
+            // this might be valid (all questions might be conditional and hidden)
+            // Don't block progression in this case
           } else {
             // No questions available for this category - prevent proceeding
             newErrors.category = 'Questions need to be configured for this category. Please contact support or choose a different category.';
           }
-        } else {
-          // Category is selected, so no need to validate description
         }
         break;
 
