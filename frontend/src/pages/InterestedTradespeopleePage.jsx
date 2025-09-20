@@ -585,7 +585,7 @@ const InterestedTradespeopleePage = () => {
                 )}
 
                 {tradesperson.status === 'interested' && (
-                  isChatDisabled() ? (
+                  isChatDisabled(tradesperson) ? (
                     <div className="space-y-1">
                       <Button
                         disabled
