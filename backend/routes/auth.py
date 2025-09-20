@@ -282,8 +282,38 @@ async def login(login_data: UserLogin):
 
 @router.get("/me", response_model=UserProfile)
 async def get_current_user_profile(current_user: User = Depends(get_current_user)):
-    """Get current user's profile"""
-    return UserProfile(**current_user.dict())
+    """Get current user's profile with updated statistics"""
+    user_data = current_user.dict()
+    
+    # For tradespeople, calculate actual completed jobs count
+    if current_user.role == UserRole.TRADESPERSON:
+        try:
+            # Count completed jobs for this tradesperson
+            completed_jobs_count = await database.database.interests.count_documents({
+                "tradesperson_id": current_user.id,
+                "job_status": "completed"
+            })
+            user_data["total_jobs"] = completed_jobs_count
+            
+            # Also update average rating if we have reviews
+            reviews_data = await database.database.reviews.find({
+                "tradesperson_id": current_user.id
+            }).to_list(length=None)
+            
+            if reviews_data:
+                total_rating = sum(review.get("rating", 0) for review in reviews_data)
+                user_data["average_rating"] = round(total_rating / len(reviews_data), 1)
+                user_data["total_reviews"] = len(reviews_data)
+            else:
+                user_data["average_rating"] = 0.0
+                user_data["total_reviews"] = 0
+                
+        except Exception as e:
+            logger.error(f"Error calculating tradesperson statistics: {e}")
+            # Keep original values if calculation fails
+            pass
+    
+    return UserProfile(**user_data)
 
 @router.put("/profile", response_model=UserProfile)
 async def update_profile(
