@@ -386,10 +386,10 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
 
     try {
       // Create the job using authenticated user's data
-      // Create job data with proper description
-      let jobDescription = formData.description;
+      // Generate description from category and questions, since manual description field is removed
+      let jobDescription = `${formData.category} work requested.`;
       
-      // If using admin questions instead of manual description, generate description from answers
+      // If using admin questions, generate description from answers
       if (formData.category && tradeQuestions.length > 0 && Object.keys(questionAnswers).length > 0) {
         const answerTexts = tradeQuestions.map(question => {
           const answer = questionAnswers[question.id];
