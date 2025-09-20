@@ -121,6 +121,7 @@ function App() {
             <Route path="/browse-jobs" element={<BrowseJobsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/tradesperson/:tradespersonId/portfolio" element={<TradespersonPortfolioPage />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/notifications/preferences" element={<NotificationPreferencesPage />} />
             <Route path="/notifications/history" element={<NotificationHistoryPage />} />
             <Route path="/reviews" element={<ReviewsPage />} />
