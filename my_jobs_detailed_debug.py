@@ -326,18 +326,20 @@ class DetailedMyJobsDebugger:
                 print(f"   📋 Total jobs in system: {len(all_jobs)}")
                 
                 # Check how many belong to current user by email
-                user_jobs_by_email = [
-                    job for job in all_jobs 
-                    if job.get('homeowner', {}).get('email') == self.user_data.get('email')
-                ]
+                user_jobs_by_email = []
+                user_jobs_by_id = []
+                
+                for job in all_jobs:
+                    homeowner = job.get('homeowner')
+                    if homeowner and isinstance(homeowner, dict):
+                        if homeowner.get('email') == self.user_data.get('email'):
+                            user_jobs_by_email.append(job)
+                    
+                    if job.get('homeowner_id') == self.user_data.get('id'):
+                        user_jobs_by_id.append(job)
                 
                 print(f"   📋 Jobs belonging to user (by email): {len(user_jobs_by_email)}")
-                
-                # Check how many belong to current user by ID
-                user_jobs_by_id = [
-                    job for job in all_jobs 
-                    if job.get('homeowner_id') == self.user_data.get('id')
-                ]
+                print(f"   📋 Jobs belonging to user (by ID): {len(user_jobs_by_id)}")
                 
                 print(f"   📋 Jobs belonging to user (by ID): {len(user_jobs_by_id)}")
                 
