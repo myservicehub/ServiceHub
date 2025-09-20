@@ -289,10 +289,15 @@ async def get_current_user_profile(current_user: User = Depends(get_current_user
     if current_user.role == UserRole.TRADESPERSON:
         try:
             # Count completed jobs for this tradesperson
-            completed_jobs_count = await database.database.interests.count_documents({
+            query = {
                 "tradesperson_id": current_user.id,
                 "job_status": "completed"
-            })
+            }
+            logger.info(f"Querying interests with: {query}")
+            
+            completed_jobs_count = await database.database.interests.count_documents(query)
+            logger.info(f"Found {completed_jobs_count} completed jobs for tradesperson {current_user.id}")
+            
             user_data["total_jobs"] = completed_jobs_count
             
             # Also update average rating if we have reviews
