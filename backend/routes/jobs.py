@@ -45,6 +45,10 @@ async def create_job(
         # Convert to dict and prepare for database
         job_dict = job_data.dict()
         
+        # Auto-generate description if not provided
+        if not job_dict.get('description') or len(job_dict.get('description', '').strip()) < 10:
+            job_dict['description'] = f"Professional {job_dict['category']} service required. Job details will be provided through structured questions and consultation."
+        
         # Validate LGA belongs to the specified state (check both static and dynamic LGAs)
         static_valid = validate_lga_for_state(job_data.state, job_data.lga)
         
