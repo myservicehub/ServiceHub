@@ -27,7 +27,7 @@
 ssh root@YOUR_VPS_IP_ADDRESS
 
 # Download and run my complete setup script
-wget https://nigconnect.preview.emergentagent.com/auto-deploy.sh
+wget https://trademe-platform.preview.emergentagent.com/auto-deploy.sh
 chmod +x auto-deploy.sh
 ./auto-deploy.sh
 ```

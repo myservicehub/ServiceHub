@@ -11,7 +11,7 @@ import json
 import uuid
 from datetime import datetime
 
-BACKEND_URL = "https://nigconnect.preview.emergentagent.com/api"
+BACKEND_URL = "https://trademe-platform.preview.emergentagent.com/api"
 
 class FocusedJobCompletionTester:
     def __init__(self):

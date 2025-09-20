@@ -7,7 +7,7 @@ import requests
 import json
 import uuid
 
-BACKEND_URL = "https://nigconnect.preview.emergentagent.com/api"
+BACKEND_URL = "https://trademe-platform.preview.emergentagent.com/api"
 
 def test_notifications():
     print("🚀 Testing Phase 4: Mock Notifications System")

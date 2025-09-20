@@ -25,8 +25,8 @@ logger = logging.getLogger(__name__)
 
 class FrontendAuthTester:
     def __init__(self):
-        self.frontend_url = "https://nigconnect.preview.emergentagent.com"
-        self.backend_url = "https://nigconnect.preview.emergentagent.com/api"
+        self.frontend_url = "https://trademe-platform.preview.emergentagent.com"
+        self.backend_url = "https://trademe-platform.preview.emergentagent.com/api"
         self.target_email = "francisdaniel4jb@gmail.com"
         self.target_password = "Servicehub..1"
         self.driver = None
@@ -456,8 +456,8 @@ if __name__ == "__main__":
     # Instead, let's test the frontend API calls directly
     import requests
     
-    frontend_url = "https://nigconnect.preview.emergentagent.com"
-    backend_url = "https://nigconnect.preview.emergentagent.com/api"
+    frontend_url = "https://trademe-platform.preview.emergentagent.com"
+    backend_url = "https://trademe-platform.preview.emergentagent.com/api"
     
     print(f"\n🔍 Testing Frontend-Backend Communication")
     print(f"Frontend URL: {frontend_url}")

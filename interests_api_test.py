@@ -23,7 +23,7 @@ import uuid
 import time
 
 # Get backend URL from environment
-BACKEND_URL = "https://nigconnect.preview.emergentagent.com/api"
+BACKEND_URL = "https://trademe-platform.preview.emergentagent.com/api"
 
 class InterestsAPITester:
     def __init__(self):

@@ -45,7 +45,7 @@ from typing import Dict, List, Any, Optional
 import uuid
 
 # Get backend URL from environment
-BACKEND_URL = "https://nigconnect.preview.emergentagent.com/api"
+BACKEND_URL = "https://trademe-platform.preview.emergentagent.com/api"
 
 class MyJobsDebugTester:
     def __init__(self):
@@ -432,8 +432,8 @@ class MyJobsDebugTester:
         # Test with Origin header (simulating frontend request)
         print(f"\n--- Test 1: CORS Headers ---")
         headers = {
-            'Origin': 'https://nigconnect.preview.emergentagent.com',
-            'Referer': 'https://nigconnect.preview.emergentagent.com/my-jobs'
+            'Origin': 'https://trademe-platform.preview.emergentagent.com',
+            'Referer': 'https://trademe-platform.preview.emergentagent.com/my-jobs'
         }
         
         response = self.make_request("GET", "/jobs/my-jobs", auth_token=self.user_token, headers=headers)

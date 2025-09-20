@@ -39,7 +39,7 @@ All platform stats have been updated to reflect accurate data from the database 
 
 ### **API Endpoint Testing**
 ```bash
-curl https://nigconnect.preview.emergentagent.com/api/stats
+curl https://trademe-platform.preview.emergentagent.com/api/stats
 ```
 **Response:**
 ```json

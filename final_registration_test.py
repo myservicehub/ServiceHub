@@ -10,7 +10,7 @@ import json
 import uuid
 
 # Get backend URL from environment
-BACKEND_URL = "https://nigconnect.preview.emergentagent.com/api"
+BACKEND_URL = "https://trademe-platform.preview.emergentagent.com/api"
 
 def test_frontend_registration():
     """Test registration with exact frontend data format but unique email"""
