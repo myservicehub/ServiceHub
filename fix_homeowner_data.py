@@ -23,6 +23,18 @@ async def fix_homeowner_data():
     client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_URL)
     db = client.get_database()
     
+    # Debug: Check all jobs first
+    all_jobs_cursor = db.jobs.find({})
+    all_jobs = await all_jobs_cursor.to_list(length=10)
+    
+    print(f"📊 Total jobs in database: {len(all_jobs)}")
+    for job in all_jobs[:3]:  # Show first 3 jobs
+        print(f"   - Job: {job.get('title', 'Unknown')}")
+        print(f"     homeowner_id: {job.get('homeowner_id', 'NOT_SET')}")
+        print(f"     homeowner: {job.get('homeowner', 'NOT_SET')}")
+        print(f"     homeowner_email: {job.get('homeowner_email', 'NOT_SET')}")
+        print()
+    
     # Get all jobs with null homeowner_id
     jobs_cursor = db.jobs.find({"$or": [{"homeowner_id": None}, {"homeowner_id": {"$exists": False}}]})
     jobs_to_fix = await jobs_cursor.to_list(length=None)
