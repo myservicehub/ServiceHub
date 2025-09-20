@@ -978,6 +978,29 @@ const BrowseJobsPage = () => {
                 </div>
               </div>
 
+              {/* Job Requirements & Details from Trade Category Questions */}
+              {selectedJobAnswers && selectedJobAnswers.answers && selectedJobAnswers.answers.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="font-semibold mb-3 font-montserrat">Job Requirements & Details</h3>
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-3">
+                    {selectedJobAnswers.answers.map((answer, index) => (
+                      <div key={index} className="border-b border-green-200 last:border-b-0 pb-3 last:pb-0">
+                        <div className="font-medium text-gray-800 font-lato mb-1">
+                          {answer.question_text}
+                        </div>
+                        <div className="text-gray-700 font-lato pl-3">
+                          <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                          {answer.answer_text || answer.answer_value}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-2 text-xs text-gray-500 font-lato">
+                    Specific requirements provided by the homeowner
+                  </div>
+                </div>
+              )}
+
               {/* Additional Details */}
               {(selectedJobDetails.town || selectedJobDetails.zip_code || selectedJobDetails.home_address) && (
                 <div className="mb-6">
