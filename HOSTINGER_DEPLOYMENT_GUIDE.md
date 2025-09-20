@@ -187,7 +187,7 @@ systemctl status nginx mongod
 
 ```bash
 # Install SSL certificate
-certbot --nginx -d your-domain.com -d www.your-domain.com
+certbot --nginx -d myservicehub.co -d www.myservicehub.co
 
 # Auto-renewal setup
 certbot renew --dry-run
