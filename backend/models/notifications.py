@@ -31,6 +31,7 @@ class NotificationStatus(str, Enum):
     SENT = "sent"
     DELIVERED = "delivered"
     FAILED = "failed"
+    READ = "read"
 
 class NotificationPreferences(BaseModel):
     """User notification preferences"""
