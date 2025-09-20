@@ -71,6 +71,7 @@ const BrowseJobsPage = () => {
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'map'
   const [selectedJobId, setSelectedJobId] = useState(null);
   const [selectedJobDetails, setSelectedJobDetails] = useState(null);
+  const [selectedJobAnswers, setSelectedJobAnswers] = useState(null);
   const [showJobModal, setShowJobModal] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   const [locationLoading, setLocationLoading] = useState(false);
