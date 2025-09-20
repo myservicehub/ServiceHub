@@ -24,7 +24,10 @@ const AuthModal = ({ isOpen, onClose, defaultMode = 'login', defaultTab = 'trade
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+      <DialogContent 
+        className="max-w-4xl max-h-[90vh] overflow-y-auto p-0"
+        onPointerDownOutside={(e) => { e.preventDefault(); }}
+      >
         {mode === 'login' ? (
           <LoginForm 
             onClose={handleClose} 
