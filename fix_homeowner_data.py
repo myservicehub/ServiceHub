@@ -23,8 +23,8 @@ async def fix_homeowner_data():
     client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_URL)
     db = client.get_database()
     
-    # Get all jobs with missing homeowner_id
-    jobs_cursor = db.jobs.find({"homeowner_id": None})
+    # Get all jobs with null homeowner_id
+    jobs_cursor = db.jobs.find({"$or": [{"homeowner_id": None}, {"homeowner_id": {"$exists": False}}]})
     jobs_to_fix = await jobs_cursor.to_list(length=None)
     
     print(f"📋 Found {len(jobs_to_fix)} jobs with missing homeowner_id")
