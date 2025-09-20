@@ -499,6 +499,10 @@ const MyJobsPage = () => {
     }
   };
 
+  const handleCompleteAndReview = async (jobId) => {
+    // Implementation will be added here
+  };
+
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
