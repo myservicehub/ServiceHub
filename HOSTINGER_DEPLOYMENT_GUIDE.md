@@ -97,7 +97,7 @@ nano .env
 Add these variables:
 ```env
 MONGO_URL=mongodb://localhost:27017/servicehub
-FRONTEND_URL=http://your-domain.com
+FRONTEND_URL=https://myservicehub.co
 JWT_SECRET=your-super-secret-jwt-key-here
 PORT=8001
 ```
