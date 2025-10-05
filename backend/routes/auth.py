@@ -38,7 +38,7 @@ async def register_homeowner(registration_data: HomeownerRegistration):
         if not validate_password_strength(registration_data.password):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Password must be at least 8 characters long and contain uppercase, lowercase, and numeric characters"
+                detail="Password must be at least 8 characters long and contain uppercase, lowercase, numeric, and special characters"
             )
 
         # Validate and format phone number
@@ -132,7 +132,7 @@ async def register_tradesperson(registration_data: TradespersonRegistration):
         if not validate_password_strength(registration_data.password):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Password must be at least 8 characters long and contain uppercase, lowercase, and numeric characters"
+                detail="Password must be at least 8 characters long and contain uppercase, lowercase, numeric, and special characters"
             )
 
         # Validate and format phone number

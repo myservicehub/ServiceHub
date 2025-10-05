@@ -93,6 +93,14 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
   });
 
   const [errors, setErrors] = useState({});
+  const [passwordStrength, setPasswordStrength] = useState({
+    length: false,
+    uppercase: false,
+    lowercase: false,
+    number: false,
+    special: false,
+    score: 0
+  });
   const [testResults, setTestResults] = useState(null);
   const [currentTest, setCurrentTest] = useState(null);
   const [testAnswers, setTestAnswers] = useState({});
@@ -138,8 +146,80 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
     'Limited liability partnership (LLP)'
   ];
 
+  // Phone number validation and formatting functions
+  const validateNigerianPhone = (phone) => {
+    // Remove all non-digit characters
+    const cleanPhone = phone.replace(/\D/g, '');
+    
+    // Check for valid Nigerian phone number patterns
+    // Pattern 1: Starting with 234 (country code) - should be 13 digits total
+    if (cleanPhone.startsWith('234') && cleanPhone.length === 13) {
+      return true;
+    }
+    
+    // Pattern 2: Starting with 0 - should be 11 digits total (08140120508)
+    if (cleanPhone.startsWith('0') && cleanPhone.length === 11) {
+      return true;
+    }
+    
+    // Pattern 3: Starting with 7, 8, or 9 (without 0 prefix) - should be 10 digits total (8140120508)
+    if ((cleanPhone.startsWith('7') || cleanPhone.startsWith('8') || cleanPhone.startsWith('9')) && cleanPhone.length === 10) {
+      return true;
+    }
+    
+    return false;
+  };
+
+  const formatNigerianPhone = (phone) => {
+    // Remove all non-digit characters
+    const cleanPhone = phone.replace(/\D/g, '');
+    
+    // If already in +234 format, return as is
+    if (cleanPhone.startsWith('234') && cleanPhone.length === 13) {
+      return `+${cleanPhone}`;
+    }
+    
+    // If starts with 0, remove it and add +234
+    if (cleanPhone.startsWith('0') && cleanPhone.length === 11) {
+      return `+234${cleanPhone.substring(1)}`;
+    }
+    
+    // If starts with 7, 8, or 9 (10 digits), add +234
+    if ((cleanPhone.startsWith('7') || cleanPhone.startsWith('8') || cleanPhone.startsWith('9')) && cleanPhone.length === 10) {
+      return `+234${cleanPhone}`;
+    }
+    
+    // Return original if no valid pattern
+    return phone;
+  };
+
+  // Password strength validation
+  const validatePasswordStrength = (password) => {
+    const strength = {
+      length: password.length >= 8,
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      number: /\d/.test(password),
+      special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password),
+      score: 0
+    };
+    
+    // Calculate score
+    strength.score = Object.values(strength).filter(Boolean).length - 1; // -1 to exclude score itself
+    
+    return strength;
+  };
+
   const updateFormData = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Real-time password validation
+    if (field === 'password') {
+      const strength = validatePasswordStrength(value);
+      setPasswordStrength(strength);
+    }
+    
+    // Clear errors for the field being updated
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
@@ -377,9 +457,21 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
           newErrors.email = 'Please enter a valid email address';
         }
-        if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
-        if (!formData.password || formData.password.length < 6) {
-          newErrors.password = 'Password must be at least 6 characters';
+        // Enhanced phone validation
+        if (!formData.phone.trim()) {
+          newErrors.phone = 'Phone number is required';
+        } else if (!validateNigerianPhone(formData.phone)) {
+          newErrors.phone = 'Please enter a valid Nigerian phone number (e.g., 08140120508 or 8140120508)';
+        }
+        
+        // Enhanced password validation
+        if (!formData.password) {
+          newErrors.password = 'Password is required';
+        } else {
+          const strength = validatePasswordStrength(formData.password);
+          if (!strength.length || !strength.uppercase || !strength.lowercase || !strength.number || !strength.special) {
+            newErrors.password = 'Password must meet all requirements below';
+          }
         }
         break;
       case 2:
@@ -538,25 +630,28 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          +234 Phone number *
+          Phone number *
         </label>
         <div className="flex">
           <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm">
             +234
           </span>
           <Input
-            placeholder="Phone number"
+            placeholder="8140120508 or 08140120508"
             value={formData.phone}
             onChange={(e) => updateFormData('phone', e.target.value)}
             className={`rounded-l-none ${errors.phone ? 'border-red-500' : ''}`}
           />
         </div>
+        <p className="text-xs text-gray-500 mt-1">
+          Enter your number with or without the leading 0 (e.g., 8140120508 or 08140120508)
+        </p>
         {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Password (6 characters minimum) *
+          Password *
         </label>
         <Input
           type="password"
@@ -565,6 +660,53 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
           onChange={(e) => updateFormData('password', e.target.value)}
           className={errors.password ? 'border-red-500' : ''}
         />
+        
+        {/* Password strength indicator */}
+        <div className="mt-3 space-y-2">
+          <div className="text-xs font-medium text-gray-700">Password requirements:</div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+            <div className={`flex items-center space-x-2 ${passwordStrength.length ? 'text-green-600' : 'text-gray-400'}`}>
+              {passwordStrength.length ? <CheckCircle size={14} /> : <XCircle size={14} />}
+              <span>At least 8 characters</span>
+            </div>
+            <div className={`flex items-center space-x-2 ${passwordStrength.uppercase ? 'text-green-600' : 'text-gray-400'}`}>
+              {passwordStrength.uppercase ? <CheckCircle size={14} /> : <XCircle size={14} />}
+              <span>One uppercase letter</span>
+            </div>
+            <div className={`flex items-center space-x-2 ${passwordStrength.lowercase ? 'text-green-600' : 'text-gray-400'}`}>
+              {passwordStrength.lowercase ? <CheckCircle size={14} /> : <XCircle size={14} />}
+              <span>One lowercase letter</span>
+            </div>
+            <div className={`flex items-center space-x-2 ${passwordStrength.number ? 'text-green-600' : 'text-gray-400'}`}>
+              {passwordStrength.number ? <CheckCircle size={14} /> : <XCircle size={14} />}
+              <span>One number</span>
+            </div>
+            <div className={`flex items-center space-x-2 ${passwordStrength.special ? 'text-green-600' : 'text-gray-400'}`}>
+              {passwordStrength.special ? <CheckCircle size={14} /> : <XCircle size={14} />}
+              <span>One special character</span>
+            </div>
+          </div>
+          
+          {/* Password strength bar */}
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div 
+              className={`h-2 rounded-full transition-all duration-300 ${
+                passwordStrength.score === 5 ? 'bg-green-500' :
+                passwordStrength.score >= 3 ? 'bg-yellow-500' :
+                passwordStrength.score >= 1 ? 'bg-red-500' : 'bg-gray-300'
+              }`}
+              style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
+            />
+          </div>
+          <div className="text-xs text-gray-500">
+            Password strength: {
+              passwordStrength.score === 5 ? 'Strong' :
+              passwordStrength.score >= 3 ? 'Medium' :
+              passwordStrength.score >= 1 ? 'Weak' : 'Very Weak'
+            }
+          </div>
+        </div>
+        
         {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
       </div>
 

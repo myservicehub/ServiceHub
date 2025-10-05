@@ -53,46 +53,52 @@ def verify_token(token: str) -> dict:
         )
 
 def validate_password_strength(password: str) -> bool:
-    """Validate password meets minimum requirements."""
+    """Validate password meets minimum requirements: 8+ chars, uppercase, lowercase, number, special char."""
     if len(password) < 8:
         return False
     
     has_upper = any(c.isupper() for c in password)
     has_lower = any(c.islower() for c in password)
     has_digit = any(c.isdigit() for c in password)
+    has_special = any(c in "!@#$%^&*()_+-=[]{}|;:,.<>?" for c in password)
     
-    return has_upper and has_lower and has_digit
+    return has_upper and has_lower and has_digit and has_special
 
 def validate_nigerian_phone(phone: str) -> bool:
     """Validate Nigerian phone number format."""
-    # Remove spaces and dashes
-    phone = phone.replace(" ", "").replace("-", "")
+    # Remove all non-digit characters
+    clean_phone = ''.join(filter(str.isdigit, phone))
     
-    # Check for +234 format
-    if phone.startswith("+234") and len(phone) == 14:
-        return phone[4:].isdigit()
+    # Pattern 1: Starting with 234 (country code) - should be 13 digits total
+    if clean_phone.startswith('234') and len(clean_phone) == 13:
+        return True
     
-    # Check for 0 format (convert to +234)
-    if phone.startswith("0") and len(phone) == 11:
-        return phone[1:].isdigit()
+    # Pattern 2: Starting with 0 - should be 11 digits total (08140120508)
+    if clean_phone.startswith('0') and len(clean_phone) == 11:
+        return True
+    
+    # Pattern 3: Starting with 7, 8, or 9 (without 0 prefix) - should be 10 digits total (8140120508)
+    if (clean_phone.startswith('7') or clean_phone.startswith('8') or clean_phone.startswith('9')) and len(clean_phone) == 10:
+        return True
     
     return False
 
 def format_nigerian_phone(phone: str) -> str:
     """Format Nigerian phone number to standard +234 format."""
-    # Remove spaces and dashes
-    phone = phone.replace(" ", "").replace("-", "")
-    
-    # If starts with 0, replace with +234
-    if phone.startswith("0") and len(phone) == 11:
-        return "+234" + phone[1:]
+    # Remove all non-digit characters
+    clean_phone = ''.join(filter(str.isdigit, phone))
     
     # If already in +234 format, return as is
-    if phone.startswith("+234"):
-        return phone
+    if clean_phone.startswith('234') and len(clean_phone) == 13:
+        return f"+{clean_phone}"
     
-    # If just digits (10 digits), add +234
-    if len(phone) == 10 and phone.isdigit():
-        return "+234" + phone
+    # If starts with 0, remove it and add +234
+    if clean_phone.startswith('0') and len(clean_phone) == 11:
+        return f"+234{clean_phone[1:]}"
     
+    # If starts with 7, 8, or 9 (10 digits), add +234
+    if (clean_phone.startswith('7') or clean_phone.startswith('8') or clean_phone.startswith('9')) and len(clean_phone) == 10:
+        return f"+234{clean_phone}"
+    
+    # Return original if no valid pattern
     return phone
