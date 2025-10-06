@@ -22,7 +22,7 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
   const [currentTrade, setCurrentTrade] = useState(0);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState({});
-  const [timeRemaining, setTimeRemaining] = useState(1800); // 30 minutes in seconds
+  const [timeRemaining, setTimeRemaining] = useState(900); // 15 minutes in seconds
   const [testQuestions, setTestQuestions] = useState({});
   const [testResults, setTestResults] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -80,7 +80,7 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
     setCurrentTrade(0);
     setCurrentQuestion(0);
     setAnswers({});
-    setTimeRemaining(1800); // Reset timer
+    setTimeRemaining(900); // Reset timer
   };
 
   const handleAnswerSelect = (answerIndex) => {
@@ -205,8 +205,8 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
               <h4 className="font-medium text-yellow-800">Test Requirements</h4>
               <ul className="text-sm text-yellow-700 mt-2 space-y-1">
                 <li>• You need to score <strong>80% or higher</strong> to pass</li>
-                <li>• <strong>20 questions</strong> per trade category</li>
-                <li>• <strong>30 minutes</strong> time limit</li>
+                <li>• <strong>7 questions</strong> per trade category</li>
+                <li>• <strong>15 minutes</strong> time limit</li>
                 <li>• Questions cover technical knowledge, safety, and Nigerian standards</li>
                 <li>• <strong>Immediate results</strong> provided</li>
               </ul>

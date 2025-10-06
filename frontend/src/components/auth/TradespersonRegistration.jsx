@@ -1311,7 +1311,7 @@ const WalletSetup = ({ formData, updateFormData, handleFinalSubmit, isLoading, s
             handleFinalSubmit();
           }}
           disabled={isLoading}
-          className="w-full border-2 border-green-600 text-green-600 hover:bg-green-50 py-3 px-6 rounded-lg font-medium disabled:opacity-50"
+          className="w-full border-2 border-gray-400 text-gray-600 hover:bg-gray-50 py-3 px-6 rounded-lg font-medium disabled:opacity-50"
           type="button"
         >
           {isLoading ? 'Completing Registration...' : 'Set Up Wallet Later & Complete Registration'}

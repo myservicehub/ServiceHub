@@ -116,8 +116,8 @@ const TradespersonRegistrationDemo = () => {
                         <h4 className="font-semibold mb-2">Test Format</h4>
                         <ul className="text-sm text-gray-600 space-y-1">
                           <li>• Trade-specific questions</li>
-                          <li>• 20 questions per trade</li>
-                          <li>• 30-minute time limit</li>
+                          <li>• 7 questions per trade</li>
+                          <li>• 15-minute time limit</li>
                           <li>• Immediate results</li>
                         </ul>
                       </div>
