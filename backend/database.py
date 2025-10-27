@@ -66,6 +66,46 @@ class Database:
             self.database = self.client[db_name]
             self.connected = True
             logger.info("Connected to MongoDB")
+            # Ensure required indexes at startup
+            try:
+                # Users: unique email index
+                await self.database.users.create_index(
+                    [("email", 1)],
+                    name="unique_email",
+                    unique=True,
+                    partialFilterExpression={"email": {"$type": "string"}}
+                )
+
+                # Jobs: compound indexes to optimize common queries and sorts
+                await self.database.jobs.create_index(
+                    [("status", 1), ("created_at", -1)],
+                    name="jobs_status_createdAt"
+                )
+                await self.database.jobs.create_index(
+                    [("homeowner_id", 1), ("created_at", -1)],
+                    name="jobs_homeownerId_createdAt"
+                )
+                await self.database.jobs.create_index(
+                    [("homeowner.id", 1), ("created_at", -1)],
+                    name="jobs_homeownerDotId_createdAt"
+                )
+                await self.database.jobs.create_index(
+                    [("category", 1), ("created_at", -1)],
+                    name="jobs_category_createdAt"
+                )
+
+                # Messages: indexes for conversation queries and read-status updates
+                await self.database.messages.create_index(
+                    [("conversation_id", 1), ("created_at", 1)],
+                    name="messages_conversation_createdAt"
+                )
+                await self.database.messages.create_index(
+                    [("conversation_id", 1), ("sender_type", 1), ("status", 1)],
+                    name="messages_conversation_sender_status"
+                )
+                logger.info("Database indexes ensured successfully")
+            except Exception as e:
+                logger.error(f"Failed to ensure database indexes: {e}")
         except Exception as e:
             self.connected = False
             logger.error(f"MongoDB connection failed: {e}")
