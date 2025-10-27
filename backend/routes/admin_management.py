@@ -167,8 +167,8 @@ async def admin_login(login_data: AdminLogin, request: Request):
     # Update login information
     await database.update_admin_login(admin["id"])
     
-    # Create access token
-    access_token = create_access_token(admin["id"], admin["username"], admin["role"])
+    # Create access token (centralized)
+    access_token = create_admin_access_token(admin["id"], admin["username"], admin["role"])
     
     # Get admin permissions
     admin_role = AdminRole(admin["role"])
@@ -195,13 +195,13 @@ async def admin_login(login_data: AdminLogin, request: Request):
     
     return AdminLoginResponse(
         access_token=access_token,
-        expires_in=JWT_EXPIRATION_HOURS * 3600,
+        expires_in=8 * 3600,
         admin=admin_response,
         permissions=permissions
     )
 
 @router.post("/logout")
-async def admin_logout(admin: dict = Depends(get_current_admin), request: Request = None):
+async def admin_logout(admin: dict = Depends(get_current_admin_account), request: Request = None):
     """Admin logout"""
     await log_admin_activity(
         admin["id"], admin["username"], AdminActivityType.LOGOUT,
@@ -210,7 +210,7 @@ async def admin_logout(admin: dict = Depends(get_current_admin), request: Reques
     return {"message": "Logged out successfully"}
 
 @router.get("/me")
-async def get_current_admin_info(admin: dict = Depends(get_current_admin)):
+async def get_current_admin_info(admin: dict = Depends(get_current_admin_account)):
     """Get current admin information"""
     admin_role = AdminRole(admin["role"])
     permissions = [perm.value for perm in get_admin_permissions(admin_role)]

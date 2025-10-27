@@ -5,6 +5,8 @@ import logging
 
 from database import database
 from models.base import JobAccessFeeUpdate, TransactionStatus
+from models.admin import AdminPermission
+from auth.dependencies import require_permission, get_current_admin_account
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +34,7 @@ async def admin_login(credentials: dict = Depends(verify_admin_credentials)):
 # ==========================================
 
 @router.get("/wallet/funding-requests")
-async def get_pending_funding_requests(skip: int = 0, limit: int = 20):
+async def get_pending_funding_requests(skip: int = 0, limit: int = 20, admin: dict = Depends(require_permission(AdminPermission.MANAGE_WALLET_FUNDING))):
     """Get pending wallet funding requests for admin review"""
     
     requests = await database.get_pending_funding_requests(skip=skip, limit=limit)
@@ -49,13 +51,14 @@ async def get_pending_funding_requests(skip: int = 0, limit: int = 20):
 @router.post("/wallet/confirm-funding/{transaction_id}")
 async def confirm_wallet_funding(
     transaction_id: str,
-    admin_notes: str = Form("")
+    admin_notes: str = Form(""),
+    admin: dict = Depends(require_permission(AdminPermission.MANAGE_WALLET_FUNDING))
 ):
     """Confirm wallet funding request"""
     
     success = await database.confirm_wallet_funding(
         transaction_id=transaction_id,
-        admin_id="admin",  # In production, use actual admin ID
+        admin_id=admin["id"],
         admin_notes=admin_notes
     )
     
@@ -71,13 +74,14 @@ async def confirm_wallet_funding(
 @router.post("/wallet/reject-funding/{transaction_id}")
 async def reject_wallet_funding(
     transaction_id: str,
-    admin_notes: str = Form(...)
+    admin_notes: str = Form(...),
+    admin: dict = Depends(require_permission(AdminPermission.MANAGE_WALLET_FUNDING))
 ):
     """Reject wallet funding request"""
     
     success = await database.reject_wallet_funding(
         transaction_id=transaction_id,
-        admin_id="admin",  # In production, use actual admin ID
+        admin_id=admin["id"],
         admin_notes=admin_notes
     )
     
@@ -382,7 +386,7 @@ async def get_pending_jobs(
 async def approve_job(
     job_id: str,
     approval_data: dict,
-    current_user = None  # Will be populated by admin auth
+    admin: dict = Depends(require_permission(AdminPermission.APPROVE_JOBS))
 ):
     """Approve or reject a job posting"""
     
@@ -410,7 +414,7 @@ async def approve_job(
     new_status = "active" if action == "approve" else "rejected"
     approval_data_db = {
         "status": new_status,
-        "approved_by": "admin",  # Use actual admin ID when auth is implemented
+        "approved_by": admin["id"],
         "approved_at": datetime.utcnow(),
         "approval_notes": notes,
         "updated_at": datetime.utcnow()
@@ -455,7 +459,7 @@ async def approve_job(
         "message": f"Job {action}d successfully",
         "job_id": job_id,
         "action": action,
-        "approved_by": "admin",
+        "approved_by": admin["id"],
         "approved_at": datetime.utcnow().isoformat(),
         "notes": notes
     }
@@ -497,7 +501,7 @@ async def get_job_statistics_admin():
 async def edit_job_admin(
     job_id: str,
     update_data: dict,
-    current_user = None  # Will be populated by admin auth
+    admin: dict = Depends(require_permission(AdminPermission.MANAGE_JOBS))
 ):
     """Edit job details including access fees (admin only)"""
     
@@ -536,7 +540,7 @@ async def edit_job_admin(
     
     # Add metadata
     filtered_updates['updated_at'] = datetime.utcnow()
-    filtered_updates['last_edited_by'] = "admin"  # Use actual admin ID when auth is implemented
+    filtered_updates['last_edited_by'] = admin["id"]
     filtered_updates['admin_notes'] = update_data.get('admin_notes', '')
     
     # Update job
@@ -570,7 +574,7 @@ async def edit_job_admin(
         "message": "Job updated successfully",
         "job_id": job_id,
         "updated_fields": list(filtered_updates.keys()),
-        "updated_by": "admin",
+        "updated_by": admin["id"],
         "updated_at": datetime.utcnow().isoformat()
     }
 
@@ -663,7 +667,7 @@ async def get_admin_dashboard_stats():
 # ==========================================
 
 @router.get("/wallet/payment-proof/{filename}")
-async def view_payment_proof(filename: str):
+async def view_payment_proof(filename: str, admin: dict = Depends(require_permission(AdminPermission.VIEW_PAYMENT_PROOFS))):
     """View payment proof image (admin only)"""
     from fastapi.responses import FileResponse
     import os
@@ -699,7 +703,7 @@ async def get_user_details(user_id: str):
         raise HTTPException(status_code=500, detail="Failed to get user details")
 
 @router.delete("/users/{user_id}")
-async def delete_user_account(user_id: str):
+async def delete_user_account(user_id: str, admin: dict = Depends(require_permission(AdminPermission.DELETE_USERS))):
     """Delete user account permanently (admin only)"""
     
     try:
@@ -714,7 +718,7 @@ async def delete_user_account(user_id: str):
         if not success:
             raise HTTPException(status_code=500, detail="Failed to delete user account")
         
-        logger.info(f"Admin deleted user account: {user.get('email', 'Unknown')} (ID: {user_id})")
+        logger.info(f"Admin {admin['id']} deleted user account: {user.get('email', 'Unknown')} (ID: {user_id})")
         
         return {
             "message": "User account deleted successfully",
@@ -779,7 +783,7 @@ async def get_contact_by_id(contact_id: str):
     return contact
 
 @router.post("/contacts")
-async def create_contact(contact_data: dict):
+async def create_contact(contact_data: dict, admin: dict = Depends(require_permission(AdminPermission.MANAGE_CONTACTS))):
     """Create a new contact"""
     
     # Validate required fields
@@ -804,7 +808,7 @@ async def create_contact(contact_data: dict):
     if len(contact_data['value']) < 1:
         raise HTTPException(status_code=400, detail="Contact value cannot be empty")
     
-    contact_id = await database.create_contact(contact_data, "admin")
+    contact_id = await database.create_contact(contact_data, admin["id"]) 
     
     if not contact_id:
         raise HTTPException(status_code=500, detail="Failed to create contact")
@@ -816,7 +820,7 @@ async def create_contact(contact_data: dict):
     }
 
 @router.put("/contacts/{contact_id}")
-async def update_contact(contact_id: str, contact_data: dict):
+async def update_contact(contact_id: str, contact_data: dict, admin: dict = Depends(require_permission(AdminPermission.MANAGE_CONTACTS))):
     """Update an existing contact"""
     
     # Validate field lengths if provided
@@ -826,7 +830,7 @@ async def update_contact(contact_id: str, contact_data: dict):
     if 'value' in contact_data and len(contact_data['value']) < 1:
         raise HTTPException(status_code=400, detail="Contact value cannot be empty")
     
-    success = await database.update_contact(contact_id, contact_data, "admin")
+    success = await database.update_contact(contact_id, contact_data, admin["id"]) 
     
     if not success:
         raise HTTPException(status_code=404, detail="Contact not found or update failed")
@@ -946,7 +950,7 @@ async def get_policy_history(policy_type: str):
     }
 
 @router.post("/policies")
-async def create_policy(policy_data: dict):
+async def create_policy(policy_data: dict, admin: dict = Depends(require_permission(AdminPermission.MANAGE_POLICIES))):
     """Create a new policy"""
     
     # Validate required fields
@@ -968,7 +972,7 @@ async def create_policy(policy_data: dict):
     if len(policy_data['title']) < 5:
         raise HTTPException(status_code=400, detail="Policy title must be at least 5 characters")
     
-    policy_id = await database.create_policy(policy_data, "admin")
+    policy_id = await database.create_policy(policy_data, admin["id"]) 
     
     if not policy_id:
         raise HTTPException(status_code=500, detail="Failed to create policy")
@@ -980,7 +984,7 @@ async def create_policy(policy_data: dict):
     }
 
 @router.put("/policies/{policy_id}")
-async def update_policy(policy_id: str, policy_data: dict):
+async def update_policy(policy_id: str, policy_data: dict, admin: dict = Depends(require_permission(AdminPermission.MANAGE_POLICIES))):
     """Update an existing policy"""
     
     # Validate content length if provided
@@ -991,7 +995,7 @@ async def update_policy(policy_id: str, policy_data: dict):
     if 'title' in policy_data and len(policy_data['title']) < 5:
         raise HTTPException(status_code=400, detail="Policy title must be at least 5 characters")
     
-    success = await database.update_policy(policy_id, policy_data, "admin")
+    success = await database.update_policy(policy_id, policy_data, admin["id"])
     
     if not success:
         raise HTTPException(status_code=404, detail="Policy not found or update failed")
@@ -1002,7 +1006,7 @@ async def update_policy(policy_id: str, policy_data: dict):
     }
 
 @router.delete("/policies/{policy_id}")
-async def delete_policy(policy_id: str):
+async def delete_policy(policy_id: str, admin: dict = Depends(require_permission(AdminPermission.MANAGE_POLICIES))):
     """Delete a policy (only drafts can be deleted)"""
     
     success = await database.delete_policy(policy_id)
@@ -1016,10 +1020,10 @@ async def delete_policy(policy_id: str):
     }
 
 @router.post("/policies/{policy_type}/restore/{version}")
-async def restore_policy_version(policy_type: str, version: int):
+async def restore_policy_version(policy_type: str, version: int, admin: dict = Depends(require_permission(AdminPermission.MANAGE_POLICIES))):
     """Restore a specific version of a policy"""
     
-    policy_id = await database.restore_policy_version(policy_type, version, "admin")
+    policy_id = await database.restore_policy_version(policy_type, version, admin["id"])
     
     if not policy_id:
         raise HTTPException(status_code=404, detail="Policy version not found or restore failed")
@@ -1032,10 +1036,10 @@ async def restore_policy_version(policy_type: str, version: int):
     }
 
 @router.post("/policies/{policy_id}/archive")
-async def archive_policy(policy_id: str):
+async def archive_policy(policy_id: str, admin: dict = Depends(require_permission(AdminPermission.MANAGE_POLICIES))):
     """Manually archive a policy"""
     
-    success = await database.archive_policy(policy_id, "admin")
+    success = await database.archive_policy(policy_id, admin["id"])
     
     if not success:
         raise HTTPException(status_code=404, detail="Policy not found or archive failed")
@@ -1124,7 +1128,8 @@ async def get_user_details(user_id: str):
 async def update_user_status(
     user_id: str,
     status: str = Form(...),
-    admin_notes: str = Form("")
+    admin_notes: str = Form(""),
+    admin: dict = Depends(require_permission(AdminPermission.MANAGE_USERS))
 ):
     """Update user status (active, suspended, banned)"""
     
@@ -1139,6 +1144,8 @@ async def update_user_status(
     
     if not success:
         raise HTTPException(status_code=404, detail="User not found")
+    
+    logger.info(f"Admin {admin['id']} updated status for user {user_id} to {status}")
     
     return {
         "message": f"User status updated to {status}",
@@ -1817,7 +1824,7 @@ async def get_questions_for_trade(trade_category: str):
     }
 
 @router.post("/skills-questions/{trade_category}")
-async def add_skills_question(trade_category: str, question_data: dict):
+async def add_skills_question(trade_category: str, question_data: dict, admin: dict = Depends(require_permission(AdminPermission.MANAGE_TRADES))):
     """Add a new skills test question for a trade category"""
     
     # Validate required fields
@@ -1839,6 +1846,8 @@ async def add_skills_question(trade_category: str, question_data: dict):
     if not question_id:
         raise HTTPException(status_code=500, detail="Failed to add question")
     
+    logger.info(f"Admin {admin['id']} added skills question {question_id} for trade {trade_category}")
+    
     return {
         "message": "Skills question added successfully",
         "question_id": question_id,
@@ -1846,7 +1855,7 @@ async def add_skills_question(trade_category: str, question_data: dict):
     }
 
 @router.put("/skills-questions/{question_id}")
-async def update_skills_question(question_id: str, question_data: dict):
+async def update_skills_question(question_id: str, question_data: dict, admin: dict = Depends(require_permission(AdminPermission.MANAGE_TRADES))):
     """Update an existing skills test question"""
     
     # Validate required fields
@@ -1868,13 +1877,15 @@ async def update_skills_question(question_id: str, question_data: dict):
     if not success:
         raise HTTPException(status_code=404, detail="Question not found")
     
+    logger.info(f"Admin {admin['id']} updated skills question {question_id}")
+    
     return {
         "message": "Skills question updated successfully",
         "question_id": question_id
     }
 
 @router.delete("/skills-questions/{question_id}")
-async def delete_skills_question(question_id: str):
+async def delete_skills_question(question_id: str, admin: dict = Depends(require_permission(AdminPermission.MANAGE_TRADES))):
     """Delete a skills test question"""
     
     success = await database.delete_skills_question(question_id)
@@ -1882,10 +1893,12 @@ async def delete_skills_question(question_id: str):
     if not success:
         raise HTTPException(status_code=404, detail="Question not found")
     
+    logger.info(f"Admin {admin['id']} deleted skills question {question_id}")
+    
     return {"message": f"Skills question deleted successfully"}
 
 @router.get("/wallet/transaction/{transaction_id}")
-async def get_transaction_details(transaction_id: str):
+async def get_transaction_details(transaction_id: str, admin: dict = Depends(require_permission(AdminPermission.MANAGE_WALLET_FUNDING))):
     """Get detailed transaction information for admin review"""
     
     transaction = await database.wallet_transactions_collection.find_one({"id": transaction_id})
@@ -1927,13 +1940,14 @@ async def get_pending_verifications(skip: int = 0, limit: int = 20):
 @router.post("/verifications/{verification_id}/approve")
 async def approve_verification(
     verification_id: str,
-    admin_notes: str = Form("")
+    admin_notes: str = Form(""),
+    admin: dict = Depends(require_permission(AdminPermission.VERIFY_USERS))
 ):
     """Approve user identity verification"""
     
     success = await database.verify_user_documents(
         verification_id=verification_id,
-        admin_id="admin",  # In production, use actual admin ID
+        admin_id=admin["id"],
         approved=True,
         admin_notes=admin_notes
     )
@@ -1951,7 +1965,8 @@ async def approve_verification(
 @router.post("/verifications/{verification_id}/reject")
 async def reject_verification(
     verification_id: str,
-    admin_notes: str = Form(...)
+    admin_notes: str = Form(...),
+    admin: dict = Depends(require_permission(AdminPermission.VERIFY_USERS))
 ):
     """Reject user identity verification"""
     
@@ -1960,7 +1975,7 @@ async def reject_verification(
     
     success = await database.verify_user_documents(
         verification_id=verification_id,
-        admin_id="admin",  # In production, use actual admin ID
+        admin_id=admin["id"],
         approved=False,
         admin_notes=admin_notes
     )
@@ -1999,7 +2014,7 @@ async def get_verification_details(verification_id: str):
     return verification
 
 @router.get("/verifications/document/{filename}")
-async def view_verification_document(filename: str):
+async def view_verification_document(filename: str, admin: dict = Depends(require_permission(AdminPermission.VERIFY_USERS))):
     """View verification document image (admin only)"""
     from fastapi.responses import FileResponse
     import os
