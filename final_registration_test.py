@@ -10,7 +10,8 @@ import json
 import uuid
 
 # Get backend URL from environment
-BACKEND_URL = "https://trademe-platform.preview.emergentagent.com/api"
+import os
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8001/api")
 
 def test_frontend_registration():
     """Test registration with exact frontend data format but unique email"""
@@ -19,7 +20,7 @@ def test_frontend_registration():
     frontend_data = {
         "name": "John FinalTestUser",
         "email": f"john.finaltest.{uuid.uuid4().hex[:8]}@example.com",  # Unique email
-        "password": "TestPass123",
+        "password": "TestPass123!",
         "phone": "+2348012345678",
         "location": "Lagos",
         "postcode": "000000",

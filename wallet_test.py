@@ -14,7 +14,7 @@ import io
 from PIL import Image
 
 # Get backend URL from environment
-BACKEND_URL = "https://trademe-platform.preview.emergentagent.com/api"
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8001/api")
 
 class WalletSystemTester:
     def __init__(self):

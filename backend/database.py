@@ -45,22 +45,30 @@ class Database:
             # Fallback for older Python versions that don't support TLSVersion enum
             pass
 
-        # Determine if TLS should be used (Atlas or explicit tls=true)
-        use_tls = mongo_url.startswith("mongodb+srv://") or ("tls=true" in mongo_url.lower())
+        url_lower = mongo_url.lower()
+        use_tls = mongo_url.startswith("mongodb+srv://") or ("tls=true" in url_lower) or ("ssl=true" in url_lower)
+        insecure_via_uri = "tlsinsecure=true" in url_lower
+        insecure_via_params = ("tlsallowinvalidcertificates=true" in url_lower) or ("tlsallowinvalidhostnames=true" in url_lower)
         try:
+            client_kwargs = {
+                "serverSelectionTimeoutMS": timeout_ms,
+                "connectTimeoutMS": connect_timeout_ms,
+            }
             if use_tls:
-                self.client = AsyncIOMotorClient(
-                    mongo_url,
-                    tlsCAFile=certifi.where(),
-                    serverSelectionTimeoutMS=timeout_ms,
-                    connectTimeoutMS=connect_timeout_ms,
-                )
-            else:
-                self.client = AsyncIOMotorClient(
-                    mongo_url,
-                    serverSelectionTimeoutMS=timeout_ms,
-                    connectTimeoutMS=connect_timeout_ms,
-                )
+                client_kwargs["tls"] = True
+                if insecure_via_uri or insecure_via_params:
+                    # When URI already includes insecure flags, do not set conflicting client params
+                    # Also avoid tlsCAFile to prevent certificate validation
+                    pass
+                else:
+                    client_kwargs["tlsCAFile"] = certifi.where()
+            
+            # Initialize the client
+            self.client = AsyncIOMotorClient(
+                mongo_url,
+                **client_kwargs,
+            )
+            
             # Verify connection with a ping
             await self.client.admin.command('ping')
             self.database = self.client[db_name]

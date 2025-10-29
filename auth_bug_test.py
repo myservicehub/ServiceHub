@@ -21,7 +21,7 @@ import uuid
 import time
 
 # Get backend URL from environment
-BACKEND_URL = "https://trademe-platform.preview.emergentagent.com/api"
+BACKEND_URL = os.getenv('BACKEND_URL', 'http://localhost:8001/api')
 
 class AuthenticationBugTester:
     def __init__(self):
@@ -80,7 +80,7 @@ class AuthenticationBugTester:
         homeowner_data = {
             "name": "Adebayo Johnson",
             "email": f"adebayo.test.{uuid.uuid4().hex[:8]}@email.com",
-            "password": "SecurePass123",
+            "password": "TestPass123!",
             "phone": "08123456789",
             "location": "Lagos",
             "postcode": "100001"
@@ -265,39 +265,53 @@ class AuthenticationBugTester:
         tradesperson_data = {
             "name": "Emeka Okafor",
             "email": f"emeka.test.{uuid.uuid4().hex[:8]}@tradework.com",
-            "password": "SecurePass123",
+            "password": "TestPass123!",
             "phone": "08187654321",
             "location": "Abuja",
             "postcode": "900001",
             "trade_categories": ["Plumbing"],
             "experience_years": 5,
             "company_name": "Test Plumbing Services",
-            "description": "Professional plumber for testing.",
-            "certifications": ["Licensed Plumber"]
+            "description": "I am a qualified and experienced plumber with over five years of hands-on residential and commercial plumbing work, including leak repairs, pipe installations, bathroom and kitchen fittings, and routine maintenance. I focus on safety, reliability, and high-quality workmanship for every project.",
+            "certifications": ["Licensed Plumber", "Gas Safe Registered"]
         }
         
         response = self.make_request("POST", "/auth/register/tradesperson", json=tradesperson_data)
         if response.status_code == 200:
-            tradesperson_profile = response.json()
-            if tradesperson_profile.get('role') == 'tradesperson':
-                self.log_result("Tradesperson registration", True, 
-                               f"ID: {tradesperson_profile['id']}")
-                
-                # Login tradesperson to get token
-                login_data = {
-                    'email': tradesperson_data['email'],
-                    'password': tradesperson_data['password']
-                }
-                response = self.make_request("POST", "/auth/login", json=login_data)
-                if response.status_code == 200:
-                    login_response = response.json()
-                    self.auth_tokens['tradesperson'] = login_response['access_token']
-                    self.test_data['tradesperson_user'] = login_response['user']
-                    self.log_result("Tradesperson login", True, "Login successful")
+            try:
+                data = response.json()
+                # Handle both response formats: LoginResponse with user + access_token OR plain user object
+                user_data = data.get('user', data)
+                role = user_data.get('role')
+                user_id = user_data.get('id') or data.get('id')
+                if role == 'tradesperson':
+                    self.log_result("Tradesperson registration", True, f"ID: {user_id}")
+                    # Prefer using access_token from registration if available; otherwise login
+                    if 'access_token' in data:
+                        self.auth_tokens['tradesperson'] = data['access_token']
+                        self.test_data['tradesperson_user'] = user_data
+                        self.log_result("Tradesperson login", True, "Token obtained from registration")
+                    else:
+                        # Login tradesperson to get token
+                        login_data = {
+                            'email': tradesperson_data['email'],
+                            'password': tradesperson_data['password']
+                        }
+                        response = self.make_request("POST", "/auth/login", json=login_data)
+                        if response.status_code == 200:
+                            login_response = response.json()
+                            self.auth_tokens['tradesperson'] = login_response.get('access_token')
+                            self.test_data['tradesperson_user'] = login_response.get('user')
+                            if self.auth_tokens['tradesperson']:
+                                self.log_result("Tradesperson login", True, "Login successful")
+                            else:
+                                self.log_result("Tradesperson login", False, "Missing access_token in login response")
+                        else:
+                            self.log_result("Tradesperson login", False, f"Status: {response.status_code}")
                 else:
-                    self.log_result("Tradesperson login", False, f"Status: {response.status_code}")
-            else:
-                self.log_result("Tradesperson registration", False, "Invalid role in response")
+                    self.log_result("Tradesperson registration", False, f"Invalid role in response: {role}")
+            except json.JSONDecodeError:
+                self.log_result("Tradesperson registration", False, "Invalid JSON response")
         else:
             self.log_result("Tradesperson registration", False, f"Status: {response.status_code}")
         
@@ -328,7 +342,7 @@ class AuthenticationBugTester:
             else:
                 self.log_result("Tradesperson job creation prevention", False, 
                                f"Expected 403, got {response.status_code}")
-        
+
         # Test homeowner accessing tradesperson-only endpoints
         if 'homeowner' in self.auth_tokens:
             response = self.make_request("GET", "/jobs/for-tradesperson", 

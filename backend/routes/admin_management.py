@@ -46,7 +46,7 @@ async def get_current_admin(credentials: HTTPAuthorizationCredentials = Depends(
         return admin
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token has expired")
-    except jwt.JWTError:
+    except (jwt.InvalidTokenError, jwt.DecodeError, ValueError):
         raise HTTPException(status_code=401, detail="Invalid token")
 
 def require_permission(permission: AdminPermission):
@@ -168,7 +168,7 @@ async def admin_login(login_data: AdminLogin, request: Request):
     await database.update_admin_login(admin["id"])
     
     # Create access token (centralized)
-    access_token = create_admin_access_token(admin["id"], admin["username"], admin["role"])
+    access_token = create_access_token(admin["id"], admin["username"], admin["role"])
     
     # Get admin permissions
     admin_role = AdminRole(admin["role"])
@@ -201,7 +201,7 @@ async def admin_login(login_data: AdminLogin, request: Request):
     )
 
 @router.post("/logout")
-async def admin_logout(admin: dict = Depends(get_current_admin_account), request: Request = None):
+async def admin_logout(admin: dict = Depends(get_current_admin), request: Request = None):
     """Admin logout"""
     await log_admin_activity(
         admin["id"], admin["username"], AdminActivityType.LOGOUT,
@@ -210,7 +210,7 @@ async def admin_logout(admin: dict = Depends(get_current_admin_account), request
     return {"message": "Logged out successfully"}
 
 @router.get("/me")
-async def get_current_admin_info(admin: dict = Depends(get_current_admin_account)):
+async def get_current_admin_info(admin: dict = Depends(get_current_admin)):
     """Get current admin information"""
     admin_role = AdminRole(admin["role"])
     permissions = [perm.value for perm in get_admin_permissions(admin_role)]

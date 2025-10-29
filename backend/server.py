@@ -7,6 +7,7 @@ import time
 from pathlib import Path
 from datetime import datetime
 import uuid
+import asyncio
 
 # Import database and routes
 from database import database
@@ -33,7 +34,12 @@ logger = get_logger('server')
 async def lifespan(app: FastAPI):
     # Startup
     try:
-        await database.connect_to_mongo()
+        try:
+            # Prevent startup hanging by timing out DB connect quickly
+            timeout_sec = int(os.getenv("DB_STARTUP_TIMEOUT_SEC", "3"))
+            await asyncio.wait_for(database.connect_to_mongo(), timeout=timeout_sec)
+        except asyncio.TimeoutError:
+            logger.warning("Database connection timed out during startup; running in degraded mode")
         if getattr(database, 'connected', False):
             logger.info("Connected to MongoDB")
         else:

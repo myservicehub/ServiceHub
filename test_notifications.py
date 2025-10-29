@@ -15,7 +15,7 @@ import uuid
 from datetime import datetime
 
 # Get backend URL from environment
-BACKEND_URL = "https://trademe-platform.preview.emergentagent.com/api"
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8001/api")
 
 class NotificationTester:
     def __init__(self):
