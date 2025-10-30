@@ -1,59 +1,41 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Phone, Mail, MapPin, Clock, Send, MessageCircle, HelpCircle, Facebook, Instagram, Youtube, Twitter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../hooks/use-toast';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { contactSchema, formatPhoneE164 } from '../utils/validation';
 
 const ContactUsPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    subject: '',
-    userType: '',
-    message: ''
+
+  // React Hook Form setup with Zod schema
+  const form = useForm({
+    resolver: zodResolver(contactSchema),
+    mode: 'onChange',
+    defaultValues: {
+      name: '',
+      email: '',
+      phone: '',
+      subject: '',
+      userType: '',
+      message: ''
+    }
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+  const { register, handleSubmit, formState: { errors, isSubmitting, isValid }, reset } = form;
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    // Basic validation
-    if (!formData.name || !formData.email || !formData.message) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields.",
-        variant: "destructive"
-      });
-      setIsSubmitting(false);
-      return;
-    }
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      toast({
-        title: "Invalid Email",
-        description: "Please enter a valid email address.",
-        variant: "destructive"
-      });
-      setIsSubmitting(false);
-      return;
-    }
-
+  const onSubmit = async (data) => {
     try {
+      // Normalize phone to E.164 if provided
+      const payload = {
+        ...data,
+        phone: data.phone ? formatPhoneE164(data.phone, 'NG') : undefined,
+      };
+
       // Simulate form submission (replace with actual API call)
       await new Promise(resolve => setTimeout(resolve, 2000));
       
@@ -64,22 +46,13 @@ const ContactUsPage = () => {
       });
 
       // Reset form
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        subject: '',
-        userType: '',
-        message: ''
-      });
+      reset();
     } catch (error) {
       toast({
         title: "Error Sending Message",
         description: "Please try again or contact us directly via email.",
         variant: "destructive"
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -178,7 +151,7 @@ const ContactUsPage = () => {
               <div className="bg-white rounded-lg shadow-sm border p-8">
                 <h2 className="text-2xl font-semibold text-gray-900 mb-6">Send us a Message</h2>
                 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
@@ -187,13 +160,14 @@ const ContactUsPage = () => {
                       <input
                         type="text"
                         id="name"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleInputChange}
+                        {...register('name')}
                         required
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         placeholder="Enter your full name"
                       />
+                      {errors.name && (
+                        <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+                      )}
                     </div>
                     
                     <div>
@@ -203,13 +177,14 @@ const ContactUsPage = () => {
                       <input
                         type="email"
                         id="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
+                        {...register('email')}
                         required
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         placeholder="Enter your email address"
                       />
+                      {errors.email && (
+                        <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+                      )}
                     </div>
                   </div>
 
@@ -221,12 +196,13 @@ const ContactUsPage = () => {
                       <input
                         type="tel"
                         id="phone"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleInputChange}
+                        {...register('phone')}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         placeholder="+234 xxx xxx xxxx"
                       />
+                      {errors.phone && (
+                        <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
+                      )}
                     </div>
                     
                     <div>
@@ -235,9 +211,7 @@ const ContactUsPage = () => {
                       </label>
                       <select
                         id="userType"
-                        name="userType"
-                        value={formData.userType}
-                        onChange={handleInputChange}
+                        {...register('userType')}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                       >
                         <option value="">Select user type</option>
@@ -246,6 +220,9 @@ const ContactUsPage = () => {
                         <option value="business">Business</option>
                         <option value="other">Other</option>
                       </select>
+                      {errors.userType && (
+                        <p className="mt-1 text-sm text-red-600">{errors.userType.message}</p>
+                      )}
                     </div>
                   </div>
 
@@ -255,9 +232,7 @@ const ContactUsPage = () => {
                     </label>
                     <select
                       id="subject"
-                      name="subject"
-                      value={formData.subject}
-                      onChange={handleInputChange}
+                      {...register('subject')}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     >
                       <option value="">Select a subject</option>
@@ -278,19 +253,20 @@ const ContactUsPage = () => {
                     </label>
                     <textarea
                       id="message"
-                      name="message"
-                      value={formData.message}
-                      onChange={handleInputChange}
+                      {...register('message')}
                       required
                       rows={6}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-vertical"
                       placeholder="Tell us how we can help you..."
                     />
+                    {errors.message && (
+                      <p className="mt-1 text-sm text-red-600">{errors.message.message}</p>
+                    )}
                   </div>
 
                   <button
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={!isValid || isSubmitting}
                     className={`w-full flex items-center justify-center px-6 py-3 rounded-lg font-medium text-white transition-colors ${
                       isSubmitting 
                         ? 'bg-gray-400 cursor-not-allowed' 

@@ -189,6 +189,7 @@ export const showErrorFeedback = (error, options = {}) => {
   // Log the error
   logError(error, context);
 
+
   if (showToast) {
     const toastTitle = title || getDefaultErrorTitle(errorType);
     
