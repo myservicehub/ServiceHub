@@ -28,6 +28,7 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
   const [testQuestions, setTestQuestions] = useState({});
   const [testResults, setTestResults] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [noQuestionsAvailable, setNoQuestionsAvailable] = useState(false);
 
   // Initialize test questions when component mounts - only for main trade
   useEffect(() => {
@@ -45,12 +46,16 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
             : getQuestionsForTrades([mainTrade], 7);
           
           setTestQuestions(questions);
+          const total = questions[mainTrade]?.length || 0;
+          setNoQuestionsAvailable(total === 0);
         } catch (error) {
           console.error('Failed to load skills questions:', error);
           // Fallback to local dataset (7 questions) when API call fails
           const mainTrade = formData.selectedTrades[0];
           const questions = getQuestionsForTrades([mainTrade], 7);
           setTestQuestions(questions);
+          const total = questions[mainTrade]?.length || 0;
+          setNoQuestionsAvailable(total === 0);
         }
       }
     };
@@ -87,6 +92,26 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
     setCurrentQuestion(0);
     setAnswers({});
     setTimeRemaining(900); // Reset timer
+  };
+
+  const handleSkipTest = () => {
+    const mainTrade = formData.selectedTrades[0];
+    // Mark as passed to allow progression when no questions exist
+    updateFormData('skillsTestPassed', true);
+    const skipResults = {
+      mainTrade,
+      tradeResult: { score: 100, correct: 0, total: 0, passed: true },
+      overallScore: 100,
+      overallCorrect: 0,
+      overallTotal: 0,
+      passed: true,
+      completedAt: new Date().toISOString(),
+      timeUsed: 0
+    };
+    updateFormData('testScores', skipResults);
+    if (onTestComplete) {
+      onTestComplete(skipResults);
+    }
   };
 
   const handleAnswerSelect = (answerIndex) => {
@@ -249,14 +274,26 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
           </div>
         </div>
 
-        <Button
-          onClick={handleStartTest}
-          // Enable only when we have questions loaded for the main trade
-          disabled={getTotalQuestions() === 0}
-          className="w-full bg-green-600 hover:bg-green-700 text-white py-3"
-        >
-          Start Skills Test
-        </Button>
+        {getTotalQuestions() > 0 ? (
+          <Button
+            onClick={handleStartTest}
+            className="w-full bg-green-600 hover:bg-green-700 text-white py-3"
+          >
+            Start Skills Test
+          </Button>
+        ) : (
+          <div className="space-y-3">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+              No test questions are available yet for {formData.selectedTrades[0]}. We’ll skip this step so you can continue.
+            </div>
+            <Button
+              onClick={handleSkipTest}
+              className="w-full bg-green-600 hover:bg-green-700 text-white py-3"
+            >
+              Continue without test
+            </Button>
+          </div>
+        )}
       </div>
     );
   }
