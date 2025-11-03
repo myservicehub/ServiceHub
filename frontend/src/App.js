@@ -81,51 +81,7 @@ function App() {
   useEffect(() => {
     setupGlobalErrorHandling();
   }, []);
-  // Remove "Made with Emergent" watermark
-  useEffect(() => {
-    const removeWatermark = () => {
-      // Method 1: Find by text content and remove
-      const walker = document.createTreeWalker(
-        document.body,
-        NodeFilter.SHOW_TEXT,
-        null,
-        false
-      );
-      
-      let node;
-      while (node = walker.nextNode()) {
-        if (node.textContent && (
-          node.textContent.includes('Made with Emergent') ||
-          node.textContent.includes('Made with emergent') ||
-          node.textContent.trim() === 'Made with Emergent'
-        )) {
-          // Remove the parent element
-          let elementToRemove = node.parentElement;
-          if (elementToRemove) {
-            elementToRemove.style.display = 'none';
-            elementToRemove.remove();
-          }
-        }
-      }
-
-      // Method 2: Find common watermark patterns and remove
-      const potentialWatermarks = document.querySelectorAll([
-        'div[style*="position: fixed"][style*="bottom"][style*="right"]',
-        'div[style*="position: absolute"][style*="bottom"][style*="right"]',
-        '[style*="z-index: 999"]',
-        '[style*="z-index: 9999"]'
-      ].join(','));
-
-      potentialWatermarks.forEach(element => {
-        if (element.textContent && element.textContent.includes('Made with')) {
-          element.style.display = 'none';
-          element.remove();
-        }
-      });
-    };
-
-    removeWatermark();
-  }, []);
+  // No watermark removal needed since badge markup was removed
 
   return (
     <div className="App">

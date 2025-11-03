@@ -1259,7 +1259,8 @@ const AdminDashboard = () => {
           {/* Tabs */}
           <div className="bg-white rounded-lg shadow-sm border mb-8">
             <div className="border-b border-gray-200">
-              <nav className="-mb-px flex space-x-8">
+              <div className="overflow-x-auto">
+                <nav className="-mb-px flex sm:space-x-4 md:space-x-8 whitespace-nowrap px-2">
                 {[
                   { id: 'funding', label: 'Funding Requests', icon: '💰' },
                   { id: 'fees', label: 'Job Access Fees', icon: '💳' },
@@ -1289,7 +1290,8 @@ const AdminDashboard = () => {
                     {tab.label}
                   </button>
                 ))}
-              </nav>
+                </nav>
+              </div>
             </div>
 
             <div className="p-6">

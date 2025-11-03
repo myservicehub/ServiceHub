@@ -283,7 +283,8 @@ const AdminManagement = () => {
       {/* Tabs */}
       <div className="bg-white rounded-lg shadow-sm border">
         <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
+          <div className="overflow-x-auto">
+            <nav className="-mb-px flex sm:space-x-4 md:space-x-8 whitespace-nowrap px-2">
             {[
               { id: 'admins', label: 'Administrators', icon: Users },
               { id: 'activities', label: 'Activity Logs', icon: Activity },
@@ -302,7 +303,8 @@ const AdminManagement = () => {
                 <span>{tab.label}</span>
               </button>
             ))}
-          </nav>
+            </nav>
+          </div>
         </div>
 
         <div className="p-6">
