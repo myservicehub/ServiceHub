@@ -1,13 +1,13 @@
 import React from 'react';
 
-const Button = ({ 
+const Button = React.forwardRef(({ 
   className = '', 
   variant = 'default', 
   size = 'default', 
   children, 
   disabled = false,
   ...props 
-}) => {
+}, ref) => {
   const baseClasses = 'inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50';
   
   const variants = {
@@ -28,6 +28,7 @@ const Button = ({
   
   return (
     <button
+      ref={ref}
       className={`${baseClasses} ${variants[variant]} ${sizes[size]} ${className}`}
       disabled={disabled}
       {...props}
@@ -35,6 +36,8 @@ const Button = ({
       {children}
     </button>
   );
-};
+});
+
+Button.displayName = 'Button';
 
 export { Button };
