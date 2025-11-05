@@ -9,18 +9,25 @@ from ..models.auth import (
 from ..auth.security import (
     verify_password, get_password_hash, create_access_token, create_refresh_token,
     validate_password_strength, validate_nigerian_phone, format_nigerian_phone,
-    verify_refresh_token
+    verify_refresh_token, create_password_reset_token, verify_password_reset_token
 )
 from ..auth.dependencies import get_current_user, get_current_active_user
 from ..database import database
 from ..models.trade_categories import NIGERIAN_TRADE_CATEGORIES, validate_trade_category
 from ..models.nigerian_states import NIGERIAN_STATES, validate_nigerian_state
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 import uuid
 import logging
+import os
 
 logger = logging.getLogger(__name__)
+
+# Import email service for password reset emails
+try:
+    from ..services.notifications import SendGridEmailService, MockEmailService
+except ImportError:
+    from services.notifications import SendGridEmailService, MockEmailService
 
 router = APIRouter(prefix="/api/auth", tags=["authentication"])
 
@@ -792,17 +799,212 @@ async def verify_email(user_id: str):
     await database.verify_user_email(user_id)
     return {"message": "Email verified successfully"}
 
-# Password reset endpoints (simplified)
+# Password reset endpoints
 @router.post("/password-reset-request")
 async def request_password_reset(request_data: PasswordResetRequest):
-    """Request password reset (simplified)"""
-    user_data = await database.get_user_by_email(request_data.email)
-    if not user_data:
-        # Don't reveal if email exists or not for security
+    """Request password reset - generates token and sends email"""
+    try:
+        user_data = await database.get_user_by_email(request_data.email)
+        if not user_data:
+            # Don't reveal if email exists or not for security
+            return {"message": "If an account with this email exists, you will receive a password reset link."}
+        
+        # Generate password reset token (1 hour expiration)
+        token_expires = timedelta(hours=1)
+        reset_token = create_password_reset_token(
+            user_id=user_data["id"],
+            email=user_data["email"],
+            expires_delta=token_expires
+        )
+        
+        # Store token in database
+        expires_at = datetime.utcnow() + token_expires
+        token_stored = await database.create_password_reset_token(
+            user_id=user_data["id"],
+            token=reset_token,
+            expires_at=expires_at
+        )
+        
+        if not token_stored:
+            logger.error(f"Failed to store password reset token for user {user_data['id']}")
+            # Still return success message for security
+            return {"message": "If an account with this email exists, you will receive a password reset link."}
+        
+        # Send password reset email
+        try:
+            # Get frontend URL from environment
+            frontend_url = os.environ.get('FRONTEND_URL', 'https://servicehub.ng')
+            reset_link = f"{frontend_url}/reset-password?token={reset_token}"
+            
+            # Initialize email service
+            try:
+                email_service = SendGridEmailService()
+            except Exception:
+                # Fall back to mock service if SendGrid not configured
+                email_service = MockEmailService()
+                logger.warning("SendGrid not configured, using mock email service")
+            
+            # Create email content
+            email_subject = "Reset Your serviceHub Password"
+            email_content = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <style>
+                    body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                    .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                    .header {{ background-color: #2F8140; color: white; padding: 20px; text-align: center; }}
+                    .content {{ background-color: #f9f9f9; padding: 30px; }}
+                    .button {{ display: inline-block; background-color: #2F8140; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }}
+                    .footer {{ text-align: center; padding: 20px; color: #666; font-size: 12px; }}
+                    .warning {{ color: #d32f2f; font-weight: bold; margin-top: 20px; }}
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>serviceHub</h1>
+                        <h2>Password Reset Request</h2>
+                    </div>
+                    <div class="content">
+                        <p>Hello {user_data.get('name', 'User')},</p>
+                        <p>We received a request to reset your password for your serviceHub account.</p>
+                        <p>Click the button below to reset your password:</p>
+                        <p style="text-align: center;">
+                            <a href="{reset_link}" class="button">Reset Password</a>
+                        </p>
+                        <p>Or copy and paste this link into your browser:</p>
+                        <p style="word-break: break-all; color: #666; font-size: 12px;">{reset_link}</p>
+                        <p class="warning">⚠️ This link will expire in 1 hour for security reasons.</p>
+                        <p>If you didn't request a password reset, please ignore this email. Your password will remain unchanged.</p>
+                        <p>For security reasons, never share this link with anyone.</p>
+                    </div>
+                    <div class="footer">
+                        <p>© {datetime.utcnow().year} serviceHub. All rights reserved.</p>
+                        <p>This is an automated message, please do not reply to this email.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """
+            
+            # Send email
+            email_sent = await email_service.send_email(
+                to=user_data["email"],
+                subject=email_subject,
+                content=email_content
+            )
+            
+            if email_sent:
+                logger.info(f"Password reset email sent to {user_data['email']}")
+            else:
+                logger.error(f"Failed to send password reset email to {user_data['email']}")
+            
+        except Exception as e:
+            logger.error(f"Error sending password reset email: {str(e)}")
+            # Don't fail the request if email sending fails - still return success for security
+        
+        # Always return success message (security best practice - don't reveal if email exists)
         return {"message": "If an account with this email exists, you will receive a password reset link."}
-    
-    # In production, generate secure token and send email
-    return {"message": "If an account with this email exists, you will receive a password reset link."}
+        
+    except Exception as e:
+        logger.error(f"Error processing password reset request: {str(e)}")
+        # Still return generic success message for security
+        return {"message": "If an account with this email exists, you will receive a password reset link."}
+
+@router.post("/password-reset")
+async def reset_password(reset_data: PasswordReset):
+    """Reset password using a valid reset token"""
+    try:
+        # Verify token
+        try:
+            token_payload = verify_password_reset_token(reset_data.token)
+        except HTTPException as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=e.detail
+            )
+        
+        user_id = token_payload.get("sub")
+        email = token_payload.get("email")
+        
+        if not user_id or not email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid token payload"
+            )
+        
+        # Verify token exists in database and is not used
+        token_data = await database.get_password_reset_token(reset_data.token)
+        if not token_data:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid or expired password reset token"
+            )
+        
+        # Verify token belongs to correct user
+        if token_data.get("user_id") != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Token does not match user"
+            )
+        
+        # Get user to verify they still exist
+        user_data = await database.get_user_by_id(user_id)
+        if not user_data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        # Verify email matches
+        if user_data.get("email") != email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Token email does not match user email"
+            )
+        
+        # Validate new password strength
+        if not validate_password_strength(reset_data.new_password):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Password must be at least 8 characters long and contain uppercase, lowercase, numeric, and special characters"
+            )
+        
+        # Update user password
+        hashed_password = get_password_hash(reset_data.new_password)
+        password_updated = await database.update_user(
+            user_id=user_id,
+            update_data={"password_hash": hashed_password}
+        )
+        
+        if not password_updated:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to update password"
+            )
+        
+        # Mark token as used
+        await database.mark_password_reset_token_as_used(reset_data.token)
+        
+        # Invalidate all other password reset tokens for this user
+        await database.invalidate_user_password_reset_tokens(user_id)
+        
+        logger.info(f"Password reset successful for user {user_id}")
+        
+        return {
+            "message": "Password reset successfully. You can now login with your new password."
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error resetting password: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to reset password"
+        )
 
 @router.get("/trade-categories")
 async def get_trade_categories():

@@ -178,3 +178,42 @@ def format_nigerian_phone(phone: str) -> str:
     
     # Return original if no valid pattern
     return phone
+
+def create_password_reset_token(user_id: str, email: str, expires_delta: Optional[timedelta] = None) -> str:
+    """Create a JWT token for password reset."""
+    to_encode = {
+        "sub": user_id,
+        "email": email,
+        "type": "password_reset"
+    }
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        # Default: 1 hour expiration for password reset tokens
+        expire = datetime.utcnow() + timedelta(hours=1)
+    
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+def verify_password_reset_token(token: str) -> dict:
+    """Verify and decode a password reset token."""
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        token_type = payload.get("type")
+        if token_type != "password_reset":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid token type"
+            )
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password reset token has expired"
+        )
+    except (jwt.InvalidTokenError, jwt.DecodeError, ValueError) as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid password reset token"
+        )

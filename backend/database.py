@@ -203,6 +203,74 @@ class Database:
             {"$set": {"email_verified": True, "updated_at": datetime.utcnow()}}
         )
 
+    # Password reset token operations
+    async def create_password_reset_token(self, user_id: str, token: str, expires_at: datetime) -> bool:
+        """Store a password reset token for a user"""
+        if self.database is None:
+            raise RuntimeError("Database unavailable: cannot create password reset token")
+        
+        # Invalidate any existing tokens for this user
+        await self.database.password_reset_tokens.update_many(
+            {"user_id": user_id, "used": False},
+            {"$set": {"used": True, "invalidated_at": datetime.utcnow()}}
+        )
+        
+        # Create new token record
+        token_data = {
+            "token": token,
+            "user_id": user_id,
+            "created_at": datetime.utcnow(),
+            "expires_at": expires_at,
+            "used": False,
+            "invalidated_at": None
+        }
+        
+        try:
+            await self.database.password_reset_tokens.insert_one(token_data)
+            return True
+        except Exception as e:
+            logger.error(f"Error creating password reset token: {e}")
+            return False
+
+    async def get_password_reset_token(self, token: str) -> Optional[dict]:
+        """Get password reset token data"""
+        if self.database is None:
+            return None
+        
+        token_data = await self.database.password_reset_tokens.find_one({
+            "token": token,
+            "used": False
+        })
+        
+        if token_data:
+            token_data['_id'] = str(token_data['_id'])
+            # Check if token has expired
+            if token_data.get("expires_at") and token_data["expires_at"] < datetime.utcnow():
+                return None
+        return token_data
+
+    async def mark_password_reset_token_as_used(self, token: str) -> bool:
+        """Mark a password reset token as used"""
+        if self.database is None:
+            raise RuntimeError("Database unavailable: cannot mark token as used")
+        
+        result = await self.database.password_reset_tokens.update_one(
+            {"token": token},
+            {"$set": {"used": True, "used_at": datetime.utcnow()}}
+        )
+        return result.modified_count > 0
+
+    async def invalidate_user_password_reset_tokens(self, user_id: str) -> bool:
+        """Invalidate all unused password reset tokens for a user"""
+        if self.database is None:
+            raise RuntimeError("Database unavailable: cannot invalidate tokens")
+        
+        result = await self.database.password_reset_tokens.update_many(
+            {"user_id": user_id, "used": False},
+            {"$set": {"used": True, "invalidated_at": datetime.utcnow()}}
+        )
+        return result.modified_count > 0
+
     # Job operations
     async def create_job(self, job_data: dict) -> dict:
         # Set expiration date (30 days from now)
