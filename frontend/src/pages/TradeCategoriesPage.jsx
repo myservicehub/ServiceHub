@@ -26,6 +26,7 @@ const TradeCategoriesPage = () => {
 
   // Nigerian Trade Categories with descriptions and icons
   const tradeCategories = [
+    // Column 1
     {
       name: "Building",
       description: "Professional building and construction services for residential and commercial projects",
@@ -34,32 +35,11 @@ const TradeCategoriesPage = () => {
       serviceCount: "500+"
     },
     {
-      name: "Plumbing",
-      description: "Water system installation, repairs, pipe fitting, and drainage solutions",
-      icon: "🔧",
-      popular: true,
-      serviceCount: "350+"
-    },
-    {
-      name: "Electrical Repairs",
-      description: "Electrical installations, wiring, repairs, and maintenance services",
-      icon: "⚡",
-      popular: true,
-      serviceCount: "400+"
-    },
-    {
-      name: "Painting",
-      description: "Interior and exterior painting, wall finishes, and decorative services",
-      icon: "🎨",
-      popular: true,
-      serviceCount: "300+"
-    },
-    {
-      name: "Carpentry",
-      description: "Custom woodwork, furniture repair, and wooden structure installations",
-      icon: "🪚",
-      popular: true,
-      serviceCount: "250+"
+      name: "Concrete Works",
+      description: "Concrete mixing, pouring, finishing, and repair services",
+      icon: "🏗️",
+      popular: false,
+      serviceCount: "180+"
     },
     {
       name: "Tiling",
@@ -69,6 +49,13 @@ const TradeCategoriesPage = () => {
       serviceCount: "200+"
     },
     {
+      name: "Door & Window Installation",
+      description: "Door and window installation, repair, and replacement services",
+      icon: "🚪",
+      popular: false,
+      serviceCount: "150+"
+    },
+    {
       name: "Air Conditioning & Refrigeration",
       description: "AC installation, repair, and refrigeration system services",
       icon: "❄️",
@@ -76,11 +63,41 @@ const TradeCategoriesPage = () => {
       serviceCount: "220+"
     },
     {
-      name: "General Handyman Work",
-      description: "General repairs, maintenance, and small household fixes",
-      icon: "🔨",
+      name: "Plumbing",
+      description: "Water system installation, repairs, pipe fitting, and drainage solutions",
+      icon: "🔧",
       popular: true,
-      serviceCount: "300+"
+      serviceCount: "350+"
+    },
+    {
+      name: "Cleaning",
+      description: "Professional cleaning services for homes, offices, and commercial spaces",
+      icon: "🧽",
+      popular: true,
+      serviceCount: "250+"
+    },
+    
+    // Column 2
+    {
+      name: "Home Extensions",
+      description: "Home extension and expansion construction services",
+      icon: "🏠",
+      popular: false,
+      serviceCount: "120+"
+    },
+    {
+      name: "Scaffolding",
+      description: "Scaffolding installation, rental, and safety services",
+      icon: "🪜",
+      popular: false,
+      serviceCount: "80+"
+    },
+    {
+      name: "Flooring",
+      description: "Floor installation, repairs, hardwood, tiles, and carpet services",
+      icon: "🏠",
+      popular: false,
+      serviceCount: "170+"
     },
     {
       name: "Bathroom Fitting",
@@ -97,27 +114,6 @@ const TradeCategoriesPage = () => {
       serviceCount: "200+"
     },
     {
-      name: "Flooring",
-      description: "Floor installation, repairs, hardwood, tiles, and carpet services",
-      icon: "🏠",
-      popular: false,
-      serviceCount: "170+"
-    },
-    {
-      name: "Cleaning",
-      description: "Professional cleaning services for homes, offices, and commercial spaces",
-      icon: "🧽",
-      popular: true,
-      serviceCount: "250+"
-    },
-    {
-      name: "Solar & Inverter Installation",
-      description: "Solar panel installation, inverter setup, and renewable energy solutions",
-      icon: "☀️",
-      popular: true,
-      serviceCount: "130+"
-    },
-    {
       name: "Welding",
       description: "Metal welding, fabrication, and metalwork services",
       icon: "🔥",
@@ -125,11 +121,34 @@ const TradeCategoriesPage = () => {
       serviceCount: "110+"
     },
     {
-      name: "Furniture Making",
-      description: "Custom furniture design, manufacturing, and upholstery services",
-      icon: "🪑",
+      name: "Relocation/Moving",
+      description: "Moving, relocation, and logistics services for homes and offices",
+      icon: "🚚",
       popular: false,
-      serviceCount: "140+"
+      serviceCount: "100+"
+    },
+    
+    // Column 3
+    {
+      name: "Renovations",
+      description: "Home and office renovation and remodeling services",
+      icon: "🔨",
+      popular: true,
+      serviceCount: "280+"
+    },
+    {
+      name: "Painting",
+      description: "Interior and exterior painting, wall finishes, and decorative services",
+      icon: "🎨",
+      popular: true,
+      serviceCount: "300+"
+    },
+    {
+      name: "Carpentry",
+      description: "Custom woodwork, furniture repair, and wooden structure installations",
+      icon: "🪚",
+      popular: true,
+      serviceCount: "250+"
     },
     {
       name: "Interior Design",
@@ -139,11 +158,76 @@ const TradeCategoriesPage = () => {
       serviceCount: "90+"
     },
     {
+      name: "Solar & Inverter Installation",
+      description: "Solar panel installation, inverter setup, and renewable energy solutions",
+      icon: "☀️",
+      popular: true,
+      serviceCount: "130+"
+    },
+    {
+      name: "Locksmithing",
+      description: "Lock installation, repair, key cutting, and security services",
+      icon: "🔐",
+      popular: false,
+      serviceCount: "95+"
+    },
+    {
+      name: "Waste Disposal",
+      description: "Waste collection, disposal, and management services",
+      icon: "🗑️",
+      popular: false,
+      serviceCount: "85+"
+    },
+    
+    // Column 4
+    {
       name: "Roofing",
       description: "Roof installation, repairs, guttering, and waterproofing services",
       icon: "🏠",
       popular: true,
       serviceCount: "190+"
+    },
+    {
+      name: "Plastering/POP",
+      description: "Plastering, POP ceiling installation, and wall finishing services",
+      icon: "🏛️",
+      popular: false,
+      serviceCount: "160+"
+    },
+    {
+      name: "Furniture Making",
+      description: "Custom furniture design, manufacturing, and upholstery services",
+      icon: "🪑",
+      popular: false,
+      serviceCount: "140+"
+    },
+    {
+      name: "Electrical Repairs",
+      description: "Electrical installations, wiring, repairs, and maintenance services",
+      icon: "⚡",
+      popular: true,
+      serviceCount: "400+"
+    },
+    {
+      name: "CCTV & Security Systems",
+      description: "CCTV installation, security system setup, and monitoring services",
+      icon: "📹",
+      popular: false,
+      serviceCount: "120+"
+    },
+    {
+      name: "General Handyman Work",
+      description: "General repairs, maintenance, and small household fixes",
+      icon: "🔨",
+      popular: true,
+      serviceCount: "300+"
+    },
+    {
+      name: "Recycling",
+      description: "Waste recycling, collection, and environmental services",
+      icon: "♻️",
+      popular: false,
+      serviceCount: "70+"
     }
   ];
 

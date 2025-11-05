@@ -62,33 +62,40 @@ const SignupForm = ({ onClose, onSwitchToLogin, defaultTab = 'tradesperson', sho
 
   // Nigerian Trade Categories - Updated comprehensive list
   const tradeCategories = [
+    // Column 1
     "Building",
-    "Concrete Works", 
+    "Concrete Works",
     "Tiling",
-    "CCTV & Security Systems",
     "Door & Window Installation",
     "Air Conditioning & Refrigeration",
-    "Renovations",
-    "Relocation/Moving",
-    "Painting",
-    "Carpentry",
-    "General Handyman Work",
-    "Bathroom Fitting",
-    "Generator Services",
+    "Plumbing",
+    "Cleaning",
+    
+    // Column 2
     "Home Extensions",
     "Scaffolding",
-    "Waste Disposal",
     "Flooring",
-    "Plastering/POP",
-    "Cleaning",
-    "Electrical Repairs",
-    "Solar & Inverter Installation",
-    "Plumbing",
+    "Bathroom Fitting",
+    "Generator Services",
     "Welding",
-    "Furniture Making",
+    "Relocation/Moving",
+    
+    // Column 3
+    "Renovations",
+    "Painting",
+    "Carpentry",
     "Interior Design",
-    "Roofing",
+    "Solar & Inverter Installation",
     "Locksmithing",
+    "Waste Disposal",
+    
+    // Column 4
+    "Roofing",
+    "Plastering/POP",
+    "Furniture Making",
+    "Electrical Repairs",
+    "CCTV & Security Systems",
+    "General Handyman Work",
     "Recycling"
   ];
 

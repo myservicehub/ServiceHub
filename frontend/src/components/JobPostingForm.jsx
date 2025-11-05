@@ -29,23 +29,41 @@ import LocationPicker from './maps/LocationPicker';
 
 // Fallback trade categories (used while loading or if API fails)
 const FALLBACK_TRADE_CATEGORIES = [
+  // Column 1
   "Building",
-  "Electrical Repairs",
-  "Painting",
-  "Plumbing",
+  "Concrete Works",
   "Tiling",
-  "Generator Services",
+  "Door & Window Installation",
   "Air Conditioning & Refrigeration",
-  "Welding",
-  "Carpentry",
-  "General Handyman Work",
-  "Roofing",
+  "Plumbing",
   "Cleaning",
-  "Solar & Inverter Installation",
-  "Bathroom Fitting",
+  
+  // Column 2
+  "Home Extensions",
+  "Scaffolding",
   "Flooring",
+  "Bathroom Fitting",
+  "Generator Services",
+  "Welding",
+  "Relocation/Moving",
+  
+  // Column 3
+  "Renovations",
+  "Painting",
+  "Carpentry",
+  "Interior Design",
+  "Solar & Inverter Installation",
+  "Locksmithing",
+  "Waste Disposal",
+  
+  // Column 4
+  "Roofing",
+  "Plastering/POP",
   "Furniture Making",
-  "Interior Design"
+  "Electrical Repairs",
+  "CCTV & Security Systems",
+  "General Handyman Work",
+  "Recycling"
 ];
 
 const JobPostingForm = ({ onClose, onJobPosted }) => {

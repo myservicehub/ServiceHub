@@ -80,11 +80,27 @@ class SendGridEmailService:
                 logger.info(f"📧 EMAIL SENT: to={to}, subject={subject[:50]}...")
                 return True
             else:
-                logger.error(f"❌ SendGrid failed: {response.status_code} - {response.body}")
+                error_body = ""
+                try:
+                    if hasattr(response, 'body') and response.body:
+                        error_body = str(response.body)
+                except:
+                    pass
+                logger.error(f"❌ SendGrid failed: HTTP {response.status_code} - {error_body}")
+                if response.status_code == 401:
+                    logger.error("❌ SendGrid 401 Unauthorized - Check your API key and sender email verification")
+                    logger.error(f"   Sender email: {self.sender_email}")
+                    logger.error("   Ensure: 1) API key is valid, 2) Sender email is verified in SendGrid, 3) API key has Mail Send permissions")
                 return False
                 
         except Exception as e:
-            logger.error(f"❌ Email sending failed: {str(e)}")
+            error_msg = str(e)
+            logger.error(f"❌ Email sending failed: {error_msg}")
+            if "401" in error_msg or "Unauthorized" in error_msg:
+                logger.error("❌ SendGrid Authentication Error - Please verify:")
+                logger.error(f"   1. SENDGRID_API_KEY is correct and has Mail Send permissions")
+                logger.error(f"   2. SENDER_EMAIL ({self.sender_email}) is verified in SendGrid")
+                logger.error(f"   3. API key hasn't been revoked or expired")
             return False
 
 class TermiiSMSService:

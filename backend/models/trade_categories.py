@@ -2,28 +2,41 @@
 # Comprehensive list of trades and services for the Nigerian marketplace
 
 NIGERIAN_TRADE_CATEGORIES = [
-    # Existing trades with questions (DO NOT REMOVE)
+    # Column 1
     "Building",
-    "Electrical Repairs",
-    "Painting", 
-    "Plumbing",
+    "Concrete Works",
     "Tiling",
-    
-    # Essential Nigerian basic trades
-    "Generator Services",
+    "Door & Window Installation",
     "Air Conditioning & Refrigeration",
-    "Welding",
-    "Carpentry",
-    "General Handyman Work",
-    "Roofing",
+    "Plumbing",
     "Cleaning",
-    "Solar & Inverter Installation",
-    "Bathroom Fitting",
-    "Flooring",
     
-    # New trades
+    # Column 2
+    "Home Extensions",
+    "Scaffolding",
+    "Flooring",
+    "Bathroom Fitting",
+    "Generator Services",
+    "Welding",
+    "Relocation/Moving",
+    
+    # Column 3
+    "Renovations",
+    "Painting",
+    "Carpentry",
+    "Interior Design",
+    "Solar & Inverter Installation",
+    "Locksmithing",
+    "Waste Disposal",
+    
+    # Column 4
+    "Roofing",
+    "Plastering/POP",
     "Furniture Making",
-    "Interior Design"
+    "Electrical Repairs",
+    "CCTV & Security Systems",
+    "General Handyman Work",
+    "Recycling"
 ]
 
 # For validation purposes
@@ -39,29 +52,38 @@ def get_all_categories() -> list:
 TRADE_CATEGORY_GROUPS = {
     "Construction & Building": [
         "Building",
+        "Concrete Works",
         "Tiling",
-        "Flooring"
+        "Home Extensions",
+        "Scaffolding",
+        "Flooring",
+        "Roofing",
+        "Plastering/POP",
+        "Renovations"
+    ],
+    "Installation & Repair": [
+        "Door & Window Installation",
+        "Bathroom Fitting",
+        "Air Conditioning & Refrigeration",
+        "Generator Services",
+        "Solar & Inverter Installation",
+        "Electrical Repairs",
+        "CCTV & Security Systems",
+        "Plumbing",
+        "Welding",
+        "Locksmithing"
     ],
     "Interior & Finishing": [
         "Painting",
-        "Bathroom Fitting",
         "Carpentry",
         "Furniture Making",
         "Interior Design"
     ],
-    "Installation & Repair": [
-        "Air Conditioning & Refrigeration",
-        "Solar & Inverter Installation",
-        "Generator Services"
-    ],
-    "Utilities & Systems": [
-        "Electrical Repairs",
-        "Plumbing",
-        "Welding"
-    ],
     "General Services": [
         "General Handyman Work",
-        "Roofing",
-        "Cleaning"
+        "Cleaning",
+        "Relocation/Moving",
+        "Waste Disposal",
+        "Recycling"
     ]
 }

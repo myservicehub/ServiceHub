@@ -837,12 +837,18 @@ async def request_password_reset(request_data: PasswordResetRequest):
             reset_link = f"{frontend_url}/reset-password?token={reset_token}"
             
             # Initialize email service
+            email_service = None
             try:
                 email_service = SendGridEmailService()
-            except Exception:
-                # Fall back to mock service if SendGrid not configured
+                logger.info("SendGrid email service initialized successfully")
+            except ValueError as e:
+                # Configuration missing - fall back to mock
+                logger.warning(f"SendGrid not configured: {e}. Using mock email service (emails will not be sent)")
                 email_service = MockEmailService()
-                logger.warning("SendGrid not configured, using mock email service")
+            except Exception as e:
+                # Other initialization errors - fall back to mock
+                logger.error(f"Failed to initialize SendGrid: {e}. Using mock email service (emails will not be sent)")
+                email_service = MockEmailService()
             
             # Create email content
             email_subject = "Reset Your serviceHub Password"
@@ -890,19 +896,25 @@ async def request_password_reset(request_data: PasswordResetRequest):
             """
             
             # Send email
-            email_sent = await email_service.send_email(
-                to=user_data["email"],
-                subject=email_subject,
-                content=email_content
-            )
-            
-            if email_sent:
-                logger.info(f"Password reset email sent to {user_data['email']}")
+            if email_service:
+                email_sent = await email_service.send_email(
+                    to=user_data["email"],
+                    subject=email_subject,
+                    content=email_content
+                )
+                
+                if email_sent:
+                    logger.info(f"✅ Password reset email sent successfully to {user_data['email']}")
+                else:
+                    logger.error(f"❌ Failed to send password reset email to {user_data['email']}")
+                    logger.error(f"   Check SendGrid configuration and logs above for details")
             else:
-                logger.error(f"Failed to send password reset email to {user_data['email']}")
+                logger.error("Email service not initialized - cannot send password reset email")
             
         except Exception as e:
-            logger.error(f"Error sending password reset email: {str(e)}")
+            logger.error(f"❌ Error sending password reset email: {str(e)}")
+            logger.error(f"   Token was generated and stored: {reset_token[:20]}...")
+            logger.error(f"   User can still use the token if they have it")
             # Don't fail the request if email sending fails - still return success for security
         
         # Always return success message (security best practice - don't reveal if email exists)
