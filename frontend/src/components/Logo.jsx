@@ -10,7 +10,7 @@ const Logo = ({ size = 'medium', variant = 'light' }) => {
   const currentSize = sizes[size] || sizes.medium;
 
   // Allow overriding via env var; default to your requested PNG in public, fallback to SVG
-  const logoSrc = process.env.REACT_APP_LOGO_URL || '/logo-icon-green.png';
+  const logoSrc = process.env.REACT_APP_LOGO_URL || '/Logo-Icon-Green.png';
 
   return (
     <div
