@@ -28,7 +28,7 @@ const AppSection = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">
-                Download our app
+                Our App Coming Soon
               </h2>
               <p className="text-xl text-gray-600 mb-8">
                 Posting and managing your jobs is even easier with the serviceHub app. 

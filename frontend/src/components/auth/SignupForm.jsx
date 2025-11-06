@@ -60,7 +60,7 @@ const SignupForm = ({ onClose, onSwitchToLogin, defaultTab = 'tradesperson', sho
   const navigate = useNavigate();
   const { states: nigerianStates, loading: statesLoading } = useStates();
 
-  // Nigerian Trade Categories - Canonical 24 approved list
+  // Nigerian Trade Categories - Canonical 28 approved list
   const tradeCategories = [
     // Column 1
     "Building",
@@ -92,7 +92,12 @@ const SignupForm = ({ onClose, onSwitchToLogin, defaultTab = 'tradesperson', sho
     "Furniture Making",
     "Electrical Repairs",
     "CCTV & Security Systems",
-    "General Handyman Work"
+    "General Handyman Work",
+    // Additional services to maintain strict 28
+    "Cleaning",
+    "Relocation/Moving",
+    "Waste Disposal",
+    "Recycling"
   ];
 
   const onSubmit = async (values) => {

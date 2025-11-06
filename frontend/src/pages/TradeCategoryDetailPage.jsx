@@ -354,6 +354,130 @@ const TradeCategoryDetailPage = () => {
         "Leaves tasks incomplete"
       ]
     },
+    "cleaning": {
+      name: "Cleaning",
+      description: "Home and office cleaning, deep cleaning, and sanitation services",
+      services: [
+        "Regular home cleaning",
+        "Office cleaning",
+        "Deep cleaning",
+        "Post-construction cleaning",
+        "Upholstery and carpet cleaning",
+        "Sanitization"
+      ],
+      averagePrice: "₦5,000 - ₦80,000",
+      timeframe: "2 hours - 2 days",
+      materials: ["Detergents", "Disinfectants", "Mops", "Vacuum", "Brushes", "Protective gloves"],
+      whatToExpect: "Professional cleaners provide thorough cleaning using appropriate tools and safe chemicals, focusing on hygiene and detailed finishing.",
+      whenToHire: "For routine maintenance, end-of-tenancy, post-renovation, or deep cleaning needs.",
+      tips: [
+        "Specify areas and priorities",
+        "Discuss eco-friendly options",
+        "Confirm supplies and equipment",
+        "Ask about stain treatment",
+        "Set expectations for before/after photos"
+      ],
+      redFlags: [
+        "Uses harsh chemicals without disclosure",
+        "Poor hygiene practices",
+        "No protective equipment",
+        "Rushed cleaning with no quality checks",
+        "No insurance for property damage"
+      ]
+    },
+    "relocation-moving": {
+      name: "Relocation/Moving",
+      description: "Local moving, packing, loading, and relocation logistics",
+      services: [
+        "Packing and wrapping",
+        "Loading and unloading",
+        "Local relocation",
+        "Furniture disassembly/assembly",
+        "Transport logistics",
+        "Storage coordination"
+      ],
+      averagePrice: "₦30,000 - ₦300,000",
+      timeframe: "4 hours - 2 days",
+      materials: ["Moving boxes", "Shrink wrap", "Bubble wrap", "Tapes", "Moving blankets", "Dollies"],
+      whatToExpect: "Movers safely pack and transport belongings with proper equipment, handling fragile items and coordinating logistics.",
+      whenToHire: "When relocating home or office, moving heavy items, or needing professional packing and logistics.",
+      tips: [
+        "Label boxes clearly",
+        "Insure valuable items",
+        "Confirm vehicle size and route",
+        "Discuss access and parking",
+        "Photograph fragile items before packing"
+      ],
+      redFlags: [
+        "No written inventory",
+        "Uninsured operations",
+        "Poor lifting practices",
+        "Hidden fees after quote",
+        "Damages without accountability"
+      ]
+    },
+    "waste-disposal": {
+      name: "Waste Disposal",
+      description: "Waste collection, junk removal, and disposal services",
+      services: [
+        "Junk removal",
+        "Bulk waste pickup",
+        "Construction debris disposal",
+        "Appliance and furniture removal",
+        "Scheduled waste collection",
+        "Environmental compliance"
+      ],
+      averagePrice: "₦20,000 - ₦200,000",
+      timeframe: "2 hours - 1 day",
+      materials: ["Trash bags", "Bins", "Protective gear", "Pick-up vehicles", "Trolleys", "Tarps"],
+      whatToExpect: "Waste disposal teams collect, sort, and responsibly dispose of waste, following local regulations and safety standards.",
+      whenToHire: "For post-renovation cleanup, bulky item disposal, or scheduled residential/commercial waste collection.",
+      tips: [
+        "Identify hazardous materials",
+        "Ask about recycling policies",
+        "Confirm disposal sites",
+        "Separate reusable items",
+        "Get itemized pricing by load"
+      ],
+      redFlags: [
+        "Illegal dumping",
+        "No permits or licenses",
+        "Unsafe handling of heavy items",
+        "No cleanup after pickup",
+        "Refuses weight or volume estimates"
+      ]
+    },
+    "recycling": {
+      name: "Recycling",
+      description: "Recyclables pickup, sorting, and eco-friendly material processing",
+      services: [
+        "Paper and plastic recycling",
+        "Metal and e-waste recycling",
+        "Sorting and baling",
+        "Community pickup",
+        "Business recycling programs",
+        "Education and compliance"
+      ],
+      averagePrice: "₦10,000 - ₦150,000",
+      timeframe: "2 hours - 1 day",
+      materials: ["Bins", "Bags", "Sorting tables", "Balers", "Gloves", "Labels"],
+      whatToExpect: "Recycling providers collect and process materials to reduce waste, offering pickup schedules and guidance on sorting.",
+      whenToHire: "When needing regular recyclables pickup, office recycling setups, or event waste management.",
+      tips: [
+        "Confirm accepted materials",
+        "Provide clear sorting areas",
+        "Request education materials",
+        "Ask for pickup schedules",
+        "Track recycling metrics"
+      ],
+      redFlags: [
+        "Mixes recyclables with general waste",
+        "No scale or tracking",
+        "Unsafe handling",
+        "Poor communication on schedules",
+        "No proof of processing"
+      ]
+    },
     "bathroom-fitting": {
       name: "Bathroom Fitting",
       description: "Complete bathroom installation and renovation services",

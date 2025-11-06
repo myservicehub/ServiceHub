@@ -14,6 +14,7 @@ const TradeCategoriesPage = () => {
   const categoryToSlug = (categoryName) => {
     return categoryName.toLowerCase()
       .replace(/&/g, '')
+      .replace(/\//g, '-')
       .replace(/\s+/g, '-')
       .replace(/[^a-z0-9-]/g, '');
   };
@@ -201,7 +202,36 @@ const TradeCategoriesPage = () => {
       popular: true,
       serviceCount: "300+"
     },
-  
+    // General Services additions to reach 28 categories
+    {
+      name: "Cleaning",
+      description: "Home and office cleaning, deep cleaning, and sanitation services",
+      icon: "🧹",
+      popular: true,
+      serviceCount: "260+"
+    },
+    {
+      name: "Relocation/Moving",
+      description: "Local moving, packing, loading, and relocation logistics",
+      icon: "🚚",
+      popular: false,
+      serviceCount: "150+"
+    },
+    {
+      name: "Waste Disposal",
+      description: "Waste collection, junk removal, and disposal services",
+      icon: "🗑️",
+      popular: false,
+      serviceCount: "120+"
+    },
+    {
+      name: "Recycling",
+      description: "Recyclables pickup, sorting, and eco-friendly material processing",
+      icon: "♻️",
+      popular: false,
+      serviceCount: "90+"
+    },
+
   ];
 
   // Filter categories based on search term

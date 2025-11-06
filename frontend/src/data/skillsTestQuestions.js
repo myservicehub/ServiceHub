@@ -866,7 +866,7 @@ export const skillsTestQuestions = {
   // Add more trade categories: 'Roofing', 'Carpentry', etc.
 };
 
-// Canonical → local category alias map to ensure coverage for all 24 trades
+// Canonical → local category alias map to ensure coverage for all 28 trades
 // When a canonical trade has no dedicated question set yet, map to the closest available category.
 const TRADE_ALIAS_MAP = {
   // Column 1
@@ -899,7 +899,13 @@ const TRADE_ALIAS_MAP = {
   "Furniture Making": "Building",
   "Electrical Repairs": "Electrical Repairs",
   "CCTV & Security Systems": "Electrical Repairs",
-  "General Handyman Work": "Building"
+  "General Handyman Work": "Building",
+
+  // General Services additions
+  "Cleaning": "Building",
+  "Relocation/Moving": "Building",
+  "Waste Disposal": "Building",
+  "Recycling": "Building"
 };
 
 // Function to get questions for specific trades

@@ -33,6 +33,12 @@ NIGERIAN_TRADE_CATEGORIES = [
     "Electrical Repairs",
     "CCTV & Security Systems",
     "General Handyman Work"
+    ,
+    # Additional services (to maintain 28 total)
+    "Cleaning",
+    "Relocation/Moving",
+    "Waste Disposal",
+    "Recycling"
 ]
 
 # For validation purposes
@@ -76,6 +82,10 @@ TRADE_CATEGORY_GROUPS = {
         "Interior Design"
     ],
     "General Services": [
-        "General Handyman Work"
+        "General Handyman Work",
+        "Cleaning",
+        "Relocation/Moving",
+        "Waste Disposal",
+        "Recycling"
     ]
 }

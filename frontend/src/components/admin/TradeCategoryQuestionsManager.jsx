@@ -77,7 +77,7 @@ const TradeCategoryQuestionsManager = () => {
         console.log('✅ Trade Questions Manager: Loaded trade categories:', categoryNames.length, 'categories');
       } else {
         console.log('⚠️ Trade Questions Manager: Invalid API response, using real categories from your system');
-        // Canonical fallback categories (24 approved trades)
+        // Canonical fallback categories (28 approved trades)
         setTradeCategories([
           'Building',
           'Concrete Works',
@@ -102,12 +102,16 @@ const TradeCategoryQuestionsManager = () => {
           'Furniture Making',
           'Electrical Repairs',
           'CCTV & Security Systems',
-          'General Handyman Work'
+          'General Handyman Work',
+          'Cleaning',
+          'Relocation/Moving',
+          'Waste Disposal',
+          'Recycling'
         ]);
       }
     } catch (error) {
       console.error('❌ Trade Questions Manager: Error fetching trade categories:', error);
-      // Canonical fallback categories (24 approved trades)
+      // Canonical fallback categories (28 approved trades)
       setTradeCategories([
         'Building',
         'Concrete Works',
@@ -132,7 +136,11 @@ const TradeCategoryQuestionsManager = () => {
         'Furniture Making',
         'Electrical Repairs',
         'CCTV & Security Systems',
-        'General Handyman Work'
+        'General Handyman Work',
+        'Cleaning',
+        'Relocation/Moving',
+        'Waste Disposal',
+        'Recycling'
       ]);
     } finally {
       setLoadingCategories(false);

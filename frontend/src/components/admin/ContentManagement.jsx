@@ -237,7 +237,7 @@ const ContentManagement = () => {
     email_template: { icon: Mail, label: 'Email Template', color: 'bg-pink-100 text-pink-800' },
     push_notification: { icon: Zap, label: 'Push Notification', color: 'bg-orange-100 text-orange-800' },
     promotion: { icon: Star, label: 'Promotion', color: 'bg-amber-100 text-amber-800' },
-    testimonial: { icon: Users, label: 'Testimonial', color: 'bg-teal-100 text-teal-800' }
+    testimonial: { icon: Users, label: 'Testimonial', color: 'bg-green-100 text-green-800' }
   };
 
   const statusConfig = {

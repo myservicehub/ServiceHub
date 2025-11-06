@@ -47,7 +47,9 @@ const FALLBACK_TRADE_CATEGORIES = [
   "Solar & Inverter Installation", "Locksmithing",
   // Column 4
   "Roofing", "Plastering/POP", "Furniture Making", "Electrical Repairs",
-  "CCTV & Security Systems", "General Handyman Work"
+  "CCTV & Security Systems", "General Handyman Work",
+  // Additional services to maintain strict 28
+  "Cleaning", "Relocation/Moving", "Waste Disposal", "Recycling"
 ];
 
 // If needed, we can also create a separate hook for trade categories

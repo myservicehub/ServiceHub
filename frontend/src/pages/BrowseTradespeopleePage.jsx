@@ -66,7 +66,9 @@ const BrowseTradespeopleePage = () => {
       'Welding', 'Renovations', 'Painting', 'Carpentry', 'Interior Design',
       'Solar & Inverter Installation', 'Locksmithing', 'Roofing',
       'Plastering/POP', 'Furniture Making', 'Electrical Repairs',
-      'CCTV & Security Systems', 'General Handyman Work'
+      'CCTV & Security Systems', 'General Handyman Work',
+      // Additional services to maintain strict 28
+      'Cleaning', 'Relocation/Moving', 'Waste Disposal', 'Recycling'
     ]);
     
     // Get initial search params from URL or location state

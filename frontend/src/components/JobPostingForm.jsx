@@ -59,7 +59,12 @@ const FALLBACK_TRADE_CATEGORIES = [
   "Furniture Making",
   "Electrical Repairs",
   "CCTV & Security Systems",
-  "General Handyman Work"
+  "General Handyman Work",
+  // Additional services to maintain strict 28
+  "Cleaning",
+  "Relocation/Moving",
+  "Waste Disposal",
+  "Recycling"
 ];
 
 const JobPostingForm = ({ onClose, onJobPosted }) => {
