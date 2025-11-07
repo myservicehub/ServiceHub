@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Search, MapPin, Plus, ChevronDown } from 'lucide-react';
@@ -70,14 +70,14 @@ const HeroSection = () => {
 
         if (data && Array.isArray(data.categories)) {
           setTradeCategories(data.categories);
-          console.log('✅ Loaded trade categories from API:', data.categories.length, 'categories');
-          console.log('📋 Categories:', data.categories.slice(0, 5), '...');
+          console.log('âœ… Loaded trade categories from API:', data.categories.length, 'categories');
+          console.log('ðŸ“‹ Categories:', data.categories.slice(0, 5), '...');
         } else {
-          console.log('⚠️ Invalid API response format:', data);
+          console.log('âš ï¸ Invalid API response format:', data);
           setTradeCategories(FALLBACK_TRADE_CATEGORIES);
         }
       } catch (error) {
-        console.error('❌ Error fetching trade categories:', error);
+        console.error('âŒ Error fetching trade categories:', error);
         setTradeCategories(FALLBACK_TRADE_CATEGORIES);
       } finally {
         setLoadingTrades(false);
@@ -119,13 +119,13 @@ const HeroSection = () => {
     setShowLocationDropdown(false);
   };
 
-  const handleSearch = async (e) => {
+    const handleSearch = async (e) => {
     e.preventDefault();
-    
+
     if (!job.trim()) {
       toast({
-        title: "Search required",
-        description: "Please enter what job you need doing.",
+        title: "Trade required",
+        description: "Please select what job you need doing.",
         variant: "destructive",
       });
       return;
@@ -133,45 +133,20 @@ const HeroSection = () => {
 
     if (!location.trim()) {
       toast({
-        title: "Location required", 
-        description: "Please enter your location.",
+        title: "Location required",
+        description: "Please select your location.",
         variant: "destructive",
       });
       return;
     }
 
-    setIsSearching(true);
-    
-    try {
-      // Search for tradespeople by trade and location
-      const results = await tradespeopleAPI.getTradespeople({
-        trade: job,
-        location: location,
-        limit: 10
-      });
-
-      console.log('Search results:', results);
-
-      // For now, just show a success message
-      // In a real app, you'd navigate to a search results page
-      toast({
-        title: "Search completed!",
-        description: `Found ${results.total || results?.data?.length || 0} tradespeople in ${location}.`,
-      });
-
-      // Here you would typically navigate to search results page
-      // navigate(`/search?q=${encodeURIComponent(job)}&location=${encodeURIComponent(location)}`);
-      
-    } catch (error) {
-      console.error('Search error:', error);
-      toast({
-        title: "Search failed",
-        description: "There was an error searching for tradespeople. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSearching(false);
-    }
+    // Redirect to Post Job and prefill the category with the selected trade
+    navigate('/post-job', {
+      state: {
+        initialCategory: job,
+        initialState: location,
+      },
+    });
   };
 
   return (
@@ -294,7 +269,7 @@ const HeroSection = () => {
                 className="text-white h-12 px-8 text-lg font-semibold font-lato disabled:opacity-50 hover:opacity-90"
                 style={{backgroundColor: '#121E3C'}}
               >
-                {isSearching ? 'Searching...' : 'Find tradespeople'}
+                {isSearching ? 'Searching...' : 'Find trades'}
               </Button>
             </div>
           </form>
@@ -322,3 +297,5 @@ const HeroSection = () => {
 };
 
 export default HeroSection;
+
+

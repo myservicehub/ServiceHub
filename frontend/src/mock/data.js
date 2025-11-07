@@ -1,4 +1,4 @@
-// Mock data for MyBuilder clone
+﻿// Mock data for MyBuilder clone
 
 export const stats = [
   {
@@ -44,42 +44,42 @@ export const popularTrades = [
     title: 'Gardening & Landscaping',
     description: 'Dreaming of a garden that captivates and soothes? Our detailed guides will provide pricing info and help you find the perfect gardener.',
     tradespeople: '12,543',
-    image: '🌿',
+    image: 'ðŸŒ¿',
     color: 'from-green-400 to-green-600'
   },
   {
     title: 'Painting & Decorating',
     description: 'Thinking about giving your space a fresh, new look? Our guides will not only provide pricing info but also connect you with skilled painters.',
     tradespeople: '18,721',
-    image: '🎨',
+    image: 'ðŸŽ¨',
     color: 'from-blue-400 to-blue-600'
   },
   {
     title: 'Plastering & Rendering',
     description: 'Are you interested in price information about a job in this service category? To give you an idea of costs, here are some recent projects.',
     tradespeople: '8,934',
-    image: '🏗️',
+    image: 'ðŸ—ï¸',
     color: 'from-orange-400 to-orange-600'
   },
   {
     title: 'Plumbing',
     description: 'From leaky taps to full bathroom installations, find qualified plumbers for any job. Get quotes and compare reviews.',
     tradespeople: '15,678',
-    image: '🔧',
+    image: 'ðŸ”§',
     color: 'from-indigo-400 to-indigo-600'
   },
   {
     title: 'Electrical Work',
     description: 'Safe, certified electrical work from qualified electricians. From socket installations to full rewiring projects.',
     tradespeople: '11,234',
-    image: '⚡',
+    image: 'âš¡',
     color: 'from-yellow-400 to-yellow-600'
   },
   {
     title: 'Carpentry & Joinery',
     description: 'Custom woodwork, fitted wardrobes, kitchen installations and more from skilled carpenters and joiners.',
     tradespeople: '9,876',
-    image: '🪚',
+    image: 'ðŸªš',
     color: 'from-amber-400 to-amber-600'
   }
 ];
@@ -164,7 +164,7 @@ export const footerSections = [
     title: 'For homeowners',
     links: [
       'Post a job',
-      'Find tradespeople',
+      'Find trades',
       'How it works',
       'Cost guides',
       'Reviews',
@@ -188,7 +188,7 @@ export const footerSections = [
       'Builders',
       'Electricians',
       'Plumbers',
-      'Gardeners',
+
       'Painters & decorators',
       'Carpenters'
     ]
@@ -208,7 +208,7 @@ export const footerSections = [
 
 export const navigationLinks = [
   { label: 'How it works', href: '#' },
-  { label: 'Find tradespeople', href: '#' },
+  { label: 'Find trades', href: '#' },
   { label: 'Join as tradesperson', href: '#' },
   { label: 'Help', href: '#' }
 ];
@@ -231,3 +231,4 @@ export const socialLinks = [
     href: '#' 
   }
 ];
+

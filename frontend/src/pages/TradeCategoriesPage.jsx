@@ -1,14 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Wrench, Users, Star, ArrowRight, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { statsAPI } from '../api/services';
 
 const TradeCategoriesPage = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeTradespeople, setActiveTradespeople] = useState(52);
+
+  useEffect(() => {
+    let mounted = true;
+    statsAPI.getStats()
+      .then((d) => {
+        const count = Number(d.total_tradespeople ?? d.totalTradespeople ?? 52);
+        if (mounted) setActiveTradespeople(count);
+      })
+      .catch(() => {
+        // keep fallback
+      });
+    return () => { mounted = false; };
+  }, []);
 
   // Convert category name to URL slug
   const categoryToSlug = (categoryName) => {
@@ -241,9 +256,6 @@ const TradeCategoriesPage = () => {
   );
 
   const popularCategories = tradeCategories.filter(category => category.popular);
-  const totalTradespeople = tradeCategories.reduce((total, category) => {
-    return total + parseInt(category.serviceCount.replace('+', ''));
-  }, 0);
 
   return (
     <>
@@ -270,7 +282,7 @@ const TradeCategoriesPage = () => {
                 </div>
                 <div className="bg-blue-50 rounded-lg p-6">
                   <div className="text-3xl font-bold font-montserrat text-blue-600">
-                    {totalTradespeople.toLocaleString()}+
+                    {activeTradespeople.toLocaleString()}+
                   </div>
                   <div className="text-sm text-gray-600 font-lato">Active Tradespeople</div>
                 </div>

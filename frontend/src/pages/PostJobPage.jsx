@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import JobPostingForm from '../components/JobPostingForm';
@@ -11,6 +11,9 @@ const PostJobPage = () => {
   const [isJobPosted, setIsJobPosted] = useState(false);
   const [postedJob, setPostedJob] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
+  const initialCategory = location?.state?.initialCategory || null;
+  const initialState = location?.state?.initialState || null;
 
   const handleJobComplete = (jobData) => {
     setPostedJob(jobData);
@@ -161,7 +164,7 @@ const PostJobPage = () => {
       {/* Job Posting Form */}
       <section className="py-12">
         <div className="container mx-auto px-4">
-          <JobPostingForm onComplete={handleJobComplete} />
+          <JobPostingForm onJobPosted={handleJobComplete} initialCategory={initialCategory} initialState={initialState} />
         </div>
       </section>
 
@@ -203,3 +206,10 @@ const PostJobPage = () => {
 };
 
 export default PostJobPage;
+
+
+
+
+
+
+

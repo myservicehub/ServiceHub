@@ -67,7 +67,7 @@ const FALLBACK_TRADE_CATEGORIES = [
   "Recycling"
 ];
 
-const JobPostingForm = ({ onClose, onJobPosted }) => {
+const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [tradeCategories, setTradeCategories] = useState(FALLBACK_TRADE_CATEGORIES);
   const [loadingTrades, setLoadingTrades] = useState(true);
@@ -139,6 +139,20 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
       }));
     }
   }, [currentUser, loading]);
+  // Prefill category if provided via navigation
+  useEffect(() => {
+    if (initialCategory && !formData.category) {
+      setFormData(prev => ({ ...prev, category: initialCategory }));
+    }
+  }, [initialCategory]);
+  // Prefill state if provided via navigation
+  useEffect(() => {
+    if (initialState && !formData.state) {
+      setFormData(prev => ({ ...prev, state: initialState }));
+      // Load LGAs for the initial state
+      fetchLGAsForState(initialState);
+    }
+  }, [initialState]);
 
   // Fetch trade categories from API
   useEffect(() => {
@@ -2094,3 +2108,4 @@ const JobPostingForm = ({ onClose, onJobPosted }) => {
 };
 
 export default JobPostingForm;
+

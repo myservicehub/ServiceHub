@@ -10,9 +10,20 @@ const PopularTrades = () => {
   const navigate = useNavigate();
   const { data: categoriesData, loading, error } = useAPI(() => statsAPI.getCategories());
 
+  // Helper: convert trade/category name to URL slug
+  const toSlug = (str) => {
+    return String(str || '')
+      .toLowerCase()
+      .replace(/&/g, '')
+      .replace(/\//g, '-')
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '');
+  };
+
   // Fallback data while loading or on error
   const defaultTrades = [
     {
+      name: 'Building',
       title: 'Building & Construction',
       description: 'From foundation to roofing, find experienced builders for your construction projects. Quality workmanship guaranteed.',
       tradesperson_count: '15,234',
@@ -20,6 +31,7 @@ const PopularTrades = () => {
       color: 'from-orange-400 to-orange-600'
     },
     {
+      name: 'Plumbing',
       title: 'Plumbing & Water Works',
       description: 'Professional plumbers for installations, repairs, and water system maintenance. Available for emergency services.',
       tradesperson_count: '8,721',
@@ -27,6 +39,7 @@ const PopularTrades = () => {
       color: 'from-indigo-400 to-indigo-600'
     },
     {
+      name: 'Electrical Repairs',
       title: 'Electrical Installation',
       description: 'Certified electricians for wiring, installations, and electrical repairs. Safe and reliable electrical services.',
       tradesperson_count: '12,543',
@@ -34,6 +47,7 @@ const PopularTrades = () => {
       color: 'from-yellow-400 to-yellow-600'
     },
     {
+      name: 'Painting',
       title: 'Painting & Decorating',
       description: 'Transform your space with professional painters and decorators. Interior and exterior painting services available.',
       tradesperson_count: '18,934',
@@ -41,6 +55,7 @@ const PopularTrades = () => {
       color: 'from-blue-400 to-blue-600'
     },
     {
+      name: 'Plastering/POP',
       title: 'POP & Ceiling Works',
       description: 'Expert ceiling installation and POP works. Modern designs and professional finishing for your interior spaces.',
       tradesperson_count: '6,234',
@@ -48,6 +63,7 @@ const PopularTrades = () => {
       color: 'from-purple-400 to-purple-600'
     },
     {
+      name: 'Generator Services',
       title: 'Generator Installation',
       description: 'Professional generator installation and maintenance services. Reliable power solutions for homes and businesses.',
       tradesperson_count: '4,876',
@@ -57,7 +73,9 @@ const PopularTrades = () => {
   ];
 
   // Use real categories if available, otherwise use defaults
-  const displayTrades = categoriesData?.categories || defaultTrades;
+  const displayTrades = Array.isArray(categoriesData)
+    ? categoriesData
+    : (categoriesData?.categories || defaultTrades);
 
   if (error) {
     console.warn('Failed to load categories, using defaults:', error);
@@ -78,13 +96,17 @@ const PopularTrades = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {displayTrades.slice(0, 6).map((trade, index) => (
-              <Card key={index} className="group hover:shadow-lg transition-all duration-300 cursor-pointer">
+              <Card
+                key={index}
+                className="group hover:shadow-lg transition-all duration-300 cursor-pointer"
+                onClick={() => navigate(`/trade-categories/${toSlug(trade.name || trade.title)}`)}
+              >
                 <CardContent className="p-6">
                   <div className={`w-16 h-16 rounded-lg bg-gradient-to-r ${trade.color} flex items-center justify-center mb-4 text-2xl`}>
                     {trade.icon}
                   </div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-3 group-hover:text-green-600 transition-colors">
-                    {trade.title}
+                    {trade.title || trade.name}
                   </h3>
                   <p className="text-gray-600 mb-4 line-clamp-3">
                     {trade.description}
@@ -99,7 +121,15 @@ const PopularTrades = () => {
                           : trade.tradesperson_count} tradespeople in Nigeria`
                       )}
                     </span>
-                    <Button variant="ghost" size="sm" className="text-green-600 hover:text-green-700 p-0">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-green-600 hover:text-green-700 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/trade-categories/${toSlug(trade.name || trade.title)}`);
+                      }}
+                    >
                       View all <ArrowRight size={16} className="ml-1" />
                     </Button>
                   </div>

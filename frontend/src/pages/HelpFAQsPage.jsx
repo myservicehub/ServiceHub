@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, Search, Phone, Mail, MessageCircle, HelpCircle, Users, Wallet, Briefcase, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -98,7 +98,7 @@ const HelpFAQsPage = () => {
       },
       {
         question: "How much does it cost to use serviceHub as a tradesperson?",
-        answer: "Registration is free! You pay a small access fee (typically 5-100 coins, equivalent to ₦500-₦10,000) only when you want to access homeowner contact details for jobs you're interested in. This ensures you're serious about the job and helps maintain quality leads."
+        answer: "Registration is free! You pay a small access fee (typically 5-100 coins, equivalent to â‚¦500-â‚¦10,000) only when you want to access homeowner contact details for jobs you're interested in. This ensures you're serious about the job and helps maintain quality leads."
       },
       {
         question: "How do I show interest in a job?",
@@ -106,7 +106,7 @@ const HelpFAQsPage = () => {
       },
       {
         question: "How do I add funds to my wallet?",
-        answer: "Go to your Wallet section, click 'Fund Wallet', enter the amount (minimum ₦100), and upload proof of payment to our Kuda Bank account. Our team will verify and credit your wallet within 2-4 hours during business hours."
+        answer: "Go to your Wallet section, click 'Fund Wallet', enter the amount (minimum â‚¦100), and upload proof of payment to our Kuda Bank account. Our team will verify and credit your wallet within 2-4 hours during business hours."
       },
       {
         question: "How can I improve my profile visibility?",
@@ -124,7 +124,7 @@ const HelpFAQsPage = () => {
       },
       {
         question: "What is the coin system?",
-        answer: "The coin system is for tradespeople only - homeowners don't need to worry about coins! Our coin system makes payments simple for tradesperson. 1 coin = ₦100. Tradespeople use coins to access homeowner contact details when they want to show interest in a job. Homeowners never pay any fees and don't use the coin system."
+        answer: "The coin system is for tradespeople only - homeowners don't need to worry about coins! Our coin system makes payments simple for tradesperson. 1 coin = â‚¦100. Tradespeople use coins to access homeowner contact details when they want to show interest in a job. Homeowners never pay any fees and don't use the coin system."
       },
       {
         question: "How do I check my wallet balance?",
@@ -140,7 +140,7 @@ const HelpFAQsPage = () => {
       },
       {
         question: "Is there a minimum amount I can add to my wallet?",
-        answer: "The minimum funding amount is ₦100. This ensures cost-effective processing while allowing you to access jobs with lower access fees."
+        answer: "The minimum funding amount is â‚¦100. This ensures cost-effective processing while allowing you to access jobs with lower access fees."
       }
     ],
     account: [
@@ -336,7 +336,7 @@ const HelpFAQsPage = () => {
                     className="p-4 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-colors text-left"
                   >
                     <h4 className="font-medium text-gray-900">Post a Job</h4>
-                    <p className="text-sm text-gray-600 mt-1">Find tradespeople for your project</p>
+                    <p className="text-sm text-gray-600 mt-1">Find trades for your project</p>
                   </button>
                   <button
                     onClick={() => navigate('/browse-jobs')}
