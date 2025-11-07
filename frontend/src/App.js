@@ -1,4 +1,4 @@
-﻿import React, { useEffect } from "react";
+import React, { useEffect } from "react";
 import "./App.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import HomePage from "./components/HomePage";
@@ -36,6 +36,9 @@ import BlogPage from "./pages/BlogPage";
 import CareersPage from "./pages/CareersPage";
 import TradespersonRegistrationDemo from "./pages/TradespersonRegistrationDemo";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import PrivacyPage from "./pages/PrivacyPage";
+import TermsPage from "./pages/TermsPage";
+import CookiePolicyPage from "./pages/CookiePolicyPage";
 import { Toaster } from "./components/ui/toaster";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -126,7 +129,13 @@ function App() {
               <Route path="/blog" element={<BlogPage />} />
               <Route path="/blog/:slug" element={<BlogPage />} />
               <Route path="/careers" element={<CareersPage />} />
-              <Route path="/tradesperson-registration-demo" element={<TradespersonRegistrationDemo />} />              <Route path="/reset-password" element={<ResetPasswordPage />} />            </Routes>            <Toaster />
+              <Route path="/tradesperson-registration-demo" element={<TradespersonRegistrationDemo />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/privacy-policy" element={<PrivacyPage />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/cookie-policy" element={<CookiePolicyPage />} />
+            </Routes>
+            <Toaster />
 
           </BrowserRouter>
         </AuthProvider>

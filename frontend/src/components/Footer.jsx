@@ -206,9 +206,9 @@ const Footer = () => {
             <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
               <div className="flex flex-wrap items-center space-x-6 text-sm text-gray-300 font-lato">
                 <span>© 2025 serviceHub Ltd. All rights reserved.</span>
-                <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-                <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
-                <a href="#" className="hover:text-white transition-colors">Cookie Policy</a>
+                <Link to="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>
+                <Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+                <Link to="/cookie-policy" className="hover:text-white transition-colors">Cookie Policy</Link>
               </div>
               <div className="flex items-center space-x-4 text-sm text-gray-300 font-lato">
   <span className="flex items-center gap-2"><span className="inline-block w-3 h-3 bg-[#34D164] rounded-full"></span> Nigeria</span>
