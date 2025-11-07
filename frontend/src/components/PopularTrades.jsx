@@ -26,7 +26,7 @@ const PopularTrades = () => {
       name: 'Building',
       title: 'Building & Construction',
       description: 'From foundation to roofing, find experienced builders for your construction projects. Quality workmanship guaranteed.',
-      tradesperson_count: '15,234',
+      tradesperson_count: 0,
       icon: '🏗️',
       color: 'from-orange-400 to-orange-600'
     },
@@ -34,7 +34,7 @@ const PopularTrades = () => {
       name: 'Plumbing',
       title: 'Plumbing & Water Works',
       description: 'Professional plumbers for installations, repairs, and water system maintenance. Available for emergency services.',
-      tradesperson_count: '8,721',
+      tradesperson_count: 0,
       icon: '🔧',
       color: 'from-indigo-400 to-indigo-600'
     },
@@ -42,7 +42,7 @@ const PopularTrades = () => {
       name: 'Electrical Repairs',
       title: 'Electrical Installation',
       description: 'Certified electricians for wiring, installations, and electrical repairs. Safe and reliable electrical services.',
-      tradesperson_count: '12,543',
+      tradesperson_count: 0,
       icon: '⚡',
       color: 'from-yellow-400 to-yellow-600'
     },
@@ -50,7 +50,7 @@ const PopularTrades = () => {
       name: 'Painting',
       title: 'Painting & Decorating',
       description: 'Transform your space with professional painters and decorators. Interior and exterior painting services available.',
-      tradesperson_count: '18,934',
+      tradesperson_count: 0,
       icon: '🎨',
       color: 'from-blue-400 to-blue-600'
     },
@@ -58,7 +58,7 @@ const PopularTrades = () => {
       name: 'Plastering/POP',
       title: 'POP & Ceiling Works',
       description: 'Expert ceiling installation and POP works. Modern designs and professional finishing for your interior spaces.',
-      tradesperson_count: '6,234',
+      tradesperson_count: 0,
       icon: '🏠',
       color: 'from-purple-400 to-purple-600'
     },
@@ -66,7 +66,7 @@ const PopularTrades = () => {
       name: 'Generator Services',
       title: 'Generator Installation',
       description: 'Professional generator installation and maintenance services. Reliable power solutions for homes and businesses.',
-      tradesperson_count: '4,876',
+      tradesperson_count: 0,
       icon: '🔌',
       color: 'from-red-400 to-red-600'
     }

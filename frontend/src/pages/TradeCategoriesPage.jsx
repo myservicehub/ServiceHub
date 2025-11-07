@@ -11,6 +11,7 @@ const TradeCategoriesPage = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTradespeople, setActiveTradespeople] = useState(52);
+  const [categoryCountsBySlug, setCategoryCountsBySlug] = useState({});
 
   useEffect(() => {
     let mounted = true;
@@ -21,6 +22,28 @@ const TradeCategoriesPage = () => {
       })
       .catch(() => {
         // keep fallback
+      });
+
+    // Fetch per-category tradespeople counts from backend
+    statsAPI.getCategories()
+      .then((arr) => {
+        const toSlug = (str) => String(str || '')
+          .toLowerCase()
+          .replace(/&/g, '')
+          .replace(/\//g, '-')
+          .replace(/\s+/g, '-')
+          .replace(/[^a-z0-9-]/g, '');
+        const map = {};
+        (Array.isArray(arr) ? arr : (arr?.categories || [])).forEach((c) => {
+          const slug = toSlug(c.name || c.title);
+          const n = Number(c.tradesperson_count ?? 0);
+          if (slug) map[slug] = n;
+        });
+        if (mounted) setCategoryCountsBySlug(map);
+      })
+      .catch(() => {
+        // If API fails, default counts remain 0 for all categories
+        if (mounted) setCategoryCountsBySlug({});
       });
     return () => { mounted = false; };
   }, []);
@@ -38,6 +61,13 @@ const TradeCategoriesPage = () => {
   const handleCategoryClick = (categoryName) => {
     const slug = categoryToSlug(categoryName);
     navigate(`/trade-categories/${slug}`);
+  };
+
+  // Get exact tradespeople count for a category (0 if none or missing)
+  const getCategoryCount = (categoryName) => {
+    const slug = categoryToSlug(categoryName);
+    const n = categoryCountsBySlug[slug];
+    return typeof n === 'number' ? n : 0;
   };
 
   // Nigerian Trade Categories with descriptions and icons
@@ -335,7 +365,7 @@ const TradeCategoriesPage = () => {
                           </p>
                           <div className="flex items-center justify-between">
                             <span className="text-green-600 font-semibold text-sm">
-                              {category.serviceCount} Tradespeople
+                              {getCategoryCount(category.name).toLocaleString()} Tradespeople
                             </span>
                             <div className="flex items-center text-yellow-500">
                               <Star size={16} fill="currentColor" />
@@ -390,7 +420,7 @@ const TradeCategoriesPage = () => {
                           </p>
                           <div className="flex items-center justify-between">
                             <span className="text-green-600 font-semibold text-sm">
-                              {category.serviceCount} Available
+                              {getCategoryCount(category.name).toLocaleString()} Tradespeople
                             </span>
                             <div className="text-green-600 hover:text-green-700">
                               <ArrowRight size={16} />
