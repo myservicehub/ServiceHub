@@ -269,7 +269,7 @@ const HeroSection = () => {
                 className="text-white h-12 px-8 text-lg font-semibold font-lato disabled:opacity-50 hover:opacity-90"
                 style={{backgroundColor: '#121E3C'}}
               >
-                {isSearching ? 'Searching...' : 'Find trades'}
+                {isSearching ? 'Searching...' : 'Find tradespeople'}
               </Button>
             </div>
           </form>
