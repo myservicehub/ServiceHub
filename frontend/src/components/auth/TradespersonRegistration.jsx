@@ -1188,7 +1188,7 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
                 <h4 className="font-medium text-blue-800 mb-2">How it works:</h4>
                 <ul className="text-sm text-blue-700 space-y-1 list-disc ml-4">
                   <li>1 coin = ₦100</li>
-                  <li>Each job contact costs coins (typically 1-3 coins)</li>
+                  <li>Each job contact costs coins (typically 5-50 coins)</li>
                   <li>Fund once, access multiple job contacts</li>
                   <li>Unused coins remain in your wallet</li>
                 </ul>

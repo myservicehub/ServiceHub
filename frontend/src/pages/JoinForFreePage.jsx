@@ -108,14 +108,13 @@ const JoinForFreePage = () => {
               <div className="flex flex-col sm:flex-row gap-4 mb-8">
                 <Button
                   onClick={() => setShowRegistration(true)}
-                  className="bg-white text-green-700 hover:bg-gray-100 px-8 py-4 text-lg font-semibold"
+                  className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 text-lg font-semibold"
                 >
                   Start Registration - It's Free
                 </Button>
                 <Button
-                  variant="outline"
                   onClick={() => navigate('/help-centre')}
-                  className="border-white text-white hover:bg-white hover:text-green-700 px-8 py-4 text-lg"
+                  className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 text-lg font-semibold"
                 >
                   Learn More
                 </Button>
@@ -286,7 +285,7 @@ const JoinForFreePage = () => {
           
           <Button
             onClick={() => setShowRegistration(true)}
-            className="bg-white text-green-700 hover:bg-gray-100 px-12 py-4 text-xl font-semibold"
+            className="bg-green-600 hover:bg-green-700 text-white px-12 py-4 text-xl font-semibold"
           >
             Join for Free - Start Today
           </Button>
