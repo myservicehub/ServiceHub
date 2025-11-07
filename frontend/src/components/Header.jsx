@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Menu, X, User, LogOut, Briefcase, Search, Star, Heart, ChevronDown, HelpCircle, MessageSquare, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -212,12 +212,10 @@ const Header = () => {
                         </DropdownMenuItem>
                         
                         <DropdownMenuItem onClick={() => navigate('/wallet')}>
-                          <span className="mr-2">ðŸ’°</span>
                           <span>Wallet</span>
                         </DropdownMenuItem>
                         
                         <DropdownMenuItem onClick={() => navigate('/referrals')}>
-                          <span className="mr-2">ðŸŽ</span>
                           <span>Referrals</span>
                         </DropdownMenuItem>
                         
@@ -504,7 +502,6 @@ const Header = () => {
                           }}
                           className="text-gray-700 font-lato hover:text-[#34D164] justify-start flex items-center space-x-1"
                         >
-                          <span>ðŸ’°</span>
                           <span>Wallet</span>
                         </Button>
                         <Button 
@@ -515,7 +512,6 @@ const Header = () => {
                           }}
                           className="text-gray-700 font-lato hover:text-[#34D164] justify-start flex items-center space-x-1"
                         >
-                          <span>ðŸŽ</span>
                           <span>Referrals</span>
                         </Button>
                         <Button 
@@ -628,6 +624,7 @@ const Header = () => {
 };
 
 export default Header;
+
 
 
 

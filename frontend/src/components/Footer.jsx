@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Button } from './ui/button';
 import { Facebook, Twitter, Instagram, Linkedin, Youtube } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -205,15 +205,15 @@ const Footer = () => {
           <div className="border-t border-gray-700 pt-8">
             <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
               <div className="flex flex-wrap items-center space-x-6 text-sm text-gray-300 font-lato">
-                <span>Â© 2025 serviceHub Ltd. All rights reserved.</span>
+                <span>© 2025 serviceHub Ltd. All rights reserved.</span>
                 <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
                 <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
                 <a href="#" className="hover:text-white transition-colors">Cookie Policy</a>
               </div>
               <div className="flex items-center space-x-4 text-sm text-gray-300 font-lato">
-                <span>ðŸ‡³ðŸ‡¬ Nigeria</span>
-                <span>Made in Nigeria</span>
-              </div>
+  <span className="flex items-center gap-2"><span className="inline-block w-3 h-3 bg-[#34D164] rounded-full"></span> Nigeria</span>
+  <span>Made in Nigeria</span>
+</div>
             </div>
           </div>
         </div>
@@ -223,5 +223,7 @@ const Footer = () => {
 };
 
 export default Footer;
+
+
 
 
