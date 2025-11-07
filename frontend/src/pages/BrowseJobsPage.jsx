@@ -600,7 +600,7 @@ const BrowseJobsPage = () => {
                           className="w-20"
                         />
                         <span className="text-sm font-medium text-gray-700 font-lato w-8">
-                          {filters.maxDistance}km
+                          {filters.maxDistance}km (≈ {Math.round(filters.maxDistance * 0.621371)}mi)
                         </span>
                       </div>
 
@@ -657,7 +657,7 @@ const BrowseJobsPage = () => {
                   <div className="flex items-center space-x-2">
                     <Navigation size={16} className="text-green-600" />
                     <span className="text-sm text-green-800 font-lato">
-                      Showing jobs within {filters.maxDistance}km of your location
+                      Showing jobs within {filters.maxDistance}km (≈ {Math.round(filters.maxDistance * 0.621371)}mi) of your location
                     </span>
                   </div>
                 </div>
@@ -826,7 +826,7 @@ const BrowseJobsPage = () => {
                                 📍 {job.location}
                                 {job.distance_km && (
                                   <span className="ml-1 text-blue-600 font-medium">
-                                    ({job.distance_km}km away)
+                                    ({job.distance_km} km / {Math.round(job.distance_km * 0.621371)} mi away)
                                   </span>
                                 )}
                               </span>

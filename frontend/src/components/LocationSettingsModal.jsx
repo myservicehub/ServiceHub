@@ -9,6 +9,7 @@ const LocationSettingsModal = ({
   currentLocation = null, 
   currentTravelDistance = 25 
 }) => {
+  const kmToMiles = (km) => Math.round(km * 0.621371);
   const [location, setLocation] = useState(currentLocation);
   const [travelDistance, setTravelDistance] = useState(currentTravelDistance);
   const [loading, setLoading] = useState(false);
@@ -53,7 +54,7 @@ const LocationSettingsModal = ({
                 <h3 className="font-semibold text-blue-800 mb-2">Current Settings</h3>
                 <div className="text-sm text-blue-700">
                   <p>📍 Location: {currentLocation.address || 'Custom location set'}</p>
-                  <p>🚗 Travel distance: {currentTravelDistance}km</p>
+                  <p>🚗 Travel distance: {currentTravelDistance}km (≈ {kmToMiles(currentTravelDistance)}mi)</p>
                 </div>
               </div>
             )}
@@ -96,8 +97,9 @@ const LocationSettingsModal = ({
                     onChange={(e) => setTravelDistance(parseInt(e.target.value))}
                     className="flex-1"
                   />
-                  <div className="bg-gray-100 px-3 py-2 rounded-lg min-w-[80px] text-center">
+                  <div className="bg-gray-100 px-3 py-2 rounded-lg min-w-[120px] text-center">
                     <span className="font-semibold text-gray-800">{travelDistance}km</span>
+                    <div className="text-xs text-gray-600">≈ {kmToMiles(travelDistance)}mi</div>
                   </div>
                 </div>
 
