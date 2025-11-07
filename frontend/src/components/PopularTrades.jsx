@@ -72,10 +72,31 @@ const PopularTrades = () => {
     }
   ];
 
-  // Use real categories if available, otherwise use defaults
-  const displayTrades = Array.isArray(categoriesData)
-    ? categoriesData
-    : (categoriesData?.categories || defaultTrades);
+  // Normalize backend categories and merge real counts into our curated UI cards
+  const normalizeCategories = (data) => {
+    const raw = Array.isArray(data) ? data : (data?.categories || []);
+    return Array.isArray(raw) ? raw : [];
+  };
+
+  const backendCategories = normalizeCategories(categoriesData);
+
+  // Build a count map keyed by slug for robust matching
+  const countsBySlug = new Map();
+  backendCategories.forEach((cat) => {
+    const count = typeof cat.tradesperson_count === 'number' ? cat.tradesperson_count : (cat.count || 0);
+    const keys = [cat.name, cat.title].filter(Boolean);
+    keys.forEach((k) => countsBySlug.set(toSlug(k), count));
+  });
+
+  // Always display curated UI cards; overlay real counts when available
+  const displayTrades = defaultTrades.map((trade) => {
+    const slug = toSlug(trade.name || trade.title);
+    const count = countsBySlug.get(slug);
+    return {
+      ...trade,
+      tradesperson_count: typeof count === 'number' ? count : 0,
+    };
+  });
 
   if (error) {
     console.warn('Failed to load categories, using defaults:', error);
