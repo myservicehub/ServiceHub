@@ -19,43 +19,68 @@ import { calculateTestScore } from '../../data/skillsTestQuestions';
 // Add local fallback import
 import { getQuestionsForTrades } from '../../data/skillsTestQuestions';
 
+// Test all selected trades, maintain 7 questions per trade, 15 minutes per trade
+const QUESTIONS_PER_TRADE = 7;
+const TIME_PER_TRADE_SECONDS = 900; // 15 minutes per trade
+
 const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
   const [testState, setTestState] = useState('intro'); // intro, active, results
   const [currentTrade, setCurrentTrade] = useState(0);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState({});
-  const [timeRemaining, setTimeRemaining] = useState(900); // 15 minutes in seconds
+  const [timeRemaining, setTimeRemaining] = useState(TIME_PER_TRADE_SECONDS); // dynamic later
   const [testQuestions, setTestQuestions] = useState({});
   const [testResults, setTestResults] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [noQuestionsAvailable, setNoQuestionsAvailable] = useState(false);
 
-  // Initialize test questions when component mounts - only for main trade
+  // Helper: trades to test (limited)
+  const getTestedTrades = () => Object.keys(testQuestions);
+
+  // Initialize test questions when component mounts - now for multiple trades
   useEffect(() => {
     const loadQuestions = async () => {
       if (formData.selectedTrades && formData.selectedTrades.length > 0) {
         try {
-          // Only test the main trade (first selected trade)
-          const mainTrade = formData.selectedTrades[0];
-          const response = await skillsAPI.getQuestionsForTrade(mainTrade);
-          
-          // If backend returns questions use them; otherwise fallback to local dataset (7 questions)
-          const backendQuestions = response?.questions || [];
-          const questions = backendQuestions.length > 0
-            ? { [mainTrade]: backendQuestions }
-            : getQuestionsForTrades([mainTrade], 7);
-          
-          setTestQuestions(questions);
-          const total = questions[mainTrade]?.length || 0;
-          setNoQuestionsAvailable(total === 0);
+          // Decide trades to test (limit to MAX_TRADES_TO_TEST)
+          const tradesToTest = formData.selectedTrades;
+
+          const aggregated = {};
+          for (const trade of tradesToTest) {
+            try {
+              const response = await skillsAPI.getQuestionsForTrade(trade);
+              const backendQuestions = response?.questions || [];
+              aggregated[trade] = backendQuestions.length > 0
+                ? backendQuestions.slice(0, QUESTIONS_PER_TRADE)
+                : [];
+            } catch (err) {
+              console.warn('Skills questions fetch failed for', trade, err);
+              aggregated[trade] = [];
+            }
+          }
+
+          // Fallback to local dataset for trades with missing questions
+          const tradesMissing = Object.entries(aggregated)
+            .filter(([, qs]) => (qs?.length || 0) === 0)
+            .map(([trade]) => trade);
+          if (tradesMissing.length > 0) {
+            const localData = getQuestionsForTrades(tradesMissing, QUESTIONS_PER_TRADE);
+            for (const trade of tradesMissing) {
+              aggregated[trade] = localData[trade] || [];
+            }
+          }
+
+          setTestQuestions(aggregated);
+          const totalAcrossTrades = Object.values(aggregated).reduce((sum, arr) => sum + (arr?.length || 0), 0);
+          setNoQuestionsAvailable(totalAcrossTrades === 0);
         } catch (error) {
           console.error('Failed to load skills questions:', error);
-          // Fallback to local dataset (7 questions) when API call fails
-          const mainTrade = formData.selectedTrades[0];
-          const questions = getQuestionsForTrades([mainTrade], 7);
+          // Fallback to local dataset when API call fails
+          const tradesToTest = formData.selectedTrades;
+          const questions = getQuestionsForTrades(tradesToTest, QUESTIONS_PER_TRADE);
           setTestQuestions(questions);
-          const total = questions[mainTrade]?.length || 0;
-          setNoQuestionsAvailable(total === 0);
+          const totalAcrossTrades = Object.values(questions).reduce((sum, arr) => sum + (arr?.length || 0), 0);
+          setNoQuestionsAvailable(totalAcrossTrades === 0);
         }
       }
     };
@@ -91,16 +116,18 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
     setCurrentTrade(0);
     setCurrentQuestion(0);
     setAnswers({});
-    setTimeRemaining(900); // Reset timer
+    // Reset timer proportional to number of trades (15 min per trade)
+    const loadedTrades = getTestedTrades().length;
+    const selectedTradesCount = formData.selectedTrades?.length || 0;
+    const totalTrades = loadedTrades > 0 ? loadedTrades : selectedTradesCount || 1;
+    setTimeRemaining(totalTrades * TIME_PER_TRADE_SECONDS);
   };
 
   const handleSkipTest = () => {
-    const mainTrade = formData.selectedTrades[0];
     // Mark as passed to allow progression when no questions exist
     updateFormData('skillsTestPassed', true);
     const skipResults = {
-      mainTrade,
-      tradeResult: { score: 100, correct: 0, total: 0, passed: true },
+      resultsByTrade: {},
       overallScore: 100,
       overallCorrect: 0,
       overallTotal: 0,
@@ -115,8 +142,9 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
   };
 
   const handleAnswerSelect = (answerIndex) => {
-    const mainTrade = formData.selectedTrades[0];
-    const questionKey = `${mainTrade}_${currentQuestion}`;
+    const trades = getTestedTrades();
+    const trade = trades[currentTrade];
+    const questionKey = `${trade}_${currentQuestion}`;
     
     setAnswers(prev => ({
       ...prev,
@@ -125,20 +153,43 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
   };
 
   const handleNextQuestion = () => {
-    const mainTrade = formData.selectedTrades[0];
-    const currentTradeQuestions = testQuestions[mainTrade] || [];
+    const trades = getTestedTrades();
+    const trade = trades[currentTrade];
+    const currentTradeQuestions = testQuestions[trade] || [];
     
-    if (currentQuestion < currentTradeQuestions.length - 1) {
+    if (currentTradeQuestions.length === 0) {
+      // No questions for this trade, skip to next
+      if (currentTrade < trades.length - 1) {
+        setCurrentTrade(prev => prev + 1);
+        setCurrentQuestion(0);
+      } else {
+        handleSubmitTest();
+      }
+    } else if (currentQuestion < currentTradeQuestions.length - 1) {
       setCurrentQuestion(prev => prev + 1);
     } else {
-      // End of test - submit
-      handleSubmitTest();
+      // End of this trade's questions
+      if (currentTrade < trades.length - 1) {
+        setCurrentTrade(prev => prev + 1);
+        setCurrentQuestion(0);
+      } else {
+        // End of test - submit combined
+        handleSubmitTest();
+      }
     }
   };
 
   const handlePreviousQuestion = () => {
     if (currentQuestion > 0) {
       setCurrentQuestion(prev => prev - 1);
+    } else if (currentTrade > 0) {
+      // Move to previous trade's last question
+      const prevTradeIndex = currentTrade - 1;
+      const trades = getTestedTrades();
+      const prevTrade = trades[prevTradeIndex];
+      const prevQuestions = testQuestions[prevTrade] || [];
+      setCurrentTrade(prevTradeIndex);
+      setCurrentQuestion(Math.max(prevQuestions.length - 1, 0));
     }
   };
 
@@ -148,36 +199,41 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
 
   const handleSubmitTest = async () => {
     setIsSubmitting(true);
-    
-    // Calculate results for main trade only
-    const mainTrade = formData.selectedTrades[0];
-    const tradeQuestions = testQuestions[mainTrade] || [];
-    const tradeAnswers = {};
-    
-    tradeQuestions.forEach((_, index) => {
-      const questionKey = `${mainTrade}_${index}`;
-      tradeAnswers[index] = answers[questionKey];
+    // Calculate results for all tested trades
+    const trades = getTestedTrades();
+    const resultsByTrade = {};
+    let overallCorrect = 0;
+    let overallTotal = 0;
+
+    trades.forEach((trade) => {
+      const tradeQuestions = testQuestions[trade] || [];
+      const tradeAnswers = {};
+      tradeQuestions.forEach((_, index) => {
+        const questionKey = `${trade}_${index}`;
+        tradeAnswers[index] = answers[questionKey];
+      });
+      const result = calculateTestScore(tradeAnswers, tradeQuestions);
+      resultsByTrade[trade] = result;
+      overallCorrect += result.correct;
+      overallTotal += result.total;
     });
-    
-    const tradeResult = calculateTestScore(tradeAnswers, tradeQuestions);
-    
+
+    const overallScore = overallTotal > 0 ? Math.round((overallCorrect / overallTotal) * 100) : 100;
     const finalResults = {
-      mainTrade,
-      tradeResult,
-      overallScore: tradeResult.score,
-      overallCorrect: tradeResult.correct,
-      overallTotal: tradeResult.total,
-      passed: tradeResult.passed,
+      resultsByTrade,
+      overallScore,
+      overallCorrect,
+      overallTotal,
+      passed: overallScore >= 80,
       completedAt: new Date().toISOString(),
-      // Fix incorrect timeUsed calculation: initial timer is 900 seconds
-      timeUsed: 900 - timeRemaining
+      timeUsed: (getTestedTrades().length * TIME_PER_TRADE_SECONDS) - timeRemaining
     };
     
     setTestResults(finalResults);
     setTestState('results');
     
     // Update form data
-    updateFormData('skillsTestPassed', tradeResult.passed);
+    updateFormData('skillsTestPassed', finalResults.passed);
     updateFormData('testScores', finalResults);
     
     if (onTestComplete) {
@@ -188,8 +244,9 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
   };
 
   const getTotalQuestions = () => {
-    const mainTrade = formData.selectedTrades[0];
-    return testQuestions[mainTrade]?.length || 0;
+    const trades = getTestedTrades();
+    const trade = trades[currentTrade];
+    return testQuestions[trade]?.length || 0;
   };
 
   const getCurrentQuestionNumber = () => {
@@ -197,8 +254,9 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
   };
 
   const getCurrentAnswer = () => {
-    const mainTrade = formData.selectedTrades[0];
-    const questionKey = `${mainTrade}_${currentQuestion}`;
+    const trades = getTestedTrades();
+    const trade = trades[currentTrade];
+    const questionKey = `${trade}_${currentQuestion}`;
     return answers[questionKey];
   };
 
@@ -207,13 +265,14 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
   };
 
   const canGoPrevious = () => {
-    return currentQuestion > 0;
+    return currentQuestion > 0 || currentTrade > 0;
   };
 
   const isLastQuestion = () => {
-    const mainTrade = formData.selectedTrades[0];
-    const totalQuestions = testQuestions[mainTrade]?.length || 0;
-    return currentQuestion === totalQuestions - 1;
+    const trades = getTestedTrades();
+    const trade = trades[currentTrade];
+    const totalQuestions = testQuestions[trade]?.length || 0;
+    return totalQuestions === 0 ? true : currentQuestion === totalQuestions - 1;
   };
 
   // Introduction screen
@@ -236,9 +295,9 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
             <div>
               <h4 className="font-medium text-yellow-800">Test Requirements</h4>
               <ul className="text-sm text-yellow-700 mt-2 space-y-1">
-                <li>• You need to score <strong>80% or higher</strong> to pass</li>
-                <li>• <strong>7 questions</strong> per trade category</li>
-                <li>• <strong>15 minutes</strong> time limit</li>
+                <li>• You need to score <strong>80% or higher overall</strong> to pass</li>
+                <li>• <strong>{QUESTIONS_PER_TRADE} questions</strong> per trade category</li>
+                <li>• <strong>{Math.round((formData.selectedTrades?.length || 1) * (TIME_PER_TRADE_SECONDS / 60))} minutes</strong> total time limit</li>
                 <li>• Questions cover technical knowledge, safety, and Nigerian standards</li>
                 <li>• <strong>Immediate results</strong> provided</li>
               </ul>
@@ -247,30 +306,25 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
         </div>
 
         <div className="space-y-4">
-          <h4 className="font-medium text-gray-800">You will be tested on your main trade:</h4>
+          <h4 className="font-medium text-gray-800">You will be tested on your selected trades:</h4>
           <div className="grid grid-cols-1 gap-3">
-            <div className="flex items-center space-x-3 p-4 border-2 border-green-500 rounded-lg bg-green-50">
-              <Trophy className="h-6 w-6 text-green-600" />
-              <div>
-                <span className="font-semibold text-lg text-green-800">{formData.selectedTrades[0]}</span>
-                <p className="text-sm text-green-700">Your primary trade • {getTotalQuestions()} questions</p>
+            {(getTestedTrades().length ? getTestedTrades() : (formData.selectedTrades || [])).map((trade) => (
+              <div key={trade} className="flex items-center space-x-3 p-4 border-2 border-green-500 rounded-lg bg-green-50">
+                <Trophy className="h-6 w-6 text-green-600" />
+                <div>
+                  <span className="font-semibold text-lg text-green-800">{trade}</span>
+                  <p className="text-sm text-green-700">{((testQuestions[trade]||[]).length) || QUESTIONS_PER_TRADE} questions</p>
+                </div>
               </div>
-            </div>
+            ))}
           </div>
-          
-          {formData.selectedTrades.length > 1 && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <p className="text-sm text-blue-800">
-                <strong>Note:</strong> You selected {formData.selectedTrades.length} trades, but you'll only be tested on your main trade ({formData.selectedTrades[0]}) to keep the assessment focused and manageable.
-              </p>
-              <p className="text-xs text-blue-600 mt-1">
-                Other trades: {formData.selectedTrades.slice(1).join(', ')}
-              </p>
-            </div>
-          )}
-          
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+            We’ll test each of your selected trades, with {QUESTIONS_PER_TRADE} questions per trade.
+          </div>
+
           <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-            <strong>Total:</strong> {getTotalQuestions()} questions covering technical knowledge, safety procedures, and Nigerian building standards.
+            <strong>Total:</strong> {getTestedTrades().reduce((sum, t) => sum + ((testQuestions[t]||[]).length), 0)} questions covering technical knowledge, safety procedures, and Nigerian standards.
           </div>
         </div>
 
@@ -279,12 +333,12 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
             onClick={handleStartTest}
             className="w-full bg-green-600 hover:bg-green-700 text-white py-3"
           >
-            Start Skills Test
+            Start Combined Skills Test
           </Button>
         ) : (
           <div className="space-y-3">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
-              No test questions are available yet for {formData.selectedTrades[0]}. We’ll skip this step so you can continue.
+              No test questions are available yet for your selected trades. We’ll skip this step so you can continue.
             </div>
             <Button
               onClick={handleSkipTest}
@@ -335,33 +389,35 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
           </div>
 
           <div className="space-y-4">
-            <h4 className="font-medium text-gray-800">Test Result for {testResults.mainTrade}:</h4>
-            <div className="border rounded-lg p-4 bg-green-50">
-              <div className="flex justify-between items-center mb-2">
-                <span className="font-medium text-lg">{testResults.mainTrade}</span>
-                <div className="flex items-center space-x-2">
-                  <span className={`font-bold text-xl ${
-                    testResults.tradeResult.passed ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {testResults.tradeResult.score}%
-                  </span>
-                  {testResults.tradeResult.passed ? (
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                  ) : (
-                    <XCircle className="h-5 w-5 text-red-600" />
-                  )}
+            <h4 className="font-medium text-gray-800">Results by Trade</h4>
+            {Object.entries(testResults.resultsByTrade || {}).map(([trade, result]) => (
+              <div key={trade} className="border rounded-lg p-4 bg-green-50">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-medium text-lg">{trade}</span>
+                  <div className="flex items-center space-x-2">
+                    <span className={`font-bold text-xl ${
+                      result.passed ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {result.score}%
+                    </span>
+                    {result.passed ? (
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                    ) : (
+                      <XCircle className="h-5 w-5 text-red-600" />
+                    )}
+                  </div>
                 </div>
+                <div className="text-sm text-gray-700 mb-2">
+                  {result.correct} out of {result.total} questions correct
+                </div>
+                <Progress 
+                  value={result.score} 
+                  className={`h-3 ${
+                    result.passed ? 'bg-green-100' : 'bg-red-100'
+                  }`}
+                />
               </div>
-              <div className="text-sm text-gray-700 mb-2">
-                {testResults.tradeResult.correct} out of {testResults.tradeResult.total} questions correct
-              </div>
-              <Progress 
-                value={testResults.tradeResult.score} 
-                className={`h-3 ${
-                  testResults.tradeResult.passed ? 'bg-green-100' : 'bg-red-100'
-                }`}
-              />
-            </div>
+            ))}
           </div>
         </div>
 
@@ -395,8 +451,9 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
   }
 
   // Active test screen
-  const mainTrade = formData.selectedTrades[0];
-  const currentTradeQuestions = testQuestions[mainTrade] || [];
+  const trades = getTestedTrades();
+  const activeTrade = trades[currentTrade];
+  const currentTradeQuestions = testQuestions[activeTrade] || [];
   const currentQuestionData = currentTradeQuestions[currentQuestion];
 
   return (
@@ -406,7 +463,7 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
         <div className="flex justify-between items-center mb-3">
           <div>
             <h3 className="font-semibold text-blue-800">
-              {formData.selectedTrades[0]} Skills Test
+              {activeTrade} Skills Test
             </h3>
             <p className="text-sm text-blue-600">
               Question {getCurrentQuestionNumber()} of {getTotalQuestions()}
@@ -427,7 +484,7 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
           </div>
         </div>
         <Progress 
-          value={(getCurrentQuestionNumber() / getTotalQuestions()) * 100} 
+          value={(getCurrentQuestionNumber() / Math.max(getTotalQuestions(),1)) * 100} 
           className="h-2"
         />
       </div>
@@ -458,7 +515,7 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
                 >
                   <input
                     type="radio"
-                    name={`question_${getCurrentQuestionNumber()}`}
+                    name={`question_${activeTrade}_${getCurrentQuestionNumber()}`}
                     value={index}
                     checked={getCurrentAnswer() === index}
                     onChange={() => handleAnswerSelect(index)}
@@ -506,7 +563,7 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
             className="flex items-center space-x-2"
           >
             <Flag size={16} />
-            <span>Submit Test</span>
+            <span>Submit Combined Test</span>
           </Button>
 
           <Button
@@ -516,7 +573,7 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
             className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white"
           >
             <span>
-              {isLastQuestion() ? 'Finish Test' : 'Next'}
+              {isLastQuestion() ? (currentTrade === trades.length - 1 ? 'Finish Test' : 'Next Trade') : 'Next'}
             </span>
             <ArrowRight size={16} />
           </Button>

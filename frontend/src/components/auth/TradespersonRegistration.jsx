@@ -120,6 +120,19 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
   const navigate = useNavigate();
   const { states: nigerianStates, loading: statesLoading } = useStates();
 
+  // Helpers for distance display and simple state-based suggestions
+  const kmToMiles = (km) => Math.round(km * 0.621371);
+  const getStateDistanceSuggestion = (state) => {
+    if (!state) {
+      return { label: 'Typical', min: 15, max: 30, value: 20 };
+    }
+    const urban = ['Lagos', 'Abuja', 'Abuja-FCT', 'Rivers', 'Port Harcourt'];
+    const suburban = ['Oyo', 'Kaduna', 'Ogun', 'Anambra', 'Kano'];
+    if (urban.includes(state)) return { label: 'Urban', min: 8, max: 15, value: 12 };
+    if (suburban.includes(state)) return { label: 'Suburban', min: 15, max: 30, value: 20 };
+    return { label: 'Rural/Mixed', min: 25, max: 50, value: 30 };
+  };
+
   // Fetch trade categories from API
   useEffect(() => {
     const fetchTradeCategories = async () => {
@@ -506,11 +519,8 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
         }
         break;
       case 4:
-        // Allow skipping skills test in demo/testing environments
-        const isDemoEnvironmentStep4 = window.location.pathname.includes('demo') || 
-                                      window.location.pathname.includes('test') ||
-                                      process.env.NODE_ENV === 'development';
-        if (!isDemoEnvironmentStep4 && !formData.skillsTestPassed) {
+        // Enforce skills test completion unless questions are not available (handled by SkillsTestComponent setting skillsTestPassed)
+        if (!formData.skillsTestPassed) {
           newErrors.skillsTest = 'You must pass the skills test to continue';
         }
         break;
@@ -788,15 +798,40 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
           <input
             type="range"
             min="5"
-            max="100"
-            value={formData.travelDistance}
-            onChange={(e) => updateFormData('travelDistance', e.target.value)}
+            max="200"
+            step="5"
+            value={parseInt(formData.travelDistance || 10)}
+            onChange={(e) => updateFormData('travelDistance', parseInt(e.target.value))}
             className="w-full"
           />
           <div className="flex justify-between text-sm text-gray-600">
-            <span>5 miles</span>
-            <span className="font-medium">{formData.travelDistance} miles</span>
-            <span>100 miles</span>
+            <span>5 km</span>
+            <span className="font-medium">{formData.travelDistance} km</span>
+            <span>200 km</span>
+          </div>
+          <div className="text-xs text-gray-600">
+            Selected: {formData.travelDistance} km (≈ {kmToMiles(formData.travelDistance)} mi)
+          </div>
+
+          {/* State-based suggestion helper */}
+          <div className="mt-2 bg-gray-50 border border-gray-200 rounded-lg p-3">
+            {(() => {
+              const s = getStateDistanceSuggestion(formData.state);
+              return (
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-700">
+                    Suggestion{formData.state ? ` for ${formData.state}` : ''}: {s.min}–{s.max} km (≈ {kmToMiles(s.min)}–{kmToMiles(s.max)} mi)
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => updateFormData('travelDistance', s.value)}
+                    className="px-3 py-1 text-sm bg-green-600 hover:bg-green-700 text-white rounded"
+                  >
+                    Apply {s.value} km
+                  </button>
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>
@@ -1204,15 +1239,22 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
           </Button>
 
           {currentStep < 6 && (
-            <Button
-              type="button"
-              onClick={nextStep}
-              disabled={isLoading || (currentStep === 4 && !formData.skillsTestPassed && !(window.location.pathname.includes('demo') || window.location.pathname.includes('test') || process.env.NODE_ENV === 'development'))}
-              className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white"
-            >
-              <span>Continue</span>
-              <ArrowRight size={16} />
-            </Button>
+            <>
+              <Button
+                type="button"
+                onClick={nextStep}
+                disabled={isLoading || (currentStep === 4 && !formData.skillsTestPassed)}
+                aria-disabled={isLoading || (currentStep === 4 && !formData.skillsTestPassed)}
+                title={currentStep === 4 && !formData.skillsTestPassed ? 'Complete the skills test to continue' : undefined}
+                className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
+              >
+                <span>Continue</span>
+                <ArrowRight size={16} />
+              </Button>
+              {currentStep === 4 && !formData.skillsTestPassed && (
+                <p className="mt-2 text-sm text-gray-600">Complete the skills test to continue.</p>
+              )}
+            </>
           )}
           {currentStep === 6 && (
             <div className="text-sm text-gray-600">
