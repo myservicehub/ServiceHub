@@ -4,11 +4,11 @@ import Footer from '../components/Footer';
 import { Link } from 'react-router-dom';
 
 const SectionBar = ({ children }) => (
-  <div className="rounded-md bg-blue-600 text-white px-4 py-2 font-semibold mb-3">{children}</div>
+  <div className="rounded-md bg-green-600 text-white px-4 py-2 font-semibold mb-3">{children}</div>
 );
 
-const SubSectionBar = ({ children }) => (
-  <div className="rounded-md bg-blue-100 text-blue-900 px-4 py-2 font-semibold mb-3">{children}</div>
+const SubSectionBar = ({ children, id }) => (
+  <div id={id} className="rounded-md bg-green-100 text-green-900 px-4 py-2 font-semibold mb-3">{children}</div>
 );
 
 const TermsPage = () => {
@@ -18,15 +18,17 @@ const TermsPage = () => {
 
       <div className="container mx-auto px-4 py-10">
         <div className="max-w-6xl mx-auto bg-white rounded-xl shadow-sm border p-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">SERVICEHUB LIMITED</h1>
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">TERMS OF SERVICE &amp; USER AGREEMENT (Merged: Service Provider + Customer)</h2>
+          <h1 className="text-4xl font-bold text-gray-900 mb-3">Terms and Conditions</h1>
+          <p className="text-gray-700 mb-6">Effective Date: 1 of january 2026 | Version: 1.0</p>
 
-          <ul className="text-gray-700 mb-6 list-disc list-inside space-y-1">
-            <li>Registered Name: ServiceHub Limited | RC: 8905084</li>
-            <li>Registered Address: 6, D Place Guest House, Off Omimi Link Road, Ekpan, Delta State, Nigeria</li>
-            <li>Email: <a href="mailto:servicehub9ja@gmail.com" className="text-green-600 hover:text-green-700">servicehub9ja@gmail.com</a> | Phone: +234 814 183 1420</li>
-            <li>Effective Date: ______________ | Version: 1.0</li>
-          </ul>
+          <div className="flex flex-wrap gap-3 mb-6">
+            <a href="#tradespeople-terms" className="inline-block bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-lg">
+              Terms &amp; conditions for tradespeople
+            </a>
+            <a href="#customer-terms" className="inline-block bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-lg">
+              Terms &amp; conditions for customers
+            </a>
+          </div>
 
           <SectionBar>1. INTRODUCTION &amp; LEGAL FRAMEWORK</SectionBar>
           <div className="text-gray-700 space-y-3 mb-6">
@@ -96,7 +98,7 @@ const TermsPage = () => {
             </ol>
           </div>
 
-          <SubSectionBar>PART A — SERVICE PROVIDER TERMS &amp; CONDITIONS</SubSectionBar>
+          <SubSectionBar id="tradespeople-terms">PART A — SERVICE PROVIDER TERMS &amp; CONDITIONS</SubSectionBar>
           <div className="text-gray-700 space-y-3 mb-6">
             <ol className="list-decimal list-inside space-y-2">
               <li><span className="font-semibold">A1. Eligibility &amp; Conduct</span>: You operate as a legitimate business/sole trader in Nigeria; you hold licences/insurances; you honour commitments; you only offer services you are qualified to perform; you meet quality standards and our Reviews Policy.</li>
@@ -110,7 +112,7 @@ const TermsPage = () => {
             </ol>
           </div>
 
-          <SubSectionBar>PART B — CUSTOMER TERMS &amp; CONDITIONS</SubSectionBar>
+          <SubSectionBar id="customer-terms">PART B — CUSTOMER TERMS &amp; CONDITIONS</SubSectionBar>
           <div className="text-gray-700 space-y-3 mb-6">
             <ol className="list-decimal list-inside space-y-2">
               <li><span className="font-semibold">B1. Posting Jobs</span>: Describe needs accurately; do not include offensive content or external contact details in postings.</li>

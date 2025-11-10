@@ -4,11 +4,11 @@ import Footer from '../components/Footer';
 import { Link } from 'react-router-dom';
 
 const SectionBar = ({ children }) => (
-  <div className="rounded-md bg-blue-600 text-white px-4 py-2 font-semibold mb-3">{children}</div>
+  <div className="rounded-md bg-green-600 text-white px-4 py-2 font-semibold mb-3">{children}</div>
 );
 
-const SubSectionBar = ({ children }) => (
-  <div className="rounded-md bg-blue-100 text-blue-900 px-4 py-2 font-semibold mb-3">{children}</div>
+const SubSectionBar = ({ children, id }) => (
+  <div id={id} className="rounded-md bg-green-100 text-green-900 px-4 py-2 font-semibold mb-3">{children}</div>
 );
 
 const PrivacyPage = () => {
@@ -18,8 +18,7 @@ const PrivacyPage = () => {
 
       <div className="container mx-auto px-4 py-10">
         <div className="max-w-6xl mx-auto bg-white rounded-xl shadow-sm border p-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">SERVICEHUB LIMITED</h1>
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">Privacy Policy</h2>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Privacy Policy</h1>
           <p className="text-gray-700 mb-6">
             This Privacy Policy explains how ServiceHub Limited ("ServiceHub", "we", "us", "our") collects,
             uses, shares, and protects personal data when you use our platforms and services. It is divided
@@ -27,6 +26,15 @@ const PrivacyPage = () => {
             (Privacy Policy for Customers). If you use ServiceHub as both a Service Provider and a Customer,
             both parts apply to you.
           </p>
+
+          <div className="flex flex-wrap gap-3 mb-6">
+            <a href="#tradespeople" className="inline-block bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-lg">
+              Privacy policy for tradespeople
+            </a>
+            <a href="#customers" className="inline-block bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-lg">
+              Privacy policy for customers
+            </a>
+          </div>
 
           <SectionBar>1. DATA CONTROLLER DETAILS</SectionBar>
           <div className="text-gray-700 space-y-3 mb-6">
@@ -56,7 +64,7 @@ const PrivacyPage = () => {
             </p>
           </div>
 
-          <SubSectionBar>PART A: PRIVACY POLICY FOR SERVICE PROVIDERS / TRADESPEOPLE</SubSectionBar>
+          <SubSectionBar id="tradespeople">PART A: PRIVACY POLICY FOR SERVICE PROVIDERS / TRADESPEOPLE</SubSectionBar>
 
           <SectionBar>A1. INTRODUCTION</SectionBar>
           <p className="text-gray-700 mb-6">
@@ -262,7 +270,7 @@ const PrivacyPage = () => {
             </p>
           </div>
 
-          <SubSectionBar>PART B: PRIVACY POLICY FOR CUSTOMERS</SubSectionBar>
+          <SubSectionBar id="customers">PART B: PRIVACY POLICY FOR CUSTOMERS</SubSectionBar>
 
           <SectionBar>B1. INTRODUCTION</SectionBar>
           <p className="text-gray-700 mb-6">
