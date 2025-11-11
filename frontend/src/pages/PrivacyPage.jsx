@@ -27,14 +27,20 @@ const PrivacyPage = () => {
             both parts apply to you.
           </p>
 
-          <div className="flex flex-wrap gap-3 mb-6">
-            <a href="#tradespeople" className="inline-block bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-lg">
-              Privacy policy for tradespeople
-            </a>
-            <a href="#customers" className="inline-block bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-lg">
-              Privacy policy for customers
-            </a>
-          </div>
+          <div className="mb-6">
+  <ul className="list-disc list-inside text-purple-700 space-y-2">
+    <li>
+      <a href="#tradespeople" className="underline hover:text-purple-800">
+        Privacy Policy for tradespeople
+      </a>
+    </li>
+    <li>
+      <a href="#customers" className="underline hover:text-purple-800">
+        Privacy Policy for customers
+      </a>
+    </li>
+  </ul>
+</div>
 
           <SectionBar>1. DATA CONTROLLER DETAILS</SectionBar>
           <div className="text-gray-700 space-y-3 mb-6">

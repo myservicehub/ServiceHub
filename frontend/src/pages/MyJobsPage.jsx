@@ -59,6 +59,7 @@ const MyJobsPage = () => {
   const [availableTradespeoplePorReview, setAvailableTradespeoplePorReview] = useState([]);
   const [jobHiringStatuses, setJobHiringStatuses] = useState({});
   const [pendingReviewJobs, setPendingReviewJobs] = useState(new Set());
+  const REVIEW_PENDING_MS = 1500; // brief pending duration before marking completed
 
   const { toast } = useToast();
   const { user, isAuthenticated } = useAuth();
@@ -419,6 +420,16 @@ const MyJobsPage = () => {
       };
 
       await reviewsAPI.createReview(reviewPayload);
+      // Mark this job's review as pending immediately after submission
+      setPendingReviewJobs(prev => new Set([...prev, jobToReview.id]));
+      // Auto-clear pending shortly to reflect quick completion
+      setTimeout(() => {
+        setPendingReviewJobs(prev => {
+          const next = new Set([...prev]);
+          next.delete(jobToReview.id);
+          return next;
+        });
+      }, REVIEW_PENDING_MS);
       
       toast({
         title: "Review Submitted",
@@ -451,6 +462,20 @@ const MyJobsPage = () => {
         ...prev,
         [jobId]: reviews
       }));
+
+      // Sync pending state based on latest review status for current user
+      const myReview = Array.isArray(reviews) ? reviews.find(r => r?.reviewer_id === user?.id) : null;
+      const statusRaw = (myReview?.status || myReview?.state || myReview?.review_status || '').toString().toLowerCase();
+      const isPending = statusRaw.includes('pending') || statusRaw.includes('under');
+      setPendingReviewJobs(prev => {
+        const next = new Set([...prev]);
+        if (isPending) {
+          next.add(jobId);
+        } else {
+          next.delete(jobId);
+        }
+        return next;
+      });
     } catch (error) {
       console.error('Failed to load job reviews:', error);
     }
@@ -461,6 +486,10 @@ const MyJobsPage = () => {
     return job.status === 'completed' && !jobReviews[job.id]?.some(review => 
       review.reviewer_id === user?.id
     );
+  };
+
+  const hasMyReview = (job) => {
+    return jobReviews[job.id]?.some(review => review.reviewer_id === user?.id);
   };
 
   const handleCompleteAndReview = async (jobId) => {
@@ -999,10 +1028,15 @@ const MyJobsPage = () => {
                                     
                                     <div className="flex items-center justify-between pt-2 border-t border-green-200">
                                       <div className="flex items-center text-sm">
-                                        {job.review_given ? (
+                                        {pendingReviewJobs.has(job.id) ? (
+                                          <div className="flex items-center text-amber-600">
+                                            <Clock size={14} className="mr-1" />
+                                            <span>Review pending</span>
+                                          </div>
+                                        ) : (hasMyReview(job) || job.review_given) ? (
                                           <div className="flex items-center text-green-600">
                                             <CheckCircle size={14} className="mr-1" />
-                                            <span>Review given</span>
+                                            <span>Review completed</span>
                                           </div>
                                         ) : canLeaveReview(job) ? (
                                           <div className="flex items-center text-amber-600">
@@ -1031,13 +1065,14 @@ const MyJobsPage = () => {
                                   </div>
                                 )}
 
-                                {/* Leave Review Button - Only for completed jobs */}
-                                {job.status === 'completed' && canLeaveReview(job) && (
+                                {/* Leave Review Button - For completed jobs (disabled when pending or already reviewed) */}
+                                {job.status === 'completed' && (
                                   <div className="flex flex-col space-y-2">
                                     <Button
                                       onClick={() => handleLeaveReview(job)}
                                       className="font-lato text-white"
                                       style={{backgroundColor: '#34D164'}}
+                                      disabled={pendingReviewJobs.has(job.id) || hasMyReview(job) || !canLeaveReview(job)}
                                     >
                                       <Star size={16} className="mr-2" />
                                       Leave Review

@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent } from './ui/card';
 import { Star, MapPin } from 'lucide-react';
-import { reviewsAPI } from '../api/services';
+import { reviewsAPI, tradespeopleAPI } from '../api/services';
 import { useAPI } from '../hooks/useAPI';
 
 const ReviewsSection = () => {
   const { data: reviews, loading, error } = useAPI(() => reviewsAPI.getFeaturedReviews(4));
 
+    const [companyByTpId, setCompanyByTpId] = useState({});
   // Fallback data while loading or on error
   const defaultReviews = [
     {
@@ -71,6 +72,53 @@ const ReviewsSection = () => {
     : (reviews?.reviews || defaultReviews);
 
   const displayReviews = loading ? defaultReviews : rawReviews.map(transformReview);
+
+  // Enrich with tradesperson company/business name for display
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      const idsToFetch = displayReviews
+        .map(r => r.tradesperson_id)
+        .filter(Boolean)
+        .filter(id => !(id in companyByTpId));
+
+      if (idsToFetch.length === 0) return;
+
+      try {
+        const results = await Promise.all(
+          idsToFetch.map(async (id) => {
+            try {
+              const tp = await tradespeopleAPI.getTradesperson(id);
+              return { id, company: tp?.business_name || tp?.company_name, name: tp?.name };
+            } catch {
+              return { id, company: null, name: null };
+            }
+          })
+        );
+
+        const next = {};
+        results.forEach(r => { next[r.id] = { company: r.company, name: r.name }; });
+        setCompanyByTpId(prev => ({ ...prev, ...next }));
+      } catch {
+        // ignore errors; fallback below
+      }
+    };
+
+    if (!loading && displayReviews && displayReviews.length > 0) {
+      fetchCompanies();
+    }
+  }, [loading, displayReviews, companyByTpId]);
+
+  const getCompanyDisplayName = (review) => {
+    const fromReview = review.company_name || review.business_name || review.tradesperson_company;
+    if (fromReview && typeof fromReview === 'string' && fromReview.trim()) {
+      return fromReview.trim();
+    }
+    const info = review.tradesperson_id ? companyByTpId[review.tradesperson_id] : undefined;
+    if (info?.company && info.company.trim()) return info.company.trim();
+    if (info?.name && info.name.trim()) return info.name.trim();
+    return 'Trusted Tradesperson';
+  };
+
 
   if (error) {
     console.warn('Failed to load reviews, using defaults:', error);
@@ -153,10 +201,10 @@ const ReviewsSection = () => {
                   <CardContent className="p-6">
                     <div className="flex items-center mb-4">
                       <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center text-white font-semibold mr-3">
-                        {getInitials(review.homeowner_name)}
+                        {getInitials(getCompanyDisplayName(review))}
                       </div>
                       <div>
-                        <h4 className="font-semibold text-gray-900">{review.homeowner_name}</h4>
+                        <h4 className="font-semibold text-gray-900">{getCompanyDisplayName(review)}</h4>
                         <div className="flex items-center text-sm text-gray-500">
                           <MapPin size={12} className="mr-1" />
                           {review.location}
@@ -201,3 +249,6 @@ const ReviewsSection = () => {
 };
 
 export default ReviewsSection;
+
+
+
