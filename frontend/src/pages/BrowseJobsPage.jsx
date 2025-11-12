@@ -29,6 +29,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import JobsMap from '../components/maps/JobsMap';
 import LocationSettingsModal from '../components/LocationSettingsModal';
 import { authAPI } from '../api/services';
+import { resolveCoordinatesFromLocationText, DEFAULT_TRAVEL_DISTANCE_KM } from '../utils/locationCoordinates';
 
 // Nigerian Trade Categories
 const NIGERIAN_TRADE_CATEGORIES = [
@@ -194,6 +195,16 @@ const BrowseJobsPage = () => {
         maxDistance: user.travel_distance_km || 25,
         useLocation: true 
       }));
+    } else if (user?.location) {
+      const coords = resolveCoordinatesFromLocationText(user.location);
+      if (coords) {
+        setUserLocation(coords);
+        setFilters(prev => ({
+          ...prev,
+          maxDistance: user?.travel_distance_km || DEFAULT_TRAVEL_DISTANCE_KM,
+          useLocation: true
+        }));
+      }
     }
   };
 
@@ -594,6 +605,25 @@ const BrowseJobsPage = () => {
                               title: "Location filter enabled",
                               description: "Using your saved profile location.",
                             });
+                          } else if (user?.location) {
+                            const coords = resolveCoordinatesFromLocationText(user.location);
+                            if (coords) {
+                              setUserLocation(coords);
+                              setFilters(prev => ({
+                                ...prev,
+                                maxDistance: user?.travel_distance_km || prev.maxDistance,
+                              }));
+                              toast({
+                                title: "Location filter enabled",
+                                description: `Using your profile location: ${user.location}.`,
+                              });
+                            } else {
+                              toast({
+                                title: "No saved coordinates",
+                                description: "Set your location in Settings or use GPS.",
+                                variant: "info",
+                              });
+                            }
                           } else {
                             toast({
                               title: "No saved location",
