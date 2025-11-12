@@ -582,9 +582,25 @@ const BrowseJobsPage = () => {
                       onChange={(e) => {
                         const checked = e.target.checked;
                         setFilters(prev => ({ ...prev, useLocation: checked }));
-                        // If enabled without a saved location, auto-fetch current GPS
-                        if (checked && !userLocation) {
-                          getCurrentLocation();
+                        // Use saved profile location instead of auto-triggering GPS
+                        if (checked) {
+                          if (user?.latitude && user?.longitude) {
+                            setUserLocation({ lat: user.latitude, lng: user.longitude });
+                            setFilters(prev => ({
+                              ...prev,
+                              maxDistance: user?.travel_distance_km || prev.maxDistance,
+                            }));
+                            toast({
+                              title: "Location filter enabled",
+                              description: "Using your saved profile location.",
+                            });
+                          } else {
+                            toast({
+                              title: "No saved location",
+                              description: "Set your location in Settings or use GPS.",
+                              variant: "info",
+                            });
+                          }
                         }
                       }}
                       className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
