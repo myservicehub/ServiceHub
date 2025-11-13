@@ -110,20 +110,15 @@ const ReviewsSection = () => {
   }, [loading, displayReviews, companyByTpId]);
 
   const getCompanyDisplayName = (review) => {
-    // Use company fields in the review if present
+    // Strictly use company names for display; avoid personal names
     const fromReview = review.company_name || review.business_name || review.tradesperson_company;
     if (fromReview && typeof fromReview === 'string' && fromReview.trim()) {
       return fromReview.trim();
     }
-    // Otherwise use fetched company info by tradesperson id (tradesperson_id or reviewee_id)
     const id = review.tradesperson_id || review.reviewee_id;
     const info = id ? companyByTpId[id] : undefined;
     if (info?.company && info.company.trim()) return info.company.trim();
-    // Fall back to person name if company missing
-    if (info?.name && info.name.trim()) return info.name.trim();
-    // Last resort: use review-provided names if any
-    if (typeof review.tradesperson_name === 'string' && review.tradesperson_name.trim()) return review.tradesperson_name.trim();
-    if (typeof review.reviewee_name === 'string' && review.reviewee_name.trim()) return review.reviewee_name.trim();
+    // If company missing, show a neutral label rather than a person's name
     return 'Trusted Tradesperson';
   };
 

@@ -29,6 +29,8 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../hooks/use-toast';
 import useStates from '../../hooks/useStates';
+import { jobsAPI } from '../../api/services';
+import { resolveCoordinatesFromLocationText, resolveCoordinatesFromStructuredLocation, DEFAULT_TRAVEL_DISTANCE_KM } from '../../utils/locationCoordinates';
 import { useNavigate } from 'react-router-dom';
 import SkillsTestComponent from './SkillsTestComponent';
 import { adminAPI } from '../../api/wallet';
@@ -118,7 +120,7 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
   const { registerTradesperson, user, isAuthenticated, isTradesperson } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { states: nigerianStates, loading: statesLoading } = useStates();
+  const { states: nigerianStates, lgas: stateLGAs, loading: statesLoading, loadLGAs } = useStates();
 
   // Helpers for distance display and simple state-based suggestions
   const kmToMiles = (km) => Math.round(km * 0.621371);
@@ -164,6 +166,17 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
     'Ordinary partnership',
     'Limited liability partnership (LLP)'
   ];
+
+  // Load LGAs whenever state changes
+  useEffect(() => {
+    if (formData.state) {
+      try {
+        loadLGAs(formData.state);
+      } catch (e) {
+        console.warn('Failed to load LGAs for state:', formData.state, e);
+      }
+    }
+  }, [formData.state, loadLGAs]);
 
   // Phone number validation and formatting functions
   const validateNigerianPhone = (phone) => {
@@ -230,7 +243,19 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
   };
 
   const updateFormData = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    if (field === 'state') {
+      // Reset dependent fields when state changes
+      setFormData(prev => ({ ...prev, state: value, lga: '', town: '' }));
+      if (value) {
+        try {
+          loadLGAs(value);
+        } catch (e) {
+          console.warn('Error loading LGAs:', e);
+        }
+      }
+    } else {
+      setFormData(prev => ({ ...prev, [field]: value }));
+    }
     
     // Real-time password validation
     if (field === 'password') {
@@ -421,6 +446,39 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
           onComplete(result);
         }
 
+        // Update profile location and travel distance post-registration
+        try {
+          const locationText = (formData.businessAddress && formData.businessAddress.trim())
+            ? formData.businessAddress
+            : `${formData.town ? formData.town + ', ' : ''}${formData.lga ? formData.lga + ', ' : ''}${formData.state}`;
+
+          const coordsStructured = resolveCoordinatesFromStructuredLocation({
+            state: formData.state,
+            lga: formData.lga,
+            town: formData.town,
+            addressText: locationText,
+          });
+          const coords = coordsStructured || resolveCoordinatesFromLocationText(locationText);
+          if (coords && coords.latitude && coords.longitude) {
+            await jobsAPI.apiClient.put('/auth/profile/location', null, {
+              params: {
+                latitude: coords.latitude,
+                longitude: coords.longitude,
+                travel_distance_km: formData.travelDistance || DEFAULT_TRAVEL_DISTANCE_KM,
+              },
+            });
+            console.log('📍 Profile location updated:', {
+              latitude: coords.latitude,
+              longitude: coords.longitude,
+              travel_distance_km: formData.travelDistance || DEFAULT_TRAVEL_DISTANCE_KM,
+            });
+          } else {
+            console.warn('⚠️ Could not resolve coordinates from location text:', locationText);
+          }
+        } catch (locErr) {
+          console.warn('⚠️ Failed to update profile location:', locErr?.response?.data || locErr?.message || locErr);
+        }
+
         // Wait for authentication context to update, then redirect
         const redirectToTradespersonDashboard = () => {
           console.log('🚀 Redirecting to tradesperson dashboard (/browse-jobs)');
@@ -507,6 +565,7 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
         if (!formData.businessType) newErrors.businessType = 'Business type is required';
         if (!formData.tradingName.trim()) newErrors.tradingName = 'Trading name is required';
         if (!formData.state) newErrors.state = 'State is required';
+        if (!formData.lga) newErrors.lga = 'LGA is required';
         break;
       case 3:
         if (!formData.idType) newErrors.idType = 'Please select an ID type';
@@ -911,6 +970,27 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
           </select>
           {errors.state && <p className="text-red-500 text-sm mt-1">{errors.state}</p>}
         </div>
+      </div>
+
+      {/* LGA selection dependent on state */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Local Government Area (LGA) *
+        </label>
+        <select
+          value={formData.lga}
+          onChange={(e) => updateFormData('lga', e.target.value)}
+          disabled={!formData.state}
+          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
+            errors.lga ? 'border-red-500' : 'border-gray-300'
+          }`}
+        >
+          <option value="">{formData.state ? 'Select your LGA' : 'Select state first'}</option>
+          {(stateLGAs || []).map((lga) => (
+            <option key={lga} value={lga}>{lga}</option>
+          ))}
+        </select>
+        {errors.lga && <p className="text-red-500 text-sm mt-1">{errors.lga}</p>}
       </div>
 
       <div>
