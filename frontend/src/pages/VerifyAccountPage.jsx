@@ -242,7 +242,7 @@ const VerifyAccountPage = () => {
             {/* Main Form */}
             <div className="lg:col-span-2">
               {/* Contact Verification */}
-              <div className="bg-white p-6 rounded-lg shadow-sm border mb-6">
+              <div className="bg-white p-6 rounded-lg shadow-sm border mb-6 overflow-hidden">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Contact Verification</h3>
                 <div className="grid md:grid-cols-2 gap-6">
                   {/* Email */}
@@ -255,7 +255,7 @@ const VerifyAccountPage = () => {
                       placeholder="Enter your registered email"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                    <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
                       <Button
                         type="button"
                         disabled={emailSending}
@@ -269,7 +269,8 @@ const VerifyAccountPage = () => {
                             toast({ title: 'Send Failed', description: msg, variant: 'destructive' });
                           } finally { setEmailSending(false); }
                         }}
-                        className=""
+                        size="sm"
+                        className="min-w-[120px]"
                       >
                         {emailSending ? 'Sending...' : 'Send Code'}
                       </Button>
@@ -278,7 +279,7 @@ const VerifyAccountPage = () => {
                         value={emailOtpCode}
                         onChange={(e) => setEmailOtpCode(e.target.value)}
                         placeholder="Enter code"
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+                        className="w-full sm:flex-1 sm:max-w-[220px] px-3 py-2 border border-gray-300 rounded-lg"
                       />
                       <Button
                         type="button"
@@ -292,6 +293,8 @@ const VerifyAccountPage = () => {
                             toast({ title: 'Verification Failed', description: 'Invalid or expired code', variant: 'destructive' });
                           } finally { setEmailVerifying(false); }
                         }}
+                        size="sm"
+                        className="min-w-[100px]"
                       >
                         {emailVerifying ? 'Verifying...' : 'Verify'}
                       </Button>
@@ -308,7 +311,7 @@ const VerifyAccountPage = () => {
                       placeholder="Enter your registered phone"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                    <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
                       <Button
                         type="button"
                         disabled={phoneSending}
@@ -322,6 +325,8 @@ const VerifyAccountPage = () => {
                             toast({ title: 'Send Failed', description: msg, variant: 'destructive' });
                           } finally { setPhoneSending(false); }
                         }}
+                        size="sm"
+                        className="min-w-[120px]"
                       >
                         {phoneSending ? 'Sending...' : 'Send Code'}
                       </Button>
@@ -330,7 +335,7 @@ const VerifyAccountPage = () => {
                         value={phoneOtpCode}
                         onChange={(e) => setPhoneOtpCode(e.target.value)}
                         placeholder="Enter code"
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+                        className="w-full sm:flex-1 sm:max-w-[220px] px-3 py-2 border border-gray-300 rounded-lg"
                       />
                       <Button
                         type="button"
@@ -344,6 +349,8 @@ const VerifyAccountPage = () => {
                             toast({ title: 'Verification Failed', description: 'Invalid or expired code', variant: 'destructive' });
                           } finally { setPhoneVerifying(false); }
                         }}
+                        size="sm"
+                        className="min-w-[100px]"
                       >
                         {phoneVerifying ? 'Verifying...' : 'Verify'}
                       </Button>
