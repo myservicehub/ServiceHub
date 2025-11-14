@@ -6,6 +6,7 @@ import { useToast } from '../hooks/use-toast';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Upload, FileText, CheckCircle, AlertCircle, Camera } from 'lucide-react';
+import { Button } from '../components/ui/button';
 
 const VerifyAccountPage = () => {
   const { isAuthenticated, user } = useAuth();
@@ -166,12 +167,12 @@ const VerifyAccountPage = () => {
           <div className="max-w-md mx-auto bg-white p-8 rounded-lg shadow-sm border text-center">
             <h2 className="text-xl font-bold text-gray-800 mb-4">Sign In Required</h2>
             <p className="text-gray-600 mb-6">Please sign in to verify your account</p>
-            <button
-              onClick={() => window.location.href = '/'}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg"
-            >
-              Go to Homepage
-            </button>
+              <Button
+                onClick={() => window.location.href = '/'}
+                className=""
+              >
+                Go to Homepage
+              </Button>
           </div>
         </div>
         <Footer />
@@ -203,18 +204,19 @@ const VerifyAccountPage = () => {
               </div>
 
               <div className="flex space-x-4">
-                <button
+                <Button
                   onClick={() => window.location.href = '/referrals'}
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg"
+                  className="flex-1"
                 >
                   View Referrals
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => window.location.href = '/'}
-                  className="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg"
+                  variant="secondary"
+                  className="flex-1"
                 >
                   Back to Home
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -253,8 +255,8 @@ const VerifyAccountPage = () => {
                       placeholder="Enter your registered email"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
-                    <div className="flex items-center space-x-3">
-                      <button
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                      <Button
                         type="button"
                         disabled={emailSending}
                         onClick={async () => {
@@ -263,13 +265,14 @@ const VerifyAccountPage = () => {
                             await authAPI.sendEmailOTP(emailInput);
                             toast({ title: 'Code Sent', description: 'Check your email for the code.' });
                           } catch (e) {
-                            toast({ title: 'Send Failed', description: 'Could not send email code', variant: 'destructive' });
+                            const msg = e?.response?.data?.detail || 'Could not send email code';
+                            toast({ title: 'Send Failed', description: msg, variant: 'destructive' });
                           } finally { setEmailSending(false); }
                         }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+                        className=""
                       >
                         {emailSending ? 'Sending...' : 'Send Code'}
-                      </button>
+                      </Button>
                       <input
                         type="text"
                         value={emailOtpCode}
@@ -277,7 +280,7 @@ const VerifyAccountPage = () => {
                         placeholder="Enter code"
                         className="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
                       />
-                      <button
+                      <Button
                         type="button"
                         disabled={emailVerifying || !emailOtpCode}
                         onClick={async () => {
@@ -289,10 +292,9 @@ const VerifyAccountPage = () => {
                             toast({ title: 'Verification Failed', description: 'Invalid or expired code', variant: 'destructive' });
                           } finally { setEmailVerifying(false); }
                         }}
-                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
                       >
                         {emailVerifying ? 'Verifying...' : 'Verify'}
-                      </button>
+                      </Button>
                     </div>
                   </div>
 
@@ -306,8 +308,8 @@ const VerifyAccountPage = () => {
                       placeholder="Enter your registered phone"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
-                    <div className="flex items-center space-x-3">
-                      <button
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                      <Button
                         type="button"
                         disabled={phoneSending}
                         onClick={async () => {
@@ -316,13 +318,13 @@ const VerifyAccountPage = () => {
                             await authAPI.sendPhoneOTP(phoneInput);
                             toast({ title: 'Code Sent', description: 'SMS code sent to your phone.' });
                           } catch (e) {
-                            toast({ title: 'Send Failed', description: 'Could not send SMS code', variant: 'destructive' });
+                            const msg = e?.response?.data?.detail || 'Could not send SMS code';
+                            toast({ title: 'Send Failed', description: msg, variant: 'destructive' });
                           } finally { setPhoneSending(false); }
                         }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
                       >
                         {phoneSending ? 'Sending...' : 'Send Code'}
-                      </button>
+                      </Button>
                       <input
                         type="text"
                         value={phoneOtpCode}
@@ -330,7 +332,7 @@ const VerifyAccountPage = () => {
                         placeholder="Enter code"
                         className="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
                       />
-                      <button
+                      <Button
                         type="button"
                         disabled={phoneVerifying || !phoneOtpCode}
                         onClick={async () => {
@@ -342,10 +344,9 @@ const VerifyAccountPage = () => {
                             toast({ title: 'Verification Failed', description: 'Invalid or expired code', variant: 'destructive' });
                           } finally { setPhoneVerifying(false); }
                         }}
-                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
                       >
                         {phoneVerifying ? 'Verifying...' : 'Verify'}
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -464,7 +465,7 @@ const VerifyAccountPage = () => {
                             />
                             <label
                               htmlFor="document-upload"
-                              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg cursor-pointer inline-block"
+                              className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg cursor-pointer inline-block"
                             >
                               Browse Files
                             </label>
@@ -487,13 +488,13 @@ const VerifyAccountPage = () => {
                   </div>
 
                   {/* Submit Button */}
-                  <button
+                  <Button
                     type="submit"
                     disabled={loading || !formData.document_type || !formData.full_name || !formData.document_image}
-                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                    className="w-full"
                   >
                     {loading ? 'Submitting...' : 'Submit for Verification'}
-                  </button>
+                  </Button>
                 </form>
               </div>
 
@@ -523,7 +524,7 @@ const VerifyAccountPage = () => {
                     </div>
                   </div>
                   <div className="mt-4">
-                    <button
+                    <Button
                       type="button"
                       disabled={refsSubmitting}
                       onClick={async ()=>{
@@ -545,11 +546,11 @@ const VerifyAccountPage = () => {
                           const msg = e?.response?.data?.detail || 'Failed to submit references';
                           toast({ title: 'Submission Failed', description: msg, variant: 'destructive' });
                         } finally { setRefsSubmitting(false); }
-                      }}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg"
+                        }}
+                      className=""
                     >
                       {refsSubmitting ? 'Submitting...' : 'Submit References'}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}

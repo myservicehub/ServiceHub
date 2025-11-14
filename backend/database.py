@@ -33,6 +33,7 @@ class Database:
         self.client = None
         self.database = None
         self.connected = False
+        self._memory = {"phone_otps": [], "email_otps": [], "users": {}}
 
     async def connect_to_mongo(self):
         # Try different environment variable names for MongoDB URL
@@ -197,7 +198,16 @@ class Database:
     async def verify_user_email(self, user_id: str):
         """Mark user email as verified"""
         if self.database is None:
-            raise RuntimeError("Database unavailable: cannot verify user email")
+            # Degraded mode: mark in memory
+            try:
+                user = self._memory["users"].get(user_id) or {}
+                user["email_verified"] = True
+                user["updated_at"] = datetime.utcnow()
+                self._memory["users"][user_id] = user
+                return
+            except Exception as e:
+                logger.error(f"Error verifying user email in memory {user_id}: {e}")
+                return
         await self.database.users.update_one(
             {"id": user_id},
             {"$set": {"email_verified": True, "updated_at": datetime.utcnow()}}
@@ -275,7 +285,27 @@ class Database:
     async def create_phone_verification_otp(self, user_id: str, phone: str, otp_code: str, expires_at: datetime) -> bool:
         """Store a phone verification OTP for a user and invalidate previous ones."""
         if self.database is None:
-            raise RuntimeError("Database unavailable: cannot create phone verification OTP")
+            try:
+                # Invalidate existing active memory OTPs for this user/phone
+                for otp in self._memory["phone_otps"]:
+                    if otp["user_id"] == user_id and otp["phone"] == phone and not otp.get("used"):
+                        otp["used"] = True
+                        otp["invalidated_at"] = datetime.utcnow()
+                otp_record = {
+                    "id": str(uuid.uuid4()),
+                    "user_id": user_id,
+                    "phone": phone,
+                    "otp_code": otp_code,
+                    "created_at": datetime.utcnow(),
+                    "expires_at": expires_at,
+                    "used": False,
+                    "invalidated_at": None,
+                }
+                self._memory["phone_otps"].append(otp_record)
+                return True
+            except Exception as e:
+                logger.error(f"Error creating phone verification OTP in memory: {e}")
+                return False
 
         # Invalidate any existing active OTPs for this user and phone
         try:
@@ -307,6 +337,16 @@ class Database:
     async def get_active_phone_otp(self, user_id: str, phone: str, otp_code: str) -> Optional[dict]:
         """Get an active (unused, unexpired) phone verification OTP for a user."""
         if self.database is None:
+            # Degraded mode: search in-memory store
+            try:
+                now = datetime.utcnow()
+                for otp in reversed(self._memory["phone_otps"]):
+                    if (
+                        otp["user_id"] == user_id and otp["phone"] == phone and otp["otp_code"] == otp_code and not otp.get("used") and (not otp.get("expires_at") or otp["expires_at"] > now)
+                    ):
+                        return otp
+            except Exception as e:
+                logger.error(f"Error retrieving phone OTP from memory for user {user_id}: {e}")
             return None
 
         try:
@@ -330,7 +370,16 @@ class Database:
     async def mark_phone_otp_used(self, otp_id: str) -> bool:
         """Mark a phone verification OTP as used."""
         if self.database is None:
-            raise RuntimeError("Database unavailable: cannot mark phone OTP as used")
+            # Degraded mode: mark used in memory
+            try:
+                for otp in self._memory["phone_otps"]:
+                    if otp["id"] == otp_id:
+                        otp["used"] = True
+                        otp["used_at"] = datetime.utcnow()
+                        return True
+            except Exception as e:
+                logger.error(f"Error marking phone OTP used in memory: {e}")
+                return False
         try:
             result = await self.database.phone_verification_otps.update_one(
                 {"id": otp_id},
@@ -344,7 +393,16 @@ class Database:
     async def verify_user_phone(self, user_id: str) -> bool:
         """Mark user phone as verified."""
         if self.database is None:
-            raise RuntimeError("Database unavailable: cannot verify user phone")
+            # Degraded mode: mark in memory
+            try:
+                user = self._memory["users"].get(user_id) or {}
+                user["phone_verified"] = True
+                user["updated_at"] = datetime.utcnow()
+                self._memory["users"][user_id] = user
+                return True
+            except Exception as e:
+                logger.error(f"Error verifying user phone in memory {user_id}: {e}")
+                return False
         try:
             result = await self.database.users.update_one(
                 {"id": user_id},
@@ -359,7 +417,27 @@ class Database:
     async def create_email_verification_otp(self, user_id: str, email: str, otp_code: str, expires_at: datetime) -> bool:
         """Store an email verification OTP for a user and invalidate previous ones."""
         if self.database is None:
-            raise RuntimeError("Database unavailable: cannot create email verification OTP")
+            try:
+                # Invalidate existing active memory OTPs for this user/email
+                for otp in self._memory["email_otps"]:
+                    if otp["user_id"] == user_id and otp["email"] == email and not otp.get("used"):
+                        otp["used"] = True
+                        otp["invalidated_at"] = datetime.utcnow()
+                otp_record = {
+                    "id": str(uuid.uuid4()),
+                    "user_id": user_id,
+                    "email": email,
+                    "otp_code": otp_code,
+                    "created_at": datetime.utcnow(),
+                    "expires_at": expires_at,
+                    "used": False,
+                    "invalidated_at": None,
+                }
+                self._memory["email_otps"].append(otp_record)
+                return True
+            except Exception as e:
+                logger.error(f"Error creating email verification OTP in memory: {e}")
+                return False
 
         # Invalidate any existing active OTPs for this user and email
         try:
@@ -391,6 +469,16 @@ class Database:
     async def get_active_email_otp(self, user_id: str, email: str, otp_code: str) -> Optional[dict]:
         """Get an active (unused, unexpired) email verification OTP for a user."""
         if self.database is None:
+            # Degraded mode: search in-memory store
+            try:
+                now = datetime.utcnow()
+                for otp in reversed(self._memory["email_otps"]):
+                    if (
+                        otp["user_id"] == user_id and otp["email"] == email and otp["otp_code"] == otp_code and not otp.get("used") and (not otp.get("expires_at") or otp["expires_at"] > now)
+                    ):
+                        return otp
+            except Exception as e:
+                logger.error(f"Error retrieving email OTP from memory for user {user_id}: {e}")
             return None
 
         try:
@@ -414,7 +502,16 @@ class Database:
     async def mark_email_otp_used(self, otp_id: str) -> bool:
         """Mark an email verification OTP as used."""
         if self.database is None:
-            raise RuntimeError("Database unavailable: cannot mark email OTP as used")
+            # Degraded mode: mark used in memory
+            try:
+                for otp in self._memory["email_otps"]:
+                    if otp["id"] == otp_id:
+                        otp["used"] = True
+                        otp["used_at"] = datetime.utcnow()
+                        return True
+            except Exception as e:
+                logger.error(f"Error marking email OTP used in memory: {e}")
+                return False
         try:
             result = await self.database.email_verification_otps.update_one(
                 {"id": otp_id},
