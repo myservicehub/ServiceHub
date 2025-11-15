@@ -70,8 +70,11 @@ class SendGridEmailService:
             
             # Add metadata as custom args if provided
             if metadata:
-                for key, value in metadata.items():
-                    message.custom_arg = {key: str(value)}
+                try:
+                    # SendGrid expects a dict at custom_args
+                    message.custom_args = {str(k): str(v) for k, v in metadata.items()}
+                except Exception as e:
+                    logger.warning(f"Failed to attach custom args to SendGrid mail: {e}")
             
             response = self.client.send(message)
             
@@ -101,6 +104,7 @@ class SendGridEmailService:
                 logger.error(f"   1. SENDGRID_API_KEY is correct and has Mail Send permissions")
                 logger.error(f"   2. SENDER_EMAIL ({self.sender_email}) is verified in SendGrid")
                 logger.error(f"   3. API key hasn't been revoked or expired")
+            # Avoid raising; allow caller to fallback to mock
             return False
 
 class TermiiSMSService:

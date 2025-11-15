@@ -952,6 +952,8 @@ async def send_email_otp(payload: SendEmailOTPRequest, current_user: dict = Depe
             except Exception as e2:
                 logger.error(f"Failed to send email OTP: {e2}")
                 email_ok = False
+        if email_ok:
+            logger.info(f"Email OTP sent to {registered_email}")
 
         if not email_ok:
             # Still return success to avoid leaking delivery failures
