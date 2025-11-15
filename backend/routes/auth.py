@@ -928,7 +928,7 @@ async def send_email_otp(payload: SendEmailOTPRequest, current_user: User = Depe
         # Send Email via SendGrid or Mock
         subject = "Your serviceHub Verification Code"
         content = (
-            f"Hello {current_user.get('name')},\n\n"
+            f"Hello {current_user.name},\n\n"
             f"Your verification code is {otp_code}. It expires in 10 minutes.\n\n"
             f"If you didn't request this, you can ignore this email.\n\n"
             f"serviceHub Team"
