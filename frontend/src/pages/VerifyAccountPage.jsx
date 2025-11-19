@@ -45,6 +45,30 @@ const VerifyAccountPage = () => {
   });
   const [refsSubmitting, setRefsSubmitting] = useState(false);
 
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const token = params.get('token');
+    if (!token) return;
+    let isMounted = true;
+    (async () => {
+      try {
+        const resp = await authAPI.confirmEmailVerification(token);
+        if (isMounted) {
+          toast({ title: 'Email Verified', description: resp?.message || 'Your email has been verified.' });
+          try {
+            await getCurrentUser();
+          } catch {}
+        }
+      } catch (e) {
+        const msg = e?.response?.data?.detail || 'Invalid or expired verification link';
+        if (isMounted) {
+          toast({ title: 'Verification Failed', description: msg, variant: 'destructive' });
+        }
+      }
+    })();
+    return () => { isMounted = false; };
+  }, [location.search]);
+
   const documentTypes = [
     { value: 'national_id', label: 'Nigerian National ID Card', description: 'Government-issued national identification card' },
     { value: 'voters_card', label: 'Permanent Voters Card (PVC)', description: 'INEC voter registration card' },
@@ -634,26 +658,3 @@ const VerifyAccountPage = () => {
 };
 
 export default VerifyAccountPage;
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const token = params.get('token');
-    if (!token) return;
-    let isMounted = true;
-    (async () => {
-      try {
-        const resp = await authAPI.confirmEmailVerification(token);
-        if (isMounted) {
-          toast({ title: 'Email Verified', description: resp?.message || 'Your email has been verified.' });
-          try {
-            await getCurrentUser();
-          } catch {}
-        }
-      } catch (e) {
-        const msg = e?.response?.data?.detail || 'Invalid or expired verification link';
-        if (isMounted) {
-          toast({ title: 'Verification Failed', description: msg, variant: 'destructive' });
-        }
-      }
-    })();
-    return () => { isMounted = false; };
-  }, [location.search]);
