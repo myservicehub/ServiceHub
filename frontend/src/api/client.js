@@ -33,7 +33,7 @@ console.log('🔧 API Configuration:', { BACKEND_URL, API_BASE });
 // Create axios instance with base configuration
 const apiClient = axios.create({
   baseURL: API_BASE,
-  timeout: 10000,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -42,7 +42,7 @@ const apiClient = axios.create({
 // Separate client for refresh to avoid interceptor loops
 const refreshClient = axios.create({
   baseURL: API_BASE,
-  timeout: 10000,
+  timeout: 30000,
   headers: { 'Content-Type': 'application/json' },
 });
 
