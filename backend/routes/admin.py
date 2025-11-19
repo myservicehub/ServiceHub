@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, Form, Request
+from fastapi import APIRouter, HTTPException, Depends, Form, Request, BackgroundTasks
 from typing import List, Optional
 from datetime import datetime
 import logging
@@ -386,6 +386,7 @@ async def get_pending_jobs(
 async def approve_job(
     job_id: str,
     approval_data: dict,
+    background_tasks: BackgroundTasks,
     admin: dict = Depends(require_permission(AdminPermission.APPROVE_JOBS))
 ):
     """Approve or reject a job posting"""
@@ -433,27 +434,54 @@ async def approve_job(
         homeowner = await database.get_user_by_email(job["homeowner"]["email"])
         if homeowner:
             if action == "approve":
-                await notification_service.send_notification(
-                    user_id=homeowner["id"],
-                    notification_type=NotificationType.JOB_APPROVED,
-                    data={
+                try:
+                    prefs = await database.get_user_notification_preferences(homeowner["id"])
+                    template_data = {
+                        "homeowner_name": homeowner.get("name", "Homeowner"),
                         "job_title": job["title"],
-                        "job_id": job_id,
+                        "approved_at": datetime.utcnow().strftime("%B %d, %Y"),
                         "admin_notes": notes
                     }
-                )
+                    await notification_service.send_notification(
+                        user_id=homeowner["id"],
+                        notification_type=NotificationType.JOB_APPROVED,
+                        template_data=template_data,
+                        user_preferences=prefs,
+                        recipient_email=homeowner.get("email"),
+                        recipient_phone=homeowner.get("phone")
+                    )
+                except Exception:
+                    pass
             else:
-                await notification_service.send_notification(
-                    user_id=homeowner["id"],
-                    notification_type=NotificationType.JOB_REJECTED,
-                    data={
+                try:
+                    prefs = await database.get_user_notification_preferences(homeowner["id"])
+                    template_data = {
+                        "homeowner_name": homeowner.get("name", "Homeowner"),
                         "job_title": job["title"],
-                        "job_id": job_id,
+                        "reviewed_at": datetime.utcnow().strftime("%B %d, %Y"),
                         "rejection_reason": notes
                     }
-                )
+                    await notification_service.send_notification(
+                        user_id=homeowner["id"],
+                        notification_type=NotificationType.JOB_REJECTED,
+                        template_data=template_data,
+                        user_preferences=prefs,
+                        recipient_email=homeowner.get("email"),
+                        recipient_phone=homeowner.get("phone")
+                    )
+                except Exception:
+                    pass
     except Exception as e:
         logger.warning(f"Failed to send approval notification: {str(e)}")
+
+    if action == "approve":
+        try:
+            from .jobs import notify_matching_tradespeople_new_job
+            updated_job = await database.get_job_by_id(job_id)
+            if updated_job:
+                background_tasks.add_task(notify_matching_tradespeople_new_job, updated_job)
+        except Exception as e:
+            logger.warning(f"Failed to enqueue matching job alerts: {str(e)}")
     
     return {
         "message": f"Job {action}d successfully",

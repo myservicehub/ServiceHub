@@ -180,9 +180,9 @@ def create_admin_access_token(admin_id: str, username: str, role: str) -> str:
 # Verification status guards
 # =============================
 async def require_homeowner_contact_verified(current_user: User = Depends(get_current_homeowner)) -> User:
-    """Require homeowner with verified email and phone"""
-    if not (getattr(current_user, "email_verified", False) and getattr(current_user, "phone_verified", False)):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Homeowner must verify email and phone")
+    """Require homeowner email verification only"""
+    if not getattr(current_user, "email_verified", False):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Homeowner must verify email")
     return current_user
 
 async def require_tradesperson_verified(current_user: User = Depends(get_current_tradesperson)) -> User:

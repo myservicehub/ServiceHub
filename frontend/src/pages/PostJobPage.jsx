@@ -40,8 +40,8 @@ const PostJobPage = () => {
     }
   ];
 
-  // Gate: homeowners must verify email and phone
-  if (isAuthenticated() && user?.role === 'homeowner' && !(user?.email_verified && user?.phone_verified)) {
+  // Gate: homeowners must verify email
+  if (isAuthenticated() && user?.role === 'homeowner' && !user?.email_verified) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
@@ -54,7 +54,7 @@ const PostJobPage = () => {
               Verification Required
             </h1>
             <p className="text-lg text-gray-600 font-lato mb-8">
-              Please verify your email and phone to post a job.
+              Please verify your email to post a job.
             </p>
             <Button onClick={() => navigate('/verify-account')} className="text-white font-lato px-8" style={{backgroundColor: '#34D164'}}>
               Go to Verification

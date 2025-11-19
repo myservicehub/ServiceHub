@@ -281,6 +281,63 @@ class Database:
         )
         return result.modified_count > 0
 
+    # Email verification token operations
+    async def create_email_verification_token(self, user_id: str, token: str, expires_at: datetime) -> bool:
+        """Store an email verification token for a user"""
+        if self.database is None:
+            raise RuntimeError("Database unavailable: cannot create email verification token")
+        try:
+            await self.database.email_verification_tokens.update_many(
+                {"user_id": user_id, "used": False},
+                {"$set": {"used": True, "invalidated_at": datetime.utcnow()}}
+            )
+        except Exception as e:
+            logger.warning(f"Failed to invalidate previous email verification tokens for user {user_id}: {e}")
+
+        token_data = {
+            "token": token,
+            "user_id": user_id,
+            "created_at": datetime.utcnow(),
+            "expires_at": expires_at,
+            "used": False,
+            "invalidated_at": None,
+        }
+        try:
+            await self.database.email_verification_tokens.insert_one(token_data)
+            return True
+        except Exception as e:
+            logger.error(f"Error creating email verification token: {e}")
+            return False
+
+    async def get_email_verification_token(self, token: str) -> Optional[dict]:
+        """Get email verification token data"""
+        if self.database is None:
+            return None
+        try:
+            token_data = await self.database.email_verification_tokens.find_one({
+                "token": token,
+                "used": False,
+            })
+            if not token_data:
+                return None
+            token_data["_id"] = str(token_data["_id"])
+            if token_data.get("expires_at") and token_data["expires_at"] < datetime.utcnow():
+                return None
+            return token_data
+        except Exception as e:
+            logger.error(f"Error retrieving email verification token: {e}")
+            return None
+
+    async def mark_email_verification_token_used(self, token: str) -> bool:
+        """Mark an email verification token as used"""
+        if self.database is None:
+            raise RuntimeError("Database unavailable: cannot mark email verification token as used")
+        result = await self.database.email_verification_tokens.update_one(
+            {"token": token},
+            {"$set": {"used": True, "used_at": datetime.utcnow()}}
+        )
+        return result.modified_count > 0
+
     # Phone verification OTP operations
     async def create_phone_verification_otp(self, user_id: str, phone: str, otp_code: str, expires_at: datetime) -> bool:
         """Store a phone verification OTP for a user and invalidate previous ones."""

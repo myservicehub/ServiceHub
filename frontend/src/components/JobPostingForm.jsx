@@ -938,26 +938,7 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
     setSubmitting(true);
 
     try {
-      // Step 1: Create homeowner account
-      const registrationData = {
-        name: formData.homeowner_name,
-        email: formData.homeowner_email,
-        password: formData.password,
-        phone: formData.homeowner_phone,
-        location: formData.state,  // Use state for location
-        postcode: formData.zip_code  // Use zip_code for postcode
-      };
-
-      const registrationResponse = await authAPI.registerHomeowner(registrationData);
-      
-      if (!registrationResponse.access_token) {
-        throw new Error('Registration failed - no access token received');
-      }
-
-      // Step 2: Login with the returned token
-      loginWithToken(registrationResponse.access_token, registrationResponse.user);
-
-      // Step 3: Create the job
+      // Build job payload
       // Create job data without description since it's been removed from the form
       const jobData = {
         title: formData.title,
@@ -982,7 +963,25 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
         jobData.longitude = formData.jobLocation.lng;
       }
 
-      const jobResponse = await jobsAPI.createJob(jobData);
+      // New flow: register-and-post with email verification gate
+      const payload = { job: jobData, password: formData.password };
+      let jobResponse;
+      try {
+        jobResponse = await jobsAPI.registerAndPost(payload);
+      } catch (err) {
+        const detail = err?.response?.data?.detail;
+        if (err?.response?.status === 403 && detail?.verification_required) {
+          toast({
+            title: "Verify your email",
+            description: "We sent a verification link to your email. Please verify to post your job.",
+          });
+          // Keep user on step 5 and show guidance
+          setCurrentStep(5);
+          setSubmitting(false);
+          return;
+        }
+        throw err;
+      }
 
       // Save question answers if there are any
       if (tradeQuestions.length > 0 && Object.keys(questionAnswers).length > 0) {
@@ -1008,9 +1007,12 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
       }
 
       const jobId = jobResponse.job_id || jobResponse.id;
+      if (jobResponse.access_token && jobResponse.user) {
+        try { loginWithToken(jobResponse.access_token, jobResponse.user); } catch {}
+      }
       toast({
-        title: "Account Created & Job Submitted!",
-        description: `Welcome to ServiceHub! Your job has been submitted for admin review. Job ID: ${jobId}`,
+        title: "Job Submitted!",
+        description: `Your job has been submitted for admin review. Job ID: ${jobId}`,
       });
 
       if (onJobPosted) {

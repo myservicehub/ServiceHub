@@ -13,10 +13,15 @@ from ..auth.security import (
     create_access_token,
     create_refresh_token,
     verify_password,
+    create_email_verification_token,
 )
 from ..models.auth import User, UserRole, UserStatus
 from ..database import database
 from ..services.notifications import notification_service
+try:
+    from ..services.notifications import SendGridEmailService, MockEmailService
+except Exception:
+    from services.notifications import SendGridEmailService, MockEmailService
 from datetime import datetime, timedelta
 import uuid
 import logging
@@ -939,6 +944,66 @@ async def notify_job_cancellation(job_id: str, job: dict, homeowner: User, reaso
     except Exception as e:
         logger.error("Error in job cancellation notification: %s", str(e))
 
+async def notify_matching_tradespeople_new_job(job: dict):
+    try:
+        category = job.get("category", "")
+        if not category:
+            return
+        filters = {
+            "role": "tradesperson",
+            "status": {"$ne": "deleted"},
+            "trade_categories": {"$regex": f"^{category}$", "$options": "i"}
+        }
+        cursor = database.users_collection.find(filters)
+        tradespeople = await cursor.to_list(length=None)
+        frontend_url = os.environ.get("FRONTEND_URL", "https://servicehub.ng")
+        for tp in tradespeople:
+            try:
+                tp_id = tp.get("id")
+                if not tp_id:
+                    continue
+                preferences = await database.get_user_notification_preferences(tp_id)
+                name = tp.get("business_name") or tp.get("name", "Tradesperson")
+                miles = None
+                jlat = job.get("latitude")
+                jlng = job.get("longitude")
+                tlat = tp.get("latitude")
+                tlng = tp.get("longitude")
+                if jlat is not None and jlng is not None and tlat is not None and tlng is not None:
+                    try:
+                        km = database.calculate_distance(tlat, tlng, jlat, jlng)
+                        max_km = tp.get("travel_distance_km", 25)
+                        if km > float(max_km):
+                            continue
+                        miles = round(km * 0.621, 1)
+                    except Exception:
+                        miles = None
+                template_data = {
+                    "Name": name,
+                    "trade_title": job.get("title", "Job"),
+                    "trade_category": job.get("category", ""),
+                    "Location": job.get("location", ""),
+                    "miles": f"{miles} miles" if miles is not None else "",
+                    "see_more_url": f"{frontend_url}/browse-jobs",
+                    "support_url": f"{frontend_url}/help-faqs",
+                    "preferences_url": f"{frontend_url}/notifications/preferences",
+                    "privacy_url": f"{frontend_url}/policies/privacy",
+                    "terms_url": f"{frontend_url}/policies/terms"
+                }
+                notification = await notification_service.send_notification(
+                    user_id=tp_id,
+                    notification_type=NotificationType.NEW_MATCHING_JOB,
+                    template_data=template_data,
+                    user_preferences=preferences,
+                    recipient_email=tp.get("email")
+                )
+                await database.create_notification(notification)
+            except Exception as e:
+                logger.error("Failed to send matching job notification to %s: %s", tp.get("id"), str(e))
+                continue
+    except Exception as e:
+        logger.error("Error notifying matching tradespeople: %s", str(e))
+
 @router.post("/create-sample-data")
 async def create_sample_data(current_user: User = Depends(get_current_homeowner)):
     """Create sample jobs for testing - TEMPORARY ENDPOINT"""
@@ -1347,6 +1412,61 @@ async def register_and_post(payload: PublicJobPostRequest, background_tasks: Bac
                 raise HTTPException(status_code=503, detail="Service temporarily unavailable")
 
         user_obj = User(**{k: v for k, v in created_user.items() if k != "password_hash"})
+
+        # Require email verification before posting job
+        if not getattr(user_obj, "email_verified", False):
+            try:
+                token_expires = timedelta(hours=24)
+                verification_token = create_email_verification_token(
+                    user_id=user_obj.id, email=user_obj.email, expires_delta=token_expires
+                )
+                expires_at = datetime.utcnow() + token_expires
+                await database.create_email_verification_token(
+                    user_id=user_obj.id, token=verification_token, expires_at=expires_at
+                )
+                email_service = None
+                try:
+                    email_service = SendGridEmailService()
+                except Exception:
+                    try:
+                        email_service = MockEmailService()
+                    except Exception:
+                        email_service = None
+                backend_url = os.environ.get("BACKEND_URL", os.environ.get("REACT_APP_BACKEND_URL", "http://127.0.0.1:8001"))
+                verify_link = f"{backend_url}/api/auth/email-verification/confirm?token={verification_token}"
+                if email_service:
+                    await email_service.send_email(
+                        to=user_obj.email,
+                        subject="Verify your email to post your job - serviceHub",
+                        content=(
+                            f"Hello {user_obj.name},\n\n"
+                            f"Please verify your email to finish posting your job. Click the link below:\n"
+                            f"{verify_link}\n\n"
+                            f"This link expires in 24 hours."
+                        ),
+                        metadata={"purpose": "email_verification", "user_id": user_obj.id}
+                    )
+                dev_payload = {}
+                try:
+                    dev_flag = os.environ.get('OTP_DEV_MODE', '0')
+                    if dev_flag in ('1','true','True'):
+                        dev_payload["debug_link"] = verify_link
+                except Exception:
+                    pass
+                raise HTTPException(
+                    status_code=403,
+                    detail={
+                        "message": "Email verification required",
+                        "verification_required": True,
+                        "email_sent": True,
+                        **dev_payload,
+                    }
+                )
+            except HTTPException:
+                raise
+            except Exception as e:
+                logger.error(f"Failed to send verification email during register-and-post: {e}")
+                raise HTTPException(status_code=500, detail="Failed to initiate email verification")
 
         job_dict = job_data.dict()
         job_dict["location"] = job_data.state

@@ -217,3 +217,39 @@ def verify_password_reset_token(token: str) -> dict:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid password reset token"
         )
+
+def create_email_verification_token(user_id: str, email: str, expires_delta: Optional[timedelta] = None) -> str:
+    """Create a JWT token for email verification via link."""
+    to_encode = {
+        "sub": user_id,
+        "email": email,
+        "type": "email_verification"
+    }
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(hours=24)
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+def verify_email_verification_token(token: str) -> dict:
+    """Verify and decode an email verification token."""
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        token_type = payload.get("type")
+        if token_type != "email_verification":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid token type"
+            )
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email verification token has expired"
+        )
+    except (jwt.InvalidTokenError, jwt.DecodeError, ValueError):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid email verification token"
+        )

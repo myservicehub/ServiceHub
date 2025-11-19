@@ -745,6 +745,60 @@ serviceHub Team
             )
         }
         
+        templates[NotificationType.NEW_MATCHING_JOB] = {
+            NotificationChannel.EMAIL: NotificationTemplate(
+                id=str(uuid.uuid4()),
+                type=NotificationType.NEW_MATCHING_JOB,
+                channel=NotificationChannel.EMAIL,
+                subject_template="New Job in Your Area: {trade_title}",
+                content_template="""
+<html>
+<head>
+    <style>
+        .container { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+        .logo img { height: 40px; }
+        .logo span { font-size: 24px; font-weight: bold; color: #000; }
+        .button { display: inline-block; padding: 10px 20px; background-color: #003366; color: #fff; text-decoration: none; border-radius: 4px; margin: 20px 0; }
+        .steps { margin: 20px 0; padding-left: 20px; }
+        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666; }
+        .footer a { color: #666; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <img src="servicehub-logo.png" alt="ServiceHub Logo">
+            <span>ServiceHub</span>
+        </div>
+        <h2>Hello {Name}</h2>
+        <p>There's a new job in your area!</p>
+        <p><strong>{trade_title}</strong></p>
+        <p>{trade_category}</p>
+        <p>{Location} & {miles}</p>
+        <a href="{see_more_url}" class="button">See more details</a>
+        <h3>Next steps</h3>
+        <ol class="steps">
+            <li>Send a message for free to the customer to express interest in this job.</li>
+            <li>You'll only pay if a customer shares their contact details with you.</li>
+            <li>Contact the customer as soon as you get the contact details for the best chance of getting hired.</li>
+        </ol>
+        <p>Do not share this email with others to prevent Unauthorised access to your account</p>
+        <p>Please don't reply to this email — we won't get your response. Need help? Visit our <a href="{support_url}">Support centre</a></p>
+        <p><a href="{preferences_url}">Manage preferences</a></p>
+        <div class="footer">
+            <p>2025 ServiceHub limited. Registered in Nigeria.</p>
+            <p>6, D Place Guest House, Off Omimi Link Road, Ekpan, Delta State, Nigeria</p>
+            <p><a href="{privacy_url}">Privacy policy</a> | <a href="{terms_url}">Terms and conditions</a></p>
+        </div>
+    </div>
+    </body>
+    </html>
+""",
+                variables=["Name", "trade_title", "trade_category", "Location", "miles", "see_more_url", "support_url", "preferences_url", "privacy_url", "terms_url"]
+            )
+        }
+
         return templates
     
     def get_template(self, notification_type: NotificationType, channel: NotificationChannel) -> Optional[NotificationTemplate]:

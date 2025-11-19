@@ -180,6 +180,11 @@ export const jobsAPI = {
     return response.data;
   },
 
+  registerAndPost: async (payload) => {
+    const response = await apiClient.post('/jobs/register-and-post', payload);
+    return response.data;
+  },
+
   getJobs: async (params = {}) => {
     const response = await apiClient.get('/jobs', { params });
     return response.data;

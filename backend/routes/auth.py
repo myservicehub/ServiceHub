@@ -11,7 +11,8 @@ from ..models.auth import (
 from ..auth.security import (
     verify_password, get_password_hash, create_access_token, create_refresh_token,
     validate_password_strength, validate_nigerian_phone, format_nigerian_phone,
-    verify_refresh_token, create_password_reset_token, verify_password_reset_token
+    verify_refresh_token, create_password_reset_token, verify_password_reset_token,
+    create_email_verification_token, verify_email_verification_token
 )
 from ..auth.dependencies import get_current_user, get_current_active_user
 from ..database import database
@@ -135,12 +136,48 @@ async def register_homeowner(registration_data: HomeownerRegistration):
                 )
                 refresh_token = create_refresh_token(data={"sub": created_user["id"], "email": created_user["email"]})
 
+                # Send email verification link
+                try:
+                    token_expires = timedelta(hours=24)
+                    verification_token = create_email_verification_token(
+                        user_id=created_user["id"], email=created_user["email"], expires_delta=token_expires
+                    )
+                    expires_at = datetime.utcnow() + token_expires
+                    await database.create_email_verification_token(
+                        user_id=created_user["id"], token=verification_token, expires_at=expires_at
+                    )
+                    email_service = None
+                    try:
+                        email_service = SendGridEmailService()
+                    except Exception:
+                        try:
+                            email_service = MockEmailService()
+                        except Exception:
+                            email_service = None
+                    backend_url = os.environ.get("BACKEND_URL", os.environ.get("REACT_APP_BACKEND_URL", "http://127.0.0.1:8001"))
+                    verify_link = f"{backend_url}/api/auth/email-verification/confirm?token={verification_token}"
+                    if email_service:
+                        await email_service.send_email(
+                            to=created_user["email"],
+                            subject="Verify your email - serviceHub",
+                            content=(
+                                f"Hello {created_user.get('name','')},\n\n"
+                                f"Please verify your email to complete registration. Click the link below:\n"
+                                f"{verify_link}\n\n"
+                                f"This link expires in 24 hours."
+                            ),
+                            metadata={"purpose": "email_verification", "user_id": created_user["id"]}
+                        )
+                except Exception as e:
+                    logger.warning(f"Failed to send verification email: {e}")
+
                 return {
                     "user": user_response.dict(),
                     "access_token": access_token,
                     "refresh_token": refresh_token,
                     "token_type": "bearer",
-                    "expires_in": 60 * 60 * 24
+                    "expires_in": 60 * 60 * 24,
+                    "email_verification": {"sent": True}
                 }
             except Exception as e:
                 logger.error(f"DB error during homeowner registration: {e}. Falling back to synthetic user.")
@@ -1361,3 +1398,75 @@ async def refresh_tokens(request: RefreshTokenRequest):
         raise
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Refresh failed: {str(e)}")
+# Email verification via link
+@router.post("/email-verification/request")
+async def request_email_verification(current_user: User = Depends(get_current_active_user)):
+    """Generate link token and send email to current user's email"""
+    try:
+        token_expires = timedelta(hours=24)
+        verification_token = create_email_verification_token(
+            user_id=current_user.id, email=current_user.email, expires_delta=token_expires
+        )
+        expires_at = datetime.utcnow() + token_expires
+        await database.create_email_verification_token(
+            user_id=current_user.id, token=verification_token, expires_at=expires_at
+        )
+        email_service = None
+        try:
+            email_service = SendGridEmailService()
+        except Exception:
+            try:
+                email_service = MockEmailService()
+            except Exception:
+                email_service = None
+        backend_url = os.environ.get("BACKEND_URL", os.environ.get("REACT_APP_BACKEND_URL", "http://127.0.0.1:8001"))
+        verify_link = f"{backend_url}/api/auth/email-verification/confirm?token={verification_token}"
+        if email_service:
+            await email_service.send_email(
+                to=current_user.email,
+                subject="Verify your email - serviceHub",
+                content=(
+                    f"Hello {current_user.name},\n\n"
+                    f"Please verify your email to continue using serviceHub. Click the link below:\n"
+                    f"{verify_link}\n\n"
+                    f"This link expires in 24 hours."
+                ),
+                metadata={"purpose": "email_verification", "user_id": current_user.id}
+            )
+        resp = {"message": "Verification email sent"}
+        try:
+            dev_flag = os.environ.get('OTP_DEV_MODE', '0')
+            if dev_flag in ('1','true','True'):
+                resp["debug_link"] = verify_link
+        except Exception:
+            pass
+        return resp
+    except Exception as e:
+        logger.error(f"Error requesting email verification: {e}")
+        raise HTTPException(status_code=500, detail="Failed to send verification email")
+
+@router.get("/email-verification/confirm")
+async def confirm_email_verification(token: str):
+    """Confirm email verification via token link"""
+    try:
+        payload = verify_email_verification_token(token)
+        user_id = payload.get("sub")
+        email = payload.get("email")
+        if not user_id or not email:
+            raise HTTPException(status_code=400, detail="Invalid token payload")
+        token_data = await database.get_email_verification_token(token)
+        if not token_data or token_data.get("user_id") != user_id:
+            raise HTTPException(status_code=400, detail="Invalid or expired verification token")
+        user_data = await database.get_user_by_id(user_id)
+        if not user_data:
+            raise HTTPException(status_code=404, detail="User not found")
+        if user_data.get("email") != email:
+            raise HTTPException(status_code=400, detail="Token email does not match user email")
+        await database.verify_user_email(user_id)
+        await database.mark_email_verification_token_used(token)
+        return {"message": "Email verified successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error confirming email verification: {e}")
+        raise HTTPException(status_code=500, detail="Failed to verify email")
