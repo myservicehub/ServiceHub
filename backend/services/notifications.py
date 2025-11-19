@@ -123,40 +123,40 @@ class TermiiSMSService:
         logger.info(f"🔧 {self.service_name} initialized - Production Mode")
     
     async def send_sms(self, to: str, message: str, metadata: Dict[str, Any] = None) -> bool:
-        """Send real SMS using Termii API"""
+        """Send real SMS using Termii API with deliverability fallback."""
         try:
             # Format Nigerian phone number
             formatted_phone = self._format_nigerian_phone(to)
-            
-            # Prepare API payload
-            payload = {
-                "to": formatted_phone,
-                "from": self.sender_id,
-                "sms": message,
-                "type": "plain",
-                "api_key": self.api_key,
-                "channel": "generic"
-            }
-            
-            # Send request to Termii API
-            response = requests.post(
-                f"{self.base_url}/api/sms/send",
-                json=payload,
-                headers={"Content-Type": "application/json"}
-            )
-            
-            if response.status_code == 200:
-                response_data = response.json()
-                if response_data.get('code') == 'ok':
-                    logger.info(f"📱 SMS SENT: to={formatted_phone}, message_id={response_data.get('message_id')}")
+
+            def _send_with_channel(channel: str) -> bool:
+                payload = {
+                    "to": formatted_phone,
+                    "from": self.sender_id,
+                    "sms": message,
+                    "type": "plain",
+                    "api_key": self.api_key,
+                    "channel": channel,
+                }
+                resp = requests.post(
+                    f"{self.base_url}/api/sms/send",
+                    json=payload,
+                    headers={"Content-Type": "application/json"}
+                )
+                try:
+                    data = resp.json()
+                except Exception:
+                    data = {"raw": resp.text}
+                if resp.status_code == 200 and isinstance(data, dict) and data.get("code") == "ok":
+                    logger.info(f"📱 SMS SENT: to={formatted_phone}, channel={channel}, message_id={data.get('message_id')}")
                     return True
-                else:
-                    logger.error(f"❌ Termii API error: {response_data}")
-                    return False
-            else:
-                logger.error(f"❌ Termii HTTP error: {response.status_code} - {response.text}")
+                logger.error(f"❌ Termii send failed (channel={channel}): status={resp.status_code}, body={data}")
                 return False
-                
+
+            # Try DND route first (better deliverability on DND-enabled numbers), then fallback to generic
+            if _send_with_channel("dnd"):
+                return True
+            return _send_with_channel("generic")
+
         except Exception as e:
             logger.error(f"❌ SMS sending failed: {str(e)}")
             return False
