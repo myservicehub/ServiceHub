@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { referralsAPI, verificationAPI } from '../api/referrals';
 import { authAPI } from '../api/services';
@@ -9,7 +10,9 @@ import { Upload, FileText, CheckCircle, AlertCircle, Camera } from 'lucide-react
 import { Button } from '../components/ui/button';
 
 const VerifyAccountPage = () => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, getCurrentUser, updateUser } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     document_type: '',
     full_name: user?.name || '',
@@ -631,3 +634,26 @@ const VerifyAccountPage = () => {
 };
 
 export default VerifyAccountPage;
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const token = params.get('token');
+    if (!token) return;
+    let isMounted = true;
+    (async () => {
+      try {
+        const resp = await authAPI.confirmEmailVerification(token);
+        if (isMounted) {
+          toast({ title: 'Email Verified', description: resp?.message || 'Your email has been verified.' });
+          try {
+            await getCurrentUser();
+          } catch {}
+        }
+      } catch (e) {
+        const msg = e?.response?.data?.detail || 'Invalid or expired verification link';
+        if (isMounted) {
+          toast({ title: 'Verification Failed', description: msg, variant: 'destructive' });
+        }
+      }
+    })();
+    return () => { isMounted = false; };
+  }, [location.search]);

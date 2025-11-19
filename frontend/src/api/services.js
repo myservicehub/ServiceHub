@@ -68,6 +68,11 @@ export const authAPI = {
     const response = await apiClient.post('/auth/verify-email-otp', { otp_code: otpCode, email });
     return response.data;
   },
+
+  confirmEmailVerification: async (token) => {
+    const response = await apiClient.get(`/auth/email-verification/confirm?token=${encodeURIComponent(token)}`);
+    return response.data;
+  },
 };
 
 // Statistics API

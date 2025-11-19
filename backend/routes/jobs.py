@@ -134,6 +134,10 @@ async def create_job(
             homeowner=current_user.dict(),
             job=created_job
         )
+        background_tasks.add_task(
+            notify_matching_tradespeople_new_job,
+            created_job
+        )
         
         return Job(**created_job)
         
@@ -1497,6 +1501,10 @@ async def register_and_post(payload: PublicJobPostRequest, background_tasks: Bac
             _notify_job_posted_successfully,
             homeowner=user_obj.dict(),
             job=created_job,
+        )
+        background_tasks.add_task(
+            notify_matching_tradespeople_new_job,
+            created_job,
         )
 
         access_token_expires = timedelta(minutes=60 * 24)
