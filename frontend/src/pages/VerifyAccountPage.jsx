@@ -10,7 +10,7 @@ import { Upload, FileText, CheckCircle, AlertCircle, Camera } from 'lucide-react
 import { Button } from '../components/ui/button';
 
 const VerifyAccountPage = () => {
-  const { isAuthenticated, user, getCurrentUser, updateUser } = useAuth();
+  const { isAuthenticated, user, getCurrentUser, updateUser, loginWithToken } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -58,8 +58,13 @@ const VerifyAccountPage = () => {
       try {
         const resp = await authAPI.confirmEmailVerification(token);
         if (isMounted) {
+          if (resp?.access_token && resp?.user) {
+            try { loginWithToken(resp.access_token, resp.user); } catch {}
+            if (resp?.refresh_token) {
+              try { localStorage.setItem('refresh_token', resp.refresh_token); } catch {}
+            }
+          }
           toast({ title: 'Email Verified', description: resp?.message || 'Your email has been verified.' });
-          try { await getCurrentUser(); } catch {}
           setVerified(true);
           setTimeout(() => {
             navigate(nextPath, { replace: true });
