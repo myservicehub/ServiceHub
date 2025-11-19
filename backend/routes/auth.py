@@ -894,24 +894,30 @@ async def send_phone_otp(payload: SendPhoneOTPRequest, current_user: User = Depe
         if not stored:
             logger.warning("Phone OTP storage failed, proceeding with send in degraded mode")
 
-        # Send SMS
+        # Send SMS (with diagnostic result)
         message = f"Your serviceHub verification code is {otp_code}. It expires in 10 minutes."
-        sms_ok = await notification_service.send_custom_sms(
+        send_result = await notification_service.send_custom_sms_with_result(
             phone=formatted_phone,
             message=message,
             metadata={"purpose": "phone_verification", "user_id": current_user.id}
         )
+        sms_ok = bool(send_result.get("ok"))
         if not sms_ok:
-            # Still return success to avoid leaking info; user can request again
-            logger.error(f"Failed to send OTP SMS to {formatted_phone}")
+            logger.error(f"Failed to send OTP SMS to {formatted_phone} - result={send_result}")
 
-        resp = {"message": "Verification code sent"}
+        resp = {"message": "Verification code sent", "delivery_status": ("sent" if sms_ok else "failed")}
         try:
             dev_flag = os.environ.get('OTP_DEV_MODE', '0')
             logger.info(f"OTP_DEV_MODE={dev_flag}")
             if dev_flag in ('1', 'true', 'True'):
                 resp["debug_code"] = otp_code
                 logger.info(f"OTP dev mode active; phone debug_code={otp_code}")
+            # Optionally include provider diagnostics
+            debug_resp = os.environ.get('OTP_DEBUG_RESPONSE', '0')
+            if debug_resp in ('1', 'true', 'True'):
+                resp["provider_status"] = send_result.get("status")
+                resp["provider_channel"] = send_result.get("channel")
+                resp["provider_response"] = send_result.get("response")
         except Exception:
             pass
         return resp

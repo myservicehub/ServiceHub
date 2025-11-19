@@ -160,6 +160,48 @@ class TermiiSMSService:
         except Exception as e:
             logger.error(f"❌ SMS sending failed: {str(e)}")
             return False
+
+    async def send_sms_with_result(self, to: str, message: str, metadata: Dict[str, Any] = None) -> Dict[str, Any]:
+        """Send SMS and return detailed provider result for diagnostics."""
+        result: Dict[str, Any] = {"ok": False}
+        try:
+            formatted_phone = self._format_nigerian_phone(to)
+
+            def _send_with_channel(channel: str) -> Dict[str, Any]:
+                payload = {
+                    "to": formatted_phone,
+                    "from": self.sender_id,
+                    "sms": message,
+                    "type": "plain",
+                    "api_key": self.api_key,
+                    "channel": channel,
+                }
+                resp = requests.post(
+                    f"{self.base_url}/api/sms/send",
+                    json=payload,
+                    headers={"Content-Type": "application/json"}
+                )
+                try:
+                    data = resp.json()
+                except Exception:
+                    data = {"raw": resp.text}
+                ok = resp.status_code == 200 and isinstance(data, dict) and data.get("code") == "ok"
+                return {"ok": ok, "status": resp.status_code, "channel": channel, "response": data}
+
+            first = _send_with_channel("dnd")
+            if first.get("ok"):
+                logger.info(f"📱 SMS SENT: to={formatted_phone}, channel=dnd, message_id={first.get('response',{}).get('message_id')}")
+                return first
+            second = _send_with_channel("generic")
+            if second.get("ok"):
+                logger.info(f"📱 SMS SENT: to={formatted_phone}, channel=generic, message_id={second.get('response',{}).get('message_id')}")
+                return second
+            logger.error(f"❌ Termii send failed on both channels: first={first}, second={second}")
+            return second if second else first
+        except Exception as e:
+            logger.error(f"❌ SMS sending failed: {str(e)}")
+            result["error"] = str(e)
+            return result
     
     def _format_nigerian_phone(self, phone: str) -> str:
         """Format phone number for Nigerian market"""
@@ -959,6 +1001,22 @@ class NotificationService:
         except Exception as e:
             logger.error(f"Error sending custom SMS to {phone}: {e}")
             return False
+
+    async def send_custom_sms_with_result(self, phone: str, message: str, metadata: Dict[str, Any] = None) -> Dict[str, Any]:
+        """Send direct SMS and return detailed provider result for diagnostics."""
+        self._ensure_services_initialized()
+        try:
+            if hasattr(self.sms_service, 'send_sms_with_result'):
+                return await self.sms_service.send_sms_with_result(
+                    to=phone,
+                    message=message,
+                    metadata=metadata or {}
+                )
+            ok = await self.sms_service.send_sms(to=phone, message=message, metadata=metadata or {})
+            return {"ok": ok}
+        except Exception as e:
+            logger.error(f"Error sending custom SMS (with result) to {phone}: {e}")
+            return {"ok": False, "error": str(e)}
 
 # Global notification service instance
 notification_service = NotificationService()
