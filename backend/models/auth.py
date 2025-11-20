@@ -56,6 +56,7 @@ class User(BaseModel):
     latitude: Optional[float] = None           # Home base latitude for tradespeople
     longitude: Optional[float] = None          # Home base longitude for tradespeople
     travel_distance_km: Optional[int] = 25     # Maximum travel distance in kilometers (default 25km)
+    business_type: Optional[str] = None
 
     def dict(self, **kwargs):
         d = super().dict(**kwargs)
@@ -88,6 +89,7 @@ class TradespersonRegistration(BaseModel):
     description: str = Field(..., min_length=50, max_length=1000)
     certifications: List[str] = []
     referral_code: Optional[str] = None  # Optional referral code
+    business_type: Optional[str] = None
 
 # Login Models
 class UserLogin(BaseModel):
@@ -128,6 +130,7 @@ class UserProfile(BaseModel):
     total_reviews: Optional[int] = None
     total_jobs: Optional[int] = None
     verified_tradesperson: Optional[bool] = None
+    business_type: Optional[str] = None
 
 class UserProfileUpdate(BaseModel):
     name: Optional[str] = None

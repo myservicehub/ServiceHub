@@ -46,6 +46,27 @@ const VerifyAccountPage = () => {
   const [refsSubmitting, setRefsSubmitting] = useState(false);
   const [verified, setVerified] = useState(false);
   const [nextPath, setNextPath] = useState('/profile');
+  const [businessType, setBusinessType] = useState(user?.business_type || '');
+  const [idSelfie, setIdSelfie] = useState(null);
+  const [residentialAddress, setResidentialAddress] = useState('');
+  const [workPhotos, setWorkPhotos] = useState([]);
+  const [tradeCertificate, setTradeCertificate] = useState(null);
+  const [cacCertificate, setCacCertificate] = useState(null);
+  const [cacStatusReport, setCacStatusReport] = useState(null);
+  const [companyAddress, setCompanyAddress] = useState('');
+  const [directorName, setDirectorName] = useState('');
+  const [directorIdDocument, setDirectorIdDocument] = useState(null);
+  const [companyBankName, setCompanyBankName] = useState('');
+  const [companyAccountNumber, setCompanyAccountNumber] = useState('');
+  const [companyAccountName, setCompanyAccountName] = useState('');
+  const [tin, setTin] = useState('');
+  const [businessLogo, setBusinessLogo] = useState(null);
+  const [bnCertificate, setBnCertificate] = useState(null);
+  const [partnershipAgreement, setPartnershipAgreement] = useState(null);
+  const [partnerIdDocuments, setPartnerIdDocuments] = useState([]);
+  const [llpCertificate, setLlpCertificate] = useState(null);
+  const [llpAgreement, setLlpAgreement] = useState(null);
+  const [designatedPartners, setDesignatedPartners] = useState('');
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -154,6 +175,16 @@ const VerifyAccountPage = () => {
     }
   };
 
+  const handleWorkPhotosSelect = (files) => {
+    const arr = Array.from(files || []).slice(0, 6);
+    setWorkPhotos(arr);
+  };
+
+  const handlePartnerIdsSelect = (files) => {
+    const arr = Array.from(files || []).slice(0, 6);
+    setPartnerIdDocuments(arr);
+  };
+
   const handleDrag = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -185,17 +216,43 @@ const VerifyAccountPage = () => {
       });
       return;
     }
-
     try {
       setLoading(true);
-      
-      await referralsAPI.submitVerificationDocuments(
-        formData.document_type,
-        formData.full_name,
-        formData.document_number,
-        formData.document_image
-      );
-      
+      if (user?.role === 'tradesperson') {
+        const bt = (businessType || '').toLowerCase();
+        const payload = {
+          business_type: businessType,
+          id_document: formData.document_image,
+          id_selfie: idSelfie,
+          residential_address: residentialAddress,
+          work_photos: workPhotos,
+          trade_certificate: tradeCertificate,
+          cac_certificate: cacCertificate,
+          cac_status_report: cacStatusReport,
+          company_address: companyAddress,
+          director_name: directorName,
+          director_id_document: directorIdDocument,
+          company_bank_name: companyBankName,
+          company_account_number: companyAccountNumber,
+          company_account_name: companyAccountName,
+          tin,
+          business_logo: businessLogo,
+          bn_certificate: bnCertificate,
+          partnership_agreement: partnershipAgreement,
+          partner_id_documents: partnerIdDocuments,
+          llp_certificate: llpCertificate,
+          llp_agreement: llpAgreement,
+          designated_partners: designatedPartners,
+        };
+        await verificationAPI.submitTradespersonVerification(payload);
+      } else {
+        await referralsAPI.submitVerificationDocuments(
+          formData.document_type,
+          formData.full_name,
+          formData.document_number,
+          formData.document_image
+        );
+      }
       setSubmitted(true);
       toast({
         title: "Verification Submitted",
@@ -590,6 +647,125 @@ const VerifyAccountPage = () => {
                   </Button>
                 </form>
               </div>
+
+              {user?.role === 'tradesperson' && (
+                <div className="bg-white p-6 rounded-lg shadow-sm border mt-6">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Business Verification</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Business Type</label>
+                      <select value={businessType} onChange={(e)=>setBusinessType(e.target.value)} className="w-full px-3 py-2 border rounded-lg">
+                        <option value="">Select business type</option>
+                        <option>Self-Employed / Sole Trader</option>
+                        <option>Limited Company (LTD)</option>
+                        <option>Ordinary Partnership</option>
+                        <option>Limited Liability Partnership (LLP)</option>
+                      </select>
+                    </div>
+                    {(businessType === 'Self-Employed / Sole Trader') && (
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Selfie holding ID</label>
+                          <input type="file" accept="image/*" onChange={(e)=>setIdSelfie(e.target.files[0])} />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Residential address</label>
+                          <input className="w-full px-3 py-2 border rounded-lg" value={residentialAddress} onChange={(e)=>setResidentialAddress(e.target.value)} />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Recent work photos (min 2)</label>
+                          <input type="file" accept="image/*" multiple onChange={(e)=>handleWorkPhotosSelect(e.target.files)} />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Trade certificate (optional)</label>
+                          <input type="file" accept="image/*,application/pdf" onChange={(e)=>setTradeCertificate(e.target.files[0])} />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Work reference</label>
+                          <p className="text-xs text-gray-500">Use the references section below</p>
+                        </div>
+                      </div>
+                    )}
+                    {(businessType === 'Limited Company (LTD)') && (
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">CAC Certificate</label>
+                          <input type="file" accept="image/*,application/pdf" onChange={(e)=>setCacCertificate(e.target.files[0])} />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">CAC Status Report/Extract</label>
+                          <input type="file" accept="image/*,application/pdf" onChange={(e)=>setCacStatusReport(e.target.files[0])} />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Company address</label>
+                          <input className="w-full px-3 py-2 border rounded-lg" value={companyAddress} onChange={(e)=>setCompanyAddress(e.target.value)} />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Director name</label>
+                          <input className="w-full px-3 py-2 border rounded-lg" value={directorName} onChange={(e)=>setDirectorName(e.target.value)} />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Director ID document</label>
+                          <input type="file" accept="image/*,application/pdf" onChange={(e)=>setDirectorIdDocument(e.target.files[0])} />
+                        </div>
+                        <div className="grid md:grid-cols-3 gap-3">
+                          <input className="w-full px-3 py-2 border rounded-lg" placeholder="Bank name" value={companyBankName} onChange={(e)=>setCompanyBankName(e.target.value)} />
+                          <input className="w-full px-3 py-2 border rounded-lg" placeholder="Account number" value={companyAccountNumber} onChange={(e)=>setCompanyAccountNumber(e.target.value)} />
+                          <input className="w-full px-3 py-2 border rounded-lg" placeholder="Account name" value={companyAccountName} onChange={(e)=>setCompanyAccountName(e.target.value)} />
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-3">
+                          <input className="w-full px-3 py-2 border rounded-lg" placeholder="TIN (optional)" value={tin} onChange={(e)=>setTin(e.target.value)} />
+                          <input type="file" accept="image/*" onChange={(e)=>setBusinessLogo(e.target.files[0])} />
+                        </div>
+                      </div>
+                    )}
+                    {(businessType === 'Ordinary Partnership') && (
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">CAC Business Name Certificate (BN)</label>
+                          <input type="file" accept="image/*,application/pdf" onChange={(e)=>setBnCertificate(e.target.files[0])} />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Partnership agreement</label>
+                          <input type="file" accept="image/*,application/pdf" onChange={(e)=>setPartnershipAgreement(e.target.files[0])} />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Partner ID documents</label>
+                          <input type="file" accept="image/*,application/pdf" multiple onChange={(e)=>handlePartnerIdsSelect(e.target.files)} />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Business address</label>
+                          <input className="w-full px-3 py-2 border rounded-lg" value={companyAddress} onChange={(e)=>setCompanyAddress(e.target.value)} />
+                        </div>
+                      </div>
+                    )}
+                    {(businessType === 'Limited Liability Partnership (LLP)') && (
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">CAC LLP Certificate/Registration</label>
+                          <input type="file" accept="image/*,application/pdf" onChange={(e)=>setLlpCertificate(e.target.files[0])} />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">LLP agreement</label>
+                          <input type="file" accept="image/*,application/pdf" onChange={(e)=>setLlpAgreement(e.target.files[0])} />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Designated partners (names, roles)</label>
+                          <textarea className="w-full px-3 py-2 border rounded-lg" value={designatedPartners} onChange={(e)=>setDesignatedPartners(e.target.value)} />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Partner ID documents</label>
+                          <input type="file" accept="image/*,application/pdf" multiple onChange={(e)=>handlePartnerIdsSelect(e.target.files)} />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Business address</label>
+                          <input className="w-full px-3 py-2 border rounded-lg" value={companyAddress} onChange={(e)=>setCompanyAddress(e.target.value)} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Tradespeople References */}
               {user?.role === 'tradesperson' && (

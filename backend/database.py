@@ -3658,6 +3658,42 @@ class Database:
             items.append(v)
         return items
 
+    async def has_tradesperson_references(self, user_id: str) -> bool:
+        if self.database is None:
+            return False
+        doc = await self.tradespeople_verifications_collection.find_one({
+            "user_id": user_id,
+            "work_referrer": {"$exists": True},
+            "character_referrer": {"$exists": True},
+            "status": {"$in": ["pending", "verified"]},
+        })
+        return bool(doc)
+
+    async def submit_tradesperson_full_verification(self, payload: Dict[str, Any]) -> str:
+        if self.database is None:
+            raise RuntimeError("Database unavailable: cannot submit tradesperson verification")
+        record = {
+            "id": str(uuid.uuid4()),
+            "user_id": payload.get("user_id"),
+            "business_type": payload.get("business_type"),
+            "residential_address": payload.get("residential_address"),
+            "company_address": payload.get("company_address"),
+            "director_name": payload.get("director_name"),
+            "company_bank_name": payload.get("company_bank_name"),
+            "company_account_number": payload.get("company_account_number"),
+            "company_account_name": payload.get("company_account_name"),
+            "tin": payload.get("tin"),
+            "designated_partners": payload.get("designated_partners"),
+            "documents": payload.get("documents", {}),
+            "work_photos": payload.get("work_photos", []),
+            "partner_id_documents": payload.get("partner_id_documents", []),
+            "status": "pending",
+            "submitted_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow(),
+        }
+        await self.tradespeople_verifications_collection.insert_one(record)
+        return record["id"]
+
     async def approve_tradesperson_verification(self, verification_id: str, admin_id: str, admin_notes: str = "") -> bool:
         """Approve tradesperson references and mark user verified_tradesperson"""
         v = await self.tradespeople_verifications_collection.find_one({"id": verification_id})

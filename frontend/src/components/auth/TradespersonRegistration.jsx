@@ -418,7 +418,8 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
         experience_years: experienceMapping[formData.experienceYears] || 1,
         company_name: formData.tradingName,
         description: description,
-        certifications: formData.certifications || []
+        certifications: formData.certifications || [],
+        business_type: formData.businessType,
       };
 
       console.log('📤 Sending registration data:', registrationData);
