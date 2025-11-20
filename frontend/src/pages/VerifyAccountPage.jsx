@@ -1,27 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { referralsAPI } from '../api/referrals';
+import { verificationAPI } from '../api/referrals';
 import { authAPI } from '../api/services';
 import { useToast } from '../hooks/use-toast';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { Upload, FileText, CheckCircle, AlertCircle, Camera } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 import { Button } from '../components/ui/button';
 
 const VerifyAccountPage = () => {
   const { isAuthenticated, user, getCurrentUser, updateUser, loginWithToken } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    document_type: '',
-    full_name: user?.name || '',
-    document_number: '',
-    document_image: null
-  });
   const [loading, setLoading] = useState(false);
-  const [dragActive, setDragActive] = useState(false);
-  const [imagePreview, setImagePreview] = useState(null);
   const [submitted, setSubmitted] = useState(false);
   const { toast } = useToast();
 
@@ -48,6 +40,7 @@ const VerifyAccountPage = () => {
   const [nextPath, setNextPath] = useState('/profile');
   const [businessType, setBusinessType] = useState(user?.business_type || '');
   const [idSelfie, setIdSelfie] = useState(null);
+  const [idDocument, setIdDocument] = useState(null);
   const [residentialAddress, setResidentialAddress] = useState('');
   const [workPhotos, setWorkPhotos] = useState([]);
   const [tradeCertificate, setTradeCertificate] = useState(null);
@@ -139,41 +132,7 @@ const VerifyAccountPage = () => {
     );
   }
 
-  const documentTypes = [
-    { value: 'national_id', label: 'Nigerian National ID Card', description: 'Government-issued national identification card' },
-    { value: 'voters_card', label: 'Permanent Voters Card (PVC)', description: 'INEC voter registration card' },
-    { value: 'drivers_license', label: 'Nigerian Driver\'s License', description: 'Valid Nigerian driving license' },
-    { value: 'passport', label: 'Nigerian International Passport', description: 'Nigerian international passport' },
-    { value: 'business_registration', label: 'CAC Business Registration', description: 'Corporate Affairs Commission certificate' }
-  ];
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleFileSelect = (file) => {
-    if (file && file.type.startsWith('image/')) {
-      setFormData(prev => ({
-        ...prev,
-        document_image: file
-      }));
-      
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = (e) => setImagePreview(e.target.result);
-      reader.readAsDataURL(file);
-    } else {
-      toast({
-        title: "Invalid File",
-        description: "Please select a valid image file",
-        variant: "destructive"
-      });
-    }
-  };
+  
 
   const handleWorkPhotosSelect = (files) => {
     const arr = Array.from(files || []).slice(0, 6);
@@ -185,85 +144,43 @@ const VerifyAccountPage = () => {
     setPartnerIdDocuments(arr);
   };
 
-  const handleDrag = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFileSelect(e.dataTransfer.files[0]);
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!formData.document_type || !formData.full_name || !formData.document_image) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill all required fields and upload a document image",
-        variant: "destructive"
-      });
-      return;
-    }
+  const handleBusinessVerificationSubmit = async () => {
     try {
       setLoading(true);
-      if (user?.role === 'tradesperson') {
-        const bt = (businessType || '').toLowerCase();
-        const payload = {
-          business_type: businessType,
-          id_document: formData.document_image,
-          id_selfie: idSelfie,
-          residential_address: residentialAddress,
-          work_photos: workPhotos,
-          trade_certificate: tradeCertificate,
-          cac_certificate: cacCertificate,
-          cac_status_report: cacStatusReport,
-          company_address: companyAddress,
-          director_name: directorName,
-          director_id_document: directorIdDocument,
-          company_bank_name: companyBankName,
-          company_account_number: companyAccountNumber,
-          company_account_name: companyAccountName,
-          tin,
-          business_logo: businessLogo,
-          bn_certificate: bnCertificate,
-          partnership_agreement: partnershipAgreement,
-          partner_id_documents: partnerIdDocuments,
-          llp_certificate: llpCertificate,
-          llp_agreement: llpAgreement,
-          designated_partners: designatedPartners,
-        };
-        await authAPI.submitTradespersonVerification(payload);
-      } else {
-        await referralsAPI.submitVerificationDocuments(
-          formData.document_type,
-          formData.full_name,
-          formData.document_number,
-          formData.document_image
-        );
+      if (!user?.role || user.role !== 'tradesperson') {
+        toast({ title: 'Not Allowed', description: 'Only tradespeople can submit business verification', variant: 'destructive' });
+        return;
       }
+      const payload = {
+        business_type: businessType,
+        id_document: idDocument,
+        id_selfie: idSelfie,
+        residential_address: residentialAddress,
+        work_photos: workPhotos,
+        trade_certificate: tradeCertificate,
+        cac_certificate: cacCertificate,
+        cac_status_report: cacStatusReport,
+        company_address: companyAddress,
+        director_name: directorName,
+        director_id_document: directorIdDocument,
+        company_bank_name: companyBankName,
+        company_account_number: companyAccountNumber,
+        company_account_name: companyAccountName,
+        tin,
+        business_logo: businessLogo,
+        bn_certificate: bnCertificate,
+        partnership_agreement: partnershipAgreement,
+        partner_id_documents: partnerIdDocuments,
+        llp_certificate: llpCertificate,
+        llp_agreement: llpAgreement,
+        designated_partners: designatedPartners,
+      };
+      await authAPI.submitTradespersonVerification(payload);
       setSubmitted(true);
-      toast({
-        title: "Verification Submitted",
-        description: "Your documents have been submitted for review. You'll be notified within 2-3 business days."
-      });
-      
+      toast({ title: 'Verification Submitted', description: "Your business verification has been submitted for review. You'll be notified within 2-3 business days." });
     } catch (error) {
-      console.error('Failed to submit verification:', error);
-      
-      let errorMessage = "Failed to submit verification documents";
-      
+      console.error('Failed to submit business verification:', error);
+      let errorMessage = 'Failed to submit business verification';
       if (error.response?.data?.detail) {
         if (typeof error.response.data.detail === 'string') {
           errorMessage = error.response.data.detail;
@@ -273,20 +190,7 @@ const VerifyAccountPage = () => {
           errorMessage = error.response.data.detail.msg || error.response.data.detail.message || 'Unknown error';
         }
       }
-      
-      if (error.response?.status === 400 && errorMessage.includes('already')) {
-        toast({
-          title: "Already Submitted",
-          description: errorMessage,
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "Submission Failed", 
-          description: errorMessage,
-          variant: "destructive"
-        });
-      }
+      toast({ title: 'Submission Failed', description: errorMessage, variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -323,7 +227,7 @@ const VerifyAccountPage = () => {
               <CheckCircle size={64} className="mx-auto mb-6 text-green-600" />
               <h2 className="text-2xl font-bold text-gray-800 mb-4">Verification Submitted!</h2>
               <p className="text-gray-600 mb-6">
-                Your identity documents have been submitted successfully. Our team will review them within 2-3 business days.
+                Your business verification has been submitted successfully. Our team will review it within 2-3 business days.
               </p>
               
               <div className="bg-blue-50 p-6 rounded-lg mb-6">
@@ -368,7 +272,7 @@ const VerifyAccountPage = () => {
           {/* Page Header */}
           <div className="mb-8 text-center">
             <h1 className="text-3xl font-bold text-gray-800 mb-2">Verify Your Account</h1>
-            <p className="text-gray-600">Verify your email and phone, then submit your ID. Tradespeople add references.</p>
+            <p className="text-gray-600">Verify your email and phone. Tradespeople complete business verification and references.</p>
           </div>
 
           <div className="grid lg:grid-cols-3 gap-8">
@@ -502,151 +406,7 @@ const VerifyAccountPage = () => {
                 </div>
               </div>
 
-              <div className="bg-white p-8 rounded-lg shadow-sm border">
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Document Type Selection */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-3">
-                      Document Type *
-                    </label>
-                    <div className="space-y-3">
-                      {documentTypes.map((type) => (
-                        <div key={type.value} className="flex items-start">
-                          <input
-                            type="radio"
-                            id={type.value}
-                            name="document_type"
-                            value={type.value}
-                            checked={formData.document_type === type.value}
-                            onChange={handleInputChange}
-                            className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                          />
-                          <div className="ml-3">
-                            <label htmlFor={type.value} className="text-sm font-medium text-gray-900 cursor-pointer">
-                              {type.label}
-                            </label>
-                            <p className="text-xs text-gray-500">{type.description}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Full Name */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Full Name (as shown on document) *
-                    </label>
-                    <input
-                      type="text"
-                      name="full_name"
-                      value={formData.full_name}
-                      onChange={handleInputChange}
-                      placeholder="Enter your full name exactly as shown on ID"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
-                    />
-                  </div>
-
-                  {/* Document Number */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Document Number (optional)
-                    </label>
-                    <input
-                      type="text"
-                      name="document_number"
-                      value={formData.document_number}
-                      onChange={handleInputChange}
-                      placeholder="ID number, license number, etc."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-
-                  {/* Document Image Upload */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Document Image *
-                    </label>
-                    
-                    <div
-                      className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                        dragActive 
-                          ? 'border-blue-500 bg-blue-50' 
-                          : 'border-gray-300 hover:border-gray-400'
-                      }`}
-                      onDragEnter={handleDrag}
-                      onDragLeave={handleDrag}
-                      onDragOver={handleDrag}
-                      onDrop={handleDrop}
-                    >
-                      {imagePreview ? (
-                        <div className="space-y-4">
-                          <img 
-                            src={imagePreview} 
-                            alt="Document preview" 
-                            className="max-w-full h-48 object-contain mx-auto rounded-lg border"
-                          />
-                          <p className="text-sm text-gray-600">{formData.document_image?.name}</p>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setFormData(prev => ({ ...prev, document_image: null }));
-                              setImagePreview(null);
-                            }}
-                            className="text-red-600 hover:text-red-700 text-sm"
-                          >
-                            Remove Image
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          <Camera className="mx-auto h-12 w-12 text-gray-400" />
-                          <div>
-                            <p className="text-gray-600 mb-2">
-                              Drag and drop your document image here, or
-                            </p>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={(e) => handleFileSelect(e.target.files[0])}
-                              className="hidden"
-                              id="document-upload"
-                            />
-                            <label
-                              htmlFor="document-upload"
-                              className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg cursor-pointer inline-block"
-                            >
-                              Browse Files
-                            </label>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Photo Tips */}
-                  <div className="bg-yellow-50 p-4 rounded-lg">
-                    <h4 className="text-sm font-medium text-yellow-800 mb-2">📸 Photo Tips:</h4>
-                    <ul className="text-xs text-yellow-700 space-y-1">
-                      <li>• Ensure all text on the document is clearly readable</li>
-                      <li>• Take photo in good lighting without shadows</li>
-                      <li>• Keep the document flat and avoid glare</li>
-                      <li>• Include all four corners of the document</li>
-                      <li>• File size should be less than 10MB</li>
-                    </ul>
-                  </div>
-
-                  {/* Submit Button */}
-                  <Button
-                    type="submit"
-                    disabled={loading || !formData.document_type || !formData.full_name || !formData.document_image}
-                    className="w-full"
-                  >
-                    {loading ? 'Submitting...' : 'Submit for Verification'}
-                  </Button>
-                </form>
-              </div>
+              
 
               {user?.role === 'tradesperson' && (
                 <div className="bg-white p-6 rounded-lg shadow-sm border mt-6">
@@ -664,6 +424,10 @@ const VerifyAccountPage = () => {
                     </div>
                     {(businessType === 'Self-Employed / Sole Trader') && (
                       <div className="space-y-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">ID document</label>
+                          <input type="file" accept="image/*,application/pdf" onChange={(e)=>setIdDocument(e.target.files[0])} />
+                        </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Selfie holding ID</label>
                           <input type="file" accept="image/*" onChange={(e)=>setIdSelfie(e.target.files[0])} />
@@ -763,6 +527,16 @@ const VerifyAccountPage = () => {
                         </div>
                       </div>
                     )}
+                  </div>
+                  <div className="mt-4">
+                    <Button
+                      type="button"
+                      disabled={loading || !businessType}
+                      onClick={handleBusinessVerificationSubmit}
+                      className=""
+                    >
+                      {loading ? 'Submitting...' : 'Submit Business Verification'}
+                    </Button>
                   </div>
                 </div>
               )}

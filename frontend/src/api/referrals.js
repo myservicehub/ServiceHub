@@ -112,40 +112,6 @@ export const verificationAPI = {
     });
     return response.data;
   },
-
-  async submitTradespersonVerification(payload) {
-    const formData = new FormData();
-    if (payload.business_type) formData.append('business_type', payload.business_type);
-    if (payload.id_document) formData.append('id_document', payload.id_document);
-    if (payload.id_selfie) formData.append('id_selfie', payload.id_selfie);
-    if (payload.residential_address) formData.append('residential_address', payload.residential_address);
-    if (Array.isArray(payload.work_photos)) {
-      payload.work_photos.forEach((f) => { if (f) formData.append('work_photos', f); });
-    }
-    if (payload.trade_certificate) formData.append('trade_certificate', payload.trade_certificate);
-    if (payload.cac_certificate) formData.append('cac_certificate', payload.cac_certificate);
-    if (payload.cac_status_report) formData.append('cac_status_report', payload.cac_status_report);
-    if (payload.company_address) formData.append('company_address', payload.company_address);
-    if (payload.director_name) formData.append('director_name', payload.director_name);
-    if (payload.director_id_document) formData.append('director_id_document', payload.director_id_document);
-    if (payload.company_bank_name) formData.append('company_bank_name', payload.company_bank_name);
-    if (payload.company_account_number) formData.append('company_account_number', payload.company_account_number);
-    if (payload.company_account_name) formData.append('company_account_name', payload.company_account_name);
-    if (payload.tin) formData.append('tin', payload.tin);
-    if (payload.business_logo) formData.append('business_logo', payload.business_logo);
-    if (payload.bn_certificate) formData.append('bn_certificate', payload.bn_certificate);
-    if (payload.partnership_agreement) formData.append('partnership_agreement', payload.partnership_agreement);
-    if (Array.isArray(payload.partner_id_documents)) {
-      payload.partner_id_documents.forEach((f) => { if (f) formData.append('partner_id_documents', f); });
-    }
-    if (payload.llp_certificate) formData.append('llp_certificate', payload.llp_certificate);
-    if (payload.llp_agreement) formData.append('llp_agreement', payload.llp_agreement);
-    if (payload.designated_partners) formData.append('designated_partners', payload.designated_partners);
-    const response = await apiClient.post('/referrals/tradesperson-verification', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    return response.data;
-  },
 };
 
 // Admin API for tradespeople references verification
