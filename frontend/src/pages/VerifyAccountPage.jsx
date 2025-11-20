@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { referralsAPI, verificationAPI } from '../api/referrals';
+import { referralsAPI } from '../api/referrals';
 import { authAPI } from '../api/services';
 import { useToast } from '../hooks/use-toast';
 import Header from '../components/Header';
@@ -244,7 +244,7 @@ const VerifyAccountPage = () => {
           llp_agreement: llpAgreement,
           designated_partners: designatedPartners,
         };
-        await verificationAPI.submitTradespersonVerification(payload);
+        await authAPI.submitTradespersonVerification(payload);
       } else {
         await referralsAPI.submitVerificationDocuments(
           formData.document_type,

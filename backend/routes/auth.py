@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, status, Query
+from fastapi import APIRouter, HTTPException, Depends, status, Query, UploadFile, File, Form
 from datetime import timedelta
 from ..models.auth import (
     UserLogin, LoginResponse, HomeownerRegistration, TradespersonRegistration,
@@ -14,12 +14,12 @@ from ..auth.security import (
     verify_refresh_token, create_password_reset_token, verify_password_reset_token,
     create_email_verification_token, verify_email_verification_token
 )
-from ..auth.dependencies import get_current_user, get_current_active_user
+from ..auth.dependencies import get_current_user, get_current_active_user, get_current_tradesperson
 from ..database import database
 from ..models.trade_categories import NIGERIAN_TRADE_CATEGORIES, validate_trade_category
 from ..models.nigerian_states import NIGERIAN_STATES, validate_nigerian_state
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, List, Dict, Any
 import uuid
 import logging
 import os
@@ -402,7 +402,8 @@ async def register_tradesperson(registration_data: TradespersonRegistration):
             "average_rating": 0.0,
             "total_reviews": 0,
             "total_jobs": 0,
-            "verified_tradesperson": False
+            "verified_tradesperson": False,
+            "business_type": registration_data.business_type,
         }
 
         # If database is connected, perform normal persistence flow
@@ -1582,3 +1583,130 @@ async def confirm_email_verification(token: str):
     except Exception as e:
         logger.error(f"Error confirming email verification: {e}")
         raise HTTPException(status_code=500, detail="Failed to verify email")
+@router.post("/tradesperson-verification")
+async def submit_tradesperson_verification(
+    business_type: str = Form(...),
+    id_document: UploadFile = File(None),
+    id_selfie: UploadFile = File(None),
+    residential_address: str = Form(None),
+    work_photos: List[UploadFile] = File([]),
+    trade_certificate: UploadFile = File(None),
+    cac_certificate: UploadFile = File(None),
+    cac_status_report: UploadFile = File(None),
+    company_address: str = Form(None),
+    director_name: str = Form(None),
+    director_id_document: UploadFile = File(None),
+    company_bank_name: str = Form(None),
+    company_account_number: str = Form(None),
+    company_account_name: str = Form(None),
+    tin: str = Form(None),
+    business_logo: UploadFile = File(None),
+    bn_certificate: UploadFile = File(None),
+    partnership_agreement: UploadFile = File(None),
+    partner_id_documents: List[UploadFile] = File([]),
+    llp_certificate: UploadFile = File(None),
+    llp_agreement: UploadFile = File(None),
+    designated_partners: str = Form(None),
+    current_user=Depends(get_current_tradesperson)
+):
+    base_dir = os.environ.get("UPLOADS_DIR", os.path.join(os.getcwd(), "uploads"))
+    upload_dir = os.path.join(base_dir, "tradespeople_verifications")
+    os.makedirs(upload_dir, exist_ok=True)
+    async def _save_file(f: UploadFile) -> Optional[str]:
+        if not f:
+            return None
+        if not f.content_type:
+            return None
+        fn = f.filename or str(uuid.uuid4())
+        fp = os.path.join(upload_dir, fn)
+        data = await f.read()
+        with open(fp, "wb") as out:
+            out.write(data)
+        return fn
+    docs: Dict[str, Any] = {}
+    if id_document:
+        docs["id_document"] = await _save_file(id_document)
+    if id_selfie:
+        docs["id_selfie"] = await _save_file(id_selfie)
+    if trade_certificate:
+        docs["trade_certificate"] = await _save_file(trade_certificate)
+    if cac_certificate:
+        docs["cac_certificate"] = await _save_file(cac_certificate)
+    if cac_status_report:
+        docs["cac_status_report"] = await _save_file(cac_status_report)
+    if director_id_document:
+        docs["director_id_document"] = await _save_file(director_id_document)
+    if business_logo:
+        docs["business_logo"] = await _save_file(business_logo)
+    if bn_certificate:
+        docs["bn_certificate"] = await _save_file(bn_certificate)
+    if partnership_agreement:
+        docs["partnership_agreement"] = await _save_file(partnership_agreement)
+    if llp_certificate:
+        docs["llp_certificate"] = await _save_file(llp_certificate)
+    if llp_agreement:
+        docs["llp_agreement"] = await _save_file(llp_agreement)
+    work_files: List[str] = []
+    for wf in work_photos or []:
+        fn = await _save_file(wf)
+        if fn:
+            work_files.append(fn)
+    partner_files: List[str] = []
+    for pf in partner_id_documents or []:
+        fn = await _save_file(pf)
+        if fn:
+            partner_files.append(fn)
+    payload = {
+        "user_id": current_user.id,
+        "business_type": (business_type or "").strip(),
+        "residential_address": residential_address,
+        "company_address": company_address,
+        "director_name": director_name,
+        "company_bank_name": company_bank_name,
+        "company_account_number": company_account_number,
+        "company_account_name": company_account_name,
+        "tin": tin,
+        "designated_partners": designated_partners,
+        "documents": docs,
+        "work_photos": work_files,
+        "partner_id_documents": partner_files,
+    }
+    bt = payload["business_type"].lower()
+    if bt.startswith("self") or bt.startswith("sole"):
+        if not docs.get("id_document") or not docs.get("id_selfie") or not residential_address or len(work_files) < 2:
+            raise HTTPException(status_code=400, detail="Required fields missing for self-employed")
+        has_refs = await database.has_tradesperson_references(current_user.id)
+        if not has_refs:
+            raise HTTPException(status_code=400, detail="Self-employed requires work and character references")
+    elif "limited company" in bt or bt.endswith("ltd") or bt == "ltd":
+        req_ok = all([
+            docs.get("cac_certificate"),
+            docs.get("cac_status_report"),
+            company_address,
+            director_name,
+            docs.get("director_id_document"),
+            company_bank_name,
+            company_account_number,
+            company_account_name,
+        ])
+        if not req_ok:
+            raise HTTPException(status_code=400, detail="Required fields missing for limited company")
+    elif "partnership" in bt and "limited liability" not in bt:
+        req_ok = all([
+            docs.get("bn_certificate"),
+            partnership_agreement,
+            company_address,
+        ]) and len(partner_files) >= 1
+        if not req_ok:
+            raise HTTPException(status_code=400, detail="Required fields missing for partnership")
+    elif "limited liability partnership" in bt or bt == "llp":
+        req_ok = all([
+            docs.get("llp_certificate"),
+            llp_agreement,
+            company_address,
+            designated_partners,
+        ]) and len(partner_files) >= 1
+        if not req_ok:
+            raise HTTPException(status_code=400, detail="Required fields missing for llp")
+    vid = await database.submit_tradesperson_full_verification(payload)
+    return {"message": "Verification submitted", "verification_id": vid, "status": "pending"}
