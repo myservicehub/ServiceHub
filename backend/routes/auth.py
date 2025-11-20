@@ -154,7 +154,10 @@ async def register_homeowner(registration_data: HomeownerRegistration):
                             email_service = MockEmailService()
                         except Exception:
                             email_service = None
-                    frontend_url = os.environ.get('FRONTEND_URL', 'https://servicehub.ng')
+                    dev_flag = os.environ.get('OTP_DEV_MODE', '0')
+                    frontend_url = os.environ.get('FRONTEND_URL') or (
+                        'http://localhost:3000' if dev_flag in ('1', 'true', 'True') else 'https://servicehub.ng'
+                    )
                     verify_link = f"{frontend_url.rstrip('/')}/verify-account?token={verification_token}"
                     if email_service:
                         html = f"""

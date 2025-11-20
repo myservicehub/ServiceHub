@@ -1444,7 +1444,10 @@ async def register_and_post(payload: PublicJobPostRequest, background_tasks: Bac
                         email_service = MockEmailService()
                     except Exception:
                         email_service = None
-                frontend_url = os.environ.get('FRONTEND_URL', 'https://servicehub.ng')
+                dev_flag = os.environ.get('OTP_DEV_MODE', '0')
+                frontend_url = os.environ.get('FRONTEND_URL') or (
+                    'http://localhost:3000' if dev_flag in ('1', 'true', 'True') else 'https://servicehub.ng'
+                )
                 verify_link = f"{frontend_url.rstrip('/')}/verify-account?token={verification_token}&next=/post-job"
                 if email_service:
                     html = f"""
