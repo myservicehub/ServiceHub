@@ -35,7 +35,6 @@ const VerifyAccountPage = () => {
   const [charRef, setCharRef] = useState({
     name: '', phone: '', email: '', relationship: ''
   });
-  const [refsSubmitting, setRefsSubmitting] = useState(false);
   const [verified, setVerified] = useState(false);
   const [nextPath, setNextPath] = useState('/profile');
   const [businessType, setBusinessType] = useState(user?.business_type || '');
@@ -175,9 +174,26 @@ const VerifyAccountPage = () => {
         llp_agreement: llpAgreement,
         designated_partners: designatedPartners,
       };
+      // Submit business verification first
       await authAPI.submitTradespersonVerification(payload);
+
+      // If Self-Employed, also submit references as part of the same flow
+      if (businessType === 'Self-Employed / Sole Trader') {
+        await verificationAPI.submitTradespersonReferences({
+          work_referrer_name: workRef.name,
+          work_referrer_phone: workRef.phone,
+          work_referrer_company_email: workRef.company_email,
+          work_referrer_company_name: workRef.company_name,
+          work_referrer_relationship: workRef.relationship,
+          character_referrer_name: charRef.name,
+          character_referrer_phone: charRef.phone,
+          character_referrer_email: charRef.email,
+          character_referrer_relationship: charRef.relationship,
+        });
+      }
+
       setSubmitted(true);
-      toast({ title: 'Verification Submitted', description: "Your business verification has been submitted for review. You'll be notified within 2-3 business days." });
+      toast({ title: 'Submitted', description: "Your verification and references have been submitted for review. You'll be notified within 2-3 business days." });
     } catch (error) {
       console.error('Failed to submit business verification:', error);
       let errorMessage = 'Failed to submit business verification';
@@ -470,35 +486,7 @@ const VerifyAccountPage = () => {
                               </div>
                             </div>
                           </div>
-                          <div className="mt-4">
-                            <Button
-                              type="button"
-                              disabled={refsSubmitting}
-                              onClick={async ()=>{
-                                try {
-                                  setRefsSubmitting(true);
-                                  await verificationAPI.submitTradespersonReferences({
-                                    work_referrer_name: workRef.name,
-                                    work_referrer_phone: workRef.phone,
-                                    work_referrer_company_email: workRef.company_email,
-                                    work_referrer_company_name: workRef.company_name,
-                                    work_referrer_relationship: workRef.relationship,
-                                    character_referrer_name: charRef.name,
-                                    character_referrer_phone: charRef.phone,
-                                    character_referrer_email: charRef.email,
-                                    character_referrer_relationship: charRef.relationship,
-                                  });
-                                  toast({ title: 'References Submitted', description: 'Pending admin review.' });
-                                } catch (e) {
-                                  const msg = e?.response?.data?.detail || 'Failed to submit references';
-                                  toast({ title: 'Submission Failed', description: msg, variant: 'destructive' });
-                                } finally { setRefsSubmitting(false); }
-                              }}
-                              className=""
-                            >
-                              {refsSubmitting ? 'Submitting...' : 'Submit References'}
-                            </Button>
-                          </div>
+                          {/* References are now submitted together with Business Verification for Self-Employed */}
                         </div>
                       </div>
                     )}
@@ -590,7 +578,7 @@ const VerifyAccountPage = () => {
                       onClick={handleBusinessVerificationSubmit}
                       className=""
                     >
-                      {loading ? 'Submitting...' : 'Submit Business Verification'}
+                      {loading ? 'Submitting...' : 'Submit'}
                     </Button>
                   </div>
                 </div>
