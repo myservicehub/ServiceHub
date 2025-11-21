@@ -448,12 +448,57 @@ const VerifyAccountPage = () => {
                           <input type="file" accept="image/*,application/pdf" onChange={(e)=>setTradeCertificate(e.target.files[0])} />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Work reference</label>
-                          <p className="text-xs text-gray-500">Use the references section below</p>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Character reference</label>
-                          <p className="text-xs text-gray-500">Use the references section below</p>
+                          <h4 className="font-semibold mb-2">References</h4>
+                          <div className="grid md:grid-cols-2 gap-6">
+                            <div>
+                              <h5 className="font-medium mb-2">Work Referrer</h5>
+                              <div className="space-y-3">
+                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Referrer name" value={workRef.name} onChange={(e)=>setWorkRef({...workRef, name: e.target.value})} />
+                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Referrer phone" value={workRef.phone} onChange={(e)=>setWorkRef({...workRef, phone: e.target.value})} />
+                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Company email" value={workRef.company_email} onChange={(e)=>setWorkRef({...workRef, company_email: e.target.value})} />
+                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Company name" value={workRef.company_name} onChange={(e)=>setWorkRef({...workRef, company_name: e.target.value})} />
+                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Relationship" value={workRef.relationship} onChange={(e)=>setWorkRef({...workRef, relationship: e.target.value})} />
+                              </div>
+                            </div>
+                            <div>
+                              <h5 className="font-medium mb-2">Character Referrer</h5>
+                              <div className="space-y-3">
+                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Referrer name" value={charRef.name} onChange={(e)=>setCharRef({...charRef, name: e.target.value})} />
+                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Referrer phone" value={charRef.phone} onChange={(e)=>setCharRef({...charRef, phone: e.target.value})} />
+                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Referrer email" value={charRef.email} onChange={(e)=>setCharRef({...charRef, email: e.target.value})} />
+                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Relationship" value={charRef.relationship} onChange={(e)=>setCharRef({...charRef, relationship: e.target.value})} />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="mt-4">
+                            <Button
+                              type="button"
+                              disabled={refsSubmitting}
+                              onClick={async ()=>{
+                                try {
+                                  setRefsSubmitting(true);
+                                  await verificationAPI.submitTradespersonReferences({
+                                    work_referrer_name: workRef.name,
+                                    work_referrer_phone: workRef.phone,
+                                    work_referrer_company_email: workRef.company_email,
+                                    work_referrer_company_name: workRef.company_name,
+                                    work_referrer_relationship: workRef.relationship,
+                                    character_referrer_name: charRef.name,
+                                    character_referrer_phone: charRef.phone,
+                                    character_referrer_email: charRef.email,
+                                    character_referrer_relationship: charRef.relationship,
+                                  });
+                                  toast({ title: 'References Submitted', description: 'Pending admin review.' });
+                                } catch (e) {
+                                  const msg = e?.response?.data?.detail || 'Failed to submit references';
+                                  toast({ title: 'Submission Failed', description: msg, variant: 'destructive' });
+                                } finally { setRefsSubmitting(false); }
+                              }}
+                              className=""
+                            >
+                              {refsSubmitting ? 'Submitting...' : 'Submit References'}
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -552,61 +597,7 @@ const VerifyAccountPage = () => {
               )}
 
               {/* Tradespeople References */}
-              {user?.role === 'tradesperson' && (
-                <div className="bg-white p-6 rounded-lg shadow-sm border mt-6">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Tradespeople References</h3>
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div>
-                      <h4 className="font-semibold mb-2">Work Referrer</h4>
-                      <div className="space-y-3">
-                        <input className="w-full px-3 py-2 border rounded-lg" placeholder="Referrer name" value={workRef.name} onChange={(e)=>setWorkRef({...workRef, name: e.target.value})} />
-                        <input className="w-full px-3 py-2 border rounded-lg" placeholder="Referrer phone" value={workRef.phone} onChange={(e)=>setWorkRef({...workRef, phone: e.target.value})} />
-                        <input className="w-full px-3 py-2 border rounded-lg" placeholder="Company email" value={workRef.company_email} onChange={(e)=>setWorkRef({...workRef, company_email: e.target.value})} />
-                        <input className="w-full px-3 py-2 border rounded-lg" placeholder="Company name" value={workRef.company_name} onChange={(e)=>setWorkRef({...workRef, company_name: e.target.value})} />
-                        <input className="w-full px-3 py-2 border rounded-lg" placeholder="Relationship" value={workRef.relationship} onChange={(e)=>setWorkRef({...workRef, relationship: e.target.value})} />
-                      </div>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold mb-2">Character Referrer</h4>
-                      <div className="space-y-3">
-                        <input className="w-full px-3 py-2 border rounded-lg" placeholder="Referrer name" value={charRef.name} onChange={(e)=>setCharRef({...charRef, name: e.target.value})} />
-                        <input className="w-full px-3 py-2 border rounded-lg" placeholder="Referrer phone" value={charRef.phone} onChange={(e)=>setCharRef({...charRef, phone: e.target.value})} />
-                        <input className="w-full px-3 py-2 border rounded-lg" placeholder="Referrer email" value={charRef.email} onChange={(e)=>setCharRef({...charRef, email: e.target.value})} />
-                        <input className="w-full px-3 py-2 border rounded-lg" placeholder="Relationship" value={charRef.relationship} onChange={(e)=>setCharRef({...charRef, relationship: e.target.value})} />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mt-4">
-                    <Button
-                      type="button"
-                      disabled={refsSubmitting}
-                      onClick={async ()=>{
-                        try {
-                          setRefsSubmitting(true);
-                          await verificationAPI.submitTradespersonReferences({
-                            work_referrer_name: workRef.name,
-                            work_referrer_phone: workRef.phone,
-                            work_referrer_company_email: workRef.company_email,
-                            work_referrer_company_name: workRef.company_name,
-                            work_referrer_relationship: workRef.relationship,
-                            character_referrer_name: charRef.name,
-                            character_referrer_phone: charRef.phone,
-                            character_referrer_email: charRef.email,
-                            character_referrer_relationship: charRef.relationship,
-                          });
-                          toast({ title: 'References Submitted', description: 'Pending admin review.' });
-                        } catch (e) {
-                          const msg = e?.response?.data?.detail || 'Failed to submit references';
-                          toast({ title: 'Submission Failed', description: msg, variant: 'destructive' });
-                        } finally { setRefsSubmitting(false); }
-                        }}
-                      className=""
-                    >
-                      {refsSubmitting ? 'Submitting...' : 'Submit References'}
-                    </Button>
-                  </div>
-                </div>
-              )}
+              {/* Tradespeople References moved into Self-Employed verification section */}
             </div>
 
             {/* Sidebar */}
