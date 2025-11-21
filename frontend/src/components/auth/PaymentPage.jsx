@@ -169,10 +169,11 @@ const PaymentPage = ({ formData, onBack, onRegistrationComplete }) => {
       const fullName = `${formData.firstName} ${formData.lastName}`;
       setRegisteredFullName(fullName);
       
-      // Use the exact description entered by the user; fall back only if empty
-      const description = (formData.profileDescription && formData.profileDescription.trim().length > 0)
-        ? formData.profileDescription.trim()
-        : `Professional ${formData.selectedTrades?.[0] || 'Trades'} services. Experienced tradesperson committed to quality work and customer satisfaction. Contact me for reliable and affordable services.`;
+      // Ensure description meets backend minimum length (>= 50 chars)
+      const rawDescription = (formData.profileDescription || '').trim();
+      const description = rawDescription.length >= 50
+        ? rawDescription
+        : `Professional ${formData.selectedTrades?.[0] || 'Trades'} services. Experienced tradesperson committed to quality work and customer satisfaction. Contact me for reliable and affordable services across ${formData.state || 'your area'}.`;
 
       // Map experience years from string to number
       const experienceMapping = {
@@ -187,7 +188,7 @@ const PaymentPage = ({ formData, onBack, onRegistrationComplete }) => {
         name: fullName,
         email: formData.email,
         password: formData.password,
-        phone: formData.phone,
+        phone: formatNigerianPhone(formData.phone),
         location: formData.state,
         postcode: formData.postcode || '000000',
         trade_categories: formData.selectedTrades,
