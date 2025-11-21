@@ -295,9 +295,10 @@ const VerifyAccountPage = () => {
             {/* Main Form */}
             <div className="lg:col-span-2">
               {/* Contact Verification */}
-              <div className="bg-white p-6 rounded-lg shadow-sm border mb-6 overflow-hidden">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Contact Verification</h3>
-                <div className="grid md:grid-cols-2 gap-6">
+              {user?.role !== 'tradesperson' && (
+                <div className="bg-white p-6 rounded-lg shadow-sm border mb-6 overflow-hidden">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Contact Verification</h3>
+                  <div className="grid md:grid-cols-2 gap-6">
                   {/* Email */}
                   <div className="space-y-3">
                     <label className="block text-sm font-medium text-gray-700">Email Address</label>
@@ -420,7 +421,8 @@ const VerifyAccountPage = () => {
                     </div>
                   </div>
                 </div>
-              </div>
+                </div>
+              )}
 
               
 

@@ -30,6 +30,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../hooks/use-toast';
 import useStates from '../../hooks/useStates';
 import { jobsAPI } from '../../api/services';
+import { authAPI } from '../../api/services';
 import { resolveCoordinatesFromLocationText, resolveCoordinatesFromStructuredLocation, DEFAULT_TRAVEL_DISTANCE_KM } from '../../utils/locationCoordinates';
 import { useNavigate } from 'react-router-dom';
 import SkillsTestComponent from './SkillsTestComponent';
@@ -116,6 +117,17 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [showPaymentPage, setShowPaymentPage] = useState(false);
+
+  // Contact verification states
+  const [emailOtpCode, setEmailOtpCode] = useState('');
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailVerifying, setEmailVerifying] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(false);
+
+  const [phoneOtpCode, setPhoneOtpCode] = useState('');
+  const [phoneSending, setPhoneSending] = useState(false);
+  const [phoneVerifying, setPhoneVerifying] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(false);
 
   const { registerTradesperson, user, isAuthenticated, isTradesperson } = useAuth();
   const { toast } = useToast();
@@ -554,6 +566,13 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
             newErrors.password = 'Password must meet all requirements below';
           }
         }
+        // Require contact verification before continuing
+        if (!newErrors.email && !emailVerified) {
+          newErrors.email = 'Please verify your email before continuing';
+        }
+        if (!newErrors.phone && !phoneVerified) {
+          newErrors.phone = 'Please verify your phone number before continuing';
+        }
         break;
       case 2:
         if (formData.selectedTrades.length === 0) {
@@ -705,6 +724,62 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
           className={errors.email ? 'border-red-500' : ''}
         />
         {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+
+        {/* Email OTP verification */}
+        <div className="mt-3 space-y-2">
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              disabled={emailSending || !formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)}
+              onClick={async () => {
+                try {
+                  setEmailSending(true);
+                  await authAPI.sendEmailOTP(formData.email);
+                  toast({ title: 'Email code sent', description: 'Check your inbox for the OTP code.' });
+                } catch (err) {
+                  toast({ title: 'Failed to send email code', description: err?.response?.data?.detail || err?.message || 'Please try again.', variant: 'destructive' });
+                } finally {
+                  setEmailSending(false);
+                }
+              }}
+            >
+              {emailSending ? 'Sending…' : 'Send Code'}
+            </Button>
+            <Input
+              placeholder="Enter code"
+              value={emailOtpCode}
+              onChange={(e) => setEmailOtpCode(e.target.value)}
+              className="max-w-[180px]"
+            />
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              disabled={emailVerifying || !emailOtpCode || !formData.email}
+              onClick={async () => {
+                try {
+                  setEmailVerifying(true);
+                  await authAPI.verifyEmailOTP(emailOtpCode, formData.email);
+                  setEmailVerified(true);
+                  toast({ title: 'Email verified', description: 'Your email was verified successfully.' });
+                } catch (err) {
+                  setEmailVerified(false);
+                  toast({ title: 'Verification failed', description: err?.response?.data?.detail || err?.message || 'Invalid code. Please try again.', variant: 'destructive' });
+                } finally {
+                  setEmailVerifying(false);
+                }
+              }}
+            >
+              {emailVerifying ? 'Verifying…' : 'Verify'}
+            </Button>
+            {emailVerified && (
+              <div className="flex items-center text-green-600 text-sm">
+                <CheckCircle className="h-4 w-4 mr-1" /> Verified
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       <div>
@@ -726,6 +801,64 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
           Enter your number with or without the leading 0 (e.g., 8140120508 or 08140120508)
         </p>
         {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
+
+        {/* Phone OTP verification */}
+        <div className="mt-3 space-y-2">
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              disabled={phoneSending || !formData.phone || !validateNigerianPhone(formData.phone)}
+              onClick={async () => {
+                try {
+                  setPhoneSending(true);
+                  const formatted = formatNigerianPhone(formData.phone);
+                  await authAPI.sendPhoneOTP(formatted);
+                  toast({ title: 'SMS code sent', description: 'Check your phone for the OTP code.' });
+                } catch (err) {
+                  toast({ title: 'Failed to send SMS code', description: err?.response?.data?.detail || err?.message || 'Please try again.', variant: 'destructive' });
+                } finally {
+                  setPhoneSending(false);
+                }
+              }}
+            >
+              {phoneSending ? 'Sending…' : 'Send Code'}
+            </Button>
+            <Input
+              placeholder="Enter code"
+              value={phoneOtpCode}
+              onChange={(e) => setPhoneOtpCode(e.target.value)}
+              className="max-w-[180px]"
+            />
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              disabled={phoneVerifying || !phoneOtpCode || !formData.phone}
+              onClick={async () => {
+                try {
+                  setPhoneVerifying(true);
+                  const formatted = formatNigerianPhone(formData.phone);
+                  await authAPI.verifyPhoneOTP(phoneOtpCode, formatted);
+                  setPhoneVerified(true);
+                  toast({ title: 'Phone verified', description: 'Your phone number was verified successfully.' });
+                } catch (err) {
+                  setPhoneVerified(false);
+                  toast({ title: 'Verification failed', description: err?.response?.data?.detail || err?.message || 'Invalid code. Please try again.', variant: 'destructive' });
+                } finally {
+                  setPhoneVerifying(false);
+                }
+              }}
+            >
+              {phoneVerifying ? 'Verifying…' : 'Verify'}
+            </Button>
+            {phoneVerified && (
+              <div className="flex items-center text-green-600 text-sm">
+                <CheckCircle className="h-4 w-4 mr-1" /> Verified
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       <div>
