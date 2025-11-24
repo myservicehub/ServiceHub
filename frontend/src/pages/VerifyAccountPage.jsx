@@ -59,6 +59,9 @@ const VerifyAccountPage = () => {
   const [llpCertificate, setLlpCertificate] = useState(null);
   const [llpAgreement, setLlpAgreement] = useState(null);
   const [designatedPartners, setDesignatedPartners] = useState('');
+  // Inline validation errors
+  const [selfErrors, setSelfErrors] = useState({});
+  const [refErrors, setRefErrors] = useState({});
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -138,6 +141,30 @@ const VerifyAccountPage = () => {
     setWorkPhotos(arr);
   };
 
+  // Validation helpers for Self-Employed submission
+  const validateSelfEmployed = () => {
+    const errs = {};
+    if (!idDocument) errs.id_document = 'Valid ID is required';
+    if (!idSelfie) errs.id_selfie = 'Selfie holding ID is required';
+    if (!residentialAddress || !residentialAddress.trim()) errs.residential_address = 'Residential address is required';
+    if (!Array.isArray(workPhotos) || workPhotos.length < 2) errs.work_photos = 'At least 2 recent work photos are required';
+    return errs;
+  };
+
+  const validateReferences = () => {
+    const errs = {};
+    if (!workRef.name?.trim()) errs.work_referrer_name = 'Work referrer name is required';
+    if (!workRef.phone?.trim()) errs.work_referrer_phone = 'Work referrer phone is required';
+    if (!workRef.company_email?.trim()) errs.work_referrer_company_email = 'Company email is required';
+    if (!workRef.company_name?.trim()) errs.work_referrer_company_name = 'Company name is required';
+    if (!workRef.relationship?.trim()) errs.work_referrer_relationship = 'Relationship is required';
+    if (!charRef.name?.trim()) errs.character_referrer_name = 'Character referrer name is required';
+    if (!charRef.phone?.trim()) errs.character_referrer_phone = 'Character referrer phone is required';
+    if (!charRef.email?.trim()) errs.character_referrer_email = 'Character referrer email is required';
+    if (!charRef.relationship?.trim()) errs.character_referrer_relationship = 'Relationship is required';
+    return errs;
+  };
+
   const handlePartnerIdsSelect = (files) => {
     const arr = Array.from(files || []).slice(0, 6);
     setPartnerIdDocuments(arr);
@@ -149,6 +176,36 @@ const VerifyAccountPage = () => {
       if (!user?.role || user.role !== 'tradesperson') {
         toast({ title: 'Not Allowed', description: 'Only tradespeople can submit business verification', variant: 'destructive' });
         return;
+      }
+      // Clear previous errors
+      setSelfErrors({});
+      setRefErrors({});
+
+      // Pre-validate Self-Employed required fields and references
+      if (businessType === 'Self-Employed / Sole Trader') {
+        const seErrs = validateSelfEmployed();
+        const rfErrs = validateReferences();
+        if (Object.keys(seErrs).length || Object.keys(rfErrs).length) {
+          setSelfErrors(seErrs);
+          setRefErrors(rfErrs);
+          const missingLabels = [
+            seErrs.id_document && 'Valid ID',
+            seErrs.id_selfie && 'Selfie holding ID',
+            seErrs.residential_address && 'Residential address',
+            seErrs.work_photos && 'Recent work photos (min 2)',
+            rfErrs.work_referrer_name && 'Work referrer name',
+            rfErrs.work_referrer_phone && 'Work referrer phone',
+            rfErrs.work_referrer_company_email && 'Work referrer company email',
+            rfErrs.work_referrer_company_name && 'Work referrer company name',
+            rfErrs.work_referrer_relationship && 'Work referrer relationship',
+            rfErrs.character_referrer_name && 'Character referrer name',
+            rfErrs.character_referrer_phone && 'Character referrer phone',
+            rfErrs.character_referrer_email && 'Character referrer email',
+            rfErrs.character_referrer_relationship && 'Character referrer relationship',
+          ].filter(Boolean);
+          toast({ title: 'Missing Required Fields', description: `Please complete: ${missingLabels.join(', ')}`, variant: 'destructive' });
+          return;
+        }
       }
       const payload = {
         business_type: businessType,
@@ -174,10 +231,7 @@ const VerifyAccountPage = () => {
         llp_agreement: llpAgreement,
         designated_partners: designatedPartners,
       };
-      // Submit business verification first
-      await authAPI.submitTradespersonVerification(payload);
-
-      // If Self-Employed, also submit references as part of the same flow
+      // For Self-Employed, submit references first so backend check passes
       if (businessType === 'Self-Employed / Sole Trader') {
         await verificationAPI.submitTradespersonReferences({
           work_referrer_name: workRef.name,
@@ -192,6 +246,9 @@ const VerifyAccountPage = () => {
         });
       }
 
+      // Then submit business verification
+      await authAPI.submitTradespersonVerification(payload);
+
       setSubmitted(true);
       toast({ title: 'Submitted', description: "Your verification and references have been submitted for review. You'll be notified within 2-3 business days." });
     } catch (error) {
@@ -200,6 +257,39 @@ const VerifyAccountPage = () => {
       if (error.response?.data?.detail) {
         if (typeof error.response.data.detail === 'string') {
           errorMessage = error.response.data.detail;
+          // Map generic backend messages to detailed field feedback
+          if (errorMessage.includes('Required fields missing for self-employed')) {
+            const seErrs = validateSelfEmployed();
+            const rfErrs = validateReferences();
+            setSelfErrors(seErrs);
+            setRefErrors(rfErrs);
+            const missingLabels = [
+              seErrs.id_document && 'Valid ID',
+              seErrs.id_selfie && 'Selfie holding ID',
+              seErrs.residential_address && 'Residential address',
+              seErrs.work_photos && 'Recent work photos (min 2)',
+            ].filter(Boolean);
+            if (missingLabels.length) {
+              errorMessage = `Please complete: ${missingLabels.join(', ')}`;
+            }
+          } else if (errorMessage.includes('Self-employed requires work and character references')) {
+            const rfErrs = validateReferences();
+            setRefErrors(rfErrs);
+            const missingLabels = [
+              rfErrs.work_referrer_name && 'Work referrer name',
+              rfErrs.work_referrer_phone && 'Work referrer phone',
+              rfErrs.work_referrer_company_email && 'Work referrer company email',
+              rfErrs.work_referrer_company_name && 'Work referrer company name',
+              rfErrs.work_referrer_relationship && 'Work referrer relationship',
+              rfErrs.character_referrer_name && 'Character referrer name',
+              rfErrs.character_referrer_phone && 'Character referrer phone',
+              rfErrs.character_referrer_email && 'Character referrer email',
+              rfErrs.character_referrer_relationship && 'Character referrer relationship',
+            ].filter(Boolean);
+            if (missingLabels.length) {
+              errorMessage = `Please complete: ${missingLabels.join(', ')}`;
+            }
+          }
         } else if (Array.isArray(error.response.data.detail)) {
           errorMessage = error.response.data.detail.map(err => err.msg || err.message || 'Validation error').join(', ');
         } else if (typeof error.response.data.detail === 'object') {
@@ -448,18 +538,22 @@ const VerifyAccountPage = () => {
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Valid ID (NIN, Voter’s Card, Driver’s Licence, Passport)</label>
                           <input type="file" accept="image/*,application/pdf" onChange={(e)=>setIdDocument(e.target.files[0])} />
+                          {selfErrors.id_document && (<p className="text-xs text-red-600 mt-1">{selfErrors.id_document}</p>)}
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Selfie holding ID</label>
                           <input type="file" accept="image/*" onChange={(e)=>setIdSelfie(e.target.files[0])} />
+                          {selfErrors.id_selfie && (<p className="text-xs text-red-600 mt-1">{selfErrors.id_selfie}</p>)}
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Residential address</label>
                           <input className="w-full px-3 py-2 border rounded-lg" value={residentialAddress} onChange={(e)=>setResidentialAddress(e.target.value)} />
+                          {selfErrors.residential_address && (<p className="text-xs text-red-600 mt-1">{selfErrors.residential_address}</p>)}
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Recent work photos (min 2)</label>
                           <input type="file" accept="image/*" multiple onChange={(e)=>handleWorkPhotosSelect(e.target.files)} />
+                          {selfErrors.work_photos && (<p className="text-xs text-red-600 mt-1">{selfErrors.work_photos}</p>)}
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Trade or apprenticeship certificate (optional)</label>
@@ -472,19 +566,28 @@ const VerifyAccountPage = () => {
                               <h5 className="font-medium mb-2">Work Referrer</h5>
                               <div className="space-y-3">
                                 <input className="w-full px-3 py-2 border rounded-lg" placeholder="Referrer name" value={workRef.name} onChange={(e)=>setWorkRef({...workRef, name: e.target.value})} />
+                                {refErrors.work_referrer_name && (<p className="text-xs text-red-600 mt-1">{refErrors.work_referrer_name}</p>)}
                                 <input className="w-full px-3 py-2 border rounded-lg" placeholder="Referrer phone" value={workRef.phone} onChange={(e)=>setWorkRef({...workRef, phone: e.target.value})} />
+                                {refErrors.work_referrer_phone && (<p className="text-xs text-red-600 mt-1">{refErrors.work_referrer_phone}</p>)}
                                 <input className="w-full px-3 py-2 border rounded-lg" placeholder="Company email" value={workRef.company_email} onChange={(e)=>setWorkRef({...workRef, company_email: e.target.value})} />
+                                {refErrors.work_referrer_company_email && (<p className="text-xs text-red-600 mt-1">{refErrors.work_referrer_company_email}</p>)}
                                 <input className="w-full px-3 py-2 border rounded-lg" placeholder="Company name" value={workRef.company_name} onChange={(e)=>setWorkRef({...workRef, company_name: e.target.value})} />
+                                {refErrors.work_referrer_company_name && (<p className="text-xs text-red-600 mt-1">{refErrors.work_referrer_company_name}</p>)}
                                 <input className="w-full px-3 py-2 border rounded-lg" placeholder="Relationship" value={workRef.relationship} onChange={(e)=>setWorkRef({...workRef, relationship: e.target.value})} />
+                                {refErrors.work_referrer_relationship && (<p className="text-xs text-red-600 mt-1">{refErrors.work_referrer_relationship}</p>)}
                               </div>
                             </div>
                             <div>
                               <h5 className="font-medium mb-2">Character Referrer</h5>
                               <div className="space-y-3">
                                 <input className="w-full px-3 py-2 border rounded-lg" placeholder="Referrer name" value={charRef.name} onChange={(e)=>setCharRef({...charRef, name: e.target.value})} />
+                                {refErrors.character_referrer_name && (<p className="text-xs text-red-600 mt-1">{refErrors.character_referrer_name}</p>)}
                                 <input className="w-full px-3 py-2 border rounded-lg" placeholder="Referrer phone" value={charRef.phone} onChange={(e)=>setCharRef({...charRef, phone: e.target.value})} />
+                                {refErrors.character_referrer_phone && (<p className="text-xs text-red-600 mt-1">{refErrors.character_referrer_phone}</p>)}
                                 <input className="w-full px-3 py-2 border rounded-lg" placeholder="Referrer email" value={charRef.email} onChange={(e)=>setCharRef({...charRef, email: e.target.value})} />
+                                {refErrors.character_referrer_email && (<p className="text-xs text-red-600 mt-1">{refErrors.character_referrer_email}</p>)}
                                 <input className="w-full px-3 py-2 border rounded-lg" placeholder="Relationship" value={charRef.relationship} onChange={(e)=>setCharRef({...charRef, relationship: e.target.value})} />
+                                {refErrors.character_referrer_relationship && (<p className="text-xs text-red-600 mt-1">{refErrors.character_referrer_relationship}</p>)}
                               </div>
                             </div>
                           </div>
