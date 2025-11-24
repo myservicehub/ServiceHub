@@ -137,8 +137,22 @@ const VerifyAccountPage = () => {
   
 
   const handleWorkPhotosSelect = (files) => {
-    const arr = Array.from(files || []).slice(0, 6);
-    setWorkPhotos(arr);
+    const incoming = Array.from(files || []);
+    // Accumulate selections across multiple file-picks, cap at 6
+    setWorkPhotos((prev) => {
+      const merged = [...prev, ...incoming].filter(Boolean);
+      // De-duplicate by name+size+lastModified to avoid repeats
+      const seen = new Set();
+      const unique = [];
+      for (const f of merged) {
+        const key = `${f?.name || ''}:${f?.size || 0}:${f?.lastModified || 0}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          unique.push(f);
+        }
+      }
+      return unique.slice(0, 6);
+    });
   };
 
   // Validation helpers for Self-Employed submission
@@ -561,7 +575,8 @@ const VerifyAccountPage = () => {
                         </div>
                         <div>
                           <h4 className="font-semibold mb-2">References</h4>
-                          <div className="grid md:grid-cols-2 gap-6">
+                          {/* Stack Character Referrer below Work Referrer on all screen sizes */}
+                          <div className="space-y-6">
                             <div>
                               <h5 className="font-medium mb-2">Work Referrer</h5>
                               <div className="space-y-3">
