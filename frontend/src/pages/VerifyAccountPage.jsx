@@ -589,10 +589,12 @@ const VerifyAccountPage = () => {
                         </div>
                         <div>
                           <h4 className="font-semibold mb-2">References</h4>
+                          <p className="text-sm text-gray-600 mb-4">As part of your verification on ServiceHub, we require two types of references to help confirm your professionalism and integrity:</p>
                           {/* Stack Character Referrer below Work Referrer on all screen sizes */}
                           <div className="space-y-6">
                             <div>
                               <h5 className="font-medium mb-2">Work Referee</h5>
+                              <p className="text-xs text-gray-600 mb-2">This should be someone you’ve worked for or with — a previous client, supervisor, or colleague (not a family member).</p>
                               <div className="space-y-3">
                                 <input className="w-full px-3 py-2 border rounded-lg" placeholder="Referee name" value={workRef.name} onChange={(e)=>setWorkRef({...workRef, name: e.target.value})} />
                                 {refErrors.work_referrer_name && (<p className="text-xs text-red-600 mt-1">{refErrors.work_referrer_name}</p>)}
@@ -608,6 +610,7 @@ const VerifyAccountPage = () => {
                             </div>
                             <div>
                               <h5 className="font-medium mb-2">Character Referee</h5>
+                              <p className="text-xs text-gray-600 mb-2">This should be someone who can vouch for your behaviour, reliability, and trustworthiness. This can be a community leader, neighbour, mentor, or someone you’ve known personally (but not an immediate family member).</p>
                               <div className="space-y-3">
                                 <input className="w-full px-3 py-2 border rounded-lg" placeholder="Referee name" value={charRef.name} onChange={(e)=>setCharRef({...charRef, name: e.target.value})} />
                                 {refErrors.character_referrer_name && (<p className="text-xs text-red-600 mt-1">{refErrors.character_referrer_name}</p>)}
