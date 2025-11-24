@@ -151,7 +151,18 @@ const VerifyAccountPage = () => {
           unique.push(f);
         }
       }
-      return unique.slice(0, 6);
+      const next = unique.slice(0, 6);
+      // Live validation feedback for minimum 2 photos
+      setSelfErrors((errs) => {
+        const updated = { ...errs };
+        if (!Array.isArray(next) || next.length < 2) {
+          updated.work_photos = 'At least 2 recent work photos are required';
+        } else {
+          delete updated.work_photos;
+        }
+        return updated;
+      });
+      return next;
     });
   };
 
@@ -167,14 +178,14 @@ const VerifyAccountPage = () => {
 
   const validateReferences = () => {
     const errs = {};
-    if (!workRef.name?.trim()) errs.work_referrer_name = 'Work referrer name is required';
-    if (!workRef.phone?.trim()) errs.work_referrer_phone = 'Work referrer phone is required';
+    if (!workRef.name?.trim()) errs.work_referrer_name = 'Work referee name is required';
+    if (!workRef.phone?.trim()) errs.work_referrer_phone = 'Work referee phone is required';
     if (!workRef.company_email?.trim()) errs.work_referrer_company_email = 'Company email is required';
     if (!workRef.company_name?.trim()) errs.work_referrer_company_name = 'Company name is required';
     if (!workRef.relationship?.trim()) errs.work_referrer_relationship = 'Relationship is required';
-    if (!charRef.name?.trim()) errs.character_referrer_name = 'Character referrer name is required';
-    if (!charRef.phone?.trim()) errs.character_referrer_phone = 'Character referrer phone is required';
-    if (!charRef.email?.trim()) errs.character_referrer_email = 'Character referrer email is required';
+    if (!charRef.name?.trim()) errs.character_referrer_name = 'Character referee name is required';
+    if (!charRef.phone?.trim()) errs.character_referrer_phone = 'Character referee phone is required';
+    if (!charRef.email?.trim()) errs.character_referrer_email = 'Character referee email is required';
     if (!charRef.relationship?.trim()) errs.character_referrer_relationship = 'Relationship is required';
     return errs;
   };
@@ -207,15 +218,15 @@ const VerifyAccountPage = () => {
             seErrs.id_selfie && 'Selfie holding ID',
             seErrs.residential_address && 'Residential address',
             seErrs.work_photos && 'Recent work photos (min 2)',
-            rfErrs.work_referrer_name && 'Work referrer name',
-            rfErrs.work_referrer_phone && 'Work referrer phone',
-            rfErrs.work_referrer_company_email && 'Work referrer company email',
-            rfErrs.work_referrer_company_name && 'Work referrer company name',
-            rfErrs.work_referrer_relationship && 'Work referrer relationship',
-            rfErrs.character_referrer_name && 'Character referrer name',
-            rfErrs.character_referrer_phone && 'Character referrer phone',
-            rfErrs.character_referrer_email && 'Character referrer email',
-            rfErrs.character_referrer_relationship && 'Character referrer relationship',
+            rfErrs.work_referrer_name && 'Work referee name',
+            rfErrs.work_referrer_phone && 'Work referee phone',
+            rfErrs.work_referrer_company_email && 'Work referee company email',
+            rfErrs.work_referrer_company_name && 'Work referee company name',
+            rfErrs.work_referrer_relationship && 'Work referee relationship',
+            rfErrs.character_referrer_name && 'Character referee name',
+            rfErrs.character_referrer_phone && 'Character referee phone',
+            rfErrs.character_referrer_email && 'Character referee email',
+            rfErrs.character_referrer_relationship && 'Character referee relationship',
           ].filter(Boolean);
           toast({ title: 'Missing Required Fields', description: `Please complete: ${missingLabels.join(', ')}`, variant: 'destructive' });
           return;
@@ -295,10 +306,10 @@ const VerifyAccountPage = () => {
               rfErrs.work_referrer_company_email && 'Work referrer company email',
               rfErrs.work_referrer_company_name && 'Work referrer company name',
               rfErrs.work_referrer_relationship && 'Work referrer relationship',
-              rfErrs.character_referrer_name && 'Character referrer name',
-              rfErrs.character_referrer_phone && 'Character referrer phone',
-              rfErrs.character_referrer_email && 'Character referrer email',
-              rfErrs.character_referrer_relationship && 'Character referrer relationship',
+              rfErrs.character_referrer_name && 'Character referee name',
+              rfErrs.character_referrer_phone && 'Character referee phone',
+              rfErrs.character_referrer_email && 'Character referee email',
+              rfErrs.character_referrer_relationship && 'Character referee relationship',
             ].filter(Boolean);
             if (missingLabels.length) {
               errorMessage = `Please complete: ${missingLabels.join(', ')}`;
@@ -356,7 +367,7 @@ const VerifyAccountPage = () => {
                   <li>• Our verification team will review your documents</li>
                   <li>• You'll receive an email notification with the result</li>
                   <li>• Once verified, you'll unlock all platform features</li>
-                  <li>• Referrers will receive their 5 coin reward</li>
+                  <li>• Referees will receive their 5 coin reward</li>
                 </ul>
               </div>
 
@@ -567,6 +578,9 @@ const VerifyAccountPage = () => {
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Recent work photos (min 2)</label>
                           <input type="file" accept="image/*" multiple onChange={(e)=>handleWorkPhotosSelect(e.target.files)} />
+                          {Array.isArray(workPhotos) && workPhotos.length > 0 && (
+                            <p className="text-xs text-gray-500 mt-1">Selected {workPhotos.length} of 6</p>
+                          )}
                           {selfErrors.work_photos && (<p className="text-xs text-red-600 mt-1">{selfErrors.work_photos}</p>)}
                         </div>
                         <div>
@@ -578,30 +592,30 @@ const VerifyAccountPage = () => {
                           {/* Stack Character Referrer below Work Referrer on all screen sizes */}
                           <div className="space-y-6">
                             <div>
-                              <h5 className="font-medium mb-2">Work Referrer</h5>
+                              <h5 className="font-medium mb-2">Work Referee</h5>
                               <div className="space-y-3">
-                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Referrer name" value={workRef.name} onChange={(e)=>setWorkRef({...workRef, name: e.target.value})} />
+                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Referee name" value={workRef.name} onChange={(e)=>setWorkRef({...workRef, name: e.target.value})} />
                                 {refErrors.work_referrer_name && (<p className="text-xs text-red-600 mt-1">{refErrors.work_referrer_name}</p>)}
-                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Referrer phone" value={workRef.phone} onChange={(e)=>setWorkRef({...workRef, phone: e.target.value})} />
+                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Referee phone" value={workRef.phone} onChange={(e)=>setWorkRef({...workRef, phone: e.target.value})} />
                                 {refErrors.work_referrer_phone && (<p className="text-xs text-red-600 mt-1">{refErrors.work_referrer_phone}</p>)}
-                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Company email" value={workRef.company_email} onChange={(e)=>setWorkRef({...workRef, company_email: e.target.value})} />
+                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Company email (referee)" value={workRef.company_email} onChange={(e)=>setWorkRef({...workRef, company_email: e.target.value})} />
                                 {refErrors.work_referrer_company_email && (<p className="text-xs text-red-600 mt-1">{refErrors.work_referrer_company_email}</p>)}
-                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Company name" value={workRef.company_name} onChange={(e)=>setWorkRef({...workRef, company_name: e.target.value})} />
+                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Company name (referee)" value={workRef.company_name} onChange={(e)=>setWorkRef({...workRef, company_name: e.target.value})} />
                                 {refErrors.work_referrer_company_name && (<p className="text-xs text-red-600 mt-1">{refErrors.work_referrer_company_name}</p>)}
-                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Relationship" value={workRef.relationship} onChange={(e)=>setWorkRef({...workRef, relationship: e.target.value})} />
+                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Relationship to referee" value={workRef.relationship} onChange={(e)=>setWorkRef({...workRef, relationship: e.target.value})} />
                                 {refErrors.work_referrer_relationship && (<p className="text-xs text-red-600 mt-1">{refErrors.work_referrer_relationship}</p>)}
                               </div>
                             </div>
                             <div>
-                              <h5 className="font-medium mb-2">Character Referrer</h5>
+                              <h5 className="font-medium mb-2">Character Referee</h5>
                               <div className="space-y-3">
-                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Referrer name" value={charRef.name} onChange={(e)=>setCharRef({...charRef, name: e.target.value})} />
+                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Referee name" value={charRef.name} onChange={(e)=>setCharRef({...charRef, name: e.target.value})} />
                                 {refErrors.character_referrer_name && (<p className="text-xs text-red-600 mt-1">{refErrors.character_referrer_name}</p>)}
-                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Referrer phone" value={charRef.phone} onChange={(e)=>setCharRef({...charRef, phone: e.target.value})} />
+                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Referee phone" value={charRef.phone} onChange={(e)=>setCharRef({...charRef, phone: e.target.value})} />
                                 {refErrors.character_referrer_phone && (<p className="text-xs text-red-600 mt-1">{refErrors.character_referrer_phone}</p>)}
-                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Referrer email" value={charRef.email} onChange={(e)=>setCharRef({...charRef, email: e.target.value})} />
+                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Referee email" value={charRef.email} onChange={(e)=>setCharRef({...charRef, email: e.target.value})} />
                                 {refErrors.character_referrer_email && (<p className="text-xs text-red-600 mt-1">{refErrors.character_referrer_email}</p>)}
-                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Relationship" value={charRef.relationship} onChange={(e)=>setCharRef({...charRef, relationship: e.target.value})} />
+                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Relationship to referee" value={charRef.relationship} onChange={(e)=>setCharRef({...charRef, relationship: e.target.value})} />
                                 {refErrors.character_referrer_relationship && (<p className="text-xs text-red-600 mt-1">{refErrors.character_referrer_relationship}</p>)}
                               </div>
                             </div>
