@@ -3642,21 +3642,29 @@ class Database:
         return record["id"]
 
     async def get_pending_tradespeople_verifications(self, skip: int = 0, limit: int = 20) -> List[dict]:
-        """Get pending tradespeople references verifications for admin"""
+        """Get pending tradespeople verifications for admin, deduped by user_id (latest first)."""
+        # Fetch all pending verifications sorted by most recent submission
         cursor = self.tradespeople_verifications_collection.find({
             "status": "pending"
-        }).sort("submitted_at", -1).skip(skip).limit(limit)
+        }).sort("submitted_at", -1)
 
-        items: List[dict] = []
+        deduped: List[dict] = []
+        seen_users = set()
         async for v in cursor:
+            user_id = v.get("user_id")
+            if user_id in seen_users:
+                continue
+            seen_users.add(user_id)
             v["_id"] = str(v.get("_id"))
-            user = await self.get_user_by_id(v.get("user_id"))
+            user = await self.get_user_by_id(user_id)
             if user:
                 v["user_name"] = user.get("name")
                 v["user_email"] = user.get("email")
                 v["user_phone"] = user.get("phone")
-            items.append(v)
-        return items
+            deduped.append(v)
+
+        # Apply pagination on the deduped list to keep API contract
+        return deduped[skip: skip + limit]
 
     async def has_tradesperson_references(self, user_id: str) -> bool:
         if self.database is None:
@@ -3692,10 +3700,15 @@ class Database:
             "updated_at": datetime.utcnow(),
         }
         await self.tradespeople_verifications_collection.insert_one(record)
+        # Supersede any older pending entries for the same user
+        await self.tradespeople_verifications_collection.update_many(
+            {"user_id": record.get("user_id"), "status": "pending", "id": {"$ne": record["id"]}},
+            {"$set": {"status": "superseded", "superseded_by": record["id"], "updated_at": datetime.utcnow()}}
+        )
         return record["id"]
 
     async def approve_tradesperson_verification(self, verification_id: str, admin_id: str, admin_notes: str = "") -> bool:
-        """Approve tradesperson references and mark user verified_tradesperson"""
+        """Approve tradesperson verification and mark user verified_tradesperson. Supersede other pending entries."""
         v = await self.tradespeople_verifications_collection.find_one({"id": verification_id})
         if not v:
             return False
@@ -3716,10 +3729,15 @@ class Database:
             {"id": v.get("user_id")},
             {"$set": {"verified_tradesperson": True, "is_verified": True, "updated_at": datetime.utcnow()}}
         )
+        # Cascade: supersede any other pending verifications for the same user
+        await self.tradespeople_verifications_collection.update_many(
+            {"user_id": v.get("user_id"), "status": "pending", "id": {"$ne": verification_id}},
+            {"$set": {"status": "superseded", "superseded_by": verification_id, "updated_at": datetime.utcnow()}}
+        )
         return True
 
     async def reject_tradesperson_verification(self, verification_id: str, admin_id: str, admin_notes: str) -> bool:
-        """Reject tradesperson references"""
+        """Reject tradesperson verification and supersede other pending entries for the same user."""
         v = await self.tradespeople_verifications_collection.find_one({"id": verification_id})
         if not v:
             return False
@@ -3733,6 +3751,11 @@ class Database:
                 "updated_at": datetime.utcnow()
             }}
         )
+        if result.modified_count > 0:
+            await self.tradespeople_verifications_collection.update_many(
+                {"user_id": v.get("user_id"), "status": "pending", "id": {"$ne": verification_id}},
+                {"$set": {"status": "superseded", "superseded_by": verification_id, "updated_at": datetime.utcnow()}}
+            )
         return result.modified_count > 0
         
         # Check if total wallet balance >= 5 coins (lowered minimum for flexibility)
