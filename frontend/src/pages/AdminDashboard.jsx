@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { adminAPI, walletAPI } from '../api/wallet';
 import { adminReferralsAPI, adminVerificationAPI } from '../api/referrals';
+import { getTradespeopleVerificationFileBase64 } from '../api/tradespeopleVerificationBase64';
 import { useToast } from '../hooks/use-toast';
 import ContactManagementTab from './ContactManagementTab';
 import TradeCategoryQuestionsManager from '../components/admin/TradeCategoryQuestionsManager';
@@ -28,6 +29,7 @@ const AdminDashboard = () => {
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [editingJob, setEditingJob] = useState(null);
   const [selectedVerification, setSelectedVerification] = useState(null);
+  const [verificationFileBase64, setVerificationFileBase64] = useState({});
   
   // Location & Trades Management state
   const [activeLocationTab, setActiveLocationTab] = useState('states');
@@ -210,6 +212,44 @@ const AdminDashboard = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Preload tradespeople verification files (photos/documents) as Base64 for display
+  useEffect(() => {
+    if (!isLoggedIn || activeTab !== 'tradespeople_verification') return;
+    const filenames = new Set();
+    tradespeopleVerifications.forEach((v) => {
+      if (Array.isArray(v.work_photos)) v.work_photos.forEach((f) => f && filenames.add(f));
+      if (v.documents) Object.values(v.documents).forEach((f) => f && filenames.add(f));
+    });
+    Array.from(filenames).forEach(async (f) => {
+      if (!verificationFileBase64[f]) {
+        try {
+          const dataUrl = await getTradespeopleVerificationFileBase64(f);
+          setVerificationFileBase64((prev) => ({ ...prev, [f]: dataUrl }));
+        } catch (err) {
+          console.error('Failed to fetch verification file', f, err);
+        }
+      }
+    });
+  }, [isLoggedIn, activeTab, tradespeopleVerifications, verificationFileBase64]);
+
+  const openVerificationFileInNewTab = async (filename) => {
+    try {
+      let dataUrl = verificationFileBase64[filename];
+      if (!dataUrl) {
+        dataUrl = await getTradespeopleVerificationFileBase64(filename);
+        setVerificationFileBase64((prev) => ({ ...prev, [filename]: dataUrl }));
+      }
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.click();
+    } catch (err) {
+      console.error('Failed to open verification file', filename, err);
+      toast({ title: 'Failed to open file', variant: 'destructive' });
     }
   };
 
@@ -1976,13 +2016,22 @@ const AdminDashboard = () => {
                                   <p className="text-sm text-gray-600 mb-2">Recent Work Photos:</p>
                                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                                     {v.work_photos.map((photo, idx) => (
-                                      <img
-                                        key={`${photo}-${idx}`}
-                                        src={adminVerificationAPI.getTradespeopleVerificationFileUrl(photo)}
-                                        alt={`Work photo ${idx + 1}`}
-                                        className="h-28 w-full object-cover rounded border cursor-pointer hover:shadow-lg transition-shadow"
-                                        onClick={() => window.open(adminVerificationAPI.getTradespeopleVerificationFileUrl(photo), '_blank')}
-                                      />
+                                      verificationFileBase64[photo] ? (
+                                        <img
+                                          key={`${photo}-${idx}`}
+                                          src={verificationFileBase64[photo]}
+                                          alt={`Work photo ${idx + 1}`}
+                                          className="h-28 w-full object-cover rounded border cursor-pointer hover:shadow-lg transition-shadow"
+                                          onClick={() => openVerificationFileInNewTab(photo)}
+                                        />
+                                      ) : (
+                                        <div
+                                          key={`${photo}-${idx}`}
+                                          className="h-28 w-full bg-gray-100 rounded border flex items-center justify-center text-xs text-gray-500"
+                                        >
+                                          Loading…
+                                        </div>
+                                      )
                                     ))}
                                   </div>
                                 </div>
@@ -1995,15 +2044,14 @@ const AdminDashboard = () => {
                                   <div className="flex flex-wrap gap-2">
                                     {Object.entries(v.documents).map(([label, filename]) => (
                                       filename ? (
-                                        <a
+                                        <button
                                           key={label}
-                                          href={adminVerificationAPI.getTradespeopleVerificationFileUrl(filename)}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
+                                          type="button"
+                                          onClick={() => openVerificationFileInNewTab(filename)}
                                           className="text-blue-600 hover:text-blue-700 text-sm underline"
                                         >
                                           {label.replace(/_/g, ' ')}
-                                        </a>
+                                        </button>
                                       ) : null
                                     ))}
                                   </div>
