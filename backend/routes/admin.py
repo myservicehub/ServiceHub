@@ -2079,6 +2079,39 @@ async def view_verification_document(filename: str, admin: dict = Depends(requir
     
     return FileResponse(file_path, media_type="image/jpeg")
 
+@router.get("/tradespeople-verifications/document/{filename}")
+async def view_tradespeople_verification_file(filename: str, admin: dict = Depends(require_permission(AdminPermission.VERIFY_USERS))):
+    """Serve tradespeople verification files (images or PDFs) for admin review"""
+    from fastapi.responses import FileResponse
+    import os
+
+    # Resolve common locations where uploads may be stored across environments
+    base_dir = os.environ.get("UPLOADS_DIR", os.path.join(os.getcwd(), "uploads"))
+    # Project root uploads (when running from backend directory)
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    project_uploads = os.path.join(project_root, "uploads")
+
+    candidates = [
+        os.path.join(base_dir, "tradespeople_verifications", filename),
+        os.path.join(project_uploads, "tradespeople_verifications", filename),
+        os.path.join(os.getcwd(), "uploads", "tradespeople_verifications", filename),
+        os.path.join("/app", "uploads", "tradespeople_verifications", filename),
+    ]
+
+    for fp in candidates:
+        if os.path.exists(fp):
+            ext = os.path.splitext(fp)[1].lower()
+            media_type = "application/octet-stream"
+            if ext in (".jpg", ".jpeg"):
+                media_type = "image/jpeg"
+            elif ext == ".png":
+                media_type = "image/png"
+            elif ext == ".pdf":
+                media_type = "application/pdf"
+            return FileResponse(fp, media_type=media_type)
+
+    raise HTTPException(status_code=404, detail="Tradespeople verification file not found")
+
 # ==========================================
 # TRADESPEOPLE REFERENCES VERIFICATION (ADMIN)
 # ==========================================

@@ -1959,9 +1959,57 @@ const AdminDashboard = () => {
                                   <p>Email: {v.character_referrer?.email}</p>
                                   <p>Relationship: {v.character_referrer?.relationship}</p>
                                 </div>
+                                {(v.business_type || v.residential_address || v.company_address) && (
+                                  <div className="mt-3">
+                                    <h4 className="font-semibold">Business Details</h4>
+                                    {v.business_type && (<p>Type: {v.business_type}</p>)}
+                                    {v.residential_address && (<p>Residential Address: {v.residential_address}</p>)}
+                                    {v.company_address && (<p>Company Address: {v.company_address}</p>)}
+                                  </div>
+                                )}
                               </div>
                             </div>
                             <div>
+                              {/* Uploaded work photos */}
+                              {Array.isArray(v.work_photos) && v.work_photos.length > 0 && (
+                                <div className="mb-4">
+                                  <p className="text-sm text-gray-600 mb-2">Recent Work Photos:</p>
+                                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                    {v.work_photos.map((photo, idx) => (
+                                      <img
+                                        key={`${photo}-${idx}`}
+                                        src={adminVerificationAPI.getTradespeopleVerificationFileUrl(photo)}
+                                        alt={`Work photo ${idx + 1}`}
+                                        className="h-28 w-full object-cover rounded border cursor-pointer hover:shadow-lg transition-shadow"
+                                        onClick={() => window.open(adminVerificationAPI.getTradespeopleVerificationFileUrl(photo), '_blank')}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Submitted documents */}
+                              {v.documents && Object.keys(v.documents).length > 0 && (
+                                <div className="mb-4">
+                                  <p className="text-sm text-gray-600 mb-2">Submitted Documents:</p>
+                                  <div className="flex flex-wrap gap-2">
+                                    {Object.entries(v.documents).map(([label, filename]) => (
+                                      filename ? (
+                                        <a
+                                          key={label}
+                                          href={adminVerificationAPI.getTradespeopleVerificationFileUrl(filename)}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-blue-600 hover:text-blue-700 text-sm underline"
+                                        >
+                                          {label.replace(/_/g, ' ')}
+                                        </a>
+                                      ) : null
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
                               <div className="flex space-x-2">
                                 <button
                                   onClick={async () => {

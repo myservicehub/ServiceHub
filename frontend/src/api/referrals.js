@@ -136,4 +136,9 @@ export const adminVerificationAPI = {
     });
     return response.data;
   },
+  // Build URL to view tradespeople verification files (work photos, documents)
+  getTradespeopleVerificationFileUrl(filename) {
+    const base = (process.env.REACT_APP_BACKEND_URL ? process.env.REACT_APP_BACKEND_URL + '/api' : (apiClient?.defaults?.baseURL || '/api'));
+    return `${base}/admin/tradespeople-verifications/document/${filename}`;
+  }
 };
