@@ -129,15 +129,39 @@ async def upload_portfolio_image(
 @router.get("/images/{filename}")
 async def get_portfolio_image(filename: str):
     """Serve portfolio images"""
-    file_path = UPLOAD_DIR / filename
-    if not file_path.exists():
-        raise HTTPException(status_code=404, detail="Image not found")
-    
-    return FileResponse(
-        path=file_path,
-        media_type="image/jpeg",
-        headers={"Cache-Control": "public, max-age=3600"}
-    )
+    # Resolve common locations where uploads may be stored across environments
+    base_dir = os.environ.get("UPLOADS_DIR", os.path.join(os.getcwd(), "uploads"))
+    # Project root uploads (when running from backend directory)
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    project_uploads = os.path.join(project_root, "uploads")
+
+    # Also check backend/uploads to cover cases where app was launched from backend dir
+    backend_uploads = os.path.join(project_root, "backend", "uploads")
+
+    candidates = [
+        os.path.join(base_dir, "portfolio", filename),
+        os.path.join(project_uploads, "portfolio", filename),
+        os.path.join(backend_uploads, "portfolio", filename),
+        os.path.join(os.getcwd(), "uploads", "portfolio", filename),
+        os.path.join("/app", "uploads", "portfolio", filename),
+    ]
+
+    for fp in candidates:
+        if os.path.exists(fp):
+            # Determine media type by extension; default to JPEG as images are saved as .jpg
+            ext = os.path.splitext(fp)[1].lower()
+            media_type = "image/jpeg" if ext in (".jpg", ".jpeg") else (
+                "image/png" if ext == ".png" else (
+                    "image/webp" if ext == ".webp" else "application/octet-stream"
+                )
+            )
+            return FileResponse(
+                path=fp,
+                media_type=media_type,
+                headers={"Cache-Control": "public, max-age=3600"}
+            )
+
+    raise HTTPException(status_code=404, detail="Image not found")
 
 @router.get("/my-portfolio", response_model=PortfolioResponse)
 async def get_my_portfolio(

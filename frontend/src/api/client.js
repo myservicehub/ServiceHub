@@ -138,6 +138,9 @@ apiClient.interceptors.response.use(
 
     const status = response.status;
     const originalRequest = config;
+    const hasToken = !!localStorage.getItem('token');
+    const detail = response.data?.detail;
+    const isAuthLike403 = status === 403 && typeof detail === 'string' && detail.toLowerCase().includes('not authenticated');
 
     // Do not try to refresh for auth endpoints
     const isAuthEndpoint = originalRequest.url?.includes('/auth/login') ||
@@ -146,28 +149,39 @@ apiClient.interceptors.response.use(
 
     // If admin endpoint (including admin-management), handle separately: clear admin token and redirect to admin login
     const isAdminEndpoint = originalRequest.url?.includes('/admin') || originalRequest.url?.includes('/admin-management');
-    if (status === 401 && isAdminEndpoint) {
+    if ((status === 401 || status === 403) && isAdminEndpoint) {
       console.warn('🔒 Admin endpoint unauthorized. Clearing admin token and redirecting to admin login.');
-      forceAdminLogout();
+      if (localStorage.getItem('admin_token')) {
+        forceAdminLogout();
+      }
       return Promise.reject(error);
     }
 
-    if (status !== 401 || isAuthEndpoint) {
+    // Treat certain 403 responses from backend as authentication errors (similar to 401)
+    if (!(status === 401 || isAuthLike403) || isAuthEndpoint) {
       console.error('❌ API Response Error:', response.data || response.statusText);
       return Promise.reject(error);
     }
 
     // Prevent infinite loop
     if (originalRequest._retry) {
-      console.error('⚠️ Request already retried and still unauthorized. Forcing logout.');
-      forceLogout();
+      console.error('⚠️ Request already retried and still unauthorized.');
+      if (hasToken) {
+        console.warn('Forcing logout due to repeated auth failure.');
+        forceLogout();
+      }
       return Promise.reject(error);
     }
 
     const storedRefreshToken = localStorage.getItem('refresh_token');
     if (!storedRefreshToken) {
-      console.error('⚠️ No refresh token available. Forcing logout.');
-      forceLogout();
+      console.error('⚠️ No refresh token available.');
+      if (hasToken) {
+        console.warn('User token present but refresh missing. Forcing logout.');
+        forceLogout();
+      } else {
+        console.warn('No user token stored; skipping forced logout.');
+      }
       return Promise.reject(error);
     }
 
