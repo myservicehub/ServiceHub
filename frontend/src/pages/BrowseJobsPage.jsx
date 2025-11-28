@@ -394,6 +394,11 @@ const BrowseJobsPage = () => {
       
       // Handle different error response formats with more specific messages
       let errorMessage = "There was an error showing interest. Please try again.";
+
+      // Provide clearer guidance when verification gating blocks the action
+      if (error.response?.status === 403) {
+        errorMessage = "Business verification required. Please complete verification to accept jobs.";
+      }
       
       if (error.response?.data?.detail) {
         const detail = error.response.data.detail;

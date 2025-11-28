@@ -1924,13 +1924,6 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
             >
               I have an account - Sign In
             </Button>
-            <Button
-              onClick={() => setShowAccountModal(false)}
-              variant="ghost"
-              className="w-full text-gray-500 font-lato text-sm"
-            >
-              Skip for now
-            </Button>
           </div>
         </div>
       </div>

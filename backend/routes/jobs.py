@@ -4,7 +4,12 @@ from typing import Optional
 from ..models import JobCreate, JobUpdate, JobCloseRequest, Job, JobsResponse
 from ..models.base import JobStatus
 from ..models.notifications import NotificationType
-from ..auth.dependencies import get_current_homeowner, require_homeowner_contact_verified, require_tradesperson_verified
+from ..auth.dependencies import (
+    get_current_homeowner,
+    get_current_tradesperson,
+    require_homeowner_contact_verified,
+    require_tradesperson_verified,
+)
 from ..auth.security import (
     get_password_hash,
     validate_password_strength,
@@ -221,7 +226,7 @@ async def get_nearby_jobs(
 async def get_jobs_for_tradesperson(
     skip: int = Query(0, ge=0, description="Number of items to skip"),
     limit: int = Query(50, ge=1, le=100, description="Number of items to return"),
-    current_user: User = Depends(require_tradesperson_verified)
+    current_user: User = Depends(get_current_tradesperson)
 ):
     """Get jobs filtered by tradesperson's skills and location preferences"""
     try:

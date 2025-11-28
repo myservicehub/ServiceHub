@@ -48,14 +48,16 @@ async def get_my_referrals(
 
 @router.post("/verify-documents")
 async def submit_verification_documents(
-    document_type: DocumentType = Form(...),
+    document_type: str = Form(...),
     full_name: str = Form(...),
     document_number: str = Form(""),
     document_image: UploadFile = File(None),
     document_image_base64: str = Form(None),
     current_user = Depends(get_current_user)
 ):
-    """Submit documents for identity verification"""
+    """Submit documents for identity verification
+    Accept common aliases like 'NIN', 'PVC', and 'Driver's licence'.
+    """
     
     # Check if user already has pending or verified submission
     existing = await database.user_verifications_collection.find_one({
@@ -73,6 +75,44 @@ async def submit_verification_documents(
         raise HTTPException(status_code=400, detail="Document image is required")
     if document_image and not document_image.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="Only image files are allowed")
+
+    # Normalize document type to backend canonical values
+    def _normalize_doc_type(value: str) -> str:
+        v = (value or "").strip().lower()
+        v = v.replace(" ", "_").replace("-", "_")
+        aliases = {
+            # National ID (NIN)
+            "nin": "national_id",
+            "national_id": "national_id",
+            "nationalid": "national_id",
+            # Voters Card (PVC)
+            "pvc": "voters_card",
+            "voters_card": "voters_card",
+            "voter_card": "voters_card",
+            # Driver's License
+            "drivers_license": "drivers_license",
+            "driver_license": "drivers_license",
+            "driving_license": "drivers_license",
+            "drivers_licence": "drivers_license",
+            "driver_licence": "drivers_license",
+            # Passport
+            "passport": "passport",
+            # Business Registration / CAC
+            "business_registration": "business_registration",
+            "cac": "business_registration",
+            "cac_certificate": "business_registration",
+        }
+        return aliases.get(v)
+
+    normalized_type = _normalize_doc_type(document_type)
+    if not normalized_type:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Invalid document type. Use one of: passport, national_id (NIN), "
+                "drivers_license, voters_card (PVC), business_registration."
+            ),
+        )
     
     base_dir = os.environ.get("UPLOADS_DIR", os.path.join(os.getcwd(), "uploads"))
     upload_dir = os.path.join(base_dir, "verification_documents")
@@ -107,7 +147,7 @@ async def submit_verification_documents(
     # Submit verification
     verification_id = await database.submit_verification_documents(
         user_id=current_user.id,
-        document_type=document_type,
+        document_type=normalized_type,
         document_url=filename,
         full_name=full_name,
         document_number=document_number
