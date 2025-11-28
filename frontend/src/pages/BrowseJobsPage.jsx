@@ -220,23 +220,24 @@ const BrowseJobsPage = () => {
         typeof userLocation.lat === 'number' &&
         typeof userLocation.lng === 'number'
       ) {
-        // Use location-based job fetching
-        const params = new URLSearchParams({
-          latitude: userLocation.lat.toString(),
-          longitude: userLocation.lng.toString(),
-          max_distance_km: filters.maxDistance.toString(),
-          limit: '50',
-          skip: ((page - 1) * 50).toString()
-        });
-
-        if (filters.search) params.append('q', filters.search);
-        if (filters.category) params.append('category', filters.category);
-
-        const url = filters.search || filters.category 
-          ? `/jobs/search?${params.toString()}`
-          : `/jobs/nearby?${params.toString()}`;
-
-        response = await jobsAPI.apiClient.get(url);
+        // When a search or category filter is applied, use the search endpoint with location params.
+        // Otherwise, use the tradesperson endpoint which blends nearby and unlocated jobs
+        // based on the user's saved location and travel distance.
+        if (filters.search || filters.category) {
+          const params = new URLSearchParams({
+            latitude: userLocation.lat.toString(),
+            longitude: userLocation.lng.toString(),
+            max_distance_km: filters.maxDistance.toString(),
+            limit: '50',
+            skip: ((page - 1) * 50).toString()
+          });
+          if (filters.search) params.append('q', filters.search);
+          if (filters.category) params.append('category', filters.category);
+          response = await jobsAPI.apiClient.get(`/jobs/search?${params.toString()}`);
+        } else {
+          const skip = (page - 1) * 50;
+          response = await jobsAPI.apiClient.get(`/jobs/for-tradesperson?limit=50&skip=${skip}`);
+        }
       } else {
         // Use regular job fetching for tradespeople
         const skip = (page - 1) * 50;
@@ -325,6 +326,44 @@ const BrowseJobsPage = () => {
         description: "Failed to update location settings",
         variant: "destructive"
       });
+    }
+  };
+
+  // Persist slider changes to travel_distance_km using current/saved coordinates
+  const commitTravelDistanceChange = async (distanceKm) => {
+    try {
+      if (!filters.useLocation) return; // only persist when location filter is enabled
+
+      let lat = userLocation?.lat;
+      let lng = userLocation?.lng;
+
+      // Fallback to saved coordinates on user profile
+      if (typeof lat !== 'number' || typeof lng !== 'number') {
+        if (typeof user?.latitude === 'number' && typeof user?.longitude === 'number') {
+          lat = user.latitude;
+          lng = user.longitude;
+        } else if (user?.location) {
+          const coords = resolveCoordinatesFromLocationText(user.location);
+          if (coords && typeof coords.latitude === 'number' && typeof coords.longitude === 'number') {
+            lat = coords.latitude;
+            lng = coords.longitude;
+          }
+        }
+      }
+
+      if (typeof lat !== 'number' || typeof lng !== 'number') {
+        // If we still don't have coordinates, guide the user
+        toast({
+          title: "Set a location to save distance",
+          description: "Use GPS or Settings to set your home base.",
+          variant: "info"
+        });
+        return;
+      }
+
+      await updateLocationSettings(lat, lng, distanceKm);
+    } catch (err) {
+      console.error('Failed to persist travel distance:', err);
     }
   };
 
@@ -678,6 +717,13 @@ const BrowseJobsPage = () => {
                           max="100"
                           value={filters.maxDistance}
                           onChange={(e) => setFilters(prev => ({ ...prev, maxDistance: parseInt(e.target.value) }))}
+                          onMouseUp={(e) => commitTravelDistanceChange(parseInt(e.currentTarget.value))}
+                          onTouchEnd={(e) => commitTravelDistanceChange(parseInt(e.currentTarget.value))}
+                          onKeyUp={(e) => {
+                            if (['Enter', ' ', 'Spacebar'].includes(e.key)) {
+                              commitTravelDistanceChange(parseInt(e.currentTarget.value));
+                            }
+                          }}
                           className="w-20"
                         />
                         <span className="text-sm font-medium text-gray-700 font-lato w-8">
