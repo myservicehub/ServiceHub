@@ -40,20 +40,17 @@ const LocationPicker = ({
       });
       
       // Access environment variable the correct way for React
-      let apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
+      const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
       
-      console.log('LocationPicker: Google Maps API Key available:', !!apiKey);
+      console.log('LocationPicker: Google Maps API Key available:', !!apiKey, {
+        host: window.location?.host,
+        referrer: document?.referrer
+      });
       
-      // Fallback to hardcoded key if environment variable is not available
-      // This ensures the maps work while we debug the environment variable issue
+      // Require a configured key; no hardcoded fallback to avoid domain-restriction mismatches
       if (!apiKey) {
-        apiKey = 'AIzaSyDf53OPDNVCQVti3M6enDzNiNIssWl3EUU';
-        console.log('LocationPicker: Using fallback API key');
-      }
-      
-      if (!apiKey) {
-        console.error('Google Maps API key not found. Checked import.meta.env and process.env.');
-        setError('Google Maps API key not configured. Please contact support.');
+        console.error('Google Maps API key not found in environment variables.');
+        setError('Google Maps API key not configured. Please set REACT_APP_GOOGLE_MAPS_API_KEY in your deployment.');
         setLoading(false);
         return;
       }
@@ -186,6 +183,8 @@ const LocationPicker = ({
           errorMessage = 'Google Maps billing issue';
         } else if (error.message.includes('referer')) {
           errorMessage = 'Domain not authorized for this API key';
+        } else if (error.message.includes('RefererNotAllowedMapError')) {
+          errorMessage = 'Domain not authorized for this API key (Referrer not allowed)';
         } else {
           errorMessage = error.message;
         }
