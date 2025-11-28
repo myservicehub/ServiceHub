@@ -2091,9 +2091,13 @@ async def view_tradespeople_verification_file(filename: str, admin: dict = Depen
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     project_uploads = os.path.join(project_root, "uploads")
 
+    # Also check backend/uploads to cover cases where app was launched from backend dir
+    backend_uploads = os.path.join(project_root, "backend", "uploads")
+
     candidates = [
         os.path.join(base_dir, "tradespeople_verifications", filename),
         os.path.join(project_uploads, "tradespeople_verifications", filename),
+        os.path.join(backend_uploads, "tradespeople_verifications", filename),
         os.path.join(os.getcwd(), "uploads", "tradespeople_verifications", filename),
         os.path.join("/app", "uploads", "tradespeople_verifications", filename),
     ]

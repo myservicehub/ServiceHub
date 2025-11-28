@@ -1609,7 +1609,14 @@ async def submit_tradesperson_verification(
     designated_partners: str = Form(None),
     current_user=Depends(get_current_tradesperson)
 ):
-    base_dir = os.environ.get("UPLOADS_DIR", os.path.join(os.getcwd(), "uploads"))
+    # Resolve a consistent uploads directory across environments
+    # Priority: explicit env var → project root uploads → CWD uploads
+    env_uploads = os.environ.get("UPLOADS_DIR")
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    project_uploads = os.path.join(project_root, "uploads")
+    cwd_uploads = os.path.join(os.getcwd(), "uploads")
+
+    base_dir = env_uploads or (project_uploads if os.path.isdir(project_uploads) else cwd_uploads)
     upload_dir = os.path.join(base_dir, "tradespeople_verifications")
     os.makedirs(upload_dir, exist_ok=True)
     async def _save_file(f: UploadFile) -> Optional[str]:
