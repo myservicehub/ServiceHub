@@ -6,7 +6,7 @@ import { authAPI } from '../api/services';
 import { useToast } from '../hooks/use-toast';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, Clock } from 'lucide-react';
 import { Button } from '../components/ui/button';
 
 const VerifyAccountPage = () => {
@@ -62,6 +62,18 @@ const VerifyAccountPage = () => {
   // Inline validation errors
   const [selfErrors, setSelfErrors] = useState({});
   const [refErrors, setRefErrors] = useState({});
+
+  // Derived verification flag (supports both fields used across app)
+  const isTradespersonVerified = !!(user?.verified_tradesperson || user?.is_verified);
+
+  // Refresh user data on page load to ensure latest verification status
+  useEffect(() => {
+    try {
+      if (typeof getCurrentUser === 'function') {
+        getCurrentUser();
+      }
+    } catch {}
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -406,6 +418,27 @@ const VerifyAccountPage = () => {
             <p className="text-gray-600">Verify your email and phone. Tradespeople complete business verification and references.</p>
           </div>
 
+          {/* Current Verification Status for Tradespeople */}
+          {user?.role === 'tradesperson' && (
+            <div className="bg-white p-6 rounded-lg shadow-sm border mb-8">
+              <h3 className="text-lg font-semibold text-gray-800 mb-3">Current Verification Status</h3>
+              {isTradespersonVerified ? (
+                <div className="flex items-center space-x-3 text-green-700">
+                  <CheckCircle size={20} className="text-green-600" />
+                  <span className="font-medium">Account Verified</span>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-3 text-yellow-700">
+                  <Clock size={20} className="text-yellow-600" />
+                  <span className="font-medium">Verification Pending</span>
+                </div>
+              )}
+              {!isTradespersonVerified && (
+                <p className="text-sm text-gray-600 mt-2">Your documents are under review. You'll be notified once approved.</p>
+              )}
+            </div>
+          )}
+
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Main Form */}
             <div className="lg:col-span-2">
@@ -541,7 +574,7 @@ const VerifyAccountPage = () => {
 
               
 
-              {user?.role === 'tradesperson' && (
+              {user?.role === 'tradesperson' && !isTradespersonVerified && (
                 <div className="bg-white p-6 rounded-lg shadow-sm border mt-6">
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">Business Verification</h3>
                   <div className="space-y-4">
