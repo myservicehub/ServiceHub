@@ -74,6 +74,11 @@ export const authAPI = {
     return response.data;
   },
 
+  getTradespersonVerificationStatus: async () => {
+    const response = await apiClient.get('/auth/tradesperson-verification/status');
+    return response.data;
+  },
+
   submitTradespersonVerification: async (payload) => {
     const formData = new FormData();
     if (payload.business_type) formData.append('business_type', payload.business_type);

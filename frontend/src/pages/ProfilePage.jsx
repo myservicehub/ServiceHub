@@ -54,6 +54,12 @@ const ProfilePage = () => {
   const [otpSending, setOtpSending] = useState(false);
   const [otpVerifying, setOtpVerifying] = useState(false);
   
+  // Email OTP states
+  const [emailOtpMode, setEmailOtpMode] = useState(false);
+  const [emailOtpCode, setEmailOtpCode] = useState('');
+  const [emailOtpSending, setEmailOtpSending] = useState(false);
+  const [emailOtpVerifying, setEmailOtpVerifying] = useState(false);
+  
   // Portfolio states
   const [portfolioItems, setPortfolioItems] = useState([]);
   const [portfolioLoading, setPortfolioLoading] = useState(false);
@@ -168,6 +174,42 @@ const ProfilePage = () => {
       toast({ title: 'Verification failed', description: msg, variant: 'destructive' });
     } finally {
       setOtpVerifying(false);
+    }
+  };
+
+  const handleSendEmailOTP = async () => {
+    try {
+      setEmailOtpSending(true);
+      setEmailOtpMode(true);
+      const resp = await authAPI.sendEmailOTP(profileData?.email || null);
+      if (resp?.debug_code) {
+        setEmailOtpCode(resp.debug_code);
+        toast({ title: 'OTP sent', description: `Dev code: ${resp.debug_code}` });
+      } else {
+        toast({ title: 'OTP sent', description: 'Check your email for the verification code.' });
+      }
+    } catch (error) {
+      const msg = error?.response?.data?.detail || error.message || 'Failed to send code';
+      toast({ title: 'Failed to send code', description: msg, variant: 'destructive' });
+      setEmailOtpMode(true);
+    } finally {
+      setEmailOtpSending(false);
+    }
+  };
+
+  const handleVerifyEmailOTP = async () => {
+    try {
+      setEmailOtpVerifying(true);
+      await authAPI.verifyEmailOTP(emailOtpCode, profileData?.email || null);
+      toast({ title: 'Email verified', description: 'Your email address is now verified.' });
+      setEmailOtpMode(false);
+      setEmailOtpCode('');
+      setProfileData((prev) => ({ ...prev, email_verified: true }));
+    } catch (error) {
+      const msg = error?.response?.data?.detail || error.message || 'Invalid or expired code';
+      toast({ title: 'Verification failed', description: msg, variant: 'destructive' });
+    } finally {
+      setEmailOtpVerifying(false);
     }
   };
 
@@ -526,9 +568,41 @@ const ProfilePage = () => {
                           {profileData.email_verified ? (
                             <Badge className="bg-green-100 text-green-800 text-xs">Verified</Badge>
                           ) : (
-                            <Badge className="bg-yellow-100 text-yellow-800 text-xs">Unverified</Badge>
+                            <>
+                              <Badge className="bg-yellow-100 text-yellow-800 text-xs">Unverified</Badge>
+                              <Button size="sm" variant="outline" onClick={handleSendEmailOTP} disabled={emailOtpSending}>
+                                {emailOtpSending ? 'Sending…' : 'Verify Email'}
+                              </Button>
+                            </>
                           )}
                         </div>
+                        {!profileData.email_verified && emailOtpMode && (
+                          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 mt-2">
+                            <div className="w-full sm:w-auto">
+                              <InputOTP
+                                maxLength={6}
+                                value={emailOtpCode}
+                                onChange={(val) => setEmailOtpCode(val)}
+                              >
+                                <InputOTPGroup>
+                                  <InputOTPSlot index={0} />
+                                  <InputOTPSlot index={1} />
+                                  <InputOTPSlot index={2} />
+                                  <InputOTPSeparator />
+                                  <InputOTPSlot index={3} />
+                                  <InputOTPSlot index={4} />
+                                  <InputOTPSlot index={5} />
+                                </InputOTPGroup>
+                              </InputOTP>
+                            </div>
+                            <Button size="sm" className="w-full sm:w-auto" onClick={handleVerifyEmailOTP} disabled={emailOtpVerifying || emailOtpCode.length !== 6}>
+                              {emailOtpVerifying ? 'Verifying…' : 'Verify'}
+                            </Button>
+                            <Button size="sm" variant="ghost" className="w-full sm:w-auto" onClick={handleSendEmailOTP} disabled={emailOtpSending}>
+                              {emailOtpSending ? 'Sending…' : 'Resend'}
+                            </Button>
+                          </div>
+                        )}
                       </div>
 
                       {/* Phone Field */}

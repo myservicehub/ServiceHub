@@ -1769,3 +1769,25 @@ async def submit_tradesperson_verification(
             raise HTTPException(status_code=400, detail="Required fields missing for llp")
     vid = await database.submit_tradesperson_full_verification(payload)
     return {"message": "Verification submitted", "verification_id": vid, "status": "pending"}
+
+@router.get("/tradesperson-verification/status")
+async def get_tradesperson_verification_status(current_user=Depends(get_current_tradesperson)):
+    """Return the current user's tradesperson verification status."""
+    try:
+        status_info = await database.get_user_tradesperson_verification_status(current_user.id)
+        user_doc = await database.get_user_by_id(current_user.id)
+        # Combine flags for clarity
+        combined = {
+            "status": status_info.get("status", "not_submitted"),
+            "verification_submitted": bool(user_doc.get("verification_submitted")),
+            "verified_tradesperson": bool(user_doc.get("verified_tradesperson")),
+            "is_verified": bool(user_doc.get("is_verified")),
+            "identity_verified": bool(user_doc.get("identity_verified")),
+            "verification_id": status_info.get("verification_id"),
+            "submitted_at": status_info.get("submitted_at"),
+            "updated_at": status_info.get("updated_at"),
+        }
+        return combined
+    except Exception as e:
+        logger.error(f"Error fetching tradesperson verification status: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch verification status")

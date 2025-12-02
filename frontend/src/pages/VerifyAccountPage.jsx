@@ -15,6 +15,8 @@ const VerifyAccountPage = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState('');
+  const [statusLoading, setStatusLoading] = useState(false);
   const { toast } = useToast();
 
   // Email/Phone OTP states
@@ -74,6 +76,26 @@ const VerifyAccountPage = () => {
       }
     } catch {}
   }, []);
+
+  // Fetch tradesperson verification status from backend
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      if (user?.role !== 'tradesperson' || !isAuthenticated()) return;
+      try {
+        setStatusLoading(true);
+        const resp = await authAPI.getTradespersonVerificationStatus();
+        if (!mounted) return;
+        const st = resp?.status || '';
+        setVerificationStatus(st);
+      } catch (e) {
+        // Silently ignore status errors; UI will default to pending if flags indicate
+      } finally {
+        setStatusLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [user?.role, isAuthenticated]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -428,13 +450,31 @@ const VerifyAccountPage = () => {
                   <span className="font-medium">Account Verified</span>
                 </div>
               ) : (
-                <div className="flex items-center space-x-3 text-yellow-700">
-                  <Clock size={20} className="text-yellow-600" />
-                  <span className="font-medium">Verification Pending</span>
-                </div>
-              )}
-              {!isTradespersonVerified && (
-                <p className="text-sm text-gray-600 mt-2">Your documents are under review. You'll be notified once approved.</p>
+                <>
+                  {verificationStatus === 'rejected' ? (
+                    <div className="flex items-center space-x-3 text-red-700">
+                      <Clock size={20} className="text-red-600" />
+                      <span className="font-medium">Verification Rejected</span>
+                    </div>
+                  ) : verificationStatus === 'not_submitted' ? (
+                    <div className="flex items-center space-x-3 text-gray-700">
+                      <Clock size={20} className="text-gray-600" />
+                      <span className="font-medium">Not Submitted</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center space-x-3 text-yellow-700">
+                      <Clock size={20} className="text-yellow-600" />
+                      <span className="font-medium">Verification Pending</span>
+                    </div>
+                  )}
+                  <p className="text-sm text-gray-600 mt-2">
+                    {verificationStatus === 'rejected'
+                      ? 'Your submission was not approved. Please review notes and resubmit.'
+                      : verificationStatus === 'not_submitted'
+                        ? 'You have not submitted your business verification yet.'
+                        : 'Your documents are under review. You\'ll be notified once approved.'}
+                  </p>
+                </>
               )}
             </div>
           )}
@@ -577,6 +617,11 @@ const VerifyAccountPage = () => {
               {user?.role === 'tradesperson' && !isTradespersonVerified && (
                 <div className="bg-white p-6 rounded-lg shadow-sm border mt-6">
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">Business Verification</h3>
+                  {verificationStatus === 'rejected' && (
+                    <div className="mb-4 p-3 rounded border border-red-200 bg-red-50 text-red-700 text-sm">
+                      Your previous submission was rejected. Please correct issues and upload clear documents.
+                    </div>
+                  )}
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Business Type</label>

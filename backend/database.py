@@ -3460,15 +3460,38 @@ class Database:
         if result.modified_count == 0:
             return False
         
+        # Update user's identity verification flag regardless of role
+        try:
+            user_doc = await self.get_user_by_id(verification["user_id"])
+        except Exception:
+            user_doc = None
+        user_role = (user_doc or {}).get("role")
+
         if approved:
-            # Update user verification status
+            # Mark identity_verified for all roles
             await self.users_collection.update_one(
                 {"id": verification["user_id"]},
-                {"$set": {"is_verified": True}}
+                {"$set": {"identity_verified": True, "updated_at": datetime.utcnow()}}
             )
-            
-            # Process referral rewards
-            await self._process_referral_rewards(verification["user_id"])
+
+            # Only mark homeowners fully verified here.
+            if user_role == "homeowner":
+                await self.users_collection.update_one(
+                    {"id": verification["user_id"]},
+                    {"$set": {"is_verified": True, "updated_at": datetime.utcnow()}}
+                )
+                # Process referral rewards for homeowners upon verification
+                await self._process_referral_rewards(verification["user_id"])
+            # For tradespeople, keep is_verified gated by business approval
+        else:
+            # Rejection resets identity_verified and is_verified for homeowners
+            update_fields = {"identity_verified": False, "updated_at": datetime.utcnow()}
+            if user_role == "homeowner":
+                update_fields["is_verified"] = False
+            await self.users_collection.update_one(
+                {"id": verification["user_id"]},
+                {"$set": update_fields}
+            )
         
         return True
 
@@ -3713,6 +3736,15 @@ class Database:
             "updated_at": datetime.utcnow(),
         }
         await self.tradespeople_verifications_collection.insert_one(record)
+        # Mark on user profile that verification documents were submitted
+        try:
+            await self.users_collection.update_one(
+                {"id": payload.get("user_id")},
+                {"$set": {"verification_submitted": True, "updated_at": datetime.utcnow()}}
+            )
+        except Exception:
+            # Non-fatal: if this fails, submission record still exists
+            pass
         return record["id"]
 
     async def get_tradespeople_file_base64(self, filename: str) -> Optional[dict]:
@@ -3734,6 +3766,29 @@ class Database:
                     except Exception:
                         continue
         return None
+
+    async def get_user_tradesperson_verification_status(self, user_id: str) -> dict:
+        """Return latest tradesperson verification status for a user.
+        Status values: not_submitted | pending | verified | rejected
+        """
+        if self.database is None:
+            raise RuntimeError("Database unavailable: cannot query tradespeople verifications")
+        try:
+            cursor = self.tradespeople_verifications_collection.find({
+                "user_id": user_id
+            }).sort("submitted_at", -1).limit(1)
+            docs = await cursor.to_list(length=1)
+            doc = docs[0] if docs else None
+        except Exception:
+            doc = None
+
+        status = (doc or {}).get("status") or "not_submitted"
+        return {
+            "status": status,
+            "verification_id": (doc or {}).get("id"),
+            "submitted_at": (doc or {}).get("submitted_at"),
+            "updated_at": (doc or {}).get("updated_at"),
+        }
 
     async def approve_tradesperson_verification(self, verification_id: str, admin_id: str, admin_notes: str = "") -> bool:
         """Approve tradesperson references and mark user verified_tradesperson"""
@@ -3774,7 +3829,17 @@ class Database:
                 "updated_at": datetime.utcnow()
             }}
         )
-        return result.modified_count > 0
+        if result.modified_count == 0:
+            return False
+        # Ensure user is not marked verified when business verification is rejected
+        try:
+            await self.users_collection.update_one(
+                {"id": v.get("user_id")},
+                {"$set": {"verified_tradesperson": False, "is_verified": False, "updated_at": datetime.utcnow()}}
+            )
+        except Exception:
+            pass
+        return True
         
         # Check if total wallet balance >= 5 coins (lowered minimum for flexibility)
         total_coins = wallet.get("balance_coins", 0)

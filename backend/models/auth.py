@@ -28,6 +28,7 @@ class User(BaseModel):
     postcode: str
     email_verified: bool = False
     phone_verified: bool = False
+    identity_verified: bool = False
     avatar_url: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
@@ -115,6 +116,7 @@ class UserProfile(BaseModel):
     postcode: str
     email_verified: bool
     phone_verified: bool
+    identity_verified: bool = False
     avatar_url: Optional[str] = None
     created_at: datetime
     updated_at: datetime
