@@ -13,11 +13,16 @@ const AdminManagement = () => {
   const [selectedAdmin, setSelectedAdmin] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [adminsPage, setAdminsPage] = useState(1);
+  const [adminsLimit, setAdminsLimit] = useState(20);
+  const [activitiesPage, setActivitiesPage] = useState(1);
+  const [activitiesLimit, setActivitiesLimit] = useState(20);
 
   // API functions
   const adminManagementAPI = {
-    getAdmins: async () => {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/admin-management/admins`, {
+    getAdmins: async (status = 'active') => {
+      const url = `${process.env.REACT_APP_BACKEND_URL}/api/admin-management/admins${status ? `?status=${status}` : ''}`;
+      const response = await fetch(url, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
       });
       return response.json();
@@ -93,13 +98,13 @@ const AdminManagement = () => {
   useEffect(() => {
     loadData();
     loadRoles();
-  }, [activeTab]);
+  }, [activeTab, adminsPage, activitiesPage]);
 
   const loadData = async () => {
     setLoading(true);
     try {
       if (activeTab === 'admins') {
-        const data = await adminManagementAPI.getAdmins();
+        const data = await adminManagementAPI.getAdmins('active');
         setAdmins(data.admins || []);
       } else if (activeTab === 'activities') {
         const data = await adminManagementAPI.getActivities();
@@ -309,21 +314,27 @@ const AdminManagement = () => {
 
         <div className="p-6">
           {/* Administrators Tab */}
-          {activeTab === 'admins' && (
-            <div className="space-y-4">
-              {loading ? (
-                <div className="text-center py-8">
-                  <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                  <p className="mt-2 text-gray-600">Loading administrators...</p>
-                </div>
-              ) : admins.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <Users className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                  <h4 className="text-lg font-medium mb-2">No administrators found</h4>
-                  <p>Create your first admin account to get started.</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
+      {activeTab === 'admins' && (
+        <div className="space-y-4">
+          {loading ? (
+            <div className="text-center py-8">
+              <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              <p className="mt-2 text-gray-600">Loading administrators...</p>
+            </div>
+          ) : admins.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Users className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <h4 className="text-lg font-medium mb-2">No administrators found</h4>
+              <p>Create your first admin account to get started.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              {(() => {
+                const start = (adminsPage - 1) * adminsLimit;
+                const end = start + adminsLimit;
+                const visibleAdmins = admins.slice(start, end);
+                return (
+                  <>
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
@@ -342,7 +353,7 @@ const AdminManagement = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {admins.map((admin) => (
+                      {visibleAdmins.map((admin) => (
                         <tr key={admin.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4">
                             <div>
@@ -403,51 +414,97 @@ const AdminManagement = () => {
                       ))}
                     </tbody>
                   </table>
-                </div>
-              )}
+                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t rounded-b-lg">
+                    <div className="text-sm text-gray-600">Page {adminsPage}</div>
+                    <div className="flex space-x-2">
+                      <button
+                        className={`px-3 py-1 rounded border ${adminsPage > 1 ? 'bg-white text-gray-700 hover:bg-gray-100' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
+                        disabled={adminsPage <= 1}
+                        onClick={() => setAdminsPage((p) => Math.max(1, p - 1))}
+                      >
+                        Previous
+                      </button>
+                      <button
+                        className={`px-3 py-1 rounded border ${(admins.length > end) ? 'bg-white text-gray-700 hover:bg-gray-100' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
+                        disabled={!(admins.length > end)}
+                        onClick={() => setAdminsPage((p) => p + 1)}
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                  </>
+                );
+              })()}
             </div>
           )}
+        </div>
+      )}
 
           {/* Activity Logs Tab */}
-          {activeTab === 'activities' && (
-            <div className="space-y-4">
-              {loading ? (
-                <div className="text-center py-8">
-                  <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                  <p className="mt-2 text-gray-600">Loading activities...</p>
-                </div>
-              ) : activities.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <Activity className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                  <h4 className="text-lg font-medium mb-2">No activities logged</h4>
-                  <p>Admin activities will appear here when actions are performed.</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {activities.map((activity) => (
-                    <div key={activity.id} className="bg-gray-50 rounded-lg p-4">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="font-medium text-gray-900">
-                            {activity.admin_username} - {activity.activity_type.replace('_', ' ')}
-                          </h4>
-                          <p className="text-sm text-gray-600 mt-1">{activity.description}</p>
-                          {activity.metadata && (
-                            <div className="text-xs text-gray-500 mt-2">
-                              Additional data: {JSON.stringify(activity.metadata)}
-                            </div>
-                          )}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {formatDateTime(activity.created_at)}
-                        </div>
+      {activeTab === 'activities' && (
+        <div className="space-y-4">
+          {loading ? (
+            <div className="text-center py-8">
+              <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              <p className="mt-2 text-gray-600">Loading activities...</p>
+            </div>
+          ) : activities.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Activity className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <h4 className="text-lg font-medium mb-2">No activities logged</h4>
+              <p>Admin activities will appear here when actions are performed.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {(() => {
+                const start = (activitiesPage - 1) * activitiesLimit;
+                const end = start + activitiesLimit;
+                const visibleActivities = activities.slice(start, end);
+                return visibleActivities.map((activity) => (
+                  <div key={activity.id} className="bg-gray-50 rounded-lg p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-medium text-gray-900">
+                          {activity.admin_username} - {activity.activity_type.replace('_', ' ')}
+                        </h4>
+                        <p className="text-sm text-gray-600 mt-1">{activity.description}</p>
+                        {activity.metadata && (
+                          <div className="text-xs text-gray-500 mt-2">
+                            Additional data: {JSON.stringify(activity.metadata)}
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {formatDateTime(activity.created_at)}
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
+                  </div>
+                ));
+              })()}
             </div>
           )}
+          <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border rounded-lg mt-4">
+            <div className="text-sm text-gray-600">Page {activitiesPage}</div>
+            <div className="flex space-x-2">
+              <button
+                className={`px-3 py-1 rounded border ${activitiesPage > 1 ? 'bg-white text-gray-700 hover:bg-gray-100' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
+                disabled={activitiesPage <= 1}
+                onClick={() => setActivitiesPage((p) => Math.max(1, p - 1))}
+              >
+                Previous
+              </button>
+              <button
+                className={`px-3 py-1 rounded border ${(activities.length > (activitiesPage * activitiesLimit)) ? 'bg-white text-gray-700 hover:bg-gray-100' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
+                disabled={!(activities.length > (activitiesPage * activitiesLimit))}
+                onClick={() => setActivitiesPage((p) => p + 1)}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
           {/* Statistics Tab */}
           {activeTab === 'stats' && (

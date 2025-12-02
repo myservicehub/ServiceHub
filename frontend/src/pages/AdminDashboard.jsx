@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { adminAPI, walletAPI } from '../api/wallet';
 import { adminReferralsAPI, adminVerificationAPI } from '../api/referrals';
 import { getTradespeopleVerificationFileBase64 } from '../api/tradespeopleVerificationBase64';
@@ -24,6 +24,13 @@ const AdminDashboard = () => {
   const [verifications, setVerifications] = useState([]);
   const [tradespeopleVerifications, setTradespeopleVerifications] = useState([]);
   const [users, setUsers] = useState([]);
+  const [usersPage, setUsersPage] = useState(1);
+  const [usersLimit, setUsersLimit] = useState(20);
+  const visibleUsers = useMemo(() => {
+    const start = (usersPage - 1) * usersLimit;
+    const end = start + usersLimit;
+    return users.slice(start, end);
+  }, [users, usersPage, usersLimit]);
   const [userStats, setUserStats] = useState(null);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -3958,7 +3965,7 @@ const AdminDashboard = () => {
                             </tr>
                           </thead>
                           <tbody className="bg-white divide-y divide-gray-200">
-                            {users.map((user) => (
+                            {visibleUsers.map((user) => (
                               <tr key={user.id} className="hover:bg-gray-50">
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <div className="flex items-center">
@@ -4082,6 +4089,25 @@ const AdminDashboard = () => {
                             ))}
                           </tbody>
                         </table>
+                        <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t">
+                          <div className="text-sm text-gray-600">Page {usersPage}</div>
+                          <div className="flex space-x-2">
+                            <button
+                              className={`px-3 py-1 rounded border ${usersPage > 1 ? 'bg-white text-gray-700 hover:bg-gray-100' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
+                              disabled={usersPage <= 1}
+                              onClick={() => setUsersPage((p) => Math.max(1, p - 1))}
+                            >
+                              Previous
+                            </button>
+                            <button
+                              className={`px-3 py-1 rounded border ${(users.length > (usersPage * usersLimit)) ? 'bg-white text-gray-700 hover:bg-gray-100' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
+                              disabled={!(users.length > (usersPage * usersLimit))}
+                              onClick={() => setUsersPage((p) => p + 1)}
+                            >
+                              Next
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   )}
