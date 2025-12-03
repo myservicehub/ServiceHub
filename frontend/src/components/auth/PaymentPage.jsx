@@ -346,7 +346,7 @@ const PaymentPage = ({ formData, onBack, onRegistrationComplete }) => {
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
                 <Button
                   type="button"
                   size="sm"
@@ -423,7 +423,7 @@ const PaymentPage = ({ formData, onBack, onRegistrationComplete }) => {
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
                 <Button
                   type="button"
                   size="sm"
