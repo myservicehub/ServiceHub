@@ -678,7 +678,7 @@ const BrowseJobsPage = () => {
               {/* Location and View Controls */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 {/* Location Controls */}
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center flex-wrap gap-3">
                   <div className="flex items-center space-x-2">
                     <input
                       type="checkbox"
@@ -739,7 +739,7 @@ const BrowseJobsPage = () => {
 
                   {filters.useLocation && (
                     <>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center flex-wrap gap-2">
                         <span className="text-sm text-gray-600 font-lato">Within</span>
                         <input
                           type="range"
@@ -756,7 +756,7 @@ const BrowseJobsPage = () => {
                           }}
                           className="w-20"
                         />
-                        <span className="text-sm font-medium text-gray-700 font-lato w-8">
+                        <span className="text-sm font-medium text-gray-700 font-lato">
                           {filters.maxDistance}km (≈ {Math.round(filters.maxDistance * 0.621371)}mi)
                         </span>
                       </div>

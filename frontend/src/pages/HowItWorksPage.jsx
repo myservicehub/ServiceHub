@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useAuth } from '../contexts/AuthContext';
@@ -27,6 +27,17 @@ import {
 const HowItWorksPage = () => {
   const [activeTab, setActiveTab] = useState('homeowner');
   const { isTradesperson, isAuthenticated } = useAuth();
+
+  // Ensure page loads from the very top when navigated to
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      } catch {
+        window.scrollTo(0, 0);
+      }
+    }
+  }, []);
 
   const homeownerSteps = [
     {
