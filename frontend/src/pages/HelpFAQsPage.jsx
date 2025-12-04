@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, Search, Phone, Mail, MessageCircle, HelpCircle, Users, Wallet, Briefcase, Shield } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 
 const HelpFAQsPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isAuthenticated, isTradesperson } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('general');
@@ -30,6 +31,25 @@ const HelpFAQsPage = () => {
   };
 
   const categories = getVisibleCategories();
+
+  // Read category from query param and preselect
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(location.search);
+      const categoryParam = params.get('category');
+      if (categoryParam) {
+        const availableIds = categories.map(c => c.id);
+        if (availableIds.includes(categoryParam)) {
+          setActiveCategory(categoryParam);
+        } else {
+          // If payments requested but not available, default to general
+          setActiveCategory('general');
+        }
+      }
+    } catch (e) {
+      // ignore parsing errors
+    }
+  }, [location.search, isAuthenticated, isTradesperson]);
 
   // Reset activeCategory if user doesn't have access to payments
   useEffect(() => {

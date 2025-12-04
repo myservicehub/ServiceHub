@@ -89,6 +89,18 @@ const HelpCentrePage = () => {
     }
   ];
 
+  // Map Help Centre cards to Help & FAQs categories
+  const mapCategoryToFaqId = (title) => {
+    const t = (title || '').toLowerCase();
+    if (t.includes('payment')) return 'payments';
+    if (t.includes('account')) return 'account';
+    if (t.includes('safety') || t.includes('policy')) return 'account';
+    if (t.includes('job')) return 'tradespeople';
+    if (t.includes('review') || t.includes('rating')) return 'tradespeople';
+    if (t.includes('getting started')) return 'tradespeople';
+    return 'general';
+  };
+
   const popularArticles = [
     {
       title: "How to create a winning tradesperson profile",
@@ -281,7 +293,23 @@ const HelpCentrePage = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {helpCategories.map((category, index) => (
-              <div key={index} className="bg-gray-50 rounded-xl p-6 hover:shadow-lg transition-shadow cursor-pointer group">
+              <div
+                key={index}
+                className="bg-gray-50 rounded-xl p-6 hover:shadow-lg transition-shadow cursor-pointer group"
+                onClick={() => {
+                  const faqId = mapCategoryToFaqId(category.title);
+                  navigate(`/help?category=${encodeURIComponent(faqId)}`);
+                }}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    const faqId = mapCategoryToFaqId(category.title);
+                    navigate(`/help?category=${encodeURIComponent(faqId)}`);
+                  }
+                }}
+                aria-label={`Open ${category.title} help topics`}
+              >
                 <div className={`w-12 h-12 rounded-xl ${category.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
                   <category.icon className="w-6 h-6" />
                 </div>
