@@ -538,44 +538,48 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
         </Card>
       )}
 
-      {/* Navigation buttons */}
-      <div className="flex justify-between items-center pt-4 border-t">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={handlePreviousQuestion}
-          disabled={!canGoPrevious()}
-          className="flex items-center space-x-2"
-        >
-          <ArrowLeft size={16} />
-          <span>Previous</span>
-        </Button>
+      {/* Navigation buttons (mobile-first layout) */}
+      <div className="pt-4 border-t">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center space-y-2 md:space-y-0">
+          {/* Action group: Submit + Next */}
+          <div className="flex items-center gap-2 order-1 md:order-2 md:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                if (window.confirm('Are you sure you want to submit your test? You cannot change your answers after submission.')) {
+                  handleSubmitTest();
+                }
+              }}
+              className="w-full md:w-auto flex items-center gap-2 whitespace-nowrap md:text-sm text-xs leading-tight h-auto"
+            >
+              <Flag size={16} />
+              <span>Submit Combined Test</span>
+            </Button>
 
-        <div className="flex items-center space-x-2 flex-wrap">
+            <Button
+              type="button"
+              onClick={handleNextQuestion}
+              disabled={!canGoNext() || isSubmitting}
+              className="w-full md:w-auto flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+            >
+              <span>
+                {isLastQuestion() ? (currentTrade === trades.length - 1 ? 'Finish Test' : 'Next Trade') : 'Next'}
+              </span>
+              <ArrowRight size={16} />
+            </Button>
+          </div>
+
+          {/* Previous question */}
           <Button
             type="button"
             variant="outline"
-            onClick={() => {
-              if (window.confirm('Are you sure you want to submit your test? You cannot change your answers after submission.')) {
-                handleSubmitTest();
-              }
-            }}
-            className="flex items-center space-x-2 whitespace-nowrap md:text-sm text-xs leading-tight h-auto"
+            onClick={handlePreviousQuestion}
+            disabled={!canGoPrevious()}
+            className="order-2 md:order-1 w-full md:w-auto flex items-center gap-2"
           >
-            <Flag size={16} />
-            <span>Submit Combined Test</span>
-          </Button>
-
-          <Button
-            type="button"
-            onClick={handleNextQuestion}
-            disabled={!canGoNext() || isSubmitting}
-            className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white"
-          >
-            <span>
-              {isLastQuestion() ? (currentTrade === trades.length - 1 ? 'Finish Test' : 'Next Trade') : 'Next'}
-            </span>
-            <ArrowRight size={16} />
+            <ArrowLeft size={16} />
+            <span>Previous</span>
           </Button>
         </div>
       </div>

@@ -1597,7 +1597,7 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
           )}
         </div>
 
-        <div className="flex justify-between pt-6 border-t mt-8">
+        <div className={`${currentStep === 4 ? 'hidden md:flex' : 'flex'} justify-between pt-6 border-t mt-8`}>
           <Button
             type="button"
             variant="outline"
