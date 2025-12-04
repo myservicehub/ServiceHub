@@ -857,6 +857,42 @@ async def logout(current_user: User = Depends(get_current_user)):
     # For now, we just return success and let the client handle token removal
     return {"message": "Successfully logged out"}
 
+@router.delete("/account")
+async def delete_my_account(current_user: User = Depends(get_current_active_user)):
+    """Allow a logged-in user to permanently delete their account and data"""
+    try:
+        # Prevent admin account deletion via this endpoint
+        if current_user.role == UserRole.ADMIN:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Admin accounts cannot be deleted via this endpoint"
+            )
+
+        # Ensure database is connected for full deletion
+        db_ready = getattr(database, "connected", False) and getattr(database, "database", None) is not None
+        if not db_ready:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Service temporarily unavailable. Please try again later."
+            )
+
+        success = await database.delete_user_completely(current_user.id)
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to delete account"
+            )
+
+        return {"message": "Account deleted successfully"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error deleting account: {str(e)}"
+        )
+
 @router.get("/verify-email/{user_id}")
 async def verify_email(user_id: str):
     """Verify user email (simplified - in production use secure tokens)"""

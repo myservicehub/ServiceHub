@@ -33,6 +33,7 @@ import {
   Plus,
   ChevronDown
 } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { authAPI, portfolioAPI } from '../api/services';
 import { reviewsAPI } from '../api/reviews';
 import { useAuth } from '../contexts/AuthContext';
@@ -40,6 +41,17 @@ import { useToast } from '../hooks/use-toast';
 import ImageUpload from '../components/portfolio/ImageUpload';
 import PortfolioGallery from '../components/portfolio/PortfolioGallery';
 import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from '../components/ui/input-otp';
+import { 
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from '../components/ui/alert-dialog';
 
 const ProfilePage = () => {
   const [isEditing, setIsEditing] = useState(false);
@@ -78,8 +90,10 @@ const ProfilePage = () => {
     oneStar: 0
   });
   
-  const { user, loading: authLoading, isAuthenticated, isHomeowner, isTradesperson, updateUser } = useAuth();
+  const { user, loading: authLoading, isAuthenticated, isHomeowner, isTradesperson, updateUser, logout } = useAuth();
   const { toast } = useToast();
+
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Helper function to get tab display text
   const getTabDisplayText = (tabValue) => {
@@ -115,6 +129,26 @@ const ProfilePage = () => {
     }
 
     return baseTabs;
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleteLoading(true);
+    try {
+      await authAPI.deleteAccount();
+      toast({
+        title: 'Account deleted',
+        description: 'Your account and data have been permanently removed.',
+      });
+      logout();
+      if (typeof window !== 'undefined') {
+        window.location.replace('/join-for-free');
+      }
+    } catch (error) {
+      const message = error?.response?.data?.detail || 'Failed to delete account. Please try again.';
+      toast({ title: 'Delete failed', description: message, variant: 'destructive' });
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -784,7 +818,7 @@ const ProfilePage = () => {
                               placeholder="Describe your professional background and expertise..."
                             />
                           ) : (
-                            <p className="text-gray-700 font-lato py-2">{profileData.description}</p>
+                            <p className="text-gray-700 font-lato py-2 break-words whitespace-pre-wrap">{profileData.description}</p>
                           )}
                         </div>
 
@@ -1199,6 +1233,38 @@ const ProfilePage = () => {
                         </div>
                       </div>
                     </div>
+                  </CardContent>
+                </Card>
+                <Card className="mt-6">
+                  <CardHeader>
+                    <CardTitle className="flex items-center font-montserrat" style={{color: '#121E3C'}}>
+                      <AlertTriangle size={20} className="mr-2 text-red-600" />
+                      Danger Zone
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-red-700">Deleting your account is permanent and cannot be undone.</p>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" disabled={deleteLoading}>
+                          {deleteLoading ? 'Deleting…' : 'Delete Account'}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action permanently removes your account and all associated data, including jobs, interests, messages, and reviews. This cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleDeleteAccount} className="bg-red-600 hover:bg-red-700">
+                            Proceed to delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </CardContent>
                 </Card>
               </TabsContent>

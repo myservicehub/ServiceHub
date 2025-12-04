@@ -112,6 +112,12 @@ export const authAPI = {
     });
     return response.data;
   },
+
+  // Account deletion
+  deleteAccount: async () => {
+    const response = await apiClient.delete('/auth/account');
+    return response.data;
+  },
 };
 
 // Statistics API

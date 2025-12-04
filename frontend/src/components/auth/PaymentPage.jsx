@@ -415,7 +415,7 @@ const PaymentPage = ({ formData, onBack, onRegistrationComplete }) => {
                   type="button"
                   size="sm"
                   variant="secondary"
-                  disabled={emailVerifying || !emailOtpCode || !formData.email}
+                  disabled={emailVerified || emailVerifying || !emailOtpCode || !formData.email}
                   onClick={async () => {
                     try {
                       setEmailVerifying(true);
@@ -434,15 +434,17 @@ const PaymentPage = ({ formData, onBack, onRegistrationComplete }) => {
                       }
                       toast({ title: 'Email verified', description: 'Your email was verified successfully.' });
                     } catch (err) {
-                      setEmailVerified(false);
                       toast({ title: 'Verification failed', description: err?.response?.data?.detail || err?.message || 'Invalid code. Please try again.', variant: 'destructive' });
                     } finally {
                       setEmailVerifying(false);
                     }
                   }}
                 >
-                  {emailVerifying ? 'Verifying…' : 'Verify'}
+                  {emailVerified ? 'Verified' : (emailVerifying ? 'Verifying…' : 'Verify')}
                 </Button>
+                {emailVerified && (
+                  <span className="text-xs text-green-600">This email is already verified.</span>
+                )}
               </div>
             </div>
 
@@ -493,7 +495,7 @@ const PaymentPage = ({ formData, onBack, onRegistrationComplete }) => {
                   type="button"
                   size="sm"
                   variant="secondary"
-                  disabled={phoneVerifying || !phoneOtpCode || !formData.phone}
+                  disabled={phoneVerified || phoneVerifying || !phoneOtpCode || !formData.phone}
                   onClick={async () => {
                     try {
                       setPhoneVerifying(true);
@@ -513,15 +515,17 @@ const PaymentPage = ({ formData, onBack, onRegistrationComplete }) => {
                       }
                       toast({ title: 'Phone verified', description: 'Your phone number was verified successfully.' });
                     } catch (err) {
-                      setPhoneVerified(false);
                       toast({ title: 'Verification failed', description: err?.response?.data?.detail || err?.message || 'Invalid code. Please try again.', variant: 'destructive' });
                     } finally {
                       setPhoneVerifying(false);
                     }
                   }}
                 >
-                  {phoneVerifying ? 'Verifying…' : 'Verify'}
+                  {phoneVerified ? 'Verified' : (phoneVerifying ? 'Verifying…' : 'Verify')}
                 </Button>
+                {phoneVerified && (
+                  <span className="text-xs text-green-600">This phone number is already verified.</span>
+                )}
               </div>
             </div>
           </div>
