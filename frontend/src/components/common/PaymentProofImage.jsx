@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import apiClient from '../../api/client';
 import { walletAPI, adminAPI } from '../../api/wallet';
+import { Dialog, DialogContent } from '../ui/dialog';
 
 const PaymentProofImage = ({ filename, isAdmin = false, className = '', alt = 'Payment proof' }) => {
   const [src, setSrc] = useState('');
   const [error, setError] = useState('');
+  const [viewerOpen, setViewerOpen] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -56,12 +58,23 @@ const PaymentProofImage = ({ filename, isAdmin = false, className = '', alt = 'P
   }
 
   return (
-    <img
-      src={src}
-      alt={alt}
-      className={className}
-      onClick={() => window.open(src, '_blank')}
-    />
+    <>
+      <img
+        src={src}
+        alt={alt}
+        className={className}
+        onClick={() => setViewerOpen(true)}
+      />
+      <Dialog open={viewerOpen} onOpenChange={setViewerOpen}>
+        <DialogContent className="max-w-3xl w-[95vw]">
+          <img
+            src={src}
+            alt={alt}
+            className="max-h-[80vh] w-auto mx-auto object-contain"
+          />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

@@ -17,7 +17,7 @@ const ForgotPasswordForm = ({ onClose, onBackToLogin }) => {
 
   const validateEmail = (email) => {
     if (!email.trim()) {
-      return 'Email is required';
+      return 'Please enter an email address';
     }
     if (!/\S+@\S+\.\S+/.test(email)) {
       return 'Please enter a valid email address';
@@ -151,7 +151,7 @@ const ForgotPasswordForm = ({ onClose, onBackToLogin }) => {
           </div>
         ) : (
           // Form State
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} noValidate className="space-y-4">
             {/* Email Field */}
             <div>
               <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>

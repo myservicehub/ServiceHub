@@ -193,8 +193,10 @@ const JobsMap = ({
     }
   };
 
-  const updateUserLocationMarker = () => {
-    if (!map || !userLocation || !window.google) return;
+  const updateUserLocationMarker = (overrideLocation = null) => {
+    if (!map || !window.google) return;
+    const loc = overrideLocation || userLocation;
+    if (!loc) return;
 
     // Remove existing user marker
     if (userMarker) {
@@ -203,7 +205,7 @@ const JobsMap = ({
 
     // Create user location marker
     const marker = new window.google.maps.Marker({
-      position: userLocation,
+      position: loc,
       map,
       title: 'Your Location',
       icon: {
@@ -224,7 +226,7 @@ const JobsMap = ({
     // Recenter the map to the user's location for immediate visual feedback.
     // If there are no job markers yet, ensure a reasonable zoom.
     try {
-      map.panTo(userLocation);
+      map.panTo(loc);
       if (!jobs || jobs.length === 0) {
         map.setZoom(13);
       }
@@ -291,6 +293,35 @@ const JobsMap = ({
   };
 
   const centerOnUserLocation = () => {
+    // Prefer live GPS for accuracy; fallback to saved location
+    if (navigator?.geolocation) {
+      try {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const fresh = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            };
+            updateUserLocationMarker(fresh);
+            try {
+              map?.setCenter(fresh);
+              map?.setZoom(13);
+            } catch (_) {}
+          },
+          (err) => {
+            console.warn('Geolocation error, falling back to saved location:', err);
+            if (map && userLocation) {
+              map.setCenter(userLocation);
+              map.setZoom(13);
+            }
+          },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+        return;
+      } catch (e) {
+        console.warn('Geolocation call failed, using saved location:', e);
+      }
+    }
     if (map && userLocation) {
       map.setCenter(userLocation);
       map.setZoom(13);
