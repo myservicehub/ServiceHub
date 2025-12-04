@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import ValidationBanner from './ValidationBanner';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
@@ -101,6 +102,7 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
   });
   
   const [errors, setErrors] = useState({});
+  const [globalErrorMessage, setGlobalErrorMessage] = useState('');
   const [availableLGAs, setAvailableLGAs] = useState([]);
   const [loadingLGAs, setLoadingLGAs] = useState(false);
   const [showAccountModal, setShowAccountModal] = useState(false);
@@ -198,6 +200,9 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+    if (globalErrorMessage) {
+      setGlobalErrorMessage('');
     }
     
     // When state changes, fetch LGAs and reset LGA selection
@@ -364,6 +369,13 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
 
     setErrors(newErrors);
     const isValid = Object.keys(newErrors).length === 0;
+    if (!isValid) {
+      const count = Object.keys(newErrors).length;
+      setGlobalErrorMessage(`Please fix ${count} highlighted field${count > 1 ? 's' : ''} before continuing.`);
+      setTimeout(() => scrollToFirstError(Object.keys(newErrors)), 0);
+    } else {
+      setGlobalErrorMessage('');
+    }
     
     // Debug logging for Step 1 validation
     if (step === 1) {
@@ -379,6 +391,23 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
     }
     
     return isValid;
+  };
+
+  const scrollToFirstError = (keys) => {
+    if (!keys || !keys.length) return;
+    const firstKey = keys[0];
+    const candidates = [
+      document.getElementById(`field-${firstKey}`),
+      document.querySelector(`[name="${firstKey}"]`),
+      document.querySelector(`[data-field="${firstKey}"]`)
+    ];
+    const el = candidates.find(Boolean);
+    if (el && typeof el.scrollIntoView === 'function') {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (typeof el.focus === 'function') {
+        try { el.focus(); } catch {}
+      }
+    }
   };
 
   const nextStep = () => {
@@ -785,6 +814,7 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
                   checked={questionAnswers[question.id] === option.value}
                   onChange={(e) => handleQuestionAnswer(question.id, e.target.value, question.question_type)}
                   className="text-green-600 focus:ring-green-500"
+                  id={`field-question_${question.id}-${optIndex}`}
                 />
                 <span className="text-sm font-lato">{option.text}</span>
               </label>
@@ -803,6 +833,8 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
                   checked={(questionAnswers[question.id] || []).includes(option.value)}
                   onChange={(e) => handleQuestionAnswer(question.id, option.value, question.question_type)}
                   className="text-green-600 focus:ring-green-500 rounded"
+                  name={`question_${question.id}`}
+                  id={`field-question_${question.id}-${optIndex}`}
                 />
                 <span className="text-sm font-lato">{option.text}</span>
               </label>
@@ -820,6 +852,8 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
             className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
               errors[`question_${question.id}`] ? 'border-red-500' : 'border-gray-300'
             }`}
+            name={`question_${question.id}`}
+            id={`field-question_${question.id}`}
           />
         );
 
@@ -833,6 +867,8 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
             className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato resize-none ${
               errors[`question_${question.id}`] ? 'border-red-500' : 'border-gray-300'
             }`}
+            name={`question_${question.id}`}
+            id={`field-question_${question.id}`}
           />
         );
 
@@ -848,6 +884,8 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
             className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
               errors[`question_${question.id}`] ? 'border-red-500' : 'border-gray-300'
             }`}
+            name={`question_${question.id}`}
+            id={`field-question_${question.id}`}
           />
         );
 
@@ -862,6 +900,7 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
                 checked={questionAnswers[question.id] === true}
                 onChange={(e) => handleQuestionAnswer(question.id, true, question.question_type)}
                 className="text-green-600 focus:ring-green-500"
+                id={`field-question_${question.id}-yes`}
               />
               <span className="text-sm font-lato">Yes</span>
             </label>
@@ -873,6 +912,7 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
                 checked={questionAnswers[question.id] === false}
                 onChange={(e) => handleQuestionAnswer(question.id, false, question.question_type)}
                 className="text-green-600 focus:ring-green-500"
+                id={`field-question_${question.id}-no`}
               />
               <span className="text-sm font-lato">No</span>
             </label>
@@ -1086,6 +1126,7 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
               </label>
               <input
                 type="text"
+                id="field-title"
                 value={formData.title}
                 onChange={(e) => updateFormData('title', e.target.value)}
                 placeholder="e.g., Fix leaky bathroom tap, Install kitchen cabinets"
@@ -1101,6 +1142,7 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
                 Category *
               </label>
               <select
+                id="field-category"
                 value={formData.category}
                 onChange={(e) => updateFormData('category', e.target.value)}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
@@ -1348,13 +1390,14 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
                 <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
                   State *
                 </label>
-                <select
-                  value={formData.state}
-                  onChange={(e) => updateFormData('state', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
-                    errors.state ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                >
+              <select
+                id="field-state"
+                value={formData.state}
+                onChange={(e) => updateFormData('state', e.target.value)}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
+                  errors.state ? 'border-red-500' : 'border-gray-300'
+                }`}
+              >
                   <option value="">Select your state</option>
                   {nigerianStates.map((state) => (
                     <option key={state} value={state}>
@@ -1369,14 +1412,15 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
                 <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
                   Local Government Area (LGA) *
                 </label>
-                <select
-                  value={formData.lga}
-                  onChange={(e) => updateFormData('lga', e.target.value)}
-                  disabled={!formData.state || loadingLGAs}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
-                    errors.lga ? 'border-red-500' : 'border-gray-300'
-                  } ${(!formData.state || loadingLGAs) ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                >
+              <select
+                id="field-lga"
+                value={formData.lga}
+                onChange={(e) => updateFormData('lga', e.target.value)}
+                disabled={!formData.state || loadingLGAs}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
+                  errors.lga ? 'border-red-500' : 'border-gray-300'
+                } ${(!formData.state || loadingLGAs) ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+              >
                   <option value="">
                     {loadingLGAs ? 'Loading LGAs...' : 'Select LGA'}
                   </option>
@@ -1399,15 +1443,16 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
                 <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
                   Town/Area *
                 </label>
-                <input
-                  type="text"
-                  placeholder="e.g., Victoria Island, Ikeja, Warri"
-                  value={formData.town}
-                  onChange={(e) => updateFormData('town', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
-                    errors.town ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                />
+              <input
+                type="text"
+                id="field-town"
+                placeholder="e.g., Victoria Island, Ikeja, Warri"
+                value={formData.town}
+                onChange={(e) => updateFormData('town', e.target.value)}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
+                  errors.town ? 'border-red-500' : 'border-gray-300'
+                }`}
+              />
                 {errors.town && <p className="text-red-500 text-sm mt-1">{errors.town}</p>}
               </div>
 
@@ -1415,16 +1460,17 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
                 <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
                   Zip Code *
                 </label>
-                <input
-                  type="text"
-                  placeholder="e.g., 100001"
-                  value={formData.zip_code}
-                  onChange={(e) => updateFormData('zip_code', e.target.value)}
-                  maxLength={6}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
-                    errors.zip_code ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                />
+              <input
+                type="text"
+                id="field-zip_code"
+                placeholder="e.g., 100001"
+                value={formData.zip_code}
+                onChange={(e) => updateFormData('zip_code', e.target.value)}
+                maxLength={6}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
+                  errors.zip_code ? 'border-red-500' : 'border-gray-300'
+                }`}
+              />
                 {errors.zip_code && <p className="text-red-500 text-sm mt-1">{errors.zip_code}</p>}
                 <p className="text-gray-500 text-sm mt-1">Nigerian postal code (6 digits)</p>
               </div>
@@ -1437,6 +1483,7 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
               </label>
               <textarea
                 rows={3}
+                id="field-home_address"
                 placeholder="Enter your full home address (street, building number, landmarks, etc.)"
                 value={formData.home_address}
                 onChange={(e) => updateFormData('home_address', e.target.value)}
@@ -1533,6 +1580,7 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
                   </label>
                   <input
                     type="number"
+                    id="field-budget_min"
                     placeholder="5,000"
                     value={formData.budget_min}
                     onChange={(e) => updateFormData('budget_min', e.target.value)}
@@ -1549,6 +1597,7 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
                   </label>
                   <input
                     type="number"
+                    id="field-budget_max"
                     placeholder="15,000"
                     value={formData.budget_max}
                     onChange={(e) => updateFormData('budget_max', e.target.value)}
@@ -1686,6 +1735,7 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
                     <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                     <input
                       type="text"
+                      id="field-homeowner_name"
                       placeholder="Enter your full name"
                       value={formData.homeowner_name}
                       onChange={(e) => updateFormData('homeowner_name', e.target.value)}
@@ -1706,6 +1756,7 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
                     <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                     <input
                       type="email"
+                      id="field-homeowner_email"
                       placeholder="your.email@example.com"
                       value={formData.homeowner_email}
                       onChange={(e) => updateFormData('homeowner_email', e.target.value)}
@@ -1726,6 +1777,7 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
                     <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                     <input
                       type="tel"
+                      id="field-homeowner_phone"
                       placeholder="08012345678"
                       value={formData.homeowner_phone}
                       onChange={(e) => updateFormData('homeowner_phone', e.target.value)}
@@ -1815,6 +1867,7 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
+                    id="field-password"
                     placeholder="Enter a secure password"
                     value={formData.password}
                     onChange={(e) => updateFormData('password', e.target.value)}
@@ -1840,6 +1893,7 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
                 <div className="relative">
                   <input
                     type={showConfirmPassword ? 'text' : 'password'}
+                    id="field-confirmPassword"
                     placeholder="Confirm your password"
                     value={formData.confirmPassword}
                     onChange={(e) => updateFormData('confirmPassword', e.target.value)}
@@ -2053,6 +2107,13 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
           </CardHeader>
 
           <CardContent>
+            <ValidationBanner
+              message={globalErrorMessage}
+              onJump={() => {
+                const keys = Object.keys(errors);
+                if (keys.length) scrollToFirstError(keys);
+              }}
+            />
             {renderProgressBar()}
             
             <form onSubmit={handleSubmit}>
