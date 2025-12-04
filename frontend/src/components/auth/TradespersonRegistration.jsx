@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
@@ -61,6 +61,7 @@ const FALLBACK_TRADE_CATEGORIES = [
 // For now, keeping them as constants since they're less frequently changed
 
 const TradespersonRegistration = ({ onClose, onComplete }) => {
+  const uploadSectionRef = useRef(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [tradeCategories, setTradeCategories] = useState(FALLBACK_TRADE_CATEGORIES);
@@ -1147,7 +1148,14 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
                 name="idType"
                 value={idOption.value}
                 checked={formData.idType === idOption.value}
-                onChange={(e) => updateFormData('idType', e.target.value)}
+                onChange={(e) => {
+                  updateFormData('idType', e.target.value);
+                  setTimeout(() => {
+                    if (uploadSectionRef.current) {
+                      uploadSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                  }, 0);
+                }}
                 className="sr-only"
               />
               <div className="text-4xl mb-2">{idOption.icon}</div>
@@ -1160,7 +1168,7 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
 
       {/* File Upload Section */}
       {formData.idType && (
-        <div className="space-y-4">
+        <div className="space-y-4" ref={uploadSectionRef}>
           <label className="block text-sm font-medium text-gray-700">
             Upload your {formData.idType === 'nin' ? 'NIN' : formData.idType === 'drivers_licence' ? "Driver's License" : 'Passport'} document
           </label>
