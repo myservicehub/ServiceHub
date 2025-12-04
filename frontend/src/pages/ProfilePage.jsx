@@ -306,6 +306,16 @@ const ProfilePage = () => {
         trade_categories: profileData.trade_categories || [],
         certifications: profileData.certifications || []
       });
+    } else {
+      // When entering edit mode, ensure user is on the Profile tab
+      setActiveTab('profile');
+      // Smoothly scroll to the Basic Information section for immediate feedback
+      setTimeout(() => {
+        const el = document.getElementById('basic-info-card');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 0);
     }
     setIsEditing(!isEditing);
   };
@@ -532,7 +542,7 @@ const ProfilePage = () => {
               {/* Profile Information Tab */}
               <TabsContent value="profile" className="space-y-6">
                 {/* Basic Information Card */}
-                <Card>
+                <Card id="basic-info-card">
                   <CardHeader>
                     <CardTitle className="flex items-center font-montserrat" style={{color: '#121E3C'}}>
                       <User size={20} className="mr-2" style={{color: '#34D164'}} />
