@@ -30,6 +30,7 @@ const PaymentPage = ({ formData, onBack, onRegistrationComplete }) => {
   const [loadingBankDetails, setLoadingBankDetails] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [step, setStep] = useState('payment'); // 'payment' or 'proof'
+  const [submitError, setSubmitError] = useState('');
 
   // Post-registration verification state
   const [showVerificationModal, setShowVerificationModal] = useState(false);
@@ -143,14 +144,14 @@ const PaymentPage = ({ formData, onBack, onRegistrationComplete }) => {
 
   // Handle registration completion with wallet funding
   const handleCompleteRegistration = async () => {
-    // Hybrid gating: if contact details not verified, re-open modal and stop
+    // If contact details are not verified yet, open the modal but continue.
+    // Verification will be enforced before redirecting after successful registration.
     if (!emailVerified || !phoneVerified) {
       setShowVerificationModal(true);
       toast({
         title: 'Verify your contact details',
-        description: 'Please verify both email and phone to continue.',
+        description: 'Please verify both email and phone after registration.',
       });
-      return;
     }
 
     if (!proofFile) {
@@ -289,21 +290,34 @@ const PaymentPage = ({ formData, onBack, onRegistrationComplete }) => {
         const errorMessage = typeof registrationResult.error === 'string' 
           ? registrationResult.error 
           : registrationResult.error?.message || registrationResult.error?.msg || 'Registration failed. Please check your information and try again.';
-        
+
+        // Show toast and surface inline banner
         toast({
-          title: "Registration Failed",
+          title: 'Registration Failed',
           description: errorMessage,
-          variant: "destructive",
+          variant: 'destructive',
         });
+        setSubmitError(errorMessage);
+
+        // If duplicate email/phone, guide user back to fix details
+        const msg = (errorMessage || '').toLowerCase();
+        if (msg.includes('email') || msg.includes('phone')) {
+          // Provide immediate CTA via banner; also allow user to click Back
+          // Optionally auto-navigate back after short delay to help users
+          setTimeout(() => {
+            if (typeof onBack === 'function') onBack();
+          }, 1200);
+        }
       }
     } catch (error) {
       console.error('Registration error:', error);
       const errorMessage = error.response?.data?.detail || error.message || 'Registration failed. Please try again.';
       toast({
-        title: "Registration Failed",
+        title: 'Registration Failed',
         description: errorMessage,
-        variant: "destructive",
+        variant: 'destructive',
       });
+      setSubmitError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -322,6 +336,25 @@ const PaymentPage = ({ formData, onBack, onRegistrationComplete }) => {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
+      {submitError && (
+        <div className="mb-4 flex items-start rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          <AlertCircle className="mr-2 h-4 w-4" />
+          <div className="flex-1">
+            <p>{submitError}</p>
+            <div className="mt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (typeof onBack === 'function') onBack();
+                }}
+              >
+                Back to Registration to fix details
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Post-registration verification modal */}
       <Dialog
         open={showVerificationModal}

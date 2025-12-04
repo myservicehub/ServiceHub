@@ -558,7 +558,24 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
         const errorMessage = typeof result.error === 'string' 
           ? result.error 
           : result.error?.message || result.error?.msg || 'Registration failed. Please check your information and try again.';
-        setErrors({ submit: errorMessage });
+        // Surface the error clearly and guide the user
+        setErrors(prev => ({ ...prev, submit: errorMessage }));
+        // Also show a toast so the error is immediately visible
+        toast({
+          title: 'Registration Failed',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+        // If the message suggests duplicate email/phone, send user to Step 1 to correct
+        const msg = (errorMessage || '').toLowerCase();
+        if (msg.includes('email') || msg.includes('phone')) {
+          setCurrentStep(1);
+          setErrors(prev => ({
+            ...prev,
+            email: msg.includes('email') ? 'Email already in use' : prev.email,
+            phone: msg.includes('phone') ? 'Phone number already in use' : prev.phone,
+          }));
+        }
       }
     } catch (error) {
       console.error('❌ Registration error:', error);
@@ -1487,6 +1504,12 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
 
       <CardContent>
         {renderProgressBar()}
+        {errors.submit && (
+          <div className="mb-4 flex items-start rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <AlertCircle className="mr-2 h-4 w-4" />
+            <span>{errors.submit}</span>
+          </div>
+        )}
         
         <div className="min-h-[500px]">
           {currentStep === 1 && renderStep1()}
