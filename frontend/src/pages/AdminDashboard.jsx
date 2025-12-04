@@ -14,6 +14,7 @@ import BulkActionsBar from '../components/admin/BulkActionsBar';
 import ConfirmDeleteModal from '../components/admin/ConfirmDeleteModal';
 import InlineEditForm from '../components/admin/InlineEditForm';
 import PaymentProofImage from '../components/common/PaymentProofImage';
+import { Dialog, DialogContent } from '../components/ui/dialog';
 
 const AdminDashboard = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(adminAPI.isLoggedIn());
@@ -38,6 +39,8 @@ const AdminDashboard = () => {
   const [editingJob, setEditingJob] = useState(null);
   const [selectedVerification, setSelectedVerification] = useState(null);
   const [verificationFileBase64, setVerificationFileBase64] = useState({});
+  const [verificationViewerOpen, setVerificationViewerOpen] = useState(false);
+  const [verificationViewerSrc, setVerificationViewerSrc] = useState('');
   
   // Location & Trades Management state
   const [activeLocationTab, setActiveLocationTab] = useState('states');
@@ -250,11 +253,8 @@ const AdminDashboard = () => {
         dataUrl = await getTradespeopleVerificationFileBase64(filename);
         setVerificationFileBase64((prev) => ({ ...prev, [filename]: dataUrl }));
       }
-      const a = document.createElement('a');
-      a.href = dataUrl;
-      a.target = '_blank';
-      a.rel = 'noopener noreferrer';
-      a.click();
+      setVerificationViewerSrc(dataUrl);
+      setVerificationViewerOpen(true);
     } catch (err) {
       console.error('Failed to open verification file', filename, err);
       toast({ title: 'Failed to open file', variant: 'destructive' });
@@ -1934,7 +1934,10 @@ const AdminDashboard = () => {
                                     src={adminReferralsAPI.getDocumentUrl(verification.document_url)}
                                     alt="Document"
                                     className="h-32 w-auto rounded border cursor-pointer hover:shadow-lg transition-shadow"
-                                    onClick={() => window.open(adminReferralsAPI.getDocumentUrl(verification.document_url), '_blank')}
+                                    onClick={() => {
+                                      setVerificationViewerSrc(adminReferralsAPI.getDocumentUrl(verification.document_url));
+                                      setVerificationViewerOpen(true);
+                                    }}
                                   />
                                 </div>
                               )}
@@ -5431,6 +5434,28 @@ const AdminDashboard = () => {
         </div>
       )}
       
+      {/* Verification Image/Document Viewer */}
+      <Dialog open={verificationViewerOpen} onOpenChange={setVerificationViewerOpen}>
+        <DialogContent className="max-w-3xl w-[95vw]">
+          {(
+            (typeof verificationViewerSrc === 'string' && verificationViewerSrc.startsWith('data:image')) ||
+            /\.(png|jpe?g|gif|webp|bmp)$/i.test(verificationViewerSrc || '')
+          ) ? (
+            <img
+              src={verificationViewerSrc}
+              alt="Verification file"
+              className="max-h-[80vh] w-auto mx-auto object-contain"
+            />
+          ) : (
+            <iframe
+              src={verificationViewerSrc}
+              title="Verification file"
+              className="min-h-[70vh] w-full rounded"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
       <Footer />
     </div>
   );
