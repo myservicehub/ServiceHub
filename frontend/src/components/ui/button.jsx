@@ -20,9 +20,10 @@ const Button = React.forwardRef(({
   };
   
   const sizes = {
-    default: 'h-10 px-4 py-2',
-    sm: 'h-9 rounded-md px-3',
-    lg: 'h-11 rounded-md px-8',
+    // Use min-height with vertical padding so labels never clip on mobile
+    default: 'min-h-[2.5rem] px-4 py-2',
+    sm: 'min-h-[2.25rem] rounded-md px-3',
+    lg: 'min-h-[2.75rem] rounded-md px-8',
     icon: 'h-10 w-10'
   };
   
