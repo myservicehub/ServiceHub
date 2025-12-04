@@ -46,6 +46,7 @@ const PortfolioItem = ({ item, isOwner = false, onUpdate, onDelete }) => {
 
   const handleToggleVisibility = async () => {
     try {
+      setShowActions(false);
       setUpdating(true);
       const updatedItem = await portfolioAPI.updatePortfolioItem(item.id, {
         is_public: !item.is_public
@@ -76,6 +77,7 @@ const PortfolioItem = ({ item, isOwner = false, onUpdate, onDelete }) => {
     }
 
     try {
+      setShowActions(false);
       setUpdating(true);
       await portfolioAPI.deletePortfolioItem(item.id);
       
