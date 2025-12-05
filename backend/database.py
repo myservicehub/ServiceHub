@@ -106,6 +106,16 @@ class Database:
                     )
                 except Exception as idx_err:
                     logger.warning(f"Failed to ensure users public_id index: {idx_err}")
+                # Users: unique short numeric user_id index
+                try:
+                    await self.database.users.create_index(
+                        [("user_id", 1)],
+                        name="unique_user_id",
+                        unique=True,
+                        partialFilterExpression={"user_id": {"$type": "string"}}
+                    )
+                except Exception as idx_err:
+                    logger.warning(f"Failed to ensure users user_id index: {idx_err}")
 
                 # Jobs: compound indexes to optimize common queries and sorts
                 await self.database.jobs.create_index(
@@ -225,12 +235,14 @@ class Database:
         """Create a new user"""
         if self.database is None:
             raise RuntimeError("Database unavailable: cannot create user")
-        # Ensure short public_id exists
+        # Ensure short numeric user_id exists (4 digits). Mirror into public_id for compatibility.
         try:
-            if not user_data.get("public_id"):
-                user_data["public_id"] = await self.generate_user_public_id(length=7)
+            if not user_data.get("user_id"):
+                short_id = await self.generate_user_short_id(digits=4)
+                user_data["user_id"] = short_id
+                user_data.setdefault("public_id", short_id)
         except Exception as e:
-            logger.warning(f"Failed to generate public_id for user: {e}")
+            logger.warning(f"Failed to generate user_id for user: {e}")
         result = await self.database.users.insert_one(user_data)
         user_data['_id'] = str(result.inserted_id)
         return user_data
@@ -769,6 +781,40 @@ class Database:
             candidate = to_base36(seq).rjust(length, "0")[:length].lower()
 
         raise RuntimeError("Unable to generate unique user public_id")
+
+    async def generate_user_short_id(self, digits: int = 4) -> str:
+        """Generate a unique numeric user_id with fixed length (default 4)."""
+        if self.database is None:
+            raise RuntimeError("Database unavailable: cannot generate user_id")
+
+        max_value = 10 ** digits
+        wrap_threshold = max_value * 2
+
+        # Atomically increment counter and get current sequence
+        counter = await self.database.counters.find_one_and_update(
+            {"_id": "users_short_id"},
+            {"$inc": {"seq": 1}},
+            upsert=True,
+            return_document=True
+        )
+
+        seq = int(counter.get("seq", 1))
+
+        # Wrap sequence periodically
+        if seq >= wrap_threshold:
+            await self.database.counters.update_one({"_id": "users_short_id"}, {"$set": {"seq": 1}})
+            seq = 1
+
+        # Probe forward until unique
+        for _ in range(max_value):
+            candidate_num = seq % max_value
+            candidate = f"{candidate_num:0{digits}d}"
+            exists = await self.database.users.find_one({"user_id": candidate})
+            if not exists:
+                return candidate
+            seq += 1
+
+        raise RuntimeError("Unable to generate unique user_id")
 
     async def create_pending_job(self, user_id: str, job_data: dict, expires_at: datetime) -> dict:
         if self.database is None:
