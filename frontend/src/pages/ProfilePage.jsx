@@ -602,6 +602,14 @@ const ProfilePage = () => {
                         )}
                       </div>
 
+                      {/* Public ID Field (Read-only) */}
+                      <div>
+                        <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                          Public ID
+                        </label>
+                        <p className="text-gray-700 font-lato py-2">{profileData.public_id || profileData.id}</p>
+                      </div>
+
                       {/* Email Field (Read-only) */}
                       <div>
                         <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>

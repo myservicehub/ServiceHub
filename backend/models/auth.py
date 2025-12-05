@@ -19,6 +19,8 @@ class UserStatus(str, Enum):
 # Base User Model
 class User(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    # Short, shareable public ID for display (e.g., 7–10 chars)
+    public_id: Optional[str] = None
     name: str
     email: EmailStr
     phone: str
@@ -107,6 +109,7 @@ class LoginResponse(BaseModel):
 # Profile Models
 class UserProfile(BaseModel):
     id: str
+    public_id: Optional[str] = None
     name: str
     email: EmailStr
     phone: str

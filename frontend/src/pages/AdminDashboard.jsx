@@ -5229,7 +5229,7 @@ const AdminDashboard = () => {
                           {selectedUser.name || 'No Name Provided'}
                         </div>
                         <div className="text-sm text-gray-500">
-                          User ID: {selectedUser.id}
+                          Public ID: {selectedUser.public_id || selectedUser.id}
                         </div>
                       </div>
                     </div>

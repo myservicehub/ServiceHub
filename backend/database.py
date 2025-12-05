@@ -96,6 +96,17 @@ class Database:
                     partialFilterExpression={"email": {"$type": "string"}}
                 )
 
+                # Users: unique public_id index for short shareable IDs
+                try:
+                    await self.database.users.create_index(
+                        [("public_id", 1)],
+                        name="unique_public_id",
+                        unique=True,
+                        partialFilterExpression={"public_id": {"$type": "string"}}
+                    )
+                except Exception as idx_err:
+                    logger.warning(f"Failed to ensure users public_id index: {idx_err}")
+
                 # Jobs: compound indexes to optimize common queries and sorts
                 await self.database.jobs.create_index(
                     [("status", 1), ("created_at", -1)],
@@ -214,6 +225,12 @@ class Database:
         """Create a new user"""
         if self.database is None:
             raise RuntimeError("Database unavailable: cannot create user")
+        # Ensure short public_id exists
+        try:
+            if not user_data.get("public_id"):
+                user_data["public_id"] = await self.generate_user_public_id(length=7)
+        except Exception as e:
+            logger.warning(f"Failed to generate public_id for user: {e}")
         result = await self.database.users.insert_one(user_data)
         user_data['_id'] = str(result.inserted_id)
         return user_data
@@ -710,6 +727,48 @@ class Database:
             candidate = f"{seq:0{digits}d}"
 
         raise RuntimeError("Unable to generate unique job ID")
+
+    async def generate_user_public_id(self, length: int = 7) -> str:
+        """Generate a short, unique public ID for users.
+
+        Uses an atomic counter in the `counters` collection, converts the
+        sequence to base36, and probes forward to avoid collisions.
+        """
+        if self.database is None:
+            raise RuntimeError("Database unavailable: cannot generate user public_id")
+
+        # Atomically increment counter and get current sequence
+        counter = await self.database.counters.find_one_and_update(
+            {"_id": "users_public_id"},
+            {"$inc": {"seq": 1}},
+            upsert=True,
+            return_document=True
+        )
+
+        seq = int(counter.get("seq", 1))
+
+        # Base36 conversion
+        def to_base36(num: int) -> str:
+            chars = "0123456789abcdefghijklmnopqrstuvwxyz"
+            if num <= 0:
+                return "0"
+            s = []
+            while num:
+                num, rem = divmod(num, 36)
+                s.append(chars[rem])
+            return "".join(reversed(s))
+
+        candidate = to_base36(seq).rjust(length, "0")[:length].lower()
+
+        # Probe forward until unique
+        for _ in range(36 ** length):
+            exists = await self.database.users.find_one({"public_id": candidate})
+            if not exists:
+                return candidate
+            seq += 1
+            candidate = to_base36(seq).rjust(length, "0")[:length].lower()
+
+        raise RuntimeError("Unable to generate unique user public_id")
 
     async def create_pending_job(self, user_id: str, job_data: dict, expires_at: datetime) -> dict:
         if self.database is None:
