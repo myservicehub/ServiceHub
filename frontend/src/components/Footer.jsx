@@ -241,14 +241,21 @@ const Footer = () => {
 
           {/* Bottom Footer */}
           <div className="border-t border-gray-700 pt-8">
-            <div className="flex flex-row flex-nowrap justify-between items-center gap-4 overflow-x-auto">
-              <div className="flex flex-nowrap items-center gap-6 text-sm text-gray-300 font-lato whitespace-nowrap">
+            <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+              {/* Copyright on its own line */}
+              <div className="text-sm text-gray-300 font-lato">
                 <span>© 2025 serviceHub Ltd. All rights reserved.</span>
+              </div>
+
+              {/* Only policy links kept on one line */}
+              <div className="flex items-center gap-6 text-sm text-gray-300 font-lato whitespace-nowrap">
                 <Link to="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>
                 <Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
                 <Link to="/cookie-policy" className="hover:text-white transition-colors">Cookie Policy</Link>
               </div>
-              <div className="flex items-center text-sm text-gray-300 font-lato whitespace-nowrap">
+
+              {/* Made in Nigeria with flag (not forced onto policy links line) */}
+              <div className="flex items-center text-sm text-gray-300 font-lato">
                 <span className="flex items-center gap-2">
                   <svg
                     className="w-5 h-3 rounded-sm ring-1 ring-white/20"
