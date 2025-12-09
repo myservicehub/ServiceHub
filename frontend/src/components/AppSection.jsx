@@ -1,6 +1,11 @@
 import React from 'react';
 import { Button } from './ui/button';
-import { Smartphone, Camera, MessageCircle, Star } from 'lucide-react';
+import { Camera, MessageCircle, Star } from 'lucide-react';
+
+// App coming soon image source: supports remote URL via REACT_APP_COMING_SOON_IMAGE_URL
+// and falls back to the local public asset at /coming-soon.jpg
+const COMING_SOON_IMAGE_SRC =
+  process.env.REACT_APP_COMING_SOON_IMAGE_URL || `${process.env.PUBLIC_URL || ''}/coming-soon.jpg`;
 
 const AppSection = () => {
   const features = [
@@ -82,34 +87,14 @@ const AppSection = () => {
             </div>
 
             <div className="relative">
-              <div className="bg-gradient-to-br from-green-50 to-orange-50 rounded-3xl p-8 text-center">
-                <div className="w-32 h-64 bg-gray-900 rounded-3xl mx-auto relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-b from-green-400 to-green-600 p-6">
-                    <div className="bg-white rounded-lg p-4 mb-4">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <div className="w-4 h-4 rounded-full" style={{backgroundColor: '#34D164'}}></div>
-                        <span className="text-xs font-semibold font-montserrat">
-                          <span style={{color: '#121E3C'}}>Service</span>
-                          <span style={{color: '#34D164'}}>Hub</span>
-                        </span>
-                      </div>
-                      <div className="text-left text-xs space-y-1">
-                        <div className="bg-gray-100 h-2 rounded"></div>
-                        <div className="bg-gray-100 h-2 rounded w-3/4"></div>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      {[1, 2, 3].map((i) => (
-                        <div key={i} className="bg-white/20 backdrop-blur-sm rounded-lg p-2">
-                          <div className="flex items-center space-x-2">
-                            <Smartphone size={12} className="text-white" />
-                            <div className="bg-white/30 h-1 rounded flex-1"></div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+              <div className="bg-gradient-to-br from-green-50 to-blue-50 rounded-3xl p-4 sm:p-6 md:p-8 text-center">
+                <img
+                  src={COMING_SOON_IMAGE_SRC}
+                  alt="ServiceHub app coming soon teaser"
+                  loading="lazy"
+                  className="w-full max-w-lg mx-auto h-64 sm:h-80 md:h-[28rem] object-contain rounded-2xl shadow-xl"
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                />
                 <p className="text-gray-600 mt-6 text-sm">
                   Available for iOS and Android
                 </p>

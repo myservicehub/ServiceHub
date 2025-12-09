@@ -103,7 +103,7 @@ const HelpCentrePage = () => {
 
   const popularArticles = [
     {
-      title: "How to create a winning tradesperson profile",
+      title: "How to create a winning tradeperson profile",
       category: "Getting Started",
       readTime: "5 min read",
       views: "2.1k views",
@@ -211,8 +211,8 @@ const HelpCentrePage = () => {
       {/* Hero Section */}
       <div className="bg-gradient-to-br from-green-600 via-green-700 to-green-800 text-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-6">
-            Tradesperson Help Centre
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight leading-tight mb-6">
+            Tradeperson Help Centre
           </h1>
           <p className="text-xl mb-8 text-green-100">
             Everything you need to succeed on ServiceHub. Find answers, guides, and get support.

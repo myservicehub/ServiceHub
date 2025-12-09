@@ -31,7 +31,7 @@ const BlogPage = () => {
   const FALLBACK_POSTS = [
     {
       id: 'fallback-1',
-      title: 'How to create a winning tradesperson profile',
+      title: 'How to create a winning tradeperson profile',
       slug: 'winning-tradesperson-profile',
       content: `
         <p>A strong profile significantly increases your chances of getting hired.
@@ -91,7 +91,7 @@ const BlogPage = () => {
         typically takes 2–3 business days.</p>
         <p>Verified tradespeople appear higher in search and get more job requests.</p>
       `,
-      excerpt: 'Steps to become a verified tradesperson on ServiceHub.',
+      excerpt: 'Steps to become a verified tradeperson on ServiceHub.',
       featured_image: '',
       gallery_images: [],
       category: 'account_management',
@@ -230,6 +230,9 @@ const BlogPage = () => {
   useEffect(() => {
     if (slug) {
       loadSinglePost(slug);
+    } else {
+      setSelectedPost(null);
+      loadBlogData();
     }
   }, [slug]);
 
@@ -478,7 +481,7 @@ const BlogPage = () => {
           <div className="max-w-4xl mx-auto">
             {/* Back Button */}
             <button
-              onClick={() => navigate('/blog')}
+              onClick={() => { setSelectedPost(null); navigate('/blog'); }}
               className="flex items-center text-green-600 hover:text-green-700 mb-8"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -498,8 +501,13 @@ const BlogPage = () => {
               )}
               
               <div className="p-6 md:p-8">
+                {/* Title */}
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight leading-tight text-gray-900 mb-4">
+                  {selectedPost.title}
+                </h1>
+
                 {/* Meta Information */}
-                <div className="flex flex-wrap items-center space-x-4 text-sm text-gray-500 mb-6">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-500 mb-6">
                   <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full font-medium">
                     {selectedPost.category.replace('_', ' ').toUpperCase()}
                   </span>
@@ -517,14 +525,9 @@ const BlogPage = () => {
                   </span>
                 </div>
                 
-                {/* Title */}
-                <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
-                  {selectedPost.title}
-                </h1>
-                
                 {/* Excerpt */}
                 {selectedPost.excerpt && (
-                  <div className="text-xl text-gray-600 mb-8 pb-8 border-b border-gray-200">
+                  <div className="text-lg sm:text-xl text-gray-600 mb-8 pb-8 border-b border-gray-200">
                     {selectedPost.excerpt}
                   </div>
                 )}
@@ -611,10 +614,10 @@ const BlogPage = () => {
       <section className="bg-white border-b border-gray-200">
         <div className="container mx-auto px-4 py-12">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight leading-tight text-gray-900 mb-4">
               ServiceHub Blog
             </h1>
-            <p className="text-xl text-gray-600 mb-8">
+            <p className="text-lg sm:text-xl text-gray-600 mb-8">
               Expert insights, tips, and stories from Nigeria's home improvement community
             </p>
             

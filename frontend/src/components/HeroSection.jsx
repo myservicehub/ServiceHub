@@ -48,6 +48,11 @@ const FALLBACK_TRADE_CATEGORIES = [
   "Recycling"
 ];
 
+// Hero image source: supports remote URL via REACT_APP_HERO_IMAGE_URL
+// and falls back to the local public asset at /hero.jpg
+const HERO_IMAGE_SRC =
+  process.env.REACT_APP_HERO_IMAGE_URL || `${process.env.PUBLIC_URL || ''}/hero.jpg`;
+
 const HeroSection = () => {
   const [job, setJob] = useState('');
   const [jobSearch, setJobSearch] = useState('');
@@ -150,13 +155,27 @@ const HeroSection = () => {
   };
 
   return (
-    <section className="py-10 lg:py-16" style={{background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)'}}>
+    <section className="pt-8 md:pt-10 lg:pt-12 pb-16 lg:pb-24" style={{background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)'}}>
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl lg:text-6xl font-bold font-montserrat leading-tight mb-6" style={{color: '#121E3C'}}>
+          <h1 className="text-4xl lg:text-6xl font-bold font-montserrat mb-6" style={{color: '#121E3C'}}>
             The reliable way to hire a{' '}
             <span style={{color: '#34D164'}}>tradeperson</span>
           </h1>
+          {/* Image directly under headline (as requested) */}
+          <div className="w-full flex justify-center mb-8">
+            <div className="relative w-full max-w-2xl rounded-2xl overflow-hidden shadow-xl ring-1 ring-black/5">
+              <img
+                src={HERO_IMAGE_SRC}
+                alt="Skilled tradesperson at work"
+                loading="lazy"
+                className="w-full h-64 sm:h-80 md:h-[28rem] object-cover object-left md:object-center"
+                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              />
+              {/* Brand-tinted overlay for cohesive blend */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#121E3C]/30 via-transparent to-transparent" aria-hidden="true"></div>
+            </div>
+          </div>
           <p className="text-xl text-gray-600 font-lato mb-8 max-w-2xl mx-auto">
             Post your job for free and connect with vetted, local tradespeople across Nigeria. 
             Read genuine reviews from homeowners like you.
@@ -172,9 +191,9 @@ const HeroSection = () => {
                   <button
                     type="button"
                     onClick={toggleJobDropdown}
-                    className="w-full min-w-0 min-h-[3.25rem] h-auto py-3 pl-10 pr-10 text-left md:text-lg text-sm font-lato border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white hover:border-gray-400 transition-colors flex items-center"
+                    className="w-full h-12 pl-10 pr-10 text-left text-lg font-lato border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white hover:border-gray-400 transition-colors"
                   >
-                    <span className={`block truncate min-w-0 leading-normal ${job ? 'text-gray-900' : 'text-gray-500'}`}>
+                    <span className={job ? 'text-gray-900' : 'text-gray-500'}>
                       {job || 'What job do you need doing?'}
                     </span>
                   </button>
@@ -234,9 +253,9 @@ const HeroSection = () => {
                   <button
                     type="button"
                     onClick={() => setShowLocationDropdown(!showLocationDropdown)}
-                    className="w-full min-w-0 min-h-[3.25rem] h-auto py-3 pl-10 pr-10 text-left md:text-lg text-sm font-lato border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white hover:border-gray-400 transition-colors flex items-center"
+                    className="w-full h-12 pl-10 pr-10 text-left text-lg font-lato border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white hover:border-gray-400 transition-colors"
                   >
-                    <span className={`block truncate min-w-0 leading-normal ${location ? 'text-gray-900' : 'text-gray-500'}`}>
+                    <span className={location ? 'text-gray-900' : 'text-gray-500'}>
                       {location || 'Where are you based?'}
                     </span>
                   </button>
