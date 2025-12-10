@@ -155,10 +155,11 @@ const HeroSection = () => {
   };
 
   return (
-    <section className="pt-8 md:pt-10 lg:pt-12 pb-16 lg:pb-24" style={{background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)'}}>
+    <section className="pt-8 md:pt-10 lg:pt-12 pb-16 lg:pb-24" style={{ background: '#121E3C' }}>
       <div className="container mx-auto px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl lg:text-6xl font-bold font-montserrat mb-6" style={{color: '#121E3C'}}>
+        <div className="md:grid md:grid-cols-2 md:items-start md:gap-8 lg:gap-12">
+          <div className="max-w-4xl mx-auto md:mx-0 text-center md:text-left">
+          <h1 className="text-4xl lg:text-6xl font-bold font-montserrat mb-6 text-white">
             The reliable way to hire a{' '}
             <span style={{color: '#34D164'}}>tradeperson</span>
           </h1>
@@ -177,29 +178,15 @@ const HeroSection = () => {
             </div>
           </div>
 
-          {/* Desktop + larger screens: full-width (edge-to-edge) image */}
-          <div className="hidden md:block mb-8">
-            <div className="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen">
-              <div className="relative overflow-hidden shadow-xl">
-                <img
-                  src={HERO_IMAGE_SRC}
-                  alt="Skilled tradesperson at work"
-                  loading="lazy"
-                  className="block w-full h-auto object-contain"
-                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#121E3C]/30 via-transparent to-transparent" aria-hidden="true"></div>
-              </div>
-            </div>
-          </div>
-          <p className="text-xl text-gray-600 font-lato mb-8 max-w-2xl mx-auto">
+          
+          <p className="text-xl text-gray-200 font-lato mb-8 max-w-2xl mx-auto">
             Post your job for free and connect with vetted, local tradespeople across Nigeria. 
             Read genuine reviews from homeowners like you.
           </p>
 
           {/* Search Form */}
           <form onSubmit={handleSearch} className="bg-white rounded-lg shadow-lg p-6 mb-8">
-            <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex flex-col md:flex-row md:flex-wrap gap-4">
               {/* Job Category Dropdown */}
               <div className="flex-1 relative">
                 <div className="relative">
@@ -207,7 +194,7 @@ const HeroSection = () => {
                   <button
                     type="button"
                     onClick={toggleJobDropdown}
-                    className="w-full h-12 pl-10 pr-10 text-left text-lg font-lato border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white hover:border-gray-400 transition-colors"
+                    className="w-full h-12 pl-10 pr-10 text-left text-lg font-lato border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white hover:border-gray-400 transition-colors truncate whitespace-nowrap"
                   >
                     <span className={job ? 'text-gray-900' : 'text-gray-500'}>
                       {job || 'What job do you need doing?'}
@@ -269,7 +256,7 @@ const HeroSection = () => {
                   <button
                     type="button"
                     onClick={() => setShowLocationDropdown(!showLocationDropdown)}
-                    className="w-full h-12 pl-10 pr-10 text-left text-lg font-lato border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white hover:border-gray-400 transition-colors"
+                    className="w-full h-12 pl-10 pr-10 text-left text-lg font-lato border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white hover:border-gray-400 transition-colors truncate whitespace-nowrap"
                   >
                     <span className={location ? 'text-gray-900' : 'text-gray-500'}>
                       {location || 'Where are you based?'}
@@ -309,12 +296,12 @@ const HeroSection = () => {
             </div>
           </form>
 
-          <p className="text-gray-500 text-sm font-lato mb-6">
+          <p className="text-gray-300 text-sm font-lato mb-6">
             Posting is free and only takes a couple of minutes
           </p>
 
           {/* Alternative CTA */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start items-center">
             <Button 
               onClick={() => navigate('/post-job')}
               className="text-white px-8 py-3 text-lg font-lato font-semibold hover:opacity-90"
@@ -323,9 +310,24 @@ const HeroSection = () => {
               <Plus size={20} className="mr-2" />
               Post a Job Now
             </Button>
-            <span className="text-gray-500 font-lato">or use the search above to find local tradespeople</span>
+            <span className="text-gray-300 font-lato">or use the search above to find local tradespeople</span>
           </div>
         </div>
+
+        {/* Desktop + larger screens: right column image */}
+        <div className="hidden md:flex justify-end md:col-span-1">
+          <div className="relative w-full max-w-2xl rounded-2xl overflow-hidden shadow-xl ring-1 ring-black/5">
+            <img
+              src={HERO_IMAGE_SRC}
+              alt="Skilled tradesperson at work"
+              loading="lazy"
+              className="w-full h-[28rem] lg:h-[36rem] object-cover object-center"
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#121E3C]/30 via-transparent to-transparent" aria-hidden="true"></div>
+          </div>
+        </div>
+      </div>
       </div>
     </section>
   );

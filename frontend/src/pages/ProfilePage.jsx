@@ -1227,7 +1227,7 @@ const ProfilePage = () => {
                               )}
                             </div>
                           )}
-                          {(!profileData.email_verified || !profileData.phone_verified || (isTradesperson() && !profileData.verified_tradesperson)) && (
+                          {isTradesperson() && !profileData.verified_tradesperson && (
                             <div className="mt-4">
                               <Button
                                 size="sm"

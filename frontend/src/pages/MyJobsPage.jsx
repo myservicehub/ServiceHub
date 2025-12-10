@@ -76,6 +76,8 @@ const MyJobsPage = () => {
         return 'In Progress';
       case 'completed':
         return 'Completed';
+      case 'pending_approval':
+        return 'Pending Approval';
       case 'cancelled':
         return 'Cancelled';
       default:
@@ -89,6 +91,7 @@ const MyJobsPage = () => {
     { value: 'active', label: 'Active', icon: Clock },
     { value: 'in_progress', label: 'In Progress', icon: TrendingUp },
     { value: 'completed', label: 'Completed', icon: CheckCircle },
+    { value: 'pending_approval', label: 'Pending Approval', icon: AlertCircle },
     { value: 'cancelled', label: 'Cancelled', icon: X }
   ];
 
@@ -517,10 +520,30 @@ const MyJobsPage = () => {
         return 'bg-blue-100 text-blue-800';
       case 'in_progress':
         return 'bg-yellow-100 text-yellow-800';
+      case 'pending_approval':
+        return 'bg-amber-100 text-amber-700';
       case 'cancelled':
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  // Human-friendly label for job status badges
+  const getJobStatusLabel = (status) => {
+    switch (status) {
+      case 'active':
+        return 'Active';
+      case 'completed':
+        return 'Completed';
+      case 'in_progress':
+        return 'In Progress';
+      case 'pending_approval':
+        return 'Pending Approval';
+      case 'cancelled':
+        return 'Cancelled';
+      default:
+        return (status || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
     }
   };
 
@@ -588,7 +611,7 @@ const MyJobsPage = () => {
                         {selectedJob.title}
                       </CardTitle>
                       <Badge className={getStatusColor(selectedJob.status)}>
-                        {selectedJob.status}
+                        {getJobStatusLabel(selectedJob.status)}
                       </Badge>
                     </div>
                     
@@ -881,51 +904,48 @@ const MyJobsPage = () => {
                       .map((job) => (
                         <Card key={job.id} className="hover:shadow-lg transition-shadow duration-300">
                           <CardHeader>
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center space-x-2 mb-2">
-                                  <CardTitle className="text-xl font-bold font-montserrat" style={{color: '#121E3C'}}>
-                                    {job.title}
-                                  </CardTitle>
-                                  <Badge className={getStatusColor(job.status)}>
-                                    {job.status}
-                                  </Badge>
-                                </div>
-                                
-                                <div className="flex items-center space-x-4 text-sm text-gray-600 font-lato">
-                                  <span className="flex items-center">
-                                    <MapPin size={14} className="mr-1" />
-                                    {job.location}
-                                  </span>
-                                  <span className="flex items-center">
-                                    <Calendar size={14} className="mr-1" />
-                                    Posted {formatDate(job.created_at)}
-                                  </span>
-                                  <span className="flex items-center">
-                                    <Heart size={14} className="mr-1" />
-                                    {job.interests_count || 0} interested
-                                  </span>
-                                  <span className="flex items-center">
-                                    Job ID: {job.id}
-                                  </span>
-                                </div>
+                            <div className="space-y-3">
+                              {/* Title & Status */}
+                              <div className="flex items-center gap-2">
+                                <CardTitle className="text-xl font-bold font-montserrat" style={{color: '#121E3C'}}>
+                                  {job.title}
+                                </CardTitle>
+                                <Badge className={getStatusColor(job.status)}>
+                                  {getJobStatusLabel(job.status)}
+                                </Badge>
                               </div>
 
-                              {/* Budget & Access Fee Display */}
-                              <div className="text-right space-y-2">
-                                {job.budget_min && job.budget_max ? (
-                                  <div>
-                                    <div className="text-lg font-bold font-montserrat" style={{color: '#34D164'}}>
-                                      {formatCurrency(job.budget_min)} - {formatCurrency(job.budget_max)}
+                              {/* Meta info */}
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-600 font-lato">
+                                <div className="flex items-center">
+                                  <MapPin size={14} className="mr-1" />
+                                  {job.location}
+                                </div>
+                                <div className="flex items-center sm:justify-end">
+                                  <Calendar size={14} className="mr-1" />
+                                  <span>Posted {formatDate(job.created_at)}</span>
+                                </div>
+                                <div className="flex items-center">
+                                  <Heart size={14} className="mr-1" />
+                                  <span>{job.interests_count || 0} interested</span>
+                                </div>
+                                <div className="flex items-center sm:justify-end">
+                                  <span>Job ID: {job.id}</span>
+                                </div>
+
+                                {/* Budget (separate row for mobile, aligned right on larger screens) */}
+                                <div className="sm:col-span-2 flex items-center sm:justify-between">
+                                  {job.budget_min && job.budget_max ? (
+                                    <div className="flex items-baseline gap-2">
+                                      <div className="text-lg font-bold font-montserrat" style={{color: '#34D164'}}>
+                                        {formatCurrency(job.budget_min)} - {formatCurrency(job.budget_max)}
+                                      </div>
+                                      <div className="text-sm text-gray-500 font-lato">Budget Range</div>
                                     </div>
-                                    <div className="text-sm text-gray-500 font-lato">Budget Range</div>
-                                  </div>
-                                ) : (
-                                  <div className="text-sm text-gray-500 font-lato">Budget not specified</div>
-                                )}
-                                
-                                {/* Access Fee - Hidden from homeowners, only shown to tradespeople */}
-                                {/* Note: This section is intentionally removed from homeowner view */}
+                                  ) : (
+                                    <div className="text-sm text-gray-500 font-lato">Budget not specified</div>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </CardHeader>
@@ -958,38 +978,37 @@ const MyJobsPage = () => {
                               </div>
                             </div>
 
-                            {/* Action Buttons */}
-                            <div className="flex justify-between items-center pt-4 border-t">
+                            {/* Action Area */}
+                            <div className="pt-4 border-t flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                               <div className="text-sm text-gray-500 font-lato">
                                 {job.interests_count > 0 
                                   ? `${job.interests_count} tradesperson${job.interests_count > 1 ? 's' : ''} interested`
                                   : 'No interested tradespeople yet'
                                 }
                               </div>
-                              
-                              <div className="flex flex-wrap gap-2">
-                                {/* View Interested Button */}
-                                <Button
-                                  onClick={() => handleViewInterestedTradespeople(job)}
-                                  className="text-white font-lato"
-                                  style={{backgroundColor: '#34D164'}}
-                                  disabled={!job.interests_count || job.interests_count === 0}
-                                >
-                                  <Users size={16} className="mr-2" />
-                                  View Interested ({job.interests_count || 0})
-                                </Button>
 
-                                {/* Edit Button - Only for active jobs */}
-                                {job.status === 'active' && (
-                                  <Button
-                                    onClick={() => handleEditJob(job)}
-                                    variant="outline"
-                                    className="font-lato"
-                                  >
-                                    <Edit3 size={16} className="mr-2" />
-                                    Edit
-                                  </Button>
-                                )}
+                              {/* View Interested Button */}
+                              <Button
+                                onClick={() => handleViewInterestedTradespeople(job)}
+                                className="w-full sm:w-auto text-white font-lato"
+                                style={{backgroundColor: '#34D164'}}
+                                disabled={!job.interests_count || job.interests_count === 0}
+                              >
+                                <Users size={16} className="mr-2" />
+                                View Interested ({job.interests_count || 0})
+                              </Button>
+                              
+                              {/* Edit Button - Only for active jobs */}
+                              {job.status === 'active' && (
+                                <Button
+                                  onClick={() => handleEditJob(job)}
+                                  variant="outline"
+                                  className="font-lato"
+                                >
+                                  <Edit3 size={16} className="mr-2" />
+                                  Edit
+                                </Button>
+                              )}
 
                                 {/* Completed Job Details - Only for completed jobs */}
                                 {job.status === 'completed' && (
@@ -1143,7 +1162,6 @@ const MyJobsPage = () => {
                                   </Button>
                                 )}
                               </div>
-                            </div>
                           </CardContent>
                         </Card>
                       ))
