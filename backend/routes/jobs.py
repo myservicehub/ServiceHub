@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 from ..models import JobCreate, JobUpdate, JobCloseRequest, Job, JobsResponse
 from ..models.base import JobStatus
-from ..models.notifications import NotificationType
+from ..models.notifications import NotificationType, NotificationChannel, NotificationPreferences
 from ..auth.dependencies import (
     get_current_homeowner,
     get_current_tradesperson,
@@ -987,6 +987,25 @@ async def notify_matching_tradespeople_new_job(job: dict):
                         miles = round(km * 0.621, 1)
                     except Exception:
                         miles = None
+                # Determine effective channel and handle missing contact details
+                recipient_email = tp.get("email")
+                recipient_phone = tp.get("phone")
+                try:
+                    preferred_channel = getattr(preferences, NotificationType.NEW_MATCHING_JOB.value, NotificationChannel.EMAIL)
+                except Exception:
+                    preferred_channel = NotificationChannel.EMAIL
+                effective_channel = preferred_channel
+                # Fallback: if SMS/BOTH but no phone, use EMAIL
+                if preferred_channel in [NotificationChannel.SMS, NotificationChannel.BOTH] and not recipient_phone:
+                    effective_channel = NotificationChannel.EMAIL
+                # Fallback: if EMAIL but no email and phone exists, use SMS
+                if preferred_channel == NotificationChannel.EMAIL and not recipient_email and recipient_phone:
+                    effective_channel = NotificationChannel.SMS
+                # Create transient preferences override for this send
+                try:
+                    effective_preferences: NotificationPreferences = preferences.copy(update={"new_matching_job": effective_channel})
+                except Exception:
+                    effective_preferences = preferences
                 template_data = {
                     "Name": name,
                     "trade_title": job.get("title", "Job"),
@@ -1003,8 +1022,9 @@ async def notify_matching_tradespeople_new_job(job: dict):
                     user_id=tp_id,
                     notification_type=NotificationType.NEW_MATCHING_JOB,
                     template_data=template_data,
-                    user_preferences=preferences,
-                    recipient_email=tp.get("email")
+                    user_preferences=effective_preferences,
+                    recipient_email=recipient_email,
+                    recipient_phone=recipient_phone
                 )
                 await database.create_notification(notification)
             except Exception as e:

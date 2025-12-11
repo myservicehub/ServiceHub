@@ -269,5 +269,21 @@ def _get_test_template_data(notification_type: NotificationType, user: User) -> 
         "homeowner_email": "homeowner@example.com",
         "homeowner_phone": "+2348123456789"
     }
-    
+
+    frontend_url = os.environ.get('FRONTEND_URL', 'https://servicehub.ng')
+
+    if notification_type == NotificationType.NEW_MATCHING_JOB:
+        return {
+            "Name": user.name or "Tradesperson",
+            "trade_title": "Leaky faucet repair",
+            "trade_category": "Plumber",
+            "Location": "Lagos, Nigeria",
+            "miles": "",
+            "see_more_url": f"{frontend_url}/browse-jobs",
+            "support_url": f"{frontend_url}/help-faqs",
+            "preferences_url": f"{frontend_url}/notifications/preferences",
+            "privacy_url": f"{frontend_url}/policies/privacy",
+            "terms_url": f"{frontend_url}/policies/terms"
+        }
+
     return base_data
