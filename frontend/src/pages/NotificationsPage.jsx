@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -54,6 +54,7 @@ const NotificationsPage = () => {
   const [actionLoading, setActionLoading] = useState(new Set());
   
   const { user, isAuthenticated } = useAuth();
+  const location = useLocation();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -64,6 +65,22 @@ const NotificationsPage = () => {
     }
     loadNotifications();
   }, [isAuthenticated, navigate, currentPage, filterType]);
+
+  // When navigated with ?focus=<id>, auto-expand and mark as read
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const focusId = params.get('focus');
+    if (!focusId || notifications.length === 0) return;
+
+    // Expand targeted notification
+    setExpandedNotifications(prev => new Set([...prev, focusId]));
+
+    // If not read, mark it read
+    const target = notifications.find(n => String(n.id) === String(focusId));
+    if (target && target.status !== 'read') {
+      markAsRead(target.id);
+    }
+  }, [location.search, notifications]);
 
   const loadNotifications = async (showLoader = true) => {
     try {
@@ -490,7 +507,8 @@ const NotificationsPage = () => {
             <div className="space-y-4">
               {filteredNotifications.map((notification) => (
                 <Card 
-                  key={notification.id} 
+                  key={notification.id}
+                  id={`notification-${notification.id}`}
                   className={`transition-all duration-200 hover:shadow-md ${
                     notification.status !== 'read' 
                       ? 'border-l-4 border-l-blue-500 bg-blue-50/30' 

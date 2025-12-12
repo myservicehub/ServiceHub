@@ -5993,7 +5993,16 @@ class Database:
             template_service = NotificationTemplateService()
             
             templates = []
-            template_types = ["new_interest", "contact_shared", "job_posted", "payment_confirmation", "new_message"]
+            # Include additional built-in templates supported by NotificationTemplateService
+            template_types = [
+                "new_interest",
+                "contact_shared",
+                "job_posted",
+                "payment_confirmation",
+                "new_message",
+                "new_matching_job",
+                "job_cancelled",
+            ]
             channels = ["email", "sms"]
             
             for template_type in template_types:
@@ -6002,8 +6011,8 @@ class Database:
                     if template:
                         templates.append({
                             "id": template.id,
-                            "type": template.type,
-                            "channel": template.channel,
+                            "type": getattr(template.type, "value", template.type),
+                            "channel": getattr(template.channel, "value", template.channel),
                             "subject_template": template.subject_template,
                             "content_template": template.content_template,
                             "variables": template.variables

@@ -69,14 +69,33 @@ const NotificationIndicator = () => {
     navigate('/notifications/preferences');
   };
 
-  const handleNotificationClick = (notification) => {
+  const handleNotificationClick = async (notification) => {
+    // Close dropdown
     setShowDropdown(false);
-    // Navigate based on notification type
-    if (notification.type === 'new_interest' || notification.type === 'job_posted') {
-      navigate('/my-jobs');
-    } else if (notification.type === 'contact_shared' || notification.type === 'payment_confirmation') {
-      navigate('/my-interests');
+
+    // If unread, optimistically mark as read locally and via API
+    const isUnread = notification.status === 'sent';
+    if (isUnread) {
+      // Optimistic UI update
+      setRecentNotifications(prev =>
+        prev.map(n => (n.id === notification.id ? { ...n, status: 'read' } : n))
+      );
+      setUnreadCount(prev => (prev > 0 ? prev - 1 : 0));
+
+      try {
+        await notificationsAPI.markAsRead(notification.id);
+      } catch (err) {
+        // Revert on failure
+        console.error('Failed to mark notification as read:', err);
+        setRecentNotifications(prev =>
+          prev.map(n => (n.id === notification.id ? { ...n, status: 'sent' } : n))
+        );
+        setUnreadCount(prev => prev + 1);
+      }
     }
+
+    // Navigate to notifications page focused on this item to read full content
+    navigate(`/notifications?focus=${encodeURIComponent(notification.id)}`);
   };
 
   const formatNotificationContent = (content) => {

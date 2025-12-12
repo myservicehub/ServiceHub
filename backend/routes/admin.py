@@ -1661,7 +1661,9 @@ async def get_notification_templates():
             {"value": "contact_shared", "label": "Contact Shared"},
             {"value": "job_posted", "label": "Job Posted"},
             {"value": "payment_confirmation", "label": "Payment Confirmation"},
-            {"value": "new_message", "label": "New Message"}
+            {"value": "new_message", "label": "New Message"},
+            {"value": "new_matching_job", "label": "New Matching Job"},
+            {"value": "job_cancelled", "label": "Job Cancelled"}
         ],
         "channels": [
             {"value": "email", "label": "Email"},
