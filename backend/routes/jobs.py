@@ -31,6 +31,7 @@ from datetime import datetime, timedelta
 import uuid
 import logging
 import os
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -958,13 +959,53 @@ async def notify_matching_tradespeople_new_job(job: dict):
         category = job.get("category", "")
         if not category:
             return
+        normalized_cat = category.strip().lower()
+        synonyms_map = {
+            "plumbing": ["plumber", "plumbing", "pipe", "leak", "sanitary"],
+            "electrical repairs": ["electrician", "electrical", "wiring", "power"],
+            "tiling": ["tiler", "tiling", "tiles"],
+            "painting": ["painter", "painting", "paint"],
+            "carpentry": ["carpenter", "carpentry"],
+            "furniture making": ["furniture", "furniture maker"],
+            "interior design": ["interior", "design", "interior designer"],
+            "air conditioning & refrigeration": ["air conditioning", "ac", "hvac", "refrigeration"],
+            "generator services": ["generator", "gen", "genset"],
+            "solar & inverter installation": ["solar", "inverter", "pv", "solar panel"],
+            "cctv & security systems": ["cctv", "security", "surveillance"],
+            "locksmithing": ["locksmith", "locks"],
+            "roofing": ["roofer", "roofing", "roof"],
+            "plastering/pop": ["plaster", "pop"],
+            "door & window installation": ["door", "window", "installer"],
+            "bathroom fitting": ["bathroom", "toilet", "sanitary"],
+            "flooring": ["floor", "flooring"],
+            "welding": ["welder", "welding"],
+            "cleaning": ["cleaner", "cleaning"],
+            "relocation/moving": ["relocation", "moving", "mover"],
+            "waste disposal": ["waste", "disposal", "trash"],
+            "recycling": ["recycle", "recycling"],
+            "building": ["builder", "building", "construction"],
+            "concrete works": ["concrete", "masonry", "cement"]
+        }
+        synonyms = set([category])
+        synonyms.update(synonyms_map.get(normalized_cat, []))
+        alternation = "|".join(sorted({re.escape(s) for s in synonyms}))
+        pattern = f"({alternation})"
         filters = {
             "role": "tradesperson",
             "status": {"$ne": "deleted"},
-            "trade_categories": {"$regex": f"^{category}$", "$options": "i"}
+            "$or": [
+                {"trade_categories": {"$regex": pattern, "$options": "i"}},
+                {"profession": {"$regex": pattern, "$options": "i"}},
+            ],
         }
         cursor = database.users_collection.find(filters)
         tradespeople = await cursor.to_list(length=None)
+        logger.info(
+            "NEW_MATCHING_JOB: found %s tradespeople for category '%s' (synonyms: %s)",
+            len(tradespeople),
+            category,
+            ", ".join(sorted(synonyms)),
+        )
         frontend_url = os.environ.get("FRONTEND_URL", "https://servicehub.ng")
         for tp in tradespeople:
             try:
@@ -983,6 +1024,12 @@ async def notify_matching_tradespeople_new_job(job: dict):
                         km = database.calculate_distance(tlat, tlng, jlat, jlng)
                         max_km = tp.get("travel_distance_km", 25)
                         if km > float(max_km):
+                            logger.info(
+                                "NEW_MATCHING_JOB: skipped tradesperson %s due to distance %.1f km > max %.1f km",
+                                tp_id,
+                                km,
+                                float(max_km),
+                            )
                             continue
                         miles = round(km * 0.621, 1)
                     except Exception:
