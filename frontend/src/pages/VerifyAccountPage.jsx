@@ -38,7 +38,7 @@ const VerifyAccountPage = () => {
     name: '', phone: '', email: '', relationship: ''
   });
   const [verified, setVerified] = useState(false);
-  const [nextPath, setNextPath] = useState('/profile');
+  const [nextPath, setNextPath] = useState('/my-jobs');
   const [businessType, setBusinessType] = useState(user?.business_type || '');
   const [idSelfie, setIdSelfie] = useState(null);
   const [idDocument, setIdDocument] = useState(null);
@@ -100,8 +100,6 @@ const VerifyAccountPage = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const token = params.get('token');
-    const next = params.get('next');
-    if (next) setNextPath(next.startsWith('/') ? next : '/profile');
     if (!token) return;
     let isMounted = true;
     (async () => {
@@ -115,9 +113,6 @@ const VerifyAccountPage = () => {
             }
           }
           if (resp?.auto_posted && resp?.job?.id) {
-            try {
-              setNextPath('/my-jobs');
-            } catch {}
             toast({
               title: 'Email Verified — Job Submitted',
               description: `Your job has been submitted for admin review. Job ID: ${resp.job.id}`,
@@ -126,9 +121,8 @@ const VerifyAccountPage = () => {
             toast({ title: 'Email Verified', description: resp?.message || 'Your email has been verified.' });
           }
           setVerified(true);
-          setTimeout(() => {
-            navigate(nextPath, { replace: true });
-          }, 3000);
+          try { setNextPath('/my-jobs'); } catch {}
+          navigate('/my-jobs', { replace: true });
         }
       } catch (e) {
         const msg = e?.response?.data?.detail || 'Invalid or expired verification link';

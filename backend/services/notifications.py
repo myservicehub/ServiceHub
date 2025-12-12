@@ -844,6 +844,14 @@ serviceHub Team
     </html>
 """,
                 variables=["Name", "trade_title", "trade_category", "Location", "miles", "see_more_url", "support_url", "preferences_url", "privacy_url", "terms_url"]
+            ),
+            NotificationChannel.SMS: NotificationTemplate(
+                id=str(uuid.uuid4()),
+                type=NotificationType.NEW_MATCHING_JOB,
+                channel=NotificationChannel.SMS,
+                subject_template="New Job: {trade_title}",
+                content_template="🛠️ New job near you: {trade_title} — {trade_category} at {Location} {miles}. View details: {see_more_url}",
+                variables=["trade_title", "trade_category", "Location", "miles", "see_more_url"]
             )
         }
 
@@ -905,7 +913,7 @@ class NotificationService:
         
         # Get user's preferred channel for this notification type
         channel = getattr(user_preferences, notification_type.value, NotificationChannel.EMAIL)
-        
+
         # Create notification record
         notification = Notification(
             id=str(uuid.uuid4()),
@@ -918,24 +926,40 @@ class NotificationService:
             content="",  # Will be filled by template
             metadata=template_data
         )
-        
+
+        email_failed = False
+
         try:
             # Send based on channel preference
             if channel in [NotificationChannel.EMAIL, NotificationChannel.BOTH]:
-                await self._send_email_notification(notification, template_data)
-            
+                try:
+                    await self._send_email_notification(notification, template_data)
+                except Exception as e:
+                    email_failed = True
+                    logger.error(f"❌ Email delivery failed, considering SMS fallback: {str(e)}")
+
             if channel in [NotificationChannel.SMS, NotificationChannel.BOTH]:
                 await self._send_sms_notification(notification, template_data)
-            
+
+            # If preferred channel was EMAIL and it failed, attempt SMS fallback
+            if channel == NotificationChannel.EMAIL and email_failed and recipient_phone:
+                try:
+                    # Switch channel for fallback delivery
+                    notification.channel = NotificationChannel.SMS
+                    await self._send_sms_notification(notification, template_data)
+                    logger.info(f"🔁 Fallback SMS sent for notification: {notification.id}")
+                except Exception as sms_err:
+                    logger.error(f"❌ SMS fallback failed: {str(sms_err)}")
+
             notification.status = NotificationStatus.SENT
             notification.sent_at = datetime.now(timezone.utc)
-            
-            logger.info(f"✅ Notification sent successfully: {notification.id}")
-            
+
+            logger.info(f"✅ Notification processed: {notification.id}")
+
         except Exception as e:
             notification.status = NotificationStatus.FAILED
-            logger.error(f"❌ Notification failed: {notification.id} - {str(e)}")
-        
+            logger.error(f"❌ Notification processing failed: {notification.id} - {str(e)}")
+
         return notification
     
     async def _send_email_notification(self, notification: Notification, template_data: Dict[str, Any]):
