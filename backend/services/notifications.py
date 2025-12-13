@@ -849,7 +849,7 @@ serviceHub Team
         .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
         .logo img { height: 40px; }
         .logo span { font-size: 24px; font-weight: bold; color: #000; }
-        .button { display: inline-block; padding: 10px 20px; background-color: #003366; color: #fff; text-decoration: none; border-radius: 4px; margin: 16px 0; }
+        .button { display: inline-block; padding: 12px 20px; background-color: #165DFF; color: #fff; text-decoration: none; border-radius: 6px; margin: 16px 0; }
         .steps { margin: 16px 0; padding-left: 20px; }
         .footer { margin-top: 24px; padding-top: 16px; border-top: 1px solid #eee; font-size: 12px; color: #666; }
         .footer a { color: #666; text-decoration: none; }
