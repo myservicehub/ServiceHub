@@ -862,10 +862,32 @@ serviceHub Team
         return self.templates.get(notification_type, {}).get(channel)
     
     def render_template(self, template: NotificationTemplate, data: Dict[str, Any]) -> tuple[str, str]:
-        """Render template with provided data"""
+        """Render template with provided data.
+
+        Note: HTML email templates may include CSS blocks inside <style> tags
+        that use curly braces (e.g., `.container { font-family: ... }`). Since
+        Python's str.format also uses curly braces for placeholders, we must
+        escape literal braces within <style> blocks to avoid KeyError during
+        formatting.
+        """
+        import re
         try:
             subject = template.subject_template.format(**data)
-            content = template.content_template.format(**data)
+
+            content_template = template.content_template
+
+            # Escape curly braces inside <style> blocks to prevent str.format
+            # from treating CSS declarations as placeholders.
+            def _escape_style(match: re.Match) -> str:
+                start_tag = match.group(1)
+                css_body = match.group(2)
+                end_tag = match.group(3)
+                css_body = css_body.replace('{', '{{').replace('}', '}}')
+                return f"{start_tag}{css_body}{end_tag}"
+
+            content_template = re.sub(r"(<style[^>]*>)(.*?)(</style>)", _escape_style, content_template, flags=re.DOTALL|re.IGNORECASE)
+
+            content = content_template.format(**data)
             return subject, content
         except KeyError as e:
             logger.error(f"❌ Template rendering failed - missing variable: {e}")
