@@ -1046,6 +1046,7 @@ async def notify_matching_tradespeople_new_job(job: dict):
                     "trade_category": job.get("category", ""),
                     "Location": job.get("location", ""),
                     "miles": f"{miles} miles" if miles is not None else "",
+                    "logo_url": f"{frontend_url}/Logo-Icon-Green.png",
                     "see_more_url": f"{frontend_url}/browse-jobs",
                     "support_url": f"{frontend_url}/help-faqs",
                     "preferences_url": f"{frontend_url}/notifications/preferences",

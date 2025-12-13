@@ -279,6 +279,7 @@ def _get_test_template_data(notification_type: NotificationType, user: User) -> 
             "trade_category": "Plumber",
             "Location": "Lagos, Nigeria",
             "miles": "",
+            "logo_url": f"{frontend_url}/Logo-Icon-Green.png",
             "see_more_url": f"{frontend_url}/browse-jobs",
             "support_url": f"{frontend_url}/help-faqs",
             "preferences_url": f"{frontend_url}/notifications/preferences",

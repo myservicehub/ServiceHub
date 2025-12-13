@@ -816,7 +816,7 @@ serviceHub Team
 <body>
     <div class="container">
         <div class="logo">
-            <img src="servicehub-logo.png" alt="ServiceHub Logo">
+            <img src="{logo_url}" alt="ServiceHub Logo">
             <span>ServiceHub</span>
         </div>
         <h2>Hello {Name}</h2>
@@ -843,7 +843,7 @@ serviceHub Team
     </body>
     </html>
 """,
-                variables=["Name", "trade_title", "trade_category", "Location", "miles", "see_more_url", "support_url", "preferences_url", "privacy_url", "terms_url"]
+                variables=["Name", "trade_title", "trade_category", "Location", "miles", "see_more_url", "support_url", "preferences_url", "privacy_url", "terms_url", "logo_url"]
             ),
             NotificationChannel.SMS: NotificationTemplate(
                 id=str(uuid.uuid4()),
