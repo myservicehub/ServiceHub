@@ -19,7 +19,8 @@ import {
   List,
   Navigation,
   Settings,
-  Crosshair
+  Crosshair,
+  Wrench
 } from 'lucide-react';
 import { jobsAPI, interestsAPI } from '../api/services';
 import { walletAPI, tradeCategoryQuestionsAPI } from '../api/wallet';
@@ -523,6 +524,16 @@ const BrowseJobsPage = () => {
     }).format(value);
   };
 
+  // VAT settings (defaults to Nigeria's 7.5% if not provided)
+  const VAT_RATE = Number(process.env.REACT_APP_VAT_RATE ?? 0.075);
+  const computeVatInclusive = (amountNaira) => {
+    const base = Math.max(Number(amountNaira || 0), 0);
+    const vat = Math.round(base * VAT_RATE);
+    const total = base + vat;
+    const totalCoins = Math.ceil(total / 100); // 1 coin = ₦100
+    return { vat, total, totalCoins };
+  };
+
   const handleViewJobDetails = async (job) => {
     setSelectedJobDetails(job);
     setSelectedJobAnswers(null); // Reset previous answers
@@ -542,27 +553,22 @@ const BrowseJobsPage = () => {
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now - date);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 1) return '1 day ago';
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-    return `${Math.floor(diffDays / 30)} months ago`;
+    const diffMs = Date.now() - date.getTime();
+    const seconds = Math.floor(diffMs / 1000);
+    if (seconds < 60) return 'just now';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} min${minutes === 1 ? '' : 's'} ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days} day${days === 1 ? '' : 's'} ago`;
+    const weeks = Math.floor(days / 7);
+    if (days < 30) return `${weeks} week${weeks === 1 ? '' : 's'} ago`;
+    const months = Math.floor(days / 30);
+    return `${months} month${months === 1 ? '' : 's'} ago`;
   };
 
-  const getTimeAgo = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now - date);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 1) return '1 day ago';
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-    return `${Math.floor(diffDays / 30)} months ago`;
-  };
+  const getTimeAgo = (dateString) => formatDate(dateString);
 
 
 
@@ -973,60 +979,32 @@ const BrowseJobsPage = () => {
                         onClick={() => handleViewJobDetails(job)}
                       >
                         <CardContent className="p-4">
-                          {/* Top row with category, location, and time */}
-                          <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
-                            <div className="flex items-center space-x-4">
-                              <span className="flex items-center">
-                                🔨 {job.category}
-                              </span>
-                              <span className="flex items-center">
-                                📍 {job.location}
-                                {job.distance_km !== undefined && job.distance_km !== null && (
-                                  <span className="ml-2 text-blue-600 font-medium">
-                                    {Number(job.distance_km).toFixed(1)} km away
-                                  </span>
-                                )}
-                              </span>
-                              <span className="flex items-center">
-                                🕐 {formatDate(job.created_at)}
-                              </span>
-                            </div>
-                            {/* Skills match indicator */}
-                            {user?.trade_categories?.some(skill => 
-                              skill.toLowerCase() === job.category.toLowerCase()
-                            ) && (
-                              <Badge className="bg-green-100 text-green-800 text-xs">
-                                ✓ Skills Match
-                              </Badge>
-                            )}
-                          </div>
-
                           {/* Job title */}
-                          <h3 className="text-lg font-semibold text-purple-900 leading-tight mb-3">
+                          <h3 className="text-xl font-semibold text-purple-700 leading-tight mb-2">
                             {job.title}
                           </h3>
 
-                          {/* Show Interest Button */}
-                          <div className="flex justify-end">
-                          <Button
-                            onClick={(e) => {
-                              e.stopPropagation(); // Prevent card click
-                              handleShowInterest(job);
-                            }}
-                            disabled={!user?.verified_tradesperson ||
-                                      showingInterest === job.id ||
-                                      (userInterests && userInterests.includes(job.id))}
-                            className="text-white font-lato"
-                            style={{backgroundColor: '#34D164'}}
-                          >
-                            {!user?.verified_tradesperson
-                              ? 'Verify to Show Interest'
-                              : showingInterest === job.id
-                                ? 'Showing Interest...'
-                                : (userInterests && userInterests.includes(job.id))
-                                  ? 'Already Interested'
-                                  : 'Show Interest'}
-                          </Button>
+                          {/* Meta information stacked */}
+                          <div className="space-y-1 text-sm text-gray-700">
+                            <div className="flex items-center">
+                              <Wrench size={16} className="mr-2 text-gray-500" />
+                              <span>{job.category}</span>
+                            </div>
+                            <div className="flex items-center">
+                              <MapPin size={16} className="mr-2 text-gray-500" />
+                              <span>
+                                {job.location}
+                                {job.distance_km !== undefined && job.distance_km !== null && (
+                                  <span className="ml-1 text-gray-600">
+                                    ({Number(job.distance_km).toFixed(1)} km)
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                            <div className="flex items-center">
+                              <Clock size={16} className="mr-2 text-gray-500" />
+                              <span>{formatDate(job.created_at)}</span>
+                            </div>
                           </div>
                         </CardContent>
                       </Card>
@@ -1123,14 +1101,20 @@ const BrowseJobsPage = () => {
 
                     {/* Access Fee - Only visible to tradespeople */}
                     {isTradesperson() && (
-                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                        <div className="font-semibold text-yellow-800">
-                          Access Fee: {selectedJobDetails.access_fee_coins || 10} coins
-                        </div>
-                        <div className="text-sm text-yellow-600">
-                          ₦{(selectedJobDetails.access_fee_naira || 1000).toLocaleString()} for contact details
-                        </div>
-                      </div>
+                      (() => {
+                        const { vat, total, totalCoins } = computeVatInclusive(selectedJobDetails.access_fee_naira || 1000);
+                        return (
+                          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                            <div className="font-semibold text-yellow-800">
+                              VAT + Access Fee: {totalCoins} coins
+                            </div>
+                            <div className="text-sm text-yellow-700">
+                              ₦{total.toLocaleString()} total for contact details
+                              <div className="text-xs text-yellow-600">includes ₦{vat.toLocaleString()} VAT</div>
+                            </div>
+                          </div>
+                        );
+                      })()
                     )}
                   </div>
                 </div>

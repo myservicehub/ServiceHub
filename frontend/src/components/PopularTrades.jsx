@@ -5,6 +5,7 @@ import { ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { statsAPI } from '../api/services';
 import { useAPI } from '../hooks/useAPI';
+import TradeIcon from './TradeIcon';
 
 const PopularTrades = () => {
   const navigate = useNavigate();
@@ -123,8 +124,8 @@ const PopularTrades = () => {
                 onClick={() => navigate(`/trade-categories/${toSlug(trade.name || trade.title)}`)}
               >
                 <CardContent className="p-6">
-                  <div className={`w-16 h-16 rounded-lg bg-gradient-to-r ${trade.color} flex items-center justify-center mb-4 text-2xl`}>
-                    {trade.icon}
+                  <div className={`w-16 h-16 rounded-lg bg-gradient-to-r ${trade.color} flex items-center justify-center mb-4`}>
+                    <TradeIcon name={trade.title || trade.name} size={32} className="text-white" />
                   </div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-3 group-hover:text-green-600 transition-colors">
                     {trade.title || trade.name}
