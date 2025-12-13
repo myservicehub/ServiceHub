@@ -11,8 +11,17 @@ from ..models.notifications import (
 
 # Third-party imports for real services
 from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
+from sendgrid.helpers.mail import (
+    Mail,
+    Attachment,
+    FileContent,
+    FileName,
+    FileType,
+    Disposition,
+    ContentId,
+)
 import requests
+import base64
 
 # Configure logging for notifications
 logging.basicConfig(level=logging.INFO)
@@ -61,11 +70,13 @@ class SendGridEmailService:
     async def send_email(self, to: str, subject: str, content: str, metadata: Dict[str, Any] = None) -> bool:
         """Send real email using SendGrid"""
         try:
+            # Preserve HTML as-is; avoid injecting <br> into <style> blocks
+            content_html = content
             message = Mail(
                 from_email=self.sender_email,
                 to_emails=to,
                 subject=subject,
-                html_content=content.replace('\n', '<br>')  # Convert to HTML
+                html_content=content_html
             )
             
             # Add metadata as custom args if provided
@@ -76,6 +87,36 @@ class SendGridEmailService:
                 except Exception as e:
                     logger.warning(f"Failed to attach custom args to SendGrid mail: {e}")
             
+            # Inline CID logo support: attach image if template uses cid:logo
+            try:
+                needs_inline_logo = 'cid:logo' in content_html
+                logo_url = (metadata or {}).get('logo_url') if metadata else None
+                logo_bytes = None
+                if needs_inline_logo:
+                    if logo_url:
+                        try:
+                            resp = requests.get(logo_url, timeout=10)
+                            if resp.status_code == 200:
+                                logo_bytes = resp.content
+                            else:
+                                logger.warning(f"Inline logo fetch failed: HTTP {resp.status_code} for {logo_url}")
+                        except Exception as e:
+                            logger.warning(f"Inline logo fetch error from {logo_url}: {e}")
+                    # Fallback: if we couldn't fetch bytes but have a URL, swap cid with URL
+                    if logo_bytes is None and logo_url:
+                        message.html_content = content_html.replace('cid:logo', logo_url)
+                    elif logo_bytes is not None:
+                        encoded = base64.b64encode(logo_bytes).decode('ascii')
+                        attachment = Attachment()
+                        attachment.file_content = FileContent(encoded)
+                        attachment.file_type = FileType('image/png')
+                        attachment.file_name = FileName('logo.png')
+                        attachment.disposition = Disposition('inline')
+                        attachment.content_id = ContentId('logo')
+                        message.add_attachment(attachment)
+            except Exception as e:
+                logger.warning(f"Inline CID processing failed: {e}")
+
             response = self.client.send(message)
             
             # SendGrid returns 202 for successful queuing
@@ -816,9 +857,9 @@ serviceHub Team
 </head>
 <body>
     <div class="container">
-        <div class="logo">
-            <img src="{logo_url}" alt="ServiceHub Logo">
-            <span>ServiceHub</span>
+        <div class="logo" style="display:flex; align-items:center; gap:8px; margin-bottom:16px;">
+            <img src="cid:logo" alt="ServiceHub Logo" style="height:28px; width:auto; display:inline-block; vertical-align:middle;">
+            <span style="font-size:22px; font-weight:bold; color:#0a1b3d; display:inline-block; vertical-align:middle;">ServiceHub</span>
         </div>
         <h2>Hello {Name}</h2>
         <p>There's a new job in your area!</p>
@@ -1062,7 +1103,11 @@ class NotificationService:
             to=notification.recipient_email,
             subject=subject,
             content=content,
-            metadata={"notification_id": notification.id, "type": notification.type.value}
+            metadata={
+                "notification_id": notification.id,
+                "type": notification.type.value,
+                "logo_url": template_data.get("logo_url"),
+            }
         )
         
         if not success:
