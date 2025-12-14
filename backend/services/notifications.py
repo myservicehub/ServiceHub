@@ -851,6 +851,7 @@ serviceHub Team
         .logo span { font-size: 24px; font-weight: bold; color: #000; }
         .button { display: inline-block; padding: 12px 20px; background-color: #165DFF; color: #fff; text-decoration: none; border-radius: 6px; margin: 16px 0; }
         .steps { margin: 16px 0; padding-left: 20px; }
+        .steps li { font-weight: 700; margin: 10px 0; }
         .footer { margin-top: 24px; padding-top: 16px; border-top: 1px solid #eee; font-size: 12px; color: #666; }
         .footer a { color: #666; text-decoration: none; }
     </style>
@@ -863,15 +864,15 @@ serviceHub Team
         </div>
         <h2>Hello {Name}</h2>
         <p>There's a new job in your area!</p>
-        <p><strong>{trade_title}</strong></p>
+        <p><a href="{job_url}" style="color:#0a1b3d; text-decoration:none; font-weight:bold;">{trade_title}</a></p>
         <p>{trade_category}</p>
         <p>{Location} & {miles}</p>
         <a href="{see_more_url}" class="button">See more details</a>
-        <h3>Next steps</h3>
+        <h3 style="font-weight:700; color:#0a1b3d;">Next steps</h3>
         <ol class="steps">
-            <li>Send a message for free to the customer to express interest in this job.</li>
-            <li>You'll only pay if a customer shares their contact details with you.</li>
-            <li>Contact the customer as soon as you get the contact details for the best chance of getting hired.</li>
+            <li style="font-weight:700;">Send a message for free to the customer to express interest in this job.</li>
+            <li style="font-weight:700;">You'll only pay if a customer shares their contact details with you.</li>
+            <li style="font-weight:700;">Contact the customer as soon as you get the contact details for the best chance of getting hired.</li>
         </ol>
         <p>Do not share this email with others to prevent Unauthorised access to your account</p>
         <p>Please don't reply to this email — we won't get your response. Need help? Visit our <a href="{support_url}">Support centre</a></p>
@@ -885,7 +886,7 @@ serviceHub Team
     </body>
     </html>
 """,
-                variables=["Name", "trade_title", "trade_category", "Location", "miles", "see_more_url", "support_url", "preferences_url", "privacy_url", "terms_url", "logo_url"]
+                variables=["Name", "trade_title", "trade_category", "Location", "miles", "see_more_url", "job_url", "support_url", "preferences_url", "privacy_url", "terms_url", "logo_url"]
             ),
             NotificationChannel.SMS: NotificationTemplate(
                 id=str(uuid.uuid4()),

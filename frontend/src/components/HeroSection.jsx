@@ -48,10 +48,10 @@ const FALLBACK_TRADE_CATEGORIES = [
   "Recycling"
 ];
 
-// Hero image source: supports remote URL via REACT_APP_HERO_IMAGE_URL
+// Hero image source: supports remote URL via VITE_HERO_IMAGE_URL
 // and falls back to the local public asset at /hero.jpg
 const HERO_IMAGE_SRC =
-  process.env.REACT_APP_HERO_IMAGE_URL || `${process.env.PUBLIC_URL || ''}/hero.jpg`;
+  (import.meta?.env?.VITE_HERO_IMAGE_URL) || '/hero.jpg';
 
 const HeroSection = () => {
   const [job, setJob] = useState('');

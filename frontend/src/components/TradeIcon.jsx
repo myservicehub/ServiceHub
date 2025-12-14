@@ -44,7 +44,8 @@ const TradeIcon = ({ name, size = 28, className = '' }) => {
       <img
         src={imgSrc}
         alt={name}
-        className={`w-full h-full object-contain ${className}`}
+        className={`object-contain ${className}`}
+        style={{ width: `${size}px`, height: `${size}px` }}
         loading="lazy"
         draggable={false}
       />

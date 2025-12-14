@@ -214,7 +214,7 @@ const HowItWorksPage = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Play size={40} style={{color: '#34D164'}} />
+              <Play size={28} style={{color: '#34D164'}} />
             </div>
             <h1 className="text-4xl md:text-5xl font-bold font-montserrat mb-6" style={{color: '#121E3C'}}>
               How ServiceHub Works
@@ -263,7 +263,7 @@ const HowItWorksPage = () => {
                       {/* Step Number & Icon */}
                       <div className="md:col-span-2 text-center">
                         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                          <stepData.icon size={32} style={{color: '#34D164'}} />
+                          <stepData.icon size={24} style={{color: '#34D164'}} />
                         </div>
                         <div className="text-3xl font-bold font-montserrat" style={{color: '#34D164'}}>
                           {stepData.step}
@@ -294,7 +294,7 @@ const HowItWorksPage = () => {
                     {/* Arrow to next step */}
                     {index < (activeTab === 'homeowner' ? homeownerSteps : tradespersonSteps).length - 1 && (
                       <div className="flex justify-center mt-6">
-                        <ArrowRight size={24} className="text-green-500" />
+                        <ArrowRight size={20} className="text-green-500" />
                       </div>
                     )}
                   </CardContent>
@@ -322,8 +322,8 @@ const HowItWorksPage = () => {
               {platformFeatures.map((feature, index) => (
                 <Card key={index} className="border-0 shadow-md hover:shadow-lg transition-shadow duration-300 h-full">
                   <CardContent className="p-6 text-center">
-                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <feature.icon size={32} style={{color: '#34D164'}} />
+                    <div className="mx-auto mb-4 text-center">
+                      <feature.icon size={28} style={{color: '#34D164'}} />
                     </div>
                     <h3 className="text-xl font-bold font-montserrat mb-3" style={{color: '#121E3C'}}>
                       {feature.title}
@@ -382,7 +382,7 @@ const HowItWorksPage = () => {
                 <CardContent className="p-8">
                   <div className="text-center mb-6">
                     <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Coins size={32} className="text-yellow-600" />
+                      <Coins size={24} className="text-yellow-600" />
                     </div>
                     <h3 className="text-2xl font-bold font-montserrat" style={{color: '#121E3C'}}>
                       For Tradespeople
@@ -421,7 +421,7 @@ const HowItWorksPage = () => {
                 <CardContent className="p-8">
                   <div className="text-center mb-6">
                     <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Users size={32} className="text-blue-600" />
+                      <Users size={24} className="text-blue-600" />
                     </div>
                     <h3 className="text-2xl font-bold font-montserrat" style={{color: '#121E3C'}}>
                       For Homeowners
@@ -466,7 +466,7 @@ const HowItWorksPage = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Shield size={40} style={{color: '#34D164'}} />
+              <Shield size={28} style={{color: '#34D164'}} />
             </div>
             
             <h2 className="text-3xl font-bold font-montserrat mb-6" style={{color: '#121E3C'}}>

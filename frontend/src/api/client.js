@@ -6,14 +6,14 @@ const getBackendUrl = () => {
   const isLocalhost = isBrowser && window.location.hostname === 'localhost';
 
   // Build-time env from CRA, may be inlined; runtime override via window/localStorage if needed
-  const buildEnvUrl = process.env.REACT_APP_BACKEND_URL || '';
+  const buildEnvUrl = (import.meta && import.meta.env && import.meta.env.VITE_BACKEND_URL) || '';
   const runtimeOverride = isBrowser ? (window.BACKEND_URL_OVERRIDE || localStorage.getItem('BACKEND_URL_OVERRIDE') || '') : '';
 
   let url = runtimeOverride || buildEnvUrl;
 
-  // Default for localhost when nothing is set
+  // In Vite dev, prefer proxy by leaving url empty so API_BASE uses '/api'
   if (!url && isLocalhost) {
-    url = 'http://localhost:8001';
+    url = '';
   }
 
   // Respect explicit env/runtime config; do not force port overrides.

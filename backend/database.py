@@ -34,6 +34,14 @@ class Database:
         self.database = None
         self.connected = False
         self._memory = {"phone_otps": [], "email_otps": [], "users": {}}
+        self._geo_cache: Dict[str, Dict[str, Any]] = {}
+        self._geo_rate: Dict[str, Any] = {
+            "window_start": datetime.utcnow(),
+            "count": 0,
+            "limit": int(os.getenv("GEOCODER_RATE_LIMIT_PER_MIN", "30")),
+            "window_seconds": 60,
+            "ttl_days": int(os.getenv("GEOCODER_CACHE_TTL_DAYS", "7")),
+        }
 
     async def connect_to_mongo(self):
         # Try different environment variable names for MongoDB URL
@@ -3113,6 +3121,140 @@ class Database:
         
         return c * r
 
+    # ------------------------------------------
+    # Fallback geocoding from location text
+    # ------------------------------------------
+    def _normalize_text(self, s: Optional[str]) -> str:
+        t = (s or "").lower()
+        # Replace non-alphanumeric with spaces, collapse spaces
+        cleaned = "".join(ch if (ch.isalnum() or ch.isspace()) else " " for ch in t)
+        return " ".join(cleaned.split())
+
+    def resolve_coordinates_from_text(self, text: Optional[str]) -> Optional[Dict[str, float]]:
+        if not text:
+            return None
+        t = self._normalize_text(text)
+        city_coords: Dict[str, tuple] = {
+            "lagos": (6.5244, 3.3792),
+            "ikeja": (6.6018, 3.3515),
+            "lekki": (6.4429, 3.4833),
+            "victoria island": (6.4281, 3.4219),
+            "ajah": (6.4667, 3.6000),
+            "surulere": (6.4940, 3.3490),
+            "yaba": (6.5170, 3.3830),
+            "abuja": (9.0765, 7.3986),
+            "gwagwalada": (8.9440, 7.0900),
+            "ibadan": (7.3775, 3.9470),
+            "benin": (6.3350, 5.6037),
+            "enugu": (6.5249, 7.5170),
+            "calabar": (4.9689, 8.3300),
+            "asaba": (6.2019, 6.7319),
+            "warri": (5.5540, 5.7930),
+            "uyo": (5.0333, 7.9330),
+            "port harcourt": (4.8156, 7.0498),
+            "ph": (4.8156, 7.0498),
+            "jos": (9.8965, 8.8580),
+            "kaduna": (10.5060, 7.4273),
+            "kano": (12.0000, 8.5167),
+            "ilorin": (8.4799, 4.5418),
+            "owerri": (5.4836, 7.0333),
+            "aba": (5.1066, 7.3667),
+            "onitsha": (6.1498, 6.7850),
+        }
+        state_capital_coords: Dict[str, tuple] = {
+            "rivers": (4.8156, 7.0498),
+            "rivers state": (4.8156, 7.0498),
+            "lagos": (6.5244, 3.3792),
+            "abuja": (9.0765, 7.3986),
+            "fct": (9.0765, 7.3986),
+            "delta": (6.2019, 6.7319),
+            "edo": (6.3350, 5.6037),
+            "cross river": (4.9689, 8.3300),
+            "bayelsa": (4.9247, 6.2649),
+            "enugu": (6.5249, 7.5170),
+            "oyo": (7.3775, 3.9470),
+            "kaduna": (10.5060, 7.4273),
+            "kano": (12.0000, 8.5167),
+            "plateau": (9.8965, 8.8580),
+            "kwara": (8.4799, 4.5418),
+            "anambra": (6.1498, 6.7850),
+            "abia": (5.1066, 7.3667),
+            "imo": (5.4836, 7.0333),
+        }
+        for key, (lat, lng) in city_coords.items():
+            if key in t:
+                return {"latitude": lat, "longitude": lng}
+        for key, (lat, lng) in state_capital_coords.items():
+            if key in t:
+                return {"latitude": lat, "longitude": lng}
+        coords = self.geocode_location_text(text)
+        return coords
+
+    def geocode_location_text(self, text: str) -> Optional[Dict[str, float]]:
+        if not text:
+            return None
+        key = self._normalize_text(text)
+        now = datetime.utcnow()
+        ttl = self._geo_rate.get("ttl_days", 7)
+        cached = self._geo_cache.get(key)
+        if cached:
+            ts = cached.get("ts")
+            if ts and now - ts < timedelta(days=int(ttl)):
+                return {
+                    "latitude": float(cached.get("lat")),
+                    "longitude": float(cached.get("lng")),
+                }
+        win_start = self._geo_rate.get("window_start")
+        window_seconds = int(self._geo_rate.get("window_seconds", 60))
+        limit = int(self._geo_rate.get("limit", 30))
+        if not win_start or (now - win_start).total_seconds() >= window_seconds:
+            self._geo_rate["window_start"] = now
+            self._geo_rate["count"] = 0
+        if int(self._geo_rate.get("count", 0)) >= limit:
+            return None
+        self._geo_rate["count"] = int(self._geo_rate.get("count", 0)) + 1
+        try:
+            import requests
+            params = {
+                "q": text,
+                "format": "json",
+                "limit": 1,
+                "countrycodes": "ng",
+            }
+            headers = {"User-Agent": os.getenv("GEOCODER_UA", "ServiceHub/1.0")}
+            r = requests.get(
+                "https://nominatim.openstreetmap.org/search",
+                params=params,
+                headers=headers,
+                timeout=5,
+            )
+            if r.status_code == 200:
+                data = r.json()
+                if isinstance(data, list) and data:
+                    item = data[0]
+                    lat = float(item.get("lat"))
+                    lng = float(item.get("lon"))
+                    self._geo_cache[key] = {"lat": lat, "lng": lng, "ts": now}
+                    return {"latitude": lat, "longitude": lng}
+        except Exception:
+            return None
+        return None
+
+    def resolve_coordinates_from_entity(self, entity: Dict[str, Any]) -> Optional[Dict[str, float]]:
+        try:
+            jlat = entity.get("latitude")
+            jlng = entity.get("longitude")
+            if jlat is not None and jlng is not None:
+                return {"latitude": float(jlat), "longitude": float(jlng)}
+            for field in ("location", "city", "state", "address", "address_text"):
+                v = entity.get(field)
+                coords = self.resolve_coordinates_from_text(v)
+                if coords:
+                    return coords
+        except Exception:
+            pass
+        return None
+
     async def get_jobs_near_location(self, latitude: float, longitude: float, max_distance_km: int = 25, skip: int = 0, limit: int = 50) -> List[dict]:
         """Get jobs within specified distance from a location"""
         # Get all active jobs with location data
@@ -3286,6 +3428,17 @@ class Database:
                         job["distance_km"] = round(dist, 2)
                         jobs_within_distance.append(job)
                 else:
+                    fallback = self.resolve_coordinates_from_entity(job)
+                    if fallback:
+                        try:
+                            dist = self.calculate_distance(latitude, longitude, fallback["latitude"], fallback["longitude"])
+                        except Exception:
+                            dist = None
+                        if dist is not None and dist <= float(max_distance_km):
+                            job["_id"] = str(job.get("_id")) if job.get("_id") else None
+                            job["distance_km"] = round(dist, 2)
+                            jobs_within_distance.append(job)
+                            continue
                     job["_id"] = str(job.get("_id")) if job.get("_id") else None
                     job["distance_km"] = None
                     jobs_without_coords.append(job)
@@ -3372,6 +3525,17 @@ class Database:
                     jlat = job.get("latitude")
                     jlng = job.get("longitude")
                     if jlat is None or jlng is None:
+                        fallback = self.resolve_coordinates_from_entity(job)
+                        if fallback:
+                            try:
+                                dist = self.calculate_distance(user_latitude, user_longitude, fallback["latitude"], fallback["longitude"])
+                            except Exception:
+                                dist = None
+                            if dist is not None and dist <= float(radius_km):
+                                job["_id"] = str(job.get("_id")) if job.get("_id") else None
+                                job["distance_km"] = round(dist, 2)
+                                jobs_within_distance.append(job)
+                                continue
                         job["_id"] = str(job.get("_id")) if job.get("_id") else None
                         job["distance_km"] = None
                         jobs_without_coords.append(job)
@@ -3379,7 +3543,6 @@ class Database:
                     try:
                         dist = self.calculate_distance(user_latitude, user_longitude, jlat, jlng)
                     except Exception:
-                        # Skip malformed coordinates
                         continue
                     if dist <= float(radius_km):
                         job["_id"] = str(job.get("_id")) if job.get("_id") else None

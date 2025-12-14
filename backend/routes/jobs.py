@@ -1019,9 +1019,20 @@ async def notify_matching_tradespeople_new_job(job: dict):
                 jlng = job.get("longitude")
                 tlat = tp.get("latitude")
                 tlng = tp.get("longitude")
-                if jlat is not None and jlng is not None and tlat is not None and tlng is not None:
-                    try:
-                        km = database.calculate_distance(tlat, tlng, jlat, jlng)
+                # Attempt to compute distance using explicit coordinates or fall back to location text
+                try:
+                    job_coords = None
+                    tp_coords = None
+                    if jlat is not None and jlng is not None:
+                        job_coords = {"latitude": float(jlat), "longitude": float(jlng)}
+                    else:
+                        job_coords = database.resolve_coordinates_from_entity(job)
+                    if tlat is not None and tlng is not None:
+                        tp_coords = {"latitude": float(tlat), "longitude": float(tlng)}
+                    else:
+                        tp_coords = database.resolve_coordinates_from_entity(tp)
+                    if job_coords and tp_coords:
+                        km = database.calculate_distance(tp_coords["latitude"], tp_coords["longitude"], job_coords["latitude"], job_coords["longitude"])
                         max_km = tp.get("travel_distance_km", 25)
                         if km > float(max_km):
                             logger.info(
@@ -1032,8 +1043,8 @@ async def notify_matching_tradespeople_new_job(job: dict):
                             )
                             continue
                         miles = round(km * 0.621, 1)
-                    except Exception:
-                        miles = None
+                except Exception:
+                    miles = None
                 # Determine available contact methods (do not override preferences here)
                 recipient_email = tp.get("email")
                 recipient_phone = tp.get("phone")
@@ -1048,6 +1059,7 @@ async def notify_matching_tradespeople_new_job(job: dict):
                     "miles": f"{miles} miles" if miles is not None else "",
                     "logo_url": f"{frontend_url}/Logo-Icon-Green.png",
                     "see_more_url": f"{frontend_url}/browse-jobs",
+                    "job_url": f"{frontend_url}/browse-jobs?job_id={job.get('id')}",
                     "support_url": f"{frontend_url}/help-faqs",
                     "preferences_url": f"{frontend_url}/notifications/preferences",
                     "privacy_url": f"{frontend_url}/policies/privacy",

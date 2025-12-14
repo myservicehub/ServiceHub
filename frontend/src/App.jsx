@@ -47,8 +47,6 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import OfflineIndicator from "./components/OfflineIndicator";
 import { setupGlobalErrorHandling } from "./utils/errorHandler";
 
-
-// Simple ProtectedRoute wrapper
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
   if (loading) {
@@ -57,19 +55,15 @@ const ProtectedRoute = ({ children }) => {
   return isAuthenticated() ? children : <Navigate to="/join-for-free" replace />;
 };
 
-// Role-based guard
 const RoleGuard = ({ allowedRoles, children }) => {
   const { user, isAuthenticated, loading } = useAuth();
   if (loading) {
     return <div style={{ padding: 24 }}>Loading...</div>;
   }
 
-  // Allow admin route to render regardless of regular AuthContext state.
-  // AdminDashboard itself handles login and stores admin_token/admin_info for subsequent API calls.
   const isAdminRoute = typeof window !== 'undefined' && window.location.pathname === '/admin';
   const hasAdminToken = typeof window !== 'undefined' && !!localStorage.getItem('admin_token');
   if (isAdminRoute) {
-    // If admin token exists, proceed; otherwise, render AdminDashboard to show the admin login form.
     return children;
   }
 
@@ -83,20 +77,16 @@ const RoleGuard = ({ allowedRoles, children }) => {
 };
 
 function App() {
-  // Setup global error handling
   useEffect(() => {
     setupGlobalErrorHandling();
   }, []);
-  // No watermark removal needed since badge markup was removed
 
   return (
     <div className="App">
       <ErrorBoundary>
         <AuthProvider>
-          {/* Global session timeout manager for both regular users and admins */}
           <SessionTimeoutManager />
           <BrowserRouter>
-            {/* Ensure page scroll resets on navigation (e.g., footer links) */}
             <ScrollToTop smooth={true} />
 
             <Routes>
@@ -151,8 +141,3 @@ function App() {
 }
 
 export default App;
-
-
-
-
-

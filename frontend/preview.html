@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Icon Preview</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.17/dist/tailwind.min.css" rel="stylesheet" />
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+      body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto; }
+    </style>
+  </head>
+  <body class="bg-white">
+    <div class="container mx-auto px-4 py-8">
+      <h1 class="text-2xl font-bold mb-6">Popular Trades Icon Preview</h1>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="rounded-lg border shadow-sm p-6">
+          <div class="mb-4">
+            <i data-lucide="home" class="w-11 h-11"></i>
+          </div>
+          <h3 class="text-xl font-semibold mb-2">POP &amp; Ceiling Works</h3>
+          <p class="text-gray-600">Expert ceiling installation and POP works. Modern designs and professional finishing for your interior spaces.</p>
+        </div>
+        <div class="rounded-lg border shadow-sm p-6">
+          <div class="mb-4">
+            <i data-lucide="cog" class="w-11 h-11"></i>
+          </div>
+          <h3 class="text-xl font-semibold mb-2">Generator Installation</h3>
+          <p class="text-gray-600">Professional generator installation and maintenance services. Reliable power solutions for homes and businesses.</p>
+        </div>
+      </div>
+    </div>
+    <script>
+      lucide.createIcons();
+    </script>
+  </body>
+</html>

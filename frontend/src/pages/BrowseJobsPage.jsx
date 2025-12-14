@@ -286,6 +286,32 @@ const BrowseJobsPage = () => {
     }
   };
 
+  // If a job_id is present in the URL, open its details modal directly
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(location.search || '');
+      const jobIdParam = params.get('job_id') || params.get('jobId');
+      if (jobIdParam) {
+        (async () => {
+          try {
+            const job = await jobsAPI.getJob(jobIdParam);
+            if (job && (job.id || job._id)) {
+              const normalizedJob = {
+                ...job,
+                id: job.id || job._id
+              };
+              await handleViewJobDetails(normalizedJob);
+            }
+          } catch (err) {
+            console.error('Failed to load job by ID from URL:', err);
+          }
+        })();
+      }
+    } catch (e) {
+      // no-op
+    }
+  }, [location.search]);
+
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
       toast({

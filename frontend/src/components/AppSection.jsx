@@ -2,10 +2,10 @@ import React from 'react';
 import { Button } from './ui/button';
 import { Camera, MessageCircle, Star } from 'lucide-react';
 
-// App coming soon image source: supports remote URL via REACT_APP_COMING_SOON_IMAGE_URL
+// App coming soon image source: supports remote URL via VITE_COMING_SOON_IMAGE_URL
 // and falls back to the local public asset at /coming-soon.jpg
 const COMING_SOON_IMAGE_SRC =
-  process.env.REACT_APP_COMING_SOON_IMAGE_URL || `${process.env.PUBLIC_URL || ''}/coming-soon.jpg`;
+  (import.meta?.env?.VITE_COMING_SOON_IMAGE_URL) || '/coming-soon.jpg';
 
 const AppSection = () => {
   const features = [
