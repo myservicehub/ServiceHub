@@ -266,6 +266,146 @@ const AdminManagement = () => {
     );
   };
 
+  const EditAdminModal = () => {
+    const [formData, setFormData] = useState({
+      email: selectedAdmin?.email || '',
+      full_name: selectedAdmin?.full_name || '',
+      role: selectedAdmin?.role || 'read_only_admin',
+      status: selectedAdmin?.status || 'active',
+      phone: selectedAdmin?.phone || '',
+      notes: selectedAdmin?.notes || ''
+    });
+
+    const selectedRole = roles.find((r) => r.role === formData.role);
+
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+      try {
+        await adminManagementAPI.updateAdmin(selectedAdmin.id, {
+          email: formData.email,
+          full_name: formData.full_name,
+          role: formData.role,
+          status: formData.status,
+          phone: formData.phone || undefined,
+          notes: formData.notes || undefined
+        });
+        alert('Admin updated successfully');
+        setShowEditModal(false);
+        setSelectedAdmin(null);
+        loadData();
+      } catch (error) {
+        alert('Error updating admin: ' + error.message);
+      }
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+          <h3 className="text-lg font-semibold mb-4">Edit Administrator</h3>
+          <div className="mb-4 text-sm text-gray-600">
+            <div className="font-medium text-gray-900">{selectedAdmin?.full_name}</div>
+            <div className="text-gray-500">@{selectedAdmin?.username}</div>
+          </div>
+          <form onSubmit={handleSubmit}>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                <input
+                  type="text"
+                  value={formData.full_name}
+                  onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <select
+                  value={formData.role}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  {roles.filter((role) => role.can_assign).map((role) => (
+                    <option key={role.role} value={role.role}>
+                      {role.name}
+                    </option>
+                  ))}
+                </select>
+                {selectedRole && selectedRole.permissions && (
+                  <div className="mt-2 text-xs text-gray-600">
+                    <div className="mb-1 font-medium">Role permissions:</div>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedRole.permissions.map((perm) => (
+                        <span key={perm} className="px-2 py-1 bg-gray-100 rounded-full">{perm}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="suspended">Suspended</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone (Optional)</label>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
+                <textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  rows="3"
+                />
+              </div>
+            </div>
+            <div className="flex space-x-3 mt-6">
+              <button type="submit" className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+                Save Changes
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowEditModal(false);
+                  setSelectedAdmin(null);
+                }}
+                className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-lg"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -547,6 +687,7 @@ const AdminManagement = () => {
 
       {/* Modals */}
       {showCreateModal && <CreateAdminModal />}
+      {showEditModal && selectedAdmin && <EditAdminModal />}
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && selectedAdmin && (
