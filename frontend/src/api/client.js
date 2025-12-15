@@ -144,15 +144,15 @@ apiClient.interceptors.response.use(
                            originalRequest.url?.includes('/auth/register') ||
                            originalRequest.url?.includes('/auth/refresh');
 
-    // If admin endpoint (including admin-management), handle separately: clear admin token and redirect to admin login
-    const isAdminEndpoint = originalRequest.url?.includes('/admin') || originalRequest.url?.includes('/admin-management');
-    if ((status === 401 || status === 403) && isAdminEndpoint) {
-      console.warn('🔒 Admin endpoint unauthorized. Clearing admin token and redirecting to admin login.');
-      if (localStorage.getItem('admin_token')) {
-        forceAdminLogout();
-      }
-      return Promise.reject(error);
+  // Admin endpoints: only force logout on 401 (invalid/expired token). Keep session on 403 (permission denied).
+  const isAdminEndpoint = originalRequest.url?.includes('/admin') || originalRequest.url?.includes('/admin-management');
+  if (isAdminEndpoint && status === 401) {
+    console.warn('🔒 Admin token invalid/expired. Clearing admin token and redirecting to admin login.');
+    if (localStorage.getItem('admin_token')) {
+      forceAdminLogout();
     }
+    return Promise.reject(error);
+  }
 
     // Treat certain 403 responses from backend as authentication errors (similar to 401)
     if (!(status === 401 || isAuthLike403) || isAuthEndpoint) {
