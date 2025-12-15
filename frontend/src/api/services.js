@@ -84,6 +84,7 @@ export const authAPI = {
     if (payload.business_type) formData.append('business_type', payload.business_type);
     if (payload.id_document) formData.append('id_document', payload.id_document);
     if (payload.id_selfie) formData.append('id_selfie', payload.id_selfie);
+    if (payload.proof_of_address) formData.append('proof_of_address', payload.proof_of_address);
     if (payload.residential_address) formData.append('residential_address', payload.residential_address);
     if (Array.isArray(payload.work_photos)) {
       payload.work_photos.forEach((f) => { if (f) formData.append('work_photos', f); });

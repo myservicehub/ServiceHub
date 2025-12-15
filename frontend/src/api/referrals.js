@@ -55,6 +55,14 @@ export const adminReferralsAPI = {
     return response.data;
   },
 
+  // Fetch base64 for a verification document (authorized via admin token)
+  async getVerificationDocumentBase64(filename) {
+    const response = await apiClient.get(`/admin/verifications/document-base64/${filename}`);
+    const b64 = response.data?.image_base64;
+    if (!b64) return null;
+    return `data:image/jpeg;base64,${b64}`;
+  },
+
   // Approve verification
   async approveVerification(verificationId, adminNotes = '') {
     const formData = new FormData();

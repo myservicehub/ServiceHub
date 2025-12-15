@@ -25,6 +25,7 @@ const AdminDashboard = () => {
   const [jobs, setJobs] = useState([]);
   const [verifications, setVerifications] = useState([]);
   const [tradespeopleVerifications, setTradespeopleVerifications] = useState([]);
+  const [verificationDocBase64, setVerificationDocBase64] = useState({});
   const [users, setUsers] = useState([]);
   const [usersPage, setUsersPage] = useState(1);
   const [usersLimit, setUsersLimit] = useState(20);
@@ -153,6 +154,22 @@ const AdminDashboard = () => {
       } else if (activeTab === 'verifications') {
         const data = await adminReferralsAPI.getPendingVerifications();
         setVerifications(data.verifications || []);
+        // Preload base64 images for ID verification documents (requires admin token via axios)
+        try {
+          const items = data.verifications || [];
+          for (const v of items) {
+            const fn = v?.document_url;
+            if (!fn) continue;
+            if (!verificationDocBase64[fn]) {
+              try {
+                const dataUrl = await adminReferralsAPI.getVerificationDocumentBase64(fn);
+                if (dataUrl) {
+                  setVerificationDocBase64(prev => ({ ...prev, [fn]: dataUrl }));
+                }
+              } catch {}
+            }
+          }
+        } catch {}
       } else if (activeTab === 'tradespeople_verification') {
         const data = await adminVerificationAPI.getPendingTradespeopleVerifications();
         setTradespeopleVerifications(data.verifications || []);
@@ -1931,19 +1948,25 @@ const AdminDashboard = () => {
                               </div>
                             </div>
                             
-                            <div>
+                              <div>
                               {verification.document_url && (
                                 <div className="mb-4">
                                   <p className="text-sm text-gray-600 mb-2">Document Image:</p>
-                                  <img
-                                    src={adminReferralsAPI.getDocumentUrl(verification.document_url)}
-                                    alt="Document"
-                                    className="h-32 w-auto rounded border cursor-pointer hover:shadow-lg transition-shadow"
-                                    onClick={() => {
-                                      setVerificationViewerSrc(adminReferralsAPI.getDocumentUrl(verification.document_url));
-                                      setVerificationViewerOpen(true);
-                                    }}
-                                  />
+                                  {verificationDocBase64[verification.document_url] ? (
+                                    <img
+                                      src={verificationDocBase64[verification.document_url]}
+                                      alt="Document"
+                                      className="h-32 w-auto rounded border cursor-pointer hover:shadow-lg transition-shadow"
+                                      onClick={() => {
+                                        setVerificationViewerSrc(verificationDocBase64[verification.document_url]);
+                                        setVerificationViewerOpen(true);
+                                      }}
+                                    />
+                                  ) : (
+                                    <div className="h-32 w-full bg-gray-100 rounded border flex items-center justify-center text-xs text-gray-500">
+                                      Loading…
+                                    </div>
+                                  )}
                                 </div>
                               )}
                               

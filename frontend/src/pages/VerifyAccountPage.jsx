@@ -42,6 +42,7 @@ const VerifyAccountPage = () => {
   const [businessType, setBusinessType] = useState(user?.business_type || '');
   const [idSelfie, setIdSelfie] = useState(null);
   const [idDocument, setIdDocument] = useState(null);
+  const [proofOfAddress, setProofOfAddress] = useState(null);
   const [residentialAddress, setResidentialAddress] = useState('');
   const [workPhotos, setWorkPhotos] = useState([]);
   const [tradeCertificate, setTradeCertificate] = useState(null);
@@ -279,6 +280,7 @@ const VerifyAccountPage = () => {
         business_type: businessType,
         id_document: idDocument,
         id_selfie: idSelfie,
+        proof_of_address: proofOfAddress,
         residential_address: residentialAddress,
         work_photos: workPhotos,
         trade_certificate: tradeCertificate,
@@ -661,6 +663,10 @@ const VerifyAccountPage = () => {
                           <label className="block text-sm font-medium text-gray-700 mb-1">Residential address</label>
                           <input className="w-full px-3 py-2 border rounded-lg" value={residentialAddress} onChange={(e)=>setResidentialAddress(e.target.value)} />
                           {selfErrors.residential_address && (<p className="text-xs text-red-600 mt-1">{selfErrors.residential_address}</p>)}
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Proof of address (utility bill, bank statement)</label>
+                          <input type="file" accept="image/*,application/pdf" onChange={(e)=>setProofOfAddress(e.target.files[0])} />
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Recent work photos (min 2)</label>

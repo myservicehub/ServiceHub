@@ -1624,6 +1624,7 @@ async def submit_tradesperson_verification(
     business_type: str = Form(...),
     id_document: UploadFile = File(None),
     id_selfie: UploadFile = File(None),
+    proof_of_address: UploadFile = File(None),
     residential_address: str = Form(None),
     work_photos: List[UploadFile] = File([]),
     trade_certificate: UploadFile = File(None),
@@ -1676,6 +1677,12 @@ async def submit_tradesperson_verification(
         saved = await _save_file(id_selfie)
         if saved:
             docs["id_selfie"] = saved["filename"]
+            if saved.get("base64"):
+                documents_base64.append(saved)
+    if proof_of_address:
+        saved = await _save_file(proof_of_address)
+        if saved:
+            docs["proof_of_address"] = saved["filename"]
             if saved.get("base64"):
                 documents_base64.append(saved)
     if trade_certificate:
