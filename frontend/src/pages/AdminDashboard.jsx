@@ -60,6 +60,13 @@ const AdminDashboard = () => {
   const [selectedTrade, setSelectedTrade] = useState('');
   const [showAddQuestion, setShowAddQuestion] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
+  const [questionsPage, setQuestionsPage] = useState(1);
+  const [questionsPerPage, setQuestionsPerPage] = useState(10);
+  const selectedTradeQuestions = useMemo(() => (skillsQuestions[selectedTrade] || []), [skillsQuestions, selectedTrade]);
+  const paginatedQuestions = useMemo(() => {
+    const start = (questionsPage - 1) * questionsPerPage;
+    return selectedTradeQuestions.slice(start, start + questionsPerPage);
+  }, [selectedTradeQuestions, questionsPage, questionsPerPage]);
   
   // Policy Management state
   const [policies, setPolicies] = useState([]);
@@ -2870,7 +2877,7 @@ const AdminDashboard = () => {
                       </label>
                       <select
                         value={selectedTrade}
-                        onChange={(e) => setSelectedTrade(e.target.value)}
+                        onChange={(e) => { setSelectedTrade(e.target.value); setQuestionsPage(1); }}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="">Select a trade category</option>
@@ -2926,12 +2933,12 @@ const AdminDashboard = () => {
                           </div>
                         ) : (
                           <div className="space-y-3">
-                            {(skillsQuestions[selectedTrade] || []).map((question, index) => (
+                            {paginatedQuestions.map((question, index) => (
                               <div key={question.id || index} className="bg-white border rounded-lg p-4">
                                 <div className="flex justify-between items-start mb-2">
                                   <div className="flex-1">
                                     <h4 className="font-medium text-gray-900 mb-1">
-                                      Q{index + 1}: {question.question}
+                                      Q{((questionsPage - 1) * questionsPerPage) + index + 1}: {question.question}
                                     </h4>
                                     <div className="text-sm text-gray-600 mb-2">
                                       <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs mr-2">
@@ -2984,6 +2991,27 @@ const AdminDashboard = () => {
                                 </div>
                               </div>
                             ))}
+                            <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t">
+                              <div className="text-sm text-gray-600">
+                                Page {questionsPage} • Showing {((questionsPage - 1) * questionsPerPage) + 1}-{Math.min(questionsPage * questionsPerPage, selectedTradeQuestions.length)} of {selectedTradeQuestions.length}
+                              </div>
+                              <div className="flex space-x-2">
+                                <button
+                                  className={`px-3 py-1 rounded border ${questionsPage > 1 ? 'bg-white text-gray-700 hover:bg-gray-100' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
+                                  disabled={questionsPage <= 1}
+                                  onClick={() => setQuestionsPage((p) => Math.max(1, p - 1))}
+                                >
+                                  Previous
+                                </button>
+                                <button
+                                  className={`px-3 py-1 rounded border ${(selectedTradeQuestions.length > (questionsPage * questionsPerPage)) ? 'bg-white text-gray-700 hover:bg-gray-100' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
+                                  disabled={!(selectedTradeQuestions.length > (questionsPage * questionsPerPage))}
+                                  onClick={() => setQuestionsPage((p) => p + 1)}
+                                >
+                                  Next
+                                </button>
+                              </div>
+                            </div>
                           </div>
                         )}
                       </div>
