@@ -4095,94 +4095,7 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {statusEditModal.open && typeof document !== 'undefined' && createPortal(
-          <div 
-            data-modal="status-edit-modal"
-            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-40"
-            style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}
-            onClick={(e) => {
-              console.log('Modal backdrop clicked', e.target === e.currentTarget);
-              if (e.target === e.currentTarget) {
-                setStatusEditModal({ open: false, notification: null, status: '', notes: '' });
-              }
-            }}
-          >
-            <div 
-              className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative z-[10000]"
-              style={{ position: 'relative', zIndex: 10000 }}
-              onClick={(e) => {
-                console.log('Modal content clicked');
-                e.stopPropagation();
-              }}
-            >
-              <h3 className="text-lg font-semibold mb-4">Update Notification Status</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                  <select
-                    value={statusEditModal.status}
-                    onChange={(e) => setStatusEditModal((m) => ({ ...m, status: e.target.value }))}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                  >
-                    <option value="pending">Pending</option>
-                    <option value="sent">Sent</option>
-                    <option value="delivered">Delivered</option>
-                    <option value="failed">Failed</option>
-                    <option value="cancelled">Cancelled</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Admin Notes</label>
-                  <textarea
-                    value={statusEditModal.notes}
-                    onChange={(e) => setStatusEditModal((m) => ({ ...m, notes: e.target.value }))}
-                    placeholder="Optional notes"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                    rows={3}
-                  />
-                </div>
-              </div>
-              <div className="mt-6 flex justify-end space-x-3">
-                <button
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
-                  onClick={() => {
-                    console.log('Cancel button clicked');
-                    setStatusEditModal({ open: false, notification: null, status: '', notes: '' });
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm"
-                  onClick={() => {
-                    console.log('Update button clicked');
-                    const allowed = ['pending', 'sent', 'delivered', 'failed', 'cancelled'];
-                    const normalized = (statusEditModal.status || '').toLowerCase().trim();
-                    if (!allowed.includes(normalized)) {
-                      toast({ title: 'Invalid status', description: `Allowed: ${allowed.join(', ')}`, variant: 'destructive' });
-                      return;
-                    }
-                  const notificationId = statusEditModal.notification?.id || statusEditModal.notification?._id;
-                  console.log('Updating status - notification:', statusEditModal.notification, 'ID:', notificationId);
-                  if (!notificationId) {
-                    toast({
-                      title: 'Error',
-                      description: 'Could not determine notification ID to update.',
-                      variant: 'destructive'
-                    });
-                    return;
-                  }
-                  handleUpdateNotificationStatus(String(notificationId), normalized, statusEditModal.notes);
-                    setStatusEditModal({ open: false, notification: null, status: '', notes: '' });
-                  }}
-                >
-                  Update
-                </button>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
+        {/* Status Edit Modal - Global (always available) */}
 
                   {/* Users Table */}
                   {loading ? (
@@ -5385,6 +5298,88 @@ const AdminDashboard = () => {
                   Resend
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Status Edit Modal - Global */}
+      {statusEditModal.open && (
+        <div 
+          data-modal="status-edit-modal"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-40"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setStatusEditModal({ open: false, notification: null, status: '', notes: '' });
+            }
+          }}
+        >
+          <div 
+            className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative"
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+          >
+            <h3 className="text-lg font-semibold mb-4">Update Notification Status</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select
+                  value={statusEditModal.status}
+                  onChange={(e) => setStatusEditModal((m) => ({ ...m, status: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                >
+                  <option value="pending">Pending</option>
+                  <option value="sent">Sent</option>
+                  <option value="delivered">Delivered</option>
+                  <option value="failed">Failed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Admin Notes</label>
+                <textarea
+                  value={statusEditModal.notes}
+                  onChange={(e) => setStatusEditModal((m) => ({ ...m, notes: e.target.value }))}
+                  placeholder="Optional notes"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  rows={3}
+                />
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+                onClick={() => {
+                  setStatusEditModal({ open: false, notification: null, status: '', notes: '' });
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm"
+                onClick={() => {
+                  const allowed = ['pending', 'sent', 'delivered', 'failed', 'cancelled'];
+                  const normalized = (statusEditModal.status || '').toLowerCase().trim();
+                  if (!allowed.includes(normalized)) {
+                    toast({ title: 'Invalid status', description: `Allowed: ${allowed.join(', ')}`, variant: 'destructive' });
+                    return;
+                  }
+                  const notificationId = statusEditModal.notification?.id || statusEditModal.notification?._id;
+                  if (!notificationId) {
+                    toast({
+                      title: 'Error',
+                      description: 'Could not determine notification ID to update.',
+                      variant: 'destructive'
+                    });
+                    return;
+                  }
+                  handleUpdateNotificationStatus(String(notificationId), normalized, statusEditModal.notes);
+                  setStatusEditModal({ open: false, notification: null, status: '', notes: '' });
+                }}
+              >
+                Update
+              </button>
             </div>
           </div>
         </div>
