@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import ValidationBanner from './ValidationBanner';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -69,6 +69,7 @@ const FALLBACK_TRADE_CATEGORIES = [
 
 const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState }) => {
   const [currentStep, setCurrentStep] = useState(1);
+  const formTopRef = useRef(null);
   const [tradeCategories, setTradeCategories] = useState(FALLBACK_TRADE_CATEGORIES);
   const [loadingTrades, setLoadingTrades] = useState(true);
   const [formData, setFormData] = useState({
@@ -537,6 +538,14 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
       setSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    if (formTopRef.current && typeof formTopRef.current.scrollIntoView === 'function') {
+      formTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
+    }
+  }, [currentStep]);
 
   // Load questions when trade category changes
   const loadTradeQuestions = async (category) => {
@@ -2090,7 +2099,7 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
 
   return (
     <>
-      <div className="max-w-2xl mx-auto p-6">
+      <div className="max-w-2xl mx-auto p-6" ref={formTopRef}>
         <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
