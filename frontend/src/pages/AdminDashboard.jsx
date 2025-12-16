@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { X } from 'lucide-react';
 import { adminAPI, walletAPI } from '../api/wallet';
 import { adminReferralsAPI, adminVerificationAPI } from '../api/referrals';
 import { getTradespeopleVerificationFileBase64 } from '../api/tradespeopleVerificationBase64';
@@ -5134,7 +5135,7 @@ const AdminDashboard = () => {
               
               <div>
                 <h4 className="font-semibold text-gray-700">Subject</h4>
-                <div className="mt-2 p-3 bg-gray-50 rounded border text-sm">
+                  <div className="mt-2 p-3 bg-gray-50 rounded border text-sm">
                   {selectedNotification.subject || 'No subject'}
                 </div>
               </div>
@@ -5159,7 +5160,7 @@ const AdminDashboard = () => {
                 <div>
                   <h4 className="font-semibold text-gray-700">Metadata</h4>
                   <div className="mt-2 p-3 bg-gray-50 rounded border text-sm">
-                    <pre>{JSON.stringify(selectedNotification.metadata, null, 2)}</pre>
+                    <pre>{(() => { try { return JSON.stringify(selectedNotification.metadata, (key, value) => typeof value === 'bigint' ? value.toString() : value, 2); } catch { return 'Unable to render metadata'; } })()}</pre>
                   </div>
                 </div>
               )}
