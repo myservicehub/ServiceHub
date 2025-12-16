@@ -1591,6 +1591,8 @@ async def update_notification_status(
 ):
     """Update notification status (resend, mark as failed, etc.)"""
     
+    status = (status or "").strip().lower()
+    admin_notes = admin_notes or ""
     valid_statuses = ["pending", "sent", "delivered", "failed", "cancelled"]
     if status not in valid_statuses:
         raise HTTPException(
@@ -1598,11 +1600,7 @@ async def update_notification_status(
             detail=f"Invalid status. Must be one of: {', '.join(valid_statuses)}"
         )
     
-    success = await database.update_notification_status_admin(
-        notification_id, 
-        status, 
-        admin_notes
-    )
+    success = await database.update_notification_status_admin(notification_id, status, admin_notes)
     
     if not success:
         raise HTTPException(status_code=404, detail="Notification not found")

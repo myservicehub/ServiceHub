@@ -943,11 +943,12 @@ const AdminDashboard = () => {
   const handleUpdateNotificationStatus = async (notificationId, status, adminNotes = '') => {
     try {
       setIsProcessing(true);
-      await adminAPI.updateNotificationStatus(notificationId, status, adminNotes);
+      const normalized = (status || '').toString().trim().toLowerCase();
+      await adminAPI.updateNotificationStatus(notificationId, normalized, adminNotes);
       
       toast({
         title: "Success",
-        description: `Notification status updated to ${status}`
+        description: `Notification status updated to ${normalized}`
       });
       
       // Refresh notifications
@@ -3755,11 +3756,16 @@ const AdminDashboard = () => {
                               id: 'update_status',
                               icon: ({ className }) => <span className={className}>✏️</span>,
                               onClick: (notification) => {
-                                const newStatus = prompt('Enter new status (pending, sent, delivered, failed, cancelled):', notification.status);
-                                if (newStatus && ['pending', 'sent', 'delivered', 'failed', 'cancelled'].includes(newStatus)) {
-                                  const adminNotes = prompt('Admin notes (optional):') || '';
-                                  handleUpdateNotificationStatus(notification.id, newStatus, adminNotes);
+                                const input = prompt('Enter new status (pending, sent, delivered, failed, cancelled):', notification.status);
+                                const newStatus = (input || '').toLowerCase().trim();
+                                const allowed = ['pending', 'sent', 'delivered', 'failed', 'cancelled'];
+                                if (!newStatus) return;
+                                if (!allowed.includes(newStatus)) {
+                                  toast({ title: 'Invalid status', description: `Allowed: ${allowed.join(', ')}`, variant: 'destructive' });
+                                  return;
                                 }
+                                const adminNotes = prompt('Admin notes (optional):') || '';
+                                handleUpdateNotificationStatus(notification.id, newStatus, adminNotes);
                               },
                               title: 'Update Status',
                               className: 'text-green-600 hover:text-green-900'

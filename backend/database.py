@@ -6123,8 +6123,11 @@ class Database:
             except Exception:
                 query = {"_id": notification_id}
             result = await self.notifications_collection.update_one(query, {"$set": update_data})
-            
-            return result.modified_count > 0
+            # Consider success if a document was matched, even if no fields changed
+            try:
+                return bool(getattr(result, "matched_count", 0) > 0)
+            except Exception:
+                return bool(getattr(result, "modified_count", 0) > 0)
         except Exception as e:
             logger.error(f"Error updating notification status: {str(e)}")
             return False
