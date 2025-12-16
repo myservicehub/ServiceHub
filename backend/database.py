@@ -6195,33 +6195,81 @@ class Database:
             if not user_id:
                 logger.error(f"Notification {notification_id} has no user_id; cannot resend")
                 return False
+            
+            logger.info(f"Resending notification {notification_id} for user_id: {user_id}")
                 
             user = await self.get_user_by_id(user_id)
+            # Fallback: try to find user by email if ID lookup fails
+            if not user:
+                recipient_email_from_doc = doc.get("recipient_email")
+                if recipient_email_from_doc:
+                    logger.warning(f"User not found by ID {user_id}, trying email lookup: {recipient_email_from_doc}")
+                    user = await self.get_user_by_email(recipient_email_from_doc)
+                    if user:
+                        logger.info(f"Found user by email: {user.get('name', 'Unknown')} ({user.get('email', 'No email')})")
+                        # Update user_id to match found user
+                        user_id = user.get('id') or user.get('user_id') or user_id
             if not user:
                 logger.error(f"User not found for notification {notification_id}, user_id: {user_id}")
                 return False
+            
+            logger.info(f"Found user: {user.get('name', 'Unknown')} ({user.get('email', 'No email')})")
                 
             prefs = await self.get_user_notification_preferences(user_id)
+            if not prefs:
+                logger.warning(f"No preferences found for user {user_id}, creating defaults")
+                from models.notifications import NotificationPreferences
+                prefs = NotificationPreferences(
+                    id=str(uuid.uuid4()),
+                    user_id=user_id
+                )
+                await self.create_notification_preferences(prefs)
 
             # Prepare resend parameters
             metadata = doc.get("metadata", {})
+            if not metadata:
+                logger.warning(f"Notification {notification_id} has no metadata, using empty dict")
+                metadata = {}
+            
             recipient_email = doc.get("recipient_email") or (user.get("email") if user else None)
             recipient_phone = doc.get("recipient_phone") or (user.get("phone") if user else None)
+            
+            logger.info(f"Recipient email: {recipient_email}, phone: {recipient_phone}")
             
             if not recipient_email and not recipient_phone:
                 logger.error(f"Notification {notification_id} has no recipient email or phone; cannot resend")
                 return False
             
-            # Coerce type to enum
+            # Coerce type to enum - MUST be NotificationType enum, not string
             nt = doc.get("type")
-            try:
-                notification_type = NotificationType(nt) if nt else None
-            except Exception:
-                # If stored as enum object/value already
-                notification_type = nt
-            if not notification_type:
-                logger.error(f"Notification {notification_id} has no type; cannot resend")
+            logger.info(f"Notification type from doc: {nt} (type: {type(nt)})")
+            
+            notification_type = None
+            if nt:
+                # If it's already a NotificationType enum instance
+                if isinstance(nt, NotificationType):
+                    notification_type = nt
+                # If it's a string, try to convert to enum
+                elif isinstance(nt, str):
+                    try:
+                        notification_type = NotificationType(nt)
+                        logger.info(f"Converted string '{nt}' to NotificationType enum: {notification_type}")
+                    except (ValueError, KeyError) as e:
+                        logger.error(f"Failed to convert notification type string '{nt}' to enum: {e}")
+                        logger.error(f"Valid NotificationType values are: {[e.value for e in NotificationType]}")
+                        return False
+                else:
+                    logger.error(f"Notification type is unexpected type: {type(nt)}, value: {nt}")
+                    return False
+            else:
+                logger.error(f"Notification {notification_id} has no type field")
                 return False
+                
+            if not notification_type:
+                logger.error(f"Notification {notification_id} has no valid type; cannot resend")
+                return False
+            
+            logger.info(f"Proceeding to resend notification {notification_id} with type {notification_type.value}")
 
             # Perform send
             try:
