@@ -6089,9 +6089,15 @@ class Database:
         """Get detailed notification by ID"""
         try:
             from bson import ObjectId
-            query = {"_id": ObjectId(notification_id)}
-            doc = await self.notifications_collection.find_one(query)
-            if not doc:
+            from bson.errors import InvalidId
+            # Notifications use UUID strings as _id, not ObjectIds
+            doc = None
+            try:
+                # Try ObjectId first (for backwards compatibility)
+                query = {"_id": ObjectId(notification_id)}
+                doc = await self.notifications_collection.find_one(query)
+            except (InvalidId, ValueError, TypeError):
+                # If not an ObjectId, try as string (UUID)
                 doc = await self.notifications_collection.find_one({"_id": notification_id})
             
             if doc:
@@ -6129,6 +6135,7 @@ class Database:
         """Update notification status with admin notes"""
         try:
             from bson import ObjectId
+            from bson.errors import InvalidId
             update_data = {
                 "status": status,
                 "updated_at": datetime.utcnow(),
@@ -6140,10 +6147,14 @@ class Database:
             elif status == "delivered":
                 update_data["delivered_at"] = datetime.utcnow()
             
+            # Notifications use UUID strings as _id, not ObjectIds
             try:
+                # Try ObjectId first (for backwards compatibility)
                 query = {"_id": ObjectId(notification_id)}
-            except Exception:
+            except (InvalidId, ValueError, TypeError):
+                # If not an ObjectId, try as string (UUID)
                 query = {"_id": notification_id}
+            
             result = await self.notifications_collection.update_one(query, {"$set": update_data})
             # Consider success if a document was matched, even if no fields changed
             try:
@@ -6158,20 +6169,24 @@ class Database:
         """Resend a notification immediately and update its record"""
         try:
             from bson import ObjectId
+            from bson.errors import InvalidId
             from models.notifications import NotificationType
             from services.notifications import notification_service
             
             # Fetch original notification document
+            # Notifications use UUID strings as _id, not ObjectIds
             doc = None
             try:
+                # Try ObjectId first (for backwards compatibility)
                 doc = await self.notifications_collection.find_one({"_id": ObjectId(notification_id)})
-            except Exception as e:
-                logger.warning(f"Could not parse notification_id as ObjectId: {notification_id}, error: {e}")
+            except (InvalidId, ValueError, TypeError):
+                # If not an ObjectId, try as string (UUID)
                 try:
                     doc = await self.notifications_collection.find_one({"_id": notification_id})
                 except Exception as e2:
-                    logger.error(f"Could not find notification with ID: {notification_id}, error: {e2}")
+                    logger.error(f"Error querying notification with ID: {notification_id}, error: {e2}")
                     return False
+            
             if not doc:
                 logger.error(f"Notification not found: {notification_id}")
                 return False
@@ -6255,9 +6270,13 @@ class Database:
         """Delete notification (admin only)"""
         try:
             from bson import ObjectId
+            from bson.errors import InvalidId
+            # Notifications use UUID strings as _id, not ObjectIds
             try:
+                # Try ObjectId first (for backwards compatibility)
                 query = {"_id": ObjectId(notification_id)}
-            except Exception:
+            except (InvalidId, ValueError, TypeError):
+                # If not an ObjectId, try as string (UUID)
                 query = {"_id": notification_id}
             result = await self.notifications_collection.delete_one(query)
             return result.deleted_count > 0
