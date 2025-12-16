@@ -6067,7 +6067,10 @@ class Database:
         """Get detailed notification by ID"""
         try:
             from bson import ObjectId
-            doc = await self.notifications_collection.find_one({"_id": ObjectId(notification_id)})
+            query = {"_id": ObjectId(notification_id)}
+            doc = await self.notifications_collection.find_one(query)
+            if not doc:
+                doc = await self.notifications_collection.find_one({"_id": notification_id})
             
             if doc:
                 # Get user info
@@ -6115,10 +6118,11 @@ class Database:
             elif status == "delivered":
                 update_data["delivered_at"] = datetime.utcnow()
             
-            result = await self.notifications_collection.update_one(
-                {"_id": ObjectId(notification_id)},
-                {"$set": update_data}
-            )
+            try:
+                query = {"_id": ObjectId(notification_id)}
+            except Exception:
+                query = {"_id": notification_id}
+            result = await self.notifications_collection.update_one(query, {"$set": update_data})
             
             return result.modified_count > 0
         except Exception as e:
@@ -6129,13 +6133,13 @@ class Database:
         """Queue notification for resending"""
         try:
             from bson import ObjectId
+            try:
+                query = {"_id": ObjectId(notification_id), "status": {"$in": ["failed", "cancelled"]}}
+            except Exception:
+                query = {"_id": notification_id, "status": {"$in": ["failed", "cancelled"]}}
             result = await self.notifications_collection.update_one(
-                {"_id": ObjectId(notification_id), "status": {"$in": ["failed", "cancelled"]}},
-                {"$set": {
-                    "status": "pending",
-                    "updated_at": datetime.utcnow(),
-                    "resend_count": {"$inc": 1}
-                }}
+                query,
+                {"$set": {"status": "pending", "updated_at": datetime.utcnow()}, "$inc": {"resend_count": 1}}
             )
             
             return result.modified_count > 0
@@ -6147,7 +6151,11 @@ class Database:
         """Delete notification (admin only)"""
         try:
             from bson import ObjectId
-            result = await self.notifications_collection.delete_one({"_id": ObjectId(notification_id)})
+            try:
+                query = {"_id": ObjectId(notification_id)}
+            except Exception:
+                query = {"_id": notification_id}
+            result = await self.notifications_collection.delete_one(query)
             return result.deleted_count > 0
         except Exception as e:
             logger.error(f"Error deleting notification: {str(e)}")
