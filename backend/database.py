@@ -269,7 +269,19 @@ class Database:
         """Get user by ID"""
         if self.database is None:
             return None
+        # Try multiple identifiers to be resilient: primary "id", fallback "user_id" and "public_id"
         user = await self.database.users.find_one({"id": user_id})
+        if not user:
+            try:
+                # Some code paths store short numeric user_id or public_id in notifications
+                user = await self.database.users.find_one({"user_id": user_id})
+            except Exception:
+                user = None
+        if not user:
+            try:
+                user = await self.database.users.find_one({"public_id": user_id})
+            except Exception:
+                user = None
         if user:
             user['_id'] = str(user['_id'])
         return user
