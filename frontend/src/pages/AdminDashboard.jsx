@@ -30,6 +30,7 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [usersPage, setUsersPage] = useState(1);
   const [usersLimit, setUsersLimit] = useState(20);
+  const [usersSearch, setUsersSearch] = useState('');
   const visibleUsers = useMemo(() => {
     const start = (usersPage - 1) * usersLimit;
     const end = start + usersLimit;
@@ -106,6 +107,7 @@ const AdminDashboard = () => {
   });
   const [activeNotificationTab, setActiveNotificationTab] = useState('notifications');
   const [selectedNotification, setSelectedNotification] = useState(null);
+  const [selectedNotificationUser, setSelectedNotificationUser] = useState(null);
   const [editingTemplate, setEditingTemplate] = useState(null);
   
   // Job Approval Management state
@@ -149,6 +151,21 @@ const AdminDashboard = () => {
     }
   }, [isLoggedIn, activeTab, activeLocationTab]);
 
+  useEffect(() => {
+    if (!selectedNotification) {
+      setSelectedNotificationUser(null);
+      return;
+    }
+    (async () => {
+      try {
+        const res = await adminAPI.getUserDetails(selectedNotification.user_id);
+        setSelectedNotificationUser(res?.user || null);
+      } catch {
+        setSelectedNotificationUser(null);
+      }
+    })();
+  }, [selectedNotification]);
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -182,7 +199,7 @@ const AdminDashboard = () => {
         const data = await adminVerificationAPI.getPendingTradespeopleVerifications();
         setTradespeopleVerifications(data.verifications || []);
       } else if (activeTab === 'users') {
-        const data = await adminAPI.getAllUsers();
+        const data = await adminAPI.getAllUsers(0, usersLimit, null, null, usersSearch || null);
         setUsers(data.users || []);
         setUserStats(data.stats || {});
       } else if (activeTab === 'locations') {
@@ -1945,6 +1962,7 @@ const AdminDashboard = () => {
                               <h3 className="font-semibold text-gray-800 mb-2">
                                 {verification.user_name} ({verification.user_email})
                               </h3>
+                              <div className="text-xs text-gray-400 mb-2">ID: {verification.user_short_id || verification.user_public_id || verification.user_id}</div>
                               <div className="space-y-1 text-sm text-gray-600">
                                 <p><strong>Role:</strong> {verification.user_role}</p>
                                 <p><strong>Document Type:</strong> {verification.document_type.replace('_', ' ').toUpperCase()}</p>
@@ -2029,6 +2047,7 @@ const AdminDashboard = () => {
                               <h3 className="font-semibold text-gray-800 mb-2">
                                 {v.user_name} ({v.user_email})
                               </h3>
+                              <div className="text-xs text-gray-400 mb-2">ID: {v.user_short_id || v.user_public_id || v.user_id}</div>
                               <div className="text-sm text-gray-600 space-y-1">
                                 <p><strong>Submitted:</strong> {formatDate(v.submitted_at)}</p>
                                 <div className="mt-3">
@@ -3675,6 +3694,7 @@ const AdminDashboard = () => {
                                 <div>
                                   <div className="font-medium">{value}</div>
                                   <div className="text-xs text-gray-500">{item.user_email}</div>
+                                  <div className="text-xs text-gray-400">ID: {item.user_short_id || item.user_public_id || item.user_id}</div>
                                 </div>
                               )
                             },
@@ -3964,6 +3984,35 @@ const AdminDashboard = () => {
                     )}
                   </div>
 
+                  <div className="bg-gray-50 p-4 rounded-lg border">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Search Users</label>
+                        <input
+                          type="text"
+                          value={usersSearch}
+                          onChange={(e) => setUsersSearch(e.target.value)}
+                          placeholder="Search by name, email, phone, or short ID"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        />
+                      </div>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => { setUsersPage(1); fetchData(); }}
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
+                        >
+                          Search
+                        </button>
+                        <button
+                          onClick={() => { setUsersSearch(''); setUsersPage(1); fetchData(); }}
+                          className="text-gray-600 hover:text-gray-800 px-4 py-2 border border-gray-300 rounded-lg text-sm"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* User Statistics Cards */}
                   {userStats && (
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -4036,18 +4085,21 @@ const AdminDashboard = () => {
                                         </span>
                                       </div>
                                     </div>
-                                    <div className="ml-4">
-                                      <div className="text-sm font-medium text-gray-900">
-                                        {user.name || 'No Name'}
+                                  <div className="ml-4">
+                                    <div className="text-sm font-medium text-gray-900">
+                                      {user.name || 'No Name'}
+                                    </div>
+                                    <div className="text-sm text-gray-500">
+                                      {user.email}
+                                    </div>
+                                    <div className="text-xs text-gray-400">
+                                      ID: {user.user_id || user.public_id || user.id}
+                                    </div>
+                                    {user.phone && (
+                                      <div className="text-xs text-gray-400">
+                                        {user.phone}
                                       </div>
-                                      <div className="text-sm text-gray-500">
-                                        {user.email}
-                                      </div>
-                                      {user.phone && (
-                                        <div className="text-xs text-gray-400">
-                                          {user.phone}
-                                        </div>
-                                      )}
+                                    )}
                                     </div>
                                   </div>
                                 </td>
@@ -5101,7 +5153,7 @@ const AdminDashboard = () => {
                     <div><strong>Name:</strong> {selectedNotification.user_name}</div>
                     <div><strong>Email:</strong> {selectedNotification.user_email}</div>
                     <div><strong>Role:</strong> {selectedNotification.user_role}</div>
-                    <div><strong>User ID:</strong> {selectedNotification.user_id}</div>
+                    <div><strong>User ID:</strong> {selectedNotificationUser?.user_id || selectedNotificationUser?.public_id || selectedNotification.user_id}</div>
                   </div>
                 </div>
               </div>

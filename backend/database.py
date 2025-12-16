@@ -3958,6 +3958,8 @@ class Database:
                 verification["user_name"] = user.get("name", "Unknown")
                 verification["user_email"] = user.get("email", "Unknown")
                 verification["user_role"] = user.get("role", "Unknown")
+                verification["user_public_id"] = user.get("public_id")
+                verification["user_short_id"] = user.get("user_id")
             
             verifications.append(verification)
         
@@ -4117,6 +4119,8 @@ class Database:
                 v["user_name"] = user.get("name")
                 v["user_email"] = user.get("email")
                 v["user_phone"] = user.get("phone")
+                v["user_public_id"] = user.get("public_id")
+                v["user_short_id"] = user.get("user_id")
             items.append(v)
 
         # Pagination slice
@@ -4412,12 +4416,14 @@ class Database:
             query["status"] = {"$ne": "deleted"}
             
         if search:
-            # Search in name, email, phone, or skills
             query["$or"] = [
                 {"name": {"$regex": search, "$options": "i"}},
                 {"email": {"$regex": search, "$options": "i"}},
                 {"phone": {"$regex": search, "$options": "i"}},
-                {"skills": {"$regex": search, "$options": "i"}}
+                {"skills": {"$regex": search, "$options": "i"}},
+                {"user_id": {"$regex": f"^{search}$", "$options": "i"}},
+                {"public_id": {"$regex": f"^{search}$", "$options": "i"}},
+                {"id": {"$regex": search, "$options": "i"}}
             ]
         
         # Get users with pagination
@@ -6034,6 +6040,8 @@ class Database:
                 "user_id": doc["user_id"],
                 "user_name": user.get("name", "Unknown") if user else "Unknown",
                 "user_email": user.get("email", "Unknown") if user else "Unknown",
+                "user_public_id": user.get("public_id") if user else None,
+                "user_short_id": user.get("user_id") if user else None,
                 "type": doc["type"],
                 "channel": doc["channel"],
                 "status": doc["status"],
@@ -6071,6 +6079,8 @@ class Database:
                     "user_name": user.get("name", "Unknown") if user else "Unknown",
                     "user_email": user.get("email", "Unknown") if user else "Unknown",
                     "user_role": user.get("role", "Unknown") if user else "Unknown",
+                    "user_public_id": user.get("public_id") if user else None,
+                    "user_short_id": user.get("user_id") if user else None,
                     "type": doc["type"],
                     "channel": doc["channel"],
                     "status": doc["status"],
