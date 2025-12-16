@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, Form, Request, BackgroundTasks
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 
 from ..database import database
@@ -416,9 +416,9 @@ async def approve_job(
     approval_data_db = {
         "status": new_status,
         "approved_by": admin["id"],
-        "approved_at": datetime.utcnow(),
+        "approved_at": datetime.now(timezone.utc),
         "approval_notes": notes,
-        "updated_at": datetime.utcnow()
+        "updated_at": datetime.now(timezone.utc)
     }
     
     success = await database.update_job_approval_status(job_id, approval_data_db)
@@ -439,7 +439,7 @@ async def approve_job(
                     template_data = {
                         "homeowner_name": homeowner.get("name", "Homeowner"),
                         "job_title": job["title"],
-                        "approved_at": datetime.utcnow().strftime("%B %d, %Y"),
+                        "approved_at": datetime.now(timezone.utc).strftime("%B %d, %Y"),
                         "admin_notes": notes
                     }
                     await notification_service.send_notification(
@@ -458,7 +458,7 @@ async def approve_job(
                     template_data = {
                         "homeowner_name": homeowner.get("name", "Homeowner"),
                         "job_title": job["title"],
-                        "reviewed_at": datetime.utcnow().strftime("%B %d, %Y"),
+                        "reviewed_at": datetime.now(timezone.utc).strftime("%B %d, %Y"),
                         "rejection_reason": notes
                     }
                     await notification_service.send_notification(
@@ -488,7 +488,7 @@ async def approve_job(
         "job_id": job_id,
         "action": action,
         "approved_by": admin["id"],
-        "approved_at": datetime.utcnow().isoformat(),
+        "approved_at": datetime.now(timezone.utc).isoformat(),
         "notes": notes
     }
 

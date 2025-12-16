@@ -1,5 +1,5 @@
 from motor.motor_asyncio import AsyncIOMotorClient
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import os
 from typing import List, Optional, Dict, Any
 import logging
@@ -36,7 +36,7 @@ class Database:
         self._memory = {"phone_otps": [], "email_otps": [], "users": {}}
         self._geo_cache: Dict[str, Dict[str, Any]] = {}
         self._geo_rate: Dict[str, Any] = {
-            "window_start": datetime.utcnow(),
+            "window_start": datetime.now(timezone.utc),
             "count": 0,
             "limit": int(os.getenv("GEOCODER_RATE_LIMIT_PER_MIN", "30")),
             "window_seconds": 60,
@@ -2609,7 +2609,7 @@ class Database:
     async def update_notification_preferences(self, user_id: str, updates: Dict[str, Any]) -> NotificationPreferences:
         """Update user notification preferences"""
         # Add updated timestamp
-        updates["updated_at"] = datetime.utcnow()
+        updates["updated_at"] = datetime.now(timezone.utc)
         
         await self.notification_preferences_collection.update_one(
             {"user_id": user_id},
@@ -2634,7 +2634,7 @@ class Database:
 
     async def update_notification_status(self, notification_id: str, status: NotificationStatus, delivered_at: Optional[datetime] = None) -> bool:
         """Update notification delivery status"""
-        update_data = {"status": status, "updated_at": datetime.utcnow()}
+        update_data = {"status": status, "updated_at": datetime.now(timezone.utc)}
         if delivered_at:
             update_data["delivered_at"] = delivered_at
         
@@ -2649,7 +2649,7 @@ class Database:
         """Mark a specific notification as read for a user"""
         result = await self.notifications_collection.update_one(
             {"_id": notification_id, "user_id": user_id},
-            {"$set": {"status": "read", "read_at": datetime.utcnow(), "updated_at": datetime.utcnow()}}
+            {"$set": {"status": "read", "read_at": datetime.now(timezone.utc), "updated_at": datetime.now(timezone.utc)}}
         )
         return result.modified_count > 0
 
@@ -2657,7 +2657,7 @@ class Database:
         """Mark all notifications as read for a user"""
         result = await self.notifications_collection.update_many(
             {"user_id": user_id, "status": {"$ne": "read"}},
-            {"$set": {"status": "read", "read_at": datetime.utcnow(), "updated_at": datetime.utcnow()}}
+            {"$set": {"status": "read", "read_at": datetime.now(timezone.utc), "updated_at": datetime.now(timezone.utc)}}
         )
         return result.modified_count
 

@@ -79,7 +79,11 @@ export const NotificationChannels = {
 
 // Helper functions for notification formatting
 export const formatNotificationDate = (dateString) => {
-  const date = new Date(dateString);
+  if (!dateString) return 'Just now';
+  const hasTZ = typeof dateString === 'string' && /([zZ]|[+-]\d{2}:\d{2})$/.test(dateString);
+  const normalized = hasTZ ? dateString : `${dateString}Z`;
+  const date = new Date(normalized);
+  if (isNaN(date)) return 'Just now';
   const now = new Date();
   const diffInHours = (now - date) / (1000 * 60 * 60);
   

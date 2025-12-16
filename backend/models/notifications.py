@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, List
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 
 class NotificationType(str, Enum):
@@ -53,8 +53,8 @@ class NotificationPreferences(BaseModel):
     review_reminder: NotificationChannel = NotificationChannel.EMAIL  # Review reminders
     job_completed: NotificationChannel = NotificationChannel.BOTH  # Job completion notifications
     job_cancelled: NotificationChannel = NotificationChannel.BOTH  # Job cancellation notifications
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class NotificationTemplate(BaseModel):
     """Notification template for different types and channels"""
@@ -64,7 +64,7 @@ class NotificationTemplate(BaseModel):
     subject_template: str = Field(..., description="Subject template for email")
     content_template: str = Field(..., description="Content template")
     variables: List[str] = Field(default=[], description="Template variables")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class Notification(BaseModel):
     """Individual notification record"""
@@ -80,8 +80,8 @@ class Notification(BaseModel):
     metadata: Dict[str, Any] = Field(default={}, description="Additional data")
     sent_at: Optional[datetime] = Field(None, description="When notification was sent")
     delivered_at: Optional[datetime] = Field(None, description="When notification was delivered")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class NotificationRequest(BaseModel):
     """Request to send a notification"""

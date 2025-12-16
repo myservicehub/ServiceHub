@@ -13,6 +13,10 @@ from ..models.base import (
     ReferralStats, DocumentUpload, VerificationSubmission,
     DocumentType, WithdrawalRequest, WalletResponseWithReferrals
 )
+try:
+    from ..services.notifications import SendGridEmailService, MockEmailService
+except ImportError:
+    from services.notifications import SendGridEmailService, MockEmailService
 
 router = APIRouter(prefix="/api/referrals", tags=["referrals"])
 
@@ -176,7 +180,98 @@ async def submit_tradesperson_references(
         work_referrer=work_referrer,
         character_referrer=character_referrer,
     )
-
+    tradesperson_name = (
+        getattr(current_user, "name", None)
+        or getattr(current_user, "business_name", None)
+        or "Tradesperson"
+    )
+    email_service = None
+    try:
+        email_service = SendGridEmailService()
+    except Exception:
+        try:
+            email_service = MockEmailService()
+        except Exception:
+            email_service = None
+    if email_service:
+        work_subject = "Request for Work Reference"
+        work_link = "https://forms.gle/p3SdDzHoT5eN7oTv6"
+        work_html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset=\"utf-8\">
+          <style>
+            body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+            .btn {{ display: inline-block; background-color: #34D164; color: #fff; padding: 12px 18px; border-radius: 8px; text-decoration: none; font-weight: bold; }}
+            .link {{ word-break: break-all; color: #2563eb; }}
+          </style>
+        </head>
+        <body>
+          <div class=\"container\">
+            <p>Hi {work_referrer['name']},</p>
+            <p>{tradesperson_name} has listed you as a referee regarding their professional work. We’d greatly appreciate it if you could take a few minutes to provide your feedback on their work performance.</p>
+            <p>
+              <a class=\"btn\" href=\"{work_link}\">Submit Work Reference</a>
+            </p>
+            <p>If the button doesn’t work, copy and paste this link:</p>
+            <p class=\"link\">{work_link}</p>
+            <p>Thank you for your time and support!</p>
+            <p>Best regards,<br/>Ekpemi Daniel Francis<br/>Head of human resource<br/>hr@myservicehub.co</p>
+          </div>
+        </body>
+        </html>
+        """
+        await email_service.send_email(
+            to=work_referrer["company_email"],
+            subject=work_subject,
+            content=work_html,
+            metadata={
+                "purpose": "work_reference_request",
+                "user_id": current_user.id,
+                "tradesperson_name": tradesperson_name,
+            },
+        )
+        char_subject = "Request for Character Reference"
+        char_link = "https://forms.gle/LpmqGmtv8Awzf7ix5"
+        char_html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset=\"utf-8\">
+          <style>
+            body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+            .btn {{ display: inline-block; background-color: #34D164; color: #fff; padding: 12px 18px; border-radius: 8px; text-decoration: none; font-weight: bold; }}
+            .link {{ word-break: break-all; color: #2563eb; }}
+          </style>
+        </head>
+        <body>
+          <div class=\"container\">
+            <p>Hi {character_referrer['name']},</p>
+            <p>{tradesperson_name} has listed you as a referee regarding their personal character. We’d be grateful if you could share your thoughts on their character and reliability.</p>
+            <p>
+              <a class=\"btn\" href=\"{char_link}\">Submit Character Reference</a>
+            </p>
+            <p>If the button doesn’t work, copy and paste this link:</p>
+            <p class=\"link\">{char_link}</p>
+            <p>Thank you for your time and input—it’s very much appreciated!</p>
+            <p>Best regards,<br/>Ekpemi Daniel Francis<br/>Head of human resource<br/>hr@myservicehub.co</p>
+          </div>
+        </body>
+        </html>
+        """
+        await email_service.send_email(
+            to=character_referrer["email"],
+            subject=char_subject,
+            content=char_html,
+            metadata={
+                "purpose": "character_reference_request",
+                "user_id": current_user.id,
+                "tradesperson_name": tradesperson_name,
+            },
+        )
     return {
         "message": "References submitted successfully and pending admin review.",
         "verification_id": verification_id,
