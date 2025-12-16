@@ -115,6 +115,25 @@ const AdminDashboard = () => {
   // Debug modal state changes
   useEffect(() => {
     console.log('statusEditModal state changed:', statusEditModal);
+    if (statusEditModal.open) {
+      console.log('Modal should be visible. Checking DOM in 100ms...');
+      setTimeout(() => {
+        const modalElement = document.querySelector('[data-modal="status-edit-modal"]');
+        if (modalElement) {
+          console.log('✅ Modal found in DOM:', modalElement);
+          const styles = window.getComputedStyle(modalElement);
+          console.log('Modal styles:', {
+            display: styles.display,
+            visibility: styles.visibility,
+            opacity: styles.opacity,
+            zIndex: styles.zIndex,
+            position: styles.position
+          });
+        } else {
+          console.error('❌ Modal NOT found in DOM! Portal may not be rendering.');
+        }
+      }, 100);
+    }
   }, [statusEditModal]);
   
   // Job Approval Management state
@@ -4076,10 +4095,13 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {statusEditModal.open && createPortal(
+        {statusEditModal.open && typeof document !== 'undefined' && createPortal(
           <div 
+            data-modal="status-edit-modal"
             className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-40"
+            style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}
             onClick={(e) => {
+              console.log('Modal backdrop clicked', e.target === e.currentTarget);
               if (e.target === e.currentTarget) {
                 setStatusEditModal({ open: false, notification: null, status: '', notes: '' });
               }
@@ -4087,7 +4109,11 @@ const AdminDashboard = () => {
           >
             <div 
               className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative z-[10000]"
-              onClick={(e) => e.stopPropagation()}
+              style={{ position: 'relative', zIndex: 10000 }}
+              onClick={(e) => {
+                console.log('Modal content clicked');
+                e.stopPropagation();
+              }}
             >
               <h3 className="text-lg font-semibold mb-4">Update Notification Status</h3>
               <div className="space-y-4">
@@ -4119,13 +4145,17 @@ const AdminDashboard = () => {
               <div className="mt-6 flex justify-end space-x-3">
                 <button
                   className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
-                  onClick={() => setStatusEditModal({ open: false, notification: null, status: '', notes: '' })}
+                  onClick={() => {
+                    console.log('Cancel button clicked');
+                    setStatusEditModal({ open: false, notification: null, status: '', notes: '' });
+                  }}
                 >
                   Cancel
                 </button>
                 <button
                   className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm"
                   onClick={() => {
+                    console.log('Update button clicked');
                     const allowed = ['pending', 'sent', 'delivered', 'failed', 'cancelled'];
                     const normalized = (statusEditModal.status || '').toLowerCase().trim();
                     if (!allowed.includes(normalized)) {
