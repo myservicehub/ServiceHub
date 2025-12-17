@@ -1293,59 +1293,31 @@ class Database:
 
     async def get_jobs_statistics_admin(self) -> dict:
         """Get comprehensive job statistics for admin dashboard"""
-        # Total jobs count
         total_jobs = await self.database.jobs.count_documents({})
-        
-        # Jobs by status
+        pending_jobs = await self.database.jobs.count_documents({"status": "pending_approval"})
         active_jobs = await self.database.jobs.count_documents({"status": "active"})
-        completed_jobs = await self.database.jobs.count_documents({"status": "completed"})
-        cancelled_jobs = await self.database.jobs.count_documents({"status": "cancelled"})
+        rejected_jobs = await self.database.jobs.count_documents({"status": "rejected"})
         expired_jobs = await self.database.jobs.count_documents({"status": "expired"})
-        
-        # Total interests
-        total_interests = await self.database.interests.count_documents({})
-        
-        # Jobs with most interests (top 10)
-        pipeline = [
-            {"$group": {
-                "_id": "$job_id",
-                "count": {"$sum": 1}
-            }},
-            {"$sort": {"count": -1}},
-            {"$limit": 10}
-        ]
-        top_jobs_interests = await self.database.interests.aggregate(pipeline).to_list(length=10)
-        
-        # Jobs created in last 30 days
-        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
-        recent_jobs = await self.database.jobs.count_documents({
-            "created_at": {"$gte": thirty_days_ago}
+        completed_jobs = await self.database.jobs.count_documents({"status": "completed"})
+        today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        today_end = today_start + timedelta(days=1)
+        approved_today = await self.database.jobs.count_documents({
+            "status": "active",
+            "approved_at": {"$gte": today_start, "$lt": today_end}
         })
-        
-        # Average budget ranges
-        pipeline = [
-            {"$match": {"budget_min": {"$exists": True}, "budget_max": {"$exists": True}}},
-            {"$group": {
-                "_id": None,
-                "avg_min": {"$avg": "$budget_min"},
-                "avg_max": {"$avg": "$budget_max"}
-            }}
-        ]
-        budget_stats = await self.database.jobs.aggregate(pipeline).to_list(length=1)
-        avg_budget_min = budget_stats[0]["avg_min"] if budget_stats else 0
-        avg_budget_max = budget_stats[0]["avg_max"] if budget_stats else 0
-        
+        rejected_today = await self.database.jobs.count_documents({
+            "status": "rejected",
+            "approved_at": {"$gte": today_start, "$lt": today_end}
+        })
         return {
             "total_jobs": total_jobs,
+            "pending_jobs": pending_jobs,
             "active_jobs": active_jobs,
-            "completed_jobs": completed_jobs,
-            "cancelled_jobs": cancelled_jobs,
+            "rejected_jobs": rejected_jobs,
             "expired_jobs": expired_jobs,
-            "total_interests": total_interests,
-            "top_jobs_interests": top_jobs_interests,
-            "recent_jobs": recent_jobs,
-            "avg_budget_min": avg_budget_min,
-            "avg_budget_max": avg_budget_max
+            "completed_jobs": completed_jobs,
+            "approved_today": approved_today,
+            "rejected_today": rejected_today
         }
 
     async def get_jobs_count(self, filters: dict = None) -> int:
