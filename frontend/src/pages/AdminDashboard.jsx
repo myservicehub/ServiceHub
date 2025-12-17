@@ -1814,7 +1814,7 @@ const AdminDashboard = () => {
                   {approvalStats && Object.keys(approvalStats).length > 0 && (
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                       <div className="bg-white p-4 rounded-lg border">
-                        <div className="text-2xl font-bold text-yellow-600">{approvalStats.pending_jobs || 0}</div>
+                        <div className="text-2xl font-bold text-yellow-600">{(approvalStats.pending_jobs ?? pendingJobs.length ?? 0)}</div>
                         <div className="text-sm text-gray-600">Pending Approval</div>
                       </div>
                       <div className="bg-white p-4 rounded-lg border">
