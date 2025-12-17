@@ -106,6 +106,9 @@ const AdminDashboard = () => {
     date_from: '',
     date_to: ''
   });
+  const [notificationPage, setNotificationPage] = useState(1);
+  const [notificationPageSize, setNotificationPageSize] = useState(50);
+  const [notificationTotal, setNotificationTotal] = useState(0);
   const [activeNotificationTab, setActiveNotificationTab] = useState('notifications');
   const [selectedNotification, setSelectedNotification] = useState(null);
   const [selectedNotificationUser, setSelectedNotificationUser] = useState(null);
@@ -941,10 +944,11 @@ const AdminDashboard = () => {
   const handleNotificationDataLoad = async () => {
     setLoading(true);
     try {
-      // Load notifications with current filters
-      const notificationsData = await adminAPI.getAllNotifications(notificationFilters);
+      const skip = (notificationPage - 1) * notificationPageSize;
+      const notificationsData = await adminAPI.getAllNotifications(notificationFilters, skip, notificationPageSize);
       setNotifications(notificationsData.notifications || []);
       setNotificationStats(notificationsData.stats || {});
+      setNotificationTotal(notificationsData.pagination?.total || 0);
       
       // Load templates and preferences based on active tab
       if (activeNotificationTab === 'templates') {
@@ -965,6 +969,12 @@ const AdminDashboard = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (activeTab === 'notifications' && activeNotificationTab === 'notifications') {
+      handleNotificationDataLoad();
+    }
+  }, [notificationPage, notificationPageSize, notificationFilters, activeNotificationTab, activeTab]);
 
   const handleUpdateNotificationStatus = async (notificationId, status, adminNotes = '') => {
     try {
@@ -3657,8 +3667,8 @@ const AdminDashboard = () => {
                             </div>
                           </div>
                           <div className="mt-4">
-                            <button
-                              onClick={handleNotificationDataLoad}
+                          <button
+                              onClick={() => { setNotificationPage(1); handleNotificationDataLoad(); }}
                               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
                             >
                               Apply Filters
@@ -3672,6 +3682,7 @@ const AdminDashboard = () => {
                                   date_from: '',
                                   date_to: ''
                                 });
+                                setNotificationPage(1);
                                 handleNotificationDataLoad();
                               }}
                               className="ml-2 text-gray-600 hover:text-gray-800 px-4 py-2 border border-gray-300 rounded-lg text-sm"
@@ -3827,6 +3838,43 @@ const AdminDashboard = () => {
                           ]}
                           isLoading={loading}
                         />
+                        <div className="flex items-center justify-between mt-4">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm text-gray-600">Rows per page</span>
+                            <select
+                              value={notificationPageSize}
+                              onChange={(e) => {
+                                const size = parseInt(e.target.value, 10) || 50;
+                                setNotificationPageSize(size);
+                                setNotificationPage(1);
+                              }}
+                              className="border border-gray-300 rounded px-2 py-1 text-sm"
+                            >
+                              <option value={25}>25</option>
+                              <option value={50}>50</option>
+                              <option value={100}>100</option>
+                            </select>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <button
+                              className="px-3 py-1 border rounded text-sm"
+                              disabled={notificationPage <= 1}
+                              onClick={() => setNotificationPage(p => Math.max(1, p - 1))}
+                            >
+                              Previous
+                            </button>
+                            <span className="text-sm text-gray-600">
+                              Page {notificationPage} of {Math.max(1, Math.ceil((notificationTotal || 0) / notificationPageSize))}
+                            </span>
+                            <button
+                              className="px-3 py-1 border rounded text-sm"
+                              disabled={notificationPage >= Math.ceil((notificationTotal || 0) / notificationPageSize)}
+                              onClick={() => setNotificationPage(p => p + 1)}
+                            >
+                              Next
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     )}
 
