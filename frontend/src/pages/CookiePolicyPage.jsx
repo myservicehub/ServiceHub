@@ -3,11 +3,57 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Link } from 'react-router-dom';
 import { policiesAPI } from '../api/wallet';
+const SectionBar = ({ children }) => (
+  <div className="rounded-md bg-green-600 text-white px-4 py-2 font-semibold mb-3">{children}</div>
+);
+const SubSectionBar = ({ children, id }) => (
+  <div id={id} className="rounded-md bg-green-100 text-green-900 px-4 py-2 font-semibold mb-3">{children}</div>
+);
 
 const CookiePolicyPage = () => {
   const [policy, setPolicy] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const isHeading = (line) => /^(\d+\.|[A-Z][A-Z\s&\-]+)$/.test(line.trim());
+  const isListLine = (line) => /^[-*•]\s+/.test(line);
+  const renderPolicyContent = (text) => {
+    const lines = (text || '').split(/\r?\n/);
+    const out = [];
+    let i = 0;
+    while (i < lines.length) {
+      const raw = lines[i];
+      const line = raw.trim();
+      if (!line) { i++; continue; }
+      if (isHeading(line)) {
+        out.push(<SectionBar key={`h-${i}`}>{line}</SectionBar>);
+        i++;
+        continue;
+      }
+      if (isListLine(line)) {
+        const items = [];
+        while (i < lines.length && isListLine(lines[i].trim())) {
+          items.push(lines[i].trim().replace(/^[-*•]\s+/, ''));
+          i++;
+        }
+        out.push(
+          <ul key={`ul-${i}`} className="list-disc list-inside text-gray-700 space-y-2 mb-4">
+            {items.map((it, idx) => (<li key={idx}>{it}</li>))}
+          </ul>
+        );
+        continue;
+      }
+      const para = [];
+      while (i < lines.length) {
+        const t = lines[i].trim();
+        if (!t || isHeading(t) || isListLine(t)) break;
+        para.push(lines[i]);
+        i++;
+      }
+      out.push(<p key={`p-${i}`} className="text-gray-700 mb-4">{para.join(' ')}</p>);
+    }
+    return out;
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -46,7 +92,9 @@ const CookiePolicyPage = () => {
               <Link to="/privacy-policy" className="text-green-600 hover:text-green-700 underline">Privacy Policy</Link>.
             </div>
           ) : (
-            <div className="text-gray-700 whitespace-pre-wrap">{policy?.content}</div>
+            <div>
+              {renderPolicyContent(policy?.content || '')}
+            </div>
           )}
         </div>
       </div>

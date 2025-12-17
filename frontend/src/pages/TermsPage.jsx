@@ -17,6 +17,51 @@ const TermsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const isHeading = (line) => /^(\d+\.|[A|B]\d+\.|[A-Z][A-Z\s&\-]+)$/.test(line.trim());
+  const isSubHeading = (line) => /^([A|B]\d+\.)/.test(line.trim());
+  const isListLine = (line) => /^[-*•]\s+/.test(line);
+  const renderPolicyContent = (text) => {
+    const lines = (text || '').split(/\r?\n/);
+    const out = [];
+    let i = 0;
+    while (i < lines.length) {
+      const raw = lines[i];
+      const line = raw.trim();
+      if (!line) { i++; continue; }
+      if (isHeading(line)) {
+        out.push(
+          (isSubHeading(line)
+            ? <SubSectionBar key={`sh-${i}`}>{line}</SubSectionBar>
+            : <SectionBar key={`h-${i}`}>{line}</SectionBar>)
+        );
+        i++;
+        continue;
+      }
+      if (isListLine(line)) {
+        const items = [];
+        while (i < lines.length && isListLine(lines[i].trim())) {
+          items.push(lines[i].trim().replace(/^[-*•]\s+/, ''));
+          i++;
+        }
+        out.push(
+          <ul key={`ul-${i}`} className="list-disc list-inside text-gray-700 space-y-2 mb-4">
+            {items.map((it, idx) => (<li key={idx}>{it}</li>))}
+          </ul>
+        );
+        continue;
+      }
+      const para = [];
+      while (i < lines.length) {
+        const t = lines[i].trim();
+        if (!t || isHeading(t) || isListLine(t)) break;
+        para.push(lines[i]);
+        i++;
+      }
+      out.push(<p key={`p-${i}`} className="text-gray-700 mb-4">{para.join(' ')}</p>);
+    }
+    return out;
+  };
+
   useEffect(() => {
     let isMounted = true;
     (async () => {
@@ -54,7 +99,9 @@ const TermsPage = () => {
               <Link to="/privacy-policy" className="text-green-600 hover:text-green-700 underline">Privacy Policy</Link>.
             </div>
           ) : (
-            <div className="text-gray-700 whitespace-pre-wrap">{policy?.content}</div>
+            <div>
+              {renderPolicyContent(policy?.content || '')}
+            </div>
           )}
         </div>
       </div>
