@@ -1108,14 +1108,6 @@ class Database:
         )
         return result.modified_count > 0
 
-    async def update_job_admin(self, job_id: str, update_data: dict) -> bool:
-        """Update job details (admin only)"""
-        result = await self.database.jobs.update_one(
-            {"id": job_id},
-            {"$set": update_data}
-        )
-        return result.modified_count > 0
-
     async def get_job_interests_count(self, job_id: str) -> int:
         """Get count of interests for a specific job"""
         return await self.database.interests.count_documents({"job_id": job_id})

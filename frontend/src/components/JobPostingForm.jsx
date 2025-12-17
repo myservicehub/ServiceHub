@@ -277,6 +277,9 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
         
         if (!formData.category) newErrors.category = 'Please select a category';
 
+        if (!formData.description.trim()) newErrors.description = 'Description is required';
+        else if (formData.description.trim().length < 50) newErrors.description = 'Description must be at least 50 characters';
+
         // If category is selected, validate admin questions instead of description
         if (formData.category) {
           const visibleQuestions = getVisibleQuestions();
@@ -463,10 +466,9 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
     setSubmitting(true);
 
     try {
-      // Create job data without description since it's been removed from the form
       const jobData = {
         title: formData.title,
-        // description field completely removed - no auto-generation
+        description: formData.description,
         category: formData.category,
         state: formData.state,
         lga: formData.lga,
@@ -988,10 +990,9 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
 
     try {
       // Build job payload
-      // Create job data without description since it's been removed from the form
       const jobData = {
         title: formData.title,
-        // description field completely removed - no auto-generation
+        description: formData.description,
         category: formData.category,
         state: formData.state,
         lga: formData.lga,
@@ -1377,7 +1378,22 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
               </div>
             )}
 
-            {/* Job Description field removed as requested */}
+            <div>
+              <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                Description *
+              </label>
+              <textarea
+                rows={5}
+                id="field-description"
+                placeholder="Describe the work, materials, scope, and any important notes"
+                value={formData.description}
+                onChange={(e) => updateFormData('description', e.target.value)}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato resize-none ${
+                  errors.description ? 'border-red-500' : 'border-gray-300'
+                }`}
+              />
+              {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
+            </div>
           </div>
         );
 

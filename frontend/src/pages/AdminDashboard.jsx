@@ -4940,6 +4940,7 @@ const AdminDashboard = () => {
                   description: "Job updated successfully. Homeowner has been notified.",
                 });
                 setEditJobModal(null);
+                handleJobApprovalsDataLoad();
                 fetchData();
               } catch (error) {
                 toast({

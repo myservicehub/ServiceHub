@@ -561,7 +561,13 @@ async def edit_job_admin(
         fee_coins = filtered_updates['access_fee_coins']
         if not (5 <= fee_coins <= 100):
             raise HTTPException(status_code=400, detail="Access fee in coins must be between 5 and 100")
-    
+
+    if 'description' in filtered_updates:
+        desc = str(filtered_updates['description']).strip()
+        if not desc:
+            raise HTTPException(status_code=400, detail="Description cannot be empty")
+        filtered_updates['description'] = desc
+
     if 'budget_min' in filtered_updates and 'budget_max' in filtered_updates:
         if filtered_updates['budget_min'] > filtered_updates['budget_max']:
             raise HTTPException(status_code=400, detail="Minimum budget cannot be greater than maximum budget")
