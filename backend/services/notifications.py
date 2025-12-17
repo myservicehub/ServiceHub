@@ -19,6 +19,7 @@ from sendgrid.helpers.mail import (
     FileType,
     Disposition,
     ContentId,
+    CustomArg,
 )
 import requests
 import base64
@@ -82,10 +83,13 @@ class SendGridEmailService:
             # Add metadata as custom args if provided
             if metadata:
                 try:
-                    # SendGrid expects a dict at custom_args
-                    message.custom_args = {str(k): str(v) for k, v in metadata.items()}
+                    for k, v in metadata.items():
+                        try:
+                            message.add_custom_arg(CustomArg(str(k), str(v)))
+                        except Exception:
+                            pass
                 except Exception as e:
-                    logger.warning(f"Failed to attach custom args to SendGrid mail: {e}")
+                    logger.debug(f"Custom args attachment failed: {e}")
             
             # Inline CID logo support: attach image if template uses cid:logo
             try:
@@ -192,7 +196,7 @@ class TermiiSMSService:
                 if resp.status_code == 200 and isinstance(data, dict) and data.get("code") == "ok":
                     logger.info(f"📱 SMS SENT: to={formatted_phone}, channel={channel}, message_id={data.get('message_id')}")
                     return True
-                logger.error(f"❌ Termii send failed (channel={channel}): status={resp.status_code}, body={data}")
+                logger.debug(f"❌ Termii send failed (channel={channel}): status={resp.status_code}, body={data}")
                 return False
 
             # Choose first channel based on env override; default to dnd
