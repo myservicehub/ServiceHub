@@ -2063,7 +2063,7 @@ const AdminDashboard = () => {
               {activeTab === 'tradespeople_verification' && (
                 <div className="space-y-6">
                   <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-semibold">Tradespeople References Verification</h2>
+                    <h2 className="text-xl font-semibold">Tradespeople account verification</h2>
                     <button onClick={fetchData} className="text-blue-600 hover:text-blue-700">Refresh</button>
                   </div>
 
