@@ -70,9 +70,14 @@ const PrivacyPage = () => {
       const line = raw.trim();
       if (!line) { i++; continue; }
       if (isHeading(line)) {
+        const id = (/privacy\s*policy.*(service\s*providers|tradespeople)/i.test(line))
+          ? 'privacy-tradespeople'
+          : (/privacy\s*policy.*customers/i.test(line)
+            ? 'privacy-customers'
+            : undefined);
         out.push(
           (isSubHeading(line)
-            ? <SubSectionBar key={`sh-${i}`}>{line}</SubSectionBar>
+            ? <SubSectionBar key={`sh-${i}`} id={id}>{line}</SubSectionBar>
             : <SectionBar key={`h-${i}`}>{line}</SectionBar>)
         );
         i++;
@@ -138,6 +143,8 @@ const PrivacyPage = () => {
 
   const effective = policy?.effective_date ? new Date(policy.effective_date) : null;
   const updated = policy?.updated_at ? new Date(policy.updated_at) : null;
+  const hasPartA = false;
+  const hasPartB = false;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -160,6 +167,10 @@ const PrivacyPage = () => {
             </div>
           ) : (
             <div>
+              <div className="flex items-center gap-4 mb-4">
+                <a href="#privacy-tradespeople" className="text-green-600 hover:text-green-700 underline">privacy policy for service providers / tradespeople</a>
+                <a href="#privacy-customers" className="text-green-600 hover:text-green-700 underline">privacy policy for customers</a>
+              </div>
               {renderPolicyContent(policy?.content || '')}
             </div>
           )}

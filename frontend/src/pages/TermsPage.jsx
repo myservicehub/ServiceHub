@@ -70,9 +70,14 @@ const TermsPage = () => {
       const line = raw.trim();
       if (!line) { i++; continue; }
       if (isHeading(line)) {
+        const id = (/service\s*provider.*terms/i.test(line) || /tradespeople.*terms/i.test(line))
+          ? 'terms-service-provider'
+          : (/customer.*terms/i.test(line)
+            ? 'terms-customer'
+            : undefined);
         out.push(
           (isSubHeading(line)
-            ? <SubSectionBar key={`sh-${i}`}>{line}</SubSectionBar>
+            ? <SubSectionBar key={`sh-${i}`} id={id}>{line}</SubSectionBar>
             : <SectionBar key={`h-${i}`}>{line}</SectionBar>)
         );
         i++;
@@ -154,6 +159,10 @@ const TermsPage = () => {
             </div>
           ) : (
             <div>
+              <div className="flex items-center gap-4 mb-4">
+                <a href="#terms-service-provider" className="text-green-600 hover:text-green-700 underline">service provider terms & conditions</a>
+                <a href="#terms-customer" className="text-green-600 hover:text-green-700 underline">customer terms & conditions</a>
+              </div>
               {renderPolicyContent(policy?.content || '')}
             </div>
           )}
