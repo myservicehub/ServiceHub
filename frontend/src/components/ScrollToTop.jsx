@@ -15,6 +15,7 @@ export default function ScrollToTop({ smooth = true }) {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    if (location.hash) return;
     const behavior = smooth ? 'smooth' : 'auto';
     const scroll = () => {
       try {
