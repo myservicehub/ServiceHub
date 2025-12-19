@@ -234,6 +234,7 @@ const MyInterestsPage = () => {
     // If job is still active, show the interest status
     const statusConfig = {
       'pending': { color: 'bg-yellow-100 text-yellow-800', icon: Clock, label: 'Pending' },
+      'interested': { color: 'bg-yellow-100 text-yellow-800', icon: Clock, label: 'Pending' },
       'contact_shared': { color: 'bg-blue-100 text-blue-800', icon: MessageCircle, label: 'Contact Shared' },
       'paid_access': { color: 'bg-purple-100 text-purple-800', icon: CheckCircle, label: 'Paid Access' },
       'expired': { color: 'bg-gray-100 text-gray-800', icon: XCircle, label: 'Expired' }
@@ -289,14 +290,15 @@ const MyInterestsPage = () => {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
+      timeZone: 'Africa/Lagos'
     });
   };
 
   const filterInterests = (interests, tab) => {
     switch (tab) {
       case 'pending':
-        return interests.filter(interest => interest.status === 'pending');
+        return interests.filter(interest => ['pending', 'interested'].includes(interest.status));
       case 'contact_shared':
         return interests.filter(interest => interest.status === 'contact_shared');
       case 'paid':
@@ -653,7 +655,7 @@ const MyInterestsPage = () => {
                         </div>
                         
                         <div className="flex gap-2">
-                          {interest.status === 'pending' && (
+                          {(interest.status === 'pending' || interest.status === 'interested') && (
                             <Badge variant="outline" className="text-yellow-600">
                               Waiting for homeowner response
                             </Badge>

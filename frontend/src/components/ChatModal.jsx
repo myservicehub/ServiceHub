@@ -330,7 +330,8 @@ const ChatModal = ({
     if (isToday) {
       return date.toLocaleTimeString('en-US', { 
         hour: '2-digit', 
-        minute: '2-digit'
+        minute: '2-digit',
+        timeZone: 'Africa/Lagos'
       });
     }
     
@@ -338,7 +339,8 @@ const ChatModal = ({
       month: 'short', 
       day: 'numeric',
       hour: '2-digit', 
-      minute: '2-digit'
+      minute: '2-digit',
+      timeZone: 'Africa/Lagos'
     });
   };
 
