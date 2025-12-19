@@ -2,6 +2,18 @@ import apiClient from './client';
 
 // Reviews API endpoints
 export const reviewsAPI = {
+  // Get all reviews (admin use)
+  getAllReviews: async (params = {}) => {
+    const { page = 1, limit = 10, min_rating } = params;
+    const response = await apiClient.get('/reviews', {
+      params: {
+        page,
+        limit,
+        ...(min_rating ? { min_rating } : {})
+      }
+    });
+    return response.data;
+  },
   // Create a new review
   createReview: async (reviewData) => {
     const response = await apiClient.post('/reviews/create', reviewData);

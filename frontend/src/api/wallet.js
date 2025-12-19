@@ -804,3 +804,23 @@ export const tradeCategoryQuestionsAPI = {
     return response.data;
   }
 };
+
+export const adminReviewsAPI = {
+  async getAllReviews({ page = 1, limit = 20, status = '', min_rating = '', review_type = '', search = '' } = {}) {
+    const params = new URLSearchParams({ page: page.toString(), limit: limit.toString() });
+    if (status) params.append('status', status);
+    if (min_rating) params.append('min_rating', min_rating.toString());
+    if (review_type) params.append('review_type', review_type);
+    if (search) params.append('search', search);
+    const response = await apiClient.get(`/admin/reviews?${params.toString()}`);
+    return response.data;
+  },
+  async updateReviewStatus(reviewId, status) {
+    const response = await apiClient.put(`/admin/reviews/${reviewId}/status`, { status });
+    return response.data;
+  },
+  async deleteReview(reviewId) {
+    const response = await apiClient.delete(`/admin/reviews/${reviewId}`);
+    return response.data;
+  }
+};

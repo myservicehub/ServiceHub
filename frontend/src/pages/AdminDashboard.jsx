@@ -10,6 +10,7 @@ import TradeCategoryQuestionsManager from '../components/admin/TradeCategoryQues
 import AdminManagement from '../components/admin/AdminManagement';
 import ContentManagement from '../components/admin/ContentManagement';
 import Header from '../components/Header';
+import { adminReviewsAPI } from '../api/wallet';
 import Footer from '../components/Footer';
 import AdminDataTable from '../components/admin/AdminDataTable';
 import BulkActionsBar from '../components/admin/BulkActionsBar';
@@ -87,6 +88,26 @@ const AdminDashboard = () => {
   const [selectedContact, setSelectedContact] = useState(null);
   const [showAddContact, setShowAddContact] = useState(false);
   const [editingContact, setEditingContact] = useState(null);
+  const [reviews, setReviews] = useState([]);
+  const [reviewsPage, setReviewsPage] = useState(1);
+  const [reviewsLimit, setReviewsLimit] = useState(20);
+  const [reviewsTotal, setReviewsTotal] = useState(0);
+  const [reviewsPages, setReviewsPages] = useState(0);
+  const [reviewsMinRating, setReviewsMinRating] = useState('');
+  const [reviewsStatus, setReviewsStatus] = useState('');
+  const [reviewsSearch, setReviewsSearch] = useState('');
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const filteredReviews = useMemo(() => {
+    let list = reviews;
+    if (reviewsStatus) {
+      list = list.filter(r => String(r.status || '').toLowerCase() === reviewsStatus);
+    }
+    if (reviewsSearch) {
+      const q = reviewsSearch.toLowerCase();
+      list = list.filter(r => [r.reviewer_name, r.reviewee_name, r.title, r.job_title].some(v => String(v || '').toLowerCase().includes(q)));
+    }
+    return list;
+  }, [reviews, reviewsStatus, reviewsSearch]);
   
   // Enhanced CRUD state
   const [selectedItems, setSelectedItems] = useState([]);
@@ -180,6 +201,11 @@ const AdminDashboard = () => {
       fetchData();
     }
   }, [isLoggedIn, activeTab, activeLocationTab]);
+
+  useEffect(() => {
+    if (!isLoggedIn || activeTab !== 'reviews-management') return;
+    fetchData();
+  }, [isLoggedIn, activeTab, reviewsPage, reviewsLimit, reviewsMinRating, reviewsStatus, reviewsSearch]);
 
   useEffect(() => {
     if (!selectedNotification) {
@@ -286,6 +312,15 @@ const AdminDashboard = () => {
       } else if (activeTab === 'stats') {
         const data = await adminAPI.getDashboardStats();
         setStats(data);
+      } else if (activeTab === 'reviews-management') {
+        setReviewsLoading(true);
+        const data = await adminReviewsAPI.getAllReviews({ page: reviewsPage, limit: reviewsLimit, status: reviewsStatus || '', min_rating: reviewsMinRating || '', review_type: 'homeowner_to_tradesperson', search: reviewsSearch || '' });
+        const list = data.reviews || [];
+        setReviews(list);
+        const pagination = data.pagination || {};
+        setReviewsTotal(pagination.total || list.length);
+        setReviewsPages(pagination.pages || Math.ceil((pagination.total || list.length) / reviewsLimit));
+        setReviewsLoading(false);
       }
     } catch (error) {
       console.error('Failed to fetch data:', error);
@@ -1405,6 +1440,7 @@ const AdminDashboard = () => {
                   { id: 'policies', label: 'Policy Management', icon: '📋' },
                   { id: 'contacts', label: 'Contact Management', icon: '📞' },
                   { id: 'notifications', label: 'Notifications', icon: '🔔' },
+                  { id: 'reviews-management', label: 'Customer Reviews', icon: '⭐' },
                   { id: 'stats', label: 'Dashboard Stats', icon: '📊' }
                 ].map((tab) => (
                   <button
@@ -4090,6 +4126,154 @@ const AdminDashboard = () => {
                 <TradeCategoryQuestionsManager />
               )}
 
+              {activeTab === 'reviews-management' && (
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-xl font-semibold">Homeowner Reviews Management</h2>
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="text"
+                        value={reviewsSearch}
+                        onChange={(e) => setReviewsSearch(e.target.value)}
+                        placeholder="Search by reviewer, reviewee, title"
+                        className="px-3 py-2 border rounded"
+                      />
+                      <select
+                        value={reviewsMinRating}
+                        onChange={(e) => setReviewsMinRating(e.target.value)}
+                        className="px-3 py-2 border rounded"
+                      >
+                        <option value="">All ratings</option>
+                        <option value="5">5+</option>
+                        <option value="4">4+</option>
+                        <option value="3">3+</option>
+                        <option value="2">2+</option>
+                        <option value="1">1+</option>
+                      </select>
+                      <select
+                        value={reviewsStatus}
+                        onChange={(e) => setReviewsStatus(e.target.value)}
+                        className="px-3 py-2 border rounded"
+                      >
+                        <option value="">All statuses</option>
+                        <option value="published">Published</option>
+                        <option value="pending">Pending</option>
+                        <option value="moderated">Moderated</option>
+                        <option value="flagged">Flagged</option>
+                        <option value="hidden">Hidden</option>
+                      </select>
+                      <button onClick={fetchData} className="text-blue-600 hover:text-blue-700">Refresh</button>
+                      <button
+                        onClick={() => {
+                          const header = ['Date','Reviewer','Reviewee','Rating','Title','Status','Job Title'];
+                          const rows = filteredReviews.map(r => [
+                            new Date(r.created_at).toLocaleString('en-NG', { timeZone: 'Africa/Lagos' }),
+                            r.reviewer_name,
+                            r.reviewee_name,
+                            r.rating,
+                            (r.title || '').replace(/\n/g,' '),
+                            r.status,
+                            r.job_title || ''
+                          ]);
+                          const csv = [header, ...rows].map(row => row.map(val => `"${String(val).replace(/"/g,'""')}"`).join(',')).join('\n');
+                          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = `homeowner_reviews_page_${reviewsPage}.csv`;
+                          a.click();
+                          URL.revokeObjectURL(url);
+                        }}
+                        className="text-green-600 hover:text-green-700"
+                      >
+                        Export CSV
+                      </button>
+                    </div>
+                  </div>
+
+                  {reviewsLoading ? (
+                    <div className="space-y-4">
+                      {[...Array(3)].map((_, i) => (
+                        <div key={i} className="bg-gray-50 p-4 rounded-lg animate-pulse">
+                          <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
+                          <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="bg-white rounded-lg shadow">
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reviewer</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reviewee</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {filteredReviews.map((r) => (
+                              <tr key={r.id}>
+                                <td className="px-6 py-4 text-sm text-gray-700">{new Date(r.created_at).toLocaleString('en-NG', { timeZone: 'Africa/Lagos' })}</td>
+                                <td className="px-6 py-4 text-sm text-gray-700">{r.reviewer_name}</td>
+                                <td className="px-6 py-4 text-sm text-gray-700">{r.reviewee_name}</td>
+                                <td className="px-6 py-4 text-sm font-medium">{r.rating} ⭐</td>
+                                <td className="px-6 py-4 text-sm text-gray-700">{(r.title || '').slice(0, 80)}</td>
+                                <td className="px-6 py-4 text-sm text-gray-700">{r.status}</td>
+                                <td className="px-6 py-4 text-sm text-gray-700">{r.job_title || ''}</td>
+                                <td className="px-6 py-4 text-sm text-gray-700">
+                                  <div className="flex space-x-2">
+                                    {(r.status !== 'published') && (
+                                      <button
+                                        className="px-2 py-1 border rounded text-green-700"
+                                        onClick={async () => { await adminReviewsAPI.updateReviewStatus(r.id, 'published'); fetchData(); }}
+                                      >Publish</button>
+                                    )}
+                                    {(r.status !== 'hidden') && (
+                                      <button
+                                        className="px-2 py-1 border rounded text-yellow-700"
+                                        onClick={async () => { await adminReviewsAPI.updateReviewStatus(r.id, 'hidden'); fetchData(); }}
+                                      >Hide</button>
+                                    )}
+                                    <button
+                                      className="px-2 py-1 border rounded text-red-700"
+                                      onClick={async () => { if (confirm('Delete this review?')) { await adminReviewsAPI.deleteReview(r.id); fetchData(); } }}
+                                    >Delete</button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      <div className="flex items-center justify-between px-6 py-4 border-t">
+                        <div className="text-sm text-gray-600">Total: {reviewsTotal}</div>
+                        <div className="space-x-2">
+                          <button
+                            className={`px-3 py-1 rounded border ${reviewsPage > 1 ? 'bg-white text-gray-700 hover:bg-gray-100' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
+                            disabled={reviewsPage <= 1}
+                            onClick={() => setReviewsPage((p) => Math.max(1, p - 1))}
+                          >
+                            Previous
+                          </button>
+                          <button
+                            className={`px-3 py-1 rounded border ${reviewsPage < reviewsPages ? 'bg-white text-gray-700 hover:bg-gray-100' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
+                            disabled={reviewsPage >= reviewsPages}
+                            onClick={() => setReviewsPage((p) => p + 1)}
+                          >
+                            Next
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
               {/* Stats Tab */}
               {activeTab === 'stats' && (
                 <div className="space-y-6">
@@ -5845,3 +6029,151 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
+              {activeTab === 'reviews-management' && (
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-xl font-semibold">Homeowner Reviews Management</h2>
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="text"
+                        value={reviewsSearch}
+                        onChange={(e) => setReviewsSearch(e.target.value)}
+                        placeholder="Search by reviewer, reviewee, title"
+                        className="px-3 py-2 border rounded"
+                      />
+                      <select
+                        value={reviewsMinRating}
+                        onChange={(e) => setReviewsMinRating(e.target.value)}
+                        className="px-3 py-2 border rounded"
+                      >
+                        <option value="">All ratings</option>
+                        <option value="5">5+</option>
+                        <option value="4">4+</option>
+                        <option value="3">3+</option>
+                        <option value="2">2+</option>
+                        <option value="1">1+</option>
+                      </select>
+                      <select
+                        value={reviewsStatus}
+                        onChange={(e) => setReviewsStatus(e.target.value)}
+                        className="px-3 py-2 border rounded"
+                      >
+                        <option value="">All statuses</option>
+                        <option value="published">Published</option>
+                        <option value="pending">Pending</option>
+                        <option value="moderated">Moderated</option>
+                        <option value="flagged">Flagged</option>
+                        <option value="hidden">Hidden</option>
+                      </select>
+                      <button onClick={fetchData} className="text-blue-600 hover:text-blue-700">Refresh</button>
+                      <button
+                        onClick={() => {
+                          const header = ['Date','Reviewer','Reviewee','Rating','Title','Status','Job Title'];
+                          const rows = filteredReviews.map(r => [
+                            new Date(r.created_at).toLocaleString('en-NG', { timeZone: 'Africa/Lagos' }),
+                            r.reviewer_name,
+                            r.reviewee_name,
+                            r.rating,
+                            (r.title || '').replace(/\n/g,' '),
+                            r.status,
+                            r.job_title || ''
+                          ]);
+                          const csv = [header, ...rows].map(row => row.map(val => `"${String(val).replace(/"/g,'""')}"`).join(',')).join('\n');
+                          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = `homeowner_reviews_page_${reviewsPage}.csv`;
+                          a.click();
+                          URL.revokeObjectURL(url);
+                        }}
+                        className="text-green-600 hover:text-green-700"
+                      >
+                        Export CSV
+                      </button>
+                    </div>
+                  </div>
+
+                  {reviewsLoading ? (
+                    <div className="space-y-4">
+                      {[...Array(3)].map((_, i) => (
+                        <div key={i} className="bg-gray-50 p-4 rounded-lg animate-pulse">
+                          <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
+                          <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="bg-white rounded-lg shadow">
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reviewer</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reviewee</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {filteredReviews.map((r) => (
+                              <tr key={r.id}>
+                                <td className="px-6 py-4 text-sm text-gray-700">{new Date(r.created_at).toLocaleString('en-NG', { timeZone: 'Africa/Lagos' })}</td>
+                                <td className="px-6 py-4 text-sm text-gray-700">{r.reviewer_name}</td>
+                                <td className="px-6 py-4 text-sm text-gray-700">{r.reviewee_name}</td>
+                                <td className="px-6 py-4 text-sm font-medium">{r.rating} ⭐</td>
+                                <td className="px-6 py-4 text-sm text-gray-700">{(r.title || '').slice(0, 80)}</td>
+                                <td className="px-6 py-4 text-sm text-gray-700">{r.status}</td>
+                                <td className="px-6 py-4 text-sm text-gray-700">{r.job_title || ''}</td>
+                                <td className="px-6 py-4 text-sm text-gray-700">
+                                  <div className="flex space-x-2">
+                                    {(r.status !== 'published') && (
+                                      <button
+                                        className="px-2 py-1 border rounded text-green-700"
+                                        onClick={async () => { await adminReviewsAPI.updateReviewStatus(r.id, 'published'); fetchData(); }}
+                                      >Publish</button>
+                                    )}
+                                    {(r.status !== 'hidden') && (
+                                      <button
+                                        className="px-2 py-1 border rounded text-yellow-700"
+                                        onClick={async () => { await adminReviewsAPI.updateReviewStatus(r.id, 'hidden'); fetchData(); }}
+                                      >Hide</button>
+                                    )}
+                                    <button
+                                      className="px-2 py-1 border rounded text-red-700"
+                                      onClick={async () => { if (confirm('Delete this review?')) { await adminReviewsAPI.deleteReview(r.id); fetchData(); } }}
+                                    >Delete</button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      <div className="flex items-center justify-between px-6 py-4 border-t">
+                        <div className="text-sm text-gray-600">Total: {reviewsTotal}</div>
+                        <div className="space-x-2">
+                          <button
+                            className={`px-3 py-1 rounded border ${reviewsPage > 1 ? 'bg-white text-gray-700 hover:bg-gray-100' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
+                            disabled={reviewsPage <= 1}
+                            onClick={() => setReviewsPage((p) => Math.max(1, p - 1))}
+                          >
+                            Previous
+                          </button>
+                          <button
+                            className={`px-3 py-1 rounded border ${reviewsPage < reviewsPages ? 'bg-white text-gray-700 hover:bg-gray-100' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
+                            disabled={reviewsPage >= reviewsPages}
+                            onClick={() => setReviewsPage((p) => p + 1)}
+                          >
+                            Next
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}

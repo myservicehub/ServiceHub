@@ -7,6 +7,7 @@ from ..database import database
 from ..models.base import JobAccessFeeUpdate, TransactionStatus
 from ..models.admin import AdminPermission
 from ..auth.dependencies import require_permission, get_current_admin_account
+from ..models.reviews import ReviewStatus
 
 logger = logging.getLogger(__name__)
 
@@ -278,6 +279,75 @@ async def get_job_details_for_admin(job_id: str):
     
     return {"job": job}
 
+ 
+
+@router.get("/reviews")
+async def get_all_reviews(
+    page: int = 1,
+    limit: int = 20,
+    status: str = None,
+    min_rating: int = None,
+    review_type: str = None,
+    search: str = None,
+    admin: dict = Depends(require_permission(AdminPermission.MANAGE_JOBS))
+):
+    skip = (page - 1) * limit
+    query = {}
+    if status:
+        query["status"] = status
+    if min_rating is not None:
+        query["rating"] = {"$gte": min_rating}
+    if review_type:
+        query["review_type"] = review_type
+    if search:
+        query["$or"] = [
+            {"title": {"$regex": search, "$options": "i"}},
+            {"content": {"$regex": search, "$options": "i"}},
+            {"reviewer_name": {"$regex": search, "$options": "i"}},
+            {"reviewee_name": {"$regex": search, "$options": "i"}}
+        ]
+    total = await database.reviews_collection.count_documents(query)
+    cursor = database.reviews_collection.find(query).sort("created_at", -1).skip(skip).limit(limit)
+    reviews = []
+    async for doc in cursor:
+        doc["id"] = str(doc["_id"])
+        del doc["_id"]
+        reviews.append(doc)
+    return {
+        "reviews": reviews,
+        "pagination": {
+            "page": page,
+            "limit": limit,
+            "total": total,
+            "pages": (total + limit - 1) // limit
+        }
+    }
+
+@router.put("/reviews/{review_id}/status")
+async def update_review_status(
+    review_id: str,
+    payload: dict,
+    admin: dict = Depends(require_permission(AdminPermission.MANAGE_JOBS))
+):
+    status = payload.get("status")
+    if not status:
+        raise HTTPException(status_code=400, detail="status is required")
+    try:
+        status_enum = ReviewStatus(status)
+    except Exception:
+        raise HTTPException(status_code=400, detail="invalid status")
+    updated = await database.update_review(review_id, {"status": status_enum})
+    if not updated:
+        raise HTTPException(status_code=404, detail="Review not found")
+    return updated
+
+@router.delete("/reviews/{review_id}")
+async def delete_review(review_id: str, admin: dict = Depends(require_permission(AdminPermission.MANAGE_JOBS))):
+    deleted = await database.delete_review(review_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Review not found")
+    return {"deleted": True, "id": review_id}
+
 @router.put("/jobs/{job_id}")
 async def update_job_admin(
     job_id: str,
@@ -359,9 +429,7 @@ async def get_jobs_statistics_admin():
         "job_stats": stats
     }
 
-# ==========================================
-# JOB APPROVAL MANAGEMENT
-# ==========================================
+ 
 
 @router.get("/jobs/pending")
 async def get_pending_jobs(

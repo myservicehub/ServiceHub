@@ -2376,6 +2376,10 @@ class Database:
         
         return True
 
+    async def delete_review(self, review_id: str) -> bool:
+        result = await self.reviews_collection.delete_one({"id": review_id})
+        return result.deleted_count > 0
+
     async def get_platform_review_stats(self) -> ReviewStats:
         """Get platform-wide review statistics"""
         # Total reviews
