@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, Form, Request, BackgroundTasks
 from typing import List, Optional
 from datetime import datetime, timezone
+import uuid
 import logging
 
 from ..database import database
@@ -510,20 +511,35 @@ async def approve_job(
                         "approved_at": datetime.now(timezone.utc).strftime("%B %d, %Y"),
                         "admin_notes": notes
                     }
-                    notification = await notification_service.send_notification(
-                        user_id=homeowner["id"],
-                        notification_type=NotificationType.JOB_APPROVED,
-                        template_data=template_data,
-                        user_preferences=prefs,
-                        recipient_email=homeowner.get("email"),
-                        recipient_phone=homeowner.get("phone")
-                    )
+                    try:
+                        notification = await notification_service.send_notification(
+                            user_id=homeowner["id"],
+                            notification_type=NotificationType.JOB_APPROVED,
+                            template_data=template_data,
+                            user_preferences=prefs,
+                            recipient_email=homeowner.get("email"),
+                            recipient_phone=homeowner.get("phone")
+                        )
+                    except Exception as e:
+                        from models.notifications import Notification, NotificationChannel, NotificationStatus
+                        notification = Notification(
+                            id=str(uuid.uuid4()),
+                            user_id=homeowner["id"],
+                            type=NotificationType.JOB_APPROVED,
+                            channel=NotificationChannel.EMAIL,
+                            recipient_email=homeowner.get("email"),
+                            recipient_phone=homeowner.get("phone"),
+                            subject=f"Job Approved: {job['title']}",
+                            content=f"Your job '{job['title']}' was approved. Notes: {notes}",
+                            status=NotificationStatus.PENDING,
+                            metadata=template_data,
+                        )
                     try:
                         await database.create_notification(notification)
                     except Exception:
                         pass
                 except Exception:
-                    pass
+                    logger.warning("Failed to enqueue homeowner approval notification")
             else:
                 try:
                     prefs = await database.get_user_notification_preferences(homeowner["id"])
@@ -533,20 +549,35 @@ async def approve_job(
                         "reviewed_at": datetime.now(timezone.utc).strftime("%B %d, %Y"),
                         "rejection_reason": notes
                     }
-                    notification = await notification_service.send_notification(
-                        user_id=homeowner["id"],
-                        notification_type=NotificationType.JOB_REJECTED,
-                        template_data=template_data,
-                        user_preferences=prefs,
-                        recipient_email=homeowner.get("email"),
-                        recipient_phone=homeowner.get("phone")
-                    )
+                    try:
+                        notification = await notification_service.send_notification(
+                            user_id=homeowner["id"],
+                            notification_type=NotificationType.JOB_REJECTED,
+                            template_data=template_data,
+                            user_preferences=prefs,
+                            recipient_email=homeowner.get("email"),
+                            recipient_phone=homeowner.get("phone")
+                        )
+                    except Exception as e:
+                        from models.notifications import Notification, NotificationChannel, NotificationStatus
+                        notification = Notification(
+                            id=str(uuid.uuid4()),
+                            user_id=homeowner["id"],
+                            type=NotificationType.JOB_REJECTED,
+                            channel=NotificationChannel.EMAIL,
+                            recipient_email=homeowner.get("email"),
+                            recipient_phone=homeowner.get("phone"),
+                            subject=f"Job Requires Updates: {job['title']}",
+                            content=f"Your job '{job['title']}' needs updates before approval. Reason: {notes}",
+                            status=NotificationStatus.PENDING,
+                            metadata=template_data,
+                        )
                     try:
                         await database.create_notification(notification)
                     except Exception:
                         pass
                 except Exception:
-                    pass
+                    logger.warning("Failed to enqueue homeowner rejection notification")
     except Exception as e:
         logger.warning(f"Failed to send approval notification: {str(e)}")
 

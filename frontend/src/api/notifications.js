@@ -67,7 +67,9 @@ export const NotificationTypes = {
   JOB_POSTED: 'job_posted',
   PAYMENT_CONFIRMATION: 'payment_confirmation',
   JOB_EXPIRING: 'job_expiring',
-  NEW_MATCHING_JOB: 'new_matching_job'
+  NEW_MATCHING_JOB: 'new_matching_job',
+  JOB_APPROVED: 'job_approved',
+  JOB_REJECTED: 'job_rejected'
 };
 
 // Notification channels enum
@@ -112,7 +114,9 @@ export const getNotificationIcon = (type) => {
     [NotificationTypes.JOB_POSTED]: '📋',
     [NotificationTypes.PAYMENT_CONFIRMATION]: '💰',
     [NotificationTypes.JOB_EXPIRING]: '⏰',
-    [NotificationTypes.NEW_MATCHING_JOB]: '🔔'
+    [NotificationTypes.NEW_MATCHING_JOB]: '🔔',
+    [NotificationTypes.JOB_APPROVED]: '✅',
+    [NotificationTypes.JOB_REJECTED]: '❌'
   };
   return icons[type] || '📢';
 };
@@ -124,7 +128,9 @@ export const getNotificationColor = (type) => {
     [NotificationTypes.JOB_POSTED]: 'text-green-600',
     [NotificationTypes.PAYMENT_CONFIRMATION]: 'text-green-600',
     [NotificationTypes.JOB_EXPIRING]: 'text-yellow-600',
-    [NotificationTypes.NEW_MATCHING_JOB]: 'text-purple-600'
+    [NotificationTypes.NEW_MATCHING_JOB]: 'text-purple-600',
+    [NotificationTypes.JOB_APPROVED]: 'text-green-600',
+    [NotificationTypes.JOB_REJECTED]: 'text-red-600'
   };
   return colors[type] || 'text-gray-600';
 };

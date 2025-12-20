@@ -134,6 +134,20 @@ const NotificationPreferencesPage = () => {
       title: 'New Matching Jobs',
       description: 'Jobs that match your skills and location',
       userType: 'tradesperson'
+    },
+    [NotificationTypes.JOB_APPROVED]: {
+      icon: Briefcase,
+      color: 'text-green-600',
+      title: 'Job Approved',
+      description: 'When your posted job is approved and goes live',
+      userType: 'homeowner'
+    },
+    [NotificationTypes.JOB_REJECTED]: {
+      icon: Briefcase,
+      color: 'text-red-600',
+      title: 'Job Requires Updates',
+      description: 'When your posted job needs changes before approval',
+      userType: 'homeowner'
     }
   };
 
