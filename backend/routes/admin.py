@@ -1963,7 +1963,7 @@ async def get_all_skills_questions():
         "total_questions": sum(len(q) for q in questions.values())
     }
 
-@router.get("/skills-questions/{trade_category}")
+@router.get("/skills-questions/{trade_category:path}")
 async def get_questions_for_trade(trade_category: str):
     """Get all questions for a specific trade category"""
     
@@ -1975,7 +1975,7 @@ async def get_questions_for_trade(trade_category: str):
         "count": len(questions)
     }
 
-@router.post("/skills-questions/{trade_category}")
+@router.post("/skills-questions/{trade_category:path}")
 async def add_skills_question(trade_category: str, question_data: dict, admin: dict = Depends(require_permission(AdminPermission.MANAGE_TRADES))):
     """Add a new skills test question for a trade category"""
     

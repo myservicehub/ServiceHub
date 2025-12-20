@@ -1409,7 +1409,7 @@ async def get_job_question_answers(job_id: str):
         raise HTTPException(status_code=500, detail="Failed to retrieve job question answers")
 
 # Public Skills Questions Endpoint (no authentication required)
-@router.get("/skills-questions/{trade_category}")
+@router.get("/skills-questions/{trade_category:path}")
 async def get_public_skills_questions(
     trade_category: str,
     limit: int = Query(7, ge=1, le=50, description="Number of questions to return"),
