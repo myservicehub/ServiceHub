@@ -23,6 +23,7 @@ const AdminDashboard = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(adminAPI.isLoggedIn());
   const [activeTab, setActiveTab] = useState('funding');
   const fundingTabRef = useRef(null);
+  const usersTabRef = useRef(null);
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [fundingRequests, setFundingRequests] = useState([]);
   const [jobs, setJobs] = useState([]);
@@ -205,6 +206,11 @@ const AdminDashboard = () => {
     if (!isLoggedIn || activeTab !== 'users') return;
     fetchData();
   }, [isLoggedIn, activeTab, usersPage, usersLimit]);
+
+  useEffect(() => {
+    if (!isLoggedIn || activeTab !== 'users') return;
+    usersTabRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [usersPage]);
 
   useEffect(() => {
     if (!isLoggedIn || activeTab !== 'reviews-management') return;
@@ -4351,7 +4357,7 @@ const AdminDashboard = () => {
 
               {/* User Management Tab */}
               {activeTab === 'users' && (
-                <div className="space-y-6">
+                <div className="space-y-6" ref={usersTabRef} tabIndex={-1}>
                   <div className="flex justify-between items-center">
                     <h2 className="text-xl font-semibold">User Management</h2>
                     {userStats && (
@@ -4377,13 +4383,13 @@ const AdminDashboard = () => {
                       </div>
                       <div className="flex space-x-2">
                         <button
-                          onClick={() => { setUsersPage(1); fetchData(); }}
+                          onClick={() => { setUsersPage(1); fetchData(); usersTabRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
                           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
                         >
                           Search
                         </button>
                         <button
-                          onClick={() => { setUsersSearch(''); setUsersPage(1); fetchData(); }}
+                          onClick={() => { setUsersSearch(''); setUsersPage(1); fetchData(); usersTabRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
                           className="text-gray-600 hover:text-gray-800 px-4 py-2 border border-gray-300 rounded-lg text-sm"
                         >
                           Clear
@@ -4588,14 +4594,14 @@ const AdminDashboard = () => {
                             <button
                               className={`px-3 py-1 rounded border ${usersPage > 1 ? 'bg-white text-gray-700 hover:bg-gray-100' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
                               disabled={usersPage <= 1}
-                              onClick={() => setUsersPage((p) => Math.max(1, p - 1))}
+                              onClick={() => { setUsersPage((p) => Math.max(1, p - 1)); usersTabRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
                             >
                               Previous
                             </button>
                             <button
                               className={`px-3 py-1 rounded border ${(usersPage < Math.ceil(usersTotal / usersLimit)) ? 'bg-white text-gray-700 hover:bg-gray-100' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
                               disabled={!(usersPage < Math.ceil(usersTotal / usersLimit))}
-                              onClick={() => setUsersPage((p) => p + 1)}
+                              onClick={() => { setUsersPage((p) => p + 1); usersTabRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
                             >
                               Next
                             </button>
