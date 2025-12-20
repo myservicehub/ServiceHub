@@ -476,8 +476,10 @@ const AdminDashboard = () => {
         description: "Coins have been added to user's wallet"
       });
       setActiveTab('funding');
-      fundingTabRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      fetchData();
+      try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch { window.scrollTo(0, 0); }
+      fundingTabRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      await fetchData();
+      fundingTabRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (error) {
       toast({
         title: "Error",
@@ -504,8 +506,10 @@ const AdminDashboard = () => {
         description: "User will be notified of the rejection"
       });
       setActiveTab('funding');
-      fundingTabRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      fetchData();
+      try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch { window.scrollTo(0, 0); }
+      fundingTabRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      await fetchData();
+      fundingTabRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (error) {
       toast({
         title: "Error",
