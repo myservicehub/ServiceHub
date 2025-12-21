@@ -82,7 +82,7 @@ class JobCreate(BaseModel):
 
 class JobUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=10, max_length=200)
-    description: Optional[str] = Field(None, min_length=50, max_length=2000)
+    description: Optional[str] = Field(None, min_length=1, max_length=2000)
     category: Optional[str] = None
     
     # Enhanced location fields

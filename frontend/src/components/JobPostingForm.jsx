@@ -275,6 +275,8 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
         else if (formData.title.length < 10) newErrors.title = 'Job title must be at least 10 characters';
         
         if (!formData.category) newErrors.category = 'Please select a category';
+        
+        if (!formData.description.trim()) newErrors.description = 'Job description is required';
 
         // If category is selected, validate admin questions instead of description
         if (formData.category) {
@@ -462,10 +464,9 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
     setSubmitting(true);
 
     try {
-      // Create job data without description since it's been removed from the form
       const jobData = {
         title: formData.title,
-        // description field completely removed - no auto-generation
+        description: formData.description.trim(),
         category: formData.category,
         state: formData.state,
         lga: formData.lga,
@@ -979,10 +980,9 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
 
     try {
       // Build job payload
-      // Create job data without description since it's been removed from the form
       const jobData = {
         title: formData.title,
-        // description field completely removed - no auto-generation
+        description: formData.description.trim(),
         category: formData.category,
         state: formData.state,
         lga: formData.lga,
@@ -1175,6 +1175,28 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
                 ))}
               </select>
               {errors.category && <p className="text-red-500 text-sm mt-1">{errors.category}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                Job Description *
+              </label>
+              <textarea
+                id="field-description"
+                rows={5}
+                placeholder="Describe the work in detail so tradespeople understand your needs"
+                value={formData.description}
+                onChange={(e) => updateFormData('description', e.target.value)}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
+                  errors.description ? 'border-red-500' : 'border-gray-300'
+                }`}
+                maxLength={2000}
+              />
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>Up to 2000 characters</span>
+                <span>{formData.description.length}/2000</span>
+              </div>
+              {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
             </div>
 
             {/* Admin-Set Questions Section */}
@@ -1706,6 +1728,26 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
                     <div>
                       <span className="font-medium">Location:</span> {formData.town}, {formData.lga}, {formData.state}
                     </div>
+                  </div>
+                </div>
+
+                <div className="bg-white border rounded-lg p-6">
+                  <h3 className="text-lg font-semibold font-montserrat mb-3" style={{color: '#121E3C'}}>
+                    Job Summary
+                  </h3>
+                  <div className="space-y-2 text-sm">
+                    <div>
+                      <span className="font-medium">Title:</span> {formData.title}
+                    </div>
+                    <div>
+                      <span className="font-medium">Category:</span> {formData.category}
+                    </div>
+                    {formData.description && (
+                      <div>
+                        <span className="font-medium">Description:</span>
+                        <p className="text-gray-700 mt-1">{formData.description}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
                 
