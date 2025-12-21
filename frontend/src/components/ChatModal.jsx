@@ -323,25 +323,18 @@ const ChatModal = ({
   };
 
   const formatTime = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const isToday = date.toDateString() === now.toDateString();
-    
+    if (!dateString) return '';
+    const hasTZ = typeof dateString === 'string' && /[zZ]|[+-]\d{2}:?\d{2}$/.test(dateString);
+    const date = new Date(hasTZ ? dateString : `${dateString}Z`);
+    const lagos = 'Africa/Lagos';
+    const formatDay = new Intl.DateTimeFormat('en-US', { timeZone: lagos, year: 'numeric', month: '2-digit', day: '2-digit' });
+    const todayStr = formatDay.format(new Date());
+    const dateStr = formatDay.format(date);
+    const isToday = todayStr === dateStr;
     if (isToday) {
-      return date.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        timeZone: 'Africa/Lagos'
-      });
+      return new Intl.DateTimeFormat('en-US', { timeZone: lagos, hour: '2-digit', minute: '2-digit' }).format(date);
     }
-    
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric',
-      hour: '2-digit', 
-      minute: '2-digit',
-      timeZone: 'Africa/Lagos'
-    });
+    return new Intl.DateTimeFormat('en-US', { timeZone: lagos, month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date);
   };
 
   const getMessageAlignment = (message) => {

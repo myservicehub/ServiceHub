@@ -5152,8 +5152,8 @@ class Database:
                 existing['_id'] = str(existing['_id'])
                 return existing
             
-            conversation_data["created_at"] = datetime.now()
-            conversation_data["updated_at"] = datetime.now()
+            conversation_data["created_at"] = datetime.now(timezone.utc)
+            conversation_data["updated_at"] = datetime.now(timezone.utc)
             conversation_data["unread_count_homeowner"] = 0
             conversation_data["unread_count_tradesperson"] = 0
             
@@ -5198,8 +5198,8 @@ class Database:
     async def create_message(self, message_data: dict) -> dict:
         """Create a new message"""
         try:
-            message_data["created_at"] = datetime.now()
-            message_data["updated_at"] = datetime.now()
+            message_data["created_at"] = datetime.now(timezone.utc)
+            message_data["updated_at"] = datetime.now(timezone.utc)
             message_data["status"] = "sent"
             
             result = await self.database.messages.insert_one(message_data)
@@ -5247,7 +5247,7 @@ class Database:
                     "sender_type": other_type,
                     "status": {"$ne": "read"}
                 },
-                {"$set": {"status": "read", "updated_at": datetime.now()}}
+                {"$set": {"status": "read", "updated_at": datetime.now(timezone.utc)}}
             )
             
             # Reset unread count for this user type
@@ -5289,8 +5289,8 @@ class Database:
                 {
                     "$set": {
                         "last_message": message_content,
-                        "last_message_at": datetime.now(),
-                        "updated_at": datetime.now()
+                        "last_message_at": datetime.now(timezone.utc),
+                        "updated_at": datetime.now(timezone.utc)
                     },
                     "$inc": {recipient_unread_field: 1}
                 }
