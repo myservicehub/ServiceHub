@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, UploadFile, File
+from fastapi.responses import FileResponse
 from ..models.messages import (
     Conversation, ConversationCreate, Message, MessageCreate,
     ConversationList, MessageList
@@ -12,10 +13,52 @@ from datetime import datetime
 import uuid
 import logging
 import os
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/messages", tags=["messages"])
+
+attachments_dir = Path(__file__).resolve().parent.parent / "uploads" / "messages"
+attachments_dir.mkdir(parents=True, exist_ok=True)
+
+@router.post("/attachments")
+async def upload_attachment(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_active_user)
+):
+    allowed_types = {
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/gif",
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    }
+    if file.content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail="Unsupported file type")
+    data = await file.read()
+    max_bytes = int(os.getenv("MESSAGE_ATTACHMENT_MAX_BYTES", "10485760"))
+    if len(data) > max_bytes:
+        raise HTTPException(status_code=413, detail="File too large")
+    ext = os.path.splitext(file.filename or "")[1].lower()
+    name = f"{uuid.uuid4().hex}{ext}"
+    dest = attachments_dir / name
+    with open(dest, "wb") as f:
+        f.write(data)
+    url_path = f"/api/messages/attachments/{name}"
+    return {"filename": name, "content_type": file.content_type, "size": len(data), "url": url_path}
+
+@router.get("/attachments/{filename}")
+async def get_attachment(
+    filename: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    path = attachments_dir / filename
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Attachment not found")
+    return FileResponse(path)
 
 @router.post("/conversations", response_model=Conversation)
 async def create_conversation(

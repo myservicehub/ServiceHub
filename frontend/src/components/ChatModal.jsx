@@ -5,7 +5,7 @@ import { Badge } from './ui/badge';
 import { Textarea } from './ui/textarea';
 import { 
   X, Send, MessageCircle, User, Clock, CheckCircle2, 
-  Phone, Mail, MapPin, Briefcase, Loader2, HelpCircle
+  Phone, Mail, MapPin, Briefcase, Loader2, HelpCircle, Paperclip, Image as ImageIcon, FileText
 } from 'lucide-react';
 import { messagesAPI } from '../api/messages';
 import { useAuth } from '../contexts/AuthContext';
@@ -25,6 +25,7 @@ const ChatModal = ({
   const { user } = useAuth();
   const { toast } = useToast();
   const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
   const [conversationId, setConversationId] = useState(initialConversationId);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
@@ -288,6 +289,51 @@ const ChatModal = ({
     }
   }, [newMessage, conversationId, sending, messages.length, toast, scrollToBottom, setForceUpdate]);
 
+  const handleAttachmentClick = () => {
+    if (sending) return;
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      if (!conversationId) {
+        await initializeConversation();
+      }
+      if (!conversationId) return;
+      setSending(true);
+      const uploadRes = await messagesAPI.uploadAttachment(file);
+      const attachmentUrl = uploadRes?.url || messagesAPI.getAttachmentUrl(uploadRes?.filename);
+      const messageType = (file.type || '').startsWith('image/') ? 'image' : 'file';
+      const response = await messagesAPI.sendMessage(conversationId, {
+        conversation_id: conversationId,
+        message_type: messageType,
+        content: file.name,
+        attachment_url: attachmentUrl,
+      });
+      if (response && response.id) {
+        setMessages(prev => {
+          const exists = prev.some(m => m.id === response.id);
+          if (exists) return prev;
+          const next = [...prev, response];
+          setMessageCount(next.length);
+          setForceUpdate(p => p + 1);
+          setTimeout(() => { scrollToBottom(); }, 100);
+          return next;
+        });
+        toast({ title: 'Attachment Sent', description: 'Your file has been sent.' });
+      } else {
+        throw new Error('Invalid message response');
+      }
+    } catch (err) {
+      toast({ title: 'Error', description: 'Failed to send attachment.', variant: 'destructive' });
+    } finally {
+      setSending(false);
+    }
+  };
+
   // Hiring status handlers
   const handleStatusUpdate = async (statusData) => {
     try {
@@ -470,6 +516,16 @@ const ChatModal = ({
                     
                     <div className="flex-1">
                       <p className="text-sm break-words">{message.content}</p>
+                      {message.attachment_url && (
+                        message.message_type === 'image' ? (
+                          <img src={message.attachment_url} alt="attachment" className="mt-2 rounded max-h-40" />
+                        ) : (
+                          <a href={message.attachment_url} target="_blank" rel="noopener noreferrer" className={`mt-2 inline-flex items-center gap-1 text-xs ${message.sender_id === user?.id ? 'text-green-100 underline' : 'text-green-700 underline'}`}>
+                            <FileText className="w-3 h-3" />
+                            <span>Open attachment</span>
+                          </a>
+                        )
+                      )}
                       
                       <div className={`flex items-center gap-1 mt-1 text-xs ${
                         message.sender_id === user?.id ? 'text-green-100' : 'text-gray-500'
@@ -492,7 +548,7 @@ const ChatModal = ({
 
         {/* Message Input */}
         <div className="border-t p-4">
-          <div className="flex gap-3">
+          <div className="flex gap-3 items-end">
             <Textarea
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
@@ -501,6 +557,17 @@ const ChatModal = ({
               className="flex-1 min-h-[44px] max-h-32 resize-none"
               disabled={sending}
             />
+
+            <input ref={fileInputRef} type="file" accept="image/*,.pdf,.doc,.docx" className="hidden" onChange={handleFileChange} />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleAttachmentClick}
+              disabled={sending}
+              className="self-end"
+            >
+              <Paperclip className="w-4 h-4" />
+            </Button>
             
             <Button
               onClick={sendMessage}

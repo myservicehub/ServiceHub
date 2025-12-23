@@ -29,6 +29,20 @@ export const messagesAPI = {
     return response.data;
   },
 
+  uploadAttachment: async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.post('/messages/attachments', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  getAttachmentUrl: (filename) => {
+    const base = (import.meta?.env?.VITE_BACKEND_URL ? `${import.meta.env.VITE_BACKEND_URL}/api` : (apiClient?.defaults?.baseURL || '/api'));
+    return `${base}/messages/attachments/${filename}`;
+  },
+
   markConversationAsRead: async (conversationId) => {
     const response = await apiClient.put(`/messages/conversations/${conversationId}/read`);
     return response.data;
