@@ -549,35 +549,37 @@ const ChatModal = ({
         {/* Message Input */}
         <div className="border-t p-4">
           <div className="flex gap-3 items-end">
-            <Textarea
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Type your message..."
-              className="flex-1 min-h-[44px] max-h-32 resize-none"
-              disabled={sending}
-            />
+            <div className="relative flex-1">
+              <Textarea
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Type your message..."
+                className="w-full min-h-[44px] max-h-32 resize-none pr-20"
+                disabled={sending}
+              />
 
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*,.pdf,.doc,.docx"
-              className="hidden"
-              onChange={handleFileChange}
-            />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleAttachmentClick}
-              disabled={sending}
-              className="self-end flex items-center gap-2"
-              title="Attach file"
-              aria-label="Attach file"
-            >
-              <Paperclip className="w-4 h-4" />
-              <span className="text-sm">Attach</span>
-            </Button>
-            
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,.pdf,.doc,.docx"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+
+              <button
+                type="button"
+                onClick={handleAttachmentClick}
+                disabled={sending}
+                title="Attach file"
+                aria-label="Attach file"
+                className="absolute right-2 bottom-2 inline-flex items-center gap-1 px-2 py-1 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 shadow-sm"
+              >
+                <Paperclip className="w-4 h-4" />
+                <span className="text-xs">Attach</span>
+              </button>
+            </div>
+
             <Button
               onClick={sendMessage}
               disabled={!newMessage.trim() || sending}
