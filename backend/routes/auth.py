@@ -23,6 +23,7 @@ from typing import Optional, List, Dict, Any
 import uuid
 import logging
 import os
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,10 @@ except ImportError:
     from services.notifications import SendGridEmailService, MockEmailService, notification_service
 
 router = APIRouter(prefix="/api/auth", tags=["authentication"])
+
+BASE_UPLOADS = Path(os.environ.get("UPLOADS_DIR", os.path.join(os.getcwd(), "uploads")))
+CERT_UPLOAD_DIR = BASE_UPLOADS / "certifications"
+CERT_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 @router.post("/register/homeowner")
 async def register_homeowner(registration_data: HomeownerRegistration):
@@ -830,7 +835,10 @@ async def update_tradesperson_profile(
             update_data["description"] = profile_data.description
         
         if profile_data.certifications is not None:
-            update_data["certifications"] = profile_data.certifications
+            update_data["certifications"] = [
+                c if isinstance(c, str) else c.dict()
+                for c in profile_data.certifications
+            ]
 
         if update_data:
             await database.update_user(current_user.id, update_data)
@@ -849,6 +857,66 @@ async def update_tradesperson_profile(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to update tradesperson profile: {str(e)}"
         )
+
+@router.post("/profile/certification-image")
+async def upload_certification_image(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_active_user)
+):
+    try:
+        allowed = {"image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf"}
+        if file.content_type not in allowed:
+            raise HTTPException(status_code=400, detail="Unsupported file type")
+        data = await file.read()
+        max_bytes = int(os.getenv("CERT_IMAGE_MAX_BYTES", "5242880"))
+        if len(data) > max_bytes:
+            raise HTTPException(status_code=413, detail="File too large")
+        ext = os.path.splitext(file.filename or "")[1].lower() or ".jpg"
+        name = f"{uuid.uuid4().hex}{ext}"
+        dest = CERT_UPLOAD_DIR / name
+        with open(dest, "wb") as f:
+            f.write(data)
+        url_path = f"/api/auth/certifications/image/{name}"
+        return {"filename": name, "content_type": file.content_type, "size": len(data), "url": url_path}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to upload certification image: {str(e)}")
+
+@router.get("/certifications/image/{filename}")
+async def get_certification_image(filename: str):
+    try:
+        from fastapi.responses import FileResponse
+        import os
+        base_dir = os.environ.get("UPLOADS_DIR", os.path.join(os.getcwd(), "uploads"))
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        project_uploads = os.path.join(project_root, "uploads")
+        backend_uploads = os.path.join(project_root, "backend", "uploads")
+        candidates = [
+            os.path.join(base_dir, "certifications", filename),
+            os.path.join(project_uploads, "certifications", filename),
+            os.path.join(backend_uploads, "certifications", filename),
+            os.path.join(os.getcwd(), "uploads", "certifications", filename),
+            os.path.join("/app", "uploads", "certifications", filename),
+        ]
+        for fp in candidates:
+            if os.path.exists(fp):
+                ext = os.path.splitext(fp)[1].lower()
+                media_type = (
+                    "application/pdf" if ext == ".pdf" else (
+                        "image/jpeg" if ext in (".jpg", ".jpeg") else (
+                            "image/png" if ext == ".png" else (
+                                "image/webp" if ext == ".webp" else "application/octet-stream"
+                            )
+                        )
+                    )
+                )
+                return FileResponse(fp, media_type=media_type, headers={"Cache-Control": "public, max-age=3600"})
+        raise HTTPException(status_code=404, detail="Image not found")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to serve image: {str(e)}")
 
 @router.post("/logout")
 async def logout(current_user: User = Depends(get_current_user)):

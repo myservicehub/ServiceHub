@@ -154,17 +154,25 @@ const ProfilePage = () => {
   useEffect(() => {
     if (isAuthenticated() && user) {
       setProfileData(user);
+      const normalizeCerts = (certs) => {
+        const arr = Array.isArray(certs) ? certs : [];
+        return arr.map((c) => {
+          if (typeof c === 'string') return { name: c, image_url: '' };
+          const name = c?.name ?? '';
+          const image_url = c?.image_url ?? c?.image ?? '';
+          return { name, image_url };
+        });
+      };
       setEditData({
         name: user.name || '',
         phone: user.phone || '',
         location: user.location || '',
         postcode: user.postcode || '',
-        // Tradesperson specific fields
         company_name: user.company_name || '',
         description: user.description || '',
         experience_years: user.experience_years || 0,
         trade_categories: user.trade_categories || [],
-        certifications: user.certifications || []
+        certifications: normalizeCerts(user.certifications)
       });
 
       // Load portfolio if tradesperson
@@ -329,6 +337,15 @@ const ProfilePage = () => {
   const handleEditToggle = () => {
     if (isEditing) {
       // Reset edit data to original values
+      const normalizeCerts = (certs) => {
+        const arr = Array.isArray(certs) ? certs : [];
+        return arr.map((c) => {
+          if (typeof c === 'string') return { name: c, image_url: '' };
+          const name = c?.name ?? '';
+          const image_url = c?.image_url ?? c?.image ?? '';
+          return { name, image_url };
+        });
+      };
       setEditData({
         name: profileData.name || '',
         phone: profileData.phone || '',
@@ -338,7 +355,7 @@ const ProfilePage = () => {
         description: profileData.description || '',
         experience_years: profileData.experience_years || 0,
         trade_categories: profileData.trade_categories || [],
-        certifications: profileData.certifications || []
+        certifications: normalizeCerts(profileData.certifications)
       });
     } else {
       // When entering edit mode, ensure user is on the Profile tab
@@ -419,12 +436,12 @@ const ProfilePage = () => {
   const handleAddCertification = () => {
     setEditData({
       ...editData,
-      certifications: [...editData.certifications, '']
+      certifications: [...(editData.certifications || []), { name: '', image_url: '' }]
     });
   };
 
   const handleRemoveCertification = (index) => {
-    const newCertifications = editData.certifications.filter((_, i) => i !== index);
+    const newCertifications = (editData.certifications || []).filter((_, i) => i !== index);
     setEditData({
       ...editData,
       certifications: newCertifications
@@ -432,12 +449,26 @@ const ProfilePage = () => {
   };
 
   const handleCertificationChange = (index, value) => {
-    const newCertifications = [...editData.certifications];
-    newCertifications[index] = value;
-    setEditData({
-      ...editData,
-      certifications: newCertifications
-    });
+    const list = [...(editData.certifications || [])];
+    const item = list[index] || { name: '', image_url: '' };
+    list[index] = { ...item, name: value };
+    setEditData({ ...editData, certifications: list });
+  };
+
+  const handleCertificationFileChange = async (index, file) => {
+    if (!file) return;
+    try {
+      const resp = await authAPI.uploadCertificationImage(file);
+      const url = resp?.url;
+      const list = [...(editData.certifications || [])];
+      const item = list[index] || { name: '', image_url: '' };
+      list[index] = { ...item, image_url: url };
+      setEditData({ ...editData, certifications: list });
+      toast({ title: 'Image added', description: 'Certification photo uploaded.' });
+    } catch (error) {
+      const msg = error?.response?.data?.detail || 'Failed to upload image';
+      toast({ title: 'Upload failed', description: msg, variant: 'destructive' });
+    }
   };
 
   // Show loading while authentication is being checked
@@ -882,14 +913,23 @@ const ProfilePage = () => {
                       <CardContent>
                         {isEditing ? (
                           <div className="space-y-3">
-                            {editData.certifications.map((cert, index) => (
+                            {(editData.certifications || []).map((cert, index) => (
                               <div key={index} className="flex items-center space-x-2">
                                 <Input
-                                  value={cert}
+                                  value={cert?.name || ''}
                                   onChange={(e) => handleCertificationChange(index, e.target.value)}
                                   placeholder="Enter certification name"
                                   className="flex-1 font-lato"
                                 />
+                                <input
+                                  type="file"
+                                  accept="image/*,application/pdf"
+                                  onChange={(e) => handleCertificationFileChange(index, e.target.files?.[0] || null)}
+                                  className="text-sm"
+                                />
+                                {cert?.image_url ? (
+                                  <img src={cert.image_url} alt="Cert" className="w-10 h-10 object-cover rounded" />
+                                ) : null}
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -910,13 +950,20 @@ const ProfilePage = () => {
                           </div>
                         ) : (
                           <div className="space-y-2">
-                            {profileData.certifications?.length > 0 ? (
-                              profileData.certifications.map((cert, index) => (
-                                <div key={index} className="flex items-center space-x-2">
-                                  <Award size={14} style={{color: '#34D164'}} />
-                                  <span className="text-gray-700 font-lato">{cert}</span>
-                                </div>
-                              ))
+                            {Array.isArray(profileData.certifications) && profileData.certifications.length > 0 ? (
+                              profileData.certifications.map((c, index) => {
+                                const name = typeof c === 'string' ? c : (c?.name || '');
+                                const image_url = typeof c === 'string' ? '' : (c?.image_url || c?.image || '');
+                                return (
+                                  <div key={index} className="flex items-center space-x-2">
+                                    <Award size={14} style={{color: '#34D164'}} />
+                                    <span className="text-gray-700 font-lato">{name}</span>
+                                    {image_url ? (
+                                      <img src={image_url} alt="Cert" className="w-8 h-8 object-cover rounded" />
+                                    ) : null}
+                                  </div>
+                                );
+                              })
                             ) : (
                               <p className="text-gray-500 font-lato">No certifications added yet</p>
                             )}

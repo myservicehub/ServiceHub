@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, EmailStr
-from typing import List, Optional
+from typing import List, Optional, Union
 from datetime import datetime
 from enum import Enum
 import uuid
@@ -15,6 +15,11 @@ class UserStatus(str, Enum):
     PENDING_VERIFICATION = "pending_verification"
     SUSPENDED = "suspended"
     INACTIVE = "inactive"
+
+# Certification item for tradespeople
+class Certification(BaseModel):
+    name: str
+    image_url: Optional[str] = None
 
 # Base User Model
 class User(BaseModel):
@@ -43,7 +48,7 @@ class User(BaseModel):
     experience_years: Optional[int] = None
     company_name: Optional[str] = None
     description: Optional[str] = None
-    certifications: Optional[List[str]] = None
+    certifications: Optional[List[Union[str, Certification]]] = None
     average_rating: Optional[float] = 0.0
     total_reviews: Optional[int] = 0
     total_jobs: Optional[int] = 0
@@ -92,7 +97,7 @@ class TradespersonRegistration(BaseModel):
     experience_years: int = Field(..., ge=0, le=50)
     company_name: Optional[str] = None
     description: str = Field(..., min_length=50, max_length=1000)
-    certifications: List[str] = []
+    certifications: List[Union[str, Certification]] = []
     referral_code: Optional[str] = None  # Optional referral code
     business_type: Optional[str] = None
 
@@ -133,7 +138,7 @@ class UserProfile(BaseModel):
     experience_years: Optional[int] = None
     company_name: Optional[str] = None
     description: Optional[str] = None
-    certifications: Optional[List[str]] = None
+    certifications: Optional[List[Union[str, Certification]]] = None
     average_rating: Optional[float] = None
     total_reviews: Optional[int] = None
     total_jobs: Optional[int] = None
@@ -151,7 +156,7 @@ class TradespersonProfileUpdate(UserProfileUpdate):
     experience_years: Optional[int] = None
     company_name: Optional[str] = None
     description: Optional[str] = None
-    certifications: Optional[List[str]] = None
+    certifications: Optional[List[Union[str, Certification]]] = None
 
 # Token Models
 class Token(BaseModel):

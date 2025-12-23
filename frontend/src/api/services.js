@@ -79,6 +79,15 @@ export const authAPI = {
     return response.data;
   },
 
+  uploadCertificationImage: async (file) => {
+    const form = new FormData();
+    form.append('file', file);
+    const response = await apiClient.post('/auth/profile/certification-image', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
   submitTradespersonVerification: async (payload) => {
     const formData = new FormData();
     if (payload.business_type) formData.append('business_type', payload.business_type);
