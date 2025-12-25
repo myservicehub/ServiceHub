@@ -23,8 +23,13 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           port: 22
+          script_stop: true
+          command_timeout: 300s
           script: |
-            cd ${{ secrets.SERVER_PATH }}
-            git pull
-            docker compose up -d --build
+            set -e
+            cd "${{ secrets.SERVER_PATH }}"
+            git fetch --all
+            git reset --hard origin/main
+            docker compose pull
+            docker compose up -d --build --remove-orphans
             docker compose ps
