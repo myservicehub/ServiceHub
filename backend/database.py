@@ -5111,7 +5111,12 @@ class Database:
                 upsert=True
             )
 
-            return (result.modified_count > 0) or (getattr(result, "upserted_id", None) is not None)
+            # Treat a matched document (even when no fields changed) as success to
+            # avoid misleading 404 "not found" errors on no-op updates.
+            matched = getattr(result, "matched_count", 0) > 0
+            modified = getattr(result, "modified_count", 0) > 0
+            upserted = getattr(result, "upserted_id", None) is not None
+            return matched or modified or upserted
         except Exception as e:
             print(f"Error updating trade: {e}")
             return False
