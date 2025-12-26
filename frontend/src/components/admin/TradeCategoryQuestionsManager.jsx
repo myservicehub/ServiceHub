@@ -48,6 +48,11 @@ const TradeCategoryQuestionsManager = () => {
       enabled: false,
       logic_operator: 'AND',
       rules: []
+    },
+    navigation_logic: {
+      enabled: false,
+      next_question_map: {},
+      default_next_question_id: ''
     }
   });
   
@@ -318,6 +323,11 @@ const TradeCategoryQuestionsManager = () => {
         enabled: question.conditional_logic?.enabled || false,
         logic_operator: question.conditional_logic?.logic_operator || 'AND',
         rules: question.conditional_logic?.rules || []
+      },
+      navigation_logic: {
+        enabled: question.navigation_logic?.enabled || false,
+        next_question_map: question.navigation_logic?.next_question_map || {},
+        default_next_question_id: question.navigation_logic?.default_next_question_id || ''
       }
     });
     setShowCreateForm(true);
@@ -872,6 +882,112 @@ const TradeCategoryQuestionsManager = () => {
                       <li>• <strong>Chain rules:</strong> Create questions that depend on multiple previous answers</li>
                       <li>• <strong>Example:</strong> Show emergency questions only if service type is "Emergency" AND urgency is "High"</li>
                     </ul>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Next Question Branching */}
+            <div className="border rounded-lg p-4 bg-gray-50 mt-4">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-lg font-medium text-gray-900">Next Question Branching</h4>
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.navigation_logic.enabled}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      navigation_logic: { ...prev.navigation_logic, enabled: e.target.checked }
+                    }))}
+                  />
+                  <span className="text-sm font-medium">Enable Branching</span>
+                </label>
+              </div>
+
+              {formData.navigation_logic.enabled && (
+                <div className="space-y-4">
+                  {formData.question_type === 'yes_no' ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {[{label:'Yes', value:'true'}, {label:'No', value:'false'}].map(opt => (
+                        <div key={opt.value}>
+                          <label className="block text-sm font-medium mb-2">Next question if {opt.label}</label>
+                          <select
+                            value={formData.navigation_logic.next_question_map[opt.value] || ''}
+                            onChange={(e) => setFormData(prev => ({
+                              ...prev,
+                              navigation_logic: {
+                                ...prev.navigation_logic,
+                                next_question_map: {
+                                  ...prev.navigation_logic.next_question_map,
+                                  [opt.value]: e.target.value
+                                }
+                              }
+                            }))}
+                            className="w-full px-3 py-2 border rounded-md text-sm"
+                          >
+                            <option value="">Select next question</option>
+                            {questions
+                              .filter(q => q.id !== editingQuestion?.id && q.trade_category === formData.trade_category)
+                              .map(q => (
+                                <option key={q.id} value={q.id}>[{questionTypes.find(t => t.value === q.question_type)?.label}] {q.question_text.substring(0, 40)}...</option>
+                              ))}
+                          </select>
+                        </div>
+                      ))}
+                    </div>
+                  ) : formData.question_type === 'multiple_choice_single' ? (
+                    <div className="space-y-3">
+                      {(formData.options || []).map((optText) => {
+                        const key = optText.trim().toLowerCase().replace(/\s+/g, '_');
+                        return (
+                          <div key={key}>
+                            <label className="block text-sm font-medium mb-2">Next question if "{optText}"</label>
+                            <select
+                              value={formData.navigation_logic.next_question_map[key] || ''}
+                              onChange={(e) => setFormData(prev => ({
+                                ...prev,
+                                navigation_logic: {
+                                  ...prev.navigation_logic,
+                                  next_question_map: {
+                                    ...prev.navigation_logic.next_question_map,
+                                    [key]: e.target.value
+                                  }
+                                }
+                              }))}
+                              className="w-full px-3 py-2 border rounded-md text-sm"
+                            >
+                              <option value="">Select next question</option>
+                              {questions
+                                .filter(q => q.id !== editingQuestion?.id && q.trade_category === formData.trade_category)
+                                .map(q => (
+                                  <option key={q.id} value={q.id}>[{questionTypes.find(t => t.value === q.question_type)?.label}] {q.question_text.substring(0, 40)}...</option>
+                                ))}
+                            </select>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-600">Branching is available for Yes/No and Single Choice questions.</div>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Default next question (fallback)</label>
+                    <select
+                      value={formData.navigation_logic.default_next_question_id || ''}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        navigation_logic: { ...prev.navigation_logic, default_next_question_id: e.target.value }
+                      }))}
+                      className="w-full px-3 py-2 border rounded-md text-sm"
+                    >
+                      <option value="">None</option>
+                      {questions
+                        .filter(q => q.id !== editingQuestion?.id && q.trade_category === formData.trade_category)
+                        .map(q => (
+                          <option key={q.id} value={q.id}>[{questionTypes.find(t => t.value === q.question_type)?.label}] {q.question_text.substring(0, 40)}...</option>
+                        ))}
+                    </select>
                   </div>
                 </div>
               )}

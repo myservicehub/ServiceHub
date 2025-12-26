@@ -717,6 +717,11 @@ class ConditionalLogic(BaseModel):
     logic_operator: str = Field(default="AND", pattern="^(AND|OR)$")  # How to combine multiple rules
     rules: List[ConditionalLogicRule] = Field(default=[])  # Multiple conditional logic rules
 
+class NavigationLogic(BaseModel):
+    enabled: bool = Field(default=False)
+    next_question_map: Dict[str, str] = Field(default_factory=dict)
+    default_next_question_id: Optional[str] = None
+
 class TradeCategoryQuestionCreate(BaseModel):
     trade_category: str = Field(..., min_length=1, max_length=100)
     question_text: str = Field(..., min_length=5, max_length=500)
@@ -730,6 +735,7 @@ class TradeCategoryQuestionCreate(BaseModel):
     max_value: Optional[float] = None  # For number inputs
     is_active: bool = Field(default=True)
     conditional_logic: Optional[ConditionalLogic] = None  # New conditional logic field
+    navigation_logic: Optional[NavigationLogic] = None
 
 class TradeCategoryQuestion(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -745,6 +751,7 @@ class TradeCategoryQuestion(BaseModel):
     max_value: Optional[float] = None
     is_active: bool = True
     conditional_logic: Optional[ConditionalLogic] = None  # New conditional logic field
+    navigation_logic: Optional[NavigationLogic] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     created_by: Optional[str] = None
@@ -761,6 +768,7 @@ class TradeCategoryQuestionUpdate(BaseModel):
     max_value: Optional[float] = None
     is_active: Optional[bool] = None
     conditional_logic: Optional[ConditionalLogic] = None  # New conditional logic field
+    navigation_logic: Optional[NavigationLogic] = None
 
 class QuestionAnswer(BaseModel):
     question_id: str

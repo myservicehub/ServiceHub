@@ -624,17 +624,12 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
     });
   };
 
-  // Navigate to next question (with validation and conditional logic)
   const goToNextQuestion = () => {
     const visibleQuestions = getVisibleQuestions();
-    
-    // Check if current question is answered
     const currentQuestion = visibleQuestions[currentQuestionIndex];
     if (!currentQuestion) return;
-    
+
     const answer = questionAnswers[currentQuestion.id];
-    
-    // Validate based on question type
     let isAnswered = false;
     if (currentQuestion.question_type === 'multiple_choice_multiple') {
       isAnswered = Array.isArray(answer) && answer.length > 0;
@@ -643,25 +638,61 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
     } else {
       isAnswered = answer !== undefined && answer !== null && answer !== '';
     }
-    
+
     if (!isAnswered && currentQuestion.is_required) {
-      // Show error for current question
       setErrors(prev => ({
         ...prev,
         [`question_${currentQuestion.id}`]: 'This question is required'
       }));
       return;
     }
-    
-    // Clear any errors for this question
+
     setErrors(prev => {
       const newErrors = { ...prev };
       delete newErrors[`question_${currentQuestion.id}`];
       return newErrors;
     });
-    
-    // Move to next question
-    if (currentQuestionIndex < visibleQuestions.length - 1) {
+
+    const normalize = (val) => {
+      if (val === undefined || val === null) return '';
+      if (typeof val === 'boolean') return val ? 'true' : 'false';
+      return String(val).toLowerCase().trim().replace(/\s+/g, '_');
+    };
+
+    let targetIndex = currentQuestionIndex + 1;
+    const nav = currentQuestion.navigation_logic;
+    if (nav && nav.enabled) {
+      let key = '';
+      if (currentQuestion.question_type === 'yes_no') {
+        key = normalize(answer);
+      } else if (currentQuestion.question_type === 'multiple_choice_single') {
+        key = normalize(answer);
+      }
+      const nextId = (nav.next_question_map && key) ? nav.next_question_map[key] : null;
+      const fallbackId = nav.default_next_question_id || null;
+      const candidateId = nextId || fallbackId;
+      if (candidateId) {
+        const visibleIdx = visibleQuestions.findIndex(q => q.id === candidateId);
+        if (visibleIdx !== -1) {
+          targetIndex = visibleIdx;
+        } else {
+          const allIdx = tradeQuestions.findIndex(q => q.id === candidateId);
+          if (allIdx !== -1) {
+            const q = tradeQuestions[allIdx];
+            const shouldShow = evaluateConditionalLogic(q, questionAnswers);
+            if (shouldShow) {
+              const newVisible = getVisibleQuestions();
+              const idx2 = newVisible.findIndex(x => x.id === candidateId);
+              if (idx2 !== -1) targetIndex = idx2;
+            }
+          }
+        }
+      }
+    }
+
+    if (targetIndex > currentQuestionIndex && targetIndex < visibleQuestions.length) {
+      setCurrentQuestionIndex(targetIndex);
+    } else if (currentQuestionIndex < visibleQuestions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
     }
   };
