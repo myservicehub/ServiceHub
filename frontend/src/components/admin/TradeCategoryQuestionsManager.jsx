@@ -349,6 +349,11 @@ const TradeCategoryQuestionsManager = () => {
         enabled: false,
         logic_operator: 'AND',
         rules: []
+      },
+      navigation_logic: {
+        enabled: false,
+        next_question_map: {},
+        default_next_question_id: ''
       }
     });
     setShowCreateForm(false);
