@@ -366,11 +366,12 @@ export const adminAPI = {
 
   async updateTrade(oldName, newName, group = '', description = '') {
     const formData = new FormData();
+    formData.append('old_name', oldName);
     formData.append('new_name', newName);
     formData.append('group', group);
     formData.append('description', description);
     
-    const response = await apiClient.put(`/admin/trades/${encodeURIComponent(oldName)}`, formData, {
+    const response = await apiClient.put('/admin/trades/update', formData, {
       headers: {
         'Content-Type': undefined, // Let axios set multipart/form-data with boundary
       },

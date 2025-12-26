@@ -1640,6 +1640,36 @@ async def update_trade(
         "new_name": new_name
     }
 
+@router.put("/trades/update")
+async def update_trade_by_form(
+    old_name: str = Form(...),
+    new_name: str = Form(...),
+    group: str = Form(""),
+    description: str = Form("")
+):
+    """Update trade category using form body instead of path param.
+    Helps avoid proxy/path encoding issues for names with special characters.
+    """
+    if not new_name.strip():
+        raise HTTPException(status_code=400, detail="Trade name is required")
+
+    success = await database.update_trade(old_name.strip(), new_name.strip(), group, description)
+    if not success:
+        # Determine if static trade exists to provide clearer error
+        try:
+            from models.trade_categories import NIGERIAN_TRADE_CATEGORIES
+            if old_name.strip() in NIGERIAN_TRADE_CATEGORIES:
+                raise HTTPException(status_code=500, detail="Failed to update trade (database error or permission)")
+        except Exception:
+            pass
+        raise HTTPException(status_code=404, detail="Trade category not found")
+
+    return {
+        "message": "Trade category updated successfully",
+        "old_name": old_name,
+        "new_name": new_name
+    }
+
 @router.delete("/trades/{trade_name}")
 async def delete_trade(trade_name: str):
     """Delete a trade category"""
