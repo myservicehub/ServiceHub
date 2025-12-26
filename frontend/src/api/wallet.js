@@ -370,7 +370,7 @@ export const adminAPI = {
     formData.append('group', group);
     formData.append('description', description);
     
-    const response = await apiClient.put(`/admin/trades/${oldName}`, formData, {
+    const response = await apiClient.put(`/admin/trades/${encodeURIComponent(oldName)}`, formData, {
       headers: {
         'Content-Type': undefined, // Let axios set multipart/form-data with boundary
       },
@@ -379,7 +379,7 @@ export const adminAPI = {
   },
 
   async deleteTrade(tradeName) {
-    const response = await apiClient.delete(`/admin/trades/${tradeName}`);
+    const response = await apiClient.delete(`/admin/trades/${encodeURIComponent(tradeName)}`);
     return response.data;
   },
 
