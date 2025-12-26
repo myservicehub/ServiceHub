@@ -3497,7 +3497,8 @@ const AdminDashboard = () => {
                             setEditingPolicy(null);
                             fetchData();
                           } catch (error) {
-                            toast({ title: "Failed to update policy", variant: "destructive" });
+                            const msg = error?.response?.data?.detail || "Failed to update policy";
+                            toast({ title: "Error", description: msg, variant: "destructive" });
                           }
                         }}>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">

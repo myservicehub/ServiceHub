@@ -5835,58 +5835,65 @@ We may update this Cookie Policy to reflect changes in technology or regulations
             existing_policy = await self.get_policy_by_id(policy_id)
             if not existing_policy:
                 return False
-            
-            # Archive current version if it's active
-            if existing_policy["status"] == "active":
+
+            # Determine effective date (prefer incoming value)
+            effective_date_val = policy_data.get("effective_date", existing_policy.get("effective_date"))
+            parsed_effective_date = None
+            if effective_date_val:
+                parsed_effective_date = effective_date_val
+                if isinstance(parsed_effective_date, str):
+                    parsed_effective_date = datetime.fromisoformat(parsed_effective_date.replace('Z', '+00:00'))
+
+            # Compute status based on provided status or effective date
+            status_val = policy_data.get("status")
+            if not status_val and parsed_effective_date:
+                status_val = "active" if parsed_effective_date <= datetime.now() else "scheduled"
+            if not status_val:
+                status_val = existing_policy.get("status", "active")
+
+            now_iso = datetime.now().isoformat()
+
+            # If current version is active, archive and create a complete new version document
+            if existing_policy.get("status") == "active":
                 await self.archive_policy(policy_id, updated_by)
-                # Create new version
-                new_version = existing_policy["version"] + 1
-            else:
-                # Update in place if not active
-                new_version = existing_policy["version"]
-            
+
+                new_doc = {
+                    "id": str(uuid.uuid4()),
+                    "policy_type": existing_policy.get("policy_type"),
+                    "title": policy_data.get("title", existing_policy.get("title")),
+                    "content": policy_data.get("content", existing_policy.get("content")),
+                    "status": status_val,
+                    "version": (existing_policy.get("version", 1) + 1),
+                    "effective_date": effective_date_val,
+                    "created_at": now_iso,
+                    "updated_at": now_iso,
+                    "created_by": updated_by,
+                    "notes": policy_data.get("notes", existing_policy.get("notes", ""))
+                }
+
+                result = await self.database.policies.insert_one(new_doc)
+                return result.inserted_id is not None
+
+            # Otherwise, update in place for non-active versions
             update_data = {
-                "updated_at": datetime.now().isoformat()
+                "updated_at": now_iso
             }
-            
-            # Update fields if provided
             if "title" in policy_data:
                 update_data["title"] = policy_data["title"]
             if "content" in policy_data:
                 update_data["content"] = policy_data["content"]
             if "notes" in policy_data:
                 update_data["notes"] = policy_data["notes"]
-            if "effective_date" in policy_data:
-                update_data["effective_date"] = policy_data["effective_date"]
-                
-                # Update status based on effective date
-                if policy_data["effective_date"]:
-                    effective_date = policy_data["effective_date"]
-                    if isinstance(effective_date, str):
-                        effective_date = datetime.fromisoformat(effective_date.replace('Z', '+00:00'))
-                    
-                    if effective_date <= datetime.now():
-                        update_data["status"] = "active"
-                    else:
-                        update_data["status"] = "scheduled"
-            
-            if "status" in policy_data:
-                update_data["status"] = policy_data["status"]
-            
-            # If creating new version
-            if existing_policy["status"] == "active":
-                update_data["version"] = new_version
-                update_data["id"] = str(uuid.uuid4())
-                result = await self.database.policies.insert_one(update_data)
-                return result.inserted_id is not None
-            else:
-                # Update existing
-                result = await self.database.policies.update_one(
-                    {"id": policy_id},
-                    {"$set": update_data}
-                )
-                return result.modified_count > 0
-            
+            # effective_date and status updates
+            update_data["effective_date"] = effective_date_val
+            update_data["status"] = status_val
+
+            result = await self.database.policies.update_one(
+                {"id": policy_id},
+                {"$set": update_data}
+            )
+            return result.modified_count > 0
+
         except Exception as e:
             print(f"Error updating policy {policy_id}: {e}")
             return False
