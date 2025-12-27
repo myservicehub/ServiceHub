@@ -690,7 +690,7 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
       }
     }
 
-    if (targetIndex > currentQuestionIndex && targetIndex < visibleQuestions.length) {
+    if (targetIndex >= 0 && targetIndex < visibleQuestions.length) {
       setCurrentQuestionIndex(targetIndex);
     } else if (currentQuestionIndex < visibleQuestions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);

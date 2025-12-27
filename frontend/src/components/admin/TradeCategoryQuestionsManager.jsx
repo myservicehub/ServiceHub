@@ -29,6 +29,8 @@ const TradeCategoryQuestionsManager = () => {
   const [loading, setLoading] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
+  const [reorderMode, setReorderMode] = useState(false);
+  const [reorderList, setReorderList] = useState([]);
   // Client-side pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
@@ -64,6 +66,55 @@ const TradeCategoryQuestionsManager = () => {
       const el = document.getElementById('admin-question-text-input');
       if (el) { try { el.focus(); } catch {} }
     }, 50);
+  };
+
+  const startReorder = () => {
+    const base = (selectedCategory
+      ? questions.filter(q => q.trade_category === selectedCategory)
+      : questions).slice().sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+    setReorderList(base);
+    setReorderMode(true);
+  };
+
+  const cancelReorder = () => {
+    setReorderMode(false);
+    setReorderList([]);
+  };
+
+  const moveQuestionUp = (index) => {
+    if (index <= 0) return;
+    const list = reorderList.slice();
+    const tmp = list[index - 1];
+    list[index - 1] = list[index];
+    list[index] = tmp;
+    setReorderList(list);
+  };
+
+  const moveQuestionDown = (index) => {
+    if (index >= reorderList.length - 1) return;
+    const list = reorderList.slice();
+    const tmp = list[index + 1];
+    list[index + 1] = list[index];
+    list[index] = tmp;
+    setReorderList(list);
+  };
+
+  const saveReorder = async () => {
+    try {
+      if (!selectedCategory && reorderList.length > 0) {
+        setSelectedCategory(reorderList[0].trade_category);
+      }
+      const payload = reorderList.map((q, idx) => ({ id: q.id, display_order: idx + 1 }));
+      await tradeCategoryQuestionsAPI.reorderTradeQuestions(selectedCategory || reorderList[0]?.trade_category, payload);
+      toast({ title: "Success", description: "Questions reordered" });
+      setReorderMode(false);
+      setReorderList([]);
+      await loadQuestions();
+      await loadCategoriesWithQuestions();
+    } catch (error) {
+      console.error('Failed to reorder questions:', error);
+      toast({ title: "Error", description: "Failed to reorder questions", variant: "destructive" });
+    }
   };
   
   const { toast } = useToast();
@@ -1027,6 +1078,57 @@ const TradeCategoryQuestionsManager = () => {
           </CardContent>
         </Card>
         </div>
+      )}
+
+      {selectedCategory && !showCreateForm && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Arrange Questions for {selectedCategory}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {!reorderMode ? (
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-600">Total: {questions.filter(q => q.trade_category === selectedCategory).length}</div>
+                <Button
+                  variant="outline"
+                  onClick={startReorder}
+                  disabled={questions.filter(q => q.trade_category === selectedCategory).length < 2}
+                >
+                  <GripVertical size={16} className="mr-2" />
+                  Reorder
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-600">Drag controls: use Up/Down to adjust order</div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={cancelReorder}><X size={16} className="mr-2" />Cancel</Button>
+                    <Button onClick={saveReorder} className="bg-blue-600 hover:bg-blue-700"><Save size={16} className="mr-2" />Save Order</Button>
+                  </div>
+                </div>
+                <div className="divide-y border rounded-md">
+                  {reorderList.map((q, idx) => (
+                    <div key={q.id} className="flex items-center justify-between p-3 bg-white">
+                      <div className="flex items-center gap-3">
+                        <Badge variant="secondary">{idx + 1}</Badge>
+                        <span className="font-medium truncate">{q.question_text}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" onClick={() => moveQuestionUp(idx)} disabled={idx === 0}>
+                          <ChevronUp size={16} />
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => moveQuestionDown(idx)} disabled={idx === reorderList.length - 1}>
+                          <ChevronDown size={16} />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {/* Questions List */}
