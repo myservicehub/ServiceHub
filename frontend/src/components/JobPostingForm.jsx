@@ -125,6 +125,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
   // One-by-one question display state
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [showQuestionsOneByOne, setShowQuestionsOneByOne] = useState(true);
+  const [navHistory, setNavHistory] = useState([]);
 
   const { loginWithToken, isAuthenticated, user: currentUser, loading } = useAuth();
   const { toast } = useToast();
@@ -701,6 +702,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
     };
 
     if (targetIndex >= 0 && targetIndex < visibleQuestions.length) {
+      setNavHistory(prev => [...prev, currentQuestion.id]);
       setCurrentQuestionIndex(targetIndex);
       return;
     }
@@ -709,17 +711,20 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       .slice(currentQuestionIndex + 1)
       .findIndex(q => !isAnsweredQ(q));
     if (nextUnansweredRel !== -1) {
+      setNavHistory(prev => [...prev, currentQuestion.id]);
       setCurrentQuestionIndex(currentQuestionIndex + 1 + nextUnansweredRel);
       return;
     }
 
     const firstUnanswered = visibleQuestions.findIndex(q => !isAnsweredQ(q));
     if (firstUnanswered !== -1) {
+      setNavHistory(prev => [...prev, currentQuestion.id]);
       setCurrentQuestionIndex(firstUnanswered);
       return;
     }
 
     if (currentQuestionIndex < visibleQuestions.length - 1) {
+      setNavHistory(prev => [...prev, currentQuestion.id]);
       setCurrentQuestionIndex(prev => prev + 1);
       return;
     }
@@ -727,6 +732,16 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
 
   // Navigate to previous question (with conditional logic)
   const goToPreviousQuestion = () => {
+    const visibleQuestions = getVisibleQuestions();
+    if (navHistory.length > 0) {
+      const lastId = navHistory[navHistory.length - 1];
+      const prevIndex = visibleQuestions.findIndex(q => q.id === lastId);
+      if (prevIndex !== -1) {
+        setNavHistory(prev => prev.slice(0, -1));
+        setCurrentQuestionIndex(prevIndex);
+        return;
+      }
+    }
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(prev => prev - 1);
     }
@@ -735,6 +750,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
   // Reset question navigation when category changes
   const resetQuestionNavigation = () => {
     setCurrentQuestionIndex(0);
+    setNavHistory([]);
   };
 
   // Enhanced conditional logic evaluation for multiple rules
@@ -1376,22 +1392,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                             </div>
                           )}
                           
-                          {/* Show answered questions summary */}
-                          {currentQuestionIndex > 0 && (
-                            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                              <h4 className="text-sm font-medium text-gray-700 mb-3">Previously Answered:</h4>
-                              <div className="space-y-2">
-                                {visibleQuestions.slice(0, currentQuestionIndex).map((question, index) => (
-                                  <div key={question.id} className="flex justify-between items-start text-sm">
-                                    <span className="text-gray-600 flex-1 pr-4">{question.question_text}</span>
-                                    <span className="text-gray-800 font-medium">
-                                      {formatAnswerText(question, questionAnswers[question.id])}
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
+                          
 
                           {/* Conditional Logic Debug Info (remove in production) */}
                           {process.env.NODE_ENV === 'development' && (
