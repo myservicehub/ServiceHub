@@ -67,7 +67,7 @@ const FALLBACK_TRADE_CATEGORIES = [
   "Recycling"
 ];
 
-const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState }) => {
+function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [tradeCategories, setTradeCategories] = useState(FALLBACK_TRADE_CATEGORIES);
   const [loadingTrades, setLoadingTrades] = useState(true);
@@ -110,6 +110,9 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [loginData, setLoginData] = useState({ email: '', password: '' });
+  const [loginErrors, setLoginErrors] = useState({});
+  const [loggingIn, setLoggingIn] = useState(false);
   // Map centering control
   const [mapCenterAddress, setMapCenterAddress] = useState('');
   const [mapCenterZoom, setMapCenterZoom] = useState(10);
@@ -690,10 +693,35 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
       }
     }
 
+    const isAnsweredQ = (q) => {
+      const a = questionAnswers[q.id];
+      if (q.question_type === 'multiple_choice_multiple') return Array.isArray(a) && a.length > 0;
+      if (q.question_type === 'yes_no') return a === true || a === false;
+      return a !== undefined && a !== null && String(a).trim() !== '';
+    };
+
     if (targetIndex >= 0 && targetIndex < visibleQuestions.length) {
       setCurrentQuestionIndex(targetIndex);
-    } else if (currentQuestionIndex < visibleQuestions.length - 1) {
+      return;
+    }
+
+    const nextUnansweredRel = visibleQuestions
+      .slice(currentQuestionIndex + 1)
+      .findIndex(q => !isAnsweredQ(q));
+    if (nextUnansweredRel !== -1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1 + nextUnansweredRel);
+      return;
+    }
+
+    const firstUnanswered = visibleQuestions.findIndex(q => !isAnsweredQ(q));
+    if (firstUnanswered !== -1) {
+      setCurrentQuestionIndex(firstUnanswered);
+      return;
+    }
+
+    if (currentQuestionIndex < visibleQuestions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
+      return;
     }
   };
 
@@ -2006,7 +2034,7 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
   };
 
   // Account/Login Choice Modal
-  const AccountCreationModal = () => (
+  const accountCreationModal = (
     showAccountModal && (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-lg max-w-md w-full p-6">
@@ -2064,41 +2092,36 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
     )
   );
 
-  // Login Modal for returning users
-  const LoginModal = () => {
-    const [loginData, setLoginData] = useState({ email: '', password: '' });
-    const [loginErrors, setLoginErrors] = useState({});
-    const [loggingIn, setLoggingIn] = useState(false);
-
-    const handleLogin = async (e) => {
-      e.preventDefault();
-      setLoggingIn(true);
-      
-      try {
-        const response = await authAPI.login(loginData.email, loginData.password);
-        if (response.access_token) {
-          loginWithToken(response.access_token, response.user);
-          setShowLoginModal(false);
-          
-          toast({
-            title: "Welcome back!",
-            description: "You're now logged in. Let's post your job!",
-          });
-          
-          // After login, return to the preview step instead of auto-posting
-          setCurrentStep(4);
-        }
-      } catch (error) {
-        console.error('Login failed:', error);
-        setLoginErrors({ 
-          general: error.response?.data?.detail || "Login failed. Please check your credentials." 
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoggingIn(true);
+    
+    try {
+      const response = await authAPI.login(loginData.email, loginData.password);
+      if (response.access_token) {
+        loginWithToken(response.access_token, response.user);
+        setShowLoginModal(false);
+        
+        toast({
+          title: "Welcome back!",
+          description: "You're now logged in. Let's post your job!",
         });
-      } finally {
-        setLoggingIn(false);
+        
+        // After login, return to the preview step instead of auto-posting
+        setCurrentStep(4);
       }
-    };
+    } catch (error) {
+      console.error('Login failed:', error);
+      setLoginErrors({ 
+        general: error.response?.data?.detail || "Login failed. Please check your credentials." 
+      });
+    } finally {
+      setLoggingIn(false);
+    }
+  };
 
-    return showLoginModal && (
+  const loginModal = (
+    showLoginModal && (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-lg max-w-md w-full p-6">
           <div className="text-center mb-6">
@@ -2165,8 +2188,8 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
           </form>
         </div>
       </div>
-    );
-  };
+    )
+  );
 
   return (
     <>
@@ -2242,8 +2265,8 @@ const JobPostingForm = ({ onClose, onJobPosted, initialCategory, initialState })
         </Card>
       </div>
 
-      <AccountCreationModal />
-      <LoginModal />
+      {accountCreationModal}
+      {loginModal}
     </>
   );
 };
