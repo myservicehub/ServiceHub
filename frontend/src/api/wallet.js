@@ -811,6 +811,15 @@ export const tradeCategoryQuestionsAPI = {
     return response.data;
   },
 
+  async uploadJobQuestionAttachment(jobId, questionId, file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.post(`/jobs/trade-questions/upload/${encodeURIComponent(jobId)}/${encodeURIComponent(questionId)}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
   async saveJobQuestionAnswers(answersData) {
     const response = await apiClient.post('/jobs/trade-questions/answers', answersData);
     return response.data;

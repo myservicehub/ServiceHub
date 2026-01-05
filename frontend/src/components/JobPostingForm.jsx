@@ -126,6 +126,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [showQuestionsOneByOne, setShowQuestionsOneByOne] = useState(true);
   const [navHistory, setNavHistory] = useState([]);
+  const [endAfterQuestionId, setEndAfterQuestionId] = useState(null);
 
   const { loginWithToken, isAuthenticated, user: currentUser, loading } = useAuth();
   const { toast } = useToast();
@@ -284,9 +285,11 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
         // If category is selected, validate admin questions instead of description
         if (formData.category) {
           const visibleQuestions = getVisibleQuestions();
+          const cutoffIndex = endAfterQuestionId ? visibleQuestions.findIndex(q => q.id === endAfterQuestionId) : -1;
+          const questionsToValidate = cutoffIndex !== -1 ? visibleQuestions.slice(0, cutoffIndex + 1) : visibleQuestions;
           if (visibleQuestions.length > 0) {
             // Validate only visible trade category questions (after conditional logic)
-            visibleQuestions.forEach(question => {
+            questionsToValidate.forEach(question => {
               if (question.is_required) {
                 const answer = questionAnswers[question.id];
                 
@@ -297,6 +300,11 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                 } else if (question.question_type === 'yes_no') {
                   // For yes/no questions, any boolean value is valid (including false)
                   if (answer === undefined || answer === null) {
+                    newErrors[`question_${question.id}`] = 'This question is required';
+                  }
+                } else if (question.question_type === 'file_upload') {
+                  const hasFile = (answer instanceof File) || (typeof answer === 'string' && !!answer.trim());
+                  if (!hasFile) {
                     newErrors[`question_${question.id}`] = 'This question is required';
                   }
                 } else {
@@ -495,15 +503,30 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       // Save question answers if there are any
       if (tradeQuestions.length > 0 && Object.keys(questionAnswers).length > 0) {
         try {
+          const jobId = jobResponse.job_id || jobResponse.id;
+          const updatedAnswers = { ...questionAnswers };
+          for (const q of tradeQuestions.filter(q => q.question_type === 'file_upload')) {
+            const val = questionAnswers[q.id];
+            if (val instanceof File) {
+              try {
+                const res = await tradeCategoryQuestionsAPI.uploadJobQuestionAttachment(jobId, q.id, val);
+                updatedAnswers[q.id] = res?.url || '';
+              } catch (e) {
+                console.error('File upload failed for question', q.id, e);
+                updatedAnswers[q.id] = '';
+              }
+            }
+          }
+
           const answersData = {
-            job_id: jobResponse.job_id || jobResponse.id,
+            job_id: jobId,
             trade_category: formData.category,
             answers: tradeQuestions.map(question => ({
               question_id: question.id,
               question_text: question.question_text,
               question_type: question.question_type,
-              answer_value: questionAnswers[question.id],
-              answer_text: formatAnswerText(question, questionAnswers[question.id])
+              answer_value: updatedAnswers[question.id],
+              answer_text: formatAnswerText(question, updatedAnswers[question.id])
             }))
           };
 
@@ -563,6 +586,8 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
           initialAnswers[question.id] = false;
         } else if (question.question_type === 'multiple_choice_multiple') {
           initialAnswers[question.id] = [];
+        } else if (question.question_type === 'file_upload') {
+          initialAnswers[question.id] = null;
         } else {
           initialAnswers[question.id] = '';
         }
@@ -639,6 +664,8 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       isAnswered = Array.isArray(answer) && answer.length > 0;
     } else if (currentQuestion.question_type === 'yes_no') {
       isAnswered = answer === true || answer === false;
+    } else if (currentQuestion.question_type === 'file_upload') {
+      isAnswered = (answer && typeof answer === 'string' && answer.trim() !== '') || (answer instanceof File);
     } else {
       isAnswered = answer !== undefined && answer !== null && answer !== '';
     }
@@ -676,6 +703,26 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       const fallbackId = nav.default_next_question_id || null;
       const candidateId = nextId || fallbackId;
       if (candidateId) {
+        if (candidateId === '__END__') {
+          const a = questionAnswers[currentQuestion.id];
+          const required = currentQuestion.is_required;
+          let ok = true;
+          if (required) {
+            if (currentQuestion.question_type === 'multiple_choice_multiple') ok = Array.isArray(a) && a.length > 0;
+            else if (currentQuestion.question_type === 'yes_no') ok = a === true || a === false;
+            else if (currentQuestion.question_type === 'file_upload') ok = (a instanceof File) || (typeof a === 'string' && a.trim() !== '');
+            else ok = a !== undefined && a !== null && String(a).trim() !== '';
+          }
+          if (!ok) {
+            setErrors(prev => ({ ...prev, [`question_${currentQuestion.id}`]: 'This question is required' }));
+            return;
+          }
+          setErrors(prev => { const n = { ...prev }; delete n[`question_${currentQuestion.id}`]; return n; });
+          setNavHistory(prev => [...prev, currentQuestion.id]);
+          setEndAfterQuestionId(currentQuestion.id);
+          nextStep();
+          return;
+        }
         const visibleIdx = visibleQuestions.findIndex(q => q.id === candidateId);
         if (visibleIdx !== -1) {
           targetIndex = visibleIdx;
@@ -698,6 +745,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       const a = questionAnswers[q.id];
       if (q.question_type === 'multiple_choice_multiple') return Array.isArray(a) && a.length > 0;
       if (q.question_type === 'yes_no') return a === true || a === false;
+      if (q.question_type === 'file_upload') return (a instanceof File) || (typeof a === 'string' && String(a).trim() !== '');
       return a !== undefined && a !== null && String(a).trim() !== '';
     };
 
@@ -751,6 +799,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
   const resetQuestionNavigation = () => {
     setCurrentQuestionIndex(0);
     setNavHistory([]);
+    setEndAfterQuestionId(null);
   };
 
   // Enhanced conditional logic evaluation for multiple rules
@@ -877,6 +926,9 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       
       case 'yes_no':
         return answer === true ? 'Yes' : 'No';
+      case 'file_upload':
+        if (answer instanceof File) return `File: ${answer.name}`;
+        return 'Attachment uploaded';
       
       case 'text_input':
       case 'text_area':
@@ -1006,6 +1058,28 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
           </div>
         );
 
+      case 'file_upload':
+        return (
+          <div className="space-y-2">
+            <input
+              type="file"
+              accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,video/mp4,video/quicktime"
+              onChange={(e) => {
+                const file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+                handleQuestionAnswer(question.id, file, question.question_type);
+              }}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
+                errors[`question_${question.id}`] ? 'border-red-500' : 'border-gray-300'
+              }`}
+              name={`question_${question.id}`}
+              id={`field-question_${question.id}`}
+            />
+            {questionAnswers[question.id] instanceof File && (
+              <div className="text-sm text-gray-600">Selected: {questionAnswers[question.id].name}</div>
+            )}
+          </div>
+        );
+
       default:
         return null;
     }
@@ -1109,18 +1183,37 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
         throw err;
       }
 
+      if (jobResponse.access_token && jobResponse.user) {
+        try { loginWithToken(jobResponse.access_token, jobResponse.user); } catch {}
+      }
+
       // Save question answers if there are any
       if (tradeQuestions.length > 0 && Object.keys(questionAnswers).length > 0) {
         try {
+          const jobId = jobResponse.job_id || jobResponse.id;
+          const updatedAnswers = { ...questionAnswers };
+          for (const q of tradeQuestions.filter(q => q.question_type === 'file_upload')) {
+            const val = questionAnswers[q.id];
+            if (val instanceof File) {
+              try {
+                const res = await tradeCategoryQuestionsAPI.uploadJobQuestionAttachment(jobId, q.id, val);
+                updatedAnswers[q.id] = res?.url || '';
+              } catch (e) {
+                console.error('File upload failed for question', q.id, e);
+                updatedAnswers[q.id] = '';
+              }
+            }
+          }
+
           const answersData = {
-            job_id: jobResponse.job_id || jobResponse.id,
+            job_id: jobId,
             trade_category: formData.category,
             answers: tradeQuestions.map(question => ({
               question_id: question.id,
               question_text: question.question_text,
               question_type: question.question_type,
-              answer_value: questionAnswers[question.id],
-              answer_text: formatAnswerText(question, questionAnswers[question.id])
+              answer_value: updatedAnswers[question.id],
+              answer_text: formatAnswerText(question, updatedAnswers[question.id])
             }))
           };
 
@@ -1133,9 +1226,6 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       }
 
       const jobId = jobResponse.job_id || jobResponse.id;
-      if (jobResponse.access_token && jobResponse.user) {
-        try { loginWithToken(jobResponse.access_token, jobResponse.user); } catch {}
-      }
       toast({
         title: "Job Submitted!",
         description: `Your job has been submitted for admin review. Job ID: ${jobId}`,
@@ -1337,11 +1427,16 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                                   <span>Previous</span>
                                 </Button>
                                 
-                                {currentQuestionIndex === visibleQuestions.length - 1 ? (
+                                {(() => {
+                                  const currentQuestion = visibleQuestions[currentQuestionIndex];
+                                  const finishHere = currentQuestion && isEndAfterThis(currentQuestion);
+                                  const isLast = currentQuestionIndex === visibleQuestions.length - 1;
+                                  return finishHere || isLast;
+                                })() ? (
                                   <Button
                                     type="button"
                                     onClick={() => {
-                                      // Validate the last question before proceeding to next step
+                                      // Validate the current question before proceeding to next step
                                       const currentQuestion = visibleQuestions[currentQuestionIndex];
                                       const answer = questionAnswers[currentQuestion.id];
                                       
@@ -1368,6 +1463,8 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                                         delete newErrors[`question_${currentQuestion.id}`];
                                         return newErrors;
                                       });
+                                      setEndAfterQuestionId(currentQuestion.id);
+                                      setNavHistory(prev => [...prev, currentQuestion.id]);
                                       
                                       nextStep();
                                     }}

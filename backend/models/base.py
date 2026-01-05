@@ -27,6 +27,7 @@ class QuestionType(str, Enum):
     TEXT_AREA = "text_area"
     NUMBER_INPUT = "number_input"
     YES_NO = "yes_no"
+    FILE_UPLOAD = "file_upload"
 
 class PortfolioItemCategory(str, Enum):
     PLUMBING = "plumbing"

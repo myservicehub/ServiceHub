@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, Query, Depends, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Query, Depends, BackgroundTasks, UploadFile, File
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from typing import Optional
 from ..models import JobCreate, JobUpdate, JobCloseRequest, Job, JobsResponse
@@ -7,6 +8,7 @@ from ..models.notifications import NotificationType, NotificationChannel, Notifi
 from ..auth.dependencies import (
     get_current_homeowner,
     get_current_tradesperson,
+    get_current_active_user,
     require_homeowner_contact_verified,
     require_tradesperson_verified,
 )
@@ -32,6 +34,7 @@ import uuid
 import logging
 import os
 import re
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -1407,6 +1410,104 @@ async def get_job_question_answers(job_id: str):
     except Exception as e:
         logger.error(f"Error getting job question answers for {job_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to retrieve job question answers")
+
+# ==========================================
+# FILE UPLOADS FOR JOB QUESTIONS
+# ==========================================
+
+uploads_base = Path(__file__).resolve().parent.parent / "uploads" / "jobs"
+uploads_base.mkdir(parents=True, exist_ok=True)
+
+@router.post("/trade-questions/upload/{job_id}/{question_id}")
+async def upload_job_question_attachment(
+    job_id: str,
+    question_id: str,
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_homeowner)
+):
+    try:
+        job = await database.get_job_by_id(job_id)
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+        homeowner_id = job.get("homeowner", {}).get("id") or job.get("homeowner_id")
+        if homeowner_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Not authorized to upload for this job")
+
+        allowed_types = {
+            "image/jpeg",
+            "image/png",
+            "image/webp",
+            "application/pdf",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "video/mp4",
+            "video/quicktime",
+        }
+        if file.content_type not in allowed_types:
+            raise HTTPException(status_code=400, detail="Unsupported file type")
+
+        data = await file.read()
+        max_bytes = int(os.getenv("JOB_QUESTION_ATTACHMENT_MAX_BYTES", "52428800"))
+        if len(data) > max_bytes:
+            raise HTTPException(status_code=413, detail="File too large")
+
+        ext = os.path.splitext(file.filename or "")[1].lower()
+        import uuid as _uuid
+        name = f"{_uuid.uuid4().hex}{ext}"
+        job_dir = uploads_base / job_id
+        job_dir.mkdir(parents=True, exist_ok=True)
+        dest = job_dir / name
+        with open(dest, "wb") as f:
+            f.write(data)
+
+        url_path = f"/api/jobs/trade-questions/file/{job_id}/{name}"
+        return {"filename": name, "content_type": file.content_type, "size": len(data), "url": url_path}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error uploading job question attachment for {job_id}/{question_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to upload attachment")
+
+@router.get("/trade-questions/file/{job_id}/{filename}")
+async def get_job_question_attachment(
+    job_id: str,
+    filename: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    try:
+        job = await database.get_job_by_id(job_id)
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+        if current_user.role == "homeowner":
+            owner_id = job.get("homeowner", {}).get("id") or job.get("homeowner_id")
+            if owner_id != current_user.id:
+                raise HTTPException(status_code=403, detail="Access denied")
+        elif current_user.role == "tradesperson":
+            interest = await database.get_interest_by_job_and_tradesperson(job_id, current_user.id)
+            if not interest or interest.get("status") != "paid_access":
+                raise HTTPException(status_code=403, detail="Access denied")
+        else:
+            raise HTTPException(status_code=403, detail="Access denied")
+        job_dir = uploads_base / job_id
+        path = job_dir / filename
+        if not path.exists():
+            raise HTTPException(status_code=404, detail="Attachment not found")
+        ext = os.path.splitext(filename)[1].lower()
+        media_type = (
+            "image/jpeg" if ext in (".jpg", ".jpeg") else
+            "image/png" if ext == ".png" else
+            "image/webp" if ext == ".webp" else
+            "application/pdf" if ext == ".pdf" else
+            "video/mp4" if ext == ".mp4" else
+            "video/quicktime" if ext in (".mov", ".qt") else
+            "application/octet-stream"
+        )
+        return FileResponse(path, media_type=media_type)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error serving job question attachment {job_id}/{filename}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to serve attachment")
 
 # Public Skills Questions Endpoint (no authentication required)
 @router.get("/skills-questions/{trade_category:path}")

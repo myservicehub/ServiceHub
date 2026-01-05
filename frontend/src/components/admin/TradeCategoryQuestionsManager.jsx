@@ -125,7 +125,8 @@ const TradeCategoryQuestionsManager = () => {
     { value: 'text_input', label: 'Short Text Input' },
     { value: 'text_area', label: 'Long Text Area' },
     { value: 'number_input', label: 'Number Input' },
-    { value: 'yes_no', label: 'Yes/No Question' }
+    { value: 'yes_no', label: 'Yes/No Question' },
+    { value: 'file_upload', label: 'File Upload (PDF/Image/Video/Document)' }
   ];
 
   useEffect(() => {
@@ -986,27 +987,28 @@ const TradeCategoryQuestionsManager = () => {
                         return (
                           <div key={key}>
                             <label className="block text-sm font-medium mb-2">Next question if "{optText}"</label>
-                            <select
-                              value={formData.navigation_logic.next_question_map[key] || ''}
-                              onChange={(e) => setFormData(prev => ({
-                                ...prev,
-                                navigation_logic: {
-                                  ...prev.navigation_logic,
-                                  next_question_map: {
-                                    ...prev.navigation_logic.next_question_map,
-                                    [key]: e.target.value
-                                  }
+                          <select
+                            value={formData.navigation_logic.next_question_map[key] || ''}
+                            onChange={(e) => setFormData(prev => ({
+                              ...prev,
+                              navigation_logic: {
+                                ...prev.navigation_logic,
+                                next_question_map: {
+                                  ...prev.navigation_logic.next_question_map,
+                                  [key]: e.target.value
                                 }
-                              }))}
-                              className="w-full px-3 py-2 border rounded-md text-sm"
-                            >
-                              <option value="">Select next question</option>
-                              {questions
-                                .filter(q => q.id !== editingQuestion?.id && q.trade_category === formData.trade_category)
-                                .map(q => (
-                                  <option key={q.id} value={q.id}>[{questionTypes.find(t => t.value === q.question_type)?.label}] {q.question_text.substring(0, 40)}...</option>
-                                ))}
-                            </select>
+                              }
+                            }))}
+                            className="w-full px-3 py-2 border rounded-md text-sm"
+                          >
+                            <option value="">Select next question</option>
+                            <option value="__END__">Finish questions after this</option>
+                            {questions
+                              .filter(q => q.id !== editingQuestion?.id && q.trade_category === formData.trade_category)
+                              .map(q => (
+                                <option key={q.id} value={q.id}>[{questionTypes.find(t => t.value === q.question_type)?.label}] {q.question_text.substring(0, 40)}...</option>
+                              ))}
+                          </select>
                           </div>
                         );
                       })}
@@ -1026,6 +1028,7 @@ const TradeCategoryQuestionsManager = () => {
                       className="w-full px-3 py-2 border rounded-md text-sm"
                     >
                       <option value="">None</option>
+                      <option value="__END__">Finish questions after this</option>
                       {questions
                         .filter(q => q.id !== editingQuestion?.id && q.trade_category === formData.trade_category)
                         .map(q => (
