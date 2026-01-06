@@ -305,7 +305,9 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                     newErrors[`question_${question.id}`] = 'This question is required';
                   }
                 } else if (isFileUploadType(question.question_type)) {
-                  const hasFile = (answer instanceof File) || (typeof answer === 'string' && !!answer.trim());
+                  const hasFile = Array.isArray(answer)
+                    ? answer.length > 0
+                    : (answer instanceof File) || (typeof answer === 'string' && !!String(answer).trim());
                   if (!hasFile) {
                     newErrors[`question_${question.id}`] = 'This question is required';
                   }
@@ -527,6 +529,18 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                 console.error('File upload failed for question', q.id, e);
                 updatedAnswers[q.id] = '';
               }
+            } else if (Array.isArray(val)) {
+              const urls = [];
+              for (const f of val) {
+                if (!(f instanceof File)) continue;
+                try {
+                  const res = await tradeCategoryQuestionsAPI.uploadJobQuestionAttachment(jobId, q.id, f);
+                  if (res?.url) urls.push(res.url);
+                } catch (e) {
+                  console.error('File upload failed for question', q.id, e);
+                }
+              }
+              updatedAnswers[q.id] = urls;
             }
           }
 
@@ -599,7 +613,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
         } else if (question.question_type === 'multiple_choice_multiple') {
           initialAnswers[question.id] = [];
         } else if (question.question_type === 'file_upload') {
-          initialAnswers[question.id] = null;
+          initialAnswers[question.id] = [];
         } else {
           initialAnswers[question.id] = '';
         }
@@ -689,7 +703,9 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
     } else if (currentQuestion.question_type === 'yes_no') {
       isAnswered = answer === true || answer === false;
     } else if (isFileUploadType(currentQuestion.question_type)) {
-      isAnswered = (answer && typeof answer === 'string' && answer.trim() !== '') || (answer instanceof File);
+      isAnswered = Array.isArray(answer)
+        ? answer.length > 0
+        : (answer && typeof answer === 'string' && String(answer).trim() !== '') || (answer instanceof File);
     } else {
       if (currentQuestion.question_type === 'multiple_choice_single' && answer === 'other') {
         isAnswered = (questionAnswersOtherText[currentQuestion.id] || '').trim() !== '';
@@ -735,7 +751,9 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       const inlineUploadQ = (currentQuestion.question_type === 'yes_no' && answer === true) ? getInlineUploadForYes(currentQuestion) : null;
       if (inlineUploadQ) {
         const a2 = questionAnswers[inlineUploadQ.id];
-        const ok2 = (a2 instanceof File) || (typeof a2 === 'string' && a2.trim() !== '');
+        const ok2 = Array.isArray(a2)
+          ? a2.length > 0
+          : (a2 instanceof File) || (typeof a2 === 'string' && String(a2).trim() !== '');
         if (inlineUploadQ.is_required && !ok2) {
           setErrors(prev => ({ ...prev, [`question_${inlineUploadQ.id}`]: 'This field is required' }));
           return;
@@ -762,7 +780,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
             if (required) {
               if (currentQuestion.question_type === 'multiple_choice_multiple') ok = Array.isArray(a) && a.length > 0;
               else if (currentQuestion.question_type === 'yes_no') ok = a === true || a === false;
-              else if (isFileUploadType(currentQuestion.question_type)) ok = (a instanceof File) || (typeof a === 'string' && a.trim() !== '');
+              else if (isFileUploadType(currentQuestion.question_type)) ok = Array.isArray(a) ? a.length > 0 : (a instanceof File) || (typeof a === 'string' && String(a).trim() !== '');
               else {
                 if (a === 'other') ok = (questionAnswersOtherText[currentQuestion.id] || '').trim() !== '';
                 else ok = a !== undefined && a !== null && String(a).trim() !== '';
@@ -802,7 +820,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       const a = questionAnswers[q.id];
       if (q.question_type === 'multiple_choice_multiple') return Array.isArray(a) && a.length > 0;
       if (q.question_type === 'yes_no') return a === true || a === false;
-      if (isFileUploadType(q.question_type)) return (a instanceof File) || (typeof a === 'string' && String(a).trim() !== '');
+      if (isFileUploadType(q.question_type)) return Array.isArray(a) ? a.length > 0 : (a instanceof File) || (typeof a === 'string' && String(a).trim() !== '');
       return a !== undefined && a !== null && String(a).trim() !== '';
     };
 
@@ -958,15 +976,50 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
     }
   };
 
-  // Filter questions based on conditional logic
   const getVisibleQuestions = () => {
     if (!tradeQuestions || tradeQuestions.length === 0) {
       return [];
     }
 
-    return tradeQuestions.filter(question => {
-      return evaluateConditionalLogic(question, questionAnswers);
-    });
+    const byId = {};
+    tradeQuestions.forEach(q => { byId[q.id] = q; });
+    const ordered = tradeQuestions.slice().sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+    let current = ordered[0] || null;
+    const path = [];
+    const visited = new Set();
+    const normalize = (val) => {
+      if (val === undefined || val === null) return '';
+      if (typeof val === 'boolean') return val ? 'true' : 'false';
+      return String(val).toLowerCase().trim().replace(/\s+/g, '_');
+    };
+
+    while (current && !visited.has(String(current.id))) {
+      visited.add(String(current.id));
+      if (evaluateConditionalLogic(current, questionAnswers)) {
+        path.push(current);
+      }
+
+      const nav = current.navigation_logic;
+      let nextId = null;
+      if (nav && nav.enabled) {
+        let key = '';
+        const ans = questionAnswers[current.id];
+        if (current.question_type === 'yes_no') key = normalize(ans);
+        else if (current.question_type === 'multiple_choice_single') key = normalize(ans);
+        const nextIdRaw = (nav.next_question_map && key) ? nav.next_question_map[key] : null;
+        const fallbackId = nav.default_next_question_id || null;
+        const candidateId = key === 'other' ? fallbackId : (nextIdRaw || fallbackId);
+        if (candidateId === '__END__') break;
+        nextId = candidateId;
+      } else {
+        const idx = ordered.findIndex(q => q.id === current.id);
+        nextId = ordered[idx + 1]?.id || null;
+      }
+
+      current = nextId ? byId[nextId] : null;
+    }
+
+    return path;
   };
 
   const isEndAfterThis = (question) => {
@@ -999,7 +1052,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       case 'file_upload_document':
         return 'application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
       default:
-        return 'image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,video/mp4,video/quicktime';
+        return 'image/*,video/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,text/csv';
     }
   };
 
@@ -1056,6 +1109,10 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       case 'yes_no':
         return answer === true ? 'Yes' : 'No';
       case 'file_upload':
+        if (Array.isArray(answer)) {
+          const names = answer.filter(a => a instanceof File).map(f => f.name);
+          return names.length > 0 ? `Files: ${names.join(', ')}` : 'Attachments uploaded';
+        }
         if (answer instanceof File) return `File: ${answer.name}`;
         return 'Attachment uploaded';
       
@@ -1245,9 +1302,10 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                     <input
                       type="file"
                       accept={acceptForUploadType(inlineQ.question_type)}
+                      multiple
                       onChange={(e) => {
-                        const file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
-                        handleQuestionAnswer(inlineQ.id, file, inlineQ.question_type);
+                        const files = Array.from(e.target.files || []);
+                        handleQuestionAnswer(inlineQ.id, files, inlineQ.question_type);
                       }}
                       className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
                         errors[`question_${inlineQ.id}`] ? 'border-red-500' : 'border-gray-300'
@@ -1255,8 +1313,8 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                       name={`question_${inlineQ.id}`}
                       id={`field-question_${inlineQ.id}`}
                     />
-                    {questionAnswers[inlineQ.id] instanceof File && (
-                      <div className="text-sm text-gray-600">Selected: {questionAnswers[inlineQ.id].name}</div>
+                    {Array.isArray(questionAnswers[inlineQ.id]) && questionAnswers[inlineQ.id].length > 0 && (
+                      <div className="text-sm text-gray-600">Selected: {questionAnswers[inlineQ.id].filter(f => f instanceof File).map(f => f.name).join(', ')}</div>
                     )}
                     {errors[`question_${inlineQ.id}`] && (
                       <p className="text-red-500 text-sm font-lato mt-1">{errors[`question_${inlineQ.id}`]}</p>
@@ -1279,9 +1337,10 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
             <input
               type="file"
               accept={acceptForUploadType(question.question_type)}
+              multiple
               onChange={(e) => {
-                const file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
-                handleQuestionAnswer(question.id, file, question.question_type);
+                const files = Array.from(e.target.files || []);
+                handleQuestionAnswer(question.id, files, question.question_type);
               }}
               className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
                 errors[`question_${question.id}`] ? 'border-red-500' : 'border-gray-300'
@@ -1289,8 +1348,8 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
               name={`question_${question.id}`}
               id={`field-question_${question.id}`}
             />
-            {questionAnswers[question.id] instanceof File && (
-              <div className="text-sm text-gray-600">Selected: {questionAnswers[question.id].name}</div>
+            {Array.isArray(questionAnswers[question.id]) && questionAnswers[question.id].length > 0 && (
+              <div className="text-sm text-gray-600">Selected: {questionAnswers[question.id].filter(f => f instanceof File).map(f => f.name).join(', ')}</div>
             )}
           </div>
         );
@@ -1407,7 +1466,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
         try {
           const jobId = jobResponse.job_id || jobResponse.id;
           const updatedAnswers = { ...questionAnswers };
-          for (const q of tradeQuestions.filter(q => q.question_type === 'file_upload')) {
+          for (const q of tradeQuestions.filter(q => isFileUploadType(q.question_type))) {
             const val = questionAnswers[q.id];
             if (val instanceof File) {
               try {
@@ -1417,6 +1476,18 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                 console.error('File upload failed for question', q.id, e);
                 updatedAnswers[q.id] = '';
               }
+            } else if (Array.isArray(val)) {
+              const urls = [];
+              for (const f of val) {
+                if (!(f instanceof File)) continue;
+                try {
+                  const res = await tradeCategoryQuestionsAPI.uploadJobQuestionAttachment(jobId, q.id, f);
+                  if (res?.url) urls.push(res.url);
+                } catch (e) {
+                  console.error('File upload failed for question', q.id, e);
+                }
+              }
+              updatedAnswers[q.id] = urls;
             }
           }
 
