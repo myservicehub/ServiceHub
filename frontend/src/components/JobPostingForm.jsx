@@ -744,9 +744,13 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       } else if (currentQuestion.question_type === 'multiple_choice_single') {
         key = normalize(answer);
       }
-      const nextIdRaw = (nav.next_question_map && key) ? nav.next_question_map[key] : null;
+      let nextIdRaw = null;
+      const map = nav.next_question_map || {};
+      for (const [mk, mv] of Object.entries(map)) {
+        if (normalizeNavKey(mk) === key) { nextIdRaw = mv; break; }
+      }
       const fallbackId = nav.default_next_question_id || null;
-      const candidateId = key === 'other' ? fallbackId : (nextIdRaw || fallbackId);
+      const candidateId = nextIdRaw || fallbackId;
       // Inline upload gating for yes/no => upload mapping
       const inlineUploadQ = (currentQuestion.question_type === 'yes_no' && answer === true) ? getInlineUploadForYes(currentQuestion) : null;
       if (inlineUploadQ) {
@@ -1006,9 +1010,13 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
         const ans = questionAnswers[current.id];
         if (current.question_type === 'yes_no') key = normalize(ans);
         else if (current.question_type === 'multiple_choice_single') key = normalize(ans);
-        const nextIdRaw = (nav.next_question_map && key) ? nav.next_question_map[key] : null;
+        let nextIdRaw = null;
+        const map = nav.next_question_map || {};
+        for (const [mk, mv] of Object.entries(map)) {
+          if (normalizeNavKey(mk) === key) { nextIdRaw = mv; break; }
+        }
         const fallbackId = nav.default_next_question_id || null;
-        const candidateId = key === 'other' ? fallbackId : (nextIdRaw || fallbackId);
+        const candidateId = nextIdRaw || fallbackId;
         if (candidateId === '__END__') break;
         nextId = candidateId;
       } else {
@@ -1036,7 +1044,11 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
     const answer = questionAnswers[question.id];
     if (question.question_type === 'yes_no') key = normalize(answer);
     else if (question.question_type === 'multiple_choice_single') key = normalize(answer);
-    const mapped = (nav.next_question_map && key) ? nav.next_question_map[key] : null;
+    let mapped = null;
+    const map = nav.next_question_map || {};
+    for (const [mk, mv] of Object.entries(map)) {
+      if (normalizeNavKey(mk) === key) { mapped = mv; break; }
+    }
     return mapped === '__END__';
   };
 
@@ -1056,11 +1068,22 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
     }
   };
 
+  const normalizeNavKey = (k) => {
+    const s = String(k).toLowerCase().trim().replace(/\s+/g, '_');
+    if (s === 'yes' || s === 'true' || s === '1') return 'true';
+    if (s === 'no' || s === 'false' || s === '0') return 'false';
+    return s;
+  };
+
   const findQuestionById = (qid) => tradeQuestions.find(q => q.id === qid);
   const getInlineUploadForYes = (question) => {
     const nav = question.navigation_logic;
     if (!nav || !nav.enabled) return null;
-    const mappedId = nav.next_question_map ? nav.next_question_map['true'] : null;
+    const map = nav.next_question_map || {};
+    let mappedId = null;
+    for (const k of Object.keys(map)) {
+      if (normalizeNavKey(k) === 'true') { mappedId = map[k]; break; }
+    }
     if (!mappedId) return null;
     const target = findQuestionById(mappedId);
     if (target && isFileUploadType(target.question_type)) return target;
