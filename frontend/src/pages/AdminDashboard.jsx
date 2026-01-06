@@ -460,9 +460,13 @@ const AdminDashboard = () => {
       });
     } catch (error) {
       console.error('❌ Login failed:', error);
+      const message =
+        (error && error.response && error.response.data && (error.response.data.detail || error.response.data.message || error.response.data.error))
+        || (typeof error.message === 'string' ? error.message : '')
+        || 'Invalid username or password.';
       toast({
         title: "Login Failed",
-        description: error.message || "Invalid credentials. Please try again.",
+        description: message,
         variant: "destructive",
       });
     }

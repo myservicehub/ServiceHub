@@ -75,10 +75,14 @@ module.exports = {
   				'5': 'hsl(var(--chart-5))'
   			}
   		},
-  		fontFamily: {
-  			'montserrat': ['Montserrat', 'sans-serif'],
-  			'lato': ['Lato', 'sans-serif']
-  		},
+        fontFamily: {
+            // Map legacy utility classes to official fonts
+            'montserrat': ['Sora', 'Inter', 'sans-serif'],
+            'lato': ['Inter', 'Sora', 'sans-serif'],
+            // Explicit aliases for new utilities if needed
+            'sora': ['Sora', 'sans-serif'],
+            'inter': ['Inter', 'sans-serif']
+        },
   		keyframes: {
   			'accordion-down': {
   				from: {
