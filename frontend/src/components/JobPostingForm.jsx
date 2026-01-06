@@ -1061,6 +1061,11 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
     if (s === 'no' || s === 'false' || s === '0') return 'false';
     return s;
   };
+  const normalize = (val) => {
+    if (val === undefined || val === null) return '';
+    if (typeof val === 'boolean') return val ? 'true' : 'false';
+    return String(val).toLowerCase().trim().replace(/\s+/g, '_');
+  };
   const findMappedId = (map, key) => {
     let match = null;
     for (const [mk, mv] of Object.entries(map || {})) {
