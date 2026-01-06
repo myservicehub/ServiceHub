@@ -128,6 +128,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
   const [navHistory, setNavHistory] = useState([]);
   const [endAfterQuestionId, setEndAfterQuestionId] = useState(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [questionAnswersOtherText, setQuestionAnswersOtherText] = useState({});
 
   const { loginWithToken, isAuthenticated, user: currentUser, loading } = useAuth();
   const { toast } = useToast();
@@ -309,8 +310,18 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                     newErrors[`question_${question.id}`] = 'This question is required';
                   }
                 } else {
-                  if (!answer || (typeof answer === 'string' && !answer.trim())) {
-                    newErrors[`question_${question.id}`] = 'This question is required';
+                  if (question.question_type === 'multiple_choice_single' && answer === 'other') {
+                    if (!(questionAnswersOtherText[question.id] || '').trim()) {
+                      newErrors[`question_${question.id}_other`] = 'Please specify';
+                    }
+                  } else if (question.question_type === 'multiple_choice_multiple' && Array.isArray(answer) && answer.includes('other')) {
+                    if (!(questionAnswersOtherText[question.id] || '').trim()) {
+                      newErrors[`question_${question.id}_other`] = 'Please specify';
+                    }
+                  } else {
+                    if (!answer || (typeof answer === 'string' && !answer.trim())) {
+                      newErrors[`question_${question.id}`] = 'This question is required';
+                    }
                   }
                 }
               }
@@ -618,8 +629,14 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
           ? currentAnswers.filter(v => v !== value)
           : [...currentAnswers, value];
         newAnswers = { ...prev, [questionId]: multipleAnswers };
+        if (!multipleAnswers.includes('other')) {
+          setQuestionAnswersOtherText(prevOther => ({ ...prevOther, [questionId]: '' }));
+        }
       } else {
         newAnswers = { ...prev, [questionId]: value };
+        if (value !== 'other') {
+          setQuestionAnswersOtherText(prevOther => ({ ...prevOther, [questionId]: '' }));
+        }
       }
       
       // After updating answers, check if current question index is still valid
@@ -662,13 +679,23 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
     const answer = questionAnswers[currentQuestion.id];
     let isAnswered = false;
     if (currentQuestion.question_type === 'multiple_choice_multiple') {
-      isAnswered = Array.isArray(answer) && answer.length > 0;
+      const hasAny = Array.isArray(answer) && answer.length > 0;
+      const needsOther = Array.isArray(answer) && answer.includes('other');
+      if (needsOther) {
+        isAnswered = (questionAnswersOtherText[currentQuestion.id] || '').trim() !== '';
+      } else {
+        isAnswered = hasAny;
+      }
     } else if (currentQuestion.question_type === 'yes_no') {
       isAnswered = answer === true || answer === false;
     } else if (currentQuestion.question_type === 'file_upload') {
       isAnswered = (answer && typeof answer === 'string' && answer.trim() !== '') || (answer instanceof File);
     } else {
-      isAnswered = answer !== undefined && answer !== null && answer !== '';
+      if (currentQuestion.question_type === 'multiple_choice_single' && answer === 'other') {
+        isAnswered = (questionAnswersOtherText[currentQuestion.id] || '').trim() !== '';
+      } else {
+        isAnswered = answer !== undefined && answer !== null && answer !== '';
+      }
     }
 
     if (!isAnswered && currentQuestion.is_required) {
@@ -682,6 +709,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
     setErrors(prev => {
       const newErrors = { ...prev };
       delete newErrors[`question_${currentQuestion.id}`];
+      delete newErrors[`question_${currentQuestion.id}_other`];
       return newErrors;
     });
 
@@ -700,9 +728,9 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       } else if (currentQuestion.question_type === 'multiple_choice_single') {
         key = normalize(answer);
       }
-      const nextId = (nav.next_question_map && key) ? nav.next_question_map[key] : null;
+      const nextIdRaw = (nav.next_question_map && key) ? nav.next_question_map[key] : null;
       const fallbackId = nav.default_next_question_id || null;
-      const candidateId = nextId || fallbackId;
+      const candidateId = key === 'other' ? fallbackId : (nextIdRaw || fallbackId);
       if (candidateId) {
         if (candidateId === '__END__') {
           const a = questionAnswers[currentQuestion.id];
@@ -712,10 +740,14 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
             if (currentQuestion.question_type === 'multiple_choice_multiple') ok = Array.isArray(a) && a.length > 0;
             else if (currentQuestion.question_type === 'yes_no') ok = a === true || a === false;
             else if (currentQuestion.question_type === 'file_upload') ok = (a instanceof File) || (typeof a === 'string' && a.trim() !== '');
-            else ok = a !== undefined && a !== null && String(a).trim() !== '';
+            else {
+              if (a === 'other') ok = (questionAnswersOtherText[currentQuestion.id] || '').trim() !== '';
+              else ok = a !== undefined && a !== null && String(a).trim() !== '';
+            }
           }
           if (!ok) {
-            setErrors(prev => ({ ...prev, [`question_${currentQuestion.id}`]: 'This question is required' }));
+            const keyName = a === 'other' ? `question_${currentQuestion.id}_other` : `question_${currentQuestion.id}`;
+            setErrors(prev => ({ ...prev, [keyName]: 'This field is required' }));
             return;
           }
           setErrors(prev => { const n = { ...prev }; delete n[`question_${currentQuestion.id}`]; return n; });
@@ -947,13 +979,22 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
     
     switch (question.question_type) {
       case 'multiple_choice_single':
+        if (answer === 'other') {
+          const extra = (questionAnswersOtherText[question.id] || '').trim();
+          return extra ? `Other: ${extra}` : 'Other';
+        }
         const singleOption = question.options?.find(opt => opt.value === answer);
         return singleOption ? singleOption.text : answer;
       
       case 'multiple_choice_multiple':
         if (Array.isArray(answer)) {
-          const selectedOptions = question.options?.filter(opt => answer.includes(opt.value));
-          return selectedOptions?.map(opt => opt.text).join(', ') || answer.join(', ');
+          const selectedOptions = question.options?.filter(opt => answer.includes(opt.value)) || [];
+          const texts = selectedOptions.map(opt => opt.text);
+          if (answer.includes('other')) {
+            const extra = (questionAnswersOtherText[question.id] || '').trim();
+            texts.push(extra ? `Other: ${extra}` : 'Other');
+          }
+          return texts.join(', ') || answer.join(', ');
         }
         return answer;
       
@@ -991,9 +1032,34 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                 <span className="text-sm font-lato">{option.text}</span>
               </label>
             ))}
+            {(() => {
+              const selected = questionAnswers[question.id];
+              const hasOther = (question.options || []).some(opt => String(opt.value).toLowerCase() === 'other' || String(opt.text).toLowerCase() === 'other');
+              if (hasOther && selected === 'other') {
+                return (
+                  <div className="mt-2">
+                    <textarea
+                      id={`field-question_${question.id}_other`}
+                      data-field={`question_${question.id}_other`}
+                      rows={3}
+                      placeholder="Please specify"
+                      value={questionAnswersOtherText[question.id] || ''}
+                      onChange={(e) => setQuestionAnswersOtherText(prev => ({ ...prev, [question.id]: e.target.value }))}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato resize-none ${
+                        errors[`question_${question.id}_other`] ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    />
+                    {errors[`question_${question.id}_other`] && (
+                      <p className="text-red-500 text-sm font-lato mt-1">{errors[`question_${question.id}_other`]}</p>
+                    )}
+                  </div>
+                );
+              }
+              return null;
+            })()}
           </div>
         );
-
+      
       case 'multiple_choice_multiple':
         return (
           <div className="space-y-2">
@@ -1003,14 +1069,39 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                   type="checkbox"
                   value={option.value}
                   checked={(questionAnswers[question.id] || []).includes(option.value)}
-                  onChange={(e) => handleQuestionAnswer(question.id, option.value, question.question_type)}
-                  className="text-green-600 focus:ring-green-500 rounded"
-                  name={`question_${question.id}`}
-                  id={`field-question_${question.id}-${optIndex}`}
-                />
-                <span className="text-sm font-lato">{option.text}</span>
-              </label>
+                onChange={(e) => handleQuestionAnswer(question.id, option.value, question.question_type)}
+                className="text-green-600 focus:ring-green-500 rounded"
+                name={`question_${question.id}`}
+                id={`field-question_${question.id}-${optIndex}`}
+              />
+              <span className="text-sm font-lato">{option.text}</span>
+            </label>
             ))}
+            {(() => {
+              const selected = questionAnswers[question.id] || [];
+              const hasOther = (question.options || []).some(opt => String(opt.value).toLowerCase() === 'other' || String(opt.text).toLowerCase() === 'other');
+              if (hasOther && selected.includes('other')) {
+                return (
+                  <div className="mt-2">
+                    <textarea
+                      id={`field-question_${question.id}_other`}
+                      data-field={`question_${question.id}_other`}
+                      rows={3}
+                      placeholder="Please specify"
+                      value={questionAnswersOtherText[question.id] || ''}
+                      onChange={(e) => setQuestionAnswersOtherText(prev => ({ ...prev, [question.id]: e.target.value }))}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato resize-none ${
+                        errors[`question_${question.id}_other`] ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    />
+                    {errors[`question_${question.id}_other`] && (
+                      <p className="text-red-500 text-sm font-lato mt-1">{errors[`question_${question.id}_other`]}</p>
+                    )}
+                  </div>
+                );
+              }
+              return null;
+            })()}
           </div>
         );
 
