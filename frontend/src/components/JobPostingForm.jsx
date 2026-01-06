@@ -127,6 +127,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
   const [showQuestionsOneByOne, setShowQuestionsOneByOne] = useState(true);
   const [navHistory, setNavHistory] = useState([]);
   const [endAfterQuestionId, setEndAfterQuestionId] = useState(null);
+  const [showReviewModal, setShowReviewModal] = useState(false);
 
   const { loginWithToken, isAuthenticated, user: currentUser, loading } = useAuth();
   const { toast } = useToast();
@@ -926,6 +927,20 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
     return mapped === '__END__';
   };
 
+  const getQuestionsForReview = () => {
+    const visible = getVisibleQuestions();
+    if (endAfterQuestionId) {
+      const idx = visible.findIndex(q => q.id === endAfterQuestionId);
+      return idx !== -1 ? visible.slice(0, idx + 1) : visible;
+    }
+    return visible;
+  };
+
+  const proceedToNextStepWithReview = () => {
+    if (!validateStep(currentStep)) return;
+    setShowReviewModal(true);
+  };
+
   // Format answer text for human readability
   const formatAnswerText = (question, answer) => {
     if (!answer) return '';
@@ -1483,8 +1498,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                                       });
                                       setEndAfterQuestionId(currentQuestion.id);
                                       setNavHistory(prev => [...prev, currentQuestion.id]);
-                                      
-                                      nextStep();
+                                      setShowReviewModal(true);
                                     }}
                                     className="flex items-center space-x-2 text-white w-full sm:w-auto"
                                     style={{backgroundColor: '#34D164'}}
@@ -2355,7 +2369,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                   {currentStep < totalSteps ? (
                     <Button
                       type="button"
-                      onClick={nextStep}
+                      onClick={currentStep === 1 ? proceedToNextStepWithReview : nextStep}
                       disabled={submitting}
                       className="flex items-center text-white font-lato w-full sm:w-auto"
                       style={{backgroundColor: '#34D164'}}
@@ -2383,6 +2397,28 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
 
       {accountCreationModal}
       {loginModal}
+      {showReviewModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full p-6">
+            <div className="mb-4">
+              <h3 className="text-xl font-bold font-montserrat" style={{color: '#121E3C'}}>Review your answers</h3>
+              <p className="text-gray-600 text-sm font-lato">Please review your responses before continuing to the next step.</p>
+            </div>
+            <div className="max-h-80 overflow-y-auto border rounded-md p-4 mb-6">
+              {getQuestionsForReview().map((q) => (
+                <div key={q.id} className="mb-3">
+                  <div className="text-sm font-medium font-lato" style={{color: '#121E3C'}}>{q.question_text}</div>
+                  <div className="text-sm text-gray-700 font-lato">{formatAnswerText(q, questionAnswers[q.id]) || '—'}</div>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-3">
+              <Button variant="outline" className="w-full font-lato" onClick={() => setShowReviewModal(false)}>Edit Answers</Button>
+              <Button className="w-full text-white font-lato" style={{backgroundColor: '#34D164'}} onClick={() => { setShowReviewModal(false); nextStep(); }}>Confirm and Continue</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
