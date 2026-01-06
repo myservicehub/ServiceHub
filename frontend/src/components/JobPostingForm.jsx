@@ -647,7 +647,12 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
           setQuestionAnswersOtherText(prevOther => ({ ...prevOther, [questionId]: '' }));
         }
       } else {
-        newAnswers = { ...prev, [questionId]: value };
+        if (isFileUploadType(questionType) && Array.isArray(value)) {
+          const existing = Array.isArray(prev[questionId]) ? prev[questionId] : [];
+          newAnswers = { ...prev, [questionId]: [...existing, ...value] };
+        } else {
+          newAnswers = { ...prev, [questionId]: value };
+        }
         if (value !== 'other') {
           setQuestionAnswersOtherText(prevOther => ({ ...prevOther, [questionId]: '' }));
         }
@@ -763,14 +768,10 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       if (candidateId) {
         // Skip navigating to inline upload question (already shown inline)
         if (inlineUploadQ && String(candidateId) === String(inlineUploadQ.id)) {
-          // Find next question after candidate in visible list, ignoring inline id
-          const afterList = visibleQuestions.slice(currentQuestionIndex + 1).filter(q => String(q.id) !== String(inlineUploadQ.id));
-          if (afterList.length > 0) {
-            setNavHistory(prev => [...prev, currentQuestion.id]);
-            setCurrentQuestionIndex(currentQuestionIndex + 1 + 0);
-            return;
-          }
-          // If no more, fall through to unanswered/next logic below
+          const targetIdx = currentQuestionIndex + 1;
+          setNavHistory(prev => [...prev, currentQuestion.id]);
+          setCurrentQuestionIndex(targetIdx);
+          return;
         } else {
           if (candidateId === '__END__') {
             const a = questionAnswers[currentQuestion.id];
@@ -830,7 +831,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
     }
 
     const skipIds = [];
-    const maybeInline = (currentQuestion.question_type === 'yes_no' && answer === true) ? getInlineUploadForYes(currentQuestion) : null;
+    const maybeInline = getInlineUploadForAnswer(currentQuestion, answer);
     if (maybeInline) skipIds.push(String(maybeInline.id));
     const nextUnansweredRel = visibleQuestions
       .slice(currentQuestionIndex + 1)
@@ -1018,7 +1019,13 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       current = nextId ? byId[String(nextId)] : null;
     }
 
-    return path;
+    const skipInlineIds = new Set();
+    for (const q of path) {
+      const inline = getInlineUploadForAnswer(q, questionAnswers[q.id]);
+      if (inline) skipInlineIds.add(String(inline.id));
+    }
+
+    return path.filter(q => !skipInlineIds.has(String(q.id)));
   };
 
   const isEndAfterThis = (question) => {
