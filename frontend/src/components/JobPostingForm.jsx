@@ -731,43 +731,67 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       const nextIdRaw = (nav.next_question_map && key) ? nav.next_question_map[key] : null;
       const fallbackId = nav.default_next_question_id || null;
       const candidateId = key === 'other' ? fallbackId : (nextIdRaw || fallbackId);
+      // Inline upload gating for yes/no => upload mapping
+      const inlineUploadQ = (currentQuestion.question_type === 'yes_no' && answer === true) ? getInlineUploadForYes(currentQuestion) : null;
+      if (inlineUploadQ) {
+        const a2 = questionAnswers[inlineUploadQ.id];
+        const ok2 = (a2 instanceof File) || (typeof a2 === 'string' && a2.trim() !== '');
+        if (inlineUploadQ.is_required && !ok2) {
+          setErrors(prev => ({ ...prev, [`question_${inlineUploadQ.id}`]: 'This field is required' }));
+          return;
+        } else {
+          setErrors(prev => { const n = { ...prev }; delete n[`question_${inlineUploadQ.id}`]; return n; });
+        }
+      }
       if (candidateId) {
-        if (candidateId === '__END__') {
-          const a = questionAnswers[currentQuestion.id];
-          const required = currentQuestion.is_required;
-          let ok = true;
-          if (required) {
-            if (currentQuestion.question_type === 'multiple_choice_multiple') ok = Array.isArray(a) && a.length > 0;
-            else if (currentQuestion.question_type === 'yes_no') ok = a === true || a === false;
-            else if (isFileUploadType(currentQuestion.question_type)) ok = (a instanceof File) || (typeof a === 'string' && a.trim() !== '');
-            else {
-              if (a === 'other') ok = (questionAnswersOtherText[currentQuestion.id] || '').trim() !== '';
-              else ok = a !== undefined && a !== null && String(a).trim() !== '';
-            }
-          }
-          if (!ok) {
-            const keyName = a === 'other' ? `question_${currentQuestion.id}_other` : `question_${currentQuestion.id}`;
-            setErrors(prev => ({ ...prev, [keyName]: 'This field is required' }));
+        // Skip navigating to inline upload question (already shown inline)
+        if (inlineUploadQ && candidateId === inlineUploadQ.id) {
+          // Find next question after candidate in visible list, ignoring inline id
+          const afterList = visibleQuestions.slice(currentQuestionIndex + 1).filter(q => q.id !== inlineUploadQ.id);
+          if (afterList.length > 0) {
+            setNavHistory(prev => [...prev, currentQuestion.id]);
+            setCurrentQuestionIndex(currentQuestionIndex + 1 + 0);
             return;
           }
-          setErrors(prev => { const n = { ...prev }; delete n[`question_${currentQuestion.id}`]; return n; });
-          setNavHistory(prev => [...prev, currentQuestion.id]);
-          setEndAfterQuestionId(currentQuestion.id);
-          nextStep();
-          return;
-        }
-        const visibleIdx = visibleQuestions.findIndex(q => q.id === candidateId);
-        if (visibleIdx !== -1) {
-          targetIndex = visibleIdx;
+          // If no more, fall through to unanswered/next logic below
         } else {
-          const allIdx = tradeQuestions.findIndex(q => q.id === candidateId);
-          if (allIdx !== -1) {
-            const q = tradeQuestions[allIdx];
-            const shouldShow = evaluateConditionalLogic(q, questionAnswers);
-            if (shouldShow) {
-              const newVisible = getVisibleQuestions();
-              const idx2 = newVisible.findIndex(x => x.id === candidateId);
-              if (idx2 !== -1) targetIndex = idx2;
+          if (candidateId === '__END__') {
+            const a = questionAnswers[currentQuestion.id];
+            const required = currentQuestion.is_required;
+            let ok = true;
+            if (required) {
+              if (currentQuestion.question_type === 'multiple_choice_multiple') ok = Array.isArray(a) && a.length > 0;
+              else if (currentQuestion.question_type === 'yes_no') ok = a === true || a === false;
+              else if (isFileUploadType(currentQuestion.question_type)) ok = (a instanceof File) || (typeof a === 'string' && a.trim() !== '');
+              else {
+                if (a === 'other') ok = (questionAnswersOtherText[currentQuestion.id] || '').trim() !== '';
+                else ok = a !== undefined && a !== null && String(a).trim() !== '';
+              }
+            }
+            if (!ok) {
+              const keyName = a === 'other' ? `question_${currentQuestion.id}_other` : `question_${currentQuestion.id}`;
+              setErrors(prev => ({ ...prev, [keyName]: 'This field is required' }));
+              return;
+            }
+            setErrors(prev => { const n = { ...prev }; delete n[`question_${currentQuestion.id}`]; return n; });
+            setNavHistory(prev => [...prev, currentQuestion.id]);
+            setEndAfterQuestionId(currentQuestion.id);
+            nextStep();
+            return;
+          }
+          const visibleIdx = visibleQuestions.findIndex(q => q.id === candidateId);
+          if (visibleIdx !== -1) {
+            targetIndex = visibleIdx;
+          } else {
+            const allIdx = tradeQuestions.findIndex(q => q.id === candidateId);
+            if (allIdx !== -1) {
+              const q = tradeQuestions[allIdx];
+              const shouldShow = evaluateConditionalLogic(q, questionAnswers);
+              if (shouldShow) {
+                const newVisible = getVisibleQuestions();
+                const idx2 = newVisible.findIndex(x => x.id === candidateId);
+                if (idx2 !== -1) targetIndex = idx2;
+              }
             }
           }
         }
@@ -788,8 +812,12 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       return;
     }
 
+    const skipIds = [];
+    const maybeInline = (currentQuestion.question_type === 'yes_no' && answer === true) ? getInlineUploadForYes(currentQuestion) : null;
+    if (maybeInline) skipIds.push(maybeInline.id);
     const nextUnansweredRel = visibleQuestions
       .slice(currentQuestionIndex + 1)
+      .filter(q => !skipIds.includes(q.id))
       .findIndex(q => !isAnsweredQ(q));
     if (nextUnansweredRel !== -1) {
       setNavHistory(prev => [...prev, currentQuestion.id]);
@@ -797,7 +825,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       return;
     }
 
-    const firstUnanswered = visibleQuestions.findIndex(q => !isAnsweredQ(q));
+    const firstUnanswered = visibleQuestions.filter(q => !skipIds.includes(q.id)).findIndex(q => !isAnsweredQ(q));
     if (firstUnanswered !== -1) {
       setNavHistory(prev => [...prev, currentQuestion.id]);
       setCurrentQuestionIndex(firstUnanswered);
@@ -973,6 +1001,17 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       default:
         return 'image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,video/mp4,video/quicktime';
     }
+  };
+
+  const findQuestionById = (qid) => tradeQuestions.find(q => q.id === qid);
+  const getInlineUploadForYes = (question) => {
+    const nav = question.navigation_logic;
+    if (!nav || !nav.enabled) return null;
+    const mappedId = nav.next_question_map ? nav.next_question_map['true'] : null;
+    if (!mappedId) return null;
+    const target = findQuestionById(mappedId);
+    if (target && isFileUploadType(target.question_type)) return target;
+    return null;
   };
 
   const getQuestionsForReview = () => {
@@ -1170,31 +1209,63 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
 
       case 'yes_no':
         return (
-          <div className="flex space-x-6">
-            <label className="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="radio"
-                name={`question_${question.id}`}
-                value="true"
-                checked={questionAnswers[question.id] === true}
-                onChange={(e) => handleQuestionAnswer(question.id, true, question.question_type)}
-                className="text-green-600 focus:ring-green-500"
-                id={`field-question_${question.id}-yes`}
-              />
-              <span className="text-sm font-lato">Yes</span>
-            </label>
-            <label className="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="radio"
-                name={`question_${question.id}`}
-                value="false"
-                checked={questionAnswers[question.id] === false}
-                onChange={(e) => handleQuestionAnswer(question.id, false, question.question_type)}
-                className="text-green-600 focus:ring-green-500"
-                id={`field-question_${question.id}-no`}
-              />
-              <span className="text-sm font-lato">No</span>
-            </label>
+          <div className="space-y-3">
+            <div className="flex space-x-6">
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name={`question_${question.id}`}
+                  value="true"
+                  checked={questionAnswers[question.id] === true}
+                  onChange={(e) => handleQuestionAnswer(question.id, true, question.question_type)}
+                  className="text-green-600 focus:ring-green-500"
+                  id={`field-question_${question.id}-yes`}
+                />
+                <span className="text-sm font-lato">Yes</span>
+              </label>
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name={`question_${question.id}`}
+                  value="false"
+                  checked={questionAnswers[question.id] === false}
+                  onChange={(e) => handleQuestionAnswer(question.id, false, question.question_type)}
+                  className="text-green-600 focus:ring-green-500"
+                  id={`field-question_${question.id}-no`}
+                />
+                <span className="text-sm font-lato">No</span>
+              </label>
+            </div>
+            {(() => {
+              const inlineQ = getInlineUploadForYes(question);
+              if (questionAnswers[question.id] === true && inlineQ) {
+                return (
+                  <div className="space-y-2 border rounded-md p-3">
+                    <label className="block text-sm font-medium font-lato" style={{color: '#121E3C'}}>{inlineQ.question_text}</label>
+                    <input
+                      type="file"
+                      accept={acceptForUploadType(inlineQ.question_type)}
+                      onChange={(e) => {
+                        const file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+                        handleQuestionAnswer(inlineQ.id, file, inlineQ.question_type);
+                      }}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
+                        errors[`question_${inlineQ.id}`] ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      name={`question_${inlineQ.id}`}
+                      id={`field-question_${inlineQ.id}`}
+                    />
+                    {questionAnswers[inlineQ.id] instanceof File && (
+                      <div className="text-sm text-gray-600">Selected: {questionAnswers[inlineQ.id].name}</div>
+                    )}
+                    {errors[`question_${inlineQ.id}`] && (
+                      <p className="text-red-500 text-sm font-lato mt-1">{errors[`question_${inlineQ.id}`]}</p>
+                    )}
+                  </div>
+                );
+              }
+              return null;
+            })()}
           </div>
         );
 
