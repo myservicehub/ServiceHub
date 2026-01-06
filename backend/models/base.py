@@ -28,6 +28,10 @@ class QuestionType(str, Enum):
     NUMBER_INPUT = "number_input"
     YES_NO = "yes_no"
     FILE_UPLOAD = "file_upload"
+    FILE_UPLOAD_IMAGE = "file_upload_image"
+    FILE_UPLOAD_VIDEO = "file_upload_video"
+    FILE_UPLOAD_PDF = "file_upload_pdf"
+    FILE_UPLOAD_DOCUMENT = "file_upload_document"
 
 class PortfolioItemCategory(str, Enum):
     PLUMBING = "plumbing"

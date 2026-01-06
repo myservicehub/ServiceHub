@@ -304,7 +304,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                   if (answer === undefined || answer === null) {
                     newErrors[`question_${question.id}`] = 'This question is required';
                   }
-                } else if (question.question_type === 'file_upload') {
+                } else if (isFileUploadType(question.question_type)) {
                   const hasFile = (answer instanceof File) || (typeof answer === 'string' && !!answer.trim());
                   if (!hasFile) {
                     newErrors[`question_${question.id}`] = 'This question is required';
@@ -517,7 +517,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
         try {
           const jobId = jobResponse.job_id || jobResponse.id;
           const updatedAnswers = { ...questionAnswers };
-          for (const q of tradeQuestions.filter(q => q.question_type === 'file_upload')) {
+          for (const q of tradeQuestions.filter(q => isFileUploadType(q.question_type))) {
             const val = questionAnswers[q.id];
             if (val instanceof File) {
               try {
@@ -688,7 +688,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       }
     } else if (currentQuestion.question_type === 'yes_no') {
       isAnswered = answer === true || answer === false;
-    } else if (currentQuestion.question_type === 'file_upload') {
+    } else if (isFileUploadType(currentQuestion.question_type)) {
       isAnswered = (answer && typeof answer === 'string' && answer.trim() !== '') || (answer instanceof File);
     } else {
       if (currentQuestion.question_type === 'multiple_choice_single' && answer === 'other') {
@@ -739,7 +739,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
           if (required) {
             if (currentQuestion.question_type === 'multiple_choice_multiple') ok = Array.isArray(a) && a.length > 0;
             else if (currentQuestion.question_type === 'yes_no') ok = a === true || a === false;
-            else if (currentQuestion.question_type === 'file_upload') ok = (a instanceof File) || (typeof a === 'string' && a.trim() !== '');
+            else if (isFileUploadType(currentQuestion.question_type)) ok = (a instanceof File) || (typeof a === 'string' && a.trim() !== '');
             else {
               if (a === 'other') ok = (questionAnswersOtherText[currentQuestion.id] || '').trim() !== '';
               else ok = a !== undefined && a !== null && String(a).trim() !== '';
@@ -778,7 +778,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       const a = questionAnswers[q.id];
       if (q.question_type === 'multiple_choice_multiple') return Array.isArray(a) && a.length > 0;
       if (q.question_type === 'yes_no') return a === true || a === false;
-      if (q.question_type === 'file_upload') return (a instanceof File) || (typeof a === 'string' && String(a).trim() !== '');
+      if (isFileUploadType(q.question_type)) return (a instanceof File) || (typeof a === 'string' && String(a).trim() !== '');
       return a !== undefined && a !== null && String(a).trim() !== '';
     };
 
@@ -957,6 +957,22 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
     else if (question.question_type === 'multiple_choice_single') key = normalize(answer);
     const mapped = (nav.next_question_map && key) ? nav.next_question_map[key] : null;
     return mapped === '__END__';
+  };
+
+  const isFileUploadType = (t) => ['file_upload','file_upload_image','file_upload_video','file_upload_pdf','file_upload_document'].includes(t);
+  const acceptForUploadType = (t) => {
+    switch (t) {
+      case 'file_upload_image':
+        return 'image/*';
+      case 'file_upload_pdf':
+        return 'application/pdf';
+      case 'file_upload_video':
+        return 'video/mp4,video/quicktime';
+      case 'file_upload_document':
+        return 'application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      default:
+        return 'image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,video/mp4,video/quicktime';
+    }
   };
 
   const getQuestionsForReview = () => {
@@ -1183,11 +1199,15 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
         );
 
       case 'file_upload':
+      case 'file_upload_image':
+      case 'file_upload_pdf':
+      case 'file_upload_video':
+      case 'file_upload_document':
         return (
           <div className="space-y-2">
             <input
               type="file"
-              accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,video/mp4,video/quicktime"
+              accept={acceptForUploadType(question.question_type)}
               onChange={(e) => {
                 const file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
                 handleQuestionAnswer(question.id, file, question.question_type);

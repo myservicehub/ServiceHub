@@ -126,7 +126,11 @@ const TradeCategoryQuestionsManager = () => {
     { value: 'text_area', label: 'Long Text Area' },
     { value: 'number_input', label: 'Number Input' },
     { value: 'yes_no', label: 'Yes/No Question' },
-    { value: 'file_upload', label: 'File Upload (PDF/Image/Video/Document)' }
+    { value: 'file_upload_image', label: 'File Upload (Image)' },
+    { value: 'file_upload_pdf', label: 'File Upload (PDF)' },
+    { value: 'file_upload_video', label: 'File Upload (Video)' },
+    { value: 'file_upload_document', label: 'File Upload (Document)' },
+    { value: 'file_upload', label: 'File Upload (Any)' }
   ];
 
   useEffect(() => {

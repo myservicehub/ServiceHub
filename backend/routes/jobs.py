@@ -1433,16 +1433,42 @@ async def upload_job_question_attachment(
         if homeowner_id != current_user.id:
             raise HTTPException(status_code=403, detail="Not authorized to upload for this job")
 
-        allowed_types = {
-            "image/jpeg",
-            "image/png",
-            "image/webp",
-            "application/pdf",
-            "application/msword",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            "video/mp4",
-            "video/quicktime",
-        }
+        question = await database.get_trade_category_question_by_id(question_id)
+        if not question:
+            raise HTTPException(status_code=404, detail="Question not found")
+
+        qtype = str(question.get("question_type"))
+        if qtype == "file_upload_image":
+            allowed_types = {
+                "image/jpeg",
+                "image/png",
+                "image/webp",
+            }
+        elif qtype == "file_upload_pdf":
+            allowed_types = {
+                "application/pdf",
+            }
+        elif qtype == "file_upload_document":
+            allowed_types = {
+                "application/msword",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            }
+        elif qtype == "file_upload_video":
+            allowed_types = {
+                "video/mp4",
+                "video/quicktime",
+            }
+        else:
+            allowed_types = {
+                "image/jpeg",
+                "image/png",
+                "image/webp",
+                "application/pdf",
+                "application/msword",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "video/mp4",
+                "video/quicktime",
+            }
         if file.content_type not in allowed_types:
             raise HTTPException(status_code=400, detail="Unsupported file type")
 
@@ -1498,6 +1524,8 @@ async def get_job_question_attachment(
             "image/png" if ext == ".png" else
             "image/webp" if ext == ".webp" else
             "application/pdf" if ext == ".pdf" else
+            "application/msword" if ext == ".doc" else
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document" if ext == ".docx" else
             "video/mp4" if ext == ".mp4" else
             "video/quicktime" if ext in (".mov", ".qt") else
             "application/octet-stream"
