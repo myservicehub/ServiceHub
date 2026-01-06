@@ -1066,14 +1066,22 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
     if (typeof val === 'boolean') return val ? 'true' : 'false';
     return String(val).toLowerCase().trim().replace(/\s+/g, '_');
   };
+  const normalizeLoose = (val) => String(val).toLowerCase().trim().replace(/\s+/g, '_');
+  const keysMatch = (mk, kk) => {
+    if (kk === 'true' || kk === 'yes') return mk === 'true' || mk === 'yes';
+    if (kk === 'false' || kk === 'no') return mk === 'false' || mk === 'no';
+    return mk === kk;
+  };
   const findMappedId = (map, key) => {
+    const kk = normalizeLoose(key);
     let match = null;
     for (const [mk, mv] of Object.entries(map || {})) {
-      if (normalizeNavKey(mk) === key) { match = mv; break; }
+      const nk = normalizeLoose(mk);
+      if (keysMatch(nk, kk)) { match = mv; break; }
     }
-    if (!match && key === 'other') {
+    if (!match && kk === 'other') {
       for (const [mk, mv] of Object.entries(map || {})) {
-        const nk = normalizeNavKey(mk);
+        const nk = normalizeLoose(mk);
         if (nk.includes('other')) { match = mv; break; }
       }
     }
