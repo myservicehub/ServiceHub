@@ -744,11 +744,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       } else if (currentQuestion.question_type === 'multiple_choice_single') {
         key = normalize(answer);
       }
-      let nextIdRaw = null;
-      const map = nav.next_question_map || {};
-      for (const [mk, mv] of Object.entries(map)) {
-        if (normalizeNavKey(mk) === key) { nextIdRaw = mv; break; }
-      }
+      const nextIdRaw = findMappedId(nav.next_question_map, key);
       const fallbackId = nav.default_next_question_id || null;
       const candidateId = nextIdRaw || fallbackId;
       // Inline upload gating for yes/no => upload mapping
@@ -1010,11 +1006,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
         const ans = questionAnswers[current.id];
         if (current.question_type === 'yes_no') key = normalize(ans);
         else if (current.question_type === 'multiple_choice_single') key = normalize(ans);
-        let nextIdRaw = null;
-        const map = nav.next_question_map || {};
-        for (const [mk, mv] of Object.entries(map)) {
-          if (normalizeNavKey(mk) === key) { nextIdRaw = mv; break; }
-        }
+        const nextIdRaw = findMappedId(nav.next_question_map, key);
         const fallbackId = nav.default_next_question_id || null;
         const candidateId = nextIdRaw || fallbackId;
         if (candidateId === '__END__') break;
@@ -1044,11 +1036,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
     const answer = questionAnswers[question.id];
     if (question.question_type === 'yes_no') key = normalize(answer);
     else if (question.question_type === 'multiple_choice_single') key = normalize(answer);
-    let mapped = null;
-    const map = nav.next_question_map || {};
-    for (const [mk, mv] of Object.entries(map)) {
-      if (normalizeNavKey(mk) === key) { mapped = mv; break; }
-    }
+    const mapped = findMappedId(nav.next_question_map, key);
     return mapped === '__END__';
   };
 
@@ -1073,6 +1061,19 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
     if (s === 'yes' || s === 'true' || s === '1') return 'true';
     if (s === 'no' || s === 'false' || s === '0') return 'false';
     return s;
+  };
+  const findMappedId = (map, key) => {
+    let match = null;
+    for (const [mk, mv] of Object.entries(map || {})) {
+      if (normalizeNavKey(mk) === key) { match = mv; break; }
+    }
+    if (!match && key === 'other') {
+      for (const [mk, mv] of Object.entries(map || {})) {
+        const nk = normalizeNavKey(mk);
+        if (nk.includes('other')) { match = mv; break; }
+      }
+    }
+    return match;
   };
 
   const findQuestionById = (qid) => tradeQuestions.find(q => q.id === qid);
@@ -1739,8 +1740,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                                 {(() => {
                                   const currentQuestion = visibleQuestions[currentQuestionIndex];
                                   const finishHere = currentQuestion && isEndAfterThis(currentQuestion);
-                                  const isLast = currentQuestionIndex === visibleQuestions.length - 1;
-                                  return finishHere || isLast;
+                                  return finishHere;
                                 })() ? (
                                   <Button
                                     type="button"
