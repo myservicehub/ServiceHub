@@ -25,7 +25,9 @@ const getBackendUrl = () => {
 const BACKEND_URL = getBackendUrl();
 const API_BASE = BACKEND_URL ? `${BACKEND_URL}/api` : '/api';
 
-console.log('🔧 API Configuration:', { BACKEND_URL, API_BASE });
+if (import.meta && import.meta.env && import.meta.env.DEV) {
+  console.log('🔧 API Configuration:', { BACKEND_URL, API_BASE });
+}
 
 // Create axios instance with base configuration
 const apiClient = axios.create({
@@ -90,7 +92,9 @@ const forceAdminLogout = () => {
 // Request interceptor for logging and auth
 apiClient.interceptors.request.use(
   (config) => {
-    console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`);
+    if (import.meta && import.meta.env && import.meta.env.DEV) {
+      console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`);
+    }
     
     // Skip Authorization header for refresh endpoint
     const isRefreshEndpoint = config.url?.includes('/auth/refresh');
@@ -105,16 +109,22 @@ apiClient.interceptors.request.use(
     // Use admin token for admin endpoints, regular token for others
     if (isAdminPath && adminToken) {
       config.headers.Authorization = `Bearer ${adminToken}`;
-      console.log('🔑 Using admin token for admin endpoint');
+      if (import.meta && import.meta.env && import.meta.env.DEV) {
+        console.log('🔑 Using admin token for admin endpoint');
+      }
     } else if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('🔑 Using regular token');
+      if (import.meta && import.meta.env && import.meta.env.DEV) {
+        console.log('🔑 Using regular token');
+      }
     }
     
     return config;
   },
   (error) => {
-    console.error('❌ API Request Error:', error);
+    if (import.meta && import.meta.env && import.meta.env.DEV) {
+      console.error('❌ API Request Error:', error);
+    }
     return Promise.reject(error);
   }
 );
@@ -122,14 +132,18 @@ apiClient.interceptors.request.use(
 // Response interceptor for error handling + auto-refresh
 apiClient.interceptors.response.use(
   (response) => {
-    console.log(`✅ API Response: ${response.config.method?.toUpperCase()} ${response.config.url}`, response.data);
+    if (import.meta && import.meta.env && import.meta.env.DEV) {
+      console.log(`✅ API Response: ${response.config.method?.toUpperCase()} ${response.config.url}`, response.data);
+    }
     return response;
   },
   (error) => {
     const { response, config } = error;
     if (!response) {
       // Network or CORS error
-      console.error('❌ API Response Error:', error.message);
+      if (import.meta && import.meta.env && import.meta.env.DEV) {
+        console.error('❌ API Response Error:', error.message);
+      }
       return Promise.reject(error);
     }
 
@@ -147,7 +161,9 @@ apiClient.interceptors.response.use(
   // Admin endpoints: only force logout on 401 (invalid/expired token). Keep session on 403 (permission denied).
   const isAdminEndpoint = originalRequest.url?.includes('/admin') || originalRequest.url?.includes('/admin-management');
   if (isAdminEndpoint && status === 401) {
-    console.warn('🔒 Admin token invalid/expired. Clearing admin token and redirecting to admin login.');
+    if (import.meta && import.meta.env && import.meta.env.DEV) {
+      console.warn('🔒 Admin token invalid/expired. Clearing admin token and redirecting to admin login.');
+    }
     if (localStorage.getItem('admin_token')) {
       forceAdminLogout();
     }
@@ -156,15 +172,21 @@ apiClient.interceptors.response.use(
 
     // Treat certain 403 responses from backend as authentication errors (similar to 401)
     if (!(status === 401 || isAuthLike403) || isAuthEndpoint) {
-      console.error('❌ API Response Error:', response.data || response.statusText);
+      if (import.meta && import.meta.env && import.meta.env.DEV) {
+        console.error('❌ API Response Error:', response.data || response.statusText);
+      }
       return Promise.reject(error);
     }
 
     // Prevent infinite loop
     if (originalRequest._retry) {
-      console.error('⚠️ Request already retried and still unauthorized.');
+      if (import.meta && import.meta.env && import.meta.env.DEV) {
+        console.error('⚠️ Request already retried and still unauthorized.');
+      }
       if (hasToken) {
-        console.warn('Forcing logout due to repeated auth failure.');
+        if (import.meta && import.meta.env && import.meta.env.DEV) {
+          console.warn('Forcing logout due to repeated auth failure.');
+        }
         forceLogout();
       }
       return Promise.reject(error);
@@ -172,12 +194,18 @@ apiClient.interceptors.response.use(
 
     const storedRefreshToken = localStorage.getItem('refresh_token');
     if (!storedRefreshToken) {
-      console.error('⚠️ No refresh token available.');
+      if (import.meta && import.meta.env && import.meta.env.DEV) {
+        console.error('⚠️ No refresh token available.');
+      }
       if (hasToken) {
-        console.warn('User token present but refresh missing. Forcing logout.');
+        if (import.meta && import.meta.env && import.meta.env.DEV) {
+          console.warn('User token present but refresh missing. Forcing logout.');
+        }
         forceLogout();
       } else {
-        console.warn('No user token stored; skipping forced logout.');
+        if (import.meta && import.meta.env && import.meta.env.DEV) {
+          console.warn('No user token stored; skipping forced logout.');
+        }
       }
       return Promise.reject(error);
     }
@@ -225,7 +253,9 @@ apiClient.interceptors.response.use(
           resolve(apiClient(originalRequest));
         })
         .catch((refreshError) => {
-          console.error('❌ Token refresh failed:', refreshError.response?.data || refreshError.message);
+          if (import.meta && import.meta.env && import.meta.env.DEV) {
+            console.error('❌ Token refresh failed:', refreshError.response?.data || refreshError.message);
+          }
           forceLogout();
           reject(refreshError);
         })

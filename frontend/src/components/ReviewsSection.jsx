@@ -99,6 +99,7 @@ const ReviewsSection = () => {
 
   // Enrich with tradesperson company/business name for display
   useEffect(() => {
+    if (!(import.meta && import.meta.env && import.meta.env.DEV)) return;
     const fetchCompanies = async () => {
       // Prefer explicit tradesperson_id, but fallback to reviewee_id (tradesperson)
       const idsToFetch = displayReviews

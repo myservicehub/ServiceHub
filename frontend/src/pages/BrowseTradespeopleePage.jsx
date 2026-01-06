@@ -80,8 +80,6 @@ const BrowseTradespeopleePage = () => {
     setSelectedTrade(trade);
     setSelectedLocation(locationParam);
     setSearchQuery(query);
-
-    loadTradespeople();
   }, [location]);
 
   useEffect(() => {
