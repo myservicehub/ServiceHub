@@ -747,8 +747,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       const nextIdRaw = findMappedId(nav.next_question_map, key);
       const fallbackId = nav.default_next_question_id || null;
       const candidateId = nextIdRaw || fallbackId;
-      // Inline upload gating for yes/no => upload mapping
-      const inlineUploadQ = (currentQuestion.question_type === 'yes_no' && answer === true) ? getInlineUploadForYes(currentQuestion) : null;
+      const inlineUploadQ = getInlineUploadForAnswer(currentQuestion, answer);
       if (inlineUploadQ) {
         const a2 = questionAnswers[inlineUploadQ.id];
         const ok2 = Array.isArray(a2)
@@ -763,9 +762,9 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       }
       if (candidateId) {
         // Skip navigating to inline upload question (already shown inline)
-        if (inlineUploadQ && candidateId === inlineUploadQ.id) {
+        if (inlineUploadQ && String(candidateId) === String(inlineUploadQ.id)) {
           // Find next question after candidate in visible list, ignoring inline id
-          const afterList = visibleQuestions.slice(currentQuestionIndex + 1).filter(q => q.id !== inlineUploadQ.id);
+          const afterList = visibleQuestions.slice(currentQuestionIndex + 1).filter(q => String(q.id) !== String(inlineUploadQ.id));
           if (afterList.length > 0) {
             setNavHistory(prev => [...prev, currentQuestion.id]);
             setCurrentQuestionIndex(currentQuestionIndex + 1 + 0);
@@ -797,11 +796,11 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
             nextStep();
             return;
           }
-          const visibleIdx = visibleQuestions.findIndex(q => q.id === candidateId);
+          const visibleIdx = visibleQuestions.findIndex(q => String(q.id) === String(candidateId));
           if (visibleIdx !== -1) {
             targetIndex = visibleIdx;
           } else {
-            const allIdx = tradeQuestions.findIndex(q => q.id === candidateId);
+            const allIdx = tradeQuestions.findIndex(q => String(q.id) === String(candidateId));
             if (allIdx !== -1) {
               const q = tradeQuestions[allIdx];
               const shouldShow = evaluateConditionalLogic(q, questionAnswers);
@@ -832,10 +831,10 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
 
     const skipIds = [];
     const maybeInline = (currentQuestion.question_type === 'yes_no' && answer === true) ? getInlineUploadForYes(currentQuestion) : null;
-    if (maybeInline) skipIds.push(maybeInline.id);
+    if (maybeInline) skipIds.push(String(maybeInline.id));
     const nextUnansweredRel = visibleQuestions
       .slice(currentQuestionIndex + 1)
-      .filter(q => !skipIds.includes(q.id))
+      .filter(q => !skipIds.includes(String(q.id)))
       .findIndex(q => !isAnsweredQ(q));
     if (nextUnansweredRel !== -1) {
       setNavHistory(prev => [...prev, currentQuestion.id]);
@@ -843,7 +842,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       return;
     }
 
-    const firstUnanswered = visibleQuestions.filter(q => !skipIds.includes(q.id)).findIndex(q => !isAnsweredQ(q));
+    const firstUnanswered = visibleQuestions.filter(q => !skipIds.includes(String(q.id))).findIndex(q => !isAnsweredQ(q));
     if (firstUnanswered !== -1) {
       setNavHistory(prev => [...prev, currentQuestion.id]);
       setCurrentQuestionIndex(firstUnanswered);
@@ -1012,11 +1011,11 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
         if (candidateId === '__END__') break;
         nextId = candidateId;
       } else {
-        const idx = ordered.findIndex(q => q.id === current.id);
+        const idx = ordered.findIndex(q => String(q.id) === String(current.id));
         nextId = ordered[idx + 1]?.id || null;
       }
 
-      current = nextId ? byId[nextId] : null;
+      current = nextId ? byId[String(nextId)] : null;
     }
 
     return path;
@@ -1076,7 +1075,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
     return match;
   };
 
-  const findQuestionById = (qid) => tradeQuestions.find(q => q.id === qid);
+  const findQuestionById = (qid) => tradeQuestions.find(q => String(q.id) === String(qid));
   const getInlineUploadForYes = (question) => {
     const nav = question.navigation_logic;
     if (!nav || !nav.enabled) return null;
@@ -1085,6 +1084,17 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
     for (const k of Object.keys(map)) {
       if (normalizeNavKey(k) === 'true') { mappedId = map[k]; break; }
     }
+    if (!mappedId) return null;
+    const target = findQuestionById(mappedId);
+    if (target && isFileUploadType(target.question_type)) return target;
+    return null;
+  };
+
+  const getInlineUploadForAnswer = (question, ans) => {
+    const nav = question.navigation_logic;
+    if (!nav || !nav.enabled) return null;
+    const key = normalize(ans);
+    const mappedId = findMappedId(nav.next_question_map, key);
     if (!mappedId) return null;
     const target = findQuestionById(mappedId);
     if (target && isFileUploadType(target.question_type)) return target;
@@ -1187,6 +1197,38 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                     />
                     {errors[`question_${question.id}_other`] && (
                       <p className="text-red-500 text-sm font-lato mt-1">{errors[`question_${question.id}_other`]}</p>
+                    )}
+                  </div>
+                );
+              }
+              return null;
+            })()}
+            {(() => {
+              const selected = questionAnswers[question.id];
+              const inlineQ = getInlineUploadForAnswer(question, selected);
+              if (inlineQ && selected) {
+                return (
+                  <div className="space-y-2 border rounded-md p-3">
+                    <label className="block text-sm font-medium font-lato" style={{color: '#121E3C'}}>{inlineQ.question_text}</label>
+                    <input
+                      type="file"
+                      accept={acceptForUploadType(inlineQ.question_type)}
+                      multiple
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files || []);
+                        handleQuestionAnswer(inlineQ.id, files, inlineQ.question_type);
+                      }}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
+                        errors[`question_${inlineQ.id}`] ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      name={`question_${inlineQ.id}`}
+                      id={`field-question_${inlineQ.id}`}
+                    />
+                    {Array.isArray(questionAnswers[inlineQ.id]) && questionAnswers[inlineQ.id].length > 0 && (
+                      <div className="text-sm text-gray-600">Selected: {questionAnswers[inlineQ.id].filter(f => f instanceof File).map(f => f.name).join(', ')}</div>
+                    )}
+                    {errors[`question_${inlineQ.id}`] && (
+                      <p className="text-red-500 text-sm font-lato mt-1">{errors[`question_${inlineQ.id}`]}</p>
                     )}
                   </div>
                 );
@@ -1318,7 +1360,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
               </label>
             </div>
             {(() => {
-              const inlineQ = getInlineUploadForYes(question);
+              const inlineQ = getInlineUploadForAnswer(question, true);
               if (questionAnswers[question.id] === true && inlineQ) {
                 return (
                   <div className="space-y-2 border rounded-md p-3">
