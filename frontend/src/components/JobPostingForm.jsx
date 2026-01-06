@@ -908,6 +908,24 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
     });
   };
 
+  const isEndAfterThis = (question) => {
+    if (!question) return false;
+    const nav = question.navigation_logic;
+    if (!nav || !nav.enabled) return false;
+    if (nav.default_next_question_id === '__END__') return true;
+    const normalize = (val) => {
+      if (val === undefined || val === null) return '';
+      if (typeof val === 'boolean') return val ? 'true' : 'false';
+      return String(val).toLowerCase().trim().replace(/\s+/g, '_');
+    };
+    let key = '';
+    const answer = questionAnswers[question.id];
+    if (question.question_type === 'yes_no') key = normalize(answer);
+    else if (question.question_type === 'multiple_choice_single') key = normalize(answer);
+    const mapped = (nav.next_question_map && key) ? nav.next_question_map[key] : null;
+    return mapped === '__END__';
+  };
+
   // Format answer text for human readability
   const formatAnswerText = (question, answer) => {
     if (!answer) return '';
