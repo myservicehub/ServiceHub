@@ -43,18 +43,20 @@ const ContentManagement = () => {
   const [showApplicationsModal, setShowApplicationsModal] = useState(false);
   const [jobsSubTab, setJobsSubTab] = useState('postings'); // postings, applications, statistics
 
+  const BASE_URL = process.env.REACT_APP_BACKEND_URL || '';
+
   // Content Management API
   const contentAPI = {
     getItems: async (params = {}) => {
       const query = new URLSearchParams(params).toString();
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/admin/content/items?${query}`, {
+      const response = await fetch(`${BASE_URL}/api/admin/content/items?${query}`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
       });
       return response.json();
     },
 
     createItem: async (data) => {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/admin/content/items`, {
+      const response = await fetch(`${BASE_URL}/api/admin/content/items`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -66,7 +68,7 @@ const ContentManagement = () => {
     },
 
     updateItem: async (id, data) => {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/admin/content/items/${id}`, {
+      const response = await fetch(`${BASE_URL}/api/admin/content/items/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -78,7 +80,7 @@ const ContentManagement = () => {
     },
 
     deleteItem: async (id) => {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/admin/content/items/${id}`, {
+      const response = await fetch(`${BASE_URL}/api/admin/content/items/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
       });
@@ -86,7 +88,7 @@ const ContentManagement = () => {
     },
 
     publishItem: async (id, publishDate = null) => {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/admin/content/items/${id}/publish`, {
+      const response = await fetch(`${BASE_URL}/api/admin/content/items/${id}/publish`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -98,7 +100,7 @@ const ContentManagement = () => {
     },
 
     getStatistics: async () => {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/admin/content/statistics`, {
+      const response = await fetch(`${BASE_URL}/api/admin/content/statistics`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
       });
       return response.json();
@@ -106,7 +108,7 @@ const ContentManagement = () => {
 
     getTemplates: async (contentType = null) => {
       const query = contentType ? `?content_type=${contentType}` : '';
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/admin/content/templates${query}`, {
+      const response = await fetch(`${BASE_URL}/api/admin/content/templates${query}`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
       });
       return response.json();
@@ -120,7 +122,7 @@ const ContentManagement = () => {
         formData.append(key, metadata[key]);
       });
 
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/admin/content/media/upload`, {
+      const response = await fetch(`${BASE_URL}/api/admin/content/media/upload`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` },
         body: formData
@@ -130,7 +132,7 @@ const ContentManagement = () => {
 
     getMedia: async (params = {}) => {
       const query = new URLSearchParams(params).toString();
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/admin/content/media?${query}`, {
+      const response = await fetch(`${BASE_URL}/api/admin/content/media?${query}`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
       });
       return response.json();
@@ -1589,6 +1591,20 @@ const ContentManagement = () => {
         />
       )}
 
+      {showPreviewModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-semibold">Preview Content</h3>
+              <button onClick={() => setShowPreviewModal(false)} className="text-gray-500 hover:text-gray-700">
+                <XCircle className="w-6 h-6" />
+              </button>
+            </div>
+            <PreviewContent item={showPreviewModal} />
+          </div>
+        </div>
+      )}
+
       {/* Job Creation/Edit Modal */}
       {(showCreateJobModal || showEditJobModal) && (
         <JobModal
@@ -1606,6 +1622,54 @@ const ContentManagement = () => {
             loadJobsData();
           }}
         />
+      )}
+    </div>
+  );
+};
+
+const PreviewContent = ({ item }) => {
+  const [data, setData] = useState(item);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(`${process.env.REACT_APP_BACKEND_URL || ''}/api/admin/content/preview/${item.id}`);
+        const json = await res.json();
+        const content = json.content || item;
+        if (mounted) setData(content);
+      } catch (e) {
+        if (mounted) setData(item);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [item]);
+
+  return (
+    <div>
+      <div className="mb-4">
+        <h4 className="text-lg font-bold">{data.title}</h4>
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <span className="px-2 py-1 rounded bg-gray-100">{data.content_type}</span>
+          <span className="px-2 py-1 rounded bg-gray-100">{data.status}</span>
+          {data.category && (
+            <span className="px-2 py-1 rounded bg-gray-100">{data.category}</span>
+          )}
+        </div>
+      </div>
+      {data.featured_image && (
+        <img src={data.featured_image} alt={data.title} className="w-full h-64 object-cover rounded mb-4" />
+      )}
+      {data.excerpt && (
+        <div className="text-gray-600 mb-4">{data.excerpt}</div>
+      )}
+      <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: data.content || '' }} />
+      {loading && (
+        <div className="mt-4 text-sm text-gray-500">Loading preview...</div>
       )}
     </div>
   );

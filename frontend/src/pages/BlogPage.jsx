@@ -151,13 +151,14 @@ const BlogPage = () => {
   ];
 
   // Blog API
+  const BASE_URL = process.env.REACT_APP_BACKEND_URL || '';
   const blogAPI = {
     getPosts: async (params = {}) => {
       try {
         // Get published blog posts from public API
         const query = new URLSearchParams(params).toString();
-        
-        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/public/content/blog?${query}`);
+        const response = await fetch(`${BASE_URL}/api/public/content/blog?${query}`);
+        if (!response.ok) return [];
         const data = await response.json();
         return data.blog_posts || [];
       } catch (error) {
@@ -168,12 +169,10 @@ const BlogPage = () => {
 
     getPostBySlug: async (slug) => {
       try {
-        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/public/content/blog/${slug}`);
-        if (response.ok) {
-          const data = await response.json();
-          return data.blog_post;
-        }
-        return null;
+        const response = await fetch(`${BASE_URL}/api/public/content/blog/${slug}`);
+        if (!response.ok) return null;
+        const data = await response.json();
+        return data.blog_post || null;
       } catch (error) {
         console.error('Error fetching blog post:', error);
         return null;
@@ -182,7 +181,8 @@ const BlogPage = () => {
 
     getFeaturedPosts: async () => {
       try {
-        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/public/content/blog/featured`);
+        const response = await fetch(`${BASE_URL}/api/public/content/blog/featured`);
+        if (!response.ok) return [];
         const data = await response.json();
         return data.featured_posts || [];
       } catch (error) {
@@ -193,7 +193,8 @@ const BlogPage = () => {
 
     getCategories: async () => {
       try {
-        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/public/content/blog/categories`);
+        const response = await fetch(`${BASE_URL}/api/public/content/blog/categories`);
+        if (!response.ok) return [];
         const data = await response.json();
         return data.categories || [];
       } catch (error) {
@@ -204,7 +205,7 @@ const BlogPage = () => {
 
     likePost: async (postId) => {
       try {
-        await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/public/content/blog/${postId}/like`, {
+        await fetch(`${BASE_URL}/api/public/content/blog/${postId}/like`, {
           method: 'POST'
         });
       } catch (error) {
@@ -214,7 +215,7 @@ const BlogPage = () => {
 
     sharePost: async (postId) => {
       try {
-        await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/public/content/blog/${postId}/share`, {
+        await fetch(`${BASE_URL}/api/public/content/blog/${postId}/share`, {
           method: 'POST'
         });
       } catch (error) {
@@ -237,12 +238,12 @@ const BlogPage = () => {
   }, [slug]);
 
   const loadBlogData = async () => {
-    setLoading(true);
     try {
       if (slug) {
-        // If we're viewing a single post, don't load the list
+        setLoading(false);
         return;
       }
+      setLoading(true);
 
       // Get featured posts
       const featured = await blogAPI.getFeaturedPosts();
@@ -320,7 +321,8 @@ const BlogPage = () => {
 
   const getReadingTime = (content) => {
     const wordsPerMinute = 200;
-    const wordCount = content.split(' ').length;
+    const text = String(content).replace(/<[^>]*>/g, ' ');
+    const wordCount = text.trim().split(/\s+/).length;
     return Math.ceil(wordCount / wordsPerMinute);
   };
 
@@ -331,7 +333,7 @@ const BlogPage = () => {
     }
     setNewsletterLoading(true);
     try {
-      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/public/content/newsletter/subscribe`, {
+      const res = await fetch(`${BASE_URL}/api/public/content/newsletter/subscribe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: newsletterEmail, source: 'blog_sidebar' })
