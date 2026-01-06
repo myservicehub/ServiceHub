@@ -768,10 +768,18 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       if (candidateId) {
         // Skip navigating to inline upload question (already shown inline)
         if (inlineUploadQ && String(candidateId) === String(inlineUploadQ.id)) {
-          const targetIdx = currentQuestionIndex + 1;
-          setNavHistory(prev => [...prev, currentQuestion.id]);
-          setCurrentQuestionIndex(targetIdx);
-          return;
+          const afterList = visibleQuestions.slice(currentQuestionIndex + 1);
+          if (afterList.length > 0) {
+            const targetIdx = currentQuestionIndex + 1;
+            setNavHistory(prev => [...prev, currentQuestion.id]);
+            setCurrentQuestionIndex(targetIdx);
+            return;
+          } else {
+            setNavHistory(prev => [...prev, currentQuestion.id]);
+            setEndAfterQuestionId(currentQuestion.id);
+            nextStep();
+            return;
+          }
         } else {
           if (candidateId === '__END__') {
             const a = questionAnswers[currentQuestion.id];
@@ -1801,7 +1809,20 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                                 
                                 {(() => {
                                   const currentQuestion = visibleQuestions[currentQuestionIndex];
-                                  const finishHere = currentQuestion && isEndAfterThis(currentQuestion);
+                                  let finishHere = currentQuestion && isEndAfterThis(currentQuestion);
+                                  if (!finishHere && currentQuestion) {
+                                    const ans = questionAnswers[currentQuestion.id];
+                                    const inlineQ = getInlineUploadForAnswer(currentQuestion, ans);
+                                    if (inlineQ) {
+                                      const nav = currentQuestion.navigation_logic || {};
+                                      const key = normalize(ans);
+                                      const mapped = findMappedId(nav.next_question_map || {}, key);
+                                      if (String(mapped) === String(inlineQ.id)) {
+                                        const afterList = visibleQuestions.slice(currentQuestionIndex + 1);
+                                        if (afterList.length === 0) finishHere = true;
+                                      }
+                                    }
+                                  }
                                   return finishHere;
                                 })() ? (
                                   <Button
