@@ -159,7 +159,10 @@ class TermiiSMSService:
         self.service_name = "TermiiSMSService"
         self.api_key = os.environ.get('TERMII_API_KEY')
         self.sender_id = os.environ.get('TERMII_SENDER_ID')
-        self.base_url = os.environ.get('TERMII_BASE_URL', 'https://api.ng.termii.com')
+        raw_base = os.environ.get('TERMII_BASE_URL', 'https://api.ng.termii.com')
+        sanitized = raw_base.strip().strip('`"\'')
+        sanitized = sanitized.rstrip('/')
+        self.base_url = sanitized or 'https://api.ng.termii.com'
         self.force_channel = os.environ.get('TERMII_FORCE_CHANNEL', '').strip().lower() or None
         self.dnd_sender_id = os.environ.get('TERMII_DND_SENDER_ID') or None
         
