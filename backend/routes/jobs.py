@@ -137,15 +137,11 @@ async def create_job(
         # Save to database
         created_job = await database.create_job(job_dict)
         
-        # Add background task to send job posted notification
+        # Notify homeowner only; tradespeople will be notified after admin approval
         background_tasks.add_task(
             _notify_job_posted_successfully,
             homeowner=current_user.dict(),
             job=created_job
-        )
-        background_tasks.add_task(
-            notify_matching_tradespeople_new_job,
-            created_job
         )
         
         return Job(**created_job)
@@ -1782,14 +1778,11 @@ async def register_and_post(payload: PublicJobPostRequest, background_tasks: Bac
 
         created_job = await database.create_job(job_dict)
 
+        # Notify homeowner only; tradespeople will be notified after admin approval
         background_tasks.add_task(
             _notify_job_posted_successfully,
             homeowner=user_obj.dict(),
             job=created_job,
-        )
-        background_tasks.add_task(
-            notify_matching_tradespeople_new_job,
-            created_job,
         )
 
         access_token_expires = timedelta(minutes=60 * 24)

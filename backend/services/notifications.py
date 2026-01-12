@@ -394,18 +394,18 @@ serviceHub Team
                 id=str(uuid.uuid4()),
                 type=NotificationType.JOB_POSTED,
                 channel=NotificationChannel.EMAIL,
-                subject_template="Job Posted Successfully: {job_title}",
+                subject_template="Job Submitted: {job_title}",
                 content_template="""
 Hello {homeowner_name},
 
-Your job has been successfully posted on serviceHub!
+Your job has been received and is pending admin approval.
 
 📋 Job Title: {job_title}
 📍 Location: {job_location}
 💰 Budget: {job_budget}
-📅 Posted: {post_date}
+📅 Submitted: {post_date}
 
-Your job is now live and visible to qualified tradespeople in your area. You'll receive notifications when tradespeople show interest.
+We will notify you once your job is approved. After approval, qualified tradespeople in your area will be notified and can show interest.
 
 Manage your job: {manage_url}
 
@@ -418,8 +418,8 @@ serviceHub Team
                 id=str(uuid.uuid4()),
                 type=NotificationType.JOB_POSTED,
                 channel=NotificationChannel.SMS,
-                subject_template="Job Posted - serviceHub",
-                content_template="Hi {homeowner_name}! Your {job_title} job is now live on serviceHub. View: {manage_url}",
+                subject_template="Job Submitted - serviceHub",
+                content_template="Hi {homeowner_name}! Your {job_title} job has been submitted and is pending approval. We'll notify you when it's live. Manage: {manage_url}",
                 variables=["homeowner_name", "job_title", "manage_url"]
             )
         }
