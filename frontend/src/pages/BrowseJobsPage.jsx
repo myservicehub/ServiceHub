@@ -1005,8 +1005,7 @@ const BrowseJobsPage = () => {
                         onClick={() => handleViewJobDetails(job)}
                       >
                         <CardContent className="p-4">
-                          {/* Job title */}
-                          <h3 className="text-xl font-semibold text-purple-700 leading-tight mb-2">
+                          <h3 className="text-xl font-semibold leading-tight mb-2" style={{color: '#121E3C'}}>
                             {job.title}
                           </h3>
 
