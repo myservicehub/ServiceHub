@@ -1629,6 +1629,11 @@ const AdminDashboard = () => {
                                   <div className="text-xs text-gray-400">
                                     By {job.homeowner?.name || 'Unknown'} • {new Date(job.created_at).toLocaleDateString()}
                                   </div>
+                                  {job.description && (
+                                    <div className="mt-2 text-sm text-gray-700">
+                                      {String(job.description).length > 200 ? String(job.description).slice(0, 200) + '...' : job.description}
+                                    </div>
+                                  )}
                                 </div>
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap">

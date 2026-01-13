@@ -118,6 +118,7 @@ async def get_jobs_with_access_fees(skip: int = 0, limit: int = 20):
             "title": job["title"],
             "category": job["category"],
             "location": job["location"],
+            "description": job.get("description", ""),
             "homeowner_name": job["homeowner"]["name"],
             "homeowner_email": job["homeowner"].get("email", ""),
             "homeowner_total_jobs": job["homeowner"].get("total_jobs", 0),

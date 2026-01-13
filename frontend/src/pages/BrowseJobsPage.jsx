@@ -1001,7 +1001,7 @@ const BrowseJobsPage = () => {
                     {jobs.map((job) => (
                       <Card 
                         key={job.id} 
-                        className="hover:shadow-md transition-shadow duration-200 cursor-pointer border-l-4 border-l-transparent hover:border-l-purple-500"
+                        className="hover:shadow-md transition-shadow duration-200 cursor-pointer border-l-4 border-l-transparent hover:border-l-blue-600"
                         onClick={() => handleViewJobDetails(job)}
                       >
                         <CardContent className="p-4">

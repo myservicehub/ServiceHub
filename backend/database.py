@@ -986,6 +986,17 @@ class Database:
                 job["access_fee_naira"] = 1000
                 job["access_fee_coins"] = 10
             
+            try:
+                desc_val = job.get("description")
+                if not desc_val or not str(desc_val).strip():
+                    answers = await self.get_job_question_answers(job["id"])
+                    if answers:
+                        summary = self.compose_job_description_from_answers(answers)
+                        if summary:
+                            job["description"] = summary
+            except Exception:
+                pass
+            
             jobs.append(job)
         
         return jobs
@@ -1229,6 +1240,17 @@ class Database:
                 })
         
         job["interested_tradespeople"] = interested_tradespeople
+        
+        try:
+            desc_val = job.get("description")
+            if not desc_val or not str(desc_val).strip():
+                answers = await self.get_job_question_answers(job["id"])
+                if answers:
+                    summary = self.compose_job_description_from_answers(answers)
+                    if summary:
+                        job["description"] = summary
+        except Exception:
+            pass
         
         return job
 
@@ -3085,6 +3107,17 @@ class Database:
             if "access_fee_naira" not in job:
                 job["access_fee_naira"] = 1000  # Default ₦1000
                 job["access_fee_coins"] = 10    # Default 10 coins
+            
+            try:
+                desc_val = job.get("description")
+                if not desc_val or not str(desc_val).strip():
+                    answers = await self.get_job_question_answers(job["id"])
+                    if answers:
+                        summary = self.compose_job_description_from_answers(answers)
+                        if summary:
+                            job["description"] = summary
+            except Exception:
+                pass
             
             jobs.append(job)
         
@@ -7038,6 +7071,35 @@ We may update this Cookie Policy to reflect changes in technology or regulations
             logger.error(f"Error reordering questions for {trade_category}: {str(e)}")
             return False
     
+    def compose_job_description_from_answers(self, answers_doc: Optional[dict]) -> str:
+        trade_category = (answers_doc or {}).get("trade_category") or ""
+        items = []
+        for ans in ((answers_doc or {}).get("answers") or []):
+            qt = str(ans.get("question_type") or "")
+            if qt.startswith("file_upload"):
+                continue
+            text = ans.get("answer_text")
+            if not text:
+                val = ans.get("answer_value")
+                if isinstance(val, list):
+                    text = ", ".join([str(v) for v in val if v])
+                elif val is not None:
+                    text = str(val)
+            q = ans.get("question_text") or ""
+            if text and q:
+                items.append(f"{q}: {text}")
+        items = [i for i in items if i.strip()]
+        if trade_category and items:
+            head = f"{trade_category} job details"
+            summary = head + ": " + "; ".join(items[:8])
+        elif items:
+            summary = "; ".join(items[:8])
+        else:
+            summary = ""
+        if len(summary) > 800:
+            summary = summary[:800]
+        return summary
+    
     async def save_job_question_answers(self, answers_data: dict) -> dict:
         """Save answers to trade category questions for a job"""
         try:
@@ -7050,6 +7112,17 @@ We may update this Cookie Policy to reflect changes in technology or regulations
             result = await self.database.job_question_answers.insert_one(answers_data)
             if result.inserted_id:
                 answers_data['_id'] = str(result.inserted_id)
+                try:
+                    summary = self.compose_job_description_from_answers(answers_data)
+                    job = await self.database.jobs.find_one({"id": answers_data["job_id"]})
+                    current_desc = (job or {}).get("description")
+                    if summary and (not current_desc or not str(current_desc).strip()):
+                        await self.database.jobs.update_one(
+                            {"id": answers_data["job_id"]},
+                            {"$set": {"description": summary, "updated_at": datetime.utcnow()}}
+                        )
+                except Exception:
+                    pass
                 return answers_data
             return None
         except Exception as e:

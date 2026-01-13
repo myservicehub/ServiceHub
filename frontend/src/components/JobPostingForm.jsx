@@ -276,16 +276,19 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
   const validateStep = (step) => {
     const newErrors = {};
 
-    switch (step) {
-      case 1: // Job Details
-        if (!formData.title.trim()) newErrors.title = 'Job title is required';
-        else if (formData.title.length < 10) newErrors.title = 'Job title must be at least 10 characters';
-        
-        if (!formData.category) newErrors.category = 'Please select a category';
-        
+  switch (step) {
+    case 1: // Job Details
+      if (!formData.title.trim()) newErrors.title = 'Job title is required';
+      else if (formData.title.length < 10) newErrors.title = 'Job title must be at least 10 characters';
+      
+      if (!formData.description.trim()) newErrors.description = 'Job description is required';
+      else if (formData.description.trim().length < 10) newErrors.description = 'Description must be at least 10 characters';
 
-        // If category is selected, validate admin questions instead of description
-        if (formData.category) {
+      if (!formData.category) newErrors.category = 'Please select a category';
+      
+
+      // If category is selected, validate admin questions instead of description
+      if (formData.category) {
           const visibleQuestions = getVisibleQuestions();
           const cutoffIndex = endAfterQuestionId ? visibleQuestions.findIndex(q => q.id === endAfterQuestionId) : -1;
           const questionsToValidate = cutoffIndex !== -1 ? visibleQuestions.slice(0, cutoffIndex + 1) : visibleQuestions;
@@ -1734,6 +1737,23 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
             </div>
 
             
+
+            <div>
+              <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                Job Description *
+              </label>
+              <textarea
+                id="field-description"
+                value={formData.description}
+                onChange={(e) => updateFormData('description', e.target.value)}
+                placeholder="Describe the work, scope, materials, timing, and any specifics"
+                rows={4}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
+                  errors.description ? 'border-red-500' : 'border-gray-300'
+                }`}
+              />
+              {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
+            </div>
 
             {/* Admin-Set Questions Section */}
             {formData.category && (
