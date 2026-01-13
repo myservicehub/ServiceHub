@@ -281,8 +281,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       if (!formData.title.trim()) newErrors.title = 'Job title is required';
       else if (formData.title.length < 10) newErrors.title = 'Job title must be at least 10 characters';
       
-      if (!formData.description.trim()) newErrors.description = 'Job description is required';
-      else if (formData.description.trim().length < 10) newErrors.description = 'Description must be at least 10 characters';
+      
 
       if (!formData.category) newErrors.category = 'Please select a category';
       
@@ -1737,23 +1736,6 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
             </div>
 
             
-
-            <div>
-              <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
-                Job Description *
-              </label>
-              <textarea
-                id="field-description"
-                value={formData.description}
-                onChange={(e) => updateFormData('description', e.target.value)}
-                placeholder="Describe the work, scope, materials, timing, and any specifics"
-                rows={4}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
-                  errors.description ? 'border-red-500' : 'border-gray-300'
-                }`}
-              />
-              {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
-            </div>
 
             {/* Admin-Set Questions Section */}
             {formData.category && (

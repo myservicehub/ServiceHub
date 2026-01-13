@@ -1243,12 +1243,14 @@ class Database:
         
         try:
             desc_val = job.get("description")
+            answers = await self.get_job_question_answers(job["id"])
             if not desc_val or not str(desc_val).strip():
-                answers = await self.get_job_question_answers(job["id"])
                 if answers:
                     summary = self.compose_job_description_from_answers(answers)
                     if summary:
                         job["description"] = summary
+            if answers:
+                job["question_answers"] = answers
         except Exception:
             pass
         

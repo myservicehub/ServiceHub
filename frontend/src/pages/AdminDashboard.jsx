@@ -567,6 +567,23 @@ const AdminDashboard = () => {
     setShowJobDetailsModal(true);
   };
 
+  const handleOpenReview = async (job) => {
+    try {
+      setLoading(true);
+      const response = await adminAPI.getJobDetailsAdmin(job.id);
+      const jobDetails = response.job;
+      setSelectedJob(jobDetails);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load job details for review",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleEditJob = async (job) => {
     try {
       setLoading(true);
@@ -1985,7 +2002,7 @@ const AdminDashboard = () => {
                                   <td className="px-6 py-4">
                                     <div className="flex space-x-2">
                                       <button
-                                        onClick={() => setSelectedJob(job)}
+                                        onClick={() => handleOpenReview(job)}
                                         className="text-blue-600 hover:text-blue-900 text-sm font-medium"
                                       >
                                         Review
@@ -5411,13 +5428,30 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              {/* Job Description */}
               <div>
                 <h4 className="text-lg font-medium mb-3">Description</h4>
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-gray-700">{selectedJob.description}</p>
+                  <p className="text-gray-700">{selectedJob.description || 'No description'}</p>
                 </div>
               </div>
+
+              {selectedJob?.question_answers?.answers && selectedJob.question_answers.answers.length > 0 && (
+                <div>
+                  <h4 className="text-lg font-medium mb-3">Questions & Answers</h4>
+                  <div className="space-y-3">
+                    {selectedJob.question_answers.answers.map((ans, idx) => {
+                      const val = ans.answer_text || (Array.isArray(ans.answer_value) ? ans.answer_value.join(', ') : (ans.answer_value ?? ''));
+                      if ((ans.question_type || '').startsWith('file_upload')) return null;
+                      return (
+                        <div key={idx} className="bg-gray-50 p-3 rounded">
+                          <div className="text-sm text-gray-600">{ans.question_text}</div>
+                          <div className="text-sm font-medium text-gray-900">{val || '—'}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Location Details */}
               <div>

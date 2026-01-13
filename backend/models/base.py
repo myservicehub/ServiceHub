@@ -64,7 +64,7 @@ class Location(BaseModel):
 # Job Models
 class JobCreate(BaseModel):
     title: str = Field(..., min_length=10, max_length=200)
-    description: str = Field(..., min_length=10, max_length=2000)
+    description: Optional[str] = Field(None, max_length=2000)
     category: str
     
     # Enhanced location fields

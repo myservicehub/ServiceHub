@@ -753,6 +753,16 @@ async def get_job_details_admin(job_id: str):
             "coins": job.get("access_fee_coins", 10)
         }
     }
+    try:
+        qa = await database.get_job_question_answers(job_id)
+        if qa:
+            job_details["question_answers"] = qa
+            if not job_details.get("description"):
+                summary = database.compose_job_description_from_answers(qa)
+                if summary:
+                    job_details["description"] = summary
+    except Exception:
+        pass
     
     return {"job": job_details}
 
