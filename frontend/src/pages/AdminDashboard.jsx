@@ -5093,6 +5093,22 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
+              {selectedJobDetails.question_answers && selectedJobDetails.question_answers.answers && selectedJobDetails.question_answers.answers.length > 0 && (
+                <div>
+                  <h4 className="font-medium mb-2">Job Questions & Answers</h4>
+                  <div className="bg-gray-50 p-4 rounded text-sm space-y-3">
+                    {selectedJobDetails.question_answers.answers.map((qa, index) => (
+                      <div key={index} className="border-b border-gray-200 last:border-0 pb-2 last:pb-0">
+                        <div className="font-medium text-gray-700">{qa.question_text}</div>
+                        <div className="text-gray-900 mt-1">
+                          {qa.answer_text || (Array.isArray(qa.answer_value) ? qa.answer_value.join(', ') : String(qa.answer_value))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div>
                 <h4 className="font-medium mb-2">Homeowner Information</h4>
                 <div className="space-y-2 text-sm">
@@ -5435,23 +5451,30 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              {selectedJob?.question_answers?.answers && selectedJob.question_answers.answers.length > 0 && (
-                <div>
-                  <h4 className="text-lg font-medium mb-3">Questions & Answers</h4>
-                  <div className="space-y-3">
-                    {selectedJob.question_answers.answers.map((ans, idx) => {
-                      const val = ans.answer_text || (Array.isArray(ans.answer_value) ? ans.answer_value.join(', ') : (ans.answer_value ?? ''));
-                      if ((ans.question_type || '').startsWith('file_upload')) return null;
-                      return (
-                        <div key={idx} className="bg-gray-50 p-3 rounded">
-                          <div className="text-sm text-gray-600">{ans.question_text}</div>
-                          <div className="text-sm font-medium text-gray-900">{val || '—'}</div>
-                        </div>
-                      );
-                    })}
+              {(() => {
+                const visibleAnswers = selectedJob.question_answers?.answers?.filter(
+                  ans => !(ans.question_type || '').startsWith('file_upload')
+                ) || [];
+                
+                if (visibleAnswers.length === 0) return null;
+                
+                return (
+                  <div>
+                    <h4 className="text-lg font-medium mb-3">Job Questions & Answers</h4>
+                    <div className="space-y-3">
+                      {visibleAnswers.map((ans, idx) => {
+                        const val = ans.answer_text || (Array.isArray(ans.answer_value) ? ans.answer_value.join(', ') : (ans.answer_value ?? ''));
+                        return (
+                          <div key={idx} className="bg-gray-50 p-3 rounded">
+                            <div className="text-sm text-gray-600">{ans.question_text}</div>
+                            <div className="text-sm font-medium text-gray-900 mt-1">{val || '—'}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Location Details */}
               <div>
