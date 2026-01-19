@@ -5456,15 +5456,22 @@ const AdminDashboard = () => {
                    ? (descAnswer.answer_text || (Array.isArray(descAnswer.answer_value) ? descAnswer.answer_value.join(', ') : descAnswer.answer_value)) 
                    : selectedJob.description;
 
-                // Filter answers: remove file uploads AND empty answers
+                // Filter answers: show ONLY non-empty text answers
                 const visibleAnswers = selectedJob.question_answers?.answers?.filter(ans => {
                   if ((ans.question_type || '').startsWith('file_upload')) return false;
-                  
-                  // Check if answer is empty
                   const val = ans.answer_text || (Array.isArray(ans.answer_value) ? ans.answer_value.join(', ') : (ans.answer_value ?? ''));
                   if (!val || String(val).trim() === '' || val === '—') return false;
-                  
                   return true;
+                }) || [];
+
+                // Find file uploads (images) to show separately
+                const fileAnswers = selectedJob.question_answers?.answers?.filter(ans => {
+                  if (!(ans.question_type || '').startsWith('file_upload')) return false;
+                  const val = ans.answer_value;
+                  // Must have actual file URLs
+                  if (Array.isArray(val) && val.length > 0) return true;
+                  if (typeof val === 'string' && val.trim().length > 0) return true;
+                  return false;
                 }) || [];
                 
                 return (
@@ -5475,6 +5482,31 @@ const AdminDashboard = () => {
                         <p className="text-gray-700">{rawDescription || 'No description'}</p>
                       </div>
                     </div>
+
+                    {/* Image Attachments */}
+                    {fileAnswers.length > 0 && (
+                      <div>
+                        <h4 className="text-lg font-medium mb-3">Attachments</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          {fileAnswers.map((ans, idx) => {
+                             const files = Array.isArray(ans.answer_value) ? ans.answer_value : [ans.answer_value];
+                             return files.map((url, fIdx) => (
+                               <div key={`${idx}-${fIdx}`} className="relative group border rounded-lg overflow-hidden h-32 bg-gray-100">
+                                 {url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                                   <a href={url} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
+                                     <img src={url} alt={`Attachment ${fIdx + 1}`} className="w-full h-full object-cover" />
+                                   </a>
+                                 ) : (
+                                   <a href={url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full h-full text-gray-500 hover:text-blue-600">
+                                     <span className="text-xs font-medium px-2 text-center">View File</span>
+                                   </a>
+                                 )}
+                               </div>
+                             ));
+                          })}
+                        </div>
+                      </div>
+                    )}
 
                     {visibleAnswers.length > 0 && (
                       <div>

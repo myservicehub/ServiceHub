@@ -1410,7 +1410,22 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                       id={`field-question_${inlineQ.id}`}
                     />
                     {Array.isArray(questionAnswers[inlineQ.id]) && questionAnswers[inlineQ.id].length > 0 && (
-                      <div className="text-sm text-gray-600">Selected: {questionAnswers[inlineQ.id].filter(f => f instanceof File).map(f => f.name).join(', ')}</div>
+                      <div className="space-y-2 mt-2">
+                        {questionAnswers[inlineQ.id].filter(f => f instanceof File).map((f, i) => (
+                          <div key={i} className="flex items-center space-x-2">
+                            {f.type.startsWith('image/') ? (
+                              <div className="relative w-16 h-16 rounded overflow-hidden border">
+                                <img src={URL.createObjectURL(f)} alt="Preview" className="w-full h-full object-cover" />
+                              </div>
+                            ) : (
+                              <div className="w-16 h-16 bg-gray-100 flex items-center justify-center rounded border">
+                                <span className="text-xs text-gray-500">File</span>
+                              </div>
+                            )}
+                            <span className="text-sm text-gray-600">{f.name}</span>
+                          </div>
+                        ))}
+                      </div>
                     )}
                     {errors[`question_${inlineQ.id}`] && (
                       <p className="text-red-500 text-sm font-lato mt-1">{errors[`question_${inlineQ.id}`]}</p>
@@ -1445,7 +1460,22 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
               id={`field-question_${question.id}`}
             />
             {Array.isArray(questionAnswers[question.id]) && questionAnswers[question.id].length > 0 && (
-              <div className="text-sm text-gray-600">Selected: {questionAnswers[question.id].filter(f => f instanceof File).map(f => f.name).join(', ')}</div>
+              <div className="space-y-2 mt-2">
+                {questionAnswers[question.id].filter(f => f instanceof File).map((f, i) => (
+                  <div key={i} className="flex items-center space-x-2">
+                    {f.type.startsWith('image/') ? (
+                      <div className="relative w-16 h-16 rounded overflow-hidden border">
+                        <img src={URL.createObjectURL(f)} alt="Preview" className="w-full h-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="w-16 h-16 bg-gray-100 flex items-center justify-center rounded border">
+                        <span className="text-xs text-gray-500">File</span>
+                      </div>
+                    )}
+                    <span className="text-sm text-gray-600">{f.name}</span>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         );
