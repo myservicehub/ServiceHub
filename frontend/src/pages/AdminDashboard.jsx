@@ -5444,35 +5444,55 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              <div>
-                <h4 className="text-lg font-medium mb-3">Description</h4>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-gray-700">{selectedJob.description || 'No description'}</p>
-                </div>
-              </div>
-
               {(() => {
-                const visibleAnswers = selectedJob.question_answers?.answers?.filter(
-                  ans => !(ans.question_type || '').startsWith('file_upload')
-                ) || [];
-                
-                if (visibleAnswers.length === 0) return null;
+                // Find user-entered description
+                const descAnswer = selectedJob.question_answers?.answers?.find(
+                   a => a.question_text && (
+                     a.question_text.toLowerCase().includes('add a description') || 
+                     a.question_text.toLowerCase().includes('describe your job')
+                   )
+                );
+                const rawDescription = descAnswer 
+                   ? (descAnswer.answer_text || (Array.isArray(descAnswer.answer_value) ? descAnswer.answer_value.join(', ') : descAnswer.answer_value)) 
+                   : selectedJob.description;
+
+                // Filter answers: remove file uploads AND empty answers
+                const visibleAnswers = selectedJob.question_answers?.answers?.filter(ans => {
+                  if ((ans.question_type || '').startsWith('file_upload')) return false;
+                  
+                  // Check if answer is empty
+                  const val = ans.answer_text || (Array.isArray(ans.answer_value) ? ans.answer_value.join(', ') : (ans.answer_value ?? ''));
+                  if (!val || String(val).trim() === '' || val === '—') return false;
+                  
+                  return true;
+                }) || [];
                 
                 return (
-                  <div>
-                    <h4 className="text-lg font-medium mb-3">Job Questions & Answers</h4>
-                    <div className="space-y-3">
-                      {visibleAnswers.map((ans, idx) => {
-                        const val = ans.answer_text || (Array.isArray(ans.answer_value) ? ans.answer_value.join(', ') : (ans.answer_value ?? ''));
-                        return (
-                          <div key={idx} className="bg-gray-50 p-3 rounded">
-                            <div className="text-sm text-gray-600">{ans.question_text}</div>
-                            <div className="text-sm font-medium text-gray-900 mt-1">{val || '—'}</div>
-                          </div>
-                        );
-                      })}
+                  <>
+                    <div>
+                      <h4 className="text-lg font-medium mb-3">Description</h4>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <p className="text-gray-700">{rawDescription || 'No description'}</p>
+                      </div>
                     </div>
-                  </div>
+
+                    {visibleAnswers.length > 0 && (
+                      <div>
+                        <h4 className="text-lg font-medium mb-3">Job Questions & Answers</h4>
+                        <div className="space-y-3">
+                          {visibleAnswers.map((ans, idx) => {
+                            const val = ans.answer_text || (Array.isArray(ans.answer_value) ? ans.answer_value.join(', ') : (ans.answer_value ?? ''));
+                            return (
+                              <div key={idx} className="bg-gray-50 p-3 rounded">
+                                <div className="text-sm text-gray-600">{ans.question_text}</div>
+                                <div className="text-sm font-medium text-gray-900 mt-1">{val}</div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 );
               })()}
 
