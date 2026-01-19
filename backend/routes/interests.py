@@ -86,7 +86,22 @@ async def get_job_interested_tradespeople(
         if not job:
             raise HTTPException(status_code=404, detail="Job not found")
         
-        if job.get("homeowner", {}).get("email") != current_user.email:
+        # Check ownership using ID or email
+        homeowner_data = job.get("homeowner", {})
+        is_owner = False
+        
+        # Check ID match (primary)
+        if homeowner_data.get("id") and str(homeowner_data.get("id")) == str(current_user.id):
+            is_owner = True
+        # Check root level homeowner_id (most reliable)
+        elif job.get("homeowner_id") and str(job.get("homeowner_id")) == str(current_user.id):
+            is_owner = True
+        # Check email match (fallback)
+        elif homeowner_data.get("email") and homeowner_data.get("email") == current_user.email:
+            is_owner = True
+            
+        if not is_owner:
+            logger.warning(f"Unauthorized access attempt to job {job_id} by user {current_user.id}. Owner: {homeowner_data}, Owner ID: {job.get('homeowner_id')}")
             raise HTTPException(
                 status_code=403, 
                 detail="Not authorized to view interests for this job"

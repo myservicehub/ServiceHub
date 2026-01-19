@@ -555,14 +555,14 @@ const HowItWorksPage = () => {
             <div className="flex flex-col sm:flex-row gap-6 justify-center">
               <Button 
                 onClick={() => window.location.href = '/post-job'}
-                className="bg-white text-green-600 hover:bg-gray-100 px-8 py-4 rounded-lg font-lato font-semibold text-lg shadow-lg"
+                className="bg-white !text-green-600 hover:bg-gray-100 px-8 py-4 rounded-lg font-lato font-semibold text-lg shadow-lg"
               >
                 Post Your First Job
               </Button>
               
               <Button 
                 onClick={() => window.location.href = '/browse-jobs'}
-                className="border-2 border-white text-white hover:bg-white hover:text-green-600 px-8 py-4 rounded-lg font-lato font-semibold text-lg transition-colors duration-300"
+                className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-green-600 px-8 py-4 rounded-lg font-lato font-semibold text-lg transition-colors duration-300"
               >
                 Join as Tradesperson
               </Button>
