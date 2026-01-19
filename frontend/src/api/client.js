@@ -104,7 +104,7 @@ apiClient.interceptors.request.use(
     const adminToken = localStorage.getItem('admin_token');
     
     // Determine if this request targets admin areas
-    const isAdminPath = (config.url?.includes('/admin') || config.url?.includes('/admin-management'));
+    const isAdminPath = (config.url?.includes('/admin') || config.url?.includes('/admin-management') || (adminToken && config.url?.includes('/jobs/trade-questions/file/')));
     
     // Use admin token for admin endpoints, regular token for others
     if (isAdminPath && adminToken) {
