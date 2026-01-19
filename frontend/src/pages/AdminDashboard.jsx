@@ -17,6 +17,7 @@ import BulkActionsBar from '../components/admin/BulkActionsBar';
 import ConfirmDeleteModal from '../components/admin/ConfirmDeleteModal';
 import InlineEditForm from '../components/admin/InlineEditForm';
 import PaymentProofImage from '../components/common/PaymentProofImage';
+import AuthenticatedImage from '../components/common/AuthenticatedImage';
 import { Dialog, DialogContent } from '../components/ui/dialog';
 
 const AdminDashboard = () => {
@@ -5493,13 +5494,41 @@ const AdminDashboard = () => {
                              return files.map((url, fIdx) => (
                                <div key={`${idx}-${fIdx}`} className="relative group border rounded-lg overflow-hidden h-32 bg-gray-100">
                                  {url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                                   <a href={url} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
-                                     <img src={url} alt={`Attachment ${fIdx + 1}`} className="w-full h-full object-cover" />
-                                   </a>
+                                   <AuthenticatedImage 
+                                     src={url} 
+                                     alt={`Attachment ${fIdx + 1}`} 
+                                     className="w-full h-full"
+                                   />
                                  ) : (
-                                   <a href={url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full h-full text-gray-500 hover:text-blue-600">
-                                     <span className="text-xs font-medium px-2 text-center">View File</span>
-                                   </a>
+                                   <button 
+                                     onClick={async (e) => {
+                                       e.stopPropagation();
+                                       try {
+                                          // Import apiClient dynamically or assume it's available via closure/import if defined in file
+                                          // Since we can't easily import inside JSX, we'll assume we need to handle this properly.
+                                          // For now, let's just try to open it (it might fail auth) but better than nothing
+                                          // Or better: use a simple fetch to download
+                                          const token = localStorage.getItem('admin_token') || localStorage.getItem('token');
+                                          const response = await fetch(url, {
+                                            headers: { 'Authorization': `Bearer ${token}` }
+                                          });
+                                          const blob = await response.blob();
+                                          const downloadUrl = window.URL.createObjectURL(blob);
+                                          const a = document.createElement('a');
+                                          a.href = downloadUrl;
+                                          a.download = url.split('/').pop();
+                                          document.body.appendChild(a);
+                                          a.click();
+                                          a.remove();
+                                       } catch (err) {
+                                         console.error('Download failed', err);
+                                         alert('Failed to download file');
+                                       }
+                                     }}
+                                     className="flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-blue-600 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer"
+                                   >
+                                     <span className="text-xs font-medium px-2 text-center">Download File</span>
+                                   </button>
                                  )}
                                </div>
                              ));

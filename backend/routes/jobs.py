@@ -1500,7 +1500,9 @@ async def get_job_question_attachment(
         job = await database.get_job_by_id(job_id)
         if not job:
             raise HTTPException(status_code=404, detail="Job not found")
-        if current_user.role == "homeowner":
+        if current_user.role == "admin":
+            pass  # Admin has full access
+        elif current_user.role == "homeowner":
             owner_id = job.get("homeowner", {}).get("id") or job.get("homeowner_id")
             if owner_id != current_user.id:
                 raise HTTPException(status_code=403, detail="Access denied")
