@@ -1237,6 +1237,9 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
               const selected = questionAnswers[question.id];
               const inlineQ = getInlineUploadForAnswer(question, selected);
               if (inlineQ && selected) {
+                const answer = questionAnswers[inlineQ.id];
+                const files = Array.isArray(answer) ? answer : (answer ? [answer] : []);
+                
                 return (
                   <div className="space-y-2 border rounded-md p-3">
                     <label className="block text-sm font-medium font-lato" style={{color: '#121E3C'}}>{inlineQ.question_text}</label>
@@ -1254,8 +1257,23 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                       name={`question_${inlineQ.id}`}
                       id={`field-question_${inlineQ.id}`}
                     />
-                    {Array.isArray(questionAnswers[inlineQ.id]) && questionAnswers[inlineQ.id].length > 0 && (
-                      <div className="text-sm text-gray-600">Selected: {questionAnswers[inlineQ.id].filter(f => f instanceof File).map(f => f.name).join(', ')}</div>
+                    {files.length > 0 && (
+                      <div className="space-y-2 mt-2">
+                        {files.filter(f => f instanceof File).map((f, i) => (
+                          <div key={i} className="flex items-center space-x-2">
+                            {f.type.startsWith('image/') ? (
+                              <div className="relative w-16 h-16 rounded overflow-hidden border">
+                                <img src={URL.createObjectURL(f)} alt="Preview" className="w-full h-full object-cover" />
+                              </div>
+                            ) : (
+                              <div className="w-16 h-16 bg-gray-100 flex items-center justify-center rounded border">
+                                <span className="text-xs text-gray-500">File</span>
+                              </div>
+                            )}
+                            <span className="text-sm text-gray-600">{f.name}</span>
+                          </div>
+                        ))}
+                      </div>
                     )}
                     {errors[`question_${inlineQ.id}`] && (
                       <p className="text-red-500 text-sm font-lato mt-1">{errors[`question_${inlineQ.id}`]}</p>
@@ -1392,6 +1410,9 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
             {(() => {
               const inlineQ = getInlineUploadForAnswer(question, true);
               if (questionAnswers[question.id] === true && inlineQ) {
+                const answer = questionAnswers[inlineQ.id];
+                const files = Array.isArray(answer) ? answer : (answer ? [answer] : []);
+                
                 return (
                   <div className="space-y-2 border rounded-md p-3">
                     <label className="block text-sm font-medium font-lato" style={{color: '#121E3C'}}>{inlineQ.question_text}</label>
@@ -1409,9 +1430,9 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                       name={`question_${inlineQ.id}`}
                       id={`field-question_${inlineQ.id}`}
                     />
-                    {Array.isArray(questionAnswers[inlineQ.id]) && questionAnswers[inlineQ.id].length > 0 && (
+                    {files.length > 0 && (
                       <div className="space-y-2 mt-2">
-                        {questionAnswers[inlineQ.id].filter(f => f instanceof File).map((f, i) => (
+                        {files.filter(f => f instanceof File).map((f, i) => (
                           <div key={i} className="flex items-center space-x-2">
                             {f.type.startsWith('image/') ? (
                               <div className="relative w-16 h-16 rounded overflow-hidden border">
