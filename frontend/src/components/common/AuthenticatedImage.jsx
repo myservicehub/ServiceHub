@@ -23,8 +23,13 @@ const AuthenticatedImage = ({ src, alt, className, style }) => {
         setLoading(true);
         setError(false);
         
+        // Ensure we're using the admin token if it exists
+        const adminToken = localStorage.getItem('admin_token');
+        const headers = adminToken ? { 'Authorization': `Bearer ${adminToken}` } : {};
+
         const response = await apiClient.get(src, {
-          responseType: 'blob'
+          responseType: 'blob',
+          headers: headers
         });
         
         if (isMounted) {
