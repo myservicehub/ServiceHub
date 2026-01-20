@@ -5446,17 +5446,6 @@ const AdminDashboard = () => {
               </div>
 
               {(() => {
-                // Find user-entered description
-                const descAnswer = selectedJob.question_answers?.answers?.find(
-                   a => a.question_text && (
-                     a.question_text.toLowerCase().includes('add a description') || 
-                     a.question_text.toLowerCase().includes('describe your job')
-                   )
-                );
-                const rawDescription = descAnswer 
-                   ? (descAnswer.answer_text || (Array.isArray(descAnswer.answer_value) ? descAnswer.answer_value.join(', ') : descAnswer.answer_value)) 
-                   : selectedJob.description;
-
                 // Filter answers: show ONLY non-empty text answers
                 const visibleAnswers = selectedJob.question_answers?.answers?.filter(ans => {
                   if ((ans.question_type || '').startsWith('file_upload')) return false;
@@ -5477,13 +5466,6 @@ const AdminDashboard = () => {
                 
                 return (
                   <>
-                    <div>
-                      <h4 className="text-lg font-medium mb-3">Description</h4>
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <p className="text-gray-700">{rawDescription || 'No description'}</p>
-                      </div>
-                    </div>
-
                     {/* Image Attachments */}
                     {fileAnswers.length > 0 && (
                       <div>

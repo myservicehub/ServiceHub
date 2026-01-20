@@ -385,7 +385,7 @@ const InterestedTradespeopleePage = () => {
     return (
       <Card key={tradesperson.interest_id} className="hover:shadow-lg transition-shadow">
         <CardContent className="p-6">
-          <div className="flex gap-6">
+          <div className="flex flex-col md:flex-row gap-6">
             {/* Profile Image */}
             <div className="flex-shrink-0">
               <div className="w-20 h-20 rounded-full bg-gray-200 overflow-hidden">
@@ -469,12 +469,12 @@ const InterestedTradespeopleePage = () => {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => handleViewFullProfile(tradesperson)}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 w-full sm:w-auto"
                 >
                   <Eye size={16} />
                   View Full Profile
@@ -484,7 +484,7 @@ const InterestedTradespeopleePage = () => {
                   <Button
                     onClick={() => handleShareContact(tradesperson.interest_id)}
                     disabled={actionLoading[tradesperson.interest_id]}
-                    className="text-white flex items-center gap-2"
+                    className="text-white flex items-center gap-2 w-full sm:w-auto"
                     style={{backgroundColor: '#34D164'}}
                   >
                     {actionLoading[tradesperson.interest_id] ? (
@@ -510,7 +510,7 @@ const InterestedTradespeopleePage = () => {
                       <div className="space-y-1">
                         <Button
                           disabled
-                          className="text-gray-400 bg-gray-100 cursor-not-allowed w-full"
+                          className="text-gray-400 bg-gray-100 cursor-not-allowed w-full sm:w-auto"
                         >
                           <MessageCircle size={16} className="mr-2" />
                           Start Chat
@@ -530,7 +530,7 @@ const InterestedTradespeopleePage = () => {
                           }
                           handleStartChat(tradesperson);
                         }}
-                        className="text-white font-lato bg-blue-600 hover:bg-blue-700 w-full"
+                        className="text-white font-lato bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
                       >
                         <MessageCircle size={16} className="mr-2" />
                         Start Chat
@@ -548,7 +548,7 @@ const InterestedTradespeopleePage = () => {
                       <div className="space-y-1">
                         <Button
                           disabled
-                          className="text-gray-400 bg-gray-100 cursor-not-allowed w-full"
+                          className="text-gray-400 bg-gray-100 cursor-not-allowed w-full sm:w-auto"
                         >
                           <MessageCircle size={16} className="mr-2" />
                           Start Chat
@@ -576,7 +576,7 @@ const InterestedTradespeopleePage = () => {
                           // Start chat
                           handleStartChat(tradesperson);
                         }}
-                        className="text-white font-lato bg-blue-600 hover:bg-blue-700 w-full"
+                        className="text-white font-lato bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
                       >
                         <MessageCircle size={16} className="mr-2" />
                         Start Chat
@@ -588,10 +588,10 @@ const InterestedTradespeopleePage = () => {
                 {tradesperson.status === 'interested' && (
                   isChatDisabled(tradesperson) ? (
                     <div className="space-y-1">
-                      <Button
-                        disabled
-                        className="text-gray-400 bg-gray-100 cursor-not-allowed w-full"
-                      >
+                        <Button
+                          disabled
+                          className="text-gray-400 bg-gray-100 cursor-not-allowed w-full sm:w-auto"
+                        >
                         <MessageCircle size={16} className="mr-2" />
                         Chat with Tradesperson
                       </Button>
@@ -610,7 +610,7 @@ const InterestedTradespeopleePage = () => {
                         }
                         handleStartChat(tradesperson);
                       }}
-                      className="text-white font-lato bg-green-600 hover:bg-green-700 w-full"
+                      className="text-white font-lato bg-green-600 hover:bg-green-700 w-full sm:w-auto"
                     >
                       <MessageCircle size={16} className="mr-2" />
                       Chat with Tradesperson
