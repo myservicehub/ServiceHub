@@ -32,7 +32,8 @@ import LocationSettingsModal from '../components/LocationSettingsModal';
 import { authAPI } from '../api/services';
 import { resolveCoordinatesFromLocationText, DEFAULT_TRAVEL_DISTANCE_KM, nearestStateFromCoordinates, computeDistanceKm } from '../utils/locationCoordinates';
 
-// Nigerian Trade Categories
+import AuthenticatedImage from '../components/AuthenticatedImage';
+
 const NIGERIAN_TRADE_CATEGORIES = [
   // Column 1
   "Building",
@@ -1149,18 +1150,74 @@ const BrowseJobsPage = () => {
               {selectedJobAnswers && selectedJobAnswers.answers && selectedJobAnswers.answers.length > 0 && (
                 <div className="mb-6">
                   <h3 className="font-semibold mb-3 font-montserrat">Job Requirements & Details</h3>
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-3">
-                    {selectedJobAnswers.answers.map((answer, index) => (
-                      <div key={index} className="border-b border-green-200 last:border-b-0 pb-3 last:pb-0">
-                        <div className="font-medium text-gray-800 font-lato mb-1">
-                          {answer.question_text}
-                        </div>
-                        <div className="text-gray-700 font-lato pl-3">
-                          <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                          {answer.answer_text || answer.answer_value}
-                        </div>
-                      </div>
-                    ))}
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-4">
+                    {(() => {
+                      // Filter answers: show ONLY non-empty text answers
+                      const visibleAnswers = selectedJobAnswers.answers.filter(ans => {
+                        if ((ans.question_type || '').startsWith('file_upload')) return false;
+                        const val = ans.answer_text || (Array.isArray(ans.answer_value) ? ans.answer_value.join(', ') : (ans.answer_value ?? ''));
+                        if (!val || String(val).trim() === '' || val === '—') return false;
+                        return true;
+                      });
+
+                      // Find file uploads (images) to show separately
+                      const fileAnswers = selectedJobAnswers.answers.filter(ans => {
+                        if (!(ans.question_type || '').startsWith('file_upload')) return false;
+                        const val = ans.answer_value;
+                        // Must have actual file URLs
+                        if (Array.isArray(val) && val.length > 0) return true;
+                        if (typeof val === 'string' && val.trim().length > 0) return true;
+                        return false;
+                      });
+
+                      return (
+                        <>
+                          {visibleAnswers.map((answer, index) => (
+                            <div key={index} className="border-b border-green-200 last:border-b-0 pb-3 last:pb-0">
+                              <div className="font-medium text-gray-800 font-lato mb-1">
+                                {answer.question_text}
+                              </div>
+                              <div className="text-gray-700 font-lato pl-3">
+                                <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                {answer.answer_text || answer.answer_value}
+                              </div>
+                            </div>
+                          ))}
+
+                          {/* Attachments Section */}
+                          {fileAnswers.length > 0 && (
+                            <div className="pt-4 border-t border-green-200">
+                              <h4 className="font-medium text-gray-800 font-lato mb-3">Attachments</h4>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                {fileAnswers.map((ans, idx) => {
+                                  const files = Array.isArray(ans.answer_value) ? ans.answer_value : [ans.answer_value];
+                                  return files.map((url, fIdx) => (
+                                    <div key={`${idx}-${fIdx}`} className="relative group border rounded-lg overflow-hidden h-24 bg-gray-100">
+                                      {url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                                        <AuthenticatedImage 
+                                          src={url} 
+                                          alt={`Attachment ${fIdx + 1}`} 
+                                          className="w-full h-full object-cover"
+                                        />
+                                      ) : (
+                                        <a 
+                                          href={url} 
+                                          target="_blank" 
+                                          rel="noopener noreferrer"
+                                          className="flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-blue-600 bg-gray-50 hover:bg-gray-100 transition-colors"
+                                        >
+                                          <span className="text-xs font-medium px-2 text-center">Download File</span>
+                                        </a>
+                                      )}
+                                    </div>
+                                  ));
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                   <div className="mt-2 text-xs text-gray-500 font-lato">
                     Specific requirements provided by the homeowner
