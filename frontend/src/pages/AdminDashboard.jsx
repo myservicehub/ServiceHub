@@ -186,6 +186,10 @@ const AdminDashboard = () => {
   const [editingJobFee, setEditingJobFee] = useState(null);
   const [feeUpdateInProgress, setFeeUpdateInProgress] = useState(false);
   const [feesLoading, setFeesLoading] = useState(false);
+  const [feesPage, setFeesPage] = useState(1);
+  const [feesLimit, setFeesLimit] = useState(20);
+  const [feesTotal, setFeesTotal] = useState(0);
+  const [feesSearch, setFeesSearch] = useState('');
   
   // Jobs Management state
   const [jobsFilter, setJobsFilter] = useState('');
@@ -957,9 +961,10 @@ const AdminDashboard = () => {
   const handleJobAccessFeesDataLoad = async () => {
     setFeesLoading(true);
     try {
-      const feesData = await adminAPI.getJobsWithAccessFees();
+      const skip = (feesPage - 1) * feesLimit;
+      const feesData = await adminAPI.getJobsWithAccessFees(skip, feesLimit, feesSearch);
       setJobsWithFees(feesData.jobs || []);
-      
+      setFeesTotal(feesData.total || feesData.pagination?.total || 0);
     } catch (error) {
       console.error('Failed to load job access fees data:', error);
       toast({
@@ -971,6 +976,12 @@ const AdminDashboard = () => {
       setFeesLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (activeTab === 'fees') {
+      handleJobAccessFeesDataLoad();
+    }
+  }, [feesPage, feesLimit, feesSearch]);
 
   const handleUpdateJobAccessFee = async (jobId, newFee) => {
     if (!newFee || newFee < 500 || newFee > 10000) {
@@ -1005,6 +1016,27 @@ const AdminDashboard = () => {
       });
     } finally {
       setFeeUpdateInProgress(false);
+    }
+  };
+
+  const handleDeleteJobFromFees = async (jobId) => {
+    if (!window.confirm('Are you sure you want to delete this job? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await adminAPI.deleteJob(jobId);
+      toast({
+        title: "Success",
+        description: "Job deleted successfully",
+      });
+      handleJobAccessFeesDataLoad();
+    } catch (error) {
+      toast({
+        title: "Error", 
+        description: "Failed to delete job",
+        variant: "destructive",
+      });
     }
   };
 
@@ -1729,12 +1761,21 @@ const AdminDashboard = () => {
                 <div className="space-y-6">
                   <div className="flex justify-between items-center">
                     <h2 className="text-xl font-semibold">Job Access Fees Management</h2>
-                    <button
-                      onClick={handleJobAccessFeesDataLoad}
-                      className="text-blue-600 hover:text-blue-700"
-                    >
-                      Refresh
-                    </button>
+                    <div className="flex space-x-2">
+                      <input
+                        type="text"
+                        placeholder="Search jobs..."
+                        value={feesSearch}
+                        onChange={(e) => setFeesSearch(e.target.value)}
+                        className="px-3 py-1 border rounded text-sm w-64"
+                      />
+                      <button
+                        onClick={handleJobAccessFeesDataLoad}
+                        className="text-blue-600 hover:text-blue-700"
+                      >
+                        Refresh
+                      </button>
+                    </div>
                   </div>
 
                   {/* Access Fees Table */}
@@ -1756,109 +1797,141 @@ const AdminDashboard = () => {
                         <p>No job access fees to manage at this time.</p>
                       </div>
                     ) : (
-                      <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Job Details
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Homeowner
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Current Access Fee
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Status
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Actions
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
-                            {jobsWithFees.map((job) => (
-                              <tr key={job.id} className="hover:bg-gray-50">
-                                <td className="px-6 py-4">
-                                  <div>
-                                    <div className="font-medium text-gray-900 mb-1">{job.title}</div>
-                                    <div className="text-sm text-gray-600 line-clamp-2">{job.description}</div>
-                                    <div className="mt-1">
-                                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                                        {job.category}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4">
-                                  <div>
-                                    <div className="font-medium text-gray-900">{job.homeowner_name || 'Unknown'}</div>
-                                    <div className="text-sm text-gray-600">{job.homeowner_email || ''}</div>
-                                    <div className="text-xs text-gray-500">{job.homeowner_total_jobs || 0} total jobs</div>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4">
-                                  <div>
-                                    <div className="text-lg font-bold text-green-600">
-                                      ₦{job.access_fee_naira?.toLocaleString() || '1,000'}
-                                    </div>
-                                    <div className="text-sm text-gray-500">
-                                      {job.access_fee_coins || 10} coins
-                                    </div>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4">
-                                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getJobStatusColor(job.status)}`}>
-                                    {job.status?.toUpperCase()}
-                                  </span>
-                                </td>
-                                <td className="px-6 py-4">
-                                  <div className="flex space-x-2">
-                                    {editingJobFee === job.id ? (
-                                      <div className="flex items-center space-x-2">
-                                        <input
-                                          type="number"
-                                          min="500"
-                                          max="10000"
-                                          defaultValue={job.access_fee_naira || 1000}
-                                          className="w-24 px-2 py-1 border border-gray-300 rounded text-sm"
-                                          id={`fee-input-${job.id}`}
-                                          disabled={feeUpdateInProgress}
-                                        />
-                                        <button
-                                          onClick={() => {
-                                            const newFee = parseInt(document.getElementById(`fee-input-${job.id}`).value);
-                                            handleUpdateJobAccessFee(job.id, newFee);
-                                          }}
-                                          disabled={feeUpdateInProgress}
-                                          className="text-green-600 hover:text-green-900 text-sm font-medium disabled:opacity-50"
-                                        >
-                                          {feeUpdateInProgress ? 'Saving...' : 'Save'}
-                                        </button>
-                                        <button
-                                          onClick={() => setEditingJobFee(null)}
-                                          disabled={feeUpdateInProgress}
-                                          className="text-gray-600 hover:text-gray-900 text-sm font-medium disabled:opacity-50"
-                                        >
-                                          Cancel
-                                        </button>
-                                      </div>
-                                    ) : (
-                                      <button
-                                        onClick={() => setEditingJobFee(job.id)}
-                                        className="text-blue-600 hover:text-blue-900 text-sm font-medium"
-                                      >
-                                        Edit Fee
-                                      </button>
-                                    )}
-                                  </div>
-                                </td>
+                      <>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Job Details
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Homeowner
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Current Access Fee
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Status
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Actions
+                                </th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                              {jobsWithFees.map((job) => (
+                                <tr key={job.id} className="hover:bg-gray-50">
+                                  <td className="px-6 py-4">
+                                    <div>
+                                      <div className="font-medium text-gray-900 mb-1">{job.title}</div>
+                                      <div className="text-sm text-gray-600 line-clamp-2">{job.description}</div>
+                                      <div className="mt-1">
+                                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                          {job.category}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <div>
+                                      <div className="font-medium text-gray-900">{job.homeowner_name || 'Unknown'}</div>
+                                      <div className="text-sm text-gray-600">{job.homeowner_email || ''}</div>
+                                      <div className="text-xs text-gray-500">{job.homeowner_total_jobs || 0} total jobs</div>
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <div>
+                                      <div className="text-lg font-bold text-green-600">
+                                        ₦{job.access_fee_naira?.toLocaleString() || '1,000'}
+                                      </div>
+                                      <div className="text-sm text-gray-500">
+                                        {job.access_fee_coins || 10} coins
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getJobStatusColor(job.status)}`}>
+                                      {job.status?.toUpperCase()}
+                                    </span>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <div className="flex space-x-2">
+                                      {editingJobFee === job.id ? (
+                                        <div className="flex items-center space-x-2">
+                                          <input
+                                            type="number"
+                                            min="500"
+                                            max="10000"
+                                            defaultValue={job.access_fee_naira || 1000}
+                                            className="w-24 px-2 py-1 border border-gray-300 rounded text-sm"
+                                            id={`fee-input-${job.id}`}
+                                            disabled={feeUpdateInProgress}
+                                          />
+                                          <button
+                                            onClick={() => {
+                                              const newFee = parseInt(document.getElementById(`fee-input-${job.id}`).value);
+                                              handleUpdateJobAccessFee(job.id, newFee);
+                                            }}
+                                            disabled={feeUpdateInProgress}
+                                            className="text-green-600 hover:text-green-900 text-sm font-medium disabled:opacity-50"
+                                          >
+                                            {feeUpdateInProgress ? 'Saving...' : 'Save'}
+                                          </button>
+                                          <button
+                                            onClick={() => setEditingJobFee(null)}
+                                            disabled={feeUpdateInProgress}
+                                            className="text-gray-600 hover:text-gray-900 text-sm font-medium disabled:opacity-50"
+                                          >
+                                            Cancel
+                                          </button>
+                                        </div>
+                                      ) : (
+                                        <>
+                                          <button
+                                            onClick={() => setEditingJobFee(job.id)}
+                                            className="text-blue-600 hover:text-blue-900 text-sm font-medium"
+                                          >
+                                            Edit Fee
+                                          </button>
+                                          <button
+                                            onClick={() => handleDeleteJobFromFees(job.id)}
+                                            className="text-red-600 hover:text-red-900 text-sm font-medium ml-2"
+                                          >
+                                            Delete
+                                          </button>
+                                        </>
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        {/* Pagination */}
+                        <div className="px-6 py-4 border-t flex justify-between items-center bg-gray-50">
+                          <div className="text-sm text-gray-500">
+                            Showing {(feesPage - 1) * feesLimit + 1} to {Math.min(feesPage * feesLimit, feesTotal)} of {feesTotal} entries
+                          </div>
+                          <div className="flex space-x-2">
+                            <button
+                              disabled={feesPage === 1}
+                              onClick={() => setFeesPage(p => Math.max(1, p - 1))}
+                              className="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50 disabled:bg-gray-50"
+                            >
+                              Previous
+                            </button>
+                            <button
+                              disabled={feesPage * feesLimit >= feesTotal}
+                              onClick={() => setFeesPage(p => p + 1)}
+                              className="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50 disabled:bg-gray-50"
+                            >
+                              Next
+                            </button>
+                          </div>
+                        </div>
+                      </>
                     )}
                   </div>
 
