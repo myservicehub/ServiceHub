@@ -1683,14 +1683,15 @@ async def register_and_post(payload: PublicJobPostRequest, background_tasks: Bac
                 await database.create_email_verification_token(
                     user_id=user_obj.id, token=verification_token, expires_at=expires_at
                 )
-                try:
-                    await database.create_pending_job(
-                        user_id=user_obj.id,
-                        job_data=job_data.dict(),
-                        expires_at=expires_at,
-                    )
-                except Exception:
-                    pass
+                # Skip creating pending job, we will create the job directly
+                # and let the frontend handle the verification prompt
+                # if not getattr(user_obj, "email_verified", False):
+                #     await database.create_pending_job(
+                #         user_id=user_obj.id,
+                #         job_data=job_data.dict(),
+                #         expires_at=expires_at,
+                #     )
+
                 email_service = None
                 try:
                     email_service = SendGridEmailService()
@@ -1699,17 +1700,19 @@ async def register_and_post(payload: PublicJobPostRequest, background_tasks: Bac
                         email_service = MockEmailService()
                     except Exception:
                         email_service = None
+                
                 dev_flag = os.environ.get('OTP_DEV_MODE', '0')
                 frontend_url = os.environ.get('FRONTEND_URL') or (
                     'http://localhost:3000' if dev_flag in ('1', 'true', 'True') else 'https://servicehub.ng'
                 )
-                verify_link = f"{frontend_url.rstrip('/')}/verify-account?token={verification_token}&next=/post-job"
+                verify_link = f"{frontend_url.rstrip('/')}/verify-account?token={verification_token}&next=/"
+                
                 if email_service:
                     html = f"""
                     <!DOCTYPE html>
                     <html>
                     <head>
-                      <meta charset=\"utf-8\">
+                      <meta charset="utf-8">
                       <style>
                         body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
                         .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
@@ -1718,47 +1721,35 @@ async def register_and_post(payload: PublicJobPostRequest, background_tasks: Bac
                       </style>
                     </head>
                     <body>
-                      <div class=\"container\">
-                        <h2>Verify your email to post your job</h2>
+                      <div class="container">
+                        <h2>Verify your email</h2>
                         <p>Hello {user_obj.name},</p>
-                        <p>Please verify your email to finish posting your job.</p>
+                        <p>Your job has been posted successfully! Please verify your email to fully activate your account.</p>
                         <p>
-                          <a class=\"btn\" href=\"{verify_link}\">Verify Email</a>
+                          <a class="btn" href="{verify_link}">Verify Email</a>
                         </p>
                         <p>If the button doesn’t work, copy and paste this link:</p>
-                        <p class=\"link\">{verify_link}</p>
+                        <p class="link">{verify_link}</p>
                         <p>This link expires in 24 hours.</p>
                       </div>
                     </body>
                     </html>
                     """
+                    
                     await email_service.send_email(
                         to=user_obj.email,
-                        subject="Verify your email to post your job - serviceHub",
+                        subject="Verify your email - ServiceHub",
                         content=html,
                         metadata={"purpose": "email_verification", "user_id": user_obj.id}
                     )
-                dev_payload = {}
-                try:
-                    dev_flag = os.environ.get('OTP_DEV_MODE', '0')
-                    if dev_flag in ('1', 'true', 'True'):
-                        dev_payload["debug_link"] = verify_link
-                except Exception:
-                    pass
-                raise HTTPException(
-                    status_code=403,
-                    detail={
-                        "message": "Email verification required",
-                        "verification_required": True,
-                        "email_sent": True,
-                        **dev_payload,
-                    }
-                )
+                
+                logger.info(f"Verification email sent to {user_obj.email}")
             except HTTPException:
                 raise
             except Exception as e:
                 logger.error(f"Failed to send verification email during register-and-post: {e}")
-                raise HTTPException(status_code=500, detail="Failed to initiate email verification")
+                # Don't fail the request, just log error
+
 
         job_dict = job_data.dict()
         job_dict["location"] = job_data.state
