@@ -1469,21 +1469,20 @@ async def upload_job_question_attachment(
             raise HTTPException(status_code=400, detail="Unsupported file type")
 
         data = await file.read()
-        max_bytes = int(os.getenv("JOB_QUESTION_ATTACHMENT_MAX_BYTES", "52428800"))
+        # Reduce max size for base64 storage to avoid hitting MongoDB document limits (16MB total)
+        # 5MB limit allows for base64 overhead (~33%) and other document data
+        max_bytes = 5 * 1024 * 1024  # 5MB
         if len(data) > max_bytes:
-            raise HTTPException(status_code=413, detail="File too large")
+            raise HTTPException(status_code=413, detail="File too large (max 5MB)")
 
-        ext = os.path.splitext(file.filename or "")[1].lower()
-        import uuid as _uuid
-        name = f"{_uuid.uuid4().hex}{ext}"
-        job_dir = uploads_base / job_id
-        job_dir.mkdir(parents=True, exist_ok=True)
-        dest = job_dir / name
-        with open(dest, "wb") as f:
-            f.write(data)
+        import base64
+        base64_data = base64.b64encode(data).decode('utf-8')
+        data_url = f"data:{file.content_type};base64,{base64_data}"
 
-        url_path = f"/api/jobs/trade-questions/file/{job_id}/{name}"
-        return {"filename": name, "content_type": file.content_type, "size": len(data), "url": url_path}
+        # Note: We no longer save to disk to avoid ephemeral storage issues
+        # The data_url will be stored in the database by the frontend
+
+        return {"filename": file.filename, "content_type": file.content_type, "size": len(data), "url": data_url}
     except HTTPException:
         raise
     except Exception as e:

@@ -11,6 +11,8 @@ const AuthenticatedImage = ({ src, alt, className, style }) => {
 
   const normalizeRequestUrl = (raw) => {
     if (!raw) return raw;
+    // If it's a data URL, return it as-is (no normalization needed)
+    if (raw.startsWith('data:')) return raw;
     // If it's an absolute URL, let axios use it as-is (it will ignore baseURL)
     if (/^https?:\/\//i.test(raw)) return raw;
     // Our apiClient has baseURL = '/api'. Many backend responses already include '/api/...'.
@@ -25,6 +27,14 @@ const AuthenticatedImage = ({ src, alt, className, style }) => {
     if (!src) {
       setLoading(false);
       setError(true);
+      return;
+    }
+
+    // Handle data URLs directly
+    if (src.startsWith('data:')) {
+      setImageSrc(src);
+      setLoading(false);
+      setError(false);
       return;
     }
 
