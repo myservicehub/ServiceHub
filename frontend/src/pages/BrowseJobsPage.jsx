@@ -1242,23 +1242,14 @@ const BrowseJobsPage = () => {
                                       <div key={`${idx}-${fIdx}`} className="relative group border rounded-lg overflow-hidden h-32 bg-gray-100">
                                         {isImage ? (
                                           <div className="w-full h-full">
-                                            {/* Directly render img tag for immediate feedback if AuthenticatedImage has issues */}
-                                            <img 
+                                            <AuthenticatedImage 
                                               src={url} 
                                               alt={`Attachment ${fIdx + 1}`} 
                                               className="w-full h-full object-contain"
-                                              onError={(e) => {
-                                                // Fallback if image fails to load
-                                                e.target.style.display = 'none';
-                                                e.target.nextSibling.style.display = 'flex';
-                                              }}
                                             />
-                                            <div className="hidden w-full h-full flex-col items-center justify-center text-gray-500">
-                                              <span className="text-xs">Image not available</span>
-                                            </div>
                                           </div>
                                         ) : (
-                                          <a 
+                                          <a  
                                             href={url} 
                                             target="_blank" 
                                             rel="noopener noreferrer"
