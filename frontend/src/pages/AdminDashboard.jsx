@@ -5466,6 +5466,23 @@ const AdminDashboard = () => {
                 
                 return (
                   <>
+                    {visibleAnswers.length > 0 && (
+                      <div className="mb-6">
+                        <h4 className="text-lg font-medium mb-3">Job Questions & Answers</h4>
+                        <div className="space-y-4">
+                          {visibleAnswers.map((ans, idx) => {
+                            const val = ans.answer_text || (Array.isArray(ans.answer_value) ? ans.answer_value.join(', ') : (ans.answer_value ?? ''));
+                            return (
+                              <div key={idx} className="mb-3">
+                                <div className="text-sm font-medium text-[#121E3C]">{ans.question_text}</div>
+                                <div className="text-sm text-gray-700 mt-1">{val}</div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Image Attachments */}
                     {fileAnswers.length > 0 && (
                       <div>
@@ -5514,23 +5531,6 @@ const AdminDashboard = () => {
                                  )}
                                </div>
                              ));
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {visibleAnswers.length > 0 && (
-                      <div>
-                        <h4 className="text-lg font-medium mb-3">Job Questions & Answers</h4>
-                        <div className="space-y-3">
-                          {visibleAnswers.map((ans, idx) => {
-                            const val = ans.answer_text || (Array.isArray(ans.answer_value) ? ans.answer_value.join(', ') : (ans.answer_value ?? ''));
-                            return (
-                              <div key={idx} className="bg-gray-50 p-3 rounded">
-                                <div className="text-sm text-gray-600">{ans.question_text}</div>
-                                <div className="text-sm font-medium text-gray-900 mt-1">{val}</div>
-                              </div>
-                            );
                           })}
                         </div>
                       </div>
