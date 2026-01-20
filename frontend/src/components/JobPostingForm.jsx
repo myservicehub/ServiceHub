@@ -549,7 +549,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
           const answersData = {
             job_id: jobId,
             trade_category: formData.category,
-            answers: tradeQuestions.map(question => ({
+            answers: getVisibleQuestions().map(question => ({
               question_id: question.id,
               question_text: question.question_text,
               question_type: question.question_type,
@@ -1641,7 +1641,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
           const answersData = {
             job_id: jobId,
             trade_category: formData.category,
-            answers: tradeQuestions.map(question => ({
+            answers: getVisibleQuestions().map(question => ({
               question_id: question.id,
               question_text: question.question_text,
               question_type: question.question_type,
