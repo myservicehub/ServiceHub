@@ -549,7 +549,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
           const answersData = {
             job_id: jobId,
             trade_category: formData.category,
-            answers: getVisibleQuestions().map(question => ({
+            answers: getVisibleQuestions(true).map(question => ({
               question_id: question.id,
               question_text: question.question_text,
               question_type: question.question_type,
@@ -986,7 +986,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
     }
   };
 
-  const getVisibleQuestions = () => {
+  const getVisibleQuestions = (includeInline = false) => {
     if (!tradeQuestions || tradeQuestions.length === 0) {
       return [];
     }
@@ -1028,6 +1028,8 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
 
       current = nextId ? byId[String(nextId)] : null;
     }
+
+    if (includeInline) return path;
 
     const skipInlineIds = new Set();
     for (const q of path) {
@@ -1132,7 +1134,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
   };
 
   const getQuestionsForReview = () => {
-    const visible = getVisibleQuestions();
+    const visible = getVisibleQuestions(true);
     if (endAfterQuestionId) {
       const idx = visible.findIndex(q => q.id === endAfterQuestionId);
       return idx !== -1 ? visible.slice(0, idx + 1) : visible;
@@ -1641,7 +1643,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
           const answersData = {
             job_id: jobId,
             trade_category: formData.category,
-            answers: getVisibleQuestions().map(question => ({
+            answers: getVisibleQuestions(true).map(question => ({
               question_id: question.id,
               question_text: question.question_text,
               question_type: question.question_type,
