@@ -17,18 +17,48 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     token = credentials.credentials
     
     try:
-        payload = verify_token(token)
-        user_id: str = payload.get("sub")
-        if user_id is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Could not validate credentials",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
+        # First try to verify as a regular user token
+        try:
+            payload = verify_token(token)
+            user_id: str = payload.get("sub")
+            if user_id is None:
+                raise HTTPException(status_code=401)
+        except Exception:
+            # If standard verification fails, check if it's an admin token
+            try:
+                # Admin tokens use a different secret and structure
+                # Import here to avoid circular imports
+                from ..routes.admin_management import JWT_SECRET as ADMIN_JWT_SECRET, JWT_ALGORITHM as ADMIN_JWT_ALGORITHM
+                
+                payload = jwt.decode(token, ADMIN_JWT_SECRET, algorithms=[ADMIN_JWT_ALGORITHM])
+                admin_id = payload.get("admin_id")
+                if not admin_id:
+                    raise HTTPException(status_code=401)
+                
+                # It's an admin token! Create a synthetic User object with ADMIN role
+                # This allows admins to pass through endpoints expecting a User object
+                return User(
+                    id=admin_id,
+                    name=payload.get("username") or "Admin",
+                    email="admin@servicehub.co",
+                    phone="",
+                    role=UserRole.ADMIN,
+                    status=UserStatus.ACTIVE,
+                    location="",
+                    postcode=""
+                )
+            except Exception:
+                # If both fail, raise the original error
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Could not validate credentials",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+
     except HTTPException:
         raise
     
-    # If DB is connected, load from database
+    # If DB is connected, load from database (Regular User Flow)
     if getattr(database, "connected", False):
         user_data = await database.get_user_by_id(user_id)
         if user_data is None:
