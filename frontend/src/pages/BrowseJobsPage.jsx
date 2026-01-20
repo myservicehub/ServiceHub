@@ -1193,7 +1193,12 @@ const BrowseJobsPage = () => {
                                   const files = Array.isArray(ans.answer_value) ? ans.answer_value : [ans.answer_value];
                                   return files.map((url, fIdx) => {
                                     // Handle cases where the URL is a data URI or a remote URL
-                                    const isImage = url.match(/\.(jpg|jpeg|png|gif|webp)$/i) || url.startsWith('data:image/');
+                                    // Also check if it's a file path that ends with an image extension, regardless of case
+                                    const isImage = url.match(/\.(jpg|jpeg|png|gif|webp)$/i) || 
+                                                  url.startsWith('data:image/') ||
+                                                  // Fallback: assume it's an image if it's in the trade-questions path (common for uploads)
+                                                  // This helps with signed URLs or paths that might not match the regex perfectly
+                                                  url.includes('/api/jobs/trade-questions/file/');
                                     
                                     return (
                                       <div key={`${idx}-${fIdx}`} className="relative group border rounded-lg overflow-hidden h-32 bg-gray-100">
