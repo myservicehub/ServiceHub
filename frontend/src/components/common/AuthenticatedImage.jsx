@@ -9,6 +9,16 @@ const AuthenticatedImage = ({ src, alt, className, style }) => {
   const [error, setError] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
 
+  const normalizeRequestUrl = (raw) => {
+    if (!raw) return raw;
+    // If it's an absolute URL, let axios use it as-is (it will ignore baseURL)
+    if (/^https?:\/\//i.test(raw)) return raw;
+    // Our apiClient has baseURL = '/api'. Many backend responses already include '/api/...'.
+    // Avoid double-prefixing to '/api/api/...'
+    if (raw.startsWith('/api/')) return raw.replace(/^\/api/, '');
+    return raw;
+  };
+
   useEffect(() => {
     let isMounted = true;
     
@@ -27,7 +37,8 @@ const AuthenticatedImage = ({ src, alt, className, style }) => {
         const adminToken = localStorage.getItem('admin_token');
         const headers = adminToken ? { 'Authorization': `Bearer ${adminToken}` } : {};
 
-        const response = await apiClient.get(src, {
+        const requestUrl = normalizeRequestUrl(src);
+        const response = await apiClient.get(requestUrl, {
           responseType: 'blob',
           headers: headers
         });

@@ -5126,25 +5126,31 @@ class Database:
             old_name = (old_name or "").strip()
             new_name = (new_name or "").strip()
             now = datetime.now()
+            
             update_set = {"name": new_name, "updated_at": now}
-            # Only set optional fields when provided to avoid blank overwrites
+            set_on_insert = {
+                "active": True,
+                "created_at": now
+            }
+
+            # Only set optional fields in update_set when provided
+            # If provided, they will be set on insert via $set too.
+            # If NOT provided, we need a default for insert, but don't want to overwrite existing.
             if group:
                 update_set["group"] = group
+            else:
+                set_on_insert["group"] = "General Services"
+
             if description:
                 update_set["description"] = description
+            else:
+                set_on_insert["description"] = ""
 
             result = await self.database.system_trades.update_one(
                 {"name": {"$regex": f"^{re.escape(old_name)}$", "$options": "i"}},
                 {
                     "$set": update_set,
-                    "$setOnInsert": {
-                        "active": True,
-                        "created_at": now,
-                        # Default group if none supplied
-                        "group": group or "General Services",
-                        # Carry description if provided, else empty string
-                        "description": description or ""
-                    }
+                    "$setOnInsert": set_on_insert
                 },
                 upsert=True
             )
