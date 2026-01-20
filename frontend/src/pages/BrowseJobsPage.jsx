@@ -1193,7 +1193,7 @@ const BrowseJobsPage = () => {
                                   const files = Array.isArray(ans.answer_value) ? ans.answer_value : [ans.answer_value];
                                   return files.map((url, fIdx) => (
                                     <div key={`${idx}-${fIdx}`} className="relative group border rounded-lg overflow-hidden h-32 bg-gray-100">
-                                      {url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                                      {url.match(/\.(jpg|jpeg|png|gif|webp)$/i) || url.startsWith('data:image/') ? (
                                         <AuthenticatedImage 
                                           src={url} 
                                           alt={`Attachment ${fIdx + 1}`} 
