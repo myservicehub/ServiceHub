@@ -1191,26 +1191,42 @@ const BrowseJobsPage = () => {
                               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                                 {fileAnswers.map((ans, idx) => {
                                   const files = Array.isArray(ans.answer_value) ? ans.answer_value : [ans.answer_value];
-                                  return files.map((url, fIdx) => (
-                                    <div key={`${idx}-${fIdx}`} className="relative group border rounded-lg overflow-hidden h-32 bg-gray-100">
-                                      {url.match(/\.(jpg|jpeg|png|gif|webp)$/i) || url.startsWith('data:image/') ? (
-                                        <AuthenticatedImage 
-                                          src={url} 
-                                          alt={`Attachment ${fIdx + 1}`} 
-                                          className="w-full h-full"
-                                        />
-                                      ) : (
-                                        <a 
-                                          href={url} 
-                                          target="_blank" 
-                                          rel="noopener noreferrer"
-                                          className="flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-blue-600 bg-gray-50 hover:bg-gray-100 transition-colors"
-                                        >
-                                          <span className="text-xs font-medium px-2 text-center">Download File</span>
-                                        </a>
-                                      )}
-                                    </div>
-                                  ));
+                                  return files.map((url, fIdx) => {
+                                    // Handle cases where the URL is a data URI or a remote URL
+                                    const isImage = url.match(/\.(jpg|jpeg|png|gif|webp)$/i) || url.startsWith('data:image/');
+                                    
+                                    return (
+                                      <div key={`${idx}-${fIdx}`} className="relative group border rounded-lg overflow-hidden h-32 bg-gray-100">
+                                        {isImage ? (
+                                          <div className="w-full h-full">
+                                            {/* Directly render img tag for immediate feedback if AuthenticatedImage has issues */}
+                                            <img 
+                                              src={url} 
+                                              alt={`Attachment ${fIdx + 1}`} 
+                                              className="w-full h-full object-contain"
+                                              onError={(e) => {
+                                                // Fallback if image fails to load
+                                                e.target.style.display = 'none';
+                                                e.target.nextSibling.style.display = 'flex';
+                                              }}
+                                            />
+                                            <div className="hidden w-full h-full flex-col items-center justify-center text-gray-500">
+                                              <span className="text-xs">Image not available</span>
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          <a 
+                                            href={url} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-blue-600 bg-gray-50 hover:bg-gray-100 transition-colors"
+                                          >
+                                            <span className="text-xs font-medium px-2 text-center">Download File</span>
+                                          </a>
+                                        )}
+                                      </div>
+                                    );
+                                  });
                                 })}
                               </div>
                             </div>
