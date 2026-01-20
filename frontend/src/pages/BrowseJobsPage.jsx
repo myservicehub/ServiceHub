@@ -32,7 +32,7 @@ import LocationSettingsModal from '../components/LocationSettingsModal';
 import { authAPI } from '../api/services';
 import { resolveCoordinatesFromLocationText, DEFAULT_TRAVEL_DISTANCE_KM, nearestStateFromCoordinates, computeDistanceKm } from '../utils/locationCoordinates';
 
-import AuthenticatedImage from '../components/AuthenticatedImage';
+import AuthenticatedImage from '../components/common/AuthenticatedImage';
 
 const NIGERIAN_TRADE_CATEGORIES = [
   // Column 1
