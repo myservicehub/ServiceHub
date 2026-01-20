@@ -1192,12 +1192,12 @@ const BrowseJobsPage = () => {
                                 {fileAnswers.map((ans, idx) => {
                                   const files = Array.isArray(ans.answer_value) ? ans.answer_value : [ans.answer_value];
                                   return files.map((url, fIdx) => (
-                                    <div key={`${idx}-${fIdx}`} className="relative group border rounded-lg overflow-hidden h-24 bg-gray-100">
+                                    <div key={`${idx}-${fIdx}`} className="relative group border rounded-lg overflow-hidden h-32 bg-gray-100">
                                       {url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
                                         <AuthenticatedImage 
                                           src={url} 
                                           alt={`Attachment ${fIdx + 1}`} 
-                                          className="w-full h-full object-cover"
+                                          className="w-full h-full"
                                         />
                                       ) : (
                                         <a 
