@@ -1152,21 +1152,47 @@ const BrowseJobsPage = () => {
                   <h3 className="font-semibold mb-3 font-montserrat">Job Requirements & Details</h3>
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-4">
                     {(() => {
-                      // Filter answers: show ONLY non-empty text answers
+                      // Helper to detect file URLs
+                      const isFileUrl = (str) => {
+                        if (typeof str !== 'string') return false;
+                        return str.includes('/api/jobs/trade-questions/file/') || 
+                               str.match(/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i) ||
+                               str.startsWith('data:image/');
+                      };
+
+                      // Filter answers: show ONLY non-empty text answers that are NOT files
                       const visibleAnswers = selectedJobAnswers.answers.filter(ans => {
                         if ((ans.question_type || '').startsWith('file_upload')) return false;
+                        
                         const val = ans.answer_text || (Array.isArray(ans.answer_value) ? ans.answer_value.join(', ') : (ans.answer_value ?? ''));
+                        
+                        // Check if the value itself looks like a file URL (or list of them)
+                        if (isFileUrl(val) || (typeof val === 'string' && val.split(',').some(part => isFileUrl(part.trim())))) {
+                          return false;
+                        }
+
                         if (!val || String(val).trim() === '' || val === '—') return false;
                         return true;
                       });
 
                       // Find file uploads (images) to show separately
                       const fileAnswers = selectedJobAnswers.answers.filter(ans => {
-                        if (!(ans.question_type || '').startsWith('file_upload')) return false;
-                        const val = ans.answer_value;
-                        // Must have actual file URLs
-                        if (Array.isArray(val) && val.length > 0) return true;
-                        if (typeof val === 'string' && val.trim().length > 0) return true;
+                        const val = ans.answer_value || ans.answer_text;
+                        const isFileUploadType = (ans.question_type || '').startsWith('file_upload');
+
+                        // If explicitly a file upload type
+                        if (isFileUploadType) {
+                          if (Array.isArray(val) && val.length > 0) return true;
+                          if (typeof val === 'string' && val.trim().length > 0) return true;
+                        }
+
+                        // Also check if the content looks like file URLs (even if type isn't file_upload)
+                        if (typeof val === 'string') {
+                           if (isFileUrl(val) || val.split(',').some(part => isFileUrl(part.trim()))) {
+                             return true;
+                           }
+                        }
+                        
                         return false;
                       });
 
@@ -1190,7 +1216,19 @@ const BrowseJobsPage = () => {
                               <h4 className="font-medium text-gray-800 font-lato mb-3">Attachments</h4>
                               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                                 {fileAnswers.map((ans, idx) => {
-                                  const files = Array.isArray(ans.answer_value) ? ans.answer_value : [ans.answer_value];
+                                  // Handle both array and comma-separated string
+                                  let files = [];
+                                  const rawValue = ans.answer_value || ans.answer_text;
+                                  
+                                  if (Array.isArray(rawValue)) {
+                                    files = rawValue;
+                                  } else if (typeof rawValue === 'string') {
+                                    // Split by comma if present, otherwise just one item
+                                    files = rawValue.includes(',') 
+                                      ? rawValue.split(',').map(s => s.trim()) 
+                                      : [rawValue];
+                                  }
+
                                   return files.map((url, fIdx) => {
                                     // Handle cases where the URL is a data URI or a remote URL
                                     // Also check if it's a file path that ends with an image extension, regardless of case
