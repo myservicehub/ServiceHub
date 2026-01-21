@@ -589,6 +589,17 @@ const AdminDashboard = () => {
       setLoading(true);
       const response = await adminAPI.getJobDetailsAdmin(job.id);
       const jobDetails = response.job;
+      
+      // Fetch job question answers and attach to job details
+      try {
+        const answers = await tradeCategoryQuestionsAPI.getJobQuestionAnswers(job.id);
+        if (answers && answers.answers && answers.answers.length > 0) {
+          jobDetails.question_answers = answers;
+        }
+      } catch (err) {
+        console.error('Failed to fetch job question answers for admin review:', err);
+      }
+      
       setSelectedJob(jobDetails);
     } catch (error) {
       toast({
@@ -5638,21 +5649,46 @@ const AdminDashboard = () => {
               </div>
 
               {(() => {
-                // Filter answers: show ONLY non-empty text answers
+                // Helper to detect file URLs
+                const isFileUrl = (str) => {
+                  if (typeof str !== 'string') return false;
+                  return str.includes('/api/jobs/trade-questions/file/') || 
+                         str.match(/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i) ||
+                         str.startsWith('data:image/');
+                };
+
+                // Filter answers: show ONLY non-empty text answers that are NOT files
                 const visibleAnswers = selectedJob.question_answers?.answers?.filter(ans => {
                   if ((ans.question_type || '').startsWith('file_upload')) return false;
+                  
                   const val = ans.answer_text || (Array.isArray(ans.answer_value) ? ans.answer_value.join(', ') : (ans.answer_value ?? ''));
-                  if (!val || String(val).trim() === '' || val === '—') return false;
+                  
+                  // Check if the value itself looks like a file URL (or list of them)
+                  if (isFileUrl(val) || (typeof val === 'string' && val.split(',').some(part => isFileUrl(part.trim())))) {
+                    return false;
+                  }
+
+                  // Be permissive with what we show (allow 0, false, etc.)
+                  if (val === undefined || val === null || String(val).trim() === '' || val === '—') return false;
                   return true;
                 }) || [];
 
                 // Find file uploads (images) to show separately
                 const fileAnswers = selectedJob.question_answers?.answers?.filter(ans => {
-                  if (!(ans.question_type || '').startsWith('file_upload')) return false;
-                  const val = ans.answer_value;
-                  // Must have actual file URLs
-                  if (Array.isArray(val) && val.length > 0) return true;
-                  if (typeof val === 'string' && val.trim().length > 0) return true;
+                  const val = ans.answer_value || ans.answer_text;
+                  const isFileUploadType = (ans.question_type || '').startsWith('file_upload');
+                  
+                  if (isFileUploadType) {
+                    if (Array.isArray(val) && val.length > 0) return true;
+                    if (typeof val === 'string' && val.trim().length > 0) return true;
+                    return false;
+                  }
+                  
+                  // Also include if the value looks like a file URL even if not a file_upload type
+                  if (isFileUrl(val) || (typeof val === 'string' && val.split(',').some(part => isFileUrl(part.trim())))) {
+                    return true;
+                  }
+                  
                   return false;
                 }) || [];
                 
@@ -5666,8 +5702,8 @@ const AdminDashboard = () => {
                             const val = ans.answer_text || (Array.isArray(ans.answer_value) ? ans.answer_value.join(', ') : (ans.answer_value ?? ''));
                             return (
                               <div key={idx} className="mb-3">
-                                <div className="text-sm font-medium text-[#121E3C]">{ans.question_text}</div>
-                                <div className="text-sm text-gray-700 mt-1">{val}</div>
+                                <div className="text-sm font-semibold text-[#121E3C]">{ans.question_text}</div>
+                                <div className="text-sm text-gray-700 mt-1 whitespace-pre-wrap">{val}</div>
                               </div>
                             );
                           })}
@@ -5677,28 +5713,26 @@ const AdminDashboard = () => {
 
                     {/* Image Attachments */}
                     {fileAnswers.length > 0 && (
-                      <div>
+                      <div className="mb-6">
                         <h4 className="text-lg font-medium mb-3">Attachments</h4>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                           {fileAnswers.map((ans, idx) => {
-                             const files = Array.isArray(ans.answer_value) ? ans.answer_value : [ans.answer_value];
-                             return files.map((url, fIdx) => (
+                             const val = ans.answer_value || ans.answer_text;
+                             const files = Array.isArray(val) ? val : (typeof val === 'string' ? val.split(',').map(s => s.trim()) : [val]);
+                             
+                             return files.filter(f => f && (typeof f === 'string')).map((url, fIdx) => (
                                <div key={`${idx}-${fIdx}`} className="relative group border rounded-lg overflow-hidden h-32 bg-gray-100">
-                                 {url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                                 {isFileUrl(url) ? (
                                    <AuthenticatedImage 
                                      src={url} 
                                      alt={`Attachment ${fIdx + 1}`} 
-                                     className="w-full h-full"
+                                     className="w-full h-full object-cover"
                                    />
                                  ) : (
                                    <button 
                                      onClick={async (e) => {
                                        e.stopPropagation();
                                        try {
-                                          // Import apiClient dynamically or assume it's available via closure/import if defined in file
-                                          // Since we can't easily import inside JSX, we'll assume we need to handle this properly.
-                                          // For now, let's just try to open it (it might fail auth) but better than nothing
-                                          // Or better: use a simple fetch to download
                                           const token = localStorage.getItem('admin_token') || localStorage.getItem('token');
                                           const response = await fetch(url, {
                                             headers: { 'Authorization': `Bearer ${token}` }
