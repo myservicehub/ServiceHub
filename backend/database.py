@@ -867,6 +867,12 @@ class Database:
         pending["_id"] = str(result.inserted_id)
         return pending
 
+    async def get_pending_job_by_id(self, pending_id: str) -> Optional[dict]:
+        """Get pending job by its unique ID"""
+        if self.database is None:
+            return None
+        return await self.database.pending_jobs.find_one({"id": pending_id})
+
     async def get_pending_job_by_user_id(self, user_id: str) -> Optional[dict]:
         if self.database is None:
             return None

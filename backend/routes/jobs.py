@@ -43,6 +43,7 @@ router = APIRouter(prefix="/api/jobs", tags=["jobs"])
 class PublicJobPostRequest(BaseModel):
     job: JobCreate
     password: str = Field(..., min_length=8)
+    question_answers: Optional[dict] = None
 
 # Public endpoints for location data
 @router.get("/locations/states")
@@ -1369,22 +1370,30 @@ async def save_job_question_answers(
             if field not in answers_data:
                 raise HTTPException(status_code=400, detail=f"Missing required field: {field}")
         
-        # Verify job belongs to current user
-        # For new users who just registered via register-and-post, they might be in a state
-        # where we need to be careful about ownership checks if active status isn't fully propagated yet
-        # But get_current_active_user should handle it if they have a token.
+        job_id = answers_data["job_id"]
         
-        job = await database.get_job_by_id(answers_data["job_id"])
+        # Check if it's a regular job or a pending job
+        job = await database.get_job_by_id(job_id)
+        is_pending = False
+        
+        if not job:
+            job = await database.get_pending_job_by_id(job_id)
+            if job:
+                is_pending = True
+        
         if not job:
             raise HTTPException(status_code=404, detail="Job not found")
             
         # Check ownership: either direct id match or homeowner object id match
-        job_owner_id = job.get("homeowner_id")
-        if not job_owner_id and job.get("homeowner"):
-            job_owner_id = job.get("homeowner", {}).get("id")
+        if is_pending:
+            job_owner_id = job.get("user_id")
+        else:
+            job_owner_id = job.get("homeowner_id")
+            if not job_owner_id and job.get("homeowner"):
+                job_owner_id = job.get("homeowner", {}).get("id")
             
         if job_owner_id != current_user.id:
-            logger.warning(f"Unauthorized answer save attempt: User {current_user.id} tried to save for job {answers_data['job_id']} owned by {job_owner_id}")
+            logger.warning(f"Unauthorized answer save attempt: User {current_user.id} tried to save for job {job_id} owned by {job_owner_id}")
             raise HTTPException(status_code=403, detail="Not authorized to save answers for this job")
         
         saved_answers = await database.save_job_question_answers(answers_data)
@@ -1436,11 +1445,24 @@ async def upload_job_question_attachment(
     current_user: User = Depends(get_current_homeowner)
 ):
     try:
+        # Check if it's a regular job or a pending job
         job = await database.get_job_by_id(job_id)
+        is_pending = False
+        
+        if not job:
+            job = await database.get_pending_job_by_id(job_id)
+            if job:
+                is_pending = True
+        
         if not job:
             raise HTTPException(status_code=404, detail="Job not found")
-        homeowner_id = job.get("homeowner", {}).get("id") or job.get("homeowner_id")
-        if homeowner_id != current_user.id:
+            
+        if is_pending:
+            owner_id = job.get("user_id")
+        else:
+            owner_id = job.get("homeowner", {}).get("id") or job.get("homeowner_id")
+            
+        if owner_id != current_user.id:
             raise HTTPException(status_code=403, detail="Not authorized to upload for this job")
 
         question = await database.get_trade_category_question_by_id(question_id)
@@ -1697,14 +1719,17 @@ async def register_and_post(payload: PublicJobPostRequest, background_tasks: Bac
                 await database.create_email_verification_token(
                     user_id=user_obj.id, token=verification_token, expires_at=expires_at
                 )
-                # Skip creating pending job, we will create the job directly
-                # and let the frontend handle the verification prompt
-                # if not getattr(user_obj, "email_verified", False):
-                #     await database.create_pending_job(
-                #         user_id=user_obj.id,
-                #         job_data=job_data.dict(),
-                #         expires_at=expires_at,
-                #     )
+                
+                # Store job data in pending_jobs to be created after verification
+                pending_data = job_data.dict()
+                if payload.question_answers:
+                    pending_data["question_answers"] = payload.question_answers
+                
+                pending_job = await database.create_pending_job(
+                    user_id=user_obj.id,
+                    job_data=pending_data,
+                    expires_at=expires_at,
+                )
 
                 email_service = None
                 try:
@@ -1743,7 +1768,7 @@ async def register_and_post(payload: PublicJobPostRequest, background_tasks: Bac
                       <div class="container">
                         <h2>Verify your email</h2>
                         <p>Hello {user_obj.name},</p>
-                        <p>Your job has been posted successfully! Please verify your email to fully activate your account.</p>
+                        <p>Please verify your email to post your job and activate your account.</p>
                         <p style="text-align: center;">
                           <a class="btn" href="{verify_link}">Verify Email</a>
                         </p>
@@ -1764,13 +1789,21 @@ async def register_and_post(payload: PublicJobPostRequest, background_tasks: Bac
                     )
                 
                 logger.info(f"Verification email task added for {user_obj.email}")
+                
+                # Stop here and return 403 to frontend with pending_job_id
+                raise HTTPException(
+                    status_code=403, 
+                    detail={
+                        "message": "Email verification required", 
+                        "verification_required": True,
+                        "pending_job_id": pending_job.get("id")
+                    }
+                )
 
             except HTTPException:
                 raise
             except Exception as e:
                 logger.error(f"Failed to send verification email during register-and-post: {e}")
-                # Don't fail the request, just log error
-
 
         job_dict = job_data.dict()
         job_dict["location"] = job_data.state
@@ -1796,6 +1829,16 @@ async def register_and_post(payload: PublicJobPostRequest, background_tasks: Bac
         job_dict["expires_at"] = datetime.utcnow() + timedelta(days=30)
 
         created_job = await database.create_job(job_dict)
+
+        # If there are question answers and user IS verified, save them now
+        if payload.question_answers:
+            try:
+                # Prepare answers data
+                ans_data = payload.question_answers.copy()
+                ans_data["job_id"] = created_job["id"]
+                await database.save_job_question_answers(ans_data)
+            except Exception as e:
+                logger.error(f"Failed to save question answers for verified user: {e}")
 
         # Notify homeowner only; tradespeople will be notified after admin approval
         background_tasks.add_task(

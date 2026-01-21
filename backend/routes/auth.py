@@ -1667,6 +1667,31 @@ async def confirm_email_verification(token: str):
                 job_dict["updated_at"] = datetime.utcnow()
                 job_dict["expires_at"] = datetime.utcnow() + timedelta(days=30)
                 auto_job = await database.create_job(job_dict)
+                
+                # Save question answers if they were included in the pending job
+                # OR if they were saved separately using the pending_job_id
+                try:
+                    # First check if there are answers saved separately for this pending job ID
+                    existing_answers = await database.database.job_question_answers.find_one({"job_id": pending["id"]})
+                    
+                    if existing_answers:
+                        # Update the job_id from pending ID to the real job ID
+                        await database.database.job_question_answers.update_one(
+                            {"job_id": pending["id"]},
+                            {"$set": {"job_id": auto_job["id"], "updated_at": datetime.utcnow()}}
+                        )
+                        logger.info(f"Updated separately saved question answers from pending {pending['id']} to real job {auto_job['id']}")
+                    else:
+                        # Fallback to the answers stored in the pending job data itself
+                        question_answers = jd.get("question_answers")
+                        if question_answers:
+                            ans_data = dict(question_answers)
+                            ans_data["job_id"] = auto_job["id"]
+                            await database.save_job_question_answers(ans_data)
+                            logger.info(f"Saved question answers from pending job data for auto-posted job {auto_job['id']}")
+                except Exception as e:
+                    logger.error(f"Failed to save/update question answers for auto-posted job: {e}")
+
                 await database.mark_pending_job_used(pending["id"])
         except Exception:
             auto_job = None

@@ -195,6 +195,7 @@ const AdminDashboard = () => {
   const [jobsFilter, setJobsFilter] = useState('');
   const [editingJobStatus, setEditingJobStatus] = useState(null);
   const [selectedJobDetails, setSelectedJobDetails] = useState(null);
+  const [selectedJobAnswers, setSelectedJobAnswers] = useState(null);
   const [showJobDetailsModal, setShowJobDetailsModal] = useState(false);
   const [showEditJobModal, setShowEditJobModal] = useState(false);
   const [editingJobData, setEditingJobData] = useState(null);
@@ -5178,7 +5179,7 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              {selectedJobDetails.question_answers && selectedJobDetails.question_answers.answers && selectedJobDetails.question_answers.answers.length > 0 && (
+              {selectedJobAnswers && selectedJobAnswers.answers && selectedJobAnswers.answers.length > 0 && (
                 <div>
                   <h4 className="font-medium mb-2 font-montserrat">Job Requirements & Details</h4>
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-4">
@@ -5192,7 +5193,7 @@ const AdminDashboard = () => {
                       };
 
                       // Filter answers: show ONLY non-empty text answers that are NOT files
-                      const visibleAnswers = selectedJobDetails.question_answers.answers.filter(ans => {
+                      const visibleAnswers = selectedJobAnswers.answers.filter(ans => {
                         if ((ans.question_type || '').startsWith('file_upload')) return false;
                         
                         const val = ans.answer_text || (Array.isArray(ans.answer_value) ? ans.answer_value.join(', ') : (ans.answer_value ?? ''));
@@ -5207,7 +5208,7 @@ const AdminDashboard = () => {
                       });
 
                       // Find file uploads (images) to show separately
-                      const fileAnswers = selectedJobDetails.question_answers.answers.filter(ans => {
+                      const fileAnswers = selectedJobAnswers.answers.filter(ans => {
                         const val = ans.answer_value || ans.answer_text;
                         const isFileUploadType = (ans.question_type || '').startsWith('file_upload');
 

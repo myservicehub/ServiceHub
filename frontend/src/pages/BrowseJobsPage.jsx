@@ -568,13 +568,26 @@ const BrowseJobsPage = () => {
     
     // Fetch job question answers
     try {
+      console.log('🔍 Fetching answers for job ID:', job.id, '(_id:', job._id, ')');
       const answers = await tradeCategoryQuestionsAPI.getJobQuestionAnswers(job.id);
+      console.log('📋 Fetched answers document:', answers);
       if (answers && answers.answers && answers.answers.length > 0) {
+        console.log('✅ Setting selected job answers with', answers.answers.length, 'answers');
         setSelectedJobAnswers(answers);
+      } else {
+        console.log('ℹ️ No answers found for this job or answers array is empty');
+        // Try with _id just in case
+        if (job._id && job._id !== job.id) {
+          console.log('🔄 Trying to fetch answers using _id:', job._id);
+          const altAnswers = await tradeCategoryQuestionsAPI.getJobQuestionAnswers(job._id);
+          if (altAnswers && altAnswers.answers && altAnswers.answers.length > 0) {
+            console.log('✅ Found answers using _id!');
+            setSelectedJobAnswers(altAnswers);
+          }
+        }
       }
-    } catch (error) {
-      console.error('Failed to fetch job question answers:', error);
-      // Don't show error to user, just continue without answers
+    } catch (err) {
+      console.error('❌ Error fetching job answers:', err);
     }
   };
 
@@ -1171,7 +1184,8 @@ const BrowseJobsPage = () => {
                           return false;
                         }
 
-                        if (!val || String(val).trim() === '' || val === '—') return false;
+                        // Be more permissive with what we show (allow 0, false, etc.)
+                        if (val === undefined || val === null || String(val).trim() === '' || val === '—') return false;
                         return true;
                       });
 

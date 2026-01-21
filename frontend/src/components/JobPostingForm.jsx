@@ -1561,59 +1561,10 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
 
     setSubmitting(true);
 
-    try {
-      // Build job payload
-      const jobData = {
-        title: formData.title,
-        description: formData.description.trim(),
-        category: formData.category,
-        state: formData.state,
-        lga: formData.lga,
-        town: formData.town,
-        zip_code: formData.zip_code,
-        home_address: formData.home_address,
-        budget_min: formData.budgetType === 'range' ? parseInt(formData.budget_min) : null,
-        budget_max: formData.budgetType === 'range' ? parseInt(formData.budget_max) : null,
-        timeline: formData.timeline,
-        homeowner_name: formData.homeowner_name,
-        homeowner_email: formData.homeowner_email,
-        homeowner_phone: formData.homeowner_phone
-      };
-
-      // Add coordinates if location was selected
-      if (formData.jobLocation) {
-        jobData.latitude = formData.jobLocation.lat;
-        jobData.longitude = formData.jobLocation.lng;
-      }
-
-      // New flow: register-and-post with email verification gate
-      const payload = { job: jobData, password: formData.password };
-      let jobResponse;
-      try {
-        jobResponse = await jobsAPI.registerAndPost(payload);
-      } catch (err) {
-        const detail = err?.response?.data?.detail;
-        if (err?.response?.status === 403 && detail?.verification_required) {
-          toast({
-            title: "Verify your email",
-            description: "We sent a verification link to your email. Please verify to post your job.",
-          });
-          // Keep user on step 5 and show guidance
-          setCurrentStep(5);
-          setSubmitting(false);
-          return;
-        }
-        throw err;
-      }
-
-      if (jobResponse.access_token && jobResponse.user) {
-        try { loginWithToken(jobResponse.access_token, jobResponse.user); } catch {}
-      }
-
-      // Save question answers if there are any
+    // Helper function to save question answers
+    const saveAnswers = async (jobId) => {
       if (tradeQuestions.length > 0 && Object.keys(questionAnswers).length > 0) {
         try {
-          const jobId = jobResponse.job_id || jobResponse.id;
           const updatedAnswers = { ...questionAnswers };
           for (const q of tradeQuestions.filter(q => isFileUploadType(q.question_type))) {
             const val = questionAnswers[q.id];
@@ -1654,13 +1605,99 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
 
           await tradeCategoryQuestionsAPI.saveJobQuestionAnswers(answersData);
           console.log('✅ Question answers saved successfully');
+          return true;
         } catch (answerError) {
-          console.error('⚠️ Failed to save question answers, but job was created:', answerError);
-          // Don't fail the job posting if answers can't be saved
+          console.error('⚠️ Failed to save question answers:', answerError);
+          return false;
         }
       }
+      return true;
+    };
 
+    try {
+      // Build job payload
+      const jobData = {
+        title: formData.title,
+        description: formData.description.trim(),
+        category: formData.category,
+        state: formData.state,
+        lga: formData.lga,
+        town: formData.town,
+        zip_code: formData.zip_code,
+        home_address: formData.home_address,
+        budget_min: formData.budgetType === 'range' ? parseInt(formData.budget_min) : null,
+        budget_max: formData.budgetType === 'range' ? parseInt(formData.budget_max) : null,
+        timeline: formData.timeline,
+        homeowner_name: formData.homeowner_name,
+        homeowner_email: formData.homeowner_email,
+        homeowner_phone: formData.homeowner_phone
+      };
+
+      // Add coordinates if location was selected
+      if (formData.jobLocation) {
+        jobData.latitude = formData.jobLocation.lat;
+        jobData.longitude = formData.jobLocation.lng;
+      }
+
+      // New flow: register-and-post with email verification gate
+      // Include non-file answers in the initial payload if possible
+      const initialAnswers = {};
+      if (tradeQuestions.length > 0 && Object.keys(questionAnswers).length > 0) {
+        getVisibleQuestions(true).forEach(q => {
+          if (!isFileUploadType(q.question_type)) {
+            initialAnswers[q.id] = questionAnswers[q.id];
+          }
+        });
+      }
+
+      const payload = { 
+        job: jobData, 
+        password: formData.password,
+        question_answers: Object.keys(initialAnswers).length > 0 ? {
+          trade_category: formData.category,
+          answers: getVisibleQuestions(true)
+            .filter(q => !isFileUploadType(q.question_type))
+            .map(q => ({
+              question_id: q.id,
+              question_text: q.question_text,
+              question_type: q.question_type,
+              answer_value: initialAnswers[q.id],
+              answer_text: formatAnswerText(q, initialAnswers[q.id])
+            }))
+        } : null
+      };
+
+      let jobResponse;
+      try {
+        jobResponse = await jobsAPI.registerAndPost(payload);
+      } catch (err) {
+        const detail = err?.response?.data?.detail;
+        if (err?.response?.status === 403 && detail?.verification_required) {
+          // Even if 403, we might need to upload files to the pending job
+          if (detail.pending_job_id) {
+            await saveAnswers(detail.pending_job_id);
+          }
+          
+          toast({
+            title: "Verify your email",
+            description: "We sent a verification link to your email. Please verify to post your job.",
+          });
+          // Keep user on step 5 and show guidance
+          setCurrentStep(5);
+          setSubmitting(false);
+          return;
+        }
+        throw err;
+      }
+
+      if (jobResponse.access_token && jobResponse.user) {
+        try { loginWithToken(jobResponse.access_token, jobResponse.user); } catch {}
+      }
+
+      // Save/Update question answers (including files)
       const jobId = jobResponse.job_id || jobResponse.id;
+      await saveAnswers(jobId);
+
       toast({
         title: "Job Submitted!",
         description: `Your job has been submitted for admin review. Job ID: ${jobId}`,
