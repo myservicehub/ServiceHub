@@ -1359,7 +1359,7 @@ async def get_trade_category_questions(trade_category: str):
 @router.post("/trade-questions/answers")
 async def save_job_question_answers(
     answers_data: dict,
-    current_user: User = Depends(get_current_homeowner)
+    current_user: User = Depends(get_current_active_user)
 ):
     """Save answers to trade category questions for a job"""
     try:
@@ -1370,8 +1370,21 @@ async def save_job_question_answers(
                 raise HTTPException(status_code=400, detail=f"Missing required field: {field}")
         
         # Verify job belongs to current user
+        # For new users who just registered via register-and-post, they might be in a state
+        # where we need to be careful about ownership checks if active status isn't fully propagated yet
+        # But get_current_active_user should handle it if they have a token.
+        
         job = await database.get_job_by_id(answers_data["job_id"])
-        if not job or job.get("homeowner", {}).get("id") != current_user.id:
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+            
+        # Check ownership: either direct id match or homeowner object id match
+        job_owner_id = job.get("homeowner_id")
+        if not job_owner_id and job.get("homeowner"):
+            job_owner_id = job.get("homeowner", {}).get("id")
+            
+        if job_owner_id != current_user.id:
+            logger.warning(f"Unauthorized answer save attempt: User {current_user.id} tried to save for job {answers_data['job_id']} owned by {job_owner_id}")
             raise HTTPException(status_code=403, detail="Not authorized to save answers for this job")
         
         saved_answers = await database.save_job_question_answers(answers_data)
@@ -1383,6 +1396,7 @@ async def save_job_question_answers(
             "message": "Job question answers saved successfully",
             "answers": saved_answers
         }
+
     except HTTPException:
         raise
     except Exception as e:
@@ -1713,11 +1727,16 @@ async def register_and_post(payload: PublicJobPostRequest, background_tasks: Bac
                     <html>
                     <head>
                       <meta charset="utf-8">
+                      <meta name="viewport" content="width=device-width, initial-scale=1.0">
                       <style>
-                        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
-                        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-                        .btn {{ display: inline-block; background-color: #34D164; color: #fff; padding: 12px 18px; border-radius: 8px; text-decoration: none; font-weight: bold; }}
-                        .link {{ word-break: break-all; color: #2563eb; }}
+                        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #e0e0e0; background-color: #121212; margin: 0; padding: 0; }}
+                        .container {{ max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #1e1e1e; border-radius: 12px; margin-top: 20px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); }}
+                        h2 {{ color: #ffffff; margin-top: 0; font-size: 24px; font-weight: 600; }}
+                        p {{ color: #cccccc; font-size: 16px; margin-bottom: 20px; }}
+                        .btn {{ display: inline-block; background-color: #34D164; color: #ffffff !important; padding: 14px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px; margin-top: 10px; margin-bottom: 10px; transition: background-color 0.3s; }}
+                        .btn:hover {{ background-color: #2cb555; }}
+                        .link {{ word-break: break-all; color: #34D164; font-size: 14px; }}
+                        .footer {{ margin-top: 30px; font-size: 12px; color: #888888; text-align: center; border-top: 1px solid #333; padding-top: 20px; }}
                       </style>
                     </head>
                     <body>
@@ -1725,25 +1744,27 @@ async def register_and_post(payload: PublicJobPostRequest, background_tasks: Bac
                         <h2>Verify your email</h2>
                         <p>Hello {user_obj.name},</p>
                         <p>Your job has been posted successfully! Please verify your email to fully activate your account.</p>
-                        <p>
+                        <p style="text-align: center;">
                           <a class="btn" href="{verify_link}">Verify Email</a>
                         </p>
                         <p>If the button doesn’t work, copy and paste this link:</p>
-                        <p class="link">{verify_link}</p>
-                        <p>This link expires in 24 hours.</p>
+                        <p><a href="{verify_link}" class="link">{verify_link}</a></p>
+                        <p class="footer">This link expires in 24 hours.</p>
                       </div>
                     </body>
                     </html>
                     """
                     
-                    await email_service.send_email(
+                    background_tasks.add_task(
+                        email_service.send_email,
                         to=user_obj.email,
                         subject="Verify your email - ServiceHub",
                         content=html,
                         metadata={"purpose": "email_verification", "user_id": user_obj.id}
                     )
                 
-                logger.info(f"Verification email sent to {user_obj.email}")
+                logger.info(f"Verification email task added for {user_obj.email}")
+
             except HTTPException:
                 raise
             except Exception as e:

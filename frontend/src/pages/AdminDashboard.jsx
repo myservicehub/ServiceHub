@@ -5169,16 +5169,123 @@ const AdminDashboard = () => {
 
               {selectedJobDetails.question_answers && selectedJobDetails.question_answers.answers && selectedJobDetails.question_answers.answers.length > 0 && (
                 <div>
-                  <h4 className="font-medium mb-2">Job Questions & Answers</h4>
-                  <div className="bg-gray-50 p-4 rounded text-sm space-y-3">
-                    {selectedJobDetails.question_answers.answers.map((qa, index) => (
-                      <div key={index} className="border-b border-gray-200 last:border-0 pb-2 last:pb-0">
-                        <div className="font-medium text-gray-700">{qa.question_text}</div>
-                        <div className="text-gray-900 mt-1">
-                          {qa.answer_text || (Array.isArray(qa.answer_value) ? qa.answer_value.join(', ') : String(qa.answer_value))}
-                        </div>
-                      </div>
-                    ))}
+                  <h4 className="font-medium mb-2 font-montserrat">Job Requirements & Details</h4>
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-4">
+                    {(() => {
+                      // Helper to detect file URLs
+                      const isFileUrl = (str) => {
+                        if (typeof str !== 'string') return false;
+                        return str.includes('/api/jobs/trade-questions/file/') || 
+                               str.match(/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i) ||
+                               str.startsWith('data:image/');
+                      };
+
+                      // Filter answers: show ONLY non-empty text answers that are NOT files
+                      const visibleAnswers = selectedJobDetails.question_answers.answers.filter(ans => {
+                        if ((ans.question_type || '').startsWith('file_upload')) return false;
+                        
+                        const val = ans.answer_text || (Array.isArray(ans.answer_value) ? ans.answer_value.join(', ') : (ans.answer_value ?? ''));
+                        
+                        // Check if the value itself looks like a file URL (or list of them)
+                        if (isFileUrl(val) || (typeof val === 'string' && val.split(',').some(part => isFileUrl(part.trim())))) {
+                          return false;
+                        }
+
+                        if (!val || String(val).trim() === '' || val === '—') return false;
+                        return true;
+                      });
+
+                      // Find file uploads (images) to show separately
+                      const fileAnswers = selectedJobDetails.question_answers.answers.filter(ans => {
+                        const val = ans.answer_value || ans.answer_text;
+                        const isFileUploadType = (ans.question_type || '').startsWith('file_upload');
+
+                        // If explicitly a file upload type
+                        if (isFileUploadType) {
+                          if (Array.isArray(val) && val.length > 0) return true;
+                          if (typeof val === 'string' && val.trim().length > 0) return true;
+                        }
+
+                        // Also check if the content looks like file URLs (even if type isn't file_upload)
+                        if (typeof val === 'string') {
+                           if (isFileUrl(val) || val.split(',').some(part => isFileUrl(part.trim()))) {
+                             return true;
+                           }
+                        }
+                        
+                        return false;
+                      });
+
+                      return (
+                        <>
+                          {visibleAnswers.map((answer, index) => (
+                            <div key={index} className="border-b border-green-200 last:border-b-0 pb-3 last:pb-0">
+                              <div className="font-medium text-gray-800 font-lato mb-1">
+                                {answer.question_text}
+                              </div>
+                              <div className="text-gray-700 font-lato pl-3">
+                                <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                {answer.answer_text || answer.answer_value}
+                              </div>
+                            </div>
+                          ))}
+
+                          {/* Attachments Section */}
+                          {fileAnswers.length > 0 && (
+                            <div className="pt-4 border-t border-green-200">
+                              <h4 className="font-medium text-gray-800 font-lato mb-3">Attachments</h4>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                {fileAnswers.map((ans, idx) => {
+                                  // Handle both array and comma-separated string
+                                  let files = [];
+                                  const rawValue = ans.answer_value || ans.answer_text;
+                                  
+                                  if (Array.isArray(rawValue)) {
+                                    files = rawValue;
+                                  } else if (typeof rawValue === 'string') {
+                                    // Split by comma if present, otherwise just one item
+                                    files = rawValue.includes(',') 
+                                      ? rawValue.split(',').map(s => s.trim()) 
+                                      : [rawValue];
+                                  }
+
+                                  return files.map((url, fIdx) => {
+                                    // Handle cases where the URL is a data URI or a remote URL
+                                    // Also check if it's a file path that ends with an image extension, regardless of case
+                                    const isImage = url.match(/\.(jpg|jpeg|png|gif|webp)$/i) || 
+                                                  url.startsWith('data:image/') ||
+                                                  url.includes('/api/jobs/trade-questions/file/');
+                                    
+                                    return (
+                                      <div key={`${idx}-${fIdx}`} className="relative group border rounded-lg overflow-hidden h-32 bg-gray-100">
+                                        {isImage ? (
+                                          <div className="w-full h-full">
+                                            <AuthenticatedImage 
+                                              src={url} 
+                                              alt={`Attachment ${fIdx + 1}`} 
+                                              className="w-full h-full object-contain"
+                                            />
+                                          </div>
+                                        ) : (
+                                          <a  
+                                            href={url} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-blue-600 bg-gray-50 hover:bg-gray-100 transition-colors"
+                                          >
+                                            <span className="text-xs font-medium px-2 text-center">Download File</span>
+                                          </a>
+                                        )}
+                                      </div>
+                                    );
+                                  });
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               )}
