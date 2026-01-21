@@ -567,9 +567,20 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleViewJobDetails = (job) => {
+  const handleViewJobDetails = async (job) => {
     setSelectedJobDetails(job);
+    setSelectedJobAnswers(null);
     setShowJobDetailsModal(true);
+    
+    // Fetch job question answers
+    try {
+      const answers = await tradeCategoryQuestionsAPI.getJobQuestionAnswers(job.id);
+      if (answers && answers.answers && answers.answers.length > 0) {
+        setSelectedJobAnswers(answers);
+      }
+    } catch (error) {
+      console.error('Failed to fetch job question answers:', error);
+    }
   };
 
   const handleOpenReview = async (job) => {
