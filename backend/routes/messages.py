@@ -405,7 +405,15 @@ async def get_hiring_status(
         if not job:
             raise HTTPException(status_code=404, detail="Job not found")
         
-        if job.get("homeowner", {}).get("id") != current_user.id:
+        homeowner_data = job.get("homeowner", {})
+        is_owner = False
+        if homeowner_data.get("id") and str(homeowner_data.get("id")) == str(current_user.id):
+            is_owner = True
+        elif job.get("homeowner_id") and str(job.get("homeowner_id")) == str(current_user.id):
+            is_owner = True
+        elif homeowner_data.get("email") and homeowner_data.get("email") == current_user.email:
+            is_owner = True
+        if not is_owner:
             raise HTTPException(status_code=403, detail="You can only view status for your own jobs")
         
         # Get hiring status records for this job
@@ -441,7 +449,15 @@ async def get_hired_tradespeople_for_job(
         if not job:
             raise HTTPException(status_code=404, detail="Job not found")
         
-        if job.get("homeowner", {}).get("id") != current_user.id:
+        homeowner_data = job.get("homeowner", {})
+        is_owner = False
+        if homeowner_data.get("id") and str(homeowner_data.get("id")) == str(current_user.id):
+            is_owner = True
+        elif job.get("homeowner_id") and str(job.get("homeowner_id")) == str(current_user.id):
+            is_owner = True
+        elif homeowner_data.get("email") and homeowner_data.get("email") == current_user.email:
+            is_owner = True
+        if not is_owner:
             raise HTTPException(status_code=403, detail="You can only view hired tradespeople for your own jobs")
         
         # Get all hiring status records where hired = true for this job

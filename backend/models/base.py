@@ -347,15 +347,15 @@ class InterestedTradesperson(BaseModel):
     company_name: Optional[str] = None
     business_name: Optional[str] = None
     trade_categories: List[str] = []
-    experience_years: int
+    experience_years: int = 0
     average_rating: float = 4.5
     total_reviews: int = 0
     location: Optional[str] = None
     description: Optional[str] = None
     certifications: List[str] = []
     portfolio_count: Optional[int] = 0
-    status: InterestStatus
-    created_at: datetime
+    status: InterestStatus = InterestStatus.INTERESTED
+    created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     contact_shared_at: Optional[datetime] = None
     payment_made_at: Optional[datetime] = None
