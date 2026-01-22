@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ValidationBanner from './ValidationBanner';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -68,6 +69,7 @@ const FALLBACK_TRADE_CATEGORIES = [
 ];
 
 function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState }) {
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [tradeCategories, setTradeCategories] = useState(FALLBACK_TRADE_CATEGORIES);
   const [loadingTrades, setLoadingTrades] = useState(true);
@@ -575,9 +577,14 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
         onJobPosted(jobResponse);
       }
 
-      // Redirect to homepage instead of success page
+      // Redirect to My Jobs page instead of homepage to avoid full reload/anchoring
       setTimeout(() => {
-        window.location.href = '/';
+        try {
+          navigate('/my-jobs', { replace: true });
+        } catch (e) {
+          // Fallback to hard redirect if navigate is unavailable
+          window.location.href = '/my-jobs';
+        }
       }, 2000);
 
     } catch (error) {
@@ -1743,9 +1750,14 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
         onJobPosted(jobResponse);
       }
 
-      // Redirect to homepage instead of success page
+      // Redirect to My Jobs page instead of homepage to avoid full reload/anchoring
       setTimeout(() => {
-        window.location.href = '/';
+        try {
+          navigate('/my-jobs', { replace: true });
+        } catch (e) {
+          // Fallback to hard redirect if navigate is unavailable
+          window.location.href = '/my-jobs';
+        }
       }, 2000);
 
     } catch (error) {
