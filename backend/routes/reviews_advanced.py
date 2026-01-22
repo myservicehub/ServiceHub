@@ -6,7 +6,7 @@ from ..models.reviews import (
     ReviewRequest, ReviewHelpful, ReviewFilters,
     AdvancedReviewSearchRequest, AdvancedReviewSearchResponse
 )
-from ..models.auth import User
+from ..models.auth import User, UserRole
 from ..models.notifications import NotificationType
 from ..auth.dependencies import get_current_user, get_current_homeowner, get_current_tradesperson
 from ..database import database
@@ -45,9 +45,11 @@ async def create_review(
             raise HTTPException(status_code=404, detail="Job or user not found")
         
         # Determine review type
-        review_type = (ReviewType.HOMEOWNER_TO_TRADESPERSON 
-                      if current_user.role == "homeowner" 
-                      else ReviewType.TRADESPERSON_TO_HOMEOWNER)
+        review_type = (
+            ReviewType.HOMEOWNER_TO_TRADESPERSON
+            if current_user.role == UserRole.HOMEOWNER
+            else ReviewType.TRADESPERSON_TO_HOMEOWNER
+        )
         
         # Create review object
         review = Review(

@@ -11,6 +11,7 @@ from ..database import database
 from datetime import datetime
 import uuid
 from ..auth.dependencies import get_current_user
+from ..models.auth import UserRole
 
 logger = logging.getLogger(__name__)
 
@@ -183,7 +184,7 @@ async def get_received_reviews(
                 "total_pages": total_pages
             }
         # Only allow tradespeople to access this endpoint
-        if current_user.role != 'tradesperson':
+        if current_user.role != UserRole.TRADESPERSON:
             raise HTTPException(
                 status_code=403, 
                 detail="This endpoint is only available for tradespeople"

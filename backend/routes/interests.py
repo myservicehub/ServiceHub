@@ -87,32 +87,57 @@ async def get_job_interested_tradespeople(
             raise HTTPException(status_code=404, detail="Job not found")
         
         # Check ownership using ID or email
-        homeowner_data = job.get("homeowner", {})
-        is_owner = False
+            homeowner_data = job.get("homeowner", {})
+            # Robust ownership check - accept id, user_id, public_id or email
+            is_owner = False
+            try:
+                candidate_ids = set()
+                if getattr(current_user, 'id', None):
+                    candidate_ids.add(str(current_user.id))
+                if getattr(current_user, 'user_id', None):
+                    candidate_ids.add(str(current_user.user_id))
+                if getattr(current_user, 'public_id', None):
+                    candidate_ids.add(str(current_user.public_id))
+
+                if homeowner_data.get("id") and str(homeowner_data.get("id")) in candidate_ids:
+                    is_owner = True
+                elif job.get("homeowner_id") and str(job.get("homeowner_id")) in candidate_ids:
+                    is_owner = True
+                elif homeowner_data.get("email") and homeowner_data.get("email") == getattr(current_user, 'email', None):
+                    is_owner = True
+            except Exception:
+                # fallback simple comparison
+                if homeowner_data.get("id") and str(homeowner_data.get("id")) == str(getattr(current_user, 'id', None)):
+                    is_owner = True
+
+            if not is_owner:
+                logger.warning(f"Unauthorized interests access attempt to job {job_id} by user {getattr(current_user,'id',None)}. Owner: {homeowner_data}, Owner ID: {job.get('homeowner_id')}")
+                raise HTTPException(
+                    status_code=403, 
+                    detail="Not authorized to view interests for this job"
+                )
         
-        # Check ID match (primary)
-        if homeowner_data.get("id") and str(homeowner_data.get("id")) == str(current_user.id):
-            is_owner = True
-        # Check root level homeowner_id (most reliable)
-        elif job.get("homeowner_id") and str(job.get("homeowner_id")) == str(current_user.id):
-            is_owner = True
-        # Check email match (fallback)
-        elif homeowner_data.get("email") and homeowner_data.get("email") == current_user.email:
-            is_owner = True
-            
-        if not is_owner:
-            logger.warning(f"Unauthorized access attempt to job {job_id} by user {current_user.id}. Owner: {homeowner_data}, Owner ID: {job.get('homeowner_id')}")
+        # Get interested tradespeople (guard against DB errors and log details)
+        try:
+            interested = await database.get_job_interested_tradespeople(job_id)
+        except Exception as e:
+            logger.error(f"Error fetching interested tradespeople for job {job_id}: {e}")
+            # Return a 500 with a concise message that will surface to the frontend
             raise HTTPException(
-                status_code=403, 
-                detail="Not authorized to view interests for this job"
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to fetch interested tradespeople"
             )
         
-        # Get interested tradespeople
-        interested = await database.get_job_interested_tradespeople(job_id)
-        
-        # Convert to InterestedTradesperson objects
-        interested_tradespeople = [InterestedTradesperson(**person) for person in interested]
-        
+        # Convert to InterestedTradesperson objects, but be defensive: skip invalid records and log details
+        interested_tradespeople = []
+        for person in interested:
+            try:
+                it = InterestedTradesperson(**person)
+                interested_tradespeople.append(it)
+            except Exception as e:
+                # Log conversion error but continue returning other valid tradespeople
+                logger.warning(f"Skipping invalid interested tradesperson record for job {job_id}: {e} -- record: {person}")
+
         return InterestResponse(
             interested_tradespeople=interested_tradespeople,
             total=len(interested_tradespeople)

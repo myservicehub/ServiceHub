@@ -233,7 +233,7 @@ async def get_jobs_for_tradesperson(
     """Get jobs filtered by tradesperson's skills and location preferences"""
     try:
         # Ensure user is a tradesperson
-        if current_user.role != "tradesperson":
+        if current_user.role != UserRole.TRADESPERSON:
             raise HTTPException(status_code=403, detail="This endpoint is for tradespeople only")
         
         jobs = await database.get_jobs_for_tradesperson(
@@ -1549,24 +1549,25 @@ async def get_job_question_attachment(
     try:
         # Check if the user is an admin - skip DB check for job if admin
         # The User object is already synthesized with role=ADMIN by the dependency
-        if current_user.role == "admin" or current_user.role == UserRole.ADMIN:
-             pass
+        # Allow admin role to bypass ownership checks
+        if current_user.role == UserRole.ADMIN:
+            pass
         else:
-             # Regular user checks
-             job = await database.get_job_by_id(job_id)
-             if not job:
-                 raise HTTPException(status_code=404, detail="Job not found")
+            # Regular user checks
+            job = await database.get_job_by_id(job_id)
+            if not job:
+                raise HTTPException(status_code=404, detail="Job not found")
 
-             if current_user.role == "homeowner":
-                 owner_id = job.get("homeowner", {}).get("id") or job.get("homeowner_id")
-                 if owner_id != current_user.id:
-                     raise HTTPException(status_code=403, detail="Access denied")
-             elif current_user.role == "tradesperson":
-                 interest = await database.get_interest_by_job_and_tradesperson(job_id, current_user.id)
-                 if not interest or interest.get("status") != "paid_access":
-                     raise HTTPException(status_code=403, detail="Access denied")
-             else:
-                 raise HTTPException(status_code=403, detail="Access denied")
+            if current_user.role == UserRole.HOMEOWNER:
+                owner_id = job.get("homeowner", {}).get("id") or job.get("homeowner_id")
+                if owner_id != current_user.id:
+                    raise HTTPException(status_code=403, detail="Access denied")
+            elif current_user.role == UserRole.TRADESPERSON:
+                interest = await database.get_interest_by_job_and_tradesperson(job_id, current_user.id)
+                if not interest or interest.get("status") != "paid_access":
+                    raise HTTPException(status_code=403, detail="Access denied")
+            else:
+                raise HTTPException(status_code=403, detail="Access denied")
         
         job_dir = uploads_base / job_id
         path = job_dir / filename

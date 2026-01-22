@@ -11,6 +11,7 @@ try:
         Notification, NotificationPreferences, NotificationChannel,
         NotificationType, NotificationStatus
     )
+    from .models.auth import UserRole
     from .models.reviews import (
         Review, ReviewCreate, ReviewSummary, ReviewRequest, 
         ReviewStats, ReviewType, ReviewStatus
@@ -21,6 +22,7 @@ except ImportError:
         Notification, NotificationPreferences, NotificationChannel,
         NotificationType, NotificationStatus
     )
+    from models.auth import UserRole
     from models.reviews import (
         Review, ReviewCreate, ReviewSummary, ReviewRequest, 
         ReviewStats, ReviewType, ReviewStatus
@@ -3866,7 +3868,7 @@ class Database:
             )
 
             # Only mark homeowners fully verified here.
-            if user_role == "homeowner":
+            if user_role == UserRole.HOMEOWNER.value:
                 await self.users_collection.update_one(
                     {"id": verification["user_id"]},
                     {"$set": {"is_verified": True, "updated_at": datetime.utcnow()}}
@@ -3877,7 +3879,7 @@ class Database:
         else:
             # Rejection resets identity_verified and is_verified for homeowners
             update_fields = {"identity_verified": False, "updated_at": datetime.utcnow()}
-            if user_role == "homeowner":
+            if user_role == UserRole.HOMEOWNER.value:
                 update_fields["is_verified"] = False
             await self.users_collection.update_one(
                 {"id": verification["user_id"]},
@@ -4496,15 +4498,15 @@ class Database:
             user["wallet_balance"] = 0
             
             # Get wallet balance if tradesperson
-            if user.get("role") == "tradesperson":
+            if user.get("role") == UserRole.TRADESPERSON.value:
                 wallet = await self.wallets_collection.find_one({"user_id": user["id"]})
                 if wallet:
                     user["wallet_balance"] = wallet.get("balance_coins", 0)
             
             # Count jobs/interests based on role
-            if user.get("role") == "homeowner":
+            if user.get("role") == UserRole.HOMEOWNER.value:
                 user["jobs_posted"] = await self.database.jobs.count_documents({"homeowner.id": user["id"]})
-            elif user.get("role") == "tradesperson":
+            elif user.get("role") == UserRole.TRADESPERSON.value:
                 user["interests_shown"] = await self.database.interests.count_documents({"tradesperson_id": user["id"]})
             
             processed_users.append(user)
@@ -4562,53 +4564,41 @@ class Database:
     
     async def get_user_activity_stats(self, user_id: str):
         """Get comprehensive activity statistics for a user"""
-        
+
         user = await self.get_user_by_id(user_id)
         if not user:
             return {}
-        
+
         stats = {
             "registration_date": user.get("created_at"),
             "last_login": user.get("last_login", user.get("created_at")),
             "is_verified": user.get("is_verified", False),
             "status": user.get("status", "active")
         }
-        
-        if user.get("role") == "homeowner":
-            # Homeowner statistics
+
+        # Homeowner-specific statistics
+        if user.get("role") == UserRole.HOMEOWNER.value:
             stats.update({
                 "total_jobs_posted": await self.database.jobs.count_documents({"homeowner.id": user_id}),
-                "active_jobs": await self.database.jobs.count_documents({
-                    "homeowner.id": user_id,
-                    "status": "open"
-                }),
-                "completed_jobs": await self.database.jobs.count_documents({
-                    "homeowner.id": user_id,
-                    "status": "completed"
-                }),
-                "total_interests_received": await self.database.interests.count_documents({
-                    "job.homeowner.id": user_id
-                }),
+                "active_jobs": await self.database.jobs.count_documents({"homeowner.id": user_id, "status": "open"}),
+                "completed_jobs": await self.database.jobs.count_documents({"homeowner.id": user_id, "status": "completed"}),
+                "total_interests_received": await self.database.interests.count_documents({"job.homeowner.id": user_id}),
                 "average_job_budget": await self._get_average_job_budget(user_id)
             })
-            
-        elif user.get("role") == "tradesperson":
-            # Tradesperson statistics
+
+        # Tradesperson-specific statistics
+        elif user.get("role") == UserRole.TRADESPERSON.value:
             wallet = await self.database.wallets.find_one({"user_id": user_id})
-            
             stats.update({
                 "total_interests_shown": await self.database.interests.count_documents({"tradesperson_id": user_id}),
                 "wallet_balance_coins": wallet.get("balance_coins", 0) if wallet else 0,
                 "wallet_balance_naira": wallet.get("balance_naira", 0) if wallet else 0,
-                "successful_referrals": await self.database.user_verifications.count_documents({
-                    "referred_by": user_id,
-                    "verification_status": "verified"
-                }),
+                "successful_referrals": await self.database.user_verifications.count_documents({"referred_by": user_id, "verification_status": "verified"}),
                 "portfolio_items": await self.database.portfolio.count_documents({"tradesperson_id": user_id}),
                 "average_rating": await self._get_tradesperson_average_rating(user_id),
                 "total_reviews": await self.database.reviews.count_documents({"tradesperson_id": user_id})
             })
-        
+
         return stats
     
     async def update_user_status(self, user_id: str, status: str, admin_notes: str = ""):
@@ -4670,7 +4660,7 @@ class Database:
             activity_stats = await self.get_user_activity_stats(user_id)
             
             # Get role-specific details
-            if user.get("role") == "homeowner":
+            if user.get("role") == UserRole.HOMEOWNER.value:
                 # Get homeowner-specific data
                 jobs_posted = await self.database.jobs.count_documents({"homeowner.id": user_id})
                 active_jobs = await self.database.jobs.count_documents({
@@ -4692,7 +4682,7 @@ class Database:
                     "total_interests_received": total_interests_received
                 })
                 
-            elif user.get("role") == "tradesperson":
+            elif user.get("role") == UserRole.TRADESPERSON.value:
                 # Get tradesperson-specific data
                 wallet = await self.database.wallets.find_one({"user_id": user_id})
                 interests_shown = await self.database.interests.count_documents({"tradesperson_id": user_id})
@@ -4748,7 +4738,7 @@ class Database:
                 })
             
             # Get recent activity based on role
-            if user.get("role") == "homeowner":
+            if user.get("role") == UserRole.HOMEOWNER.value:
                 recent_jobs = await self.database.jobs.find(
                     {"homeowner.id": user_id}
                 ).sort("created_at", -1).limit(5).to_list(length=5)
@@ -4764,7 +4754,7 @@ class Database:
                     } for job in recent_jobs
                 ]
             
-            elif user.get("role") == "tradesperson":
+            elif user.get("role") == UserRole.TRADESPERSON.value:
                 recent_interests = await self.database.interests.find(
                     {"tradesperson_id": user_id}
                 ).sort("created_at", -1).limit(5).to_list(length=5)
@@ -4800,7 +4790,7 @@ class Database:
                 return False
             
             # Check if user is admin - prevent deletion of admin accounts
-            if user.get("role") == "admin":
+            if user.get("role") == UserRole.ADMIN.value:
                 logger.warning(f"Attempted to delete admin user: {user.get('email', 'Unknown')}")
                 return False
             
@@ -5281,7 +5271,7 @@ class Database:
     async def get_user_conversations(self, user_id: str, user_type: str, skip: int = 0, limit: int = 20) -> List[dict]:
         """Get all conversations for a user"""
         try:
-            if user_type == "homeowner":
+            if user_type == UserRole.HOMEOWNER.value:
                 query = {"homeowner_id": user_id}
             else:
                 query = {"tradesperson_id": user_id}
@@ -5341,7 +5331,7 @@ class Database:
         """Mark all messages in a conversation as read for a user"""
         try:
             # Update message status to read for messages not sent by this user
-            other_type = "homeowner" if user_type == "tradesperson" else "tradesperson"
+            other_type = "homeowner" if user_type == UserRole.TRADESPERSON.value else "tradesperson"
             
             await self.database.messages.update_many(
                 {
@@ -5384,7 +5374,7 @@ class Database:
         """Update conversation with last message info and increment unread count"""
         try:
             # Increment unread count for the recipient
-            recipient_unread_field = "unread_count_homeowner" if sender_type == "tradesperson" else "unread_count_tradesperson"
+            recipient_unread_field = "unread_count_homeowner" if sender_type == UserRole.TRADESPERSON.value else "unread_count_tradesperson"
             
             await self.database.conversations.update_one(
                 {"id": conversation_id},

@@ -4,7 +4,7 @@ from ..models.messages import (
     Conversation, ConversationCreate, Message, MessageCreate,
     ConversationList, MessageList
 )
-from ..models.auth import User
+from ..models.auth import User, UserRole
 from ..models.notifications import NotificationType
 from ..auth.dependencies import get_current_active_user, get_current_homeowner
 from ..database import database
@@ -73,18 +73,18 @@ async def create_conversation(
             raise HTTPException(status_code=404, detail="Job not found")
         
         # Verify user is either the homeowner or an interested tradesperson with proper access
-        if current_user.role == "homeowner":
+        if current_user.role == UserRole.HOMEOWNER:
             if job.get("homeowner", {}).get("id") != current_user.id:
                 raise HTTPException(status_code=403, detail="You can only create conversations for your own jobs")
-            
+
             # CRITICAL FIX: Homeowners can only create conversations with tradespeople who have paid access
             interest = await database.get_interest_by_job_and_tradesperson(conversation_data.job_id, conversation_data.tradesperson_id)
             if not interest:
                 raise HTTPException(status_code=403, detail="Tradesperson has not shown interest in this job")
             if interest.get("status") != "paid_access":
                 raise HTTPException(status_code=403, detail="Tradesperson must pay for access before conversation can be started")
-                
-        elif current_user.role == "tradesperson":
+
+        elif current_user.role == UserRole.TRADESPERSON:
             # Check if tradesperson has paid access to this job
             interest = await database.get_interest_by_job_and_tradesperson(conversation_data.job_id, current_user.id)
             if not interest or interest.get("status") != "paid_access":
@@ -298,21 +298,21 @@ async def get_or_create_conversation_for_job(
             return {"conversation_id": conversation["id"], "exists": True}
         
         # Verify user can create this conversation and has proper access
-        if current_user.role == "homeowner":
+        if current_user.role == UserRole.HOMEOWNER:
             if homeowner_id != current_user.id:
                 raise HTTPException(status_code=403, detail="You can only create conversations for your own jobs")
-            
+
             # CRITICAL FIX: Homeowners can only create conversations with tradespeople who have paid access
             interest = await database.get_interest_by_job_and_tradesperson(job_id, tradesperson_id)
             if not interest:
                 raise HTTPException(status_code=403, detail="Tradesperson has not shown interest in this job")
             if interest.get("status") != "paid_access":
                 raise HTTPException(status_code=403, detail="Tradesperson must pay for access before conversation can be started")
-                
-        elif current_user.role == "tradesperson":
+
+        elif current_user.role == UserRole.TRADESPERSON:
             if tradesperson_id != current_user.id:
                 raise HTTPException(status_code=403, detail="You can only create conversations for yourself")
-            
+
             # Check if tradesperson has paid access
             interest = await database.get_interest_by_job_and_tradesperson(job_id, current_user.id)
             if not interest or interest.get("status") != "paid_access":
@@ -406,14 +406,34 @@ async def get_hiring_status(
             raise HTTPException(status_code=404, detail="Job not found")
         
         homeowner_data = job.get("homeowner", {})
+        # Robust ownership check: compare against multiple possible identifiers
         is_owner = False
-        if homeowner_data.get("id") and str(homeowner_data.get("id")) == str(current_user.id):
-            is_owner = True
-        elif job.get("homeowner_id") and str(job.get("homeowner_id")) == str(current_user.id):
-            is_owner = True
-        elif homeowner_data.get("email") and homeowner_data.get("email") == current_user.email:
-            is_owner = True
+        try:
+            candidate_ids = set()
+            # canonical id from token
+            if getattr(current_user, 'id', None):
+                candidate_ids.add(str(current_user.id))
+            # short/public ids
+            if getattr(current_user, 'user_id', None):
+                candidate_ids.add(str(current_user.user_id))
+            if getattr(current_user, 'public_id', None):
+                candidate_ids.add(str(current_user.public_id))
+
+            # Compare homeowner object id or homeowner_id root
+            if homeowner_data.get("id") and str(homeowner_data.get("id")) in candidate_ids:
+                is_owner = True
+            elif job.get("homeowner_id") and str(job.get("homeowner_id")) in candidate_ids:
+                is_owner = True
+            # Fallback to email match
+            elif homeowner_data.get("email") and homeowner_data.get("email") == getattr(current_user, 'email', None):
+                is_owner = True
+        except Exception:
+            # Fallback simple check to avoid failing the request due to unexpected data shapes
+            if homeowner_data.get("id") and str(homeowner_data.get("id")) == str(current_user.id):
+                is_owner = True
+
         if not is_owner:
+            logger.warning(f"Unauthorized hiring-status access attempt for job {job_id} by user {getattr(current_user,'id',None)}. Job owner data: {homeowner_data}, homeowner_id field: {job.get('homeowner_id')}")
             raise HTTPException(status_code=403, detail="You can only view status for your own jobs")
         
         # Get hiring status records for this job
@@ -451,13 +471,27 @@ async def get_hired_tradespeople_for_job(
         
         homeowner_data = job.get("homeowner", {})
         is_owner = False
-        if homeowner_data.get("id") and str(homeowner_data.get("id")) == str(current_user.id):
-            is_owner = True
-        elif job.get("homeowner_id") and str(job.get("homeowner_id")) == str(current_user.id):
-            is_owner = True
-        elif homeowner_data.get("email") and homeowner_data.get("email") == current_user.email:
-            is_owner = True
+        try:
+            candidate_ids = set()
+            if getattr(current_user, 'id', None):
+                candidate_ids.add(str(current_user.id))
+            if getattr(current_user, 'user_id', None):
+                candidate_ids.add(str(current_user.user_id))
+            if getattr(current_user, 'public_id', None):
+                candidate_ids.add(str(current_user.public_id))
+
+            if homeowner_data.get("id") and str(homeowner_data.get("id")) in candidate_ids:
+                is_owner = True
+            elif job.get("homeowner_id") and str(job.get("homeowner_id")) in candidate_ids:
+                is_owner = True
+            elif homeowner_data.get("email") and homeowner_data.get("email") == getattr(current_user, 'email', None):
+                is_owner = True
+        except Exception:
+            if homeowner_data.get("id") and str(homeowner_data.get("id")) == str(getattr(current_user, 'id', None)):
+                is_owner = True
+
         if not is_owner:
+            logger.warning(f"Unauthorized access to hired-tradespeople for job {job_id} by user {getattr(current_user,'id',None)}")
             raise HTTPException(status_code=403, detail="You can only view hired tradespeople for your own jobs")
         
         # Get all hiring status records where hired = true for this job
@@ -515,7 +549,28 @@ async def update_hiring_status(
         if not job:
             raise HTTPException(status_code=404, detail="Job not found")
         
-        if job.get("homeowner", {}).get("id") != current_user.id:
+        # Robust ownership check for update operations as well
+        job_owner = job.get("homeowner", {})
+        owner_ok = False
+        try:
+            candidate_ids = {str(getattr(current_user, 'id', ''))}
+            if getattr(current_user, 'user_id', None):
+                candidate_ids.add(str(current_user.user_id))
+            if getattr(current_user, 'public_id', None):
+                candidate_ids.add(str(current_user.public_id))
+
+            if job_owner.get("id") and str(job_owner.get("id")) in candidate_ids:
+                owner_ok = True
+            elif job.get("homeowner_id") and str(job.get("homeowner_id")) in candidate_ids:
+                owner_ok = True
+            elif job_owner.get("email") and job_owner.get("email") == getattr(current_user, 'email', None):
+                owner_ok = True
+        except Exception:
+            if job_owner.get("id") and str(job_owner.get("id")) == str(getattr(current_user, 'id', None)):
+                owner_ok = True
+
+        if not owner_ok:
+            logger.warning(f"Unauthorized update_hiring_status attempt for job {job_id} by user {getattr(current_user,'id',None)}")
             raise HTTPException(status_code=403, detail="You can only update status for your own jobs")
         
         # Verify tradesperson exists
