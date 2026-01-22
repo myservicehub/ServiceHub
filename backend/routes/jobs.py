@@ -1533,6 +1533,46 @@ async def upload_job_question_attachment(
         # Note: We no longer save to disk to avoid ephemeral storage issues
         # The data_url will be stored in the database by the frontend
 
+        # Persist the uploaded file as a job question answer so admin/browse pages
+        # can display images even if the job is pending verification.
+        try:
+            # Build an answers document shape compatible with save_job_question_answers
+            existing = await database.get_job_question_answers(job_id)
+            if existing and isinstance(existing, dict):
+                # Ensure answers list exists
+                answers_list = existing.get("answers") or []
+            else:
+                answers_list = []
+
+            # Create an answer entry for this file upload
+            file_entry = {
+                "question_id": question_id,
+                "question_text": question.get("question") if question else "",
+                "question_type": qtype,
+                "answer_text": file.filename,
+                "answer_value": data_url,
+                "content_type": file.content_type,
+                "uploaded_at": datetime.utcnow()
+            }
+
+            # Append the file entry to answers for this question
+            answers_list.append(file_entry)
+
+            answers_doc = {
+                "job_id": job_id,
+                "trade_category": question.get("category") if question else "",
+                "answers": answers_list,
+                "created_at": datetime.utcnow()
+            }
+
+            # Use database.save_job_question_answers to persist (it replaces existing answers for a job)
+            try:
+                await database.save_job_question_answers(answers_doc)
+            except Exception as e:
+                logger.warning(f"Failed to persist uploaded question attachment for job {job_id}: {e}")
+        except Exception as e:
+            logger.error(f"Error while saving uploaded attachment to DB for {job_id}/{question_id}: {e}")
+
         return {"filename": file.filename, "content_type": file.content_type, "size": len(data), "url": data_url}
     except HTTPException:
         raise

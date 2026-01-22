@@ -1574,7 +1574,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
 
     setSubmitting(true);
 
-    const resolveJobId = (response) => response?.job?.id || response?.job?.job_id || response?.job_id || response?.id;
+  const resolveJobId = (response) => response?.pending_job_id || response?.job?.id || response?.job?.job_id || response?.job_id || response?.id;
     const saveAnswers = async (jobId) => {
       if (tradeQuestions.length > 0 && Object.keys(questionAnswers).length > 0) {
         try {
@@ -1684,13 +1684,15 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       try {
         jobResponse = await jobsAPI.registerAndPost(payload);
       } catch (err) {
+        // Backwards-compatible handling: some deployments may still return 403 with detail
         const detail = err?.response?.data?.detail;
         if (err?.response?.status === 403 && detail?.verification_required) {
           // Even if 403, we might need to upload files to the pending job
           if (detail.pending_job_id) {
             await saveAnswers(detail.pending_job_id);
+            localStorage.setItem('pending_job_id', detail.pending_job_id);
           }
-          
+
           toast({
             title: "Verify your email",
             description: "We sent a verification link to your email. Please verify to post your job.",
@@ -1701,6 +1703,25 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
           return;
         }
         throw err;
+      }
+
+      // New flow: backend returns 202 with pending_job_id when verification required
+      if (jobResponse && (jobResponse.verification_required || jobResponse.pending_job_id)) {
+        const pendingId = jobResponse.pending_job_id;
+        if (pendingId) {
+          // Persist pending id so we can retry uploads later
+          localStorage.setItem('pending_job_id', pendingId);
+          // Save answers and upload files against the pending job id
+          await saveAnswers(pendingId);
+
+          toast({
+            title: "Verify your email",
+            description: "We sent a verification link to your email. Your answers and uploads were saved and will be posted after verification.",
+          });
+          setCurrentStep(5);
+          setSubmitting(false);
+          return;
+        }
       }
 
       if (jobResponse.access_token && jobResponse.user) {
