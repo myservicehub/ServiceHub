@@ -4,7 +4,7 @@ import apiClient from './client';
 export const interestsAPI = {
   // Show interest in a job
   showInterest: async (jobId) => {
-    const response = await apiClient.post(`/interests/show/${jobId}`);
+    const response = await apiClient.post('/interests/show-interest', { job_id: jobId });
     return response.data;
   },
 

@@ -2055,16 +2055,38 @@ class Database:
                     "tradesperson_id": "$tradesperson_id",
                     "tradesperson_name": "$tradesperson.name",
                     "tradesperson_email": "$tradesperson.email",
-                    "tradesperson_phone": "$tradesperson.phone",
-                    "company_name": "$tradesperson.company_name",
-                    "business_name": "$tradesperson.business_name",
-                    "trade_categories": "$tradesperson.trade_categories",
-                    "experience_years": "$tradesperson.experience_years",
-                    "average_rating": {"$ifNull": ["$tradesperson.average_rating", 4.5]},
-                    "total_reviews": {"$ifNull": ["$tradesperson.total_reviews", 0]},
-                    "location": "$tradesperson.location",
-                    "description": "$tradesperson.description",
-                    "certifications": "$tradesperson.certifications",
+                    "tradesperson_phone": {"$ifNull": ["$tradesperson.phone", None]},
+                    "profile_image": {"$ifNull": ["$tradesperson.profile_image", None]},
+                    "company_name": {"$ifNull": ["$tradesperson.company_name", None]},
+                    "business_name": {"$ifNull": ["$tradesperson.business_name", None]},
+                    "trade_categories": {"$ifNull": ["$tradesperson.trade_categories", []]},
+                    "experience_years": {
+                        "$convert": {
+                            "input": {"$ifNull": ["$tradesperson.experience_years", 0]},
+                            "to": "int",
+                            "onError": 0,
+                            "onNull": 0
+                        }
+                    },
+                    "average_rating": {
+                        "$convert": {
+                            "input": {"$ifNull": ["$tradesperson.average_rating", 0]},
+                            "to": "double",
+                            "onError": 0.0,
+                            "onNull": 0.0
+                        }
+                    },
+                    "total_reviews": {
+                        "$convert": {
+                            "input": {"$ifNull": ["$tradesperson.total_reviews", 0]},
+                            "to": "int",
+                            "onError": 0,
+                            "onNull": 0
+                        }
+                    },
+                    "location": {"$ifNull": ["$tradesperson.location", None]},
+                    "description": {"$ifNull": ["$tradesperson.description", None]},
+                    "certifications": {"$ifNull": ["$tradesperson.certifications", []]},
                     "status": "$status",
                     "created_at": "$created_at",
                     "updated_at": "$updated_at",
