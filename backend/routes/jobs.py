@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query, Depends, BackgroundTasks, UploadFile, File
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 from typing import Optional
 from ..models import JobCreate, JobUpdate, JobCloseRequest, Job, JobsResponse
@@ -1805,16 +1805,25 @@ async def register_and_post(payload: PublicJobPostRequest, background_tasks: Bac
                     )
                 
                 logger.info(f"Verification email task added for {user_obj.email}")
-                
-                # Stop here and return 403 to frontend with pending_job_id
-                raise HTTPException(
-                    status_code=403, 
-                    detail={
-                        "message": "Email verification required", 
-                        "verification_required": True,
-                        "pending_job_id": pending_job.get("id")
-                    }
-                )
+
+                # Stop here and return a structured 202 response to the frontend with pending_job_id
+                # Frontends may not reliably parse error bodies on non-200 responses; a JSONResponse
+                # makes it explicit that verification is required and provides the pending_job_id
+                # so clients can save question answers and attachments against the pending job.
+                resp_body = {
+                    "message": "Email verification required",
+                    "verification_required": True,
+                    "pending_job_id": pending_job.get("id")
+                }
+                try:
+                    # Include debug link for development mode if available
+                    dev_flag = os.environ.get('OTP_DEV_MODE', '0')
+                    if dev_flag in ('1', 'true', 'True') and verify_link:
+                        resp_body["debug_link"] = verify_link
+                except Exception:
+                    pass
+
+                return JSONResponse(status_code=202, content=resp_body)
 
             except HTTPException:
                 raise

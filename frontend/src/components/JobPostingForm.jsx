@@ -491,6 +491,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
     setSubmitting(true);
 
     try {
+      const resolveJobId = (response) => response?.job?.id || response?.job?.job_id || response?.job_id || response?.id;
       const jobData = {
         title: formData.title,
         description: formData.description.trim(),
@@ -516,10 +517,11 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
 
       const jobResponse = await jobsAPI.createJob(jobData);
 
+      const jobId = resolveJobId(jobResponse);
+
       // Save question answers if there are any
-      if (tradeQuestions.length > 0 && Object.keys(questionAnswers).length > 0) {
+      if (jobId && tradeQuestions.length > 0 && Object.keys(questionAnswers).length > 0) {
         try {
-          const jobId = jobResponse.job_id || jobResponse.id;
           const updatedAnswers = { ...questionAnswers };
           for (const q of tradeQuestions.filter(q => isFileUploadType(q.question_type))) {
             const val = questionAnswers[q.id];
@@ -562,11 +564,8 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
           console.log('✅ Question answers saved successfully');
         } catch (answerError) {
           console.error('⚠️ Failed to save question answers, but job was created:', answerError);
-          // Don't fail the job posting if answers can't be saved
         }
       }
-
-      const jobId = jobResponse.job?.id || jobResponse.job?.job_id || jobResponse.job_id || jobResponse.id;
       toast({
         title: "Job Submitted for Review!",
         description: `Your job has been submitted and is pending admin approval. Job ID: ${jobId}`,
@@ -611,7 +610,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       const initialAnswers = {};
       (response.questions || []).forEach(question => {
         if (question.question_type === 'yes_no') {
-          initialAnswers[question.id] = false;
+          initialAnswers[question.id] = null;
         } else if (question.question_type === 'multiple_choice_multiple') {
           initialAnswers[question.id] = [];
         } else if (question.question_type === 'file_upload') {
@@ -660,37 +659,36 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
         }
       }
       
-      // After updating answers, check if current question index is still valid
-      // This is important because conditional logic might hide/show questions
-      setTimeout(() => {
-        const visibleQuestions = getVisibleQuestions();
-        if (currentQuestionIndex >= visibleQuestions.length && visibleQuestions.length > 0) {
-          // Current index is out of bounds, reset to last visible question
-          setCurrentQuestionIndex(visibleQuestions.length - 1);
-        } else if (visibleQuestions.length === 0) {
-          // No visible questions, reset to 0
-          setCurrentQuestionIndex(0);
-        }
-        
-        // Clear any validation errors for questions that are no longer visible
-        const visibleQuestionIds = visibleQuestions.map(q => q.id);
-        setErrors(prevErrors => {
-          const newErrors = { ...prevErrors };
-          Object.keys(newErrors).forEach(errorKey => {
-            if (errorKey.startsWith('question_')) {
-              const questionId = errorKey.replace('question_', '');
-              if (!visibleQuestionIds.includes(questionId)) {
-                delete newErrors[errorKey];
-              }
-            }
-          });
-          return newErrors;
-        });
-      }, 10); // Small delay to ensure state has updated
-      
       return newAnswers;
     });
   };
+
+  useEffect(() => {
+    const visibleQuestions = getVisibleQuestions();
+    if (visibleQuestions.length > 0) {
+      if (currentQuestionIndex >= visibleQuestions.length) {
+        setCurrentQuestionIndex(visibleQuestions.length - 1);
+      }
+    } else if (currentQuestionIndex !== 0) {
+      setCurrentQuestionIndex(0);
+    }
+
+    const visibleQuestionIds = visibleQuestions.map(q => q.id);
+    setErrors(prevErrors => {
+      const newErrors = { ...prevErrors };
+      let changed = false;
+      Object.keys(newErrors).forEach(errorKey => {
+        if (errorKey.startsWith('question_')) {
+          const questionId = errorKey.replace('question_', '');
+          if (!visibleQuestionIds.includes(questionId)) {
+            delete newErrors[errorKey];
+            changed = true;
+          }
+        }
+      });
+      return changed ? newErrors : prevErrors;
+    });
+  }, [tradeQuestions, questionAnswers]);
 
   const goToNextQuestion = () => {
     const visibleQuestions = getVisibleQuestions();
@@ -744,7 +742,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
 
     let targetIndex = currentQuestionIndex + 1;
     const nav = currentQuestion.navigation_logic;
-    if (nav && nav.enabled) {
+    if (nav && nav.enabled && isAnswered) {
       let key = '';
       if (currentQuestion.question_type === 'yes_no') {
         key = normalize(answer);
@@ -997,6 +995,13 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
     let current = ordered[0] || null;
     const path = [];
     const visited = new Set();
+    const isAnswered = (q) => {
+      const a = questionAnswers[q.id];
+      if (q.question_type === 'multiple_choice_multiple') return Array.isArray(a) && a.length > 0;
+      if (q.question_type === 'yes_no') return a === true || a === false;
+      if (isFileUploadType(q.question_type)) return Array.isArray(a) ? a.length > 0 : (a instanceof File) || (typeof a === 'string' && String(a).trim() !== '');
+      return a !== undefined && a !== null && String(a).trim() !== '';
+    };
     const normalize = (val) => {
       if (val === undefined || val === null) return '';
       if (typeof val === 'boolean') return val ? 'true' : 'false';
@@ -1012,12 +1017,15 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       const nav = current.navigation_logic;
       let nextId = null;
       if (nav && nav.enabled) {
+        const hasAnswer = isAnswered(current);
         let key = '';
         const ans = questionAnswers[current.id];
-        if (current.question_type === 'yes_no') key = normalize(ans);
-        else if (current.question_type === 'multiple_choice_single') key = normalize(ans);
-        const nextIdRaw = findMappedId(nav.next_question_map, key);
-        const fallbackId = nav.default_next_question_id || null;
+        if (hasAnswer) {
+          if (current.question_type === 'yes_no') key = normalize(ans);
+          else if (current.question_type === 'multiple_choice_single') key = normalize(ans);
+        }
+        const nextIdRaw = hasAnswer ? findMappedId(nav.next_question_map, key) : null;
+        const fallbackId = hasAnswer ? (nav.default_next_question_id || null) : null;
         const candidateId = nextIdRaw || fallbackId;
         if (candidateId === '__END__') break;
         if (candidateId && byId[String(candidateId)]) {
@@ -1566,7 +1574,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
 
     setSubmitting(true);
 
-    // Helper function to save question answers
+    const resolveJobId = (response) => response?.job?.id || response?.job?.job_id || response?.job_id || response?.id;
     const saveAnswers = async (jobId) => {
       if (tradeQuestions.length > 0 && Object.keys(questionAnswers).length > 0) {
         try {
@@ -1700,8 +1708,10 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       }
 
       // Save/Update question answers (including files)
-      const jobId = jobResponse.job_id || jobResponse.id;
-      await saveAnswers(jobId);
+      const jobId = resolveJobId(jobResponse);
+      if (jobId) {
+        await saveAnswers(jobId);
+      }
 
       toast({
         title: "Job Submitted!",
