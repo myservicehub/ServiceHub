@@ -569,22 +569,24 @@ const BrowseJobsPage = () => {
     // Fetch job question answers
     try {
       console.log('🔍 Fetching answers for job ID:', job.id, '(_id:', job._id, ')');
-      const answers = await tradeCategoryQuestionsAPI.getJobQuestionAnswers(job.id);
+      let answers = await tradeCategoryQuestionsAPI.getJobQuestionAnswers(job.id);
       console.log('📋 Fetched answers document:', answers);
+      
+      // Fallback to _id if no answers found
+      if ((!answers || !answers.answers || answers.answers.length === 0) && job._id && job._id !== job.id) {
+        console.log('🔄 Trying to fetch answers using _id:', job._id);
+        const altAnswers = await tradeCategoryQuestionsAPI.getJobQuestionAnswers(job._id);
+        if (altAnswers && altAnswers.answers && altAnswers.answers.length > 0) {
+          console.log('✅ Found answers using _id!');
+          answers = altAnswers;
+        }
+      }
+
       if (answers && answers.answers && answers.answers.length > 0) {
         console.log('✅ Setting selected job answers with', answers.answers.length, 'answers');
         setSelectedJobAnswers(answers);
       } else {
-        console.log('ℹ️ No answers found for this job or answers array is empty');
-        // Try with _id just in case
-        if (job._id && job._id !== job.id) {
-          console.log('🔄 Trying to fetch answers using _id:', job._id);
-          const altAnswers = await tradeCategoryQuestionsAPI.getJobQuestionAnswers(job._id);
-          if (altAnswers && altAnswers.answers && altAnswers.answers.length > 0) {
-            console.log('✅ Found answers using _id!');
-            setSelectedJobAnswers(altAnswers);
-          }
-        }
+        console.log('ℹ️ No answers found for this job');
       }
     } catch (err) {
       console.error('❌ Error fetching job answers:', err);
@@ -1185,23 +1187,23 @@ const BrowseJobsPage = () => {
                         }
 
                         // Be more permissive with what we show (allow 0, false, etc.)
-                        if (val === undefined || val === null || String(val).trim() === '' || val === '—') return false;
+                        if (val === undefined || val === null || String(val).trim() === '' || val === '—' || val === 'undefined') return false;
                         return true;
                       });
 
                       // Find file uploads (images) to show separately
-                      const fileAnswers = selectedJobAnswers.answers.filter(ans => {
+                      const fileAnswers = (selectedJobAnswers.answers || []).filter(ans => {
                         const val = ans.answer_value || ans.answer_text;
                         const isFileUploadType = (ans.question_type || '').startsWith('file_upload');
 
                         // If explicitly a file upload type
                         if (isFileUploadType) {
                           if (Array.isArray(val) && val.length > 0) return true;
-                          if (typeof val === 'string' && val.trim().length > 0) return true;
+                          if (typeof val === 'string' && val.trim().length > 0 && val !== 'undefined') return true;
                         }
 
                         // Also check if the content looks like file URLs (even if type isn't file_upload)
-                        if (typeof val === 'string') {
+                        if (typeof val === 'string' && val !== 'undefined') {
                            if (isFileUrl(val) || val.split(',').some(part => isFileUrl(part.trim()))) {
                              return true;
                            }

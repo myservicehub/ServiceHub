@@ -135,22 +135,19 @@ async def get_current_admin(current_user: User = Depends(get_current_active_user
         )
     return current_user
 
-def optional_authentication(credentials: Optional[HTTPAuthorizationCredentials] = Depends(HTTPBearer(auto_error=False))) -> Optional[User]:
-    """Optional authentication - returns user if authenticated, None otherwise."""
+async def get_optional_current_active_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(HTTPBearer(auto_error=False))
+) -> Optional[User]:
+    """Optional authentication - returns active user if authenticated, None otherwise."""
     if credentials is None:
         return None
     
     try:
-        token = credentials.credentials
-        payload = verify_token(token)
-        user_id: str = payload.get("sub")
-        if user_id is None:
-            return None
-        
-        # Note: In a real implementation, you'd want to cache this or make it async
-        # For now, we'll return None to avoid blocking
+        user = await get_current_user(credentials)
+        if user and user.status == UserStatus.ACTIVE:
+            return user
         return None
-    except:
+    except Exception:
         return None
 
 # =============================

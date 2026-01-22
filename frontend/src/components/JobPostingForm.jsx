@@ -566,7 +566,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
         }
       }
 
-      const jobId = jobResponse.job_id || jobResponse.id;
+      const jobId = jobResponse.job?.id || jobResponse.job?.job_id || jobResponse.job_id || jobResponse.id;
       toast({
         title: "Job Submitted for Review!",
         description: `Your job has been submitted and is pending admin approval. Job ID: ${jobId}`,

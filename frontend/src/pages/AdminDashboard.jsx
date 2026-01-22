@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
-import { adminAPI, walletAPI } from '../api/wallet';
+import { adminAPI, walletAPI, tradeCategoryQuestionsAPI } from '../api/wallet';
 import { adminReferralsAPI, adminVerificationAPI } from '../api/referrals';
 import { getTradespeopleVerificationFileBase64 } from '../api/tradespeopleVerificationBase64';
 import { useToast } from '../hooks/use-toast';
@@ -592,8 +592,20 @@ const AdminDashboard = () => {
       
       // Fetch job question answers and attach to job details
       try {
-        const answers = await tradeCategoryQuestionsAPI.getJobQuestionAnswers(job.id);
+        console.log('Admin Review - Fetching QA for job:', job.id, '(_id:', job._id, ')');
+        let answers = await tradeCategoryQuestionsAPI.getJobQuestionAnswers(job.id);
+        
+        // Try fallback to _id if no answers found
+        if ((!answers || !answers.answers || answers.answers.length === 0) && job._id && job._id !== job.id) {
+          console.log('Admin Review - Falling back to _id for QA:', job._id);
+          const altAnswers = await tradeCategoryQuestionsAPI.getJobQuestionAnswers(job._id);
+          if (altAnswers && altAnswers.answers && altAnswers.answers.length > 0) {
+            answers = altAnswers;
+          }
+        }
+
         if (answers && answers.answers && answers.answers.length > 0) {
+          console.log('Admin Review - Found answers:', answers.answers.length);
           jobDetails.question_answers = answers;
         }
       } catch (err) {
@@ -5668,29 +5680,29 @@ const AdminDashboard = () => {
                     return false;
                   }
 
-                  // Be permissive with what we show (allow 0, false, etc.)
-                  if (val === undefined || val === null || String(val).trim() === '' || val === '—') return false;
-                  return true;
-                }) || [];
+                // Be permissive with what we show (allow 0, false, etc.)
+                if (val === undefined || val === null || String(val).trim() === '' || val === '—' || val === 'undefined') return false;
+                return true;
+              }) || [];
 
-                // Find file uploads (images) to show separately
-                const fileAnswers = selectedJob.question_answers?.answers?.filter(ans => {
-                  const val = ans.answer_value || ans.answer_text;
-                  const isFileUploadType = (ans.question_type || '').startsWith('file_upload');
-                  
-                  if (isFileUploadType) {
-                    if (Array.isArray(val) && val.length > 0) return true;
-                    if (typeof val === 'string' && val.trim().length > 0) return true;
-                    return false;
-                  }
-                  
-                  // Also include if the value looks like a file URL even if not a file_upload type
-                  if (isFileUrl(val) || (typeof val === 'string' && val.split(',').some(part => isFileUrl(part.trim())))) {
-                    return true;
-                  }
-                  
+              // Find file uploads (images) to show separately
+              const fileAnswers = (selectedJob.question_answers?.answers || []).filter(ans => {
+                const val = ans.answer_value || ans.answer_text;
+                const isFileUploadType = (ans.question_type || '').startsWith('file_upload');
+                
+                if (isFileUploadType) {
+                  if (Array.isArray(val) && val.length > 0) return true;
+                  if (typeof val === 'string' && val.trim().length > 0 && val !== 'undefined') return true;
                   return false;
-                }) || [];
+                }
+                
+                // Also include if the value looks like a file URL even if not a file_upload type
+                if (isFileUrl(val) || (typeof val === 'string' && val.split(',').some(part => isFileUrl(part.trim())))) {
+                  return true;
+                }
+                
+                return false;
+              });
                 
                 return (
                   <>

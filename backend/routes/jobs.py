@@ -9,6 +9,7 @@ from ..auth.dependencies import (
     get_current_homeowner,
     get_current_tradesperson,
     get_current_active_user,
+    get_optional_current_active_user,
     require_homeowner_contact_verified,
     require_tradesperson_verified,
 )
@@ -1360,7 +1361,7 @@ async def get_trade_category_questions(trade_category: str):
 @router.post("/trade-questions/answers")
 async def save_job_question_answers(
     answers_data: dict,
-    current_user: User = Depends(get_current_active_user)
+    current_user: Optional[User] = Depends(get_optional_current_active_user)
 ):
     """Save answers to trade category questions for a job"""
     try:
@@ -1391,10 +1392,16 @@ async def save_job_question_answers(
             job_owner_id = job.get("homeowner_id")
             if not job_owner_id and job.get("homeowner"):
                 job_owner_id = job.get("homeowner", {}).get("id")
+        
+        # For pending jobs, we allow saving without current_user if the job exists
+        # (the pending_job_id itself acts as a temporary authorization)
+        if not is_pending:
+            if not current_user:
+                raise HTTPException(status_code=401, detail="Authentication required for non-pending jobs")
             
-        if job_owner_id != current_user.id:
-            logger.warning(f"Unauthorized answer save attempt: User {current_user.id} tried to save for job {job_id} owned by {job_owner_id}")
-            raise HTTPException(status_code=403, detail="Not authorized to save answers for this job")
+            if job_owner_id != current_user.id:
+                logger.warning(f"Unauthorized answer save attempt: User {current_user.id} tried to save for job {job_id} owned by {job_owner_id}")
+                raise HTTPException(status_code=403, detail="Not authorized to save answers for this job")
         
         saved_answers = await database.save_job_question_answers(answers_data)
         
@@ -1442,7 +1449,7 @@ async def upload_job_question_attachment(
     job_id: str,
     question_id: str,
     file: UploadFile = File(...),
-    current_user: User = Depends(get_current_homeowner)
+    current_user: Optional[User] = Depends(get_optional_current_active_user)
 ):
     try:
         # Check if it's a regular job or a pending job
@@ -1457,13 +1464,21 @@ async def upload_job_question_attachment(
         if not job:
             raise HTTPException(status_code=404, detail="Job not found")
             
+        # Check ownership
         if is_pending:
-            owner_id = job.get("user_id")
+            job_owner_id = job.get("user_id")
         else:
-            owner_id = job.get("homeowner", {}).get("id") or job.get("homeowner_id")
+            job_owner_id = job.get("homeowner_id")
+            if not job_owner_id and job.get("homeowner"):
+                job_owner_id = job.get("homeowner", {}).get("id")
+        
+        # For pending jobs, we allow upload without current_user
+        if not is_pending:
+            if not current_user:
+                raise HTTPException(status_code=401, detail="Authentication required for non-pending jobs")
             
-        if owner_id != current_user.id:
-            raise HTTPException(status_code=403, detail="Not authorized to upload for this job")
+            if job_owner_id != current_user.id:
+                raise HTTPException(status_code=403, detail="Not authorized to upload for this job")
 
         question = await database.get_trade_category_question_by_id(question_id)
         if not question:
