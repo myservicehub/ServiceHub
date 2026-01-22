@@ -1020,7 +1020,12 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
         const fallbackId = nav.default_next_question_id || null;
         const candidateId = nextIdRaw || fallbackId;
         if (candidateId === '__END__') break;
-        nextId = candidateId;
+        if (candidateId && byId[String(candidateId)]) {
+          nextId = candidateId;
+        } else {
+          const idx = ordered.findIndex(q => String(q.id) === String(current.id));
+          nextId = ordered[idx + 1]?.id || null;
+        }
       } else {
         const idx = ordered.findIndex(q => String(q.id) === String(current.id));
         nextId = ordered[idx + 1]?.id || null;
