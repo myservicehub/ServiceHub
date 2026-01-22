@@ -1694,16 +1694,20 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
         // Backwards-compatible handling: some deployments may still return 403 with detail
         const detail = err?.response?.data?.detail;
         if (err?.response?.status === 403 && detail?.verification_required) {
-          // Even if 403, we might need to upload files to the pending job
-          if (detail.pending_job_id) {
-            await saveAnswers(detail.pending_job_id);
-            localStorage.setItem('pending_job_id', detail.pending_job_id);
-          }
-
+          // Notify user immediately that a verification email was sent
           toast({
             title: "Verify your email",
             description: "We sent a verification link to your email. Please verify to post your job.",
           });
+
+          // Even if 403, we might need to upload files to the pending job
+          if (detail.pending_job_id) {
+            // Persist pending id so we can retry uploads later
+            localStorage.setItem('pending_job_id', detail.pending_job_id);
+            // Save answers/uploads in background (don't block the notification)
+            try { await saveAnswers(detail.pending_job_id); } catch (e) { console.error('Failed to save answers for pending job', e); }
+          }
+
           // Keep user on step 5 and show guidance
           setCurrentStep(5);
           setSubmitting(false);
@@ -1718,13 +1722,16 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
         if (pendingId) {
           // Persist pending id so we can retry uploads later
           localStorage.setItem('pending_job_id', pendingId);
-          // Save answers and upload files against the pending job id
-          await saveAnswers(pendingId);
 
+          // Notify user immediately that a verification email was sent and their answers were saved
           toast({
             title: "Verify your email",
-            description: "We sent a verification link to your email. Your answers and uploads were saved and will be posted after verification.",
+            description: "We sent a verification link to your email. Your answers and uploads will be saved and posted after verification.",
           });
+
+          // Save answers/uploads in background but don't block the UX
+          try { await saveAnswers(pendingId); } catch (e) { console.error('Failed to save answers for pending job', e); }
+
           setCurrentStep(5);
           setSubmitting(false);
           return;
@@ -2701,20 +2708,38 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
           </div>
 
           <div className="space-y-3">
-            <Button
-              onClick={continueToAccountCreation}
-              className="w-full text-white font-lato"
-              style={{backgroundColor: '#34D164'}}
-            >
-              I'm new - Create Account
-            </Button>
-            <Button
-              onClick={continueToLogin}
-              variant="outline"
-              className="w-full font-lato"
-            >
-              I have an account - Sign In
-            </Button>
+            {!isUserAuthenticated() ? (
+              <>
+                <Button
+                  onClick={continueToAccountCreation}
+                  className="w-full text-white font-lato"
+                  style={{backgroundColor: '#34D164'}}
+                >
+                  I'm new - Create Account
+                </Button>
+                <Button
+                  onClick={continueToLogin}
+                  variant="outline"
+                  className="w-full font-lato"
+                >
+                  I have an account - Sign In
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  onClick={async () => {
+                    // Proceed with posting using the current authenticated user
+                    setShowAccountModal(false);
+                    await handleJobSubmissionForAuthenticatedUser();
+                  }}
+                  className="w-full text-white font-lato"
+                  style={{backgroundColor: '#34D164'}}
+                >
+                  Continue as {currentUser?.name ? currentUser.name.split(' ')[0] : 'you'}
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>

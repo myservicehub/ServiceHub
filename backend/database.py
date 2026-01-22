@@ -4812,7 +4812,15 @@ class Database:
                 ("user_verifications", {"user_id": user_id})
             ]
             
-            # Delete from all related collections
+            # Before deleting jobs, collect job IDs so we can clean up related documents (question answers, quotes, etc.)
+            try:
+                job_cursor = self.database.jobs.find({"$or": [{"homeowner_id": user_id}, {"homeowner.id": user_id}]}, {"id": 1})
+                jobs_for_user = await job_cursor.to_list(length=None)
+                job_ids = [j.get("id") for j in jobs_for_user if j.get("id")]
+            except Exception:
+                job_ids = []
+
+            # Delete from all related collections listed above
             for collection_name, query in collections_to_clean:
                 try:
                     collection = getattr(self.database, collection_name)
@@ -4822,6 +4830,50 @@ class Database:
                 except Exception as e:
                     logger.warning(f"Error deleting from {collection_name}: {str(e)}")
                     # Continue with deletion even if some collections fail
+
+            # Additional cleanup: pending jobs, job question answers, verification & reset tokens, quotes
+            try:
+                # Pending jobs created by this user
+                try:
+                    res = await self.database.pending_jobs.delete_many({"user_id": user_id})
+                    if getattr(res, 'deleted_count', 0) > 0:
+                        logger.info(f"Deleted {res.deleted_count} pending_jobs for user {user_id}")
+                except Exception as e:
+                    logger.warning(f"Error deleting pending_jobs for user {user_id}: {e}")
+
+                # Job question answers for any jobs owned by the user
+                if job_ids:
+                    try:
+                        res = await self.database.job_question_answers.delete_many({"job_id": {"$in": job_ids}})
+                        if getattr(res, 'deleted_count', 0) > 0:
+                            logger.info(f"Deleted {res.deleted_count} job_question_answers for user {user_id}")
+                    except Exception as e:
+                        logger.warning(f"Error deleting job_question_answers for user {user_id}: {e}")
+
+                # Email verification and password reset tokens
+                try:
+                    res = await self.database.email_verification_tokens.delete_many({"user_id": user_id})
+                    if getattr(res, 'deleted_count', 0) > 0:
+                        logger.info(f"Deleted {res.deleted_count} email_verification_tokens for user {user_id}")
+                except Exception as e:
+                    logger.warning(f"Error deleting email_verification_tokens for user {user_id}: {e}")
+
+                try:
+                    res = await self.database.password_reset_tokens.delete_many({"user_id": user_id})
+                    if getattr(res, 'deleted_count', 0) > 0:
+                        logger.info(f"Deleted {res.deleted_count} password_reset_tokens for user {user_id}")
+                except Exception as e:
+                    logger.warning(f"Error deleting password_reset_tokens for user {user_id}: {e}")
+
+                # Quotes where user acted as tradesperson or homeowner
+                try:
+                    res = await self.database.quotes.delete_many({"$or": [{"tradesperson_id": user_id}, {"homeowner_id": user_id}]})
+                    if getattr(res, 'deleted_count', 0) > 0:
+                        logger.info(f"Deleted {res.deleted_count} quotes for user {user_id}")
+                except Exception as e:
+                    logger.warning(f"Error deleting quotes for user {user_id}: {e}")
+            except Exception:
+                pass
             
             # Finally delete the user account
             # Additionally purge any duplicate user records with the same email to fully release the address

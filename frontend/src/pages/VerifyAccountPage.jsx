@@ -101,6 +101,8 @@ const VerifyAccountPage = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const token = params.get('token');
+    const nextParam = params.get('next');
+    if (nextParam) setNextPath(nextParam);
     if (!token) return;
     let isMounted = true;
     (async () => {
@@ -122,8 +124,8 @@ const VerifyAccountPage = () => {
             toast({ title: 'Email Verified', description: resp?.message || 'Your email has been verified.' });
           }
           setVerified(true);
-          try { setNextPath('/my-jobs'); } catch {}
-          navigate('/my-jobs', { replace: true });
+          // Navigate to provided nextPath (if any) or default /my-jobs
+          try { navigate(nextPath || '/my-jobs', { replace: true }); } catch (e) { navigate('/my-jobs', { replace: true }); }
         }
       } catch (e) {
         const msg = e?.response?.data?.detail || 'Invalid or expired verification link';
