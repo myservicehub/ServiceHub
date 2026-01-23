@@ -3,6 +3,9 @@ import apiClient from '../../api/client';
 import { Loader2, AlertCircle, Eye } from 'lucide-react';
 import { Dialog, DialogContent } from '../ui/dialog';
 
+// Simple in-memory cache for fetched object URLs to avoid re-downloading
+const objectUrlCache = new Map();
+
 const AuthenticatedImage = ({ src, alt, className, style }) => {
   const [imageSrc, setImageSrc] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -38,34 +41,43 @@ const AuthenticatedImage = ({ src, alt, className, style }) => {
       return;
     }
 
-    const fetchImage = async () => {
+    const fetchImage = async (attempt = 1) => {
       try {
         setLoading(true);
         setError(false);
-        
+
+        const requestUrl = normalizeRequestUrl(src);
+
+        // Use cached object URL when available
+        if (objectUrlCache.has(requestUrl)) {
+          setImageSrc(objectUrlCache.get(requestUrl));
+          return;
+        }
+
         // Ensure we're using the admin token if it exists
         const adminToken = localStorage.getItem('admin_token');
         const headers = adminToken ? { 'Authorization': `Bearer ${adminToken}` } : {};
 
-        const requestUrl = normalizeRequestUrl(src);
         const response = await apiClient.get(requestUrl, {
           responseType: 'blob',
           headers: headers
         });
-        
+
         if (isMounted) {
           const objectUrl = URL.createObjectURL(response.data);
+          objectUrlCache.set(requestUrl, objectUrl);
           setImageSrc(objectUrl);
         }
       } catch (err) {
         console.error("Error loading authenticated image:", err);
-        if (isMounted) {
-          setError(true);
+        if (attempt < 2) {
+          // one retry with small backoff
+          setTimeout(() => fetchImage(attempt + 1), 250);
+          return;
         }
+        if (isMounted) setError(true);
       } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+        if (isMounted) setLoading(false);
       }
     };
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -74,6 +74,7 @@ const NIGERIAN_TRADE_CATEGORIES = [
 
 const BrowseJobsPage = () => {
   const [jobs, setJobs] = useState([]);
+  const jobAnswersCache = useRef({});
   const [loading, setLoading] = useState(true);
   const [showingInterest, setShowingInterest] = useState(null);
   const [pagination, setPagination] = useState(null);
@@ -277,6 +278,26 @@ const BrowseJobsPage = () => {
       }
       setJobs(jobsData);
       setPagination(response.data.pagination || null);
+      // Prefetch question answers for the first visible jobs to improve modal open latency
+      try {
+        const toPrefetch = jobsData.slice(0, 10).map(j => j.id || j._id).filter(Boolean);
+        if (toPrefetch.length > 0) {
+          Promise.allSettled(
+            toPrefetch.map(id => tradeCategoryQuestionsAPI.getJobQuestionAnswers(id).then(res => ({ id, res })))
+          ).then(results => {
+            results.forEach(r => {
+              if (r.status === 'fulfilled' && r.value && r.value.id) {
+                const jobId = r.value.id || r.value.job_id || r.value.jobId || r.value.jobId;
+                jobAnswersCache.current[r.value.job_id || r.value.jobId || r.value.id || r.value.job?.id || r.value.job?.job_id || r.value.job_id || ''] = r.value.res || r.value;
+              } else if (r.status === 'fulfilled' && r.value && r.value.res) {
+                jobAnswersCache.current[r.value.id] = r.value.res;
+              }
+            });
+          }).catch(() => {});
+        }
+      } catch (e) {
+        // ignore prefetch errors
+      }
     } catch (error) {
       console.error('Failed to load jobs:', error);
       // Suppress noisy error toast to avoid disruptive red notifications.
