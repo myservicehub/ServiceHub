@@ -1790,18 +1790,21 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
   const renderProgressBar = () => (
     <div className="mb-8">
       <div className="flex justify-between items-center mb-2">
+        {
+          // Clamp displayed values so mobile UI can't show >100% or "Step 5 of 4"
+        }
         <span className="text-sm font-medium text-gray-600 font-lato">
-          Step {currentStep} of {totalSteps}
+          Step {Math.min(currentStep, totalSteps)} of {totalSteps}
         </span>
         <span className="text-sm font-medium text-gray-600 font-lato">
-          {Math.round((currentStep / totalSteps) * 100)}% Complete
+          {Math.round(Math.min(100, (currentStep / Math.max(1, totalSteps)) * 100))}% Complete
         </span>
       </div>
-      <div className="w-full bg-gray-200 rounded-full h-2">
-        <div 
+      <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+        <div
           className="h-2 rounded-full transition-all duration-300"
           style={{
-            width: `${(currentStep / totalSteps) * 100}%`,
+            width: `${Math.min(100, (currentStep / Math.max(1, totalSteps)) * 100)}%`,
             backgroundColor: '#34D164'
           }}
         />
