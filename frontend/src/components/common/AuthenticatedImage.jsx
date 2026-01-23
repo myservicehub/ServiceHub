@@ -84,10 +84,9 @@ const AuthenticatedImage = ({ src, alt, className, style }) => {
     fetchImage();
 
     return () => {
+      // Do not revoke cached object URLs here — they are shared via objectUrlCache.
+      // Just mark unmounted to prevent state updates from async tasks.
       isMounted = false;
-      if (imageSrc) {
-        URL.revokeObjectURL(imageSrc);
-      }
     };
   }, [src]);
 

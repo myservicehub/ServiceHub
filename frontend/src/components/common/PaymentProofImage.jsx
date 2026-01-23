@@ -18,13 +18,14 @@ const PaymentProofImage = ({ filename, isAdmin = false, className = '', alt = 'P
 
     if (!filename) {
       setError('No file provided');
-      return;
+      return () => { isMounted = false; };
     }
 
-    // First attempt: use direct image URL (this lets the browser stream/cache the image).
-    // For admin images the direct URL may require authentication and thus fail; in that
-    // case we'll fallback to fetching the base64 endpoint using apiClient (which sends
-    // Authorization headers).
+    // Prefer authenticated base64 endpoint first (includes auth headers).
+    const base64Url = isAdmin
+      ? adminAPI.getPaymentProofBase64Url(filename)
+      : walletAPI.getPaymentProofBase64Url(filename);
+
     const directUrl = isAdmin
       ? adminAPI.getPaymentProofUrl(filename)
       : walletAPI.getPaymentProofUrl(filename);
@@ -35,16 +36,6 @@ const PaymentProofImage = ({ filename, isAdmin = false, className = '', alt = 'P
       return () => { isMounted = false; };
     }
 
-    // Try setting the direct URL first so the browser can fetch it normally
-    setSrc(directUrl);
-
-    // Also kick off a background fetch for the base64 (used as a fallback on error
-    // or if the direct URL is blocked by auth). We perform up to one retry to
-    // reduce transient failures.
-    const base64Url = isAdmin
-      ? adminAPI.getPaymentProofBase64Url(filename)
-      : walletAPI.getPaymentProofBase64Url(filename);
-
     const fetchBase64 = async (attempt = 1) => {
       try {
         const resp = await apiClient.get(base64Url);
@@ -53,19 +44,25 @@ const PaymentProofImage = ({ filename, isAdmin = false, className = '', alt = 'P
         const dataUri = `data:image/jpeg;base64,${b64}`;
         base64Cache.set(filename, dataUri);
         if (isMounted) setSrc(dataUri);
+        return true;
       } catch (e) {
         if (attempt < 2) {
           // small backoff then retry once
-          setTimeout(() => fetchBase64(attempt + 1), 250);
-          return;
+          await new Promise(res => setTimeout(res, 250));
+          return fetchBase64(attempt + 1);
         }
-        if (isMounted) setError('Failed to load image');
-        console.warn('PaymentProofImage error:', e?.response?.data || e?.message);
+        console.warn('PaymentProofImage base64 fetch failed:', e?.response?.data || e?.message);
+        return false;
       }
     };
 
-    // Fire-and-forget background fetch
-    fetchBase64();
+    (async () => {
+      const ok = await fetchBase64();
+      if (!ok && isMounted) {
+        // fall back to letting the browser load the direct image URL (public images)
+        setSrc(directUrl);
+      }
+    })();
 
     return () => { isMounted = false; };
   }, [filename, isAdmin]);
@@ -91,6 +88,10 @@ const PaymentProofImage = ({ filename, isAdmin = false, className = '', alt = 'P
         alt={alt}
         className={className}
         onClick={() => setViewerOpen(true)}
+        onError={() => {
+          // If the image fails to load and it's not already a data URI, show placeholder
+          if (!src?.startsWith('data:')) setError('Failed to load image');
+        }}
       />
       <Dialog open={viewerOpen} onOpenChange={setViewerOpen}>
         <DialogContent className="max-w-3xl w-[95vw]">
