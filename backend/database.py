@@ -1316,6 +1316,69 @@ class Database:
         
         return result.modified_count > 0
 
+    async def delete_job_completely(self, job_id: str) -> dict:
+        """Hard-delete a job and all related data from the platform.
+
+        This removes the job document and any related documents that reference
+        the job_id across collections such as: job_question_answers, quotes,
+        interests, job_applications, conversations, messages, and reviews.
+        Returns a dict with delete counts for each collection.
+        """
+        results = {}
+        try:
+            # Remove job document
+            res = await self.database.jobs.delete_one({"id": job_id})
+            results["jobs_deleted"] = res.deleted_count
+
+            # Remove job question answers
+            res = await self.database.job_question_answers.delete_many({"job_id": job_id})
+            results["job_question_answers_deleted"] = res.deleted_count
+
+            # Remove quotes for this job
+            res = await self.database.quotes.delete_many({"job_id": job_id})
+            results["quotes_deleted"] = res.deleted_count
+
+            # Remove interests for this job
+            res = await self.database.interests.delete_many({"job_id": job_id})
+            results["interests_deleted"] = res.deleted_count
+
+            # Remove job applications
+            res = await self.database.job_applications.delete_many({"job_id": job_id})
+            results["applications_deleted"] = res.deleted_count
+
+            # Remove reviews that reference this job (if any)
+            try:
+                res = await self.database.reviews.delete_many({"job_id": job_id})
+                results["reviews_deleted"] = res.deleted_count
+            except Exception:
+                # Older deployments may use a different reviews collection name
+                results["reviews_deleted"] = 0
+
+            # Remove conversations and messages tied to this job
+            try:
+                res = await self.database.messages.delete_many({"job_id": job_id})
+                results["messages_deleted"] = res.deleted_count
+            except Exception:
+                results["messages_deleted"] = 0
+
+            try:
+                res = await self.database.conversations.delete_many({"job_id": job_id})
+                results["conversations_deleted"] = res.deleted_count
+            except Exception:
+                results["conversations_deleted"] = 0
+
+            # Optionally: remove related notifications (best-effort)
+            try:
+                res = await self.database.notifications.delete_many({"job_id": job_id})
+                results["notifications_deleted"] = res.deleted_count
+            except Exception:
+                results["notifications_deleted"] = 0
+
+            return results
+        except Exception as e:
+            # Bubble up the exception to caller
+            raise
+
     async def get_jobs_statistics_admin(self) -> dict:
         """Get comprehensive job statistics for admin dashboard"""
         total_jobs = await self.database.jobs.count_documents({})

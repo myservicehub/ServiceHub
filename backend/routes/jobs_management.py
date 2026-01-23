@@ -246,24 +246,21 @@ async def delete_job_posting(
         if not existing_job or existing_job.get("content_type") != "job_posting":
             raise HTTPException(status_code=404, detail="Job posting not found")
         
-        # Soft delete by archiving
-        success = await database.update_content_item(job_id, {
-            "status": "archived",
-            "updated_at": datetime.utcnow(),
-            "updated_by": admin["id"]
-        })
-        
-        if not success:
+        # Perform hard delete so the posting and related data are removed
+        try:
+            delete_results = await database.delete_job_completely(job_id)
+        except Exception as e:
+            logger.error(f"Failed to hard-delete job posting {job_id}: {e}")
             raise HTTPException(status_code=500, detail="Failed to delete job posting")
-        
+
         # Log activity
         await database.log_admin_activity(
             admin["id"], admin["username"], "delete_job",
             f"Deleted job posting: {existing_job['title']}",
             target_id=job_id, target_type="job"
         )
-        
-        return {"message": "Job posting deleted successfully"}
+
+        return {"message": "Job posting deleted successfully", "details": delete_results}
         
     except HTTPException:
         raise

@@ -41,7 +41,7 @@ import { useToast } from '../hooks/use-toast';
 import ImageUpload from '../components/portfolio/ImageUpload';
 import PortfolioGallery from '../components/portfolio/PortfolioGallery';
 import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from '../components/ui/input-otp';
-import { 
+import {
   AlertDialog,
   AlertDialogTrigger,
   AlertDialogContent,
@@ -52,8 +52,20 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from '../components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle as ModalTitle,
+  DialogFooter,
+} from '../components/ui/dialog';
+import SkillsTestComponent from '../components/auth/SkillsTestComponent';
 
 const ProfilePage = () => {
+  // Local fallback categories for skill suggestions
+  const FALLBACK_TRADE_CATEGORIES = [
+    'Plumbing', 'Electrical Repairs', 'Painting', 'Carpentry', 'Tiling', 'Roofing', 'Welding', 'Solar & Inverter Installation', 'Air Conditioning & Refrigeration', 'Locksmithing'
+  ];
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [profileData, setProfileData] = useState(null);
@@ -94,6 +106,11 @@ const ProfilePage = () => {
   const { toast } = useToast();
 
   const [deleteLoading, setDeleteLoading] = useState(false);
+  // Add-skill modal / test states
+  const [addSkillOpen, setAddSkillOpen] = useState(false);
+  const [selectedSkill, setSelectedSkill] = useState('');
+  const [showSkillTest, setShowSkillTest] = useState(false);
+  const [skillFormData, setSkillFormData] = useState({ selectedTrades: [], skillsTestPassed: false, testScores: {} });
 
   // Helper function to get tab display text
   const getTabDisplayText = (tabValue) => {
@@ -182,6 +199,10 @@ const ProfilePage = () => {
       }
     }
   }, [user, isAuthenticated, isTradesperson]);
+
+  const updateSkillFormData = (key, value) => {
+    setSkillFormData(prev => ({ ...prev, [key]: value }));
+  };
 
   const handleSendPhoneOTP = async () => {
     try {
@@ -863,9 +884,26 @@ const ProfilePage = () => {
 
                         {/* Trade Categories */}
                         <div>
-                          <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
-                            Skills & Expertise
-                          </label>
+                          <div className="flex items-center justify-between">
+                            <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                              Skills & Expertise
+                            </label>
+                            <div>
+                              <Button
+                                onClick={() => {
+                                  setSelectedSkill('');
+                                  setShowSkillTest(false);
+                                  setAddSkillOpen(true);
+                                }}
+                                disabled={(profileData.trade_categories || []).length >= 5}
+                                size="sm"
+                                className="ml-2"
+                              >
+                                Add Skill
+                              </Button>
+                            </div>
+                          </div>
+
                           <div className="flex flex-wrap gap-2">
                             {profileData.trade_categories?.map((category, index) => (
                               <Badge key={index} variant="outline" className="text-sm">
@@ -1366,6 +1404,113 @@ const ProfilePage = () => {
           </div>
         </div>
       </section>
+
+      {/* Add Skill Modal / Skills Test */}
+      <Dialog open={addSkillOpen} onOpenChange={setAddSkillOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <ModalTitle>Add a new skill</ModalTitle>
+          </DialogHeader>
+
+          {!showSkillTest ? (
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-gray-700">Choose a skill to add to your profile (max 5). After selecting, you will take a short skills assessment for that skill.</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Skill</label>
+                <Input
+                  value={selectedSkill}
+                  onChange={(e) => setSelectedSkill(e.target.value)}
+                  placeholder="Type or choose a skill"
+                />
+
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  {(FALLBACK_TRADE_CATEGORIES
+                    .filter(s => !(profileData.trade_categories || []).includes(s))
+                    .filter(s => selectedSkill === '' || s.toLowerCase().includes(selectedSkill.toLowerCase()))
+                    .slice(0, 8)
+                  ).map(s => (
+                    <Button key={s} variant="outline" size="sm" onClick={() => setSelectedSkill(s)}>
+                      {s}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end space-x-2">
+                <Button variant="outline" onClick={() => setAddSkillOpen(false)}>Cancel</Button>
+                <Button
+                  onClick={() => {
+                    if (!selectedSkill || selectedSkill.trim() === '') {
+                      toast({ title: 'Select a skill', description: 'Please choose a skill before starting the test.', variant: 'destructive' });
+                      return;
+                    }
+                    if ((profileData.trade_categories || []).includes(selectedSkill)) {
+                      toast({ title: 'Already added', description: 'This skill is already on your profile.' });
+                      return;
+                    }
+                    if ((profileData.trade_categories || []).length >= 5) {
+                      toast({ title: 'Limit reached', description: 'You may only have up to 5 skills.' });
+                      return;
+                    }
+                    // prepare formData for SkillsTestComponent
+                    setSkillFormData({ selectedTrades: [selectedSkill], skillsTestPassed: false, testScores: {} });
+                    setShowSkillTest(true);
+                  }}
+                  className="bg-green-600 text-white"
+                >
+                  Start Skill Test
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <SkillsTestComponent
+                formData={skillFormData}
+                updateFormData={(k, v) => updateSkillFormData(k, v)}
+                onTestComplete={async (results) => {
+                  try {
+                    if (results && results.passed) {
+                      const existing = Array.isArray(profileData.trade_categories) ? profileData.trade_categories : [];
+                      if (existing.includes(selectedSkill)) {
+                        toast({ title: 'Skill exists', description: 'Skill already present on your profile.' });
+                        setAddSkillOpen(false);
+                        setShowSkillTest(false);
+                        return;
+                      }
+                      if (existing.length >= 5) {
+                        toast({ title: 'Limit reached', description: 'You already have 5 skills.' });
+                        setAddSkillOpen(false);
+                        setShowSkillTest(false);
+                        return;
+                      }
+
+                      const newCategories = [...existing, selectedSkill];
+                      const resp = await authAPI.updateTradespersonProfile({ trade_categories: newCategories });
+                      // Update local state and auth context
+                      setProfileData(resp);
+                      updateUser(resp);
+                      toast({ title: 'Skill added', description: `${selectedSkill} has been added to your profile.` });
+                      setAddSkillOpen(false);
+                      setShowSkillTest(false);
+                    } else {
+                      toast({ title: 'Test not passed', description: 'You did not pass the skills assessment. Please review and try again.', variant: 'destructive' });
+                      // keep modal open for retry
+                    }
+                  } catch (err) {
+                    console.error('Failed to add skill after test:', err);
+                    toast({ title: 'Failed', description: err?.response?.data?.detail || 'Unable to add skill. Try again later.', variant: 'destructive' });
+                  }
+                }}
+              />
+            </div>
+          )}
+
+          <DialogFooter />
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>

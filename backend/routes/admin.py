@@ -410,15 +410,16 @@ async def delete_job_admin(job_id: str):
     if not existing_job:
         raise HTTPException(status_code=404, detail="Job not found")
     
-    # Soft delete job
-    success = await database.soft_delete_job_admin(job_id)
-    
-    if not success:
-        raise HTTPException(status_code=500, detail="Failed to delete job")
-    
+    # Hard-delete job and related data so it's fully removed from the platform
+    try:
+        delete_results = await database.delete_job_completely(job_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete job: {str(e)}")
+
     return {
         "message": "Job deleted successfully",
-        "job_id": job_id
+        "job_id": job_id,
+        "details": delete_results
     }
 
 @router.get("/jobs/stats")
