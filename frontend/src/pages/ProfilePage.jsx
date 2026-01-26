@@ -1447,16 +1447,29 @@ const ProfilePage = () => {
 
               <div>
                 <label className="block text-sm font-medium mb-2">Skill</label>
-                <Input
+
+                {/* Use native input + datalist for selectable categories (allows typing + dropdown) */}
+                <input
+                  list="trade-categories-datalist"
                   value={selectedSkill}
                   onChange={(e) => setSelectedSkill(e.target.value)}
                   placeholder="Type or choose a skill"
+                  className="block w-full rounded-md border border-gray-200 px-3 py-2 font-lato"
                 />
+
+                <datalist id="trade-categories-datalist">
+                  {(tradeCategoryOptions || [])
+                    .filter(s => !(profileData.trade_categories || []).includes(s))
+                    .map(s => (
+                      <option key={s} value={s} />
+                    ))}
+                </datalist>
 
                 <div className="mt-2 grid grid-cols-2 gap-2">
                   {loadingCategories ? (
                     <div className="col-span-2 text-sm text-gray-500">Loading skills…</div>
                   ) : (
+                    // show quick-pick buttons (filtered by typed text) for faster selection on mobile/desktop
                     (tradeCategoryOptions || []).filter(s => !(profileData.trade_categories || []).includes(s))
                       .filter(s => selectedSkill === '' || s.toLowerCase().includes(selectedSkill.toLowerCase()))
                       .slice(0, 24)
