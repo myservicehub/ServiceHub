@@ -30,6 +30,7 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
   const [timeRemaining, setTimeRemaining] = useState(TIME_PER_TRADE_SECONDS); // dynamic later
   const [testQuestions, setTestQuestions] = useState({});
   const [testResults, setTestResults] = useState(null);
+  const [attemptKey, setAttemptKey] = useState(0); // increment to force reload/shuffle for retakes
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [noQuestionsAvailable, setNoQuestionsAvailable] = useState(false);
 
@@ -84,7 +85,7 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
     };
 
     loadQuestions();
-  }, [formData.selectedTrades]);
+  }, [formData.selectedTrades, attemptKey]);
 
   // Timer countdown
   useEffect(() => {
@@ -433,9 +434,11 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
             </div>
             <Button
               onClick={() => {
-                setTestState('intro');
-                setTestResults(null);
-                setAnswers({});
+                  // Prepare for a fresh retake: increment attemptKey to force re-fetch and reshuffle
+                  setAttemptKey(prev => prev + 1);
+                  setTestState('intro');
+                  setTestResults(null);
+                  setAnswers({});
               }}
               className="mt-4 bg-red-600 hover:bg-red-700 text-white"
             >

@@ -34,7 +34,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { AlertTriangle } from 'lucide-react';
-import { authAPI, portfolioAPI } from '../api/services';
+import { authAPI, portfolioAPI, statsAPI } from '../api/services';
 import { reviewsAPI } from '../api/reviews';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
@@ -62,10 +62,9 @@ import {
 import SkillsTestComponent from '../components/auth/SkillsTestComponent';
 
 const ProfilePage = () => {
-  // Local fallback categories for skill suggestions
-  const FALLBACK_TRADE_CATEGORIES = [
-    'Plumbing', 'Electrical Repairs', 'Painting', 'Carpentry', 'Tiling', 'Roofing', 'Welding', 'Solar & Inverter Installation', 'Air Conditioning & Refrigeration', 'Locksmithing'
-  ];
+  // Options loaded from backend for skill suggestions
+  const [tradeCategoryOptions, setTradeCategoryOptions] = useState([]);
+  const [loadingCategories, setLoadingCategories] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [profileData, setProfileData] = useState(null);
@@ -203,6 +202,34 @@ const ProfilePage = () => {
   const updateSkillFormData = (key, value) => {
     setSkillFormData(prev => ({ ...prev, [key]: value }));
   };
+
+  // Load category options (preload on mount and when modal opens if needed)
+  const loadCategories = async () => {
+    // If already loaded, skip reload unless explicit
+    if ((tradeCategoryOptions || []).length > 0) return;
+    setLoadingCategories(true);
+    try {
+      const cats = await statsAPI.getCategories();
+      // Ensure we have an array of strings
+      const names = Array.isArray(cats) ? cats.map(c => (typeof c === 'string' ? c : c.name || '')).filter(Boolean) : [];
+      setTradeCategoryOptions(names);
+    } catch (err) {
+      console.warn('Failed to load categories, falling back to inline list', err);
+      setTradeCategoryOptions(['Plumbing', 'Electrical Repairs', 'Painting', 'Carpentry', 'Tiling', 'Roofing', 'Welding', 'Solar & Inverter Installation', 'Air Conditioning & Refrigeration', 'Locksmithing']);
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
+
+  useEffect(() => {
+    // Preload categories on mount for instant modal experience
+    loadCategories();
+  }, []);
+
+  useEffect(() => {
+    // Also ensure categories are loaded when modal opens (in case list changed)
+    if (addSkillOpen) loadCategories();
+  }, [addSkillOpen]);
 
   const handleSendPhoneOTP = async () => {
     try {
@@ -1427,15 +1454,18 @@ const ProfilePage = () => {
                 />
 
                 <div className="mt-2 grid grid-cols-2 gap-2">
-                  {(FALLBACK_TRADE_CATEGORIES
-                    .filter(s => !(profileData.trade_categories || []).includes(s))
-                    .filter(s => selectedSkill === '' || s.toLowerCase().includes(selectedSkill.toLowerCase()))
-                    .slice(0, 8)
-                  ).map(s => (
-                    <Button key={s} variant="outline" size="sm" onClick={() => setSelectedSkill(s)}>
-                      {s}
-                    </Button>
-                  ))}
+                  {loadingCategories ? (
+                    <div className="col-span-2 text-sm text-gray-500">Loading skills…</div>
+                  ) : (
+                    (tradeCategoryOptions || []).filter(s => !(profileData.trade_categories || []).includes(s))
+                      .filter(s => selectedSkill === '' || s.toLowerCase().includes(selectedSkill.toLowerCase()))
+                      .slice(0, 24)
+                      .map(s => (
+                        <Button key={s} variant="outline" size="sm" onClick={() => setSelectedSkill(s)}>
+                          {s}
+                        </Button>
+                      ))
+                  )}
                 </div>
               </div>
 
