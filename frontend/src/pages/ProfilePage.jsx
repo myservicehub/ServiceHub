@@ -213,9 +213,29 @@ const ProfilePage = () => {
     if ((tradeCategoryOptions || []).length > 0) return;
     setLoadingCategories(true);
     try {
-      const cats = await statsAPI.getCategories();
-      // Ensure we have an array of strings
-      const names = Array.isArray(cats) ? cats.map(c => (typeof c === 'string' ? c : c.name || '')).filter(Boolean) : [];
+      // Prefer full list from admin trades (static + custom)
+      let names = [];
+      try {
+        const { adminAPI } = await import('../api/wallet');
+        const adminResp = await adminAPI.getAllTrades();
+        if (adminResp && Array.isArray(adminResp.trades)) {
+          names = adminResp.trades.filter(Boolean);
+        }
+      } catch (e) {
+        // Fallback to stats categories if admin endpoint not accessible
+        const cats = await statsAPI.getCategories();
+        names = Array.isArray(cats) ? cats.map(c => (typeof c === 'string' ? c : c.name || '')).filter(Boolean) : [];
+      }
+      if (!names || names.length === 0) {
+        // Final fallback to canonical 28 categories
+        names = [
+          'Building','Concrete Works','Tiling','Door & Window Installation','Air Conditioning & Refrigeration','Plumbing',
+          'Home Extensions','Scaffolding','Flooring','Bathroom Fitting','Generator Services','Welding',
+          'Renovations','Painting','Carpentry','Interior Design','Solar & Inverter Installation','Locksmithing',
+          'Roofing','Plastering/POP','Furniture Making','Electrical Repairs','CCTV & Security Systems','General Handyman Work',
+          'Cleaning','Relocation/Moving','Waste Disposal','Recycling'
+        ];
+      }
       setTradeCategoryOptions(names);
     } catch (err) {
       console.warn('Failed to load categories, falling back to inline list', err);

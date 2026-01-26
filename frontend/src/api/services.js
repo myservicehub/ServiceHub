@@ -17,6 +17,11 @@ export const authAPI = {
     return response.data;
   },
 
+  getTradeCategories: async () => {
+    const response = await apiClient.get('/auth/trade-categories');
+    return response.data;
+  },
+
   getCurrentUser: async () => {
     const response = await apiClient.get('/auth/me');
     return response.data;
