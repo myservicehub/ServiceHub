@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -110,6 +110,10 @@ const ProfilePage = () => {
   const [selectedSkill, setSelectedSkill] = useState('');
   const [showSkillTest, setShowSkillTest] = useState(false);
   const [skillFormData, setSkillFormData] = useState({ selectedTrades: [], skillsTestPassed: false, testScores: {} });
+  // Combobox states for category selection
+  const [comboOpen, setComboOpen] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const wrapperRef = useRef(null);
 
   // Helper function to get tab display text
   const getTabDisplayText = (tabValue) => {
@@ -224,6 +228,31 @@ const ProfilePage = () => {
   useEffect(() => {
     // Preload categories on mount for instant modal experience
     loadCategories();
+  }, []);
+
+  // Compute filtered options for the combobox
+  const filteredOptions = useMemo(() => {
+    const excluded = (profileData?.trade_categories || []);
+    return (tradeCategoryOptions || [])
+      .filter(s => !excluded.includes(s))
+      .filter(s => selectedSkill === '' || s.toLowerCase().includes(selectedSkill.toLowerCase()));
+  }, [tradeCategoryOptions, profileData, selectedSkill]);
+
+  useEffect(() => {
+    // reset highlight when options change
+    setHighlightedIndex(0);
+  }, [filteredOptions.length]);
+
+  // close combobox when clicking outside
+  useEffect(() => {
+    const onDocMouse = (e) => {
+      if (!wrapperRef.current) return;
+      if (!wrapperRef.current.contains(e.target)) {
+        setComboOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDocMouse);
+    return () => document.removeEventListener('mousedown', onDocMouse);
   }, []);
 
   useEffect(() => {
@@ -1448,36 +1477,72 @@ const ProfilePage = () => {
               <div>
                 <label className="block text-sm font-medium mb-2">Skill</label>
 
-                {/* Use native input + datalist for selectable categories (allows typing + dropdown) */}
-                <input
-                  list="trade-categories-datalist"
-                  value={selectedSkill}
-                  onChange={(e) => setSelectedSkill(e.target.value)}
-                  placeholder="Type or choose a skill"
-                  className="block w-full rounded-md border border-gray-200 px-3 py-2 font-lato"
-                />
+                {/* Combobox: typed input with a dropdown list, keyboard nav and quick-picks */}
+                <div className="relative" ref={wrapperRef}>
+                  <div className="relative">
+                    <input
+                      value={selectedSkill}
+                      onChange={(e) => { setSelectedSkill(e.target.value); }}
+                      onFocus={() => setComboOpen(true)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'ArrowDown') {
+                          e.preventDefault();
+                          setHighlightedIndex((i) => Math.min(i + 1, filteredOptions.length - 1));
+                          setComboOpen(true);
+                        } else if (e.key === 'ArrowUp') {
+                          e.preventDefault();
+                          setHighlightedIndex((i) => Math.max(i - 1, 0));
+                        } else if (e.key === 'Enter') {
+                          if (comboOpen && filteredOptions[highlightedIndex]) {
+                            e.preventDefault();
+                            const v = filteredOptions[highlightedIndex];
+                            setSelectedSkill(v);
+                            setComboOpen(false);
+                          }
+                        } else if (e.key === 'Escape') {
+                          setComboOpen(false);
+                        }
+                      }}
+                      placeholder="Type or choose a skill"
+                      className="block w-full rounded-md border border-gray-200 px-3 py-2 font-lato"
+                    />
+                  </div>
 
-                <datalist id="trade-categories-datalist">
-                  {(tradeCategoryOptions || [])
-                    .filter(s => !(profileData.trade_categories || []).includes(s))
-                    .map(s => (
-                      <option key={s} value={s} />
-                    ))}
-                </datalist>
+                  {/* Dropdown list */}
+                  {comboOpen && (
+                    <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded shadow max-h-60 overflow-auto">
+                      {loadingCategories ? (
+                        <div className="p-3 text-sm text-gray-500">Loading skills…</div>
+                      ) : filteredOptions.length === 0 ? (
+                        <div className="p-3 text-sm text-gray-500">No matches</div>
+                      ) : (
+                        <ul>
+                          {filteredOptions.slice(0, 50).map((opt, idx) => (
+                            <li
+                              key={opt}
+                              onMouseDown={(e) => { e.preventDefault(); }}
+                              onClick={() => { setSelectedSkill(opt); setComboOpen(false); }}
+                              className={`px-3 py-2 cursor-pointer hover:bg-gray-100 ${idx === highlightedIndex ? 'bg-gray-100' : ''}`}
+                            >
+                              {opt}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
+                </div>
 
                 <div className="mt-2 grid grid-cols-2 gap-2">
                   {loadingCategories ? (
                     <div className="col-span-2 text-sm text-gray-500">Loading skills…</div>
                   ) : (
-                    // show quick-pick buttons (filtered by typed text) for faster selection on mobile/desktop
-                    (tradeCategoryOptions || []).filter(s => !(profileData.trade_categories || []).includes(s))
-                      .filter(s => selectedSkill === '' || s.toLowerCase().includes(selectedSkill.toLowerCase()))
-                      .slice(0, 24)
-                      .map(s => (
-                        <Button key={s} variant="outline" size="sm" onClick={() => setSelectedSkill(s)}>
-                          {s}
-                        </Button>
-                      ))
+                    // quick-pick buttons from filteredOptions for fast selection
+                    filteredOptions.slice(0, 24).map(s => (
+                      <Button key={s} variant="outline" size="sm" onClick={() => { setSelectedSkill(s); setComboOpen(false); }}>
+                        {s}
+                      </Button>
+                    ))
                   )}
                 </div>
               </div>
