@@ -1553,17 +1553,8 @@ const ProfilePage = () => {
                   )}
                 </div>
 
-                <div className="mt-2 grid grid-cols-2 gap-2">
-                  {loadingCategories ? (
-                    <div className="col-span-2 text-sm text-gray-500">Loading skills…</div>
-                  ) : (
-                    // quick-pick buttons from filteredOptions for fast selection
-                    filteredOptions.slice(0, 24).map(s => (
-                      <Button key={s} variant="outline" size="sm" onClick={() => { setSelectedSkill(s); setComboOpen(false); }}>
-                        {s}
-                      </Button>
-                    ))
-                  )}
+                <div className="mt-2 text-sm text-gray-500">
+                  {loadingCategories ? 'Loading skills…' : 'Start typing to see matching skills.'}
                 </div>
               </div>
 
