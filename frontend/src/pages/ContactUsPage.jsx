@@ -331,7 +331,7 @@ const ContactUsPage = () => {
             {/* Contact Information */}
             <div className="space-y-6">
               {/* Contact Methods */}
-              <div className="bg-white rounded-lg shadow-sm border p-6">
+              <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
                 <h3 className="text-xl font-semibold text-gray-900 mb-4">Get in Touch</h3>
                 <div className="space-y-4">
                   {contactMethods.map((method, index) => {
@@ -394,7 +394,7 @@ const ContactUsPage = () => {
                   <p className="mb-2">Ekpan, Delta State</p>
                   <p className="mb-4">Nigeria</p>
                   <p className="text-xs text-gray-500">
-                    We serve all 36 states and FCT across Nigeria
+                    We serve 8 states and FCT across Nigeria
                   </p>
                 </div>
               </div>
