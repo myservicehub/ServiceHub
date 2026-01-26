@@ -382,19 +382,19 @@ const ContactUsPage = () => {
               </div>
 
               {/* Address */}
-              <div className="bg-white rounded-lg shadow-sm border p-6">
+              <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
                 <div className="flex items-center mb-4">
                   <MapPin className="w-5 h-5 text-green-600 mr-2" />
                   <h3 className="text-xl font-semibold text-gray-900">Our Location</h3>
                 </div>
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-600 w-full text-justify leading-relaxed">
                   <p className="mb-2">ServiceHub Nigeria</p>
                   <p className="mb-2">6, D Place Guest House</p>
                   <p className="mb-2">Off Omimi Link Road</p>
                   <p className="mb-2">Ekpan, Delta State</p>
                   <p className="mb-4">Nigeria</p>
                   <p className="text-xs text-gray-500">
-                    We serve 8 states and FCT across Nigeria
+                    We serve 8 states accross Nigeria including FCT.
                   </p>
                 </div>
               </div>
