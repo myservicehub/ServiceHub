@@ -3,22 +3,22 @@ import axios from 'axios';
 // Resolve backend URL with robust localhost safeguards and optional runtime override
 const getBackendUrl = () => {
   const isBrowser = typeof window !== 'undefined';
-  const isLocalhost = isBrowser && window.location.hostname === 'localhost';
-
-  // Build-time env from CRA, may be inlined; runtime override via window/localStorage if needed
-  const buildEnvUrl = (import.meta && import.meta.env && import.meta.env.VITE_BACKEND_URL) || '';
-  const runtimeOverride = isBrowser ? (window.BACKEND_URL_OVERRIDE || localStorage.getItem('BACKEND_URL_OVERRIDE') || '') : '';
-
+  const hostname = isBrowser ? window.location.hostname : '';
+  const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+  const buildEnvUrl =
+    (import.meta && import.meta.env && import.meta.env.VITE_BACKEND_URL) ||
+    (typeof process !== 'undefined' && process.env && process.env.REACT_APP_BACKEND_URL) ||
+    '';
+  const runtimeOverride = isBrowser
+    ? (window.BACKEND_URL_OVERRIDE || localStorage.getItem('BACKEND_URL_OVERRIDE') || '')
+    : '';
   let url = runtimeOverride || buildEnvUrl;
-
-  // In Vite dev, prefer proxy by leaving url empty so API_BASE uses '/api'
   if (!url && isLocalhost) {
     url = '';
   }
-
-  // Respect explicit env/runtime config; do not force port overrides.
-  // If needed, backend port can be controlled via REACT_APP_BACKEND_URL.
-
+  if (!url && isBrowser && hostname.endsWith('vercel.app')) {
+    url = 'https://trademe-platform.preview.emergentagent.com';
+  }
   return url;
 };
 
