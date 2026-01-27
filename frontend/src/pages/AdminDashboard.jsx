@@ -169,6 +169,8 @@ const AdminDashboard = () => {
   const [approvalAction, setApprovalAction] = useState('');
   const [approvalNotes, setApprovalNotes] = useState('');
   const [processingApproval, setProcessingApproval] = useState(false);
+  const [approvalsLoading, setApprovalsLoading] = useState(false);
+  const [approvalsError, setApprovalsError] = useState('');
   
   // Enhanced Job Editing state
   const [editJobModal, setEditJobModal] = useState(null);
@@ -201,6 +203,15 @@ const AdminDashboard = () => {
   const [editingJobData, setEditingJobData] = useState(null);
   
   const { toast } = useToast();
+
+  const getErrorMessage = (error, fallback) => {
+    const message =
+      error?.response?.data?.detail ||
+      error?.response?.data?.message ||
+      error?.response?.data?.error ||
+      error?.message;
+    return message || fallback;
+  };
 
   useEffect(() => {
     if (isLoggedIn) {
@@ -587,36 +598,31 @@ const AdminDashboard = () => {
   const handleOpenReview = async (job) => {
     try {
       setLoading(true);
-      const response = await adminAPI.getJobDetailsAdmin(job.id);
-      const jobDetails = response.job;
-      
-      // Fetch job question answers and attach to job details
-      try {
-        console.log('Admin Review - Fetching QA for job:', job.id, '(_id:', job._id, ')');
-        let answers = await tradeCategoryQuestionsAPI.getJobQuestionAnswers(job.id);
-        
-        // Try fallback to _id if no answers found
-        if ((!answers || !answers.answers || answers.answers.length === 0) && job._id && job._id !== job.id) {
-          console.log('Admin Review - Falling back to _id for QA:', job._id);
+      const [jobDetailsResult, answersResult] = await Promise.allSettled([
+        adminAPI.getJobDetailsAdmin(job.id),
+        tradeCategoryQuestionsAPI.getJobQuestionAnswers(job.id)
+      ]);
+      if (jobDetailsResult.status !== 'fulfilled') {
+        throw jobDetailsResult.reason;
+      }
+      const jobDetails = jobDetailsResult.value.job;
+      let answers = answersResult.status === 'fulfilled' ? answersResult.value : null;
+      if ((!answers || !answers.answers || answers.answers.length === 0) && job._id && job._id !== job.id) {
+        try {
           const altAnswers = await tradeCategoryQuestionsAPI.getJobQuestionAnswers(job._id);
           if (altAnswers && altAnswers.answers && altAnswers.answers.length > 0) {
             answers = altAnswers;
           }
-        }
-
-        if (answers && answers.answers && answers.answers.length > 0) {
-          console.log('Admin Review - Found answers:', answers.answers.length);
-          jobDetails.question_answers = answers;
-        }
-      } catch (err) {
-        console.error('Failed to fetch job question answers for admin review:', err);
+        } catch {}
       }
-      
+      if (answers && answers.answers && answers.answers.length > 0) {
+        jobDetails.question_answers = answers;
+      }
       setSelectedJob(jobDetails);
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to load job details for review",
+        description: getErrorMessage(error, "Failed to load job details for review"),
         variant: "destructive"
       });
     } finally {
@@ -771,16 +777,29 @@ const AdminDashboard = () => {
   // ==========================================
 
   const handleJobApprovalsDataLoad = async () => {
-    setLoading(true);
+    setApprovalsLoading(true);
+    setApprovalsError('');
     try {
-      // Load pending jobs
-      const pendingJobsData = await adminAPI.getPendingJobs();
-      setPendingJobs(pendingJobsData.jobs || []);
-      
-      // Get approval statistics
-      const statsData = await adminAPI.getJobStatistics();
-      setApprovalStats(statsData.statistics || {});
-      
+      const [pendingResult, statsResult] = await Promise.allSettled([
+        adminAPI.getPendingJobs(),
+        adminAPI.getJobStatistics()
+      ]);
+      let errorMessage = '';
+      if (pendingResult.status === 'fulfilled') {
+        setPendingJobs(pendingResult.value.jobs || []);
+      } else {
+        setPendingJobs([]);
+        errorMessage = getErrorMessage(pendingResult.reason, "Failed to load pending jobs");
+      }
+      if (statsResult.status === 'fulfilled') {
+        setApprovalStats(statsResult.value.statistics || {});
+      } else {
+        setApprovalStats({});
+        if (!errorMessage) {
+          errorMessage = getErrorMessage(statsResult.reason, "Failed to load approval statistics");
+        }
+      }
+      setApprovalsError(errorMessage);
     } catch (error) {
       console.error('Failed to load job approvals data:', error);
       toast({
@@ -789,7 +808,7 @@ const AdminDashboard = () => {
         variant: "destructive"
       });
     } finally {
-      setLoading(false);
+      setApprovalsLoading(false);
     }
   };
 
@@ -1991,7 +2010,8 @@ const AdminDashboard = () => {
                     <h2 className="text-xl font-semibold">Job Approval Management</h2>
                     <button
                       onClick={handleJobApprovalsDataLoad}
-                      className="text-blue-600 hover:text-blue-700"
+                      disabled={approvalsLoading}
+                      className="text-blue-600 hover:text-blue-700 disabled:opacity-50"
                     >
                       Refresh
                     </button>
@@ -2024,8 +2044,19 @@ const AdminDashboard = () => {
                     <div className="px-6 py-4 border-b">
                       <h3 className="text-lg font-semibold">Jobs Pending Approval ({pendingJobs.length})</h3>
                     </div>
+                    {approvalsError && (
+                      <div className="px-6 py-4 border-b bg-red-50 text-red-700 flex items-center justify-between">
+                        <span>{approvalsError}</span>
+                        <button
+                          onClick={handleJobApprovalsDataLoad}
+                          className="text-red-700 hover:text-red-800 font-medium"
+                        >
+                          Retry
+                        </button>
+                      </div>
+                    )}
                     
-                    {loading ? (
+                    {approvalsLoading ? (
                       <div className="p-8 text-center">
                         <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
                         <p className="mt-2 text-gray-600">Loading pending jobs...</p>
