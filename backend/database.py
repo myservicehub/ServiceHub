@@ -3468,11 +3468,24 @@ class Database:
             
             # 1. SKILLS FILTERING - Only show jobs matching tradesperson's trade categories
             tradesperson_categories = tradesperson.get("trade_categories", [])
+            # Also include profession in skills matching if it exists
+            profession = tradesperson.get("profession")
+            if profession and profession not in tradesperson_categories:
+                tradesperson_categories = list(tradesperson_categories) + [profession]
+            
             if tradesperson_categories:
-                # Case-insensitive matching for trade categories
-                category_regex_patterns = [{"category": {"$regex": f"^{category}$", "$options": "i"}} for category in tradesperson_categories]
+                # Case-insensitive partial matching for trade categories and job titles
+                # This ensures jobs like "Home Plumbing" match "Plumbing" skills
+                category_regex_patterns = []
+                for category in tradesperson_categories:
+                    # Escape category for safe regex matching
+                    safe_category = re.escape(category)
+                    pattern = {"$regex": safe_category, "$options": "i"}
+                    category_regex_patterns.append({"category": pattern})
+                    category_regex_patterns.append({"title": pattern})
+                
                 job_filter["$or"] = category_regex_patterns
-                print(f"Skills filter applied: {tradesperson_categories}")
+                print(f"Skills filter applied (partial match + titles): {tradesperson_categories}")
             
             # 2. LOCATION FILTERING - Show jobs within tradesperson's travel distance
             if (tradesperson.get("latitude") is not None and 
@@ -3512,10 +3525,16 @@ class Database:
                                                skip: int = 0, limit: int = 50) -> List[dict]:
         """Get jobs near location matching skills, including jobs without coordinates (optimized)."""
         try:
-            # Build skills filter (case-insensitive exact match)
+            # Build skills filter (case-insensitive partial match for category and title)
             skills_filter = {}
             if skill_categories:
-                category_regex_patterns = [{"category": {"$regex": f"^{category}$", "$options": "i"}} for category in skill_categories]
+                category_regex_patterns = []
+                for category in skill_categories:
+                    # Escape category for safe regex matching
+                    safe_category = re.escape(category)
+                    pattern = {"$regex": safe_category, "$options": "i"}
+                    category_regex_patterns.append({"category": pattern})
+                    category_regex_patterns.append({"title": pattern})
                 skills_filter["$or"] = category_regex_patterns
 
             # Base filter: active jobs only
@@ -3525,9 +3544,8 @@ class Database:
             combined_filter = {"$and": [base_filter, skills_filter]} if skills_filter else base_filter
 
             # Use aggregation for efficiency: filter, then process distance
-            # Fetching more to allow for distance filtering after retrieval if needed, 
-            # but ideally we want to limit database load.
-            fetch_limit = max(limit * 3 + skip, 150) # Cap at 150 for performance
+            # Increased fetch_limit to 500 to ensure we don't miss nearby jobs among many skill matches
+            fetch_limit = max(limit * 5 + skip, 500) 
             
             cursor = (
                 self.database.jobs
