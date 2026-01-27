@@ -4361,13 +4361,14 @@ const AdminDashboard = () => {
                       <button onClick={fetchData} className="text-blue-600 hover:text-blue-700">Refresh</button>
                       <button
                         onClick={() => {
-                          const header = ['Date','Reviewer','Reviewee','Rating','Title','Status','Job Title'];
+                          const header = ['Date','Reviewer','Reviewee','Rating','Title','Content','Status','Job Title'];
                           const rows = filteredReviews.map(r => [
                             new Date(r.created_at).toLocaleString('en-NG', { timeZone: 'Africa/Lagos' }),
                             r.reviewer_name,
                             r.reviewee_name,
                             r.rating,
                             (r.title || '').replace(/\n/g,' '),
+                            (r.content || '').replace(/\n/g,' '),
                             r.status,
                             r.job_title || ''
                           ]);
@@ -4407,6 +4408,7 @@ const AdminDashboard = () => {
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reviewee</th>
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Review Content</th>
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job</th>
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -4420,6 +4422,7 @@ const AdminDashboard = () => {
                                 <td className="px-6 py-4 text-sm text-gray-700">{r.reviewee_name}</td>
                                 <td className="px-6 py-4 text-sm font-medium">{r.rating} ⭐</td>
                                 <td className="px-6 py-4 text-sm text-gray-700">{(r.title || '').slice(0, 80)}</td>
+                                <td className="px-6 py-4 text-sm text-gray-700 max-w-xs overflow-auto whitespace-pre-wrap">{r.content}</td>
                                 <td className="px-6 py-4 text-sm text-gray-700">{r.status}</td>
                                 <td className="px-6 py-4 text-sm text-gray-700">{r.job_title || ''}</td>
                                 <td className="px-6 py-4 text-sm text-gray-700">
