@@ -719,70 +719,92 @@ async def edit_job_admin(
 @router.get("/jobs/{job_id}/details")
 async def get_job_details_admin(job_id: str):
     """Get detailed job information for admin editing"""
+    import time
+    start_time = time.time()
     
-    job = await database.get_job_by_id(job_id)
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
+    logger.info(f"Admin fetching details for job: {job_id}")
     
-    # Get additional details in parallel
-    homeowner_email = job.get("homeowner", {}).get("email")
-    
-    tasks = [
-        database.get_job_interests_count(job_id),
-        database.get_job_question_answers(job_id)
-    ]
-    
-    if homeowner_email:
-        tasks.append(database.get_user_by_email(homeowner_email))
-    else:
-        # Placeholder for user if no email
-        async def get_none(): return None
-        tasks.append(get_none())
+    try:
+        job = await database.get_job_by_id(job_id)
+        if not job:
+            logger.warning(f"Job not found for admin: {job_id}")
+            raise HTTPException(status_code=404, detail="Job not found")
+        
+        # Get additional details in parallel
+        homeowner_email = job.get("homeowner", {}).get("email")
+        homeowner_id = job.get("homeowner", {}).get("id")
+        
+        logger.info(f"Job found. Homeowner email: {homeowner_email}, id: {homeowner_id}")
+        
+        tasks = [
+            database.get_job_interests_count(job_id),
+            database.get_job_question_answers(job_id)
+        ]
+        
+        # Add homeowner fetch task
+        if homeowner_email:
+            tasks.append(database.get_user_by_email(homeowner_email))
+        else:
+            async def get_none(): return None
+            tasks.append(get_none())
+            
+        # Add homeowner job count task if we have the ID
+        if homeowner_id:
+            tasks.append(database.count_homeowner_jobs(homeowner_id))
+        else:
+            async def get_zero(): return 0
+            tasks.append(get_zero())
 
-    # Run all tasks in parallel
-    results = await asyncio.gather(*tasks, return_exceptions=True)
-    
-    interests_count = results[0] if not isinstance(results[0], Exception) else 0
-    qa = results[1] if not isinstance(results[1], Exception) else None
-    homeowner = results[2] if not isinstance(results[2], Exception) else None
-    
-    # Get homeowner job count if homeowner exists
-    homeowner_total_jobs = 0
-    if homeowner and not isinstance(homeowner, Exception):
-        try:
-            homeowner_id = homeowner.get("id") or homeowner.get("_id")
-            if homeowner_id:
-                homeowner_total_jobs = await database.count_homeowner_jobs(str(homeowner_id))
-        except Exception:
-            pass
+        # Run all tasks in parallel
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        interests_count = results[0] if not isinstance(results[0], Exception) else 0
+        qa = results[1] if not isinstance(results[1], Exception) else None
+        homeowner = results[2] if not isinstance(results[2], Exception) else None
+        homeowner_total_jobs = results[3] if not isinstance(results[3], Exception) else 0
+        
+        # If we didn't have homeowner_id but found homeowner by email, get their job count
+        if not homeowner_id and homeowner and not isinstance(homeowner, Exception):
+            h_id = homeowner.get("id") or homeowner.get("_id")
+            if h_id:
+                homeowner_total_jobs = await database.count_homeowner_jobs(str(h_id))
+        
+        end_time = time.time()
+        logger.info(f"Job details fetched in {end_time - start_time:.4f}s for job {job_id}")
 
-    job_details = {
-        **job,
-        "homeowner_details": {
-            "name": homeowner.get("name") if homeowner else "Unknown",
-            "email": homeowner.get("email") if homeowner else "Unknown",
-            "phone": homeowner.get("phone") if homeowner else "Unknown",
-            "verification_status": homeowner.get("verification_status") if homeowner else "unknown",
-            "total_jobs": homeowner_total_jobs
-        },
-        "interests_count": interests_count,
-        "access_fees": {
-            "naira": job.get("access_fee_naira", 1000),
-            "coins": job.get("access_fee_coins", 10)
+        job_details = {
+            **job,
+            "homeowner_details": {
+                "name": homeowner.get("name") if (homeowner and not isinstance(homeowner, Exception)) else "Unknown",
+                "email": homeowner.get("email") if (homeowner and not isinstance(homeowner, Exception)) else "Unknown",
+                "phone": homeowner.get("phone") if (homeowner and not isinstance(homeowner, Exception)) else "Unknown",
+                "verification_status": homeowner.get("verification_status") if (homeowner and not isinstance(homeowner, Exception)) else "unknown",
+                "total_jobs": homeowner_total_jobs
+            },
+            "interests_count": interests_count,
+            "access_fees": {
+                "naira": job.get("access_fee_naira", 1000),
+                "coins": job.get("access_fee_coins", 10)
+            }
         }
-    }
-    
-    if qa:
-        job_details["question_answers"] = qa
-        if not job_details.get("description"):
-            try:
-                summary = database.compose_job_description_from_answers(qa)
-                if summary:
-                    job_details["description"] = summary
-            except Exception:
-                pass
-    
-    return {"job": job_details}
+        
+        if qa:
+            job_details["question_answers"] = qa
+            if not job_details.get("description"):
+                try:
+                    summary = database.compose_job_description_from_answers(qa)
+                    if summary:
+                        job_details["description"] = summary
+                except Exception:
+                    pass
+        
+        return {"job": job_details}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching job details: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 # ==========================================
 # ADMIN DASHBOARD STATS
@@ -790,53 +812,8 @@ async def get_job_details_admin(job_id: str):
 
 @router.get("/dashboard/stats")
 async def get_admin_dashboard_stats():
-    """Get admin dashboard statistics"""
-    
-    # Get pending funding requests count
-    pending_requests = await database.get_pending_funding_requests(limit=1000)  # Get all
-    pending_count = len(pending_requests)
-    
-    # Calculate total pending amount
-    total_pending_naira = sum(req["amount_naira"] for req in pending_requests)
-    total_pending_coins = sum(req["amount_coins"] for req in pending_requests)
-    
-    # Get total jobs count
-    jobs = await database.get_jobs_with_access_fees(limit=1000)  # Get all
-    total_jobs = len(jobs)
-    
-    # Calculate total interests and potential revenue
-    total_interests = sum(job.get("interests_count", 0) for job in jobs)
-    
-    # Average access fee
-    access_fees = [job.get("access_fee_naira", 1500) for job in jobs]
-    avg_access_fee = sum(access_fees) / len(access_fees) if access_fees else 1500
-    
-    # Get pending verifications count
-    pending_verifications = await database.get_pending_verifications(limit=1000)
-    pending_verifications_count = len(pending_verifications)
-    
-    return {
-        "wallet_stats": {
-            "pending_funding_requests": pending_count,
-            "total_pending_amount_naira": total_pending_naira,
-            "total_pending_amount_coins": total_pending_coins
-        },
-        "job_stats": {
-            "total_jobs": total_jobs,
-            "total_interests": total_interests,
-            "average_access_fee_naira": round(avg_access_fee, 0),
-            "average_access_fee_coins": round(avg_access_fee / 100, 0)
-        },
-        "verification_stats": {
-            "pending_verifications": pending_verifications_count
-        },
-        "system_stats": {
-            "coin_conversion_rate": "1 coin = ₦100",
-            "max_access_fee": "₦10,000 (100 coins)",
-            "min_funding_amount": "Any positive amount",
-            "referral_reward": "5 coins per verified referral"
-        }
-    }
+    """Get admin dashboard statistics (optimized)"""
+    return await database.get_admin_dashboard_stats()
 
 # ==========================================
 # PAYMENT PROOF VIEWING

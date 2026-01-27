@@ -29,7 +29,29 @@ except ImportError:
     )
     from models.admin import AdminRole, AdminStatus, AdminActivityType
 
+import functools
+import time
+
 logger = logging.getLogger(__name__)
+
+def time_it(func):
+    """Decorator to log execution time of async database methods"""
+    @functools.wraps(func)
+    async def wrapper(*args, **kwargs):
+        start_time = time.time()
+        try:
+            result = await func(*args, **kwargs)
+            duration = time.time() - start_time
+            if duration > 0.5: # Only log if it takes more than 500ms
+                logger.warning(f"🐢 Database query {func.__name__} took {duration:.4f} seconds")
+            else:
+                logger.info(f"⚡ Database query {func.__name__} took {duration:.4f} seconds")
+            return result
+        except Exception as e:
+            duration = time.time() - start_time
+            logger.error(f"❌ Database query {func.__name__} failed after {duration:.4f} seconds: {e}")
+            raise
+    return wrapper
 
 class Database:
     def __init__(self):
@@ -109,6 +131,14 @@ class Database:
             logger.info("Connected to MongoDB")
             # Ensure required indexes at startup
             try:
+                # Users: unique id index
+                await self.database.users.create_index(
+                    [("id", 1)],
+                    name="unique_user_uuid",
+                    unique=True,
+                    partialFilterExpression={"id": {"$type": "string"}}
+                )
+
                 # Users: unique email index
                 await self.database.users.create_index(
                     [("email", 1)],
@@ -140,6 +170,16 @@ class Database:
 
                 # Jobs: compound indexes to optimize common queries and sorts
                 await self.database.jobs.create_index(
+                    [("id", 1)],
+                    name="unique_job_uuid",
+                    unique=True,
+                    partialFilterExpression={"id": {"$type": "string"}}
+                )
+                await self.database.jobs.create_index(
+                    [("created_at", -1)],
+                    name="jobs_createdAt_only"
+                )
+                await self.database.jobs.create_index(
                     [("status", 1), ("created_at", -1)],
                     name="jobs_status_createdAt"
                 )
@@ -157,6 +197,12 @@ class Database:
                 )
 
                 # Messages: indexes for conversation queries and read-status updates
+                await self.database.messages.create_index(
+                    [("id", 1)],
+                    name="unique_message_uuid",
+                    unique=True,
+                    partialFilterExpression={"id": {"$type": "string"}}
+                )
                 await self.database.messages.create_index(
                     [("conversation_id", 1), ("created_at", 1)],
                     name="messages_conversation_createdAt"
@@ -185,6 +231,35 @@ class Database:
                     )
                 except Exception as idx_err:
                     logger.warning(f"Failed to ensure newsletter_subscribers index: {idx_err}")
+
+                # Performance Optimization Indexes
+                try:
+                    # Interests: unique id index
+                    await self.database.interests.create_index(
+                        [("id", 1)],
+                        name="unique_interest_uuid",
+                        unique=True,
+                        partialFilterExpression={"id": {"$type": "string"}}
+                    )
+                    # Interests: index by job_id for faster counts and lookups
+                    await self.database.interests.create_index([("job_id", 1)], name="interests_job_id")
+                    # Job Question Answers: index by job_id
+                    await self.database.job_question_answers.create_index([("job_id", 1)], name="job_qa_job_id")
+                    # Reviews: unique id and index by job_id and artisan_id
+                    await self.database.reviews.create_index(
+                        [("id", 1)],
+                        name="unique_review_uuid",
+                        unique=True,
+                        partialFilterExpression={"id": {"$type": "string"}}
+                    )
+                    await self.database.reviews.create_index([("job_id", 1)], name="reviews_job_id")
+                    await self.database.reviews.create_index([("artisan_id", 1)], name="reviews_artisan_id")
+                    # Notifications: index by user_id and status
+                    await self.database.notifications.create_index([("user_id", 1), ("status", 1)], name="notifications_user_status")
+                    logger.info("Performance optimization indexes ensured successfully")
+                except Exception as idx_err:
+                    logger.warning(f"Failed to ensure performance indexes: {idx_err}")
+
                 logger.info("Database indexes ensured successfully")
             except Exception as e:
                 logger.error(f"Failed to ensure database indexes: {e}")
@@ -268,8 +343,9 @@ class Database:
         user_data['_id'] = str(result.inserted_id)
         return user_data
 
+    @time_it
     async def get_user_by_id(self, user_id: str) -> Optional[dict]:
-        """Get user by ID"""
+        """Get user by ID (optimized)"""
         if self.database is None:
             return None
         # Try multiple identifiers to be resilient: primary "id", fallback "user_id" and "public_id"
@@ -277,12 +353,14 @@ class Database:
         if not user:
             try:
                 # Some code paths store short numeric user_id or public_id in notifications
-                user = await self.database.users.find_one({"user_id": user_id})
-            except Exception:
-                user = None
-        if not user:
-            try:
-                user = await self.database.users.find_one({"public_id": user_id})
+                # Use parallel lookup for fallbacks if primary fails
+                import asyncio
+                tasks = [
+                    self.database.users.find_one({"user_id": user_id}),
+                    self.database.users.find_one({"public_id": user_id})
+                ]
+                results = await asyncio.gather(*tasks)
+                user = results[0] or results[1]
             except Exception:
                 user = None
         if user:
@@ -946,175 +1024,84 @@ class Database:
     # ADMIN JOB MANAGEMENT METHODS
     # ==========================================
 
+    @time_it
     async def get_all_jobs_admin(self, skip: int = 0, limit: int = 50, status: str = None) -> List[dict]:
-        """Get all jobs for admin management with comprehensive details"""
+        """Get all jobs for admin management with comprehensive details (optimized)"""
+        import asyncio
         query = {}
         if status:
             query["status"] = status
         
-        # Include soft-deleted jobs for admin (where deleted_at exists)
+        # 1. Fetch jobs
         cursor = self.database.jobs.find(query).sort("created_at", -1).skip(skip).limit(limit)
+        jobs = await cursor.to_list(length=limit)
         
-        jobs = []
-        async for job in cursor:
+        if not jobs:
+            return []
+
+        # 2. Extract IDs for batch fetching
+        job_ids = [str(job.get("id")) for job in jobs if job.get("id")]
+        homeowner_ids = set()
+        for job in jobs:
+            h_id = job.get("homeowner_id")
+            if not h_id and isinstance(job.get("homeowner"), dict):
+                h_id = job["homeowner"].get("id")
+            if h_id and h_id != "unknown":
+                homeowner_ids.add(h_id)
+
+        # 3. Batch fetch in parallel
+        tasks = []
+        # Task for users
+        if homeowner_ids:
+            tasks.append(self.database.users.find({"id": {"$in": list(homeowner_ids)}}).to_list(length=len(homeowner_ids)))
+        else:
+            async def get_empty_list(): return []
+            tasks.append(get_empty_list())
+            
+        # Task for interests counts
+        if job_ids:
+            # We use aggregation to get counts for multiple jobs at once
+            pipeline = [
+                {"$match": {"job_id": {"$in": job_ids}}},
+                {"$group": {"_id": "$job_id", "count": {"$sum": 1}}}
+            ]
+            tasks.append(self.database.interests.aggregate(pipeline).to_list(length=len(job_ids)))
+        else:
+            tasks.append(get_empty_list())
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        users_list = results[0] if not isinstance(results[0], Exception) else []
+        interests_list = results[1] if not isinstance(results[1], Exception) else []
+        
+        # 4. Create lookup maps
+        users_map = {u["id"]: u for u in users_list if "id" in u}
+        interests_map = {item["_id"]: item["count"] for item in interests_list}
+        
+        # 5. Enrich job data
+        final_jobs = []
+        for job in jobs:
             job["_id"] = str(job["_id"])
             
-            # Get homeowner details
-            if "homeowner_id" in job:
-                homeowner = await self.database.users.find_one({"id": job["homeowner_id"]})
-                if homeowner:
-                    job["homeowner"] = {
-                        "id": homeowner["id"],
-                        "name": homeowner.get("name", "Unknown"),
-                        "email": homeowner.get("email", ""),
-                        "phone": homeowner.get("phone", "")
-                    }
-                else:
-                    job["homeowner"] = {
-                        "id": job.get("homeowner_id", "unknown"),
-                        "name": "Unknown",
-                        "email": "",
-                        "phone": ""
-                    }
-            else:
-                # Handle legacy jobs without homeowner_id
-                job["homeowner"] = {
-                    "id": "unknown",
-                    "name": job.get("homeowner_name", "Unknown"),
-                    "email": job.get("homeowner_email", ""),
-                    "phone": job.get("homeowner_phone", "")
-                }
+            # Use optimized helper for homeowner info
+            self._enrich_job_homeowner(job, users_map, interests_map) # Note: interests_map is passed as job_counts_map here as it's what we want to show
             
-            # Get interests count
-            interests_count = await self.database.interests.count_documents({"job_id": job["id"]})
-            job["interests_count"] = interests_count
+            # Add interests_count explicitly (even though helper adds it to total_jobs, we want interests_count field)
+            job["interests_count"] = interests_map.get(job.get("id"), 0)
             
-            # Set default access fees if not present
+            # Set default access fees if missing
             if "access_fee_naira" not in job:
                 job["access_fee_naira"] = 1000
                 job["access_fee_coins"] = 10
-            
-            try:
-                desc_val = job.get("description")
-                if not desc_val or not str(desc_val).strip():
-                    answers = await self.get_job_question_answers(job["id"])
-                    if answers:
-                        summary = self.compose_job_description_from_answers(answers)
-                        if summary:
-                            job["description"] = summary
-            except Exception:
-                pass
-            
-            jobs.append(job)
-        
-        return jobs
-
-    async def get_pending_jobs_admin(self, skip: int = 0, limit: int = 50) -> List[dict]:
-        """Get jobs pending admin approval"""
-        query = {"status": "pending_approval"}
-        
-        cursor = self.database.jobs.find(query).sort("created_at", -1).skip(skip).limit(limit)
-        
-        jobs = []
-        async for job in cursor:
-            job["_id"] = str(job["_id"])
-            
-            # Get homeowner details - check multiple possible sources
-            homeowner_id = None
-            homeowner_info = None
-            
-            # First, check if homeowner_id exists at root level
-            if "homeowner_id" in job:
-                homeowner_id = job["homeowner_id"]
-                homeowner = await self.database.users.find_one({"id": homeowner_id})
-                if homeowner:
-                    homeowner_info = {
-                        "id": homeowner["id"],
-                        "name": homeowner.get("name", "Unknown"),
-                        "email": homeowner.get("email", ""),
-                        "phone": homeowner.get("phone", "")
-                    }
-                    homeowner_info["verification_status"] = homeowner.get("verification_status", "pending")
-                    homeowner_info["join_date"] = homeowner.get("created_at")
-                    # Count total jobs for this homeowner
-                    homeowner_info["total_jobs"] = await self.database.jobs.count_documents({
-                        "$or": [
-                            {"homeowner_id": homeowner_id},
-                            {"homeowner.id": homeowner_id}
-                        ]
-                    })
-            
-            # If no homeowner_id at root, check if homeowner object exists
-            elif "homeowner" in job and isinstance(job["homeowner"], dict):
-                homeowner_obj = job["homeowner"]
-                homeowner_id = homeowner_obj.get("id")
                 
-                if homeowner_id and homeowner_id != "unknown":
-                    # Try to get updated user info from users collection
-                    homeowner = await self.database.users.find_one({"id": homeowner_id})
-                    if homeowner:
-                        homeowner_info = {
-                            "id": homeowner["id"],
-                            "name": homeowner.get("name", homeowner_obj.get("name", "Unknown")),
-                            "email": homeowner.get("email", homeowner_obj.get("email", "")),
-                            "phone": homeowner.get("phone", homeowner_obj.get("phone", ""))
-                        }
-                        homeowner_info["verification_status"] = homeowner.get("verification_status", "pending")
-                        homeowner_info["join_date"] = homeowner.get("created_at")
-                        # Count total jobs for this homeowner
-                        homeowner_info["total_jobs"] = await self.database.jobs.count_documents({
-                            "$or": [
-                                {"homeowner_id": homeowner_id},
-                                {"homeowner.id": homeowner_id}
-                            ]
-                        })
-                    else:
-                        # Use the embedded homeowner data
-                        homeowner_info = {
-                            "id": homeowner_obj.get("id", "unknown"),
-                            "name": homeowner_obj.get("name", "Unknown"),
-                            "email": homeowner_obj.get("email", ""),
-                            "phone": homeowner_obj.get("phone", "")
-                        }
-                        homeowner_info["verification_status"] = "pending"
-                        homeowner_info["join_date"] = job.get("created_at")
-                        # Count total jobs for this homeowner
-                        homeowner_info["total_jobs"] = await self.database.jobs.count_documents({
-                            "$or": [
-                                {"homeowner_id": homeowner_id},
-                                {"homeowner.id": homeowner_id}
-                            ]
-                        })
-                else:
-                    # Use the embedded homeowner data as fallback
-                    homeowner_info = {
-                        "id": homeowner_obj.get("id", "unknown"),
-                        "name": homeowner_obj.get("name", "Unknown"),
-                        "email": homeowner_obj.get("email", ""),
-                        "phone": homeowner_obj.get("phone", ""),
-                        "verification_status": "pending",
-                        "join_date": job.get("created_at"),
-                        "total_jobs": 1  # At least this job
-                    }
+            final_jobs.append(job)
             
-            # If still no homeowner info found, use legacy fields or defaults
-            if not homeowner_info:
-                homeowner_info = {
-                    "id": "unknown",
-                    "name": job.get("homeowner_name", "Unknown"),
-                    "email": job.get("homeowner_email", ""),
-                    "phone": job.get("homeowner_phone", ""),
-                    "verification_status": "pending",
-                    "join_date": job.get("created_at"),
-                    "total_jobs": 0
-                }
-            
-            # Set the homeowner info in the job
-            job["homeowner"] = homeowner_info
-            
-            jobs.append(job)
-        
-        return jobs
+        return final_jobs
+
+    @time_it
+    async def get_pending_jobs_admin(self, skip: int = 0, limit: int = 50) -> List[dict]:
+        """Get jobs pending admin approval (optimized)"""
+        return await self.get_all_jobs_admin(skip=skip, limit=limit, status="pending_approval")
 
     async def get_pending_jobs_count(self) -> int:
         """Get count of jobs pending approval"""
@@ -1136,8 +1123,12 @@ class Database:
         """Count total jobs posted by a homeowner"""
         return await self.database.jobs.count_documents({"homeowner.id": homeowner_id})
 
+    @time_it
     async def get_jobs_statistics_admin(self) -> dict:
-        """Get comprehensive job statistics for admin dashboard"""
+        """Get comprehensive job statistics for admin dashboard (optimized)"""
+        today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        today_end = today_start + timedelta(days=1)
+        
         pipeline = [
             {
                 "$group": {
@@ -1147,7 +1138,37 @@ class Database:
                     "active_jobs": {"$sum": {"$cond": [{"$eq": ["$status", "active"]}, 1, 0]}},
                     "rejected_jobs": {"$sum": {"$cond": [{"$eq": ["$status", "rejected"]}, 1, 0]}},
                     "expired_jobs": {"$sum": {"$cond": [{"$eq": ["$status", "expired"]}, 1, 0]}},
-                    "completed_jobs": {"$sum": {"$cond": [{"$eq": ["$status", "completed"]}, 1, 0]}}
+                    "completed_jobs": {"$sum": {"$cond": [{"$eq": ["$status", "completed"]}, 1, 0]}},
+                    "approved_today": {
+                        "$sum": {
+                            "$cond": [
+                                {
+                                    "$and": [
+                                        {"$eq": ["$status", "active"]},
+                                        {"$gte": ["$approved_at", today_start]},
+                                        {"$lt": ["$approved_at", today_end]}
+                                    ]
+                                },
+                                1,
+                                0
+                            ]
+                        }
+                    },
+                    "rejected_today": {
+                        "$sum": {
+                            "$cond": [
+                                {
+                                    "$and": [
+                                        {"$eq": ["$status", "rejected"]},
+                                        {"$gte": ["$approved_at", today_start]},
+                                        {"$lt": ["$approved_at", today_end]}
+                                    ]
+                                },
+                                1,
+                                0
+                            ]
+                        }
+                    }
                 }
             }
         ]
@@ -1155,26 +1176,7 @@ class Database:
         result = await self.database.jobs.aggregate(pipeline).to_list(1)
         
         if result:
-            stats = result[0]
-            
-            # Get today's approvals and rejections
-            today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-            today_end = today_start + timedelta(days=1)
-            
-            approved_today = await self.database.jobs.count_documents({
-                "status": "active",
-                "approved_at": {"$gte": today_start, "$lt": today_end}
-            })
-            
-            rejected_today = await self.database.jobs.count_documents({
-                "status": "rejected", 
-                "approved_at": {"$gte": today_start, "$lt": today_end}
-            })
-            
-            stats["approved_today"] = approved_today
-            stats["rejected_today"] = rejected_today
-            
-            return stats
+            return result[0]
         else:
             return {
                 "total_jobs": 0,
@@ -1195,73 +1197,116 @@ class Database:
         
         return await self.database.jobs.count_documents(query)
 
+    @time_it
     async def get_job_by_id_admin(self, job_id: str) -> Optional[dict]:
-        """Get job details by ID for admin editing"""
+        """Get job details by ID for admin editing (optimized)"""
+        import asyncio
         job = await self.database.jobs.find_one({"id": job_id})
         if not job:
             return None
         
         job["_id"] = str(job["_id"])
         
-        # Get homeowner details
-        if "homeowner_id" in job:
-            homeowner = await self.database.users.find_one({"id": job["homeowner_id"]})
-            if homeowner:
-                job["homeowner"] = {
-                    "id": homeowner["id"],
-                    "name": homeowner.get("name", "Unknown"),
-                    "email": homeowner.get("email", ""),
-                    "phone": homeowner.get("phone", "")
-                }
-            else:
-                job["homeowner"] = {
-                    "id": job.get("homeowner_id", "unknown"),
-                    "name": "Unknown",
-                    "email": "",
-                    "phone": ""
-                }
+        # Parallel fetch for homeowner, interests, and job counts
+        tasks = []
+        
+        # 1. Homeowner task
+        h_id = job.get("homeowner_id")
+        if h_id:
+            tasks.append(self.database.users.find_one({"id": h_id}))
         else:
-            # Handle legacy jobs without homeowner_id
+            async def get_none(): return None
+            tasks.append(get_none())
+            
+        # 2. Interests task
+        tasks.append(self.database.interests.find({"job_id": job["id"]}).to_list(length=100))
+        
+        # 3. Questions/Answers task
+        tasks.append(self.get_job_question_answers(job["id"]))
+
+        # 4. Homeowner total jobs count task
+        if h_id:
+            tasks.append(self.database.jobs.count_documents({
+                "$or": [{"homeowner_id": h_id}, {"homeowner.id": h_id}]
+            }))
+        else:
+            async def get_zero(): return 0
+            tasks.append(get_zero())
+        
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        homeowner = results[0] if not isinstance(results[0], Exception) else None
+        interests = results[1] if not isinstance(results[1], Exception) else []
+        answers = results[2] if not isinstance(results[2], Exception) else []
+        homeowner_job_count = results[3] if not isinstance(results[3], Exception) else 0
+        
+        # Set homeowner info
+        if homeowner:
             job["homeowner"] = {
-                "id": "unknown",
+                "id": homeowner["id"],
+                "name": homeowner.get("name", "Unknown"),
+                "email": homeowner.get("email", ""),
+                "phone": homeowner.get("phone", ""),
+                "verification_status": homeowner.get("verification_status", "pending"),
+                "join_date": homeowner.get("created_at"),
+                "total_jobs": homeowner_job_count
+            }
+        elif "homeowner" in job and isinstance(job["homeowner"], dict):
+            # Fallback for embedded homeowner
+            h_obj = job["homeowner"]
+            job["homeowner"] = {
+                "id": h_obj.get("id", "unknown"),
+                "name": h_obj.get("name", "Unknown"),
+                "email": h_obj.get("email", ""),
+                "phone": h_obj.get("phone", ""),
+                "verification_status": "unknown",
+                "total_jobs": 1
+            }
+        else:
+            job["homeowner"] = {
+                "id": h_id or "unknown",
                 "name": job.get("homeowner_name", "Unknown"),
                 "email": job.get("homeowner_email", ""),
-                "phone": job.get("homeowner_phone", "")
+                "phone": job.get("homeowner_phone", ""),
+                "verification_status": "unknown",
+                "total_jobs": 0
             }
+            
+        # Set interests count
+        job["interests_count"] = len(interests)
         
-        # Get interests count and details
-        interests_count = await self.database.interests.count_documents({"job_id": job["id"]})
-        job["interests_count"] = interests_count
-        
-        # Get interested tradespeople
-        interests_cursor = self.database.interests.find({"job_id": job["id"]})
+        # Batch fetch tradespeople for interests
         interested_tradespeople = []
-        async for interest in interests_cursor:
-            tradesperson = await self.database.users.find_one({"id": interest["tradesperson_id"]})
-            if tradesperson:
-                interested_tradespeople.append({
-                    "interest_id": interest["id"],
-                    "tradesperson_name": tradesperson.get("name", "Unknown"),
-                    "tradesperson_email": tradesperson.get("email", ""),
-                    "status": interest.get("status", "pending"),
-                    "created_at": interest.get("created_at")
-                })
+        if interests:
+            tradesperson_ids = [i["tradesperson_id"] for i in interests if i.get("tradesperson_id")]
+            if tradesperson_ids:
+                tradespeople_list = await self.database.users.find({"id": {"$in": tradesperson_ids}}).to_list(length=len(tradesperson_ids))
+                tradespeople_map = {u["id"]: u for u in tradespeople_list if "id" in u}
+                
+                for interest in interests:
+                    tp_id = interest.get("tradesperson_id")
+                    tp = tradespeople_map.get(tp_id)
+                    interested_tradespeople.append({
+                        "interest_id": interest["id"],
+                        "tradesperson_id": tp_id,
+                        "tradesperson_name": tp.get("name", "Unknown") if tp else "Unknown",
+                        "tradesperson_email": tp.get("email", "") if tp else "",
+                        "status": interest.get("status", "pending"),
+                        "created_at": interest.get("created_at")
+                    })
         
         job["interested_tradespeople"] = interested_tradespeople
         
-        try:
-            desc_val = job.get("description")
-            answers = await self.get_job_question_answers(job["id"])
-            if not desc_val or not str(desc_val).strip():
-                if answers:
-                    summary = self.compose_job_description_from_answers(answers)
-                    if summary:
-                        job["description"] = summary
+        # Set description and answers
+        desc_val = job.get("description")
+        if not desc_val or not str(desc_val).strip():
             if answers:
-                job["question_answers"] = answers
-        except Exception:
-            pass
-        
+                summary = self.compose_job_description_from_answers(answers)
+                if summary:
+                    job["description"] = summary
+        if answers:
+            job["question_answers"] = answers
+            
         return job
 
     async def update_job_admin(self, job_id: str, job_data: dict) -> bool:
@@ -1324,89 +1369,36 @@ class Database:
         interests, job_applications, conversations, messages, and reviews.
         Returns a dict with delete counts for each collection.
         """
-        results = {}
         try:
-            # Remove job document
-            res = await self.database.jobs.delete_one({"id": job_id})
-            results["jobs_deleted"] = res.deleted_count
+            # Prepare all delete tasks
+            delete_tasks = {
+                "jobs": self.database.jobs.delete_one({"id": job_id}),
+                "job_question_answers": self.database.job_question_answers.delete_many({"job_id": job_id}),
+                "quotes": self.database.quotes.delete_many({"job_id": job_id}),
+                "interests": self.database.interests.delete_many({"job_id": job_id}),
+                "job_applications": self.database.job_applications.delete_many({"job_id": job_id}),
+                "reviews": self.database.reviews.delete_many({"job_id": job_id}),
+                "messages": self.database.messages.delete_many({"job_id": job_id}),
+                "conversations": self.database.conversations.delete_many({"job_id": job_id}),
+                "notifications": self.database.notifications.delete_many({"job_id": job_id}),
+            }
 
-            # Remove job question answers
-            res = await self.database.job_question_answers.delete_many({"job_id": job_id})
-            results["job_question_answers_deleted"] = res.deleted_count
+            # Run all deletions in parallel
+            keys = list(delete_tasks.keys())
+            results_list = await asyncio.gather(*[delete_tasks[k] for k in keys], return_exceptions=True)
+            
+            final_results = {}
+            for i, key in enumerate(keys):
+                res = results_list[i]
+                if isinstance(res, Exception):
+                    final_results[f"{key}_deleted"] = 0
+                else:
+                    final_results[f"{key}_deleted"] = res.deleted_count
 
-            # Remove quotes for this job
-            res = await self.database.quotes.delete_many({"job_id": job_id})
-            results["quotes_deleted"] = res.deleted_count
-
-            # Remove interests for this job
-            res = await self.database.interests.delete_many({"job_id": job_id})
-            results["interests_deleted"] = res.deleted_count
-
-            # Remove job applications
-            res = await self.database.job_applications.delete_many({"job_id": job_id})
-            results["applications_deleted"] = res.deleted_count
-
-            # Remove reviews that reference this job (if any)
-            try:
-                res = await self.database.reviews.delete_many({"job_id": job_id})
-                results["reviews_deleted"] = res.deleted_count
-            except Exception:
-                # Older deployments may use a different reviews collection name
-                results["reviews_deleted"] = 0
-
-            # Remove conversations and messages tied to this job
-            try:
-                res = await self.database.messages.delete_many({"job_id": job_id})
-                results["messages_deleted"] = res.deleted_count
-            except Exception:
-                results["messages_deleted"] = 0
-
-            try:
-                res = await self.database.conversations.delete_many({"job_id": job_id})
-                results["conversations_deleted"] = res.deleted_count
-            except Exception:
-                results["conversations_deleted"] = 0
-
-            # Optionally: remove related notifications (best-effort)
-            try:
-                res = await self.database.notifications.delete_many({"job_id": job_id})
-                results["notifications_deleted"] = res.deleted_count
-            except Exception:
-                results["notifications_deleted"] = 0
-
-            return results
+            return final_results
         except Exception as e:
-            # Bubble up the exception to caller
+            logger.error(f"Error in delete_job_completely for {job_id}: {e}")
             raise
-
-    async def get_jobs_statistics_admin(self) -> dict:
-        """Get comprehensive job statistics for admin dashboard"""
-        total_jobs = await self.database.jobs.count_documents({})
-        pending_jobs = await self.database.jobs.count_documents({"status": "pending_approval"})
-        active_jobs = await self.database.jobs.count_documents({"status": "active"})
-        rejected_jobs = await self.database.jobs.count_documents({"status": "rejected"})
-        expired_jobs = await self.database.jobs.count_documents({"status": "expired"})
-        completed_jobs = await self.database.jobs.count_documents({"status": "completed"})
-        today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-        today_end = today_start + timedelta(days=1)
-        approved_today = await self.database.jobs.count_documents({
-            "status": "active",
-            "approved_at": {"$gte": today_start, "$lt": today_end}
-        })
-        rejected_today = await self.database.jobs.count_documents({
-            "status": "rejected",
-            "approved_at": {"$gte": today_start, "$lt": today_end}
-        })
-        return {
-            "total_jobs": total_jobs,
-            "pending_jobs": pending_jobs,
-            "active_jobs": active_jobs,
-            "rejected_jobs": rejected_jobs,
-            "expired_jobs": expired_jobs,
-            "completed_jobs": completed_jobs,
-            "approved_today": approved_today,
-            "rejected_today": rejected_today
-        }
 
     async def get_jobs_count(self, filters: dict = None) -> int:
         query = filters or {}
@@ -2102,7 +2094,7 @@ class Database:
         return interest_data
 
     async def get_job_interested_tradespeople(self, job_id: str) -> List[dict]:
-        """Get all tradespeople who showed interest in a job"""
+        """Get all tradespeople who showed interest in a job (optimized)"""
         pipeline = [
             {"$match": {"job_id": job_id}},
             {
@@ -2164,21 +2156,24 @@ class Database:
         ]
         
         interested = await self.interests_collection.aggregate(pipeline).to_list(length=None)
-        
+        if not interested:
+            return []
+
+        # Batch fetch portfolio counts
+        tradesperson_ids = [p["tradesperson_id"] for p in interested]
+        portfolio_counts_pipeline = [
+            {"$match": {"tradesperson_id": {"$in": tradesperson_ids}}},
+            {"$group": {"_id": "$tradesperson_id", "count": {"$sum": 1}}}
+        ]
+        portfolio_counts = await self.database.portfolio.aggregate(portfolio_counts_pipeline).to_list(length=len(tradesperson_ids))
+        portfolio_map = {doc["_id"]: doc["count"] for doc in portfolio_counts}
+
         # Convert ObjectId to string and add portfolio count
         for person in interested:
             if '_id' in person:
                 person['_id'] = str(person['_id'])
             
-            # Get portfolio count for tradesperson
-            try:
-                portfolio_count = await self.database.portfolio.count_documents(
-                    {"tradesperson_id": person["tradesperson_id"]}
-                )
-                person["portfolio_count"] = portfolio_count
-            except Exception as e:
-                logging.warning(f"Could not get portfolio count for tradesperson {person['tradesperson_id']}: {e}")
-                person["portfolio_count"] = 0
+            person["portfolio_count"] = portfolio_map.get(person["tradesperson_id"], 0)
         
         return interested
 
@@ -2938,22 +2933,98 @@ class Database:
         
         return transactions
 
+    @time_it
+    async def get_admin_dashboard_stats(self) -> dict:
+        """Get comprehensive admin dashboard statistics using optimized aggregations"""
+        import asyncio
+        
+        # 1. Wallet stats: Pending requests count and total amounts
+        wallet_pipeline = [
+            {"$match": {"transaction_type": "wallet_funding", "status": "pending"}},
+            {"$group": {
+                "_id": None,
+                "count": {"$sum": 1},
+                "total_naira": {"$sum": "$amount_naira"},
+                "total_coins": {"$sum": "$amount_coins"}
+            }}
+        ]
+        
+        # 2. Job stats: Total jobs and total interests
+        job_pipeline = [
+            {"$group": {
+                "_id": None,
+                "total_jobs": {"$sum": 1},
+                "total_interests": {"$sum": {"$ifNull": ["$interests_count", 0]}},
+                "total_access_fee_naira": {"$sum": {"$ifNull": ["$access_fee_naira", 1500]}}
+            }}
+        ]
+        
+        # 3. Verification stats: Pending counts from both collections
+        tasks = [
+            self.wallet_transactions_collection.aggregate(wallet_pipeline).to_list(length=1),
+            self.database.jobs.aggregate(job_pipeline).to_list(length=1),
+            self.user_verifications_collection.count_documents({"status": "pending"}),
+            self.tradespeople_verifications_collection.count_documents({"status": "pending"})
+        ]
+        
+        results = await asyncio.gather(*tasks)
+        
+        wallet_res = results[0][0] if results[0] else {"count": 0, "total_naira": 0, "total_coins": 0}
+        job_res = results[1][0] if results[1] else {"total_jobs": 0, "total_interests": 0, "total_access_fee_naira": 0}
+        pending_verifications_count = results[2]
+        pending_trades_verifications_count = results[3]
+        
+        avg_access_fee = job_res["total_access_fee_naira"] / job_res["total_jobs"] if job_res["total_jobs"] > 0 else 1500
+        
+        return {
+            "wallet_stats": {
+                "pending_funding_requests": wallet_res["count"],
+                "total_pending_amount_naira": wallet_res["total_naira"],
+                "total_pending_amount_coins": wallet_res["total_coins"]
+            },
+            "job_stats": {
+                "total_jobs": job_res["total_jobs"],
+                "total_interests": job_res["total_interests"],
+                "average_access_fee_naira": round(avg_access_fee, 0),
+                "average_access_fee_coins": round(avg_access_fee / 100, 0)
+            },
+            "verification_stats": {
+                "pending_verifications": pending_verifications_count,
+                "pending_tradespeople_verifications": pending_trades_verifications_count
+            },
+            "system_stats": {
+                "coin_conversion_rate": "1 coin = ₦100",
+                "max_access_fee": "₦10,000 (100 coins)",
+                "min_funding_amount": "Any positive amount",
+                "referral_reward": "5 coins per verified referral"
+            }
+        }
+
     async def get_pending_funding_requests(self, skip: int = 0, limit: int = 20) -> List[dict]:
-        """Get pending wallet funding requests for admin"""
+        """Get pending wallet funding requests for admin (optimized)"""
         cursor = self.wallet_transactions_collection.find({
             "transaction_type": "wallet_funding",
             "status": "pending"
         }).sort("created_at", -1).skip(skip).limit(limit)
         
-        requests = []
-        async for request in cursor:
+        requests = await cursor.to_list(length=limit)
+        if not requests:
+            return []
+
+        # Batch fetch user details
+        user_ids = list(set(r["user_id"] for r in requests if "user_id" in r))
+        users = await self.database.users.find({"id": {"$in": user_ids}}).to_list(length=len(user_ids))
+        user_map = {u["id"]: u for u in users}
+
+        for request in requests:
             request["_id"] = str(request["_id"])
-            # Get user details
-            user = await self.get_user_by_id(request["user_id"])
+            user = user_map.get(request.get("user_id"))
             if user:
                 request["user_name"] = user.get("name", "Unknown")
                 request["user_email"] = user.get("email", "Unknown")
-            requests.append(request)
+            else:
+                request["user_name"] = "Unknown"
+                request["user_email"] = "Unknown"
         
         return requests
 
@@ -3048,175 +3119,111 @@ class Database:
         )
         return result.modified_count > 0
 
+    @time_it
     async def get_jobs_with_access_fees(self, skip: int = 0, limit: int = 20) -> List[dict]:
-        """Get all jobs with access fees for admin management"""
+        """Get all jobs with access fees for admin management (optimized)"""
+        import asyncio
         cursor = self.database.jobs.find({}).sort("created_at", -1).skip(skip).limit(limit)
+        jobs = await cursor.to_list(length=limit)
         
-        jobs = []
-        async for job in cursor:
+        if not jobs:
+            return []
+
+        # Extract IDs for batch fetching
+        homeowner_ids = set()
+        for job in jobs:
+            h_id = job.get("homeowner_id")
+            if not h_id and isinstance(job.get("homeowner"), dict):
+                h_id = job["homeowner"].get("id")
+            if h_id and h_id != "unknown":
+                homeowner_ids.add(h_id)
+
+        # Batch fetch users and their job counts
+        users_map = {}
+        homeowner_job_counts = {}
+        
+        if homeowner_ids:
+            # Fetch users and job counts in parallel
+            tasks = [
+                self.database.users.find({"id": {"$in": list(homeowner_ids)}}).to_list(length=len(homeowner_ids)),
+                self.database.jobs.aggregate([
+                    {"$match": {
+                        "$or": [
+                            {"homeowner_id": {"$in": list(homeowner_ids)}},
+                            {"homeowner.id": {"$in": list(homeowner_ids)}}
+                        ]
+                    }},
+                    {"$group": {
+                        "_id": {"$ifNull": ["$homeowner_id", "$homeowner.id"]},
+                        "count": {"$sum": 1}
+                    }}
+                ]).to_list(length=len(homeowner_ids))
+            ]
+            
+            results = await asyncio.gather(*tasks)
+            users_list = results[0]
+            counts_list = results[1]
+            
+            users_map = {u["id"]: u for u in users_list if "id" in u}
+            homeowner_job_counts = {str(item["_id"]): item["count"] for item in counts_list if item["_id"]}
+
+        final_jobs = []
+        for job in jobs:
             job["_id"] = str(job["_id"])
             
-            # Get homeowner details using multiple approaches
-            homeowner_id = None
-            homeowner_info = None
+            # Use optimized helper for homeowner info
+            self._enrich_job_homeowner(job, users_map, homeowner_job_counts)
             
-            # First, check if homeowner_id exists at root level
-            if "homeowner_id" in job and job["homeowner_id"]:
-                homeowner_id = job["homeowner_id"]
-                homeowner = await self.database.users.find_one({"id": homeowner_id})
-                if homeowner:
-                    homeowner_info = {
-                        "id": homeowner["id"],
-                        "name": homeowner.get("name", "Unknown"),
-                        "email": homeowner.get("email", ""),
-                        "phone": homeowner.get("phone", "")
-                    }
-                    homeowner_info["verification_status"] = homeowner.get("verification_status", "pending")
-                    homeowner_info["join_date"] = homeowner.get("created_at")
-                    # Count total jobs for this homeowner
-                    homeowner_info["total_jobs"] = await self.database.jobs.count_documents({
-                        "$or": [
-                            {"homeowner_id": homeowner_id},
-                            {"homeowner.id": homeowner_id}
-                        ]
-                    })
-            
-            # If no homeowner_id at root, check if homeowner object exists
-            elif "homeowner" in job and isinstance(job["homeowner"], dict):
-                homeowner_obj = job["homeowner"]
-                homeowner_id = homeowner_obj.get("id")
-                
-                if homeowner_id and homeowner_id != "unknown":
-                    # Try to get updated user info from users collection
-                    homeowner = await self.database.users.find_one({"id": homeowner_id})
-                    if homeowner:
-                        homeowner_info = {
-                            "id": homeowner["id"],
-                            "name": homeowner.get("name", homeowner_obj.get("name", "Unknown")),
-                            "email": homeowner.get("email", homeowner_obj.get("email", "")),
-                            "phone": homeowner.get("phone", homeowner_obj.get("phone", ""))
-                        }
-                        homeowner_info["verification_status"] = homeowner.get("verification_status", "pending")
-                        homeowner_info["join_date"] = homeowner.get("created_at")
-                        # Count total jobs for this homeowner
-                        homeowner_info["total_jobs"] = await self.database.jobs.count_documents({
-                            "$or": [
-                                {"homeowner_id": homeowner_id},
-                                {"homeowner.id": homeowner_id}
-                            ]
-                        })
-                    else:
-                        # Use the embedded homeowner data
-                        homeowner_info = {
-                            "id": homeowner_obj.get("id", "unknown"),
-                            "name": homeowner_obj.get("name", "Unknown"),
-                            "email": homeowner_obj.get("email", ""),
-                            "phone": homeowner_obj.get("phone", "")
-                        }
-                        homeowner_info["verification_status"] = "pending"
-                        homeowner_info["join_date"] = job.get("created_at")
-                        # Count total jobs for this homeowner
-                        homeowner_info["total_jobs"] = await self.database.jobs.count_documents({
-                            "$or": [
-                                {"homeowner_id": homeowner_id},
-                                {"homeowner.id": homeowner_id}
-                            ]
-                        })
-                else:
-                    # NEW: Handle case where homeowner object exists but has no ID
-                    # Use the embedded homeowner data directly (name and email available)
-                    homeowner_name = homeowner_obj.get("name", "Unknown")
-                    homeowner_email = homeowner_obj.get("email", "")
-                    
-                    if homeowner_name != "Unknown" or homeowner_email:
-                        # Try to find user by email if available
-                        if homeowner_email:
-                            homeowner = await self.database.users.find_one({"email": homeowner_email})
-                            if homeowner:
-                                homeowner_info = {
-                                    "id": homeowner["id"],
-                                    "name": homeowner.get("name", homeowner_name),
-                                    "email": homeowner.get("email", homeowner_email),
-                                    "phone": homeowner.get("phone", homeowner_obj.get("phone", ""))
-                                }
-                                homeowner_info["verification_status"] = homeowner.get("verification_status", "pending")
-                                homeowner_info["join_date"] = homeowner.get("created_at")
-                                # Count total jobs for this homeowner using email
-                                homeowner_info["total_jobs"] = await self.database.jobs.count_documents({
-                                    "homeowner.email": homeowner_email
-                                })
-                            else:
-                                # Use embedded data even without user ID
-                                homeowner_info = {
-                                    "id": "legacy",
-                                    "name": homeowner_name,
-                                    "email": homeowner_email,
-                                    "phone": homeowner_obj.get("phone", ""),
-                                    "verification_status": "legacy",
-                                    "join_date": job.get("created_at"),
-                                    "total_jobs": await self.database.jobs.count_documents({
-                                        "homeowner.email": homeowner_email
-                                    }) if homeowner_email else 1
-                                }
-                        else:
-                            # Only name available, no email for lookup
-                            homeowner_info = {
-                                "id": "legacy",
-                                "name": homeowner_name,
-                                "email": "",
-                                "phone": homeowner_obj.get("phone", ""),
-                                "verification_status": "legacy",
-                                "join_date": job.get("created_at"),
-                                "total_jobs": await self.database.jobs.count_documents({
-                                    "homeowner.name": homeowner_name
-                                }) if homeowner_name != "Unknown" else 1
-                            }
-                    else:
-                        # Fallback for completely empty homeowner object
-                        homeowner_info = {
-                            "id": "unknown",
-                            "name": "Unknown",
-                            "email": "",
-                            "phone": "",
-                            "verification_status": "pending",
-                            "join_date": job.get("created_at"),
-                            "total_jobs": 1
-                        }
-            
-            # If still no homeowner info found, use legacy fields or defaults
-            if not homeowner_info:
-                homeowner_info = {
-                    "id": "unknown",
-                    "name": job.get("homeowner_name", "Unknown"),
-                    "email": job.get("homeowner_email", ""),
-                    "phone": job.get("homeowner_phone", ""),
-                    "verification_status": "pending",
-                    "join_date": job.get("created_at"),
-                    "total_jobs": 0
-                }
-            
-            # Set the homeowner info in the job
-            job["homeowner"] = homeowner_info
-            
-            # Set default access fee if not present
+            # Default access fees if missing
             if "access_fee_naira" not in job:
-                job["access_fee_naira"] = 1000  # Default ₦1000
-                job["access_fee_coins"] = 10    # Default 10 coins
+                job["access_fee_naira"] = 1500
+                job["access_fee_coins"] = 15
+                
+            final_jobs.append(job)
             
-            try:
-                desc_val = job.get("description")
-                if not desc_val or not str(desc_val).strip():
-                    answers = await self.get_job_question_answers(job["id"])
-                    if answers:
-                        summary = self.compose_job_description_from_answers(answers)
-                        if summary:
-                            job["description"] = summary
-            except Exception:
-                pass
+        return final_jobs
+
+    def _enrich_job_homeowner(self, job: dict, users_map: dict, job_counts_map: dict = None) -> dict:
+        """Helper to enrich job with homeowner information from lookup map"""
+        h_id = job.get("homeowner_id")
+        if not h_id and isinstance(job.get("homeowner"), dict):
+            h_id = job["homeowner"].get("id")
             
-            jobs.append(job)
+        homeowner_info = None
+        if h_id and h_id in users_map:
+            user = users_map[h_id]
+            homeowner_info = {
+                "id": user["id"],
+                "name": user.get("name", "Unknown"),
+                "email": user.get("email", ""),
+                "phone": user.get("phone", ""),
+                "verification_status": user.get("verification_status", "pending"),
+                "join_date": user.get("created_at"),
+                "total_jobs": job_counts_map.get(h_id, 0) if job_counts_map else 0
+            }
+        elif "homeowner" in job and isinstance(job["homeowner"], dict):
+            h_obj = job["homeowner"]
+            h_id_val = str(h_obj.get("id", "unknown"))
+            homeowner_info = {
+                "id": h_obj.get("id", "unknown"),
+                "name": h_obj.get("name", "Unknown"),
+                "email": h_obj.get("email", ""),
+                "phone": h_obj.get("phone", ""),
+                "verification_status": "unknown",
+                "total_jobs": job_counts_map.get(h_id_val, 0) if job_counts_map else 0
+            }
+        else:
+            homeowner_info = {
+                "id": h_id or "unknown",
+                "name": job.get("homeowner_name", "Unknown"),
+                "email": job.get("homeowner_email", ""),
+                "phone": job.get("homeowner_phone", ""),
+                "verification_status": "unknown",
+                "total_jobs": 0
+            }
         
-        return jobs
+        job["homeowner"] = homeowner_info
+        return job
 
     # ==========================================
     # LOCATION-BASED METHODS
@@ -3249,67 +3256,38 @@ class Database:
         cleaned = "".join(ch if (ch.isalnum() or ch.isspace()) else " " for ch in t)
         return " ".join(cleaned.split())
 
-    def resolve_coordinates_from_text(self, text: Optional[str]) -> Optional[Dict[str, float]]:
+    async def resolve_coordinates_from_text(self, text: Optional[str]) -> Optional[Dict[str, float]]:
+        """Resolve coordinates from text using hardcoded fallback or geocoding service"""
         if not text:
             return None
         t = self._normalize_text(text)
-        city_coords: Dict[str, tuple] = {
-            "lagos": (6.5244, 3.3792),
-            "ikeja": (6.6018, 3.3515),
-            "lekki": (6.4429, 3.4833),
-            "victoria island": (6.4281, 3.4219),
-            "ajah": (6.4667, 3.6000),
-            "surulere": (6.4940, 3.3490),
-            "yaba": (6.5170, 3.3830),
-            "abuja": (9.0765, 7.3986),
-            "gwagwalada": (8.9440, 7.0900),
-            "ibadan": (7.3775, 3.9470),
-            "benin": (6.3350, 5.6037),
-            "enugu": (6.5249, 7.5170),
-            "calabar": (4.9689, 8.3300),
-            "asaba": (6.2019, 6.7319),
-            "warri": (5.5540, 5.7930),
-            "uyo": (5.0333, 7.9330),
-            "port harcourt": (4.8156, 7.0498),
-            "ph": (4.8156, 7.0498),
-            "jos": (9.8965, 8.8580),
-            "kaduna": (10.5060, 7.4273),
-            "kano": (12.0000, 8.5167),
-            "ilorin": (8.4799, 4.5418),
-            "owerri": (5.4836, 7.0333),
-            "aba": (5.1066, 7.3667),
-            "onitsha": (6.1498, 6.7850),
+        
+        # Combined hardcoded coordinates for common Nigerian locations (Performance Fallback)
+        location_map: Dict[str, tuple] = {
+            "lagos": (6.5244, 3.3792), "ikeja": (6.6018, 3.3515), "lekki": (6.4429, 3.4833),
+            "victoria island": (6.4281, 3.4219), "ajah": (6.4667, 3.6000), "surulere": (6.4940, 3.3490),
+            "yaba": (6.5170, 3.3830), "abuja": (9.0765, 7.3986), "fct": (9.0765, 7.3986),
+            "gwagwalada": (8.9440, 7.0900), "ibadan": (7.3775, 3.9470), "oyo": (7.3775, 3.9470),
+            "benin": (6.3350, 5.6037), "edo": (6.3350, 5.6037), "enugu": (6.5249, 7.5170),
+            "calabar": (4.9689, 8.3300), "cross river": (4.9689, 8.3300), "asaba": (6.2019, 6.7319),
+            "delta": (6.2019, 6.7319), "warri": (5.5540, 5.7930), "uyo": (5.0333, 7.9330),
+            "port harcourt": (4.8156, 7.0498), "ph": (4.8156, 7.0498), "rivers": (4.8156, 7.0498),
+            "jos": (9.8965, 8.8580), "plateau": (9.8965, 8.8580), "kaduna": (10.5060, 7.4273),
+            "kano": (12.0000, 8.5167), "ilorin": (8.4799, 4.5418), "kwara": (8.4799, 4.5418),
+            "owerri": (5.4836, 7.0333), "imo": (5.4836, 7.0333), "aba": (5.1066, 7.3667),
+            "abia": (5.1066, 7.3667), "onitsha": (6.1498, 6.7850), "anambra": (6.1498, 6.7850),
+            "bayelsa": (4.9247, 6.2649)
         }
-        state_capital_coords: Dict[str, tuple] = {
-            "rivers": (4.8156, 7.0498),
-            "rivers state": (4.8156, 7.0498),
-            "lagos": (6.5244, 3.3792),
-            "abuja": (9.0765, 7.3986),
-            "fct": (9.0765, 7.3986),
-            "delta": (6.2019, 6.7319),
-            "edo": (6.3350, 5.6037),
-            "cross river": (4.9689, 8.3300),
-            "bayelsa": (4.9247, 6.2649),
-            "enugu": (6.5249, 7.5170),
-            "oyo": (7.3775, 3.9470),
-            "kaduna": (10.5060, 7.4273),
-            "kano": (12.0000, 8.5167),
-            "plateau": (9.8965, 8.8580),
-            "kwara": (8.4799, 4.5418),
-            "anambra": (6.1498, 6.7850),
-            "abia": (5.1066, 7.3667),
-            "imo": (5.4836, 7.0333),
-        }
-        for key, (lat, lng) in city_coords.items():
-            if key in t:
-                return {"latitude": lat, "longitude": lng}
-        for key, (lat, lng) in state_capital_coords.items():
-            if key in t:
-                return {"latitude": lat, "longitude": lng}
-        coords = self.geocode_location_text(text)
-        return coords
 
-    def geocode_location_text(self, text: str) -> Optional[Dict[str, float]]:
+        # Check for matches in text
+        for key, (lat, lng) in location_map.items():
+            if key in t:
+                return {"latitude": lat, "longitude": lng}
+                
+        # If no hardcoded match, use geocoding service
+        return await self.geocode_location_text(text)
+
+    async def geocode_location_text(self, text: str) -> Optional[Dict[str, float]]:
         if not text:
             return None
         key = self._normalize_text(text)
@@ -3333,7 +3311,7 @@ class Database:
             return None
         self._geo_rate["count"] = int(self._geo_rate.get("count", 0)) + 1
         try:
-            import requests
+            import httpx
             params = {
                 "q": text,
                 "format": "json",
@@ -3341,25 +3319,25 @@ class Database:
                 "countrycodes": "ng",
             }
             headers = {"User-Agent": os.getenv("GEOCODER_UA", "ServiceHub/1.0")}
-            r = requests.get(
-                "https://nominatim.openstreetmap.org/search",
-                params=params,
-                headers=headers,
-                timeout=5,
-            )
-            if r.status_code == 200:
-                data = r.json()
-                if isinstance(data, list) and data:
-                    item = data[0]
-                    lat = float(item.get("lat"))
-                    lng = float(item.get("lon"))
-                    self._geo_cache[key] = {"lat": lat, "lng": lng, "ts": now}
-                    return {"latitude": lat, "longitude": lng}
+            async with httpx.AsyncClient(timeout=5) as client:
+                r = await client.get(
+                    "https://nominatim.openstreetmap.org/search",
+                    params=params,
+                    headers=headers,
+                )
+                if r.status_code == 200:
+                    data = r.json()
+                    if isinstance(data, list) and data:
+                        item = data[0]
+                        lat = float(item.get("lat"))
+                        lng = float(item.get("lon"))
+                        self._geo_cache[key] = {"lat": lat, "lng": lng, "ts": now}
+                        return {"latitude": lat, "longitude": lng}
         except Exception:
             return None
         return None
 
-    def resolve_coordinates_from_entity(self, entity: Dict[str, Any]) -> Optional[Dict[str, float]]:
+    async def resolve_coordinates_from_entity(self, entity: Dict[str, Any]) -> Optional[Dict[str, float]]:
         try:
             jlat = entity.get("latitude")
             jlng = entity.get("longitude")
@@ -3367,7 +3345,7 @@ class Database:
                 return {"latitude": float(jlat), "longitude": float(jlng)}
             for field in ("location", "city", "state", "address", "address_text"):
                 v = entity.get(field)
-                coords = self.resolve_coordinates_from_text(v)
+                coords = await self.resolve_coordinates_from_text(v)
                 if coords:
                     return coords
         except Exception:
@@ -3381,11 +3359,12 @@ class Database:
             "status": "active",
             "latitude": {"$exists": True, "$ne": None},
             "longitude": {"$exists": True, "$ne": None}
-        }).skip(skip).limit(limit * 2)  # Get more to filter by distance
+        }).skip(skip).limit(limit * 3)  # Get more to allow for distance filtering
         
+        raw_jobs = await cursor.to_list(length=None)
         jobs_with_distance = []
         
-        async for job in cursor:
+        async def process_job(job):
             job["_id"] = str(job["_id"])
             
             # Calculate distance
@@ -3397,7 +3376,13 @@ class Database:
             # Only include jobs within max distance
             if distance <= max_distance_km:
                 job["distance_km"] = round(distance, 1)
-                jobs_with_distance.append(job)
+                return job
+            return None
+
+        # Process in parallel
+        tasks = [process_job(job) for job in raw_jobs]
+        results = await asyncio.gather(*tasks)
+        jobs_with_distance = [j for j in results if j is not None]
         
         # Sort by distance (closest first)
         jobs_with_distance.sort(key=lambda x: x["distance_km"])
@@ -3484,11 +3469,9 @@ class Database:
                 cursor = self.database.jobs.find(job_filter).sort("created_at", -1).skip(skip).limit(limit)
                 jobs = await cursor.to_list(length=None)
                 
-                # Process and enrich jobs data
-                processed_jobs = []
-                for job in jobs:
-                    processed_job = await self._process_job_data(job)
-                    processed_jobs.append(processed_job)
+                # Process and enrich jobs data in parallel
+                tasks = [self._process_job_data(job) for job in jobs]
+                processed_jobs = await asyncio.gather(*tasks)
                 
                 return processed_jobs
                 
@@ -3500,13 +3483,7 @@ class Database:
     async def get_jobs_near_location_with_skills(self, latitude: float, longitude: float, 
                                                max_distance_km: float, skill_categories: List[str],
                                                skip: int = 0, limit: int = 50) -> List[dict]:
-        """Get jobs near location matching skills, including jobs without coordinates.
-
-        - Prioritize jobs within `max_distance_km` when coordinates exist.
-        - Include active, skill-matching jobs without coordinates as fallback.
-        - Sort by distance first, then by recency for no-coordinate jobs.
-        - Apply pagination on the combined list using `skip` and `limit`.
-        """
+        """Get jobs near location matching skills, including jobs without coordinates (optimized)."""
         try:
             # Build skills filter (case-insensitive exact match)
             skills_filter = {}
@@ -3514,19 +3491,21 @@ class Database:
                 category_regex_patterns = [{"category": {"$regex": f"^{category}$", "$options": "i"}} for category in skill_categories]
                 skills_filter["$or"] = category_regex_patterns
 
-            # Base filter: active jobs only (do NOT require coordinates)
+            # Base filter: active jobs only
             base_filter = {"status": "active"}
 
             # Combine filters
             combined_filter = {"$and": [base_filter, skills_filter]} if skills_filter else base_filter
 
-            # Fetch extra to allow distance filtering and fallback composition
-            fetch_limit = max(limit * 3 + skip, limit)
+            # Use aggregation for efficiency: filter, then process distance
+            # Fetching more to allow for distance filtering after retrieval if needed, 
+            # but ideally we want to limit database load.
+            fetch_limit = max(limit * 3 + skip, 150) # Cap at 150 for performance
+            
             cursor = (
                 self.database.jobs
                 .find(combined_filter)
                 .sort("created_at", -1)
-                .skip(0)
                 .limit(fetch_limit)
             )
             raw_jobs = await cursor.to_list(length=None)
@@ -3534,46 +3513,60 @@ class Database:
             jobs_within_distance: List[Dict[str, Any]] = []
             jobs_without_coords: List[Dict[str, Any]] = []
 
-            for job in raw_jobs:
+            async def process_job(job):
+                job["_id"] = str(job["_id"])
                 jlat = job.get("latitude")
                 jlng = job.get("longitude")
+                
+                dist = None
                 if jlat is not None and jlng is not None:
                     try:
-                        dist = self.calculate_distance(latitude, longitude, jlat, jlng)
-                    except Exception:
-                        dist = None
-                    if dist is not None and dist <= float(max_distance_km):
-                        job["_id"] = str(job.get("_id")) if job.get("_id") else None
+                        dist = self.calculate_distance(latitude, longitude, float(jlat), float(jlng))
+                    except (ValueError, TypeError):
+                        pass
+                
+                if dist is not None:
+                    if dist <= float(max_distance_km):
                         job["distance_km"] = round(dist, 2)
-                        jobs_within_distance.append(job)
+                        return ("within", job)
                 else:
-                    fallback = self.resolve_coordinates_from_entity(job)
+                    # Fallback coordinate resolution
+                    fallback = await self.resolve_coordinates_from_entity(job)
                     if fallback:
                         try:
                             dist = self.calculate_distance(latitude, longitude, fallback["latitude"], fallback["longitude"])
-                        except Exception:
-                            dist = None
-                        if dist is not None and dist <= float(max_distance_km):
-                            job["_id"] = str(job.get("_id")) if job.get("_id") else None
-                            job["distance_km"] = round(dist, 2)
-                            jobs_within_distance.append(job)
-                            continue
-                    job["_id"] = str(job.get("_id")) if job.get("_id") else None
+                            if dist <= float(max_distance_km):
+                                job["distance_km"] = round(dist, 2)
+                                return ("within", job)
+                        except (ValueError, TypeError):
+                            pass
+                    
                     job["distance_km"] = None
+                    return ("without", job)
+                return (None, None)
+
+            # Process jobs in parallel
+            tasks = [process_job(job) for job in raw_jobs]
+            results = await asyncio.gather(*tasks)
+
+            for status, job in results:
+                if status == "within":
+                    jobs_within_distance.append(job)
+                elif status == "without":
                     jobs_without_coords.append(job)
 
             # Sort: closest first, then most recent for no-coordinate jobs
             jobs_within_distance.sort(key=lambda x: x.get("distance_km", float("inf")))
-            jobs_without_coords.sort(key=lambda x: x.get("created_at", datetime.min), reverse=True)
+            # jobs_without_coords already sorted by created_at desc from find()
 
             combined = jobs_within_distance + jobs_without_coords
-            sliced = combined[skip: skip + limit]
-            return sliced
+            return combined[skip : skip + limit]
 
         except Exception as e:
             logger.error(f"Error in get_jobs_near_location_with_skills: {e}")
             return []
 
+    @time_it
     async def search_jobs_with_location(
         self,
         search_query: Optional[str] = None,
@@ -3584,12 +3577,7 @@ class Database:
         skip: int = 0,
         limit: int = 50,
     ) -> List[dict]:
-        """Search active, non-expired jobs with optional text/category filters and optional location radius.
-
-        - With location provided: prioritize jobs within radius when coordinates exist,
-          then include matching jobs without coordinates; paginate the combined list.
-        - Without location: sort by most recent (created_at desc).
-        """
+        """Search active, non-expired jobs with optional text/category filters and optional location radius (optimized)."""
         try:
             # Base filter: public active jobs that haven't expired
             base_filter: Dict[str, Any] = {
@@ -3598,41 +3586,27 @@ class Database:
             }
 
             # Text search on title/description
-            text_filter: Dict[str, Any] = {}
             if search_query:
-                text_filter = {
-                    "$or": [
-                        {"title": {"$regex": search_query, "$options": "i"}},
-                        {"description": {"$regex": search_query, "$options": "i"}},
-                    ]
-                }
+                base_filter["$or"] = [
+                    {"title": {"$regex": search_query, "$options": "i"}},
+                    {"description": {"$regex": search_query, "$options": "i"}},
+                ]
 
             # Category filter (case-insensitive exact match)
-            category_filter: Dict[str, Any] = {}
             if category:
-                category_filter = {"category": {"$regex": f"^{category}$", "$options": "i"}}
+                base_filter["category"] = {"$regex": f"^{category}$", "$options": "i"}
 
             use_location = (user_latitude is not None and user_longitude is not None)
-
-            # Combine filters (do NOT require coordinate presence)
-            combined_filters: List[Dict[str, Any]] = [base_filter]
-            if text_filter:
-                combined_filters.append(text_filter)
-            if category_filter:
-                combined_filters.append(category_filter)
-
-            filters: Dict[str, Any] = {"$and": combined_filters} if len(combined_filters) > 1 else base_filter
 
             # Location-aware search
             if use_location:
                 radius_km = max_distance_km if (isinstance(max_distance_km, (int, float)) and max_distance_km is not None) else 25
-                # Fetch extra to allow distance filtering and composition
-                fetch_limit = max(limit * 3 + skip, limit)
+                fetch_limit = max(limit * 3 + skip, 150)
+                
                 cursor = (
                     self.database.jobs
-                    .find(filters)
+                    .find(base_filter)
                     .sort("created_at", -1)
-                    .skip(0)
                     .limit(fetch_limit)
                 )
                 raw_jobs = await cursor.to_list(length=None)
@@ -3640,63 +3614,71 @@ class Database:
                 jobs_within_distance: List[Dict[str, Any]] = []
                 jobs_without_coords: List[Dict[str, Any]] = []
 
-                for job in raw_jobs:
+                async def process_job(job):
+                    job["_id"] = str(job["_id"])
                     jlat = job.get("latitude")
                     jlng = job.get("longitude")
-                    if jlat is None or jlng is None:
-                        fallback = self.resolve_coordinates_from_entity(job)
+                    
+                    dist = None
+                    if jlat is not None and jlng is not None:
+                        try:
+                            dist = self.calculate_distance(user_latitude, user_longitude, float(jlat), float(jlng))
+                        except (ValueError, TypeError):
+                            pass
+                    
+                    if dist is not None:
+                        if dist <= float(radius_km):
+                            job["distance_km"] = round(dist, 2)
+                            return ("within", job)
+                    else:
+                        fallback = await self.resolve_coordinates_from_entity(job)
                         if fallback:
                             try:
                                 dist = self.calculate_distance(user_latitude, user_longitude, fallback["latitude"], fallback["longitude"])
-                            except Exception:
-                                dist = None
-                            if dist is not None and dist <= float(radius_km):
-                                job["_id"] = str(job.get("_id")) if job.get("_id") else None
-                                job["distance_km"] = round(dist, 2)
-                                jobs_within_distance.append(job)
-                                continue
-                        job["_id"] = str(job.get("_id")) if job.get("_id") else None
+                                if dist <= float(radius_km):
+                                    job["distance_km"] = round(dist, 2)
+                                    return ("within", job)
+                            except (ValueError, TypeError):
+                                pass
+                        
                         job["distance_km"] = None
-                        jobs_without_coords.append(job)
-                        continue
-                    try:
-                        dist = self.calculate_distance(user_latitude, user_longitude, jlat, jlng)
-                    except Exception:
-                        continue
-                    if dist <= float(radius_km):
-                        job["_id"] = str(job.get("_id")) if job.get("_id") else None
-                        job["distance_km"] = round(dist, 2)
+                        return ("without", job)
+                    return (None, None)
+
+                # Process jobs in parallel
+                tasks = [process_job(job) for job in raw_jobs]
+                results = await asyncio.gather(*tasks)
+
+                for status, job in results:
+                    if status == "within":
                         jobs_within_distance.append(job)
+                    elif status == "without":
+                        jobs_without_coords.append(job)
 
                 # Sort and paginate combined results
                 jobs_within_distance.sort(key=lambda x: x.get("distance_km", float("inf")))
-                jobs_without_coords.sort(key=lambda x: x.get("created_at", datetime.min), reverse=True)
-
                 combined = jobs_within_distance + jobs_without_coords
-                sliced = combined[skip: skip + limit]
-                return sliced
-
-            # No location filtering: regular query sorted by recency
-            cursor = (
-                self.database.jobs
-                .find(filters)
-                .sort("created_at", -1)
-                .skip(skip)
-                .limit(limit)
-            )
-            jobs = await cursor.to_list(length=None)
-            for job in jobs:
-                job["_id"] = str(job.get("_id")) if job.get("_id") else None
-            return jobs
+                return combined[skip : skip + limit]
+            else:
+                # No location, just fetch and paginate
+                cursor = (
+                    self.database.jobs
+                    .find(base_filter)
+                    .sort("created_at", -1)
+                    .skip(skip)
+                    .limit(limit)
+                )
+                results = await cursor.to_list(length=None)
+                for job in results:
+                    job["_id"] = str(job["_id"])
+                    job["distance_km"] = None
+                return results
 
         except Exception as e:
             logger.error(f"Error in search_jobs_with_location: {e}")
             return []
 
-        except Exception as e:
-            print(f"Error getting jobs near location with skills: {str(e)}")
-            return []
-
+    @time_it
     async def _process_job_data(self, job: dict) -> dict:
         """Process and enrich job data with additional information"""
         try:
@@ -4061,18 +4043,27 @@ class Database:
             "referral_link": f"{os.environ.get('FRONTEND_URL', 'https://servicehub.ng')}/signup?ref={referral_code}"
         }
 
+    @time_it
     async def get_pending_verifications(self, skip: int = 0, limit: int = 20) -> List[dict]:
-        """Get pending document verifications for admin"""
+        """Get pending document verifications for admin (optimized)"""
         cursor = self.user_verifications_collection.find({
             "status": "pending"
         }).sort("submitted_at", -1).skip(skip).limit(limit)
         
-        verifications = []
-        async for verification in cursor:
+        verifications = await cursor.to_list(length=limit)
+        if not verifications:
+            return []
+
+        # Batch fetch user details
+        user_ids = list(set(v["user_id"] for v in verifications if "user_id" in v))
+        users_list = await self.database.users.find({"id": {"$in": user_ids}}).to_list(length=len(user_ids))
+        user_map = {u["id"]: u for u in users_list if "id" in u}
+        
+        for verification in verifications:
             verification["_id"] = str(verification["_id"])
             
-            # Get user details
-            user = await self.get_user_by_id(verification["user_id"])
+            # Get user details from map
+            user = user_map.get(verification.get("user_id"))
             if user:
                 verification["user_name"] = user.get("name", "Unknown")
                 verification["user_email"] = user.get("email", "Unknown")
@@ -4080,30 +4071,35 @@ class Database:
                 verification["user_public_id"] = user.get("public_id")
                 verification["user_short_id"] = user.get("user_id")
             
-            verifications.append(verification)
-        
         return verifications
 
+    @time_it
     async def get_user_referrals(self, user_id: str, skip: int = 0, limit: int = 10) -> List[dict]:
-        """Get list of users referred by this user"""
+        """Get list of users referred by this user (optimized)"""
         cursor = self.referrals_collection.find({
             "referrer_id": user_id
         }).sort("created_at", -1).skip(skip).limit(limit)
         
-        referrals = []
-        async for referral in cursor:
+        referrals = await cursor.to_list(length=limit)
+        if not referrals:
+            return []
+
+        # Batch fetch referred user details
+        referred_ids = list(set(r["referred_user_id"] for r in referrals if "referred_user_id" in r))
+        users_list = await self.database.users.find({"id": {"$in": referred_ids}}).to_list(length=len(referred_ids))
+        user_map = {u["id"]: u for u in users_list if "id" in u}
+        
+        for referral in referrals:
             referral["_id"] = str(referral["_id"])
             
-            # Get referred user details
-            referred_user = await self.get_user_by_id(referral["referred_user_id"])
+            # Get referred user details from map
+            referred_user = user_map.get(referral.get("referred_user_id"))
             if referred_user:
                 referral["referred_user_name"] = referred_user.get("name", "Unknown")
                 referral["referred_user_email"] = referred_user.get("email", "Unknown")
                 referral["referred_user_role"] = referred_user.get("role", "Unknown")
                 referral["is_verified"] = referred_user.get("is_verified", False)
             
-            referrals.append(referral)
-        
         return referrals
 
     async def check_withdrawal_eligibility(self, user_id: str) -> dict:
@@ -4163,88 +4159,52 @@ class Database:
         await self.tradespeople_verifications_collection.insert_one(record)
         return record["id"]
 
+    @time_it
     async def get_pending_tradespeople_verifications(self, skip: int = 0, limit: int = 20) -> List[dict]:
-        """Get pending tradespeople references verifications for admin.
-        Returns a single merged record per user to avoid duplicate approve/reject entries.
+        """Get pending tradespeople references verifications for admin (fully optimized).
+        Returns a single merged record per user using MongoDB aggregation.
         """
-        cursor = self.tradespeople_verifications_collection.find({
-            "status": "pending"
-        }).sort("submitted_at", -1)
+        pipeline = [
+            {"$match": {"status": "pending"}},
+            {"$sort": {"submitted_at": -1}},
+            {"$group": {
+                "_id": "$user_id",
+                "doc": {"$first": "$$ROOT"}
+            }},
+            {"$replaceRoot": {"newRoot": "$doc"}},
+            {"$sort": {"submitted_at": -1}},
+            {"$skip": skip},
+            {"$limit": limit}
+        ]
+        
+        verifications = await self.tradespeople_verifications_collection.aggregate(pipeline).to_list(length=limit)
+        if not verifications:
+            return []
 
-        grouped: Dict[str, dict] = {}
-        async for v in cursor:
-            uid = v.get("user_id")
-            if not uid:
-                continue
-            # Normalize _id to string for consistency
-            try:
-                v["_id"] = str(v.get("_id"))
-            except Exception:
-                pass
+        # Convert _id to string and collect user IDs
+        user_ids = []
+        for v in verifications:
+            v["_id"] = str(v["_id"])
+            if v.get("user_id"):
+                user_ids.append(v["user_id"])
 
-            if uid not in grouped:
-                grouped[uid] = v.copy()
-            else:
-                # Merge fields from duplicate pending records
-                current = grouped[uid]
-                # Choose latest id by updated_at/submitted_at for the action target
-                def ts(doc):
-                    return doc.get("updated_at") or doc.get("submitted_at") or datetime.utcnow()
-                if ts(v) >= ts(current):
-                    current["id"] = v.get("id", current.get("id"))
-                # Merge simple fields if missing
-                for key in [
-                    "business_type","residential_address","company_address",
-                    "director_name","company_bank_name","company_account_number",
-                    "company_account_name","tin","designated_partners",
-                ]:
-                    if not current.get(key) and v.get(key):
-                        current[key] = v.get(key)
-                # Merge documents dict
-                docs_a = current.get("documents") or {}
-                docs_b = v.get("documents") or {}
-                current["documents"] = {**docs_a, **docs_b}
-                # Merge lists
-                def merge_list(a, b):
-                    a = a or []
-                    b = b or []
-                    seen = set()
-                    out = []
-                    for x in list(a) + list(b):
-                        if x is None:
-                            continue
-                        key = x if isinstance(x, str) else str(x)
-                        if key in seen:
-                            continue
-                        seen.add(key)
-                        out.append(x)
-                    return out
-                current["work_photos"] = merge_list(current.get("work_photos"), v.get("work_photos"))
-                current["partner_id_documents"] = merge_list(current.get("partner_id_documents"), v.get("partner_id_documents"))
-                # References: prefer latest non-empty
-                if v.get("work_referrer"):
-                    current["work_referrer"] = v.get("work_referrer")
-                if v.get("character_referrer"):
-                    current["character_referrer"] = v.get("character_referrer")
-                # Update timestamps
-                current["updated_at"] = max(ts(current), ts(v))
-                grouped[uid] = current
+        # Batch fetch user metadata
+        user_map = {}
+        if user_ids:
+            users_list = await self.database.users.find({"id": {"$in": user_ids}}).to_list(length=len(user_ids))
+            user_map = {u["id"]: u for u in users_list if "id" in u}
 
         # Attach user metadata
-        items: List[dict] = []
-        for uid, v in grouped.items():
-            user = await self.get_user_by_id(uid)
+        for v in verifications:
+            user = user_map.get(v.get("user_id"))
             if user:
                 v["user_name"] = user.get("name")
                 v["user_email"] = user.get("email")
                 v["user_phone"] = user.get("phone")
                 v["user_public_id"] = user.get("public_id")
                 v["user_short_id"] = user.get("user_id")
-            items.append(v)
-
-        # Pagination slice
-        items = items[skip: skip + limit]
-        return items
+                
+        return verifications
 
     async def has_tradesperson_references(self, user_id: str) -> bool:
         if self.database is None:
@@ -4519,9 +4479,10 @@ class Database:
     # USER MANAGEMENT METHODS (Admin)
     # ==========================================
     
+    @time_it
     async def get_all_users_for_admin(self, skip: int = 0, limit: int = 50, role: str = None, status: str = None, search: str = None):
-        """Get all users with filtering for admin dashboard"""
-        
+        """Get all users with filtering for admin dashboard (optimized)"""
+        import asyncio
         # Build query filter
         query = {}
         
@@ -4549,12 +4510,62 @@ class Database:
         users_cursor = self.users_collection.find(query).skip(skip).limit(limit).sort("created_at", -1)
         users = await users_cursor.to_list(length=limit)
         
+        if not users:
+            return []
+
+        # Extract IDs for batch operations
+        user_ids = [u["id"] for u in users if "id" in u]
+        homeowner_ids = [u["id"] for u in users if u.get("role") == UserRole.HOMEOWNER.value and "id" in u]
+        tradesperson_ids = [u["id"] for u in users if u.get("role") == UserRole.TRADESPERSON.value and "id" in u]
+
+        # Parallelize batch fetches for metadata
+        tasks = []
+        
+        # 1. Task for wallets (if tradespeople exist)
+        async def fetch_wallets():
+            if not tradesperson_ids:
+                return {}
+            wallets_list = await self.wallets_collection.find({"user_id": {"$in": tradesperson_ids}}).to_list(length=len(tradesperson_ids))
+            return {w["user_id"]: w for w in wallets_list if "user_id" in w}
+        tasks.append(fetch_wallets())
+
+        # 2. Task for homeowner job counts
+        async def fetch_job_counts():
+            if not homeowner_ids:
+                return {}
+            pipeline = [
+                {"$match": {"homeowner.id": {"$in": homeowner_ids}}},
+                {"$group": {"_id": "$homeowner.id", "count": {"$sum": 1}}}
+            ]
+            counts = await self.database.jobs.aggregate(pipeline).to_list(length=len(homeowner_ids))
+            return {str(c["_id"]): c["count"] for c in counts}
+        tasks.append(fetch_job_counts())
+
+        # 3. Task for tradesperson interest counts
+        async def fetch_interest_counts():
+            if not tradesperson_ids:
+                return {}
+            pipeline = [
+                {"$match": {"tradesperson_id": {"$in": tradesperson_ids}}},
+                {"$group": {"_id": "$tradesperson_id", "count": {"$sum": 1}}}
+            ]
+            counts = await self.database.interests.aggregate(pipeline).to_list(length=len(tradesperson_ids))
+            return {str(c["_id"]): c["count"] for c in counts}
+        tasks.append(fetch_interest_counts())
+
+        # Execute all batch fetches in parallel
+        results = await asyncio.gather(*tasks)
+        wallets_map = results[0]
+        jobs_count_map = results[1]
+        interests_count_map = results[2]
+
         # Process users to add activity info and remove sensitive data
         processed_users = []
         for user in users:
             user["_id"] = str(user["_id"])
             user.pop("password_hash", None)  # Remove password hash
             
+            uid = user.get("id")
             # Add activity indicators
             user["last_login"] = user.get("last_login", user.get("created_at"))
             user["is_verified"] = user.get("is_verified", False)
@@ -4562,15 +4573,14 @@ class Database:
             
             # Get wallet balance if tradesperson
             if user.get("role") == UserRole.TRADESPERSON.value:
-                wallet = await self.wallets_collection.find_one({"user_id": user["id"]})
+                wallet = wallets_map.get(uid)
                 if wallet:
                     user["wallet_balance"] = wallet.get("balance_coins", 0)
+                user["interests_shown"] = interests_count_map.get(uid, 0)
             
-            # Count jobs/interests based on role
+            # Count jobs based on role
             if user.get("role") == UserRole.HOMEOWNER.value:
-                user["jobs_posted"] = await self.database.jobs.count_documents({"homeowner.id": user["id"]})
-            elif user.get("role") == UserRole.TRADESPERSON.value:
-                user["interests_shown"] = await self.database.interests.count_documents({"tradesperson_id": user["id"]})
+                user["jobs_posted"] = jobs_count_map.get(uid, 0)
             
             processed_users.append(user)
         
@@ -4625,9 +4635,10 @@ class Database:
             "status": {"$ne": "deleted"}
         })
     
+    @time_it
     async def get_user_activity_stats(self, user_id: str):
-        """Get comprehensive activity statistics for a user"""
-
+        """Get comprehensive activity statistics for a user (optimized)"""
+        import asyncio
         user = await self.get_user_by_id(user_id)
         if not user:
             return {}
@@ -4641,25 +4652,42 @@ class Database:
 
         # Homeowner-specific statistics
         if user.get("role") == UserRole.HOMEOWNER.value:
+            tasks = [
+                self.database.jobs.count_documents({"homeowner.id": user_id}),
+                self.database.jobs.count_documents({"homeowner.id": user_id, "status": "open"}),
+                self.database.jobs.count_documents({"homeowner.id": user_id, "status": "completed"}),
+                self.database.interests.count_documents({"job.homeowner.id": user_id}),
+                self._get_average_job_budget(user_id)
+            ]
+            results = await asyncio.gather(*tasks)
             stats.update({
-                "total_jobs_posted": await self.database.jobs.count_documents({"homeowner.id": user_id}),
-                "active_jobs": await self.database.jobs.count_documents({"homeowner.id": user_id, "status": "open"}),
-                "completed_jobs": await self.database.jobs.count_documents({"homeowner.id": user_id, "status": "completed"}),
-                "total_interests_received": await self.database.interests.count_documents({"job.homeowner.id": user_id}),
-                "average_job_budget": await self._get_average_job_budget(user_id)
+                "total_jobs_posted": results[0],
+                "active_jobs": results[1],
+                "completed_jobs": results[2],
+                "total_interests_received": results[3],
+                "average_job_budget": results[4]
             })
 
         # Tradesperson-specific statistics
         elif user.get("role") == UserRole.TRADESPERSON.value:
-            wallet = await self.database.wallets.find_one({"user_id": user_id})
+            tasks = [
+                self.database.wallets.find_one({"user_id": user_id}),
+                self.database.interests.count_documents({"tradesperson_id": user_id}),
+                self.database.user_verifications.count_documents({"referred_by": user_id, "verification_status": "verified"}),
+                self.database.portfolio.count_documents({"tradesperson_id": user_id}),
+                self._get_tradesperson_average_rating(user_id),
+                self.database.reviews.count_documents({"tradesperson_id": user_id})
+            ]
+            results = await asyncio.gather(*tasks)
+            wallet = results[0]
             stats.update({
-                "total_interests_shown": await self.database.interests.count_documents({"tradesperson_id": user_id}),
+                "total_interests_shown": results[1],
                 "wallet_balance_coins": wallet.get("balance_coins", 0) if wallet else 0,
                 "wallet_balance_naira": wallet.get("balance_naira", 0) if wallet else 0,
-                "successful_referrals": await self.database.user_verifications.count_documents({"referred_by": user_id, "verification_status": "verified"}),
-                "portfolio_items": await self.database.portfolio.count_documents({"tradesperson_id": user_id}),
-                "average_rating": await self._get_tradesperson_average_rating(user_id),
-                "total_reviews": await self.database.reviews.count_documents({"tradesperson_id": user_id})
+                "successful_referrals": results[2],
+                "portfolio_items": results[3],
+                "average_rating": results[4],
+                "total_reviews": results[5]
             })
 
         return stats
@@ -4706,11 +4734,12 @@ class Database:
         result = await self.database.reviews.aggregate(pipeline).to_list(length=1)
         return round(result[0]["avg_rating"], 1) if result else 0
     
+    @time_it
     async def get_user_details_admin(self, user_id: str):
-        """Get comprehensive user details for admin management"""
-        
+        """Get comprehensive user details for admin management (optimized)"""
+        import asyncio
         try:
-            # Get basic user information
+            # Get basic user information first
             user = await self.get_user_by_id(user_id)
             if not user:
                 return None
@@ -4719,73 +4748,62 @@ class Database:
             user.pop("password_hash", None)
             user["_id"] = str(user.get("_id", ""))
             
-            # Get activity statistics
-            activity_stats = await self.get_user_activity_stats(user_id)
+            # Prepare parallel tasks
+            tasks = {
+                "activity_stats": self.get_user_activity_stats(user_id),
+                "verification": self.database.user_verifications.find_one({"user_id": user_id})
+            }
             
-            # Get role-specific details
+            # Add role-specific tasks
             if user.get("role") == UserRole.HOMEOWNER.value:
-                # Get homeowner-specific data
-                jobs_posted = await self.database.jobs.count_documents({"homeowner.id": user_id})
-                active_jobs = await self.database.jobs.count_documents({
+                tasks["jobs_posted"] = self.database.jobs.count_documents({"homeowner.id": user_id})
+                tasks["active_jobs"] = self.database.jobs.count_documents({
                     "homeowner.id": user_id,
                     "status": {"$in": ["active", "open"]}
                 })
-                completed_jobs = await self.database.jobs.count_documents({
+                tasks["completed_jobs"] = self.database.jobs.count_documents({
                     "homeowner.id": user_id,
                     "status": "completed"
                 })
-                total_interests_received = await self.database.interests.count_documents({
+                tasks["total_interests_received"] = self.database.interests.count_documents({
                     "homeowner_id": user_id
                 })
-                
-                user.update({
-                    "jobs_posted": jobs_posted,
-                    "active_jobs": active_jobs,
-                    "completed_jobs": completed_jobs,
-                    "total_interests_received": total_interests_received
-                })
+                tasks["recent_jobs"] = self.database.jobs.find(
+                    {"homeowner.id": user_id}
+                ).sort("created_at", -1).limit(5).to_list(length=5)
                 
             elif user.get("role") == UserRole.TRADESPERSON.value:
-                # Get tradesperson-specific data
-                wallet = await self.database.wallets.find_one({"user_id": user_id})
-                interests_shown = await self.database.interests.count_documents({"tradesperson_id": user_id})
-                paid_interests = await self.database.interests.count_documents({
+                tasks["wallet"] = self.database.wallets.find_one({"user_id": user_id})
+                tasks["interests_shown"] = self.database.interests.count_documents({"tradesperson_id": user_id})
+                tasks["paid_interests"] = self.database.interests.count_documents({
                     "tradesperson_id": user_id,
                     "status": "paid_access"
                 })
-                portfolio_items = await self.database.portfolio.count_documents({"tradesperson_id": user_id})
-                reviews_count = await self.database.reviews.count_documents({"reviewee_id": user_id})
-                average_rating = await self._get_tradesperson_average_rating(user_id)
-                
-                # Get recent transactions
-                transactions = await self.database.wallet_transactions.find(
+                tasks["portfolio_items"] = self.database.portfolio.count_documents({"tradesperson_id": user_id})
+                tasks["reviews_count"] = self.database.reviews.count_documents({"reviewee_id": user_id})
+                tasks["average_rating"] = self._get_tradesperson_average_rating(user_id)
+                tasks["transactions"] = self.database.wallet_transactions.find(
                     {"user_id": user_id}
                 ).sort("created_at", -1).limit(10).to_list(length=10)
-                
-                user.update({
-                    "wallet_balance_coins": wallet.get("balance_coins", 0) if wallet else 0,
-                    "wallet_balance_naira": wallet.get("balance_naira", 0) if wallet else 0,
-                    "interests_shown": interests_shown,
-                    "paid_interests": paid_interests,
-                    "portfolio_items": portfolio_items,
-                    "reviews_count": reviews_count,
-                    "average_rating": average_rating,
-                    "recent_transactions": [
-                        {
-                            "id": str(tx.get("_id", "")),
-                            "type": tx.get("transaction_type", ""),
-                            "amount_coins": tx.get("amount_coins", 0),
-                            "amount_naira": tx.get("amount_naira", 0),
-                            "description": tx.get("description", ""),
-                            "status": tx.get("status", ""),
-                            "created_at": tx.get("created_at")
-                        } for tx in transactions
-                    ]
-                })
+                tasks["recent_interests"] = self.database.interests.find(
+                    {"tradesperson_id": user_id}
+                ).sort("created_at", -1).limit(5).to_list(length=5)
+
+            # Execute all tasks in parallel
+            task_keys = list(tasks.keys())
+            task_results = await asyncio.gather(*[tasks[k] for k in task_keys], return_exceptions=True)
+            results = dict(zip(task_keys, task_results))
             
-            # Add verification status
-            verification = await self.database.user_verifications.find_one({"user_id": user_id})
-            if verification:
+            # Process Activity Stats
+            activity_stats = results.get("activity_stats", {})
+            if isinstance(activity_stats, Exception):
+                logger.error(f"Error fetching activity stats for {user_id}: {activity_stats}")
+                activity_stats = {}
+            user.update(activity_stats)
+            
+            # Process Verification
+            verification = results.get("verification")
+            if verification and not isinstance(verification, Exception):
                 user.update({
                     "verification_status": verification.get("verification_status", "unverified"),
                     "document_type": verification.get("document_type", ""),
@@ -4800,28 +4818,74 @@ class Database:
                     "verification_notes": ""
                 })
             
-            # Get recent activity based on role
+            # Process Homeowner specific results
             if user.get("role") == UserRole.HOMEOWNER.value:
-                recent_jobs = await self.database.jobs.find(
-                    {"homeowner.id": user_id}
-                ).sort("created_at", -1).limit(5).to_list(length=5)
+                user.update({
+                    "jobs_posted": results.get("jobs_posted", 0) if not isinstance(results.get("jobs_posted"), Exception) else 0,
+                    "active_jobs": results.get("active_jobs", 0) if not isinstance(results.get("active_jobs"), Exception) else 0,
+                    "completed_jobs": results.get("completed_jobs", 0) if not isinstance(results.get("completed_jobs"), Exception) else 0,
+                    "total_interests_received": results.get("total_interests_received", 0) if not isinstance(results.get("total_interests_received"), Exception) else 0
+                })
                 
-                user["recent_jobs"] = [
-                    {
-                        "id": job.get("id", ""),
-                        "title": job.get("title", ""),
-                        "category": job.get("category", ""),
-                        "status": job.get("status", ""),
-                        "created_at": job.get("created_at"),
-                        "interests_count": await self.database.interests.count_documents({"job_id": job.get("id", "")})
-                    } for job in recent_jobs
-                ]
-            
+                recent_jobs_raw = results.get("recent_jobs", [])
+                if isinstance(recent_jobs_raw, Exception):
+                    recent_jobs_raw = []
+                
+                # Optimized: Batch fetch interest counts for recent jobs
+                if recent_jobs_raw:
+                    job_ids = [j.get("id") for j in recent_jobs_raw if j.get("id")]
+                    interest_counts_pipeline = [
+                        {"$match": {"job_id": {"$in": job_ids}}},
+                        {"$group": {"_id": "$job_id", "count": {"$sum": 1}}}
+                    ]
+                    counts_cursor = self.database.interests.aggregate(interest_counts_pipeline)
+                    counts_list = await counts_cursor.to_list(length=len(job_ids))
+                    counts_map = {c["_id"]: c["count"] for c in counts_list}
+                    
+                    user["recent_jobs"] = [
+                        {
+                            "id": job.get("id", ""),
+                            "title": job.get("title", ""),
+                            "category": job.get("category", ""),
+                            "status": job.get("status", ""),
+                            "created_at": job.get("created_at"),
+                            "interests_count": counts_map.get(job.get("id"), 0)
+                        } for job in recent_jobs_raw
+                    ]
+                else:
+                    user["recent_jobs"] = []
+                    
+            # Process Tradesperson specific results
             elif user.get("role") == UserRole.TRADESPERSON.value:
-                recent_interests = await self.database.interests.find(
-                    {"tradesperson_id": user_id}
-                ).sort("created_at", -1).limit(5).to_list(length=5)
+                wallet = results.get("wallet")
+                if isinstance(wallet, Exception): wallet = None
                 
+                user.update({
+                    "wallet_balance_coins": wallet.get("balance_coins", 0) if wallet else 0,
+                    "wallet_balance_naira": wallet.get("balance_naira", 0) if wallet else 0,
+                    "interests_shown": results.get("interests_shown", 0) if not isinstance(results.get("interests_shown"), Exception) else 0,
+                    "paid_interests": results.get("paid_interests", 0) if not isinstance(results.get("paid_interests"), Exception) else 0,
+                    "portfolio_items": results.get("portfolio_items", 0) if not isinstance(results.get("portfolio_items"), Exception) else 0,
+                    "reviews_count": results.get("reviews_count", 0) if not isinstance(results.get("reviews_count"), Exception) else 0,
+                    "average_rating": results.get("average_rating", 0) if not isinstance(results.get("average_rating"), Exception) else 0
+                })
+                
+                transactions = results.get("transactions", [])
+                if isinstance(transactions, Exception): transactions = []
+                user["recent_transactions"] = [
+                    {
+                        "id": str(tx.get("_id", "")),
+                        "type": tx.get("transaction_type", ""),
+                        "amount_coins": tx.get("amount_coins", 0),
+                        "amount_naira": tx.get("amount_naira", 0),
+                        "description": tx.get("description", ""),
+                        "status": tx.get("status", ""),
+                        "created_at": tx.get("created_at")
+                    } for tx in transactions
+                ]
+                
+                recent_interests = results.get("recent_interests", [])
+                if isinstance(recent_interests, Exception): recent_interests = []
                 user["recent_interests"] = [
                     {
                         "id": str(interest.get("_id", "")),
@@ -4834,18 +4898,16 @@ class Database:
                     } for interest in recent_interests
                 ]
             
-            # Combine with activity stats
-            user.update(activity_stats)
-            
             return user
             
         except Exception as e:
             logger.error(f"Error getting user details for admin: {str(e)}")
             return None
     
+    @time_it
     async def delete_user_completely(self, user_id: str):
-        """Permanently delete user and all associated data"""
-        
+        """Permanently delete user and all associated data (optimized)"""
+        import asyncio
         try:
             # Get user details first for logging
             user = await self.get_user_by_id(user_id)
@@ -4857,89 +4919,53 @@ class Database:
                 logger.warning(f"Attempted to delete admin user: {user.get('email', 'Unknown')}")
                 return False
             
-            # Delete from all related collections
-            collections_to_clean = [
-                ("jobs", {"homeowner.id": user_id}),
-                ("jobs", {"$or": [{"homeowner_id": user_id}, {"homeowner.id": user_id}]}),
-                ("interests", {"tradesperson_id": user_id}),
-                ("interests", {"homeowner_id": user_id}),
-                ("wallets", {"user_id": user_id}),
-                ("wallet_transactions", {"user_id": user_id}),
-                ("portfolio", {"tradesperson_id": user_id}),
-                ("reviews", {"reviewer_id": user_id}),
-                ("reviews", {"reviewee_id": user_id}),
-                ("conversations", {"participants": user_id}),
-                ("messages", {"sender_id": user_id}),
-                ("notifications", {"user_id": user_id}),
-                ("notification_preferences", {"user_id": user_id}),
-                ("user_verifications", {"user_id": user_id})
-            ]
-            
-            # Before deleting jobs, collect job IDs so we can clean up related documents (question answers, quotes, etc.)
+            # 1. Collect job IDs first (needed for cascading deletes)
+            job_ids = []
             try:
                 job_cursor = self.database.jobs.find({"$or": [{"homeowner_id": user_id}, {"homeowner.id": user_id}]}, {"id": 1})
                 jobs_for_user = await job_cursor.to_list(length=None)
                 job_ids = [j.get("id") for j in jobs_for_user if j.get("id")]
-            except Exception:
-                job_ids = []
+            except Exception as e:
+                logger.warning(f"Error collecting job IDs for user {user_id}: {e}")
 
-            # Delete from all related collections listed above
-            for collection_name, query in collections_to_clean:
-                try:
-                    collection = getattr(self.database, collection_name)
-                    result = await collection.delete_many(query)
-                    if result.deleted_count > 0:
-                        logger.info(f"Deleted {result.deleted_count} records from {collection_name} for user {user_id}")
-                except Exception as e:
-                    logger.warning(f"Error deleting from {collection_name}: {str(e)}")
-                    # Continue with deletion even if some collections fail
+            # 2. Prepare all deletion tasks
+            delete_tasks = {
+                "jobs": self.database.jobs.delete_many({"$or": [{"homeowner_id": user_id}, {"homeowner.id": user_id}]}),
+                "interests_tp": self.database.interests.delete_many({"tradesperson_id": user_id}),
+                "interests_ho": self.database.interests.delete_many({"homeowner_id": user_id}),
+                "wallets": self.database.wallets.delete_many({"user_id": user_id}),
+                "wallet_transactions": self.database.wallet_transactions.delete_many({"user_id": user_id}),
+                "portfolio": self.database.portfolio.delete_many({"tradesperson_id": user_id}),
+                "reviews_reviewer": self.database.reviews.delete_many({"reviewer_id": user_id}),
+                "reviews_reviewee": self.database.reviews.delete_many({"reviewee_id": user_id}),
+                "conversations": self.database.conversations.delete_many({"participants": user_id}),
+                "messages": self.database.messages.delete_many({"sender_id": user_id}),
+                "notifications": self.database.notifications.delete_many({"user_id": user_id}),
+                "notification_preferences": self.database.notification_preferences.delete_many({"user_id": user_id}),
+                "user_verifications": self.database.user_verifications.delete_many({"user_id": user_id}),
+                "pending_jobs": self.database.pending_jobs.delete_many({"user_id": user_id}),
+                "email_verification_tokens": self.database.email_verification_tokens.delete_many({"user_id": user_id}),
+                "password_reset_tokens": self.database.password_reset_tokens.delete_many({"user_id": user_id}),
+                "quotes": self.database.quotes.delete_many({"$or": [{"tradesperson_id": user_id}, {"homeowner_id": user_id}]})
+            }
 
-            # Additional cleanup: pending jobs, job question answers, verification & reset tokens, quotes
-            try:
-                # Pending jobs created by this user
-                try:
-                    res = await self.database.pending_jobs.delete_many({"user_id": user_id})
-                    if getattr(res, 'deleted_count', 0) > 0:
-                        logger.info(f"Deleted {res.deleted_count} pending_jobs for user {user_id}")
-                except Exception as e:
-                    logger.warning(f"Error deleting pending_jobs for user {user_id}: {e}")
+            # Add cascading job-related deletes if we have job IDs
+            if job_ids:
+                delete_tasks["job_question_answers"] = self.database.job_question_answers.delete_many({"job_id": {"$in": job_ids}})
 
-                # Job question answers for any jobs owned by the user
-                if job_ids:
-                    try:
-                        res = await self.database.job_question_answers.delete_many({"job_id": {"$in": job_ids}})
-                        if getattr(res, 'deleted_count', 0) > 0:
-                            logger.info(f"Deleted {res.deleted_count} job_question_answers for user {user_id}")
-                    except Exception as e:
-                        logger.warning(f"Error deleting job_question_answers for user {user_id}: {e}")
-
-                # Email verification and password reset tokens
-                try:
-                    res = await self.database.email_verification_tokens.delete_many({"user_id": user_id})
-                    if getattr(res, 'deleted_count', 0) > 0:
-                        logger.info(f"Deleted {res.deleted_count} email_verification_tokens for user {user_id}")
-                except Exception as e:
-                    logger.warning(f"Error deleting email_verification_tokens for user {user_id}: {e}")
-
-                try:
-                    res = await self.database.password_reset_tokens.delete_many({"user_id": user_id})
-                    if getattr(res, 'deleted_count', 0) > 0:
-                        logger.info(f"Deleted {res.deleted_count} password_reset_tokens for user {user_id}")
-                except Exception as e:
-                    logger.warning(f"Error deleting password_reset_tokens for user {user_id}: {e}")
-
-                # Quotes where user acted as tradesperson or homeowner
-                try:
-                    res = await self.database.quotes.delete_many({"$or": [{"tradesperson_id": user_id}, {"homeowner_id": user_id}]})
-                    if getattr(res, 'deleted_count', 0) > 0:
-                        logger.info(f"Deleted {res.deleted_count} quotes for user {user_id}")
-                except Exception as e:
-                    logger.warning(f"Error deleting quotes for user {user_id}: {e}")
-            except Exception:
-                pass
+            # 3. Run all deletions in parallel
+            task_keys = list(delete_tasks.keys())
+            results_list = await asyncio.gather(*[delete_tasks[k] for k in task_keys], return_exceptions=True)
             
-            # Finally delete the user account
-            # Additionally purge any duplicate user records with the same email to fully release the address
+            # Log results
+            for i, key in enumerate(task_keys):
+                res = results_list[i]
+                if isinstance(res, Exception):
+                    logger.warning(f"Failed to delete from {key} for user {user_id}: {res}")
+                elif hasattr(res, 'deleted_count') and res.deleted_count > 0:
+                    logger.info(f"Deleted {res.deleted_count} records from {key} for user {user_id}")
+
+            # Finally delete the user account(s)
             email = user.get("email")
             if email:
                 result = await self.users_collection.delete_many({"email": email})
@@ -4956,7 +4982,7 @@ class Database:
         except Exception as e:
             logger.error(f"Error deleting user completely: {str(e)}")
             return False
-    
+            
     # ==========================================
     # LOCATION MANAGEMENT METHODS (Admin)
     # ==========================================
@@ -6510,20 +6536,33 @@ We may update this Cookie Policy to reflect changes in technology or regulations
     # ADMIN NOTIFICATION MANAGEMENT METHODS
     # ==========================================
     
+    @time_it
     async def get_admin_notifications(self, filters: dict = None, skip: int = 0, limit: int = 50) -> List[dict]:
-        """Get notifications for admin management with filtering"""
+        """Get notifications for admin management with filtering (optimized)"""
         query = filters or {}
         
         cursor = self.notifications_collection.find(query).sort("created_at", -1).skip(skip).limit(limit)
+        docs = await cursor.to_list(length=limit)
         
+        if not docs:
+            return []
+
+        # 1. Batch fetch user info
+        user_ids = {doc["user_id"] for doc in docs if doc.get("user_id")}
+        user_map = {}
+        if user_ids:
+            users_list = await self.database.users.find({"id": {"$in": list(user_ids)}}).to_list(length=len(user_ids))
+            user_map = {u["id"]: u for u in users_list if "id" in u}
+
         notifications = []
-        async for doc in cursor:
-            # Get user info for each notification
-            user = await self.get_user_by_id(doc["user_id"])
+        for doc in docs:
+            # Get user info from map
+            uid = doc.get("user_id")
+            user = user_map.get(uid) if uid else None
             
             notification = {
                 "id": str(doc["_id"]),
-                "user_id": doc["user_id"],
+                "user_id": uid,
                 "user_name": user.get("name", "Unknown") if user else "Unknown",
                 "user_email": user.get("email", "Unknown") if user else "Unknown",
                 "user_public_id": user.get("public_id") if user else None,
@@ -7445,31 +7484,21 @@ We may update this Cookie Policy to reflect changes in technology or regulations
         
         return await self.database.admin_activities.count_documents(query)
 
+    @time_it
     async def get_admin_stats(self) -> dict:
-        """Get admin statistics"""
-        # Total admins by role
-        pipeline = [
+        """Get comprehensive admin statistics using parallel tasks"""
+        import asyncio
+        
+        # 1. Pipeline for role distribution
+        role_pipeline = [
             {"$group": {
                 "_id": "$role",
                 "count": {"$sum": 1}
             }}
         ]
         
-        role_counts = {}
-        async for doc in self.database.admins.aggregate(pipeline):
-            role_counts[doc["_id"]] = doc["count"]
-        
-        # Active vs inactive admins
-        active_admins = await self.database.admins.count_documents({"status": AdminStatus.ACTIVE.value})
-        total_admins = await self.database.admins.count_documents({})
-        
-        # Recent activities
-        recent_activities = await self.database.admin_activities.count_documents({
-            "created_at": {"$gte": datetime.utcnow() - timedelta(days=7)}
-        })
-        
-        # Login statistics
-        pipeline = [
+        # 2. Pipeline for login statistics
+        login_pipeline = [
             {"$group": {
                 "_id": None,
                 "total_logins": {"$sum": "$login_count"},
@@ -7477,7 +7506,30 @@ We may update this Cookie Policy to reflect changes in technology or regulations
             }}
         ]
         
-        login_stats = await self.database.admins.aggregate(pipeline).to_list(1)
+        # 3. Recent activity date
+        seven_days_ago = datetime.utcnow() - timedelta(days=7)
+        
+        # Define tasks for parallel execution
+        tasks = [
+            self.database.admins.aggregate(role_pipeline).to_list(length=20),
+            self.database.admins.count_documents({"status": AdminStatus.ACTIVE.value}),
+            self.database.admins.count_documents({}),
+            self.database.admin_activities.count_documents({"created_at": {"$gte": seven_days_ago}}),
+            self.database.admins.aggregate(login_pipeline).to_list(length=1)
+        ]
+        
+        # Execute all tasks in parallel
+        results = await asyncio.gather(*tasks)
+        
+        # Process results
+        role_docs = results[0]
+        active_admins = results[1]
+        total_admins = results[2]
+        recent_activities = results[3]
+        login_stats = results[4]
+        
+        role_counts = {doc["_id"]: doc["count"] for doc in role_docs if doc["_id"]}
+        
         total_logins = login_stats[0]["total_logins"] if login_stats else 0
         avg_logins = login_stats[0]["avg_logins"] if login_stats else 0
 

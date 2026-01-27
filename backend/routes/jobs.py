@@ -1027,11 +1027,12 @@ async def notify_matching_tradespeople_new_job(job: dict):
                     if jlat is not None and jlng is not None:
                         job_coords = {"latitude": float(jlat), "longitude": float(jlng)}
                     else:
-                        job_coords = database.resolve_coordinates_from_entity(job)
+                        job_coords = await database.resolve_coordinates_from_entity(job)
                     if tlat is not None and tlng is not None:
-                        tp_coords = {"latitude": float(tlat), "longitude": float(tlng)}
+                        tlng_val = float(tlng)
+                        tp_coords = {"latitude": float(tlat), "longitude": tlng_val}
                     else:
-                        tp_coords = database.resolve_coordinates_from_entity(tp)
+                        tp_coords = await database.resolve_coordinates_from_entity(tp)
                     if job_coords and tp_coords:
                         km = database.calculate_distance(tp_coords["latitude"], tp_coords["longitude"], job_coords["latitude"], job_coords["longitude"])
                         max_km = tp.get("travel_distance_km", 25)
