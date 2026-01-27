@@ -30,6 +30,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import JobsMap from '../components/maps/JobsMap';
 import LocationSettingsModal from '../components/LocationSettingsModal';
 import { authAPI } from '../api/services';
+import { notificationsAPI } from '../api/notifications';
 import { resolveCoordinatesFromLocationText, DEFAULT_TRAVEL_DISTANCE_KM, nearestStateFromCoordinates, computeDistanceKm } from '../utils/locationCoordinates';
 
 import AuthenticatedImage from '../components/common/AuthenticatedImage';
@@ -153,6 +154,65 @@ const BrowseJobsPage = () => {
     user?.latitude,
     user?.longitude,
   ]);
+
+  // If the user received a recent job notification (e.g. NEW_MATCHING_JOB / JOB_POSTED)
+  // check the referenced job. If the job exists but is pending approval, surface
+  // that information to the user. If the job is active but somehow missing from
+  // the current list, trigger a refresh.
+  useEffect(() => {
+    if (!isAuthenticated() || !isTradesperson()) return;
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const res = await notificationsAPI.getHistory({ limit: 10, offset: 0 });
+        const list = res?.notifications || res?.items || res || [];
+
+        for (const n of list) {
+          if (cancelled) return;
+          const type = (n.type || n.notification_type || n.type_name || '').toString().toLowerCase();
+          if (!type) continue;
+
+          // Only care about job-related notifications
+          if (['new_matching_job', 'job_posted', 'job_approved', 'job_rejected'].includes(type)) {
+            const jobId = n?.metadata?.job_id || n?.template_data?.job_id || n?.job_id || n?.data?.job_id;
+            if (!jobId) continue;
+
+            try {
+              const job = await jobsAPI.getJob(jobId);
+              if (!job) continue;
+
+              // If job exists but not active, inform the user it's pending approval
+              if (job.status && job.status !== 'active') {
+                toast({
+                  title: 'Job not yet visible',
+                  description: `${job.title || 'A job'} is ${job.status.replace('_', ' ')} and will appear in Browse once approved.`,
+                  duration: 8000
+                });
+                return; // we already informed the user
+              }
+
+              // If job is active but not in our current jobs list, refresh
+              const present = jobs.find(j => j.id === job.id || j._id === job.id || j.id === job._id);
+              if (!present) {
+                loadJobsBasedOnFilters();
+                return;
+              }
+            } catch (err) {
+              // ignore failures for now
+              console.error('Error checking job from notification:', err);
+            }
+          }
+        }
+      } catch (err) {
+        // noisy errors are non-fatal
+        console.error('Failed to fetch notifications for job check:', err);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [isAuthenticated, isTradesperson, user?.id]);
 
   // Show welcome message for new registrations
   useEffect(() => {
