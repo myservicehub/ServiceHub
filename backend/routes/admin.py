@@ -3,6 +3,7 @@ from typing import List, Optional
 from datetime import datetime, timezone
 import uuid
 import logging
+import asyncio
 
 from ..database import database
 from ..models.base import JobAccessFeeUpdate, TransactionStatus
@@ -270,18 +271,6 @@ async def get_all_jobs_for_admin(skip: int = 0, limit: int = 50, status: str = N
             "total": total_count
         }
     }
-
-@router.get("/jobs/{job_id}/details")
-async def get_job_details_for_admin(job_id: str):
-    """Get detailed job information for admin editing"""
-    
-    job = await database.get_job_by_id_admin(job_id)
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
-    
-    return {"job": job}
-
- 
 
 @router.get("/reviews")
 async def get_all_reviews(
@@ -735,10 +724,38 @@ async def get_job_details_admin(job_id: str):
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
     
-    # Get additional details
-    homeowner = await database.get_user_by_email(job["homeowner"]["email"])
-    interests_count = await database.get_job_interests_count(job_id)
+    # Get additional details in parallel
+    homeowner_email = job.get("homeowner", {}).get("email")
     
+    tasks = [
+        database.get_job_interests_count(job_id),
+        database.get_job_question_answers(job_id)
+    ]
+    
+    if homeowner_email:
+        tasks.append(database.get_user_by_email(homeowner_email))
+    else:
+        # Placeholder for user if no email
+        async def get_none(): return None
+        tasks.append(get_none())
+
+    # Run all tasks in parallel
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    
+    interests_count = results[0] if not isinstance(results[0], Exception) else 0
+    qa = results[1] if not isinstance(results[1], Exception) else None
+    homeowner = results[2] if not isinstance(results[2], Exception) else None
+    
+    # Get homeowner job count if homeowner exists
+    homeowner_total_jobs = 0
+    if homeowner and not isinstance(homeowner, Exception):
+        try:
+            homeowner_id = homeowner.get("id") or homeowner.get("_id")
+            if homeowner_id:
+                homeowner_total_jobs = await database.count_homeowner_jobs(str(homeowner_id))
+        except Exception:
+            pass
+
     job_details = {
         **job,
         "homeowner_details": {
@@ -746,7 +763,7 @@ async def get_job_details_admin(job_id: str):
             "email": homeowner.get("email") if homeowner else "Unknown",
             "phone": homeowner.get("phone") if homeowner else "Unknown",
             "verification_status": homeowner.get("verification_status") if homeowner else "unknown",
-            "total_jobs": await database.count_homeowner_jobs(homeowner["id"]) if homeowner else 0
+            "total_jobs": homeowner_total_jobs
         },
         "interests_count": interests_count,
         "access_fees": {
@@ -754,16 +771,16 @@ async def get_job_details_admin(job_id: str):
             "coins": job.get("access_fee_coins", 10)
         }
     }
-    try:
-        qa = await database.get_job_question_answers(job_id)
-        if qa:
-            job_details["question_answers"] = qa
-            if not job_details.get("description"):
+    
+    if qa:
+        job_details["question_answers"] = qa
+        if not job_details.get("description"):
+            try:
                 summary = database.compose_job_description_from_answers(qa)
                 if summary:
                     job_details["description"] = summary
-    except Exception:
-        pass
+            except Exception:
+                pass
     
     return {"job": job_details}
 
