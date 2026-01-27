@@ -171,6 +171,7 @@ const AdminDashboard = () => {
   const [processingApproval, setProcessingApproval] = useState(false);
   const [approvalsLoading, setApprovalsLoading] = useState(false);
   const [approvalsError, setApprovalsError] = useState('');
+  const [selectedJobLoading, setSelectedJobLoading] = useState(false);
   
   // Enhanced Job Editing state
   const [editJobModal, setEditJobModal] = useState(null);
@@ -201,6 +202,7 @@ const AdminDashboard = () => {
   const [showJobDetailsModal, setShowJobDetailsModal] = useState(false);
   const [showEditJobModal, setShowEditJobModal] = useState(false);
   const [editingJobData, setEditingJobData] = useState(null);
+  const [editJobLoading, setEditJobLoading] = useState(false);
   
   const { toast } = useToast();
 
@@ -596,29 +598,32 @@ const AdminDashboard = () => {
   };
 
   const handleOpenReview = async (job) => {
+    setSelectedJob(job);
+    setSelectedJobLoading(true);
     try {
-      setLoading(true);
       const [jobDetailsResult, answersResult] = await Promise.allSettled([
         adminAPI.getJobDetailsAdmin(job.id),
         tradeCategoryQuestionsAPI.getJobQuestionAnswers(job.id)
       ]);
-      if (jobDetailsResult.status !== 'fulfilled') {
+      if (jobDetailsResult.status === 'fulfilled') {
+        const jobDetails = jobDetailsResult.value.job;
+        let answers = answersResult.status === 'fulfilled' ? answersResult.value : null;
+        if ((!answers || !answers.answers || answers.answers.length === 0) && job._id && job._id !== job.id) {
+          try {
+            const altAnswers = await tradeCategoryQuestionsAPI.getJobQuestionAnswers(job._id);
+            if (altAnswers && altAnswers.answers && altAnswers.answers.length > 0) {
+              answers = altAnswers;
+            }
+          } catch {}
+        }
+        const merged = { ...job, ...jobDetails };
+        if (answers && answers.answers && answers.answers.length > 0) {
+          merged.question_answers = answers;
+        }
+        setSelectedJob(merged);
+      } else {
         throw jobDetailsResult.reason;
       }
-      const jobDetails = jobDetailsResult.value.job;
-      let answers = answersResult.status === 'fulfilled' ? answersResult.value : null;
-      if ((!answers || !answers.answers || answers.answers.length === 0) && job._id && job._id !== job.id) {
-        try {
-          const altAnswers = await tradeCategoryQuestionsAPI.getJobQuestionAnswers(job._id);
-          if (altAnswers && altAnswers.answers && altAnswers.answers.length > 0) {
-            answers = altAnswers;
-          }
-        } catch {}
-      }
-      if (answers && answers.answers && answers.answers.length > 0) {
-        jobDetails.question_answers = answers;
-      }
-      setSelectedJob(jobDetails);
     } catch (error) {
       toast({
         title: "Error",
@@ -626,7 +631,7 @@ const AdminDashboard = () => {
         variant: "destructive"
       });
     } finally {
-      setLoading(false);
+      setSelectedJobLoading(false);
     }
   };
 
@@ -875,14 +880,13 @@ const AdminDashboard = () => {
   // ==========================================
 
   const handleOpenJobEditor = async (job) => {
+    setShowEditJobModal(true);
+    setEditJobModal(job);
+    setEditJobErrors({});
+    setEditJobLoading(true);
     try {
-      setLoading(true);
-      
-      // Get detailed job information
       const response = await adminAPI.getJobDetailsAdmin(job.id);
       const jobDetails = response.job;
-      
-      // Initialize edit form with current values
       setEditJobForm({
         title: jobDetails.title || '',
         description: jobDetails.description || '',
@@ -899,19 +903,15 @@ const AdminDashboard = () => {
         access_fee_coins: jobDetails.access_fees?.coins || 10,
         admin_notes: ''
       });
-      
       setEditJobModal(jobDetails);
-      setEditJobErrors({});
-      
     } catch (error) {
-      console.error('Failed to load job details:', error);
       toast({
         title: "Error",
         description: "Failed to load job details for editing",
         variant: "destructive"
       });
     } finally {
-      setLoading(false);
+      setEditJobLoading(false);
     }
   };
 
@@ -2143,14 +2143,22 @@ const AdminDashboard = () => {
                                     <div className="flex space-x-2">
                                       <button
                                         onClick={() => handleOpenReview(job)}
-                                        className="text-blue-600 hover:text-blue-900 text-sm font-medium"
+                                        disabled={selectedJobLoading}
+                                        className="text-blue-600 hover:text-blue-900 text-sm font-medium disabled:opacity-50 flex items-center"
                                       >
+                                        {selectedJobLoading && selectedJob?.id === job.id && (
+                                          <span className="inline-block animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600 mr-1"></span>
+                                        )}
                                         Review
                                       </button>
                                       <button
                                         onClick={() => handleOpenJobEditor(job)}
-                                        className="text-purple-600 hover:text-purple-900 text-sm font-medium"
+                                        disabled={editJobLoading}
+                                        className="text-purple-600 hover:text-purple-900 text-sm font-medium disabled:opacity-50 flex items-center"
                                       >
+                                        {editJobLoading && editJobModal?.id === job.id && (
+                                          <span className="inline-block animate-spin rounded-full h-3 w-3 border-b-2 border-purple-600 mr-1"></span>
+                                        )}
                                         Edit
                                       </button>
                                       <button
@@ -5396,6 +5404,12 @@ const AdminDashboard = () => {
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center p-6 border-b">
               <h3 className="text-xl font-semibold">Edit Job</h3>
+              {editJobLoading && (
+                <div className="flex items-center text-sm text-gray-500">
+                  <span className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600 mr-2"></span>
+                  Loading details...
+                </div>
+              )}
               <button
                 onClick={() => setEditJobModal(null)}
                 className="text-gray-500 hover:text-gray-700"
@@ -5403,7 +5417,9 @@ const AdminDashboard = () => {
                 ✕
               </button>
             </div>
-            <form onSubmit={async (e) => {
+            <form 
+              key={`edit-job-${editJobModal.id}-${editJobLoading}`}
+              onSubmit={async (e) => {
               e.preventDefault();
               const formData = new FormData(e.target);
               const jobData = {
@@ -5672,6 +5688,12 @@ const AdminDashboard = () => {
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center p-6 border-b">
               <h3 className="text-xl font-semibold">Job Review - {selectedJob.title}</h3>
+              {selectedJobLoading && (
+                <div className="flex items-center text-sm text-gray-500">
+                  <span className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></span>
+                  Loading details...
+                </div>
+              )}
               <button
                 onClick={() => setSelectedJob(null)}
                 className="text-gray-500 hover:text-gray-700"
@@ -5880,11 +5902,14 @@ const AdminDashboard = () => {
                 </button>
                 <button
                   onClick={() => {
-                    setSelectedJob(null);
                     handleOpenJobEditor(selectedJob);
                   }}
-                  className="px-4 py-2 text-purple-600 bg-purple-100 rounded-lg hover:bg-purple-200"
+                  disabled={editJobLoading}
+                  className="px-4 py-2 text-purple-600 bg-purple-100 rounded-lg hover:bg-purple-200 disabled:opacity-50 flex items-center"
                 >
+                  {editJobLoading && (
+                    <span className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600 mr-2"></span>
+                  )}
                   Edit Job
                 </button>
                 <button
