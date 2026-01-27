@@ -6424,13 +6424,8 @@ We may update this Cookie Policy to reflect changes in technology or regulations
             return {}
     
     async def initialize_default_contacts(self):
-        """Initialize default contact information if none exists"""
+        """Initialize default contact information for any missing types"""
         try:
-            # Check if contacts already exist
-            existing_contacts = await self.database.contacts.count_documents({})
-            if existing_contacts > 0:
-                return
-            
             # Default contact information
             default_contacts = [
                 {
@@ -6500,7 +6495,7 @@ We may update this Cookie Policy to reflect changes in technology or regulations
                 {
                     "contact_type": "social_twitter",
                     "label": "Twitter",
-            "value": "https://x.com/myservice_hub",
+                    "value": "https://x.com/myservice_hub",
                     "is_active": True,
                     "display_order": 4,
                     "notes": "Official Twitter account"
@@ -6523,11 +6518,22 @@ We may update this Cookie Policy to reflect changes in technology or regulations
                 }
             ]
             
-            # Insert default contacts
-            for contact_data in default_contacts:
+            # Get existing contact types
+            existing_contacts_docs = await self.database.contacts.find({}, {"contact_type": 1}).to_list(None)
+            existing_types = {c["contact_type"] for c in existing_contacts_docs}
+            
+            # Filter to only missing contacts
+            contacts_to_add = [c for c in default_contacts if c["contact_type"] not in existing_types]
+            
+            if not contacts_to_add:
+                print("All default contact types already exist")
+                return
+            
+            # Insert missing default contacts
+            for contact_data in contacts_to_add:
                 await self.create_contact(contact_data, "system")
             
-            print("Default contact information initialized")
+            print(f"Initialized {len(contacts_to_add)} default contact(s)")
             
         except Exception as e:
             print(f"Error initializing default contacts: {e}")

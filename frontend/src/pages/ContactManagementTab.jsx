@@ -15,6 +15,14 @@ const ContactManagementTab = ({
   
   // Group contacts by category for better organization
   const contactsByCategory = {};
+  
+  // Pre-populate with all categories from contactTypes to ensure they show up
+  contactTypes.forEach(type => {
+    if (!contactsByCategory[type.category]) {
+      contactsByCategory[type.category] = [];
+    }
+  });
+
   contacts.forEach(contact => {
     const type = contactTypes.find(t => t.value === contact.contact_type);
     const category = type?.category || 'Other';
@@ -252,86 +260,94 @@ const ContactManagementTab = ({
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {categoryContacts.map((contact, index) => (
-                      <tr key={contact.id || index} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">
-                              {contact.label}
-                            </div>
-                            <div className="text-sm text-gray-500 capitalize">
-                              {(contact.contact_type || '').replace('_', ' ')}
-                            </div>
-                            {contact.notes && (
-                              <div className="text-xs text-gray-400 mt-1">
-                                📝 {contact.notes}
+                    {categoryContacts.length > 0 ? (
+                      categoryContacts.map((contact, index) => (
+                        <tr key={contact.id || index} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {contact.label}
                               </div>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-900 max-w-xs truncate">
-                            {contact.value}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex flex-col">
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              contact.is_active 
-                                ? 'bg-green-100 text-green-800' 
-                                : 'bg-red-100 text-red-800'
-                            }`}>
-                              {contact.is_active ? 'Active' : 'Inactive'}
-                            </span>
-                            <span className="text-xs text-gray-500 mt-1">
-                              Order: {contact.display_order}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <div className="space-y-1">
-                            <div>{new Date(contact.updated_at).toLocaleDateString()}</div>
-                            <div className="text-xs">by {contact.updated_by}</div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => {
-                                setEditingContact({
-                                  id: contact.id,
-                                  contact_type: contact.contact_type,
-                                  label: contact.label,
-                                  value: contact.value,
-                                  is_active: contact.is_active,
-                                  display_order: contact.display_order,
-                                  notes: contact.notes || ''
-                                });
-                              }}
-                              className="text-blue-600 hover:text-blue-900"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={async () => {
-                                if (window.confirm(`Delete contact "${contact.label}"?`)) {
-                                  try {
-                                    await adminAPI.deleteContact(contact.id);
-                                    toast({ title: "Contact deleted successfully" });
-                                    fetchData();
-                                  } catch (error) {
-                                    toast({ title: "Failed to delete contact", variant: "destructive" });
+                              <div className="text-sm text-gray-500 capitalize">
+                                {(contact.contact_type || '').replace('_', ' ')}
+                              </div>
+                              {contact.notes && (
+                                <div className="text-xs text-gray-400 mt-1">
+                                  📝 {contact.notes}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-sm text-gray-900 max-w-xs truncate">
+                              {contact.value}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex flex-col">
+                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                contact.is_active 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {contact.is_active ? 'Active' : 'Inactive'}
+                              </span>
+                              <span className="text-xs text-gray-500 mt-1">
+                                Order: {contact.display_order}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <div className="space-y-1">
+                              <div>{new Date(contact.updated_at).toLocaleDateString()}</div>
+                              <div className="text-xs">by {contact.updated_by}</div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => {
+                                  setEditingContact({
+                                    id: contact.id,
+                                    contact_type: contact.contact_type,
+                                    label: contact.label,
+                                    value: contact.value,
+                                    is_active: contact.is_active,
+                                    display_order: contact.display_order,
+                                    notes: contact.notes || ''
+                                  });
+                                }}
+                                className="text-blue-600 hover:text-blue-900"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={async () => {
+                                  if (window.confirm(`Delete contact "${contact.label}"?`)) {
+                                    try {
+                                      await adminAPI.deleteContact(contact.id);
+                                      toast({ title: "Contact deleted successfully" });
+                                      fetchData();
+                                    } catch (error) {
+                                      toast({ title: "Failed to delete contact", variant: "destructive" });
+                                    }
                                   }
-                                }
-                              }}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              Delete
-                            </button>
-                          </div>
+                                }}
+                                className="text-red-600 hover:text-red-900"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="5" className="px-6 py-8 text-center text-sm text-gray-500 italic">
+                          No contacts created in this category. Click "Add New Contact" or "Initialize Defaults".
                         </td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>
