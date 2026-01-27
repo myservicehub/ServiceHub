@@ -541,12 +541,12 @@ const NotificationsPage = () => {
                             )}
                           </div>
 
-                          <p className="text-gray-600 font-lato mb-3">
+                          <div className="text-gray-600 font-lato mb-3 whitespace-pre-wrap">
                             {expandedNotifications.has(notification.id) 
                               ? notification.content 
                               : formatNotificationContent(notification.content)
                             }
-                          </p>
+                          </div>
 
                           {notification.content && notification.content.length > 120 && (
                             <Button

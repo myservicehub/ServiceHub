@@ -947,14 +947,11 @@ serviceHub Team
         """Get template for specific type and channel"""
         return self.templates.get(notification_type, {}).get(channel)
     
-    def render_template(self, template: NotificationTemplate, data: Dict[str, Any]) -> tuple[str, str]:
+    def render_template(self, template: NotificationTemplate, data: Dict[str, Any]) -> tuple[str, str, str]:
         """Render template with provided data.
 
-        Note: HTML email templates may include CSS blocks inside <style> tags
-        that use curly braces (e.g., `.container { font-family: ... }`). Since
-        Python's str.format also uses curly braces for placeholders, we must
-        escape literal braces within <style> blocks to avoid KeyError during
-        formatting.
+        Returns:
+            tuple: (subject, content, plain_text_content)
         """
         import re
         try:
@@ -977,7 +974,22 @@ serviceHub Team
             content_template = re.sub(r"(<style[^>]*>)(.*?)(</style>)", _escape_style, content_template, flags=re.DOTALL|re.IGNORECASE)
 
             content = content_template.format_map(_SafeDict(data))
-            return subject, content
+            
+            # Generate plain text version by removing HTML tags
+            plain_text = content
+            if "<html>" in content.lower() or "<p>" in content.lower():
+                # Remove style blocks
+                plain_text = re.sub(r"<style[^>]*>.*?</style>", "", plain_text, flags=re.DOTALL|re.IGNORECASE)
+                # Replace <br>, <p>, <div> with newlines
+                plain_text = re.sub(r"<(br|p|div)[^>]*>", "\n", plain_text, flags=re.IGNORECASE)
+                # Remove all other tags
+                plain_text = re.sub(r"<[^>]+>", "", plain_text)
+                # Decode basic entities
+                plain_text = plain_text.replace("&nbsp;", " ").replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"")
+                # Clean up whitespace
+                plain_text = "\n".join(line.strip() for line in plain_text.splitlines() if line.strip())
+            
+            return subject, content, plain_text
         except KeyError as e:
             logger.error(f"❌ Template rendering failed - missing variable: {e}")
             raise ValueError(f"Missing template variable: {e}")
@@ -1142,14 +1154,14 @@ class NotificationService:
         if not template:
             raise ValueError(f"No email template found for {notification.type}")
         
-        subject, content = self.template_service.render_template(template, template_data)
+        subject, content, plain_text = self.template_service.render_template(template, template_data)
         notification.subject = subject
-        notification.content = content
+        notification.content = plain_text  # Store plain text in DB for dashboard/history
         
         success = await self.email_service.send_email(
             to=notification.recipient_email,
             subject=subject,
-            content=content,
+            content=content,  # Send full HTML via email
             metadata={
                 "notification_id": notification.id,
                 "type": notification.type.value,
@@ -1172,9 +1184,9 @@ class NotificationService:
         if not template:
             raise ValueError(f"No SMS template found for {notification.type}")
         
-        subject, content = self.template_service.render_template(template, template_data)
+        subject, content, plain_text = self.template_service.render_template(template, template_data)
         notification.subject = subject
-        notification.content = content
+        notification.content = content # SMS templates are already plain text
         
         success = await self.sms_service.send_sms(
             to=notification.recipient_phone,
