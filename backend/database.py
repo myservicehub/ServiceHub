@@ -195,6 +195,10 @@ class Database:
                     [("category", 1), ("created_at", -1)],
                     name="jobs_category_createdAt"
                 )
+                await self.database.jobs.create_index(
+                    [("title", 1), ("created_at", -1)],
+                    name="jobs_title_createdAt"
+                )
 
                 # Messages: indexes for conversation queries and read-status updates
                 await self.database.messages.create_index(
@@ -3475,17 +3479,13 @@ class Database:
             
             if tradesperson_categories:
                 # Case-insensitive partial matching for trade categories and job titles
-                # This ensures jobs like "Home Plumbing" match "Plumbing" skills
-                category_regex_patterns = []
-                for category in tradesperson_categories:
-                    # Escape category for safe regex matching
-                    safe_category = re.escape(category)
-                    pattern = {"$regex": safe_category, "$options": "i"}
-                    category_regex_patterns.append({"category": pattern})
-                    category_regex_patterns.append({"title": pattern})
-                
-                job_filter["$or"] = category_regex_patterns
-                print(f"Skills filter applied (partial match + titles): {tradesperson_categories}")
+                # Using a single combined regex for better performance
+                combined_pattern = "|".join([re.escape(cat) for cat in tradesperson_categories])
+                job_filter["$or"] = [
+                    {"category": {"$regex": combined_pattern, "$options": "i"}},
+                    {"title": {"$regex": combined_pattern, "$options": "i"}}
+                ]
+                print(f"Skills filter applied (optimized regex): {tradesperson_categories}")
             
             # 2. LOCATION FILTERING - Show jobs within tradesperson's travel distance
             if (tradesperson.get("latitude") is not None and 
@@ -3528,14 +3528,11 @@ class Database:
             # Build skills filter (case-insensitive partial match for category and title)
             skills_filter = {}
             if skill_categories:
-                category_regex_patterns = []
-                for category in skill_categories:
-                    # Escape category for safe regex matching
-                    safe_category = re.escape(category)
-                    pattern = {"$regex": safe_category, "$options": "i"}
-                    category_regex_patterns.append({"category": pattern})
-                    category_regex_patterns.append({"title": pattern})
-                skills_filter["$or"] = category_regex_patterns
+                combined_pattern = "|".join([re.escape(cat) for cat in skill_categories])
+                skills_filter["$or"] = [
+                    {"category": {"$regex": combined_pattern, "$options": "i"}},
+                    {"title": {"$regex": combined_pattern, "$options": "i"}}
+                ]
 
             # Base filter: active jobs only
             base_filter = {"status": "active"}
@@ -3553,7 +3550,7 @@ class Database:
                 .sort("created_at", -1)
                 .limit(fetch_limit)
             )
-            raw_jobs = await cursor.to_list(length=None)
+            raw_jobs = await cursor.to_list(length=fetch_limit)
 
             jobs_within_distance: List[Dict[str, Any]] = []
             jobs_without_coords: List[Dict[str, Any]] = []
@@ -3575,17 +3572,8 @@ class Database:
                         job["distance_km"] = round(dist, 2)
                         return ("within", job)
                 else:
-                    # Fallback coordinate resolution
-                    fallback = await self.resolve_coordinates_from_entity(job)
-                    if fallback:
-                        try:
-                            dist = self.calculate_distance(latitude, longitude, fallback["latitude"], fallback["longitude"])
-                            if dist <= float(max_distance_km):
-                                job["distance_km"] = round(dist, 2)
-                                return ("within", job)
-                        except (ValueError, TypeError):
-                            pass
-                    
+                    # Note: We removed resolve_coordinates_from_entity here to prevent timeouts
+                    # caused by Nominatim rate limiting when processing many jobs at once.
                     job["distance_km"] = None
                     return ("without", job)
                 return (None, None)
@@ -3654,7 +3642,7 @@ class Database:
                     .sort("created_at", -1)
                     .limit(fetch_limit)
                 )
-                raw_jobs = await cursor.to_list(length=None)
+                raw_jobs = await cursor.to_list(length=fetch_limit)
 
                 jobs_within_distance: List[Dict[str, Any]] = []
                 jobs_without_coords: List[Dict[str, Any]] = []
@@ -3676,16 +3664,7 @@ class Database:
                             job["distance_km"] = round(dist, 2)
                             return ("within", job)
                     else:
-                        fallback = await self.resolve_coordinates_from_entity(job)
-                        if fallback:
-                            try:
-                                dist = self.calculate_distance(user_latitude, user_longitude, fallback["latitude"], fallback["longitude"])
-                                if dist <= float(radius_km):
-                                    job["distance_km"] = round(dist, 2)
-                                    return ("within", job)
-                            except (ValueError, TypeError):
-                                pass
-                        
+                        # Note: Removed resolve_coordinates_from_entity to prevent timeouts
                         job["distance_km"] = None
                         return ("without", job)
                     return (None, None)
