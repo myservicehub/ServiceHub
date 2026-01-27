@@ -16,7 +16,6 @@ import AdminDataTable from '../components/admin/AdminDataTable';
 import BulkActionsBar from '../components/admin/BulkActionsBar';
 import ConfirmDeleteModal from '../components/admin/ConfirmDeleteModal';
 import InlineEditForm from '../components/admin/InlineEditForm';
-import JobEditModal from '../components/JobEditModal';
 import PaymentProofImage from '../components/common/PaymentProofImage';
 import AuthenticatedImage from '../components/common/AuthenticatedImage';
 import { Dialog, DialogContent } from '../components/ui/dialog';
@@ -881,14 +880,29 @@ const AdminDashboard = () => {
   // ==========================================
 
   const handleOpenJobEditor = async (job) => {
-    // Load full job details first, then open the unified JobEditModal
+    setShowEditJobModal(true);
+    setEditJobModal(job);
     setEditJobErrors({});
     setEditJobLoading(true);
-    setEditJobModal(null);
     try {
       const response = await adminAPI.getJobDetailsAdmin(job.id);
       const jobDetails = response.job;
-      // Provide the full job details to JobEditModal
+      setEditJobForm({
+        title: jobDetails.title || '',
+        description: jobDetails.description || '',
+        category: jobDetails.category || '',
+        state: jobDetails.state || '',
+        lga: jobDetails.lga || '',
+        town: jobDetails.town || '',
+        zip_code: jobDetails.zip_code || '',
+        home_address: jobDetails.home_address || '',
+        budget_min: jobDetails.budget_min || '',
+        budget_max: jobDetails.budget_max || '',
+        timeline: jobDetails.timeline || '',
+        access_fee_naira: jobDetails.access_fees?.naira || 1000,
+        access_fee_coins: jobDetails.access_fees?.coins || 10,
+        admin_notes: ''
+      });
       setEditJobModal(jobDetails);
     } catch (error) {
       toast({
@@ -5384,19 +5398,289 @@ const AdminDashboard = () => {
         </div>
       )}
 
-      {/* Unified Edit Job Modal (reusable component) */}
-      <JobEditModal
-        isOpen={!!editJobModal}
-        onClose={() => setEditJobModal(null)}
-        job={editJobModal}
-        onJobUpdated={(updatedJob) => {
-          toast({ title: 'Job Updated', description: 'Job updated successfully.' });
-          setEditJobModal(null);
-          // Refresh lists
-          handleJobApprovalsDataLoad();
-          fetchData();
-        }}
-      />
+      {/* Edit Job Modal */}
+      {editJobModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center p-6 border-b">
+              <h3 className="text-xl font-semibold">Edit Job</h3>
+              {editJobLoading && (
+                <div className="flex items-center text-sm text-gray-500">
+                  <span className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600 mr-2"></span>
+                  Loading details...
+                </div>
+              )}
+              <button
+                onClick={() => setEditJobModal(null)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            <form 
+              key={`edit-job-${editJobModal.id}-${editJobLoading}`}
+              onSubmit={async (e) => {
+              e.preventDefault();
+              const formData = new FormData(e.target);
+              const jobData = {
+                title: formData.get('title'),
+                description: formData.get('description'),
+                category: formData.get('category'),
+                state: formData.get('state'),
+                lga: formData.get('lga'),
+                town: formData.get('town'),
+                zip_code: formData.get('zip_code'),
+                home_address: formData.get('home_address'),
+                timeline: formData.get('timeline'),
+                budget_min: formData.get('budget_min') ? parseInt(formData.get('budget_min')) : null,
+                budget_max: formData.get('budget_max') ? parseInt(formData.get('budget_max')) : null,
+                access_fee_naira: formData.get('access_fee_naira') ? parseInt(formData.get('access_fee_naira')) : null,
+                access_fee_coins: formData.get('access_fee_coins') ? parseInt(formData.get('access_fee_coins')) : null,
+                admin_notes: formData.get('admin_notes')
+              };
+              
+              try {
+                // Use the new editJobAdmin API
+                await adminAPI.editJobAdmin(editJobModal.id, jobData);
+                toast({
+                  title: "Success",
+                  description: "Job updated successfully. Homeowner has been notified.",
+                });
+                setEditJobModal(null);
+                handleJobApprovalsDataLoad();
+                fetchData();
+              } catch (error) {
+                toast({
+                  title: "Error",
+                  description: error.response?.data?.detail || "Failed to update job",
+                  variant: "destructive",
+                });
+              }
+            }}>
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Title</label>
+                  <input
+                    name="title"
+                    type="text"
+                    defaultValue={editJobModal.title}
+                    className="w-full px-3 py-2 border rounded-md"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1">Description</label>
+                  <textarea
+                    name="description"
+                    rows={4}
+                    defaultValue={editJobModal.description}
+                    className="w-full px-3 py-2 border rounded-md"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Category</label>
+                    <input
+                      name="category"
+                      type="text"
+                      defaultValue={editJobModal.category}
+                      className="w-full px-3 py-2 border rounded-md"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Timeline</label>
+                    <input
+                      name="timeline"
+                      type="text"
+                      defaultValue={editJobModal.timeline}
+                      className="w-full px-3 py-2 border rounded-md"
+                    />
+                  </div>
+                </div>
+
+                {/* Enhanced Location Fields */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">State</label>
+                    <input
+                      name="state"
+                      type="text"
+                      defaultValue={editJobModal.state}
+                      className="w-full px-3 py-2 border rounded-md"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">LGA</label>
+                    <input
+                      name="lga"
+                      type="text"
+                      defaultValue={editJobModal.lga}
+                      className="w-full px-3 py-2 border rounded-md"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Town</label>
+                    <input
+                      name="town"
+                      type="text"
+                      defaultValue={editJobModal.town}
+                      className="w-full px-3 py-2 border rounded-md"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Zip Code</label>
+                    <input
+                      name="zip_code"
+                      type="text"
+                      defaultValue={editJobModal.zip_code}
+                      className="w-full px-3 py-2 border rounded-md"
+                      pattern="[0-9]{6}"
+                      placeholder="6-digit postal code"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Home Address</label>
+                    <input
+                      name="home_address"
+                      type="text"
+                      defaultValue={editJobModal.home_address}
+                      className="w-full px-3 py-2 border rounded-md"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Min Budget (₦)</label>
+                    <input
+                      name="budget_min"
+                      type="number"
+                      defaultValue={editJobModal.budget_min}
+                      className="w-full px-3 py-2 border rounded-md"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Max Budget (₦)</label>
+                    <input
+                      name="budget_max"
+                      type="number"
+                      defaultValue={editJobModal.budget_max}
+                      className="w-full px-3 py-2 border rounded-md"
+                    />
+                  </div>
+                </div>
+
+                {/* Enhanced Access Fee Controls */}
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <h4 className="font-semibold text-blue-900 mb-3">Access Fee Settings</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1 text-blue-800">Access Fee (₦)</label>
+                      <input
+                        name="access_fee_naira"
+                        type="number"
+                        min="500"
+                        max="10000"
+                        value={editJobForm.access_fee_naira ?? ''}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value === '') {
+                            setEditJobForm((prev) => ({
+                              ...prev,
+                              access_fee_naira: '',
+                              access_fee_coins: ''
+                            }));
+                            return;
+                          }
+                          const numericValue = parseInt(value, 10);
+                          const coins = Number.isNaN(numericValue) ? '' : Math.floor(numericValue / 100);
+                          setEditJobForm((prev) => ({
+                            ...prev,
+                            access_fee_naira: value,
+                            access_fee_coins: coins === '' ? '' : coins.toString()
+                          }));
+                        }}
+                        className="w-full px-3 py-2 border border-blue-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                      />
+                      <p className="text-xs text-blue-600 mt-1">Range: ₦500 - ₦10,000</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1 text-blue-800">Access Fee (Coins)</label>
+                      <input
+                        name="access_fee_coins"
+                        type="number"
+                        min="5"
+                        max="100"
+                        value={editJobForm.access_fee_coins ?? ''}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setEditJobForm((prev) => ({
+                            ...prev,
+                            access_fee_coins: value
+                          }));
+                        }}
+                        className="w-full px-3 py-2 border border-blue-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                      />
+                      <p className="text-xs text-blue-600 mt-1">Range: 5 - 100 coins</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Admin Notes */}
+                <div>
+                  <label className="block text-sm font-medium mb-1">Admin Notes (Optional)</label>
+                  <textarea
+                    name="admin_notes"
+                    rows={3}
+                    className="w-full px-3 py-2 border rounded-md"
+                    placeholder="Optional notes about this edit that will be sent to the homeowner..."
+                  />
+                </div>
+
+                {/* Status (if needed) */}
+                <div>
+                  <label className="block text-sm font-medium mb-1">Status</label>
+                  <select
+                    name="status"
+                    defaultValue={editJobModal.status}
+                    className="w-full px-3 py-2 border rounded-md"
+                  >
+                    <option value="pending_approval">Pending Approval</option>
+                    <option value="active">Active</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                    <option value="expired">Expired</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-3 p-6 border-t">
+                <button
+                  type="button"
+                  onClick={() => setShowEditJobModal(false)}
+                  className="px-4 py-2 text-gray-600 border rounded hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  Update Job
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Job Review Modal */}
       {selectedJob && (
@@ -5618,8 +5902,6 @@ const AdminDashboard = () => {
                 </button>
                 <button
                   onClick={() => {
-                    // Close the review modal first to avoid stacked modals, then open the editor
-                    setSelectedJob(null);
                     handleOpenJobEditor(selectedJob);
                   }}
                   disabled={editJobLoading}
