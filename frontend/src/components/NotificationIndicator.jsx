@@ -98,9 +98,29 @@ const NotificationIndicator = () => {
     navigate(`/notifications?focus=${encodeURIComponent(notification.id)}`);
   };
 
+  const stripHtml = (html) => {
+    if (!html) return '';
+    if (typeof html !== 'string') return html;
+    if (!html.includes('<') || !html.includes('>')) return html;
+    
+    return html
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .trim();
+  };
+
   const formatNotificationContent = (content) => {
-    if (content.length <= 80) return content;
-    return content.substring(0, 80) + '...';
+    if (!content) return '';
+    const cleanContent = stripHtml(content);
+    if (cleanContent.length <= 80) return cleanContent;
+    return cleanContent.substring(0, 80) + '...';
   };
 
   if (!isAuthenticated()) {

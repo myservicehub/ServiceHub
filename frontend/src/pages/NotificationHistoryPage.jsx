@@ -109,9 +109,29 @@ const NotificationHistoryPage = () => {
     return colors[channel] || 'bg-gray-100 text-gray-800';
   };
 
+  const stripHtml = (html) => {
+    if (!html) return '';
+    if (typeof html !== 'string') return html;
+    if (!html.includes('<') || !html.includes('>')) return html;
+    
+    return html
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .trim();
+  };
+
   const formatNotificationContent = (content) => {
-    if (content.length <= 150) return content;
-    return content.substring(0, 150) + '...';
+    if (!content) return '';
+    const cleanContent = stripHtml(content);
+    if (cleanContent.length <= 150) return cleanContent;
+    return cleanContent.substring(0, 150) + '...';
   };
 
   const totalPages = Math.ceil(pagination.total / limit);
@@ -283,9 +303,9 @@ const NotificationHistoryPage = () => {
                               </div>
                             </div>
                             
-                            <p className="text-gray-600 font-lato mb-3">
-                              {isExpanded ? notification.content : formatNotificationContent(notification.content)}
-                            </p>
+                            <div className="text-gray-600 font-lato mb-3 whitespace-pre-wrap">
+                              {isExpanded ? stripHtml(notification.content) : formatNotificationContent(notification.content)}
+                            </div>
                             
                             <div className="flex items-center justify-between">
                               <div className="flex items-center space-x-4 text-sm text-gray-500 font-lato">

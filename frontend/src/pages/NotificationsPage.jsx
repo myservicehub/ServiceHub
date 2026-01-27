@@ -265,10 +265,29 @@ const NotificationsPage = () => {
     return colors[channel] || 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
+  const stripHtml = (html) => {
+    if (!html) return '';
+    if (typeof html !== 'string') return html;
+    if (!html.includes('<') || !html.includes('>')) return html;
+    
+    return html
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .trim();
+  };
+
   const formatNotificationContent = (content) => {
     if (!content) return '';
-    if (content.length <= 120) return content;
-    return content.substring(0, 120) + '...';
+    const cleanContent = stripHtml(content);
+    if (cleanContent.length <= 120) return cleanContent;
+    return cleanContent.substring(0, 120) + '...';
   };
 
   const getFilteredNotifications = () => {
@@ -543,7 +562,7 @@ const NotificationsPage = () => {
 
                           <div className="text-gray-600 font-lato mb-3 whitespace-pre-wrap">
                             {expandedNotifications.has(notification.id) 
-                              ? notification.content 
+                              ? stripHtml(notification.content) 
                               : formatNotificationContent(notification.content)
                             }
                           </div>
