@@ -5541,7 +5541,25 @@ const AdminDashboard = () => {
                         type="number"
                         min="500"
                         max="10000"
-                        defaultValue={editJobModal.access_fees?.naira || editJobModal.access_fee_naira || 1000}
+                        value={editJobForm.access_fee_naira ?? ''}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value === '') {
+                            setEditJobForm((prev) => ({
+                              ...prev,
+                              access_fee_naira: '',
+                              access_fee_coins: ''
+                            }));
+                            return;
+                          }
+                          const numericValue = parseInt(value, 10);
+                          const coins = Number.isNaN(numericValue) ? '' : Math.floor(numericValue / 100);
+                          setEditJobForm((prev) => ({
+                            ...prev,
+                            access_fee_naira: value,
+                            access_fee_coins: coins === '' ? '' : coins.toString()
+                          }));
+                        }}
                         className="w-full px-3 py-2 border border-blue-300 rounded-md focus:ring-2 focus:ring-blue-500"
                       />
                       <p className="text-xs text-blue-600 mt-1">Range: ₦500 - ₦10,000</p>
@@ -5553,7 +5571,14 @@ const AdminDashboard = () => {
                         type="number"
                         min="5"
                         max="100"
-                        defaultValue={editJobModal.access_fees?.coins || editJobModal.access_fee_coins || 10}
+                        value={editJobForm.access_fee_coins ?? ''}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setEditJobForm((prev) => ({
+                            ...prev,
+                            access_fee_coins: value
+                          }));
+                        }}
                         className="w-full px-3 py-2 border border-blue-300 rounded-md focus:ring-2 focus:ring-blue-500"
                       />
                       <p className="text-xs text-blue-600 mt-1">Range: 5 - 100 coins</p>
