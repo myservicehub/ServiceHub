@@ -2363,11 +2363,22 @@ async def view_tradespeople_verification_file_base64(filename: str, admin: dict 
                 media_type = "image/png"
             elif ext == ".pdf":
                 media_type = "application/pdf"
+            
             with open(fp, "rb") as f:
                 data = f.read()
-            b64 = base64.b64encode(data).decode("utf-8")
-            return {"filename": filename, "content_type": media_type, "image_base64": b64, "data_url": f"data:{media_type};base64,{b64}"}
-    raise HTTPException(status_code=404, detail="Tradespeople verification file not found")
+            
+            import base64
+            b64_data = base64.b64encode(data).decode("utf-8")
+            data_url = f"data:{media_type};base64,{b64_data}"
+            return {
+                "filename": filename,
+                "content_type": media_type,
+                "image_base64": b64_data,
+                "data_url": data_url
+            }
+
+    logger.warning(f"Tradespeople verification file not found after checking all candidates: {filename}")
+    raise HTTPException(status_code=404, detail=f"Tradespeople verification file {filename} not found")
 
 # ==========================================
 # TRADESPEOPLE REFERENCES VERIFICATION (ADMIN)

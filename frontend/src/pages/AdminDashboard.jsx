@@ -373,17 +373,30 @@ const AdminDashboard = () => {
       if (Array.isArray(v.work_photos)) v.work_photos.forEach((f) => f && filenames.add(f));
       if (v.documents) Object.values(v.documents).forEach((f) => f && filenames.add(f));
     });
-    Array.from(filenames).forEach(async (f) => {
-      if (!verificationFileBase64[f]) {
-        try {
-          const dataUrl = await getTradespeopleVerificationFileBase64(f);
-          setVerificationFileBase64((prev) => ({ ...prev, [f]: dataUrl }));
-        } catch (err) {
-          console.error('Failed to fetch verification file', f, err);
-        }
+    
+    const fetchFiles = async () => {
+      const pendingFilenames = Array.from(filenames).filter(f => !verificationFileBase64[f]);
+      if (pendingFilenames.length === 0) return;
+
+      // Limit concurrency to avoid overloading the server
+      const chunk = (arr, size) => Array.from({ length: Math.ceil(arr.length / size) }, (v, i) => arr.slice(i * size, i * size + size));
+      const chunks = chunk(pendingFilenames, 5);
+
+      for (const batch of chunks) {
+        await Promise.all(batch.map(async (f) => {
+          try {
+            const dataUrl = await getTradespeopleVerificationFileBase64(f);
+            setVerificationFileBase64((prev) => ({ ...prev, [f]: dataUrl }));
+          } catch (err) {
+            console.error('Failed to fetch verification file', f, err);
+            setVerificationFileBase64((prev) => ({ ...prev, [f]: 'FAILED' })); // Mark as failed to avoid re-trying
+          }
+        }));
       }
-    });
-  }, [isLoggedIn, activeTab, tradespeopleVerifications, verificationFileBase64]);
+    };
+
+    fetchFiles();
+  }, [isLoggedIn, activeTab, tradespeopleVerifications]); // Removed verificationFileBase64 to avoid loops
 
   const openVerificationFileInNewTab = async (filename) => {
     try {

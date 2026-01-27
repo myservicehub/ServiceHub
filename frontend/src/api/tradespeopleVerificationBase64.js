@@ -7,7 +7,9 @@ export async function getTradespeopleVerificationFileBase64(filename) {
 
     // First try the base64 endpoint (prioritizes DB-stored base64)
     try {
-      const b64Res = await apiClient.get(`/admin/tradespeople-verifications/document-base64/${encodeURIComponent(filename)}`);
+      const b64Res = await apiClient.get(`/admin/tradespeople-verifications/document-base64/${encodeURIComponent(filename)}`, {
+        timeout: 15000 // 15s timeout for individual file fetch
+      });
       const data = b64Res?.data || {};
       if (data?.data_url) {
         return data.data_url;
@@ -21,7 +23,10 @@ export async function getTradespeopleVerificationFileBase64(filename) {
     }
 
     // Fallback: fetch the file as blob and convert client-side
-    const blobRes = await apiClient.get(`/admin/tradespeople-verifications/document/${encodeURIComponent(filename)}`, { responseType: 'blob' });
+    const blobRes = await apiClient.get(`/admin/tradespeople-verifications/document/${encodeURIComponent(filename)}`, { 
+      responseType: 'blob',
+      timeout: 20000 // 20s timeout for fallback blob fetch
+    });
     const blob = blobRes?.data;
     const contentType = blob?.type || 'application/octet-stream';
     const arrayBuffer = await blob.arrayBuffer();

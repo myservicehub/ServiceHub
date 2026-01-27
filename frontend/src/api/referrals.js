@@ -51,7 +51,9 @@ export const referralsAPI = {
 export const adminReferralsAPI = {
   // Get pending verifications
   async getPendingVerifications(skip = 0, limit = 20) {
-    const response = await apiClient.get(`/admin/verifications/pending?skip=${skip}&limit=${limit}`);
+    const response = await apiClient.get(`/admin/verifications/pending?skip=${skip}&limit=${limit}`, {
+      timeout: 30000 // 30s timeout for admin list fetching
+    });
     return response.data;
   },
 
@@ -125,7 +127,9 @@ export const verificationAPI = {
 // Admin API for tradespeople references verification
 export const adminVerificationAPI = {
   async getPendingTradespeopleVerifications(skip = 0, limit = 20) {
-    const response = await apiClient.get(`/admin/tradespeople-verifications/pending?skip=${skip}&limit=${limit}`);
+    const response = await apiClient.get(`/admin/tradespeople-verifications/pending?skip=${skip}&limit=${limit}`, {
+      timeout: 45000 // 45s timeout for tradespeople verifications (includes aggregation)
+    });
     return response.data;
   },
   async approveTradespeopleVerification(verificationId, adminNotes = '') {

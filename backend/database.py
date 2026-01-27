@@ -256,6 +256,33 @@ class Database:
                     await self.database.reviews.create_index([("artisan_id", 1)], name="reviews_artisan_id")
                     # Notifications: index by user_id and status
                     await self.database.notifications.create_index([("user_id", 1), ("status", 1)], name="notifications_user_status")
+                    
+                    # Tradespeople Verifications: index for pending list and status queries
+                    try:
+                        await self.database.tradespeople_verifications.create_index(
+                            [("status", 1), ("submitted_at", -1)],
+                            name="verifications_status_submitted"
+                        )
+                        await self.database.tradespeople_verifications.create_index(
+                            [("user_id", 1), ("status", 1)],
+                            name="verifications_user_status"
+                        )
+                        # Add index for nested filename searches
+                        await self.database.tradespeople_verifications.create_index(
+                            "documents_base64.filename",
+                            name="idx_docs_filename"
+                        )
+                        await self.database.tradespeople_verifications.create_index(
+                            "work_photos_base64.filename",
+                            name="idx_work_photos_filename"
+                        )
+                        await self.database.tradespeople_verifications.create_index(
+                            "partner_id_documents_base64.filename",
+                            name="idx_partner_ids_filename"
+                        )
+                    except Exception as idx_err:
+                        logger.warning(f"Failed to ensure tradespeople_verifications indexes: {idx_err}")
+
                     logger.info("Performance optimization indexes ensured successfully")
                 except Exception as idx_err:
                     logger.warning(f"Failed to ensure performance indexes: {idx_err}")
