@@ -880,6 +880,11 @@ const AdminDashboard = () => {
   // ==========================================
 
   const handleOpenJobEditor = async (job) => {
+    // If we're opening from the review modal, close it first to avoid double modals
+    if (selectedJob) {
+      setSelectedJob(null);
+    }
+    
     setShowEditJobModal(true);
     setEditJobModal(job);
     setEditJobErrors({});
@@ -5907,10 +5912,12 @@ const AdminDashboard = () => {
                   disabled={editJobLoading}
                   className="px-4 py-2 text-purple-600 bg-purple-100 rounded-lg hover:bg-purple-200 disabled:opacity-50 flex items-center"
                 >
-                  {editJobLoading && (
-                    <span className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600 mr-2"></span>
-                  )}
-                  Edit Job
+                  {editJobLoading ? (
+                    <>
+                      <span className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600 mr-2"></span>
+                      Loading...
+                    </>
+                  ) : 'Edit Job'}
                 </button>
                 <button
                   onClick={() => {
