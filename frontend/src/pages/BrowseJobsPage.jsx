@@ -133,10 +133,26 @@ const BrowseJobsPage = () => {
   }, [isAuthenticated, isTradesperson]); // Add authentication dependencies
 
   useEffect(() => {
+    // Reload user location (in case it changed) and refresh jobs whenever
+    // filters, user skills or saved coordinates update. This ensures that
+    // when a tradesperson adds a new skill or updates their profile location
+    // the Browse page reflects the change without a full page refresh.
     if (isAuthenticated() && isTradesperson()) {
+      // Re-evaluate saved profile coordinates into local userLocation
+      loadUserLocationData();
       loadJobsBasedOnFilters();
     }
-  }, [filters, userLocation, isAuthenticated, isTradesperson]); // Add authentication dependencies
+  }, [
+    filters,
+    userLocation,
+    isAuthenticated,
+    isTradesperson,
+    // Trigger when the authenticated user's skills or saved coords change
+    // so new skills immediately affect the job list.
+    user?.trade_categories,
+    user?.latitude,
+    user?.longitude,
+  ]);
 
   // Show welcome message for new registrations
   useEffect(() => {
