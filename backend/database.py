@@ -418,7 +418,6 @@ class Database:
             try:
                 # Some code paths store short numeric user_id or public_id in notifications
                 # Use parallel lookup for fallbacks if primary fails
-                import asyncio
                 tasks = [
                     self.database.users.find_one({"user_id": user_id}),
                     self.database.users.find_one({"public_id": user_id})
@@ -1108,7 +1107,6 @@ class Database:
     @time_it
     async def get_all_jobs_admin(self, skip: int = 0, limit: int = 50, status: str = None) -> List[dict]:
         """Get all jobs for admin management with comprehensive details (optimized)"""
-        import asyncio
         query = {}
         if status:
             query["status"] = status
@@ -1281,7 +1279,6 @@ class Database:
     @time_it
     async def get_job_by_id_admin(self, job_id: str) -> Optional[dict]:
         """Get job details by ID for admin editing (optimized)"""
-        import asyncio
         job = await self.database.jobs.find_one({"id": job_id})
         if not job:
             return None
@@ -3068,7 +3065,6 @@ class Database:
     @time_it
     async def get_admin_dashboard_stats(self) -> dict:
         """Get comprehensive admin dashboard statistics using optimized aggregations"""
-        import asyncio
         
         # 1. Wallet stats: Pending requests count and total amounts
         wallet_pipeline = [
@@ -3254,7 +3250,6 @@ class Database:
     @time_it
     async def get_jobs_with_access_fees(self, skip: int = 0, limit: int = 20) -> List[dict]:
         """Get all jobs with access fees for admin management (optimized)"""
-        import asyncio
         cursor = self.database.jobs.find({}).sort("created_at", -1).skip(skip).limit(limit)
         jobs = await cursor.to_list(length=limit)
         
@@ -3486,7 +3481,6 @@ class Database:
 
     async def get_jobs_near_location(self, latitude: float, longitude: float, max_distance_km: int = 25, skip: int = 0, limit: int = 50) -> List[dict]:
         """Get jobs within specified distance from a location"""
-        import asyncio
         # Get all active jobs with location data
         cursor = self.database.jobs.find({
             "status": "active",
@@ -4666,7 +4660,6 @@ class Database:
     @time_it
     async def get_all_users_for_admin(self, skip: int = 0, limit: int = 50, role: str = None, status: str = None, search: str = None):
         """Get all users with filtering for admin dashboard (optimized)"""
-        import asyncio
         # Build query filter
         query = {}
         
@@ -4822,7 +4815,6 @@ class Database:
     @time_it
     async def get_user_activity_stats(self, user_id: str):
         """Get comprehensive activity statistics for a user (optimized)"""
-        import asyncio
         user = await self.get_user_by_id(user_id)
         if not user:
             return {}
@@ -4921,7 +4913,6 @@ class Database:
     @time_it
     async def get_user_details_admin(self, user_id: str):
         """Get comprehensive user details for admin management (optimized)"""
-        import asyncio
         try:
             # Get basic user information first
             user = await self.get_user_by_id(user_id)
@@ -5091,7 +5082,6 @@ class Database:
     @time_it
     async def delete_user_completely(self, user_id: str):
         """Permanently delete user and all associated data (optimized)"""
-        import asyncio
         try:
             # Get user details first for logging
             user = await self.get_user_by_id(user_id)
@@ -7677,7 +7667,6 @@ We may update this Cookie Policy to reflect changes in technology or regulations
     @time_it
     async def get_admin_stats(self) -> dict:
         """Get comprehensive admin statistics using parallel tasks"""
-        import asyncio
         
         # 1. Pipeline for role distribution
         role_pipeline = [
