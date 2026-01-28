@@ -16,9 +16,11 @@ const getBackendUrl = () => {
   if (!url && isLocalhost) {
     url = '';
   }
-  if (!url && isBrowser && hostname.endsWith('vercel.app')) {
-    url = 'https://trademe-platform.preview.emergentagent.com';
-  }
+  // If no BACKEND_URL is configured, prefer a relative API base ("/api").
+  // Previously we mapped vercel.app hosts to an external preview backend which
+  // caused production deployments to call the wrong origin and intermittently
+  // time out. Leave `url` empty so API calls use the same origin by default
+  // unless a build/runtime override is explicitly provided.
   return url;
 };
 
