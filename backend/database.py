@@ -2397,12 +2397,23 @@ class Database:
     @property
     def interests_collection(self):
         """Access to interests collection"""
+        if self.database is None:
+            raise RuntimeError("Database unavailable: interests collection not accessible")
         return self.database.interests
 
     @property
     def hiring_status_collection(self):
         """Access to hiring_status collection"""
+        if self.database is None:
+            raise RuntimeError("Database unavailable: hiring_status collection not accessible")
         return self.database.hiring_status
+
+    @property
+    def reviews_collection(self):
+        """Access to reviews collection"""
+        if self.database is None:
+            raise RuntimeError("Database unavailable: reviews collection not accessible")
+        return self.database.reviews
 
     # Review Management Methods (Trust & Quality System)
     async def create_review(self, review: Review) -> Review:
@@ -2772,10 +2783,6 @@ class Database:
         return reviews
 
     @property
-    def reviews_collection(self):
-        """Access to reviews collection"""
-        return self.database.reviews
-
     # Notification Management Methods
     async def create_notification(self, notification: Notification) -> Notification:
         """Create a new notification"""
@@ -2953,7 +2960,23 @@ class Database:
     @property
     def notifications_collection(self):
         """Access to notifications collection"""
+        if self.database is None:
+            raise RuntimeError("Database unavailable: notifications collection not accessible")
         return self.database.notifications
+
+    @property
+    def jobs_collection(self):
+        """Access to jobs collection"""
+        if self.database is None:
+            raise RuntimeError("Database unavailable: jobs collection not accessible")
+        return self.database.jobs
+
+    @property
+    def quotes_collection(self):
+        """Access to quotes collection"""
+        if self.database is None:
+            raise RuntimeError("Database unavailable: quotes collection not accessible")
+        return self.database.quotes
 
     @property
     def notification_preferences_collection(self):
@@ -3540,13 +3563,14 @@ class Database:
     @time_it
     async def get_jobs_for_tradesperson(self, tradesperson_id: str, skip: int = 0, limit: int = 50) -> List[dict]:
         """Get jobs filtered by tradesperson's skills and location preferences"""
-        import asyncio
         try:
             # Get tradesperson details
             tradesperson = await self.get_user_by_id(tradesperson_id)
             if not tradesperson:
-                # Fallback to all jobs if tradesperson not found
+                logger.warning(f"Tradesperson {tradesperson_id} not found, falling back to all available jobs")
                 return await self.get_available_jobs(skip=skip, limit=limit)
+            
+            logger.info(f"Fetching jobs for tradesperson: {tradesperson.get('first_name')} {tradesperson.get('last_name')} ({tradesperson_id})")
             
             # Build the job filter based on tradesperson profile
             # More lenient expiration check: allow jobs where expires_at is in the future OR missing
@@ -3560,7 +3584,7 @@ class Database:
             }
             
             # 1. SKILLS FILTERING - Only show jobs matching tradesperson's trade categories
-            tradesperson_categories = tradesperson.get("trade_categories")
+            tradesperson_categories = tradesperson.get("trade_categories") or []
             if not isinstance(tradesperson_categories, list):
                 tradesperson_categories = []
             
@@ -3568,6 +3592,8 @@ class Database:
             profession = tradesperson.get("profession")
             if profession and profession not in tradesperson_categories:
                 tradesperson_categories = list(tradesperson_categories) + [profession]
+            
+            logger.info(f"Tradesperson categories: {tradesperson_categories}")
             
             if tradesperson_categories:
                 # Ensure all categories are strings for re.escape
@@ -3593,38 +3619,43 @@ class Database:
                         skills_filter
                     ]
                 }
-                print(f"Skills filter applied (optimized): {tradesperson_categories}")
+                logger.debug(f"Applied skills filter: {skills_filter}")
             
             # 2. LOCATION FILTERING - Show jobs within tradesperson's travel distance
-            if (tradesperson.get("latitude") is not None and 
-                tradesperson.get("longitude") is not None):
-                
+            lat = tradesperson.get("latitude")
+            lng = tradesperson.get("longitude")
+            
+            if lat is not None and lng is not None:
                 max_distance = tradesperson.get("travel_distance_km", 25)  # Default 25km
-                print(f"Location filter applied: {max_distance}km radius")
+                logger.info(f"Applying location filter: {max_distance}km radius from ({lat}, {lng})")
                 
                 # Use location-based filtering with skills filtering
-                return await self.get_jobs_near_location_with_skills(
-                    latitude=tradesperson["latitude"],
-                    longitude=tradesperson["longitude"],
-                    max_distance_km=max_distance,
+                jobs = await self.get_jobs_near_location_with_skills(
+                    latitude=float(lat),
+                    longitude=float(lng),
+                    max_distance_km=float(max_distance),
                     skill_categories=tradesperson_categories,
                     skip=skip,
                     limit=limit
                 )
+                logger.info(f"Found {len(jobs)} jobs within {max_distance}km for tradesperson {tradesperson_id}")
+                return jobs
             else:
                 # No location data, use skills-only filtering
-                print("Using skills-only filtering (no location data)")
+                logger.info(f"No location data for tradesperson {tradesperson_id}, using skills-only filtering")
                 cursor = self.database.jobs.find(job_filter).sort("created_at", -1).skip(skip).limit(limit)
-                jobs = await cursor.to_list(length=None)
+                jobs_data = await cursor.to_list(length=None)
+                
+                logger.info(f"Found {len(jobs_data)} jobs matching skills for tradesperson {tradesperson_id}")
                 
                 # Process and enrich jobs data in parallel
-                tasks = [self._process_job_data(job) for job in jobs]
+                tasks = [self._process_job_data(job) for job in jobs_data]
                 processed_jobs = await asyncio.gather(*tasks)
                 
                 return processed_jobs
                 
         except Exception as e:
-            print(f"Error in get_jobs_for_tradesperson: {str(e)}")
+            logger.error(f"Error in get_jobs_for_tradesperson for {tradesperson_id}: {str(e)}", exc_info=True)
             # Fallback to general available jobs
             return await self.get_available_jobs(skip=skip, limit=limit)
 
@@ -3633,8 +3664,9 @@ class Database:
                                                max_distance_km: float, skill_categories: List[str],
                                                skip: int = 0, limit: int = 50) -> List[dict]:
         """Get jobs near location matching skills, including jobs without coordinates (optimized)."""
-        import asyncio
         try:
+            logger.info(f"Searching jobs near ({latitude}, {longitude}) within {max_distance_km}km with skills {skill_categories}")
+            
             # Build skills filter (optimized for performance)
             skills_filter = {}
             if skill_categories:
@@ -3662,6 +3694,8 @@ class Database:
                 combined_filter = {"$and": [base_filter, skills_filter]}
             else:
                 combined_filter = base_filter
+
+            logger.debug(f"Combined filter for location search: {combined_filter}")
 
             # Use cursor for efficiency: process jobs until we have enough
             cursor = (
@@ -3708,6 +3742,8 @@ class Database:
                 if scanned_count >= 1000:
                     break
 
+            logger.info(f"Scanned {scanned_count} jobs. Found {len(jobs_within_distance)} within distance and {len(jobs_without_coords)} without coordinates.")
+
             # Sort: closest first, then most recent for no-coordinate jobs
             jobs_within_distance.sort(key=lambda x: x.get("distance_km", float("inf")))
             
@@ -3715,7 +3751,7 @@ class Database:
             return combined[skip : skip + limit]
 
         except Exception as e:
-            logger.error(f"Error in get_jobs_near_location_with_skills: {e}")
+            logger.error(f"Error in get_jobs_near_location_with_skills: {e}", exc_info=True)
             return []
 
     @time_it
