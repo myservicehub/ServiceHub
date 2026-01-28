@@ -237,6 +237,9 @@ class Database:
                 except Exception as idx_err:
                     logger.warning(f"Failed to ensure newsletter_subscribers index: {idx_err}")
 
+            except Exception as e:
+                logger.error(f"Failed to ensure primary database indexes: {e}")
+
             # Performance Optimization Indexes
             try:
                 # Text indexes for jobs (essential for $regex queries)
@@ -323,9 +326,7 @@ class Database:
             except Exception as idx_err:
                 logger.warning(f"Failed to ensure performance indexes: {idx_err}")
 
-                logger.info("Database indexes ensured successfully")
-            except Exception as e:
-                logger.error(f"Failed to ensure database indexes: {e}")
+            logger.info("Database indexes ensured successfully")
         except Exception as e:
             self.connected = False
             logger.error(f"MongoDB connection failed: {e}")
@@ -1074,7 +1075,24 @@ class Database:
             # For public job listings, only show active and non-expired jobs
             if 'status' not in query:
                 query['status'] = 'active'
-            query['expires_at'] = {'$gt': datetime.utcnow()}
+            
+            # More lenient expiration check: allow jobs where expires_at is in the future OR missing
+            expiration_filter = {
+                "$or": [
+                    {"expires_at": {"$gt": datetime.utcnow()}},
+                    {"expires_at": {"$exists": False}},
+                    {"expires_at": None}
+                ]
+            }
+            
+            if "$and" in query:
+                query["$and"].append(expiration_filter)
+            elif "$or" in query:
+                # If there's already an $or, we must wrap both in an $and
+                original_or = query.pop("$or")
+                query["$and"] = [{"$or": original_or}, expiration_filter]
+            else:
+                query.update(expiration_filter)
         
         cursor = self.database.jobs.find(query).sort("created_at", -1).skip(skip).limit(limit)
         jobs = await cursor.to_list(length=limit)
@@ -1474,7 +1492,24 @@ class Database:
             # For public job listings, only show active and non-expired jobs
             if 'status' not in query:
                 query['status'] = 'active'
-            query['expires_at'] = {'$gt': datetime.utcnow()}
+            
+            # More lenient expiration check: allow jobs where expires_at is in the future OR missing
+            expiration_filter = {
+                "$or": [
+                    {"expires_at": {"$gt": datetime.utcnow()}},
+                    {"expires_at": {"$exists": False}},
+                    {"expires_at": None}
+                ]
+            }
+            
+            if "$and" in query:
+                query["$and"].append(expiration_filter)
+            elif "$or" in query:
+                # If there's already an $or, we must wrap both in an $and
+                original_or = query.pop("$or")
+                query["$and"] = [{"$or": original_or}, expiration_filter]
+            else:
+                query.update(expiration_filter)
             
         return await self.database.jobs.count_documents(query)
 
@@ -1713,10 +1748,14 @@ class Database:
 
     async def get_jobs_for_quoting(self, tradesperson_id: str, trade_categories: List[str], skip: int = 0, limit: int = 10) -> List[dict]:
         """Get jobs available for a tradesperson to quote on (optimized)"""
-        # Build query for jobs in tradesperson's categories
+        # Build query for jobs in tradesperson's categories with lenient expiration check
         match_query = {
             "status": "active",
-            "expires_at": {"$gt": datetime.utcnow()}
+            "$or": [
+                {"expires_at": {"$gt": datetime.utcnow()}},
+                {"expires_at": {"$exists": False}},
+                {"expires_at": None}
+            ]
         }
         
         if trade_categories:
@@ -1778,7 +1817,11 @@ class Database:
         """Count available jobs for a tradesperson (optimized)"""
         match_query = {
             "status": "active",
-            "expires_at": {"$gt": datetime.utcnow()}
+            "$or": [
+                {"expires_at": {"$gt": datetime.utcnow()}},
+                {"expires_at": {"$exists": False}},
+                {"expires_at": None}
+            ]
         }
         
         if trade_categories:
@@ -3504,13 +3547,18 @@ class Database:
                 return await self.get_available_jobs(skip=skip, limit=limit)
             
             # Build the job filter based on tradesperson profile
+            # More lenient expiration check: allow jobs where expires_at is in the future OR missing
             job_filter = {
                 "status": "active",
-                "expires_at": {"$gt": datetime.utcnow()}
+                "$or": [
+                    {"expires_at": {"$gt": datetime.utcnow()}},
+                    {"expires_at": {"$exists": False}},
+                    {"expires_at": None}
+                ]
             }
             
             # 1. SKILLS FILTERING - Only show jobs matching tradesperson's trade categories
-            tradesperson_categories = tradesperson.get("trade_categories", [])
+            tradesperson_categories = tradesperson.get("trade_categories") or []
             # Also include profession in skills matching if it exists
             profession = tradesperson.get("profession")
             if profession and profession not in tradesperson_categories:
@@ -3519,10 +3567,24 @@ class Database:
             if tradesperson_categories:
                 # Use $in for category matching (faster than regex) and combined regex for title
                 combined_pattern = "|".join([re.escape(cat) for cat in tradesperson_categories])
-                job_filter["$or"] = [
-                    {"category": {"$in": tradesperson_categories}},
-                    {"title": {"$regex": combined_pattern, "$options": "i"}}
-                ]
+                
+                # Combine the existing filter with skills filter using $and to avoid overwriting $or
+                skills_filter = {
+                    "$or": [
+                        {"category": {"$in": tradesperson_categories}},
+                        {"title": {"$regex": combined_pattern, "$options": "i"}}
+                    ]
+                }
+                
+                # Use $and to combine the expiration $or with the skills $or
+                original_job_filter = job_filter.copy()
+                job_filter = {
+                    "status": "active",
+                    "$and": [
+                        {"$or": original_job_filter["$or"]},
+                        skills_filter
+                    ]
+                }
                 print(f"Skills filter applied (optimized): {tradesperson_categories}")
             
             # 2. LOCATION FILTERING - Show jobs within tradesperson's travel distance
@@ -3573,14 +3635,21 @@ class Database:
                     {"title": {"$regex": combined_pattern, "$options": "i"}}
                 ]
 
-            # Base filter: active jobs only
+            # Base filter: active jobs only with lenient expiration check
             base_filter = {
                 "status": "active",
-                "expires_at": {"$gt": datetime.utcnow()}
+                "$or": [
+                    {"expires_at": {"$gt": datetime.utcnow()}},
+                    {"expires_at": {"$exists": False}},
+                    {"expires_at": None}
+                ]
             }
 
             # Combine filters
-            combined_filter = {"$and": [base_filter, skills_filter]} if skills_filter else base_filter
+            if skills_filter:
+                combined_filter = {"$and": [base_filter, skills_filter]}
+            else:
+                combined_filter = base_filter
 
             # Use cursor for efficiency: process jobs until we have enough
             cursor = (
@@ -3650,10 +3719,14 @@ class Database:
     ) -> List[dict]:
         """Search active, non-expired jobs with optional text/category filters and optional location radius (optimized)."""
         try:
-            # Base filter: public active jobs that haven't expired
+            # Base filter: public active jobs with lenient expiration check
             base_filter: Dict[str, Any] = {
                 "status": "active",
-                "expires_at": {"$gt": datetime.utcnow()},
+                "$or": [
+                    {"expires_at": {"$gt": datetime.utcnow()}},
+                    {"expires_at": {"$exists": False}},
+                    {"expires_at": None}
+                ]
             }
 
             # Text search on title/description
