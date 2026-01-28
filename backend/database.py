@@ -6,6 +6,10 @@ import re
 import logging
 import uuid
 import certifi
+import asyncio
+import functools
+import time
+
 try:
     from .models.notifications import (
         Notification, NotificationPreferences, NotificationChannel,
@@ -28,10 +32,6 @@ except ImportError:
         ReviewStats, ReviewType, ReviewStatus
     )
     from models.admin import AdminRole, AdminStatus, AdminActivityType
-
-import functools
-import time
-import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -154,7 +154,7 @@ class Database:
                         [("public_id", 1)],
                         name="unique_public_id",
                         unique=True,
-                        partialFilterExpression={"public_id": {"$type": "string"}}
+                        partialFilterExpression={"public_id", {"$type": "string"}}
                     )
                 except Exception as idx_err:
                     logger.warning(f"Failed to ensure users public_id index: {idx_err}")
@@ -237,96 +237,82 @@ class Database:
                 except Exception as idx_err:
                     logger.warning(f"Failed to ensure newsletter_subscribers index: {idx_err}")
 
-            except Exception as e:
-                logger.error(f"Failed to ensure primary database indexes: {e}")
-
-            # Performance Optimization Indexes
-            try:
-                # Text indexes for jobs (essential for $regex queries)
-                await self.database.jobs.create_index(
-                    [("title", "text"), ("category", "text")],
-                    name="jobs_text_search"
-                )
-                
-                # Compound indexes for filtering
-                await self.database.jobs.create_index(
-                    [("status", 1), ("category", 1), ("created_at", -1)],
-                    name="jobs_status_category_createdAt"
-                )
-                await self.database.jobs.create_index(
-                    [("status", 1), ("expires_at", 1), ("created_at", -1)],
-                    name="jobs_status_expiresAt_createdAt"
-                )
-                await self.database.jobs.create_index(
-                    [("status", 1), ("expires_at", 1), ("category", 1), ("created_at", -1)],
-                    name="jobs_status_expiresAt_category_createdAt"
-                )
-
-                # Quotes indexes
-                await self.database.quotes.create_index([("job_id", 1)], name="quotes_job_id")
-                await self.database.quotes.create_index([("tradesperson_id", 1)], name="quotes_tradesperson_id")
-                await self.database.quotes.create_index([("job_id", 1), ("tradesperson_id", 1)], name="quotes_job_tradesperson")
-                
-                # Interests: unique id index
-                await self.database.interests.create_index(
-                    [("id", 1)],
-                    name="unique_interest_uuid",
-                    unique=True,
-                    partialFilterExpression={"id": {"$type": "string"}}
-                )
-                # Interests: index by job_id and tradesperson_id for faster counts and lookups
-                await self.database.interests.create_index([("job_id", 1)], name="interests_job_id")
-                await self.database.interests.create_index([("tradesperson_id", 1)], name="interests_tradesperson_id")
-                # Job Question Answers: index by job_id
-                await self.database.job_question_answers.create_index([("job_id", 1)], name="job_qa_job_id")
-                # Reviews: unique id and index by job_id and artisan_id
-                await self.database.reviews.create_index(
-                    [("id", 1)],
-                    name="unique_review_uuid",
-                    unique=True,
-                    partialFilterExpression={"id": {"$type": "string"}}
-                )
-                await self.database.reviews.create_index([("job_id", 1)], name="reviews_job_id")
-                await self.database.reviews.create_index([("artisan_id", 1)], name="reviews_artisan_id")
-                # Notifications: index by user_id and status
-                await self.database.notifications.create_index([("user_id", 1), ("status", 1)], name="notifications_user_status")
-                
-                # Wallets: index by user_id
-                await self.database.wallets.create_index([("user_id", 1)], name="wallets_user_id", unique=True)
-                await self.database.wallet_transactions.create_index([("user_id", 1)], name="wallet_transactions_user_id")
-                await self.database.wallet_transactions.create_index([("created_at", -1)], name="wallet_transactions_createdAt")
-                
-                # Tradespeople Verifications: index for pending list and status queries
+                # Performance Optimization Indexes
                 try:
-                    await self.database.tradespeople_verifications.create_index(
-                        [("status", 1), ("submitted_at", -1)],
-                        name="verifications_status_submitted"
+                    # Text indexes for jobs (essential for $regex queries)
+                    await self.database.jobs.create_index(
+                        [("title", "text"), ("category", "text")],
+                        name="jobs_text_search"
                     )
-                    await self.database.tradespeople_verifications.create_index(
-                        [("user_id", 1), ("status", 1)],
-                        name="verifications_user_status"
+                    
+                    # Compound indexes for filtering
+                    await self.database.jobs.create_index(
+                        [("status", 1), ("category", 1), ("created_at", -1)],
+                        name="jobs_status_category_createdAt"
                     )
-                    # Add index for nested filename searches
-                    await self.database.tradespeople_verifications.create_index(
-                        "documents_base64.filename",
-                        name="idx_docs_filename"
+
+                    # Quotes indexes
+                    await self.database.quotes.create_index([("job_id", 1)], name="quotes_job_id")
+                    await self.database.quotes.create_index([("tradesperson_id", 1)], name="quotes_tradesperson_id")
+                    await self.database.quotes.create_index([("job_id", 1), ("tradesperson_id", 1)], name="quotes_job_tradesperson")
+                    
+                    # Interests: unique id index
+                    await self.database.interests.create_index(
+                        [("id", 1)],
+                        name="unique_interest_uuid",
+                        unique=True,
+                        partialFilterExpression={"id": {"$type": "string"}}
                     )
-                    await self.database.tradespeople_verifications.create_index(
-                        "work_photos_base64.filename",
-                        name="idx_work_photos_filename"
+                    # Interests: index by job_id and tradesperson_id for faster counts and lookups
+                    await self.database.interests.create_index([("job_id", 1)], name="interests_job_id")
+                    await self.database.interests.create_index([("tradesperson_id", 1)], name="interests_tradesperson_id")
+                    # Job Question Answers: index by job_id
+                    await self.database.job_question_answers.create_index([("job_id", 1)], name="job_qa_job_id")
+                    # Reviews: unique id and index by job_id and artisan_id
+                    await self.database.reviews.create_index(
+                        [("id", 1)],
+                        name="unique_review_uuid",
+                        unique=True,
+                        partialFilterExpression={"id": {"$type": "string"}}
                     )
-                    await self.database.tradespeople_verifications.create_index(
-                        "partner_id_documents_base64.filename",
-                        name="idx_partner_ids_filename"
-                    )
+                    await self.database.reviews.create_index([("job_id", 1)], name="reviews_job_id")
+                    await self.database.reviews.create_index([("artisan_id", 1)], name="reviews_artisan_id")
+                    # Notifications: index by user_id and status
+                    await self.database.notifications.create_index([("user_id", 1), ("status", 1)], name="notifications_user_status")
+                    
+                    # Tradespeople Verifications: index for pending list and status queries
+                    try:
+                        await self.database.tradespeople_verifications.create_index(
+                            [("status", 1), ("submitted_at", -1)],
+                            name="verifications_status_submitted"
+                        )
+                        await self.database.tradespeople_verifications.create_index(
+                            [("user_id", 1), ("status", 1)],
+                            name="verifications_user_status"
+                        )
+                        # Add index for nested filename searches
+                        await self.database.tradespeople_verifications.create_index(
+                            "documents_base64.filename",
+                            name="idx_docs_filename"
+                        )
+                        await self.database.tradespeople_verifications.create_index(
+                            "work_photos_base64.filename",
+                            name="idx_work_photos_filename"
+                        )
+                        await self.database.tradespeople_verifications.create_index(
+                            "partner_id_documents_base64.filename",
+                            name="idx_partner_ids_filename"
+                        )
+                    except Exception as idx_err:
+                        logger.warning(f"Failed to ensure tradespeople_verifications indexes: {idx_err}")
+
+                    logger.info("Performance optimization indexes ensured successfully")
                 except Exception as idx_err:
-                    logger.warning(f"Failed to ensure tradespeople_verifications indexes: {idx_err}")
+                    logger.warning(f"Failed to ensure performance indexes: {idx_err}")
 
-                logger.info("Performance optimization indexes ensured successfully")
-            except Exception as idx_err:
-                logger.warning(f"Failed to ensure performance indexes: {idx_err}")
-
-            logger.info("Database indexes ensured successfully")
+                logger.info("Database indexes ensured successfully")
+            except Exception as e:
+                logger.error(f"Failed to ensure database indexes: {e}")
         except Exception as e:
             self.connected = False
             logger.error(f"MongoDB connection failed: {e}")
@@ -418,6 +404,7 @@ class Database:
             try:
                 # Some code paths store short numeric user_id or public_id in notifications
                 # Use parallel lookup for fallbacks if primary fails
+                import asyncio
                 tasks = [
                     self.database.users.find_one({"user_id": user_id}),
                     self.database.users.find_one({"public_id": user_id})
@@ -1074,24 +1061,7 @@ class Database:
             # For public job listings, only show active and non-expired jobs
             if 'status' not in query:
                 query['status'] = 'active'
-            
-            # More lenient expiration check: allow jobs where expires_at is in the future OR missing
-            expiration_filter = {
-                "$or": [
-                    {"expires_at": {"$gt": datetime.utcnow()}},
-                    {"expires_at": {"$exists": False}},
-                    {"expires_at": None}
-                ]
-            }
-            
-            if "$and" in query:
-                query["$and"].append(expiration_filter)
-            elif "$or" in query:
-                # If there's already an $or, we must wrap both in an $and
-                original_or = query.pop("$or")
-                query["$and"] = [{"$or": original_or}, expiration_filter]
-            else:
-                query.update(expiration_filter)
+            query['expires_at'] = {'$gt': datetime.utcnow()}
         
         cursor = self.database.jobs.find(query).sort("created_at", -1).skip(skip).limit(limit)
         jobs = await cursor.to_list(length=limit)
@@ -1107,6 +1077,7 @@ class Database:
     @time_it
     async def get_all_jobs_admin(self, skip: int = 0, limit: int = 50, status: str = None) -> List[dict]:
         """Get all jobs for admin management with comprehensive details (optimized)"""
+        import asyncio
         query = {}
         if status:
             query["status"] = status
@@ -1279,6 +1250,7 @@ class Database:
     @time_it
     async def get_job_by_id_admin(self, job_id: str) -> Optional[dict]:
         """Get job details by ID for admin editing (optimized)"""
+        import asyncio
         job = await self.database.jobs.find_one({"id": job_id})
         if not job:
             return None
@@ -1489,24 +1461,7 @@ class Database:
             # For public job listings, only show active and non-expired jobs
             if 'status' not in query:
                 query['status'] = 'active'
-            
-            # More lenient expiration check: allow jobs where expires_at is in the future OR missing
-            expiration_filter = {
-                "$or": [
-                    {"expires_at": {"$gt": datetime.utcnow()}},
-                    {"expires_at": {"$exists": False}},
-                    {"expires_at": None}
-                ]
-            }
-            
-            if "$and" in query:
-                query["$and"].append(expiration_filter)
-            elif "$or" in query:
-                # If there's already an $or, we must wrap both in an $and
-                original_or = query.pop("$or")
-                query["$and"] = [{"$or": original_or}, expiration_filter]
-            else:
-                query.update(expiration_filter)
+            query['expires_at'] = {'$gt': datetime.utcnow()}
             
         return await self.database.jobs.count_documents(query)
 
@@ -1745,14 +1700,10 @@ class Database:
 
     async def get_jobs_for_quoting(self, tradesperson_id: str, trade_categories: List[str], skip: int = 0, limit: int = 10) -> List[dict]:
         """Get jobs available for a tradesperson to quote on (optimized)"""
-        # Build query for jobs in tradesperson's categories with lenient expiration check
+        # Build query for jobs in tradesperson's categories
         match_query = {
             "status": "active",
-            "$or": [
-                {"expires_at": {"$gt": datetime.utcnow()}},
-                {"expires_at": {"$exists": False}},
-                {"expires_at": None}
-            ]
+            "expires_at": {"$gt": datetime.utcnow()}
         }
         
         if trade_categories:
@@ -1814,11 +1765,7 @@ class Database:
         """Count available jobs for a tradesperson (optimized)"""
         match_query = {
             "status": "active",
-            "$or": [
-                {"expires_at": {"$gt": datetime.utcnow()}},
-                {"expires_at": {"$exists": False}},
-                {"expires_at": None}
-            ]
+            "expires_at": {"$gt": datetime.utcnow()}
         }
         
         if trade_categories:
@@ -2394,23 +2341,12 @@ class Database:
     @property
     def interests_collection(self):
         """Access to interests collection"""
-        if self.database is None:
-            raise RuntimeError("Database unavailable: interests collection not accessible")
         return self.database.interests
 
     @property
     def hiring_status_collection(self):
         """Access to hiring_status collection"""
-        if self.database is None:
-            raise RuntimeError("Database unavailable: hiring_status collection not accessible")
         return self.database.hiring_status
-
-    @property
-    def reviews_collection(self):
-        """Access to reviews collection"""
-        if self.database is None:
-            raise RuntimeError("Database unavailable: reviews collection not accessible")
-        return self.database.reviews
 
     # Review Management Methods (Trust & Quality System)
     async def create_review(self, review: Review) -> Review:
@@ -2780,6 +2716,10 @@ class Database:
         return reviews
 
     @property
+    def reviews_collection(self):
+        """Access to reviews collection"""
+        return self.database.reviews
+
     # Notification Management Methods
     async def create_notification(self, notification: Notification) -> Notification:
         """Create a new notification"""
@@ -2957,23 +2897,7 @@ class Database:
     @property
     def notifications_collection(self):
         """Access to notifications collection"""
-        if self.database is None:
-            raise RuntimeError("Database unavailable: notifications collection not accessible")
         return self.database.notifications
-
-    @property
-    def jobs_collection(self):
-        """Access to jobs collection"""
-        if self.database is None:
-            raise RuntimeError("Database unavailable: jobs collection not accessible")
-        return self.database.jobs
-
-    @property
-    def quotes_collection(self):
-        """Access to quotes collection"""
-        if self.database is None:
-            raise RuntimeError("Database unavailable: quotes collection not accessible")
-        return self.database.quotes
 
     @property
     def notification_preferences_collection(self):
@@ -3065,6 +2989,7 @@ class Database:
     @time_it
     async def get_admin_dashboard_stats(self) -> dict:
         """Get comprehensive admin dashboard statistics using optimized aggregations"""
+        import asyncio
         
         # 1. Wallet stats: Pending requests count and total amounts
         wallet_pipeline = [
@@ -3250,6 +3175,7 @@ class Database:
     @time_it
     async def get_jobs_with_access_fees(self, skip: int = 0, limit: int = 20) -> List[dict]:
         """Get all jobs with access fees for admin management (optimized)"""
+        import asyncio
         cursor = self.database.jobs.find({}).sort("created_at", -1).skip(skip).limit(limit)
         jobs = await cursor.to_list(length=limit)
         
@@ -3561,95 +3487,58 @@ class Database:
             # Get tradesperson details
             tradesperson = await self.get_user_by_id(tradesperson_id)
             if not tradesperson:
-                logger.warning(f"Tradesperson {tradesperson_id} not found, falling back to all available jobs")
+                # Fallback to all jobs if tradesperson not found
                 return await self.get_available_jobs(skip=skip, limit=limit)
             
-            logger.info(f"Fetching jobs for tradesperson: {tradesperson.get('first_name')} {tradesperson.get('last_name')} ({tradesperson_id})")
-            
             # Build the job filter based on tradesperson profile
-            # More lenient expiration check: allow jobs where expires_at is in the future OR missing
-            job_filter = {
-                "status": "active",
-                "$or": [
-                    {"expires_at": {"$gt": datetime.utcnow()}},
-                    {"expires_at": {"$exists": False}},
-                    {"expires_at": None}
-                ]
-            }
+            job_filter = {"status": "active"}
             
             # 1. SKILLS FILTERING - Only show jobs matching tradesperson's trade categories
-            tradesperson_categories = tradesperson.get("trade_categories") or []
-            if not isinstance(tradesperson_categories, list):
-                tradesperson_categories = []
-            
+            tradesperson_categories = tradesperson.get("trade_categories", [])
             # Also include profession in skills matching if it exists
             profession = tradesperson.get("profession")
             if profession and profession not in tradesperson_categories:
                 tradesperson_categories = list(tradesperson_categories) + [profession]
             
-            logger.info(f"Tradesperson categories: {tradesperson_categories}")
-            
             if tradesperson_categories:
-                # Ensure all categories are strings for re.escape
-                tradesperson_categories = [str(cat) for cat in tradesperson_categories if cat]
-                
                 # Use $in for category matching (faster than regex) and combined regex for title
                 combined_pattern = "|".join([re.escape(cat) for cat in tradesperson_categories])
-                
-                # Combine the existing filter with skills filter using $and to avoid overwriting $or
-                skills_filter = {
-                    "$or": [
-                        {"category": {"$in": tradesperson_categories}},
-                        {"title": {"$regex": combined_pattern, "$options": "i"}}
-                    ]
-                }
-                
-                # Use $and to combine the expiration $or with the skills $or
-                original_job_filter = job_filter.copy()
-                job_filter = {
-                    "status": "active",
-                    "$and": [
-                        {"$or": original_job_filter["$or"]},
-                        skills_filter
-                    ]
-                }
-                logger.debug(f"Applied skills filter: {skills_filter}")
+                job_filter["$or"] = [
+                    {"category": {"$in": tradesperson_categories}},
+                    {"title": {"$regex": combined_pattern, "$options": "i"}}
+                ]
+                print(f"Skills filter applied (optimized): {tradesperson_categories}")
             
             # 2. LOCATION FILTERING - Show jobs within tradesperson's travel distance
-            lat = tradesperson.get("latitude")
-            lng = tradesperson.get("longitude")
-            
-            if lat is not None and lng is not None:
+            if (tradesperson.get("latitude") is not None and 
+                tradesperson.get("longitude") is not None):
+                
                 max_distance = tradesperson.get("travel_distance_km", 25)  # Default 25km
-                logger.info(f"Applying location filter: {max_distance}km radius from ({lat}, {lng})")
+                print(f"Location filter applied: {max_distance}km radius")
                 
                 # Use location-based filtering with skills filtering
-                jobs = await self.get_jobs_near_location_with_skills(
-                    latitude=float(lat),
-                    longitude=float(lng),
-                    max_distance_km=float(max_distance),
+                return await self.get_jobs_near_location_with_skills(
+                    latitude=tradesperson["latitude"],
+                    longitude=tradesperson["longitude"],
+                    max_distance_km=max_distance,
                     skill_categories=tradesperson_categories,
                     skip=skip,
                     limit=limit
                 )
-                logger.info(f"Found {len(jobs)} jobs within {max_distance}km for tradesperson {tradesperson_id}")
-                return jobs
             else:
                 # No location data, use skills-only filtering
-                logger.info(f"No location data for tradesperson {tradesperson_id}, using skills-only filtering")
+                print("Using skills-only filtering (no location data)")
                 cursor = self.database.jobs.find(job_filter).sort("created_at", -1).skip(skip).limit(limit)
-                jobs_data = await cursor.to_list(length=None)
-                
-                logger.info(f"Found {len(jobs_data)} jobs matching skills for tradesperson {tradesperson_id}")
+                jobs = await cursor.to_list(length=None)
                 
                 # Process and enrich jobs data in parallel
-                tasks = [self._process_job_data(job) for job in jobs_data]
+                tasks = [self._process_job_data(job) for job in jobs]
                 processed_jobs = await asyncio.gather(*tasks)
                 
                 return processed_jobs
                 
         except Exception as e:
-            logger.error(f"Error in get_jobs_for_tradesperson for {tradesperson_id}: {str(e)}", exc_info=True)
+            print(f"Error in get_jobs_for_tradesperson: {str(e)}")
             # Fallback to general available jobs
             return await self.get_available_jobs(skip=skip, limit=limit)
 
@@ -3659,55 +3548,38 @@ class Database:
                                                skip: int = 0, limit: int = 50) -> List[dict]:
         """Get jobs near location matching skills, including jobs without coordinates (optimized)."""
         try:
-            logger.info(f"Searching jobs near ({latitude}, {longitude}) within {max_distance_km}km with skills {skill_categories}")
-            
             # Build skills filter (optimized for performance)
             skills_filter = {}
             if skill_categories:
-                # Ensure all categories are strings
-                valid_categories = [str(cat) for cat in skill_categories if cat]
-                if valid_categories:
-                    combined_pattern = "|".join([re.escape(cat) for cat in valid_categories])
-                    skills_filter["$or"] = [
-                        {"category": {"$in": valid_categories}},
-                        {"title": {"$regex": combined_pattern, "$options": "i"}}
-                    ]
-
-            # Base filter: active jobs only with lenient expiration check
-            base_filter = {
-                "status": "active",
-                "$or": [
-                    {"expires_at": {"$gt": datetime.utcnow()}},
-                    {"expires_at": {"$exists": False}},
-                    {"expires_at": None}
+                combined_pattern = "|".join([re.escape(cat) for cat in skill_categories])
+                skills_filter["$or"] = [
+                    {"category": {"$in": skill_categories}},
+                    {"title": {"$regex": combined_pattern, "$options": "i"}}
                 ]
-            }
+
+            # Base filter: active jobs only
+            base_filter = {"status": "active"}
 
             # Combine filters
-            if skills_filter:
-                combined_filter = {"$and": [base_filter, skills_filter]}
-            else:
-                combined_filter = base_filter
+            combined_filter = {"$and": [base_filter, skills_filter]} if skills_filter else base_filter
 
-            logger.debug(f"Combined filter for location search: {combined_filter}")
-
-            # Use cursor for efficiency: process jobs until we have enough
+            # Reduced fetch_limit to prevent timeouts: fetch only what we need plus some buffer
+            # This is much more efficient than fetching 500+ jobs
+            fetch_limit = limit + skip + 50  # Small buffer for jobs outside distance radius
+            
             cursor = (
                 self.database.jobs
                 .find(combined_filter)
                 .sort("created_at", -1)
-                .limit(1000) # Safety limit to prevent infinite scanning
+                .limit(fetch_limit)
             )
+            raw_jobs = await cursor.to_list(length=fetch_limit)
 
             jobs_within_distance: List[Dict[str, Any]] = []
             jobs_without_coords: List[Dict[str, Any]] = []
-            
-            # Target number of jobs to return
-            target_count = skip + limit
-            scanned_count = 0
-            
-            async for job in cursor:
-                scanned_count += 1
+
+            # Process jobs synchronously to avoid overhead of asyncio.gather() on large lists
+            for job in raw_jobs:
                 job["_id"] = str(job["_id"])
                 jlat = job.get("latitude")
                 jlng = job.get("longitude")
@@ -3724,28 +3596,20 @@ class Database:
                         job["distance_km"] = round(dist, 2)
                         jobs_within_distance.append(job)
                 else:
-                    # Jobs without coordinates are included as fallback
+                    # Note: We removed resolve_coordinates_from_entity here to prevent timeouts
+                    # caused by Nominatim rate limiting when processing many jobs at once.
                     job["distance_km"] = None
                     jobs_without_coords.append(job)
-                
-                # Stop if we have found enough jobs (plus some buffer for sorting)
-                if len(jobs_within_distance) + len(jobs_without_coords) >= target_count * 2:
-                    break
-                
-                # Also stop if we've scanned too many documents
-                if scanned_count >= 1000:
-                    break
-
-            logger.info(f"Scanned {scanned_count} jobs. Found {len(jobs_within_distance)} within distance and {len(jobs_without_coords)} without coordinates.")
 
             # Sort: closest first, then most recent for no-coordinate jobs
             jobs_within_distance.sort(key=lambda x: x.get("distance_km", float("inf")))
-            
+            # jobs_without_coords already sorted by created_at desc from find()
+
             combined = jobs_within_distance + jobs_without_coords
             return combined[skip : skip + limit]
 
         except Exception as e:
-            logger.error(f"Error in get_jobs_near_location_with_skills: {e}", exc_info=True)
+            logger.error(f"Error in get_jobs_near_location_with_skills: {e}")
             return []
 
     @time_it
@@ -3761,14 +3625,10 @@ class Database:
     ) -> List[dict]:
         """Search active, non-expired jobs with optional text/category filters and optional location radius (optimized)."""
         try:
-            # Base filter: public active jobs with lenient expiration check
+            # Base filter: public active jobs that haven't expired
             base_filter: Dict[str, Any] = {
                 "status": "active",
-                "$or": [
-                    {"expires_at": {"$gt": datetime.utcnow()}},
-                    {"expires_at": {"$exists": False}},
-                    {"expires_at": None}
-                ]
+                "expires_at": {"$gt": datetime.utcnow()},
             }
 
             # Text search on title/description
@@ -3787,24 +3647,20 @@ class Database:
             # Location-aware search
             if use_location:
                 radius_km = max_distance_km if (isinstance(max_distance_km, (int, float)) and max_distance_km is not None) else 25
+                fetch_limit = max(limit * 3 + skip, 150)
                 
-                # Use cursor for efficiency: process jobs until we have enough
                 cursor = (
                     self.database.jobs
                     .find(base_filter)
                     .sort("created_at", -1)
-                    .limit(1000) # Safety limit to prevent infinite scanning
+                    .limit(fetch_limit)
                 )
+                raw_jobs = await cursor.to_list(length=fetch_limit)
 
                 jobs_within_distance: List[Dict[str, Any]] = []
                 jobs_without_coords: List[Dict[str, Any]] = []
-                
-                # Target number of jobs to return
-                target_count = skip + limit
-                scanned_count = 0
-                
-                async for job in cursor:
-                    scanned_count += 1
+
+                async def process_job(job):
                     job["_id"] = str(job["_id"])
                     jlat = job.get("latitude")
                     jlng = job.get("longitude")
@@ -3819,19 +3675,22 @@ class Database:
                     if dist is not None:
                         if dist <= float(radius_km):
                             job["distance_km"] = round(dist, 2)
-                            jobs_within_distance.append(job)
+                            return ("within", job)
                     else:
-                        # Jobs without coordinates are included as fallback
+                        # Note: Removed resolve_coordinates_from_entity to prevent timeouts
                         job["distance_km"] = None
+                        return ("without", job)
+                    return (None, None)
+
+                # Process jobs in parallel
+                tasks = [process_job(job) for job in raw_jobs]
+                results = await asyncio.gather(*tasks)
+
+                for status, job in results:
+                    if status == "within":
+                        jobs_within_distance.append(job)
+                    elif status == "without":
                         jobs_without_coords.append(job)
-                    
-                    # Stop if we have found enough jobs (plus some buffer for sorting)
-                    if len(jobs_within_distance) + len(jobs_without_coords) >= target_count * 2:
-                        break
-                    
-                    # Also stop if we've scanned too many documents
-                    if scanned_count >= 1000:
-                        break
 
                 # Sort and paginate combined results
                 jobs_within_distance.sort(key=lambda x: x.get("distance_km", float("inf")))
@@ -4660,6 +4519,7 @@ class Database:
     @time_it
     async def get_all_users_for_admin(self, skip: int = 0, limit: int = 50, role: str = None, status: str = None, search: str = None):
         """Get all users with filtering for admin dashboard (optimized)"""
+        import asyncio
         # Build query filter
         query = {}
         
@@ -4815,6 +4675,7 @@ class Database:
     @time_it
     async def get_user_activity_stats(self, user_id: str):
         """Get comprehensive activity statistics for a user (optimized)"""
+        import asyncio
         user = await self.get_user_by_id(user_id)
         if not user:
             return {}
@@ -4913,6 +4774,7 @@ class Database:
     @time_it
     async def get_user_details_admin(self, user_id: str):
         """Get comprehensive user details for admin management (optimized)"""
+        import asyncio
         try:
             # Get basic user information first
             user = await self.get_user_by_id(user_id)
@@ -5082,6 +4944,7 @@ class Database:
     @time_it
     async def delete_user_completely(self, user_id: str):
         """Permanently delete user and all associated data (optimized)"""
+        import asyncio
         try:
             # Get user details first for logging
             user = await self.get_user_by_id(user_id)
@@ -7667,6 +7530,7 @@ We may update this Cookie Policy to reflect changes in technology or regulations
     @time_it
     async def get_admin_stats(self) -> dict:
         """Get comprehensive admin statistics using parallel tasks"""
+        import asyncio
         
         # 1. Pipeline for role distribution
         role_pipeline = [

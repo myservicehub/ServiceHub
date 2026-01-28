@@ -34,7 +34,7 @@ if (import.meta && import.meta.env && import.meta.env.DEV) {
 // Create axios instance with base configuration
 const apiClient = axios.create({
   baseURL: API_BASE,
-  timeout: 30000,
+  timeout: 60000, // Increased from 30s to 60s for slow endpoints like job listing
   headers: {
     'Content-Type': 'application/json',
   },
