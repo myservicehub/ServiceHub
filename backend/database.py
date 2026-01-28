@@ -3463,6 +3463,7 @@ class Database:
 
     async def get_jobs_near_location(self, latitude: float, longitude: float, max_distance_km: int = 25, skip: int = 0, limit: int = 50) -> List[dict]:
         """Get jobs within specified distance from a location"""
+        import asyncio
         # Get all active jobs with location data
         cursor = self.database.jobs.find({
             "status": "active",
@@ -3539,6 +3540,7 @@ class Database:
     @time_it
     async def get_jobs_for_tradesperson(self, tradesperson_id: str, skip: int = 0, limit: int = 50) -> List[dict]:
         """Get jobs filtered by tradesperson's skills and location preferences"""
+        import asyncio
         try:
             # Get tradesperson details
             tradesperson = await self.get_user_by_id(tradesperson_id)
@@ -3558,13 +3560,19 @@ class Database:
             }
             
             # 1. SKILLS FILTERING - Only show jobs matching tradesperson's trade categories
-            tradesperson_categories = tradesperson.get("trade_categories") or []
+            tradesperson_categories = tradesperson.get("trade_categories")
+            if not isinstance(tradesperson_categories, list):
+                tradesperson_categories = []
+            
             # Also include profession in skills matching if it exists
             profession = tradesperson.get("profession")
             if profession and profession not in tradesperson_categories:
                 tradesperson_categories = list(tradesperson_categories) + [profession]
             
             if tradesperson_categories:
+                # Ensure all categories are strings for re.escape
+                tradesperson_categories = [str(cat) for cat in tradesperson_categories if cat]
+                
                 # Use $in for category matching (faster than regex) and combined regex for title
                 combined_pattern = "|".join([re.escape(cat) for cat in tradesperson_categories])
                 
@@ -3625,15 +3633,19 @@ class Database:
                                                max_distance_km: float, skill_categories: List[str],
                                                skip: int = 0, limit: int = 50) -> List[dict]:
         """Get jobs near location matching skills, including jobs without coordinates (optimized)."""
+        import asyncio
         try:
             # Build skills filter (optimized for performance)
             skills_filter = {}
             if skill_categories:
-                combined_pattern = "|".join([re.escape(cat) for cat in skill_categories])
-                skills_filter["$or"] = [
-                    {"category": {"$in": skill_categories}},
-                    {"title": {"$regex": combined_pattern, "$options": "i"}}
-                ]
+                # Ensure all categories are strings
+                valid_categories = [str(cat) for cat in skill_categories if cat]
+                if valid_categories:
+                    combined_pattern = "|".join([re.escape(cat) for cat in valid_categories])
+                    skills_filter["$or"] = [
+                        {"category": {"$in": valid_categories}},
+                        {"title": {"$regex": combined_pattern, "$options": "i"}}
+                    ]
 
             # Base filter: active jobs only with lenient expiration check
             base_filter = {
