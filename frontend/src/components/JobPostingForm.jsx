@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { jobsAPI, authAPI } from '../api/services';
 import { adminAPI, tradeCategoryQuestionsAPI } from '../api/wallet';
+import apiClient from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
 import useStates from '../hooks/useStates';
@@ -259,12 +260,13 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
     
     setLoadingLGAs(true);
     try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/auth/lgas/${encodeURIComponent(state)}`);
-      if (response.ok) {
-        const data = await response.json();
+      const base = (process.env.REACT_APP_BACKEND_URL ? process.env.REACT_APP_BACKEND_URL + '/api' : (apiClient?.defaults?.baseURL || '/api'));
+      const resp = await fetch(`${base}/auth/lgas/${encodeURIComponent(state)}`);
+      if (resp.ok) {
+        const data = await resp.json();
         setAvailableLGAs(data.lgas || []);
       } else {
-        console.error('Failed to fetch LGAs:', response.statusText);
+        console.error('Failed to fetch LGAs:', resp.statusText);
         setAvailableLGAs([]);
       }
     } catch (error) {
