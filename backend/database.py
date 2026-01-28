@@ -31,6 +31,7 @@ except ImportError:
 
 import functools
 import time
+import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -249,59 +250,78 @@ class Database:
                     [("status", 1), ("category", 1), ("created_at", -1)],
                     name="jobs_status_category_createdAt"
                 )
+                await self.database.jobs.create_index(
+                    [("status", 1), ("expires_at", 1), ("created_at", -1)],
+                    name="jobs_status_expiresAt_createdAt"
+                )
+                await self.database.jobs.create_index(
+                    [("status", 1), ("expires_at", 1), ("category", 1), ("created_at", -1)],
+                    name="jobs_status_expiresAt_category_createdAt"
+                )
+
+                # Quotes indexes
+                await self.database.quotes.create_index([("job_id", 1)], name="quotes_job_id")
+                await self.database.quotes.create_index([("tradesperson_id", 1)], name="quotes_tradesperson_id")
+                await self.database.quotes.create_index([("job_id", 1), ("tradesperson_id", 1)], name="quotes_job_tradesperson")
                 
                 # Interests: unique id index
-                    await self.database.interests.create_index(
-                        [("id", 1)],
-                        name="unique_interest_uuid",
-                        unique=True,
-                        partialFilterExpression={"id": {"$type": "string"}}
+                await self.database.interests.create_index(
+                    [("id", 1)],
+                    name="unique_interest_uuid",
+                    unique=True,
+                    partialFilterExpression={"id": {"$type": "string"}}
+                )
+                # Interests: index by job_id and tradesperson_id for faster counts and lookups
+                await self.database.interests.create_index([("job_id", 1)], name="interests_job_id")
+                await self.database.interests.create_index([("tradesperson_id", 1)], name="interests_tradesperson_id")
+                # Job Question Answers: index by job_id
+                await self.database.job_question_answers.create_index([("job_id", 1)], name="job_qa_job_id")
+                # Reviews: unique id and index by job_id and artisan_id
+                await self.database.reviews.create_index(
+                    [("id", 1)],
+                    name="unique_review_uuid",
+                    unique=True,
+                    partialFilterExpression={"id": {"$type": "string"}}
+                )
+                await self.database.reviews.create_index([("job_id", 1)], name="reviews_job_id")
+                await self.database.reviews.create_index([("artisan_id", 1)], name="reviews_artisan_id")
+                # Notifications: index by user_id and status
+                await self.database.notifications.create_index([("user_id", 1), ("status", 1)], name="notifications_user_status")
+                
+                # Wallets: index by user_id
+                await self.database.wallets.create_index([("user_id", 1)], name="wallets_user_id", unique=True)
+                await self.database.wallet_transactions.create_index([("user_id", 1)], name="wallet_transactions_user_id")
+                await self.database.wallet_transactions.create_index([("created_at", -1)], name="wallet_transactions_createdAt")
+                
+                # Tradespeople Verifications: index for pending list and status queries
+                try:
+                    await self.database.tradespeople_verifications.create_index(
+                        [("status", 1), ("submitted_at", -1)],
+                        name="verifications_status_submitted"
                     )
-                    # Interests: index by job_id for faster counts and lookups
-                    await self.database.interests.create_index([("job_id", 1)], name="interests_job_id")
-                    # Job Question Answers: index by job_id
-                    await self.database.job_question_answers.create_index([("job_id", 1)], name="job_qa_job_id")
-                    # Reviews: unique id and index by job_id and artisan_id
-                    await self.database.reviews.create_index(
-                        [("id", 1)],
-                        name="unique_review_uuid",
-                        unique=True,
-                        partialFilterExpression={"id": {"$type": "string"}}
+                    await self.database.tradespeople_verifications.create_index(
+                        [("user_id", 1), ("status", 1)],
+                        name="verifications_user_status"
                     )
-                    await self.database.reviews.create_index([("job_id", 1)], name="reviews_job_id")
-                    await self.database.reviews.create_index([("artisan_id", 1)], name="reviews_artisan_id")
-                    # Notifications: index by user_id and status
-                    await self.database.notifications.create_index([("user_id", 1), ("status", 1)], name="notifications_user_status")
-                    
-                    # Tradespeople Verifications: index for pending list and status queries
-                    try:
-                        await self.database.tradespeople_verifications.create_index(
-                            [("status", 1), ("submitted_at", -1)],
-                            name="verifications_status_submitted"
-                        )
-                        await self.database.tradespeople_verifications.create_index(
-                            [("user_id", 1), ("status", 1)],
-                            name="verifications_user_status"
-                        )
-                        # Add index for nested filename searches
-                        await self.database.tradespeople_verifications.create_index(
-                            "documents_base64.filename",
-                            name="idx_docs_filename"
-                        )
-                        await self.database.tradespeople_verifications.create_index(
-                            "work_photos_base64.filename",
-                            name="idx_work_photos_filename"
-                        )
-                        await self.database.tradespeople_verifications.create_index(
-                            "partner_id_documents_base64.filename",
-                            name="idx_partner_ids_filename"
-                        )
-                    except Exception as idx_err:
-                        logger.warning(f"Failed to ensure tradespeople_verifications indexes: {idx_err}")
-
-                    logger.info("Performance optimization indexes ensured successfully")
+                    # Add index for nested filename searches
+                    await self.database.tradespeople_verifications.create_index(
+                        "documents_base64.filename",
+                        name="idx_docs_filename"
+                    )
+                    await self.database.tradespeople_verifications.create_index(
+                        "work_photos_base64.filename",
+                        name="idx_work_photos_filename"
+                    )
+                    await self.database.tradespeople_verifications.create_index(
+                        "partner_id_documents_base64.filename",
+                        name="idx_partner_ids_filename"
+                    )
                 except Exception as idx_err:
-                    logger.warning(f"Failed to ensure performance indexes: {idx_err}")
+                    logger.warning(f"Failed to ensure tradespeople_verifications indexes: {idx_err}")
+
+                logger.info("Performance optimization indexes ensured successfully")
+            except Exception as idx_err:
+                logger.warning(f"Failed to ensure performance indexes: {idx_err}")
 
                 logger.info("Database indexes ensured successfully")
             except Exception as e:
@@ -1691,8 +1711,8 @@ class Database:
                 "max_price": 0
             }
 
-    async def get_jobs_for_tradesperson(self, tradesperson_id: str, trade_categories: List[str], skip: int = 0, limit: int = 10) -> List[dict]:
-        """Get jobs available for a tradesperson to quote on"""
+    async def get_jobs_for_quoting(self, tradesperson_id: str, trade_categories: List[str], skip: int = 0, limit: int = 10) -> List[dict]:
+        """Get jobs available for a tradesperson to quote on (optimized)"""
         # Build query for jobs in tradesperson's categories
         match_query = {
             "status": "active",
@@ -1700,27 +1720,14 @@ class Database:
         }
         
         if trade_categories:
+            # Use $in for faster matching
             match_query["category"] = {"$in": trade_categories}
         
         # Get jobs and exclude ones already quoted on
         pipeline = [
             {"$match": match_query},
-            {"$lookup": {
-                "from": "quotes",
-                "let": {"job_id": "$id"},
-                "pipeline": [
-                    {"$match": {
-                        "$expr": {
-                            "$and": [
-                                {"$eq": ["$job_id", "$$job_id"]},
-                                {"$eq": ["$tradesperson_id", tradesperson_id]}
-                            ]
-                        }
-                    }}
-                ],
-                "as": "existing_quotes"
-            }},
-            {"$match": {"existing_quotes": {"$size": 0}}},  # Exclude jobs already quoted on
+            {"$sort": {"created_at": -1}},
+            {"$limit": 100}, # Limit early to improve lookup performance
             {"$lookup": {
                 "from": "quotes",
                 "localField": "id",
@@ -1728,10 +1735,21 @@ class Database:
                 "as": "all_quotes"
             }},
             {"$addFields": {
-                "quotes_count": {"$size": "$all_quotes"}
+                "quotes_count": {"$size": "$all_quotes"},
+                "has_quoted": {
+                    "$anyElementTrue": {
+                        "$map": {
+                            "input": "$all_quotes",
+                            "as": "q",
+                            "in": {"$eq": ["$$q.tradesperson_id", tradesperson_id]}
+                        }
+                    }
+                }
             }},
-            {"$match": {"quotes_count": {"$lt": 5}}},  # Exclude jobs with 5+ quotes
-            {"$sort": {"created_at": -1}},
+            {"$match": {
+                "has_quoted": False,
+                "quotes_count": {"$lt": 5}
+            }},
             {"$skip": skip},
             {"$limit": limit},
             {"$project": {
@@ -1756,8 +1774,8 @@ class Database:
         jobs = await self.database.jobs.aggregate(pipeline).to_list(None)
         return jobs
 
-    async def get_available_jobs_count_for_tradesperson(self, tradesperson_id: str, trade_categories: List[str]) -> int:
-        """Count available jobs for a tradesperson"""
+    async def get_available_jobs_count_for_quoting(self, tradesperson_id: str, trade_categories: List[str]) -> int:
+        """Count available jobs for a tradesperson (optimized)"""
         match_query = {
             "status": "active",
             "expires_at": {"$gt": datetime.utcnow()}
@@ -1768,22 +1786,7 @@ class Database:
         
         pipeline = [
             {"$match": match_query},
-            {"$lookup": {
-                "from": "quotes",
-                "let": {"job_id": "$id"},
-                "pipeline": [
-                    {"$match": {
-                        "$expr": {
-                            "$and": [
-                                {"$eq": ["$job_id", "$$job_id"]},
-                                {"$eq": ["$tradesperson_id", tradesperson_id]}
-                            ]
-                        }
-                    }}
-                ],
-                "as": "existing_quotes"
-            }},
-            {"$match": {"existing_quotes": {"$size": 0}}},
+            {"$limit": 100}, # Limit to improve lookup performance
             {"$lookup": {
                 "from": "quotes",
                 "localField": "id",
@@ -1791,9 +1794,21 @@ class Database:
                 "as": "all_quotes"
             }},
             {"$addFields": {
-                "quotes_count": {"$size": "$all_quotes"}
+                "quotes_count": {"$size": "$all_quotes"},
+                "has_quoted": {
+                    "$anyElementTrue": {
+                        "$map": {
+                            "input": "$all_quotes",
+                            "as": "q",
+                            "in": {"$eq": ["$$q.tradesperson_id", tradesperson_id]}
+                        }
+                    }
+                }
             }},
-            {"$match": {"quotes_count": {"$lt": 5}}},
+            {"$match": {
+                "has_quoted": False,
+                "quotes_count": {"$lt": 5}
+            }},
             {"$count": "total"}
         ]
         
@@ -2220,6 +2235,7 @@ class Database:
         
         return interested
 
+    @time_it
     async def get_tradesperson_interests(self, tradesperson_id: str) -> List[dict]:
         """Get all interests for a tradesperson"""
         pipeline = [
@@ -2763,6 +2779,13 @@ class Database:
         )
         
         return await self.get_user_notification_preferences(user_id)
+
+    async def get_user_notifications_count(self, user_id: str, status: Optional[str] = None) -> int:
+        """Count notifications for a user (optimized)"""
+        query = {"user_id": user_id}
+        if status:
+            query["status"] = status
+        return await self.notifications_collection.count_documents(query)
 
     async def get_user_notifications(self, user_id: str, limit: int = 50, offset: int = 0) -> List[Notification]:
         """Get notifications for a user with pagination"""
@@ -3470,6 +3493,7 @@ class Database:
         """Get all available (active) jobs"""
         return await self.get_jobs(skip=skip, limit=limit, filters={"status": "active"})
 
+    @time_it
     async def get_jobs_for_tradesperson(self, tradesperson_id: str, skip: int = 0, limit: int = 50) -> List[dict]:
         """Get jobs filtered by tradesperson's skills and location preferences"""
         try:
@@ -3480,7 +3504,10 @@ class Database:
                 return await self.get_available_jobs(skip=skip, limit=limit)
             
             # Build the job filter based on tradesperson profile
-            job_filter = {"status": "active"}
+            job_filter = {
+                "status": "active",
+                "expires_at": {"$gt": datetime.utcnow()}
+            }
             
             # 1. SKILLS FILTERING - Only show jobs matching tradesperson's trade categories
             tradesperson_categories = tradesperson.get("trade_categories", [])
@@ -3531,6 +3558,7 @@ class Database:
             # Fallback to general available jobs
             return await self.get_available_jobs(skip=skip, limit=limit)
 
+    @time_it
     async def get_jobs_near_location_with_skills(self, latitude: float, longitude: float, 
                                                max_distance_km: float, skill_categories: List[str],
                                                skip: int = 0, limit: int = 50) -> List[dict]:
@@ -3546,27 +3574,31 @@ class Database:
                 ]
 
             # Base filter: active jobs only
-            base_filter = {"status": "active"}
+            base_filter = {
+                "status": "active",
+                "expires_at": {"$gt": datetime.utcnow()}
+            }
 
             # Combine filters
             combined_filter = {"$and": [base_filter, skills_filter]} if skills_filter else base_filter
 
-            # Use aggregation for efficiency: filter, then process distance
-            # Increased fetch_limit to 500 to ensure we don't miss nearby jobs among many skill matches
-            fetch_limit = max(limit * 5 + skip, 500) 
-            
+            # Use cursor for efficiency: process jobs until we have enough
             cursor = (
                 self.database.jobs
                 .find(combined_filter)
                 .sort("created_at", -1)
-                .limit(fetch_limit)
+                .limit(1000) # Safety limit to prevent infinite scanning
             )
-            raw_jobs = await cursor.to_list(length=fetch_limit)
 
             jobs_within_distance: List[Dict[str, Any]] = []
             jobs_without_coords: List[Dict[str, Any]] = []
-
-            async def process_job(job):
+            
+            # Target number of jobs to return
+            target_count = skip + limit
+            scanned_count = 0
+            
+            async for job in cursor:
+                scanned_count += 1
                 job["_id"] = str(job["_id"])
                 jlat = job.get("latitude")
                 jlng = job.get("longitude")
@@ -3581,28 +3613,23 @@ class Database:
                 if dist is not None:
                     if dist <= float(max_distance_km):
                         job["distance_km"] = round(dist, 2)
-                        return ("within", job)
+                        jobs_within_distance.append(job)
                 else:
-                    # Note: We removed resolve_coordinates_from_entity here to prevent timeouts
-                    # caused by Nominatim rate limiting when processing many jobs at once.
+                    # Jobs without coordinates are included as fallback
                     job["distance_km"] = None
-                    return ("without", job)
-                return (None, None)
-
-            # Process jobs in parallel
-            tasks = [process_job(job) for job in raw_jobs]
-            results = await asyncio.gather(*tasks)
-
-            for status, job in results:
-                if status == "within":
-                    jobs_within_distance.append(job)
-                elif status == "without":
                     jobs_without_coords.append(job)
+                
+                # Stop if we have found enough jobs (plus some buffer for sorting)
+                if len(jobs_within_distance) + len(jobs_without_coords) >= target_count * 2:
+                    break
+                
+                # Also stop if we've scanned too many documents
+                if scanned_count >= 1000:
+                    break
 
             # Sort: closest first, then most recent for no-coordinate jobs
             jobs_within_distance.sort(key=lambda x: x.get("distance_km", float("inf")))
-            # jobs_without_coords already sorted by created_at desc from find()
-
+            
             combined = jobs_within_distance + jobs_without_coords
             return combined[skip : skip + limit]
 
@@ -3645,20 +3672,24 @@ class Database:
             # Location-aware search
             if use_location:
                 radius_km = max_distance_km if (isinstance(max_distance_km, (int, float)) and max_distance_km is not None) else 25
-                fetch_limit = max(limit * 3 + skip, 150)
                 
+                # Use cursor for efficiency: process jobs until we have enough
                 cursor = (
                     self.database.jobs
                     .find(base_filter)
                     .sort("created_at", -1)
-                    .limit(fetch_limit)
+                    .limit(1000) # Safety limit to prevent infinite scanning
                 )
-                raw_jobs = await cursor.to_list(length=fetch_limit)
 
                 jobs_within_distance: List[Dict[str, Any]] = []
                 jobs_without_coords: List[Dict[str, Any]] = []
-
-                async def process_job(job):
+                
+                # Target number of jobs to return
+                target_count = skip + limit
+                scanned_count = 0
+                
+                async for job in cursor:
+                    scanned_count += 1
                     job["_id"] = str(job["_id"])
                     jlat = job.get("latitude")
                     jlng = job.get("longitude")
@@ -3673,22 +3704,19 @@ class Database:
                     if dist is not None:
                         if dist <= float(radius_km):
                             job["distance_km"] = round(dist, 2)
-                            return ("within", job)
+                            jobs_within_distance.append(job)
                     else:
-                        # Note: Removed resolve_coordinates_from_entity to prevent timeouts
+                        # Jobs without coordinates are included as fallback
                         job["distance_km"] = None
-                        return ("without", job)
-                    return (None, None)
-
-                # Process jobs in parallel
-                tasks = [process_job(job) for job in raw_jobs]
-                results = await asyncio.gather(*tasks)
-
-                for status, job in results:
-                    if status == "within":
-                        jobs_within_distance.append(job)
-                    elif status == "without":
                         jobs_without_coords.append(job)
+                    
+                    # Stop if we have found enough jobs (plus some buffer for sorting)
+                    if len(jobs_within_distance) + len(jobs_without_coords) >= target_count * 2:
+                        break
+                    
+                    # Also stop if we've scanned too many documents
+                    if scanned_count >= 1000:
+                        break
 
                 # Sort and paginate combined results
                 jobs_within_distance.sort(key=lambda x: x.get("distance_km", float("inf")))

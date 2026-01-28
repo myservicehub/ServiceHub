@@ -57,19 +57,29 @@ async def get_notification_history(
     offset: int = 0,
     current_user: User = Depends(get_current_user)
 ):
-    """Get user's notification history with pagination"""
+    """Get user's notification history with pagination (optimized)"""
     try:
-        notifications = await database.get_user_notifications(
-            current_user.id, limit=limit, offset=offset
-        )
+        # Use parallel execution for counts and fetching
+        import asyncio
         
-        # Count unread notifications (assuming notifications are "unread" until explicitly marked)
-        all_notifications = await database.get_user_notifications(current_user.id, limit=1000)
-        unread_count = len([n for n in all_notifications if n.status in ["sent", "pending"]])
+        tasks = [
+            database.get_user_notifications(current_user.id, limit=limit, offset=offset),
+            database.get_user_notifications_count(current_user.id),
+            database.notifications_collection.count_documents({
+                "user_id": current_user.id, 
+                "status": {"$in": ["sent", "pending"]}
+            })
+        ]
+        
+        results = await asyncio.gather(*tasks)
+        
+        notifications = results[0]
+        total_count = results[1]
+        unread_count = results[2]
         
         return NotificationHistory(
             notifications=notifications,
-            total=len(all_notifications),
+            total=total_count,
             unread=unread_count
         )
     except Exception as e:

@@ -243,14 +243,14 @@ async def get_available_jobs(
         skip = (page - 1) * limit
         
         # Get jobs matching tradesperson's categories
-        available_jobs = await database.get_jobs_for_tradesperson(
+        available_jobs = await database.get_jobs_for_quoting(
             tradesperson_id=current_user.id,
             trade_categories=current_user.trade_categories or [],
             skip=skip,
             limit=limit
         )
         
-        total_jobs = await database.get_available_jobs_count_for_tradesperson(
+        total_jobs = await database.get_available_jobs_count_for_quoting(
             tradesperson_id=current_user.id,
             trade_categories=current_user.trade_categories or []
         )
