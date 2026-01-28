@@ -236,9 +236,21 @@ class Database:
                 except Exception as idx_err:
                     logger.warning(f"Failed to ensure newsletter_subscribers index: {idx_err}")
 
-                # Performance Optimization Indexes
-                try:
-                    # Interests: unique id index
+            # Performance Optimization Indexes
+            try:
+                # Text indexes for jobs (essential for $regex queries)
+                await self.database.jobs.create_index(
+                    [("title", "text"), ("category", "text")],
+                    name="jobs_text_search"
+                )
+                
+                # Compound indexes for filtering
+                await self.database.jobs.create_index(
+                    [("status", 1), ("category", 1), ("created_at", -1)],
+                    name="jobs_status_category_createdAt"
+                )
+                
+                # Interests: unique id index
                     await self.database.interests.create_index(
                         [("id", 1)],
                         name="unique_interest_uuid",
@@ -3478,14 +3490,13 @@ class Database:
                 tradesperson_categories = list(tradesperson_categories) + [profession]
             
             if tradesperson_categories:
-                # Case-insensitive partial matching for trade categories and job titles
-                # Using a single combined regex for better performance
+                # Use $in for category matching (faster than regex) and combined regex for title
                 combined_pattern = "|".join([re.escape(cat) for cat in tradesperson_categories])
                 job_filter["$or"] = [
-                    {"category": {"$regex": combined_pattern, "$options": "i"}},
+                    {"category": {"$in": tradesperson_categories}},
                     {"title": {"$regex": combined_pattern, "$options": "i"}}
                 ]
-                print(f"Skills filter applied (optimized regex): {tradesperson_categories}")
+                print(f"Skills filter applied (optimized): {tradesperson_categories}")
             
             # 2. LOCATION FILTERING - Show jobs within tradesperson's travel distance
             if (tradesperson.get("latitude") is not None and 
@@ -3525,12 +3536,12 @@ class Database:
                                                skip: int = 0, limit: int = 50) -> List[dict]:
         """Get jobs near location matching skills, including jobs without coordinates (optimized)."""
         try:
-            # Build skills filter (case-insensitive partial match for category and title)
+            # Build skills filter (optimized for performance)
             skills_filter = {}
             if skill_categories:
                 combined_pattern = "|".join([re.escape(cat) for cat in skill_categories])
                 skills_filter["$or"] = [
-                    {"category": {"$regex": combined_pattern, "$options": "i"}},
+                    {"category": {"$in": skill_categories}},
                     {"title": {"$regex": combined_pattern, "$options": "i"}}
                 ]
 
