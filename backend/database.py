@@ -3491,7 +3491,6 @@ class Database:
         return await self.get_jobs(skip=skip, limit=limit, filters={"status": "active"})
 
     @time_it
-    @time_it
     async def get_jobs_for_tradesperson(self, tradesperson_id: str, skip: int = 0, limit: int = 50) -> List[dict]:
         """Get jobs filtered by tradesperson's skills and location preferences"""
         try:
@@ -3568,22 +3567,42 @@ class Database:
                     {"title": {"$regex": combined_pattern, "$options": "i"}}
                 ]
 
-            # Base filter: active jobs only
-            base_filter = {"status": "active"}
+            # Base filter: active jobs only, non-expired
+            base_filter = {
+                "status": "active",
+                "expires_at": {"$gt": datetime.utcnow()}  # Only non-expired jobs
+            }
 
             # Combine filters
             combined_filter = {"$and": [base_filter, skills_filter]} if skills_filter else base_filter
 
-            # Reduced fetch_limit to prevent timeouts: fetch only what we need plus some buffer
-            # This is much more efficient than fetching 500+ jobs
-            fetch_limit = limit + skip + 50  # Small buffer for jobs outside distance radius
+            # CRITICAL OPTIMIZATION: Fetch only what we need + a small buffer
+            # Old code: fetch_limit = limit + skip + 50 (could fetch 200+ documents!)
+            # New code: fetch a reasonable batch to avoid timeouts
+            # We skip at the database level ONLY if skip is reasonable (to leverage pagination)
+            # Otherwise we fetch a limited set and do client-side filtering
+            if skip < 500:
+                # Use database-level skip for reasonable pagination
+                fetch_limit = limit * 3  # Fetch 3x to account for distance filtering
+                cursor = (
+                    self.database.jobs
+                    .find(combined_filter)
+                    .sort("created_at", -1)
+                    .skip(skip)
+                    .limit(fetch_limit)
+                )
+            else:
+                # For large skip values, fetch a reasonable batch without skip
+                # This prevents fetching thousands of documents
+                fetch_limit = min(200, limit * 2)
+                cursor = (
+                    self.database.jobs
+                    .find(combined_filter)
+                    .sort("created_at", -1)
+                    .limit(fetch_limit)
+                )
+                skip = 0  # Reset skip for client-side handling
             
-            cursor = (
-                self.database.jobs
-                .find(combined_filter)
-                .sort("created_at", -1)
-                .limit(fetch_limit)
-            )
             raw_jobs = await cursor.to_list(length=fetch_limit)
 
             jobs_within_distance: List[Dict[str, Any]] = []
