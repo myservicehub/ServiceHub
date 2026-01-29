@@ -1069,24 +1069,24 @@ const ProfilePage = () => {
                                       value={cert?.name || ''}
                                       onChange={(e) => handleCertificationChange(index, e.target.value)}
                                       placeholder="e.g. COREN Registered, Licensed Electrician"
-                                      className="w-full font-lato bg-white h-9 sm:h-10 text-sm"
+                                      className="w-full font-lato bg-white h-9 sm:h-10 text-sm text-gray-900 border-gray-300"
                                     />
                                   </div>
                                   <Button
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => handleRemoveCertification(index)}
-                                    className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 px-2 sm:h-10 sm:px-3 flex items-center gap-1 self-end sm:self-auto sm:mt-6"
+                                    className="text-red-500 hover:text-red-700 hover:bg-red-50 h-9 px-3 sm:h-10 sm:px-3 flex items-center gap-2 self-end sm:self-auto sm:mt-6 border border-red-100 sm:border-none"
                                   >
                                     <X size={16} />
-                                    <span className="sm:hidden text-xs">Remove</span>
+                                    <span className="text-xs font-medium">Remove</span>
                                   </Button>
                                 </div>
                                 
                                 <div className="flex flex-col space-y-3">
                                   <div className="w-full">
                                     <label className="text-[10px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">
-                                      Certificate File
+                                      Certificate File (Image or PDF)
                                     </label>
                                     <div className="relative group w-full">
                                       <input
@@ -1184,25 +1184,31 @@ const ProfilePage = () => {
                                     </div>
                                     
                                     {image_url && (
-                                      <div className="mt-1">
+                                      <div className="mt-3">
                                         {isPdf ? (
                                           <div 
                                             className="flex items-center p-3 bg-white border rounded cursor-pointer hover:border-[#34D164] transition-colors"
                                             onClick={() => window.open(getFullUrl(image_url), '_blank')}
                                           >
                                             <FileText size={24} className="text-red-500 mr-3" />
-                                            <div className="flex-1">
-                                              <p className="text-sm font-medium text-gray-700">Certification Document (PDF)</p>
+                                            <div className="flex-1 min-w-0">
+                                              <p className="text-sm font-medium text-gray-700 truncate">Certification Document (PDF)</p>
                                               <p className="text-xs text-gray-500">Click to view or download</p>
                                             </div>
                                           </div>
                                         ) : (
-                                          <div className="w-full max-w-[200px] h-32 rounded-md overflow-hidden border bg-white shadow-sm">
+                                          <div className="w-full max-w-full sm:max-w-[300px] aspect-video rounded-xl overflow-hidden border bg-white shadow-sm relative group">
                                             <AuthenticatedImage 
                                               src={image_url} 
                                               alt={name} 
                                               className="w-full h-full object-cover"
                                             />
+                                            <div 
+                                              className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                                              onClick={() => window.open(getFullUrl(image_url), '_blank')}
+                                            >
+                                              <Eye className="text-white" size={24} />
+                                            </div>
                                           </div>
                                         )}
                                       </div>
@@ -1211,7 +1217,11 @@ const ProfilePage = () => {
                                 );
                               })
                             ) : (
-                              <p className="text-gray-500 font-lato text-center py-4">No certifications added yet</p>
+                              <div className="text-center py-8 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                                <Award className="mx-auto h-12 w-12 text-gray-300 mb-3" />
+                                <p className="text-gray-500 font-lato">No certifications added yet</p>
+                                <p className="text-xs text-gray-400 mt-1">Add your professional certifications to build trust</p>
+                              </div>
                             )}
                           </div>
                         )}

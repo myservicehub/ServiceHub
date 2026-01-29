@@ -3595,7 +3595,7 @@ class Database:
                 .limit(fetch_limit)
             )
             
-            raw_jobs = await asyncio.wait_for(cursor.to_list(length=fetch_limit), timeout=5.0)
+            raw_jobs = await asyncio.wait_for(cursor.to_list(length=fetch_limit), timeout=10.0)
 
             jobs_within_distance: List[Dict[str, Any]] = []
             jobs_without_coords: List[Dict[str, Any]] = []
