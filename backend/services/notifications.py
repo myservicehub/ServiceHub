@@ -521,7 +521,7 @@ Your job is now visible to all qualified tradespeople in your area. You should s
 To view your job and manage applications, visit: {os.environ.get('FRONTEND_URL', 'https://my-servicehub.vercel.app')}/my-jobs
 
 Best regards,
-serviceHub Admin Team
+serviceHub Team
                 """,
                 variables=["homeowner_name", "job_title", "approved_at", "admin_notes"]
             ),
@@ -562,7 +562,7 @@ To apply for this position, visit:
 Don't miss out on this opportunity!
 
 Best regards,
-serviceHub Careers Team
+serviceHub Team
                 """,
                 variables=["recipient_name", "job_title", "department", "location", "job_type", "experience_level", "posted_date", "job_description", "application_url"]
             ),
@@ -602,7 +602,7 @@ To review this application and contact the applicant, visit the admin dashboard:
 {admin_dashboard_url}
 
 Best regards,
-serviceHub System
+serviceHub Team
                 """,
                 variables=["job_title", "applicant_name", "applicant_email", "applicant_phone", "experience_level", "applied_date", "cover_letter", "admin_dashboard_url"]
             ),
@@ -735,7 +735,7 @@ Visit your jobs: https://my-servicehub.vercel.app/my-jobs
 If you have any questions, please contact our support team.
 
 Best regards,
-serviceHub Admin Team
+serviceHub Team
                 """,
                 variables=["homeowner_name", "job_title", "reviewed_at", "rejection_reason"]
             ),
@@ -767,7 +767,7 @@ https://my-servicehub.vercel.app/my-jobs
 If you have any questions, please don't hesitate to contact our support team.
 
 Best regards,
-serviceHub
+serviceHub Team
                 """,
                 variables=["homeowner_name", "job_title"]
             ),
