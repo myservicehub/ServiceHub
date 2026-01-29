@@ -93,6 +93,7 @@ const BrowseJobsPage = () => {
   });
   const [userInterests, setUserInterests] = useState(null);
   const [userInterestsLoading, setUserInterestsLoading] = useState(false);
+  const [loadErrorCount, setLoadErrorCount] = useState(0); // Track errors to prevent infinite loops
 
   const { user, isAuthenticated, isTradesperson } = useAuth();
   const location = useLocation();
@@ -323,6 +324,9 @@ const BrowseJobsPage = () => {
         response = await jobsAPI.apiClient.get(`/jobs/for-tradesperson?limit=50&skip=${skip}`);
       }
 
+      // Success: reset error counter
+      setLoadErrorCount(0);
+
       let jobsData = response.data.jobs || [];
       if (filters.useLocation && userLocation && typeof userLocation.lat === 'number' && typeof userLocation.lng === 'number') {
         // Compute fallback distances for jobs without distance_km using text location or coords
@@ -376,9 +380,19 @@ const BrowseJobsPage = () => {
       }
     } catch (error) {
       console.error('Failed to load jobs:', error);
-      // Suppress noisy error toast to avoid disruptive red notifications.
-      // The page already provides gating/inline guidance (e.g., verification required).
-      // Intentionally not showing a toast here.
+      setLoadErrorCount(prev => prev + 1);
+      
+      // Prevent infinite reload loops: stop auto-reloading after 3 failures
+      if (loadErrorCount >= 2) {
+        console.warn('Jobs API repeatedly failing; stopping auto-reload to prevent infinite loop');
+        // Show one-time error toast only on repeated failures
+        toast({
+          title: "Unable to load jobs",
+          description: "The jobs service is temporarily unavailable. Please refresh the page or try again later.",
+          variant: "destructive",
+          duration: 10000
+        });
+      }
     } finally {
       setLoading(false);
     }

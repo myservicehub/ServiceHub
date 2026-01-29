@@ -1071,8 +1071,12 @@ class Database:
                 query['status'] = 'active'
             query['expires_at'] = {'$gt': datetime.utcnow()}
         
-        cursor = self.database.jobs.find(query).sort("created_at", -1).skip(skip).limit(limit)
-        jobs = await cursor.to_list(length=limit)
+        try:
+            cursor = self.database.jobs.find(query).sort("created_at", -1).skip(skip).limit(limit)
+            jobs = await asyncio.wait_for(cursor.to_list(length=limit), timeout=4.0)
+        except asyncio.TimeoutError:
+            logger.warning(f"get_jobs timeout after 4 seconds; returning empty")
+            jobs = []
         
         for job in jobs:
             job['_id'] = str(job['_id'])
@@ -1471,8 +1475,12 @@ class Database:
             if 'status' not in query:
                 query['status'] = 'active'
             query['expires_at'] = {'$gt': datetime.utcnow()}
-            
-        return await self.database.jobs.count_documents(query)
+        
+        try:
+            return await asyncio.wait_for(self.database.jobs.count_documents(query), timeout=4.0)
+        except asyncio.TimeoutError:
+            logger.warning(f"get_jobs_count timeout; returning 0")
+            return 0
 
     async def update_job_quotes_count(self, job_id: str):
         quotes_count = await self.database.quotes.count_documents({"job_id": job_id})
@@ -3558,57 +3566,41 @@ class Database:
                                                skip: int = 0, limit: int = 50) -> List[dict]:
         """Get jobs near location matching skills, including jobs without coordinates (optimized)."""
         try:
-            # Build skills filter (optimized for performance)
-            skills_filter = {}
-            if skill_categories:
-                combined_pattern = "|".join([re.escape(cat) for cat in skill_categories])
-                skills_filter["$or"] = [
-                    {"category": {"$in": skill_categories}},
-                    {"title": {"$regex": combined_pattern, "$options": "i"}}
-                ]
-
-            # Base filter: active jobs only, non-expired
+            # Base filter: active jobs only, non-expired (most important for performance)
             base_filter = {
                 "status": "active",
-                "expires_at": {"$gt": datetime.utcnow()}  # Only non-expired jobs
+                "expires_at": {"$gt": datetime.utcnow()}
             }
 
-            # Combine filters
-            combined_filter = {"$and": [base_filter, skills_filter]} if skills_filter else base_filter
+            # Build skills filter using ONLY category $in (avoid expensive $regex)
+            # $regex on large collections causes extreme slowdowns and timeouts
+            combined_filter = base_filter
+            if skill_categories and len(skill_categories) > 0:
+                # Use only $in operator - much faster than $regex
+                combined_filter = {
+                    "$and": [
+                        base_filter,
+                        {"category": {"$in": skill_categories}}
+                    ]
+                }
 
-            # CRITICAL OPTIMIZATION: Fetch only what we need + a small buffer
-            # Old code: fetch_limit = limit + skip + 50 (could fetch 200+ documents!)
-            # New code: fetch a reasonable batch to avoid timeouts
-            # We skip at the database level ONLY if skip is reasonable (to leverage pagination)
-            # Otherwise we fetch a limited set and do client-side filtering
-            if skip < 500:
-                # Use database-level skip for reasonable pagination
-                fetch_limit = limit * 3  # Fetch 3x to account for distance filtering
-                cursor = (
-                    self.database.jobs
-                    .find(combined_filter)
-                    .sort("created_at", -1)
-                    .skip(skip)
-                    .limit(fetch_limit)
-                )
-            else:
-                # For large skip values, fetch a reasonable batch without skip
-                # This prevents fetching thousands of documents
-                fetch_limit = min(200, limit * 2)
-                cursor = (
-                    self.database.jobs
-                    .find(combined_filter)
-                    .sort("created_at", -1)
-                    .limit(fetch_limit)
-                )
-                skip = 0  # Reset skip for client-side handling
+            # Fetch with conservative limits to avoid timeouts
+            fetch_limit = min(limit * 2, 100)  # Max 100 docs to prevent timeout
             
-            raw_jobs = await cursor.to_list(length=fetch_limit)
+            cursor = (
+                self.database.jobs
+                .find(combined_filter)
+                .sort("created_at", -1)
+                .skip(skip)
+                .limit(fetch_limit)
+            )
+            
+            raw_jobs = await asyncio.wait_for(cursor.to_list(length=fetch_limit), timeout=5.0)
 
             jobs_within_distance: List[Dict[str, Any]] = []
             jobs_without_coords: List[Dict[str, Any]] = []
 
-            # Process jobs synchronously to avoid overhead of asyncio.gather() on large lists
+            # Process jobs synchronously
             for job in raw_jobs:
                 job["_id"] = str(job["_id"])
                 jlat = job.get("latitude")
@@ -3626,18 +3618,35 @@ class Database:
                         job["distance_km"] = round(dist, 2)
                         jobs_within_distance.append(job)
                 else:
-                    # Note: We removed resolve_coordinates_from_entity here to prevent timeouts
-                    # caused by Nominatim rate limiting when processing many jobs at once.
                     job["distance_km"] = None
                     jobs_without_coords.append(job)
 
-            # Sort: closest first, then most recent for no-coordinate jobs
+            # Sort by distance
             jobs_within_distance.sort(key=lambda x: x.get("distance_km", float("inf")))
-            # jobs_without_coords already sorted by created_at desc from find()
-
             combined = jobs_within_distance + jobs_without_coords
-            return combined[skip : skip + limit]
+            return combined[:limit]  # Return only requested limit
 
+        except asyncio.TimeoutError:
+            logger.warning(f"Query timeout in get_jobs_near_location_with_skills; returning fallback")
+            # Fallback: return active jobs without skills filter
+            try:
+                cursor = (
+                    self.database.jobs
+                    .find({
+                        "status": "active",
+                        "expires_at": {"$gt": datetime.utcnow()}
+                    })
+                    .sort("created_at", -1)
+                    .skip(skip)
+                    .limit(limit)
+                )
+                jobs = await asyncio.wait_for(cursor.to_list(length=limit), timeout=3.0)
+                for job in jobs:
+                    job["_id"] = str(job["_id"])
+                return jobs
+            except Exception as e2:
+                logger.error(f"Fallback also failed: {e2}")
+                return []
         except Exception as e:
             logger.error(f"Error in get_jobs_near_location_with_skills: {e}")
             return []
@@ -3661,36 +3670,44 @@ class Database:
                 "expires_at": {"$gt": datetime.utcnow()},
             }
 
-            # Text search on title/description
-            if search_query:
+            # Text search on title/description - AVOID if possible (slow on large collections)
+            if search_query and len(search_query.strip()) >= 2:
+                search_pattern = {"$regex": search_query, "$options": "i"}
                 base_filter["$or"] = [
-                    {"title": {"$regex": search_query, "$options": "i"}},
-                    {"description": {"$regex": search_query, "$options": "i"}},
+                    {"title": search_pattern},
+                    {"description": search_pattern},
                 ]
 
-            # Category filter (case-insensitive exact match)
+            # Category filter (exact, faster than regex)
             if category:
-                base_filter["category"] = {"$regex": f"^{category}$", "$options": "i"}
+                base_filter["category"] = category  # Use exact match instead of regex
 
             use_location = (user_latitude is not None and user_longitude is not None)
 
             # Location-aware search
             if use_location:
                 radius_km = max_distance_km if (isinstance(max_distance_km, (int, float)) and max_distance_km is not None) else 25
-                fetch_limit = max(limit * 3 + skip, 150)
+                fetch_limit = max(limit * 2, 50)  # Smaller batch to avoid timeout
                 
                 cursor = (
                     self.database.jobs
                     .find(base_filter)
                     .sort("created_at", -1)
+                    .skip(skip)
                     .limit(fetch_limit)
                 )
-                raw_jobs = await cursor.to_list(length=fetch_limit)
+                # Add timeout to prevent hanging
+                try:
+                    raw_jobs = await asyncio.wait_for(cursor.to_list(length=fetch_limit), timeout=4.0)
+                except asyncio.TimeoutError:
+                    logger.warning(f"Search query timeout; returning empty results")
+                    return []
 
                 jobs_within_distance: List[Dict[str, Any]] = []
                 jobs_without_coords: List[Dict[str, Any]] = []
 
-                async def process_job(job):
+                # Process jobs synchronously (faster than parallel for small batches)
+                for job in raw_jobs:
                     job["_id"] = str(job["_id"])
                     jlat = job.get("latitude")
                     jlng = job.get("longitude")
@@ -3705,27 +3722,15 @@ class Database:
                     if dist is not None:
                         if dist <= float(radius_km):
                             job["distance_km"] = round(dist, 2)
-                            return ("within", job)
+                            jobs_within_distance.append(job)
                     else:
-                        # Note: Removed resolve_coordinates_from_entity to prevent timeouts
                         job["distance_km"] = None
-                        return ("without", job)
-                    return (None, None)
-
-                # Process jobs in parallel
-                tasks = [process_job(job) for job in raw_jobs]
-                results = await asyncio.gather(*tasks)
-
-                for status, job in results:
-                    if status == "within":
-                        jobs_within_distance.append(job)
-                    elif status == "without":
                         jobs_without_coords.append(job)
 
-                # Sort and paginate combined results
+                # Sort by distance, then recency
                 jobs_within_distance.sort(key=lambda x: x.get("distance_km", float("inf")))
                 combined = jobs_within_distance + jobs_without_coords
-                return combined[skip : skip + limit]
+                return combined[:limit]
             else:
                 # No location, just fetch and paginate
                 cursor = (
@@ -3735,7 +3740,12 @@ class Database:
                     .skip(skip)
                     .limit(limit)
                 )
-                results = await cursor.to_list(length=None)
+                try:
+                    results = await asyncio.wait_for(cursor.to_list(length=None), timeout=4.0)
+                except asyncio.TimeoutError:
+                    logger.warning(f"Search query (no location) timeout; returning empty results")
+                    return []
+                    
                 for job in results:
                     job["_id"] = str(job["_id"])
                     job["distance_km"] = None
