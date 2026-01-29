@@ -31,9 +31,13 @@ import {
   Settings,
   Camera,
   Plus,
-  ChevronDown
+  ChevronDown,
+  ExternalLink,
+  FileText,
+  Eye
 } from 'lucide-react';
 import { AlertTriangle } from 'lucide-react';
+import AuthenticatedImage from '../components/common/AuthenticatedImage';
 import { authAPI, portfolioAPI, statsAPI } from '../api/services';
 import { reviewsAPI } from '../api/reviews';
 import { useAuth } from '../contexts/AuthContext';
@@ -1063,23 +1067,70 @@ const ProfilePage = () => {
                             </Button>
                           </div>
                         ) : (
-                          <div className="space-y-2">
+                          <div className="space-y-4">
                             {Array.isArray(profileData.certifications) && profileData.certifications.length > 0 ? (
                               profileData.certifications.map((c, index) => {
                                 const name = typeof c === 'string' ? c : (c?.name || '');
                                 const image_url = typeof c === 'string' ? '' : (c?.image_url || c?.image || '');
+                                const isPdf = image_url.toLowerCase().endsWith('.pdf');
+                                
+                                // Construct full URL for direct access if needed
+                                const getFullUrl = (url) => {
+                                  if (!url) return '';
+                                  if (url.startsWith('http')) return url;
+                                  const baseUrl = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/$/, '');
+                                  return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+                                };
+
                                 return (
-                                  <div key={index} className="flex items-center space-x-2">
-                                    <Award size={14} style={{color: '#34D164'}} />
-                                    <span className="text-gray-700 font-lato">{name}</span>
-                                    {image_url ? (
-                                      <img src={image_url} alt="Cert" className="w-8 h-8 object-cover rounded" />
-                                    ) : null}
+                                  <div key={index} className="flex flex-col p-3 border rounded-lg bg-gray-50 hover:bg-white transition-colors">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <div className="flex items-center space-x-2">
+                                        <Award size={18} style={{color: '#34D164'}} />
+                                        <span className="font-semibold text-gray-800 font-lato">{name}</span>
+                                      </div>
+                                      {image_url && (
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="text-[#34D164] hover:text-[#2eb755] p-0 h-auto font-lato"
+                                          onClick={() => window.open(getFullUrl(image_url), '_blank')}
+                                        >
+                                          <ExternalLink size={14} className="mr-1" />
+                                          View
+                                        </Button>
+                                      )}
+                                    </div>
+                                    
+                                    {image_url && (
+                                      <div className="mt-1">
+                                        {isPdf ? (
+                                          <div 
+                                            className="flex items-center p-3 bg-white border rounded cursor-pointer hover:border-[#34D164] transition-colors"
+                                            onClick={() => window.open(getFullUrl(image_url), '_blank')}
+                                          >
+                                            <FileText size={24} className="text-red-500 mr-3" />
+                                            <div className="flex-1">
+                                              <p className="text-sm font-medium text-gray-700">Certification Document (PDF)</p>
+                                              <p className="text-xs text-gray-500">Click to view or download</p>
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          <div className="w-full max-w-[200px] h-32 rounded-md overflow-hidden border bg-white shadow-sm">
+                                            <AuthenticatedImage 
+                                              src={image_url} 
+                                              alt={name} 
+                                              className="w-full h-full object-cover"
+                                            />
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
                                   </div>
                                 );
                               })
                             ) : (
-                              <p className="text-gray-500 font-lato">No certifications added yet</p>
+                              <p className="text-gray-500 font-lato text-center py-4">No certifications added yet</p>
                             )}
                           </div>
                         )}

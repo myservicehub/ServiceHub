@@ -43,8 +43,11 @@ import {
   Contact,
   FileText,
   Info,
-  ExternalLink
+  ExternalLink,
+  Shield,
+  Eye
 } from 'lucide-react';
+import AuthenticatedImage from '../components/common/AuthenticatedImage';
 import { interestsAPI, portfolioAPI, tradespeopleAPI, jobsAPI } from '../api/services';
 import { reviewsAPI } from '../api/reviews';
 import { useAuth } from '../contexts/AuthContext';
@@ -881,15 +884,65 @@ const InterestedTradespeopleePage = () => {
 
                     {/* Certifications */}
                     {selectedTradesperson.certifications && selectedTradesperson.certifications.length > 0 && (
-                      <div>
-                        <h4 className="font-semibold mb-2">Certifications</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {selectedTradesperson.certifications.map((cert, index) => (
-                            <Badge key={index} variant="outline" className="flex items-center gap-1">
-                              <Award size={12} />
-                              {cert}
-                            </Badge>
-                          ))}
+                      <div className="mb-6">
+                        <h4 className="font-semibold mb-3 flex items-center gap-2">
+                          <Award size={18} className="text-green-600" />
+                          Certifications
+                        </h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {selectedTradesperson.certifications.map((c, index) => {
+                            const name = typeof c === 'string' ? c : (c?.name || '');
+                            const image_url = typeof c === 'string' ? '' : (c?.image_url || c?.image || '');
+                            const isPdf = image_url?.toLowerCase().endsWith('.pdf');
+                            
+                            const getFullUrl = (url) => {
+                              if (!url) return '';
+                              if (url.startsWith('http')) return url;
+                              const baseUrl = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/$/, '');
+                              return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+                            };
+
+                            return (
+                              <div key={index} className="flex flex-col p-3 bg-gray-50 rounded-lg border border-gray-100">
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="flex items-center gap-2">
+                                    <Shield size={14} className="text-green-600" />
+                                    <span className="text-sm font-medium text-gray-800">{name}</span>
+                                  </div>
+                                  {image_url && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="text-green-600 hover:text-green-700 h-auto p-0 flex items-center gap-1"
+                                      onClick={() => window.open(getFullUrl(image_url), '_blank')}
+                                    >
+                                      <ExternalLink size={12} />
+                                      <span className="text-xs">View</span>
+                                    </Button>
+                                  )}
+                                </div>
+                                
+                                {image_url && !isPdf && (
+                                  <div className="h-20 rounded overflow-hidden border bg-white shadow-sm mt-1">
+                                    <AuthenticatedImage 
+                                      src={image_url} 
+                                      alt={name} 
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                )}
+                                {image_url && isPdf && (
+                                  <div 
+                                    className="flex items-center p-2 bg-white border rounded cursor-pointer hover:border-green-400 transition-colors mt-1"
+                                    onClick={() => window.open(getFullUrl(image_url), '_blank')}
+                                  >
+                                    <FileText size={16} className="text-red-500 mr-2" />
+                                    <span className="text-[10px] font-medium text-gray-600">PDF Document</span>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     )}

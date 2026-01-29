@@ -37,8 +37,12 @@ import {
   Building,
   Wrench,
   Shield,
-  Zap
+  Zap,
+  ExternalLink,
+  FileText,
+  Eye
 } from 'lucide-react';
+import AuthenticatedImage from '../components/common/AuthenticatedImage';
 import { tradespeopleAPI, portfolioAPI, reviewsAPI } from '../api/services';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
@@ -804,26 +808,71 @@ const TradespersonProfilePage = () => {
                     <Card>
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                          <Award size={20} />
+                          <Award size={20} className="text-green-600" />
                           Certifications & Licenses
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {tradesperson.certifications.map((cert, index) => (
-                            <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                              <Shield size={20} className="text-green-600" />
-                              <div>
-                                <h4 className="font-medium text-sm">{cert.name}</h4>
-                                <p className="text-xs text-gray-600">Issued by {cert.issuer}</p>
-                                {cert.expiry_date && (
-                                  <p className="text-xs text-gray-500">
-                                    Expires: {formatDate(cert.expiry_date)}
-                                  </p>
+                          {tradesperson.certifications.map((c, index) => {
+                            const name = typeof c === 'string' ? c : (c?.name || '');
+                            const image_url = typeof c === 'string' ? '' : (c?.image_url || c?.image || '');
+                            const isPdf = image_url?.toLowerCase().endsWith('.pdf');
+                            
+                            const getFullUrl = (url) => {
+                              if (!url) return '';
+                              if (url.startsWith('http')) return url;
+                              const baseUrl = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/$/, '');
+                              return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+                            };
+
+                            return (
+                              <div key={index} className="flex flex-col p-4 bg-gray-50 rounded-lg border border-gray-100 hover:border-green-200 transition-colors">
+                                <div className="flex items-center justify-between mb-3">
+                                  <div className="flex items-center gap-2">
+                                    <Shield size={18} className="text-green-600" />
+                                    <h4 className="font-semibold text-gray-800">{name}</h4>
+                                  </div>
+                                  {image_url && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="text-green-600 hover:text-green-700 h-auto p-0 flex items-center gap-1"
+                                      onClick={() => window.open(getFullUrl(image_url), '_blank')}
+                                    >
+                                      <ExternalLink size={14} />
+                                      View
+                                    </Button>
+                                  )}
+                                </div>
+
+                                {image_url && (
+                                  <div className="mt-1">
+                                    {isPdf ? (
+                                      <div 
+                                        className="flex items-center p-3 bg-white border rounded cursor-pointer hover:border-green-400 transition-colors"
+                                        onClick={() => window.open(getFullUrl(image_url), '_blank')}
+                                      >
+                                        <FileText size={24} className="text-red-500 mr-3" />
+                                        <div className="flex-1">
+                                          <p className="text-sm font-medium text-gray-700">Certification Document (PDF)</p>
+                                          <p className="text-xs text-gray-500">Click to view or download</p>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="w-full h-32 rounded-md overflow-hidden border bg-white shadow-sm">
+                                        <AuthenticatedImage 
+                                          src={image_url} 
+                                          alt={name} 
+                                          className="w-full h-full object-cover"
+                                        />
+                                      </div>
+                                    )}
+                                  </div>
                                 )}
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </CardContent>
                     </Card>
