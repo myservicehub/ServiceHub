@@ -39,8 +39,7 @@ import {
   Shield,
   Zap,
   ExternalLink,
-  FileText,
-  Eye
+  FileText
 } from 'lucide-react';
 import AuthenticatedImage from '../components/common/AuthenticatedImage';
 import { tradespeopleAPI, portfolioAPI, reviewsAPI } from '../api/services';
