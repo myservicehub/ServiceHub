@@ -71,6 +71,9 @@ services:
   - key: FRONTEND_URL
     scope: RUN_AND_BUILD_TIME
     value: https://my-servicehub.vercel.app
+  - key: UPLOADS_DIR
+    scope: RUN_AND_BUILD_TIME
+    value: /app/uploads
   http_port: 8080
   github:
     branch: main

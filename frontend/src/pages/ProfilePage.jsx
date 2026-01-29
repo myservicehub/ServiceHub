@@ -506,6 +506,33 @@ const ProfilePage = () => {
       updateUser(response);
       setIsEditing(false);
 
+      // Refresh full profile to ensure all fields (including nested certifications) are up to date
+      try {
+        const freshUser = await authAPI.getCurrentUser();
+        if (freshUser) {
+          setProfileData(freshUser);
+          updateUser(freshUser);
+          
+          // Re-normalize certifications for editData
+          const normalizeCerts = (certs) => {
+            const arr = Array.isArray(certs) ? certs : [];
+            return arr.map((c) => {
+              if (typeof c === 'string') return { name: c, image_url: '' };
+              const name = c?.name ?? '';
+              const image_url = c?.image_url ?? c?.image ?? '';
+              return { name, image_url };
+            });
+          };
+          
+          setEditData(prev => ({
+            ...prev,
+            certifications: normalizeCerts(freshUser.certifications)
+          }));
+        }
+      } catch (refreshError) {
+        console.warn('Failed to refresh profile after save:', refreshError);
+      }
+
       toast({
         title: "Profile updated successfully!",
         description: "Your profile information has been saved.",
@@ -1030,40 +1057,93 @@ const ProfilePage = () => {
                       </CardHeader>
                       <CardContent>
                         {isEditing ? (
-                          <div className="space-y-3">
+                          <div className="space-y-4">
                             {(editData.certifications || []).map((cert, index) => (
-                              <div key={index} className="flex items-center space-x-2">
-                                <Input
-                                  value={cert?.name || ''}
-                                  onChange={(e) => handleCertificationChange(index, e.target.value)}
-                                  placeholder="Enter certification name"
-                                  className="flex-1 font-lato"
-                                />
-                                <input
-                                  type="file"
-                                  accept="image/*,application/pdf"
-                                  onChange={(e) => handleCertificationFileChange(index, e.target.files?.[0] || null)}
-                                  className="text-sm"
-                                />
-                                {cert?.image_url ? (
-                                  <img src={cert.image_url} alt="Cert" className="w-10 h-10 object-cover rounded" />
-                                ) : null}
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleRemoveCertification(index)}
-                                  className="text-red-600 hover:text-red-700"
-                                >
-                                  <X size={16} />
-                                </Button>
+                              <div key={index} className="flex flex-col space-y-3 p-4 border rounded-xl bg-gray-50/50 relative">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex-1">
+                                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">
+                                      Certification Name
+                                    </label>
+                                    <Input
+                                      value={cert?.name || ''}
+                                      onChange={(e) => handleCertificationChange(index, e.target.value)}
+                                      placeholder="e.g. COREN Registered, Licensed Electrician"
+                                      className="w-full font-lato bg-white"
+                                    />
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleRemoveCertification(index)}
+                                    className="text-red-500 hover:text-red-700 hover:bg-red-50 mt-6"
+                                  >
+                                    <X size={20} />
+                                  </Button>
+                                </div>
+                                
+                                <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+                                  <div className="flex-1">
+                                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">
+                                      Certificate File
+                                    </label>
+                                    <div className="relative group">
+                                      <input
+                                        type="file"
+                                        accept="image/*,application/pdf"
+                                        onChange={(e) => handleCertificationFileChange(index, e.target.files?.[0] || null)}
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                      />
+                                      <div className="flex items-center justify-center p-3 border-2 border-dashed border-gray-300 rounded-lg bg-white group-hover:border-[#34D164] transition-colors">
+                                        <Plus size={18} className="text-gray-400 mr-2 group-hover:text-[#34D164]" />
+                                        <span className="text-sm text-gray-600 group-hover:text-[#34D164]">
+                                          {cert?.image_url ? 'Change File' : 'Upload Image or PDF'}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  
+                                  {cert?.image_url && (
+                                    <div className="flex items-center gap-3 p-2 bg-white rounded-lg border shadow-sm">
+                                      {cert.image_url.toLowerCase().endsWith('.pdf') ? (
+                                        <div className="h-12 w-12 flex items-center justify-center bg-red-50 rounded border border-red-100">
+                                          <FileText size={24} className="text-red-500" />
+                                        </div>
+                                      ) : (
+                                        <div className="h-12 w-12 rounded border overflow-hidden bg-gray-50">
+                                          <img 
+                                            src={cert.image_url.startsWith('http') ? cert.image_url : `${(import.meta.env.VITE_BACKEND_URL || '').replace(/\/$/, '')}${cert.image_url.startsWith('/') ? '' : '/'}${cert.image_url}`} 
+                                            alt="Preview" 
+                                            className="h-full w-full object-cover" 
+                                            onError={(e) => {
+                                              e.target.onerror = null;
+                                              e.target.src = '/placeholder-cert.png'; // Fallback
+                                            }}
+                                          />
+                                        </div>
+                                      )}
+                                      <div className="flex flex-col">
+                                        <span className="text-xs font-medium text-gray-700">File uploaded</span>
+                                        <button 
+                                          type="button"
+                                          onClick={() => window.open(cert.image_url.startsWith('http') ? cert.image_url : `${(import.meta.env.VITE_BACKEND_URL || '').replace(/\/$/, '')}${cert.image_url.startsWith('/') ? '' : '/'}${cert.image_url}`, '_blank')}
+                                          className="text-[10px] text-[#34D164] hover:underline font-bold"
+                                        >
+                                          View File
+                                        </button>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             ))}
                             <Button
                               variant="outline"
                               onClick={handleAddCertification}
-                              className="font-lato"
+                              className="w-full py-6 border-dashed border-2 hover:border-[#34D164] hover:text-[#34D164] transition-all font-montserrat"
                             >
-                              Add Certification
+                              <Plus size={18} className="mr-2" />
+                              Add Another Certification
                             </Button>
                           </div>
                         ) : (

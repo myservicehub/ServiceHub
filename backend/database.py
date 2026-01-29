@@ -1073,9 +1073,9 @@ class Database:
         
         try:
             cursor = self.database.jobs.find(query).sort("created_at", -1).skip(skip).limit(limit)
-            jobs = await asyncio.wait_for(cursor.to_list(length=limit), timeout=4.0)
+            jobs = await asyncio.wait_for(cursor.to_list(length=limit), timeout=10.0)
         except asyncio.TimeoutError:
-            logger.warning(f"get_jobs timeout after 4 seconds; returning empty")
+            logger.warning(f"get_jobs timeout after 10 seconds; returning empty")
             jobs = []
         
         for job in jobs:
@@ -1477,7 +1477,7 @@ class Database:
             query['expires_at'] = {'$gt': datetime.utcnow()}
         
         try:
-            return await asyncio.wait_for(self.database.jobs.count_documents(query), timeout=4.0)
+            return await asyncio.wait_for(self.database.jobs.count_documents(query), timeout=10.0)
         except asyncio.TimeoutError:
             logger.warning(f"get_jobs_count timeout; returning 0")
             return 0
@@ -3389,7 +3389,7 @@ class Database:
                 "countrycodes": "ng",
             }
             headers = {"User-Agent": os.getenv("GEOCODER_UA", "ServiceHub/1.0")}
-            async with httpx.AsyncClient(timeout=5) as client:
+            async with httpx.AsyncClient(timeout=10) as client:
                 r = await client.get(
                     "https://nominatim.openstreetmap.org/search",
                     params=params,
@@ -3640,7 +3640,7 @@ class Database:
                     .skip(skip)
                     .limit(limit)
                 )
-                jobs = await asyncio.wait_for(cursor.to_list(length=limit), timeout=3.0)
+                jobs = await asyncio.wait_for(cursor.to_list(length=limit), timeout=10.0)
                 for job in jobs:
                     job["_id"] = str(job["_id"])
                 return jobs
@@ -3698,7 +3698,7 @@ class Database:
                 )
                 # Add timeout to prevent hanging
                 try:
-                    raw_jobs = await asyncio.wait_for(cursor.to_list(length=fetch_limit), timeout=4.0)
+                    raw_jobs = await asyncio.wait_for(cursor.to_list(length=fetch_limit), timeout=10.0)
                 except asyncio.TimeoutError:
                     logger.warning(f"Search query timeout; returning empty results")
                     return []
@@ -3741,7 +3741,7 @@ class Database:
                     .limit(limit)
                 )
                 try:
-                    results = await asyncio.wait_for(cursor.to_list(length=None), timeout=4.0)
+                    results = await asyncio.wait_for(cursor.to_list(length=None), timeout=10.0)
                 except asyncio.TimeoutError:
                     logger.warning(f"Search query (no location) timeout; returning empty results")
                     return []
