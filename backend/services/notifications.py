@@ -518,7 +518,7 @@ Great news! Your job posting has been approved and is now live on serviceHub.
 
 Your job is now visible to all qualified tradespeople in your area. You should start receiving interest notifications soon.
 
-To view your job and manage applications, visit: {os.environ.get('FRONTEND_URL', 'https://app.emergent.sh')}/my-jobs
+To view your job and manage applications, visit: {os.environ.get('FRONTEND_URL', 'https://my-servicehub.vercel.app')}/my-jobs
 
 Best regards,
 serviceHub Admin Team
@@ -530,7 +530,7 @@ serviceHub Admin Team
                 type=NotificationType.JOB_APPROVED,
                 channel=NotificationChannel.SMS,
                 subject_template="Job Approved - serviceHub",
-                content_template=f"✅ Your job '{{job_title}}' has been approved and is now live! Tradespeople can now see and apply. Check: {os.environ.get('FRONTEND_URL', 'https://app.emergent.sh')}/my-jobs",
+                content_template=f"✅ Your job '{{job_title}}' has been approved and is now live! Tradespeople can now see and apply. Check: {os.environ.get('FRONTEND_URL', 'https://my-servicehub.vercel.app')}/my-jobs",
                 variables=["job_title"]
             )
         }
@@ -730,7 +730,9 @@ How to Fix:
 
 We're here to help! If you have questions about these requirements, please contact our support team.
 
-Visit your jobs: https://app.emergent.sh/my-jobs
+Visit your jobs: https://my-servicehub.vercel.app/my-jobs
+
+If you have any questions, please contact our support team.
 
 Best regards,
 serviceHub Admin Team
@@ -742,7 +744,7 @@ serviceHub Admin Team
                 type=NotificationType.JOB_REJECTED,
                 channel=NotificationChannel.SMS,
                 subject_template="Job Update Required - serviceHub",
-                content_template="⚠️ Your job '{job_title}' needs updates before approval. Check your email for details or visit: https://app.emergent.sh/my-jobs",
+                content_template="⚠️ Your job '{job_title}' needs updates before approval. Check your email for details or visit: https://my-servicehub.vercel.app/my-jobs",
                 variables=["job_title"]
             )
         }
@@ -757,33 +759,24 @@ serviceHub Admin Team
                 content_template="""
 Hello {homeowner_name},
 
-Your job posting has been updated by our admin team to improve its quality and visibility.
+Your job posting has been approved by our admin team.
 
-📋 Job Title: {job_title}
-✏️ Updated Fields: {updated_fields}
-📅 Updated: {updated_at}
-👨‍💼 Updated by: Admin Team
+To view your job posting, visit:
+https://my-servicehub.vercel.app/my-jobs
 
-{admin_notes}
-
-What This Means:
-Your job posting now has better visibility and improved details to attract more qualified tradespeople. These updates help ensure you get the best possible responses to your job.
-
-To view your updated job posting, visit: https://app.emergent.sh/my-jobs
-
-If you have any questions about these updates, please don't hesitate to contact our support team.
+If you have any questions, please don't hesitate to contact our support team.
 
 Best regards,
-serviceHub Admin Team
+serviceHub
                 """,
-                variables=["homeowner_name", "job_title", "updated_fields", "updated_at", "admin_notes"]
+                variables=["homeowner_name", "job_title"]
             ),
             NotificationChannel.SMS: NotificationTemplate(
                 id=str(uuid.uuid4()),
                 type=NotificationType.JOB_UPDATED,
                 channel=NotificationChannel.SMS,
                 subject_template="Job Updated - serviceHub",
-                content_template="✏️ Your job '{job_title}' has been updated by our admin team to improve visibility. Check details: https://app.emergent.sh/my-jobs",
+                content_template="Your job '{job_title}' has been approved by our admin team. View it here: https://my-servicehub.vercel.app/my-jobs",
                 variables=["job_title"]
             )
         }
