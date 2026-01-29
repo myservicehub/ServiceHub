@@ -1059,33 +1059,33 @@ const ProfilePage = () => {
                         {isEditing ? (
                           <div className="space-y-4">
                             {(editData.certifications || []).map((cert, index) => (
-                              <div key={index} className="flex flex-col space-y-4 p-3 sm:p-4 border rounded-xl bg-gray-50/50 relative overflow-hidden">
-                                <div className="flex flex-col sm:flex-row items-start justify-between gap-3">
-                                  <div className="w-full">
-                                    <label className="text-[10px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">
+                              <div key={index} className="flex flex-col space-y-4 p-3 sm:p-5 border-2 border-gray-100 rounded-2xl bg-white relative overflow-hidden shadow-sm">
+                                <div className="flex flex-col space-y-3">
+                                  <div className="flex justify-between items-center">
+                                    <label className="text-[10px] sm:text-xs font-bold text-[#121E3C] uppercase tracking-wider block">
                                       Certification Name
                                     </label>
-                                    <Input
-                                      value={cert?.name || ''}
-                                      onChange={(e) => handleCertificationChange(index, e.target.value)}
-                                      placeholder="e.g. COREN Registered, Licensed Electrician"
-                                      className="w-full font-lato bg-white h-9 sm:h-10 text-sm text-gray-900 border-gray-300"
-                                    />
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleRemoveCertification(index)}
+                                      className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 px-2 flex items-center gap-1 border border-red-100 sm:border-none rounded-lg"
+                                    >
+                                      <X size={14} />
+                                      <span className="text-[10px] font-bold">Remove</span>
+                                    </Button>
                                   </div>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleRemoveCertification(index)}
-                                    className="text-red-500 hover:text-red-700 hover:bg-red-50 h-9 px-3 sm:h-10 sm:px-3 flex items-center gap-2 self-end sm:self-auto sm:mt-6 border border-red-100 sm:border-none"
-                                  >
-                                    <X size={16} />
-                                    <span className="text-xs font-medium">Remove</span>
-                                  </Button>
+                                  <Input
+                                    value={cert?.name || ''}
+                                    onChange={(e) => handleCertificationChange(index, e.target.value)}
+                                    placeholder="e.g. Licensed Electrician, COREN"
+                                    className="w-full font-lato bg-gray-50/50 h-10 text-sm text-gray-900 border-gray-200 focus:border-[#34D164] focus:ring-[#34D164]"
+                                  />
                                 </div>
                                 
                                 <div className="flex flex-col space-y-3">
                                   <div className="w-full">
-                                    <label className="text-[10px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">
+                                    <label className="text-[10px] sm:text-xs font-bold text-[#121E3C] uppercase tracking-wider mb-1 block">
                                       Certificate File (Image or PDF)
                                     </label>
                                     <div className="relative group w-full">
@@ -1095,42 +1095,39 @@ const ProfilePage = () => {
                                         onChange={(e) => handleCertificationFileChange(index, e.target.files?.[0] || null)}
                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                       />
-                                      <div className="flex items-center justify-center p-2 sm:p-3 border-2 border-dashed border-gray-300 rounded-lg bg-white group-hover:border-[#34D164] transition-colors">
+                                      <div className="flex items-center justify-center p-3 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50/30 group-hover:border-[#34D164] group-hover:bg-green-50/30 transition-all">
                                         <Plus size={16} className="text-gray-400 mr-2 group-hover:text-[#34D164]" />
-                                        <span className="text-xs sm:text-sm text-gray-600 group-hover:text-[#34D164] truncate">
-                                          {cert?.image_url ? 'Change File' : 'Upload Image or PDF'}
+                                        <span className="text-xs sm:text-sm font-medium text-gray-600 group-hover:text-[#34D164] truncate">
+                                          {cert?.image_url ? 'Replace Document' : 'Upload Image or PDF'}
                                         </span>
                                       </div>
                                     </div>
                                   </div>
                                   
                                   {cert?.image_url && (
-                                    <div className="flex items-center gap-3 p-2 bg-white rounded-lg border shadow-sm w-full overflow-hidden">
+                                    <div className="flex items-center gap-4 p-3 bg-green-50/50 rounded-xl border border-green-100 shadow-sm w-full overflow-hidden">
                                       {cert.image_url.toLowerCase().endsWith('.pdf') ? (
-                                        <div className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 flex items-center justify-center bg-red-50 rounded border border-red-100">
-                                          <FileText size={20} className="text-red-500" />
+                                        <div className="h-12 w-12 flex-shrink-0 flex items-center justify-center bg-white rounded-lg border border-red-100 shadow-sm">
+                                          <FileText size={24} className="text-red-500" />
                                         </div>
                                       ) : (
-                                        <div className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 rounded border overflow-hidden bg-gray-50">
-                                          <img 
-                                            src={cert.image_url.startsWith('http') ? cert.image_url : `${(import.meta.env.VITE_BACKEND_URL || '').replace(/\/$/, '')}${cert.image_url.startsWith('/') ? '' : '/'}${cert.image_url}`} 
+                                        <div className="h-12 w-12 flex-shrink-0 rounded-lg border-2 border-white overflow-hidden bg-white shadow-sm">
+                                          <AuthenticatedImage 
+                                            src={cert.image_url} 
                                             alt="Preview" 
                                             className="h-full w-full object-cover" 
-                                            onError={(e) => {
-                                              e.target.onerror = null;
-                                              e.target.src = '/placeholder-cert.png';
-                                            }}
                                           />
                                         </div>
                                       )}
-                                      <div className="flex flex-col min-w-0">
-                                        <span className="text-[10px] sm:text-xs font-medium text-gray-700 truncate">File uploaded</span>
+                                      <div className="flex flex-col min-w-0 flex-1">
+                                        <span className="text-xs font-bold text-gray-900 truncate">Document ready</span>
                                         <button 
                                           type="button"
                                           onClick={() => window.open(cert.image_url.startsWith('http') ? cert.image_url : `${(import.meta.env.VITE_BACKEND_URL || '').replace(/\/$/, '')}${cert.image_url.startsWith('/') ? '' : '/'}${cert.image_url}`, '_blank')}
-                                          className="text-[10px] text-[#34D164] hover:underline font-bold text-left"
+                                          className="text-[10px] text-[#34D164] hover:underline font-bold text-left flex items-center gap-1"
                                         >
-                                          View File
+                                          <Eye size={10} />
+                                          View Full File
                                         </button>
                                       </div>
                                     </div>
@@ -1164,50 +1161,56 @@ const ProfilePage = () => {
                                 };
 
                                 return (
-                                  <div key={index} className="flex flex-col p-3 border rounded-lg bg-gray-50 hover:bg-white transition-colors">
-                                    <div className="flex items-center justify-between mb-2">
-                                      <div className="flex items-center space-x-2">
-                                        <Award size={18} style={{color: '#34D164'}} />
-                                        <span className="font-semibold text-gray-800 font-lato">{name}</span>
+                                  <div key={index} className="flex flex-col p-4 border-2 border-gray-100 rounded-2xl bg-white hover:border-[#34D164]/30 transition-all shadow-sm">
+                                    <div className="flex items-center justify-between mb-3">
+                                      <div className="flex items-center space-x-3 min-w-0">
+                                        <div className="bg-green-100 p-2 rounded-lg">
+                                          <Award size={18} className="text-[#34D164]" />
+                                        </div>
+                                        <span className="font-bold text-gray-900 font-montserrat truncate text-sm sm:text-base">{name}</span>
                                       </div>
                                       {image_url && (
                                         <Button
                                           variant="ghost"
                                           size="sm"
-                                          className="text-[#34D164] hover:text-[#2eb755] p-0 h-auto font-lato"
+                                          className="text-[#34D164] hover:text-[#2eb755] p-2 h-auto font-bold text-xs"
                                           onClick={() => window.open(getFullUrl(image_url), '_blank')}
                                         >
-                                          <ExternalLink size={14} className="mr-1" />
-                                          View
+                                          <ExternalLink size={14} className="sm:mr-1" />
+                                          <span className="hidden sm:inline">View Full</span>
                                         </Button>
                                       )}
                                     </div>
                                     
                                     {image_url && (
-                                      <div className="mt-3">
+                                      <div className="mt-2">
                                         {isPdf ? (
                                           <div 
-                                            className="flex items-center p-3 bg-white border rounded cursor-pointer hover:border-[#34D164] transition-colors"
+                                            className="flex items-center p-4 bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-red-200 hover:bg-red-50/30 transition-all"
                                             onClick={() => window.open(getFullUrl(image_url), '_blank')}
                                           >
-                                            <FileText size={24} className="text-red-500 mr-3" />
+                                            <div className="bg-white p-2 rounded-lg shadow-sm mr-4">
+                                              <FileText size={28} className="text-red-500" />
+                                            </div>
                                             <div className="flex-1 min-w-0">
-                                              <p className="text-sm font-medium text-gray-700 truncate">Certification Document (PDF)</p>
-                                              <p className="text-xs text-gray-500">Click to view or download</p>
+                                              <p className="text-sm font-bold text-gray-800 truncate">Certification PDF</p>
+                                              <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Click to view document</p>
                                             </div>
                                           </div>
                                         ) : (
-                                          <div className="w-full max-w-full sm:max-w-[300px] aspect-video rounded-xl overflow-hidden border bg-white shadow-sm relative group">
+                                          <div className="w-full aspect-video sm:aspect-[21/9] rounded-xl overflow-hidden border-2 border-gray-100 bg-gray-50 shadow-inner relative group">
                                             <AuthenticatedImage 
                                               src={image_url} 
                                               alt={name} 
                                               className="w-full h-full object-cover"
                                             />
                                             <div 
-                                              className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                                              className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center cursor-pointer backdrop-blur-[2px]"
                                               onClick={() => window.open(getFullUrl(image_url), '_blank')}
                                             >
-                                              <Eye className="text-white" size={24} />
+                                              <div className="bg-white/20 p-3 rounded-full border border-white/40">
+                                                <Eye className="text-white" size={28} />
+                                              </div>
                                             </div>
                                           </div>
                                         )}

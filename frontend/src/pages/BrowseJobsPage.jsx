@@ -327,7 +327,16 @@ const BrowseJobsPage = () => {
       // Success: reset error counter
       setLoadErrorCount(0);
 
-      let jobsData = response.data.jobs || [];
+      let rawJobs = response.data.jobs || [];
+      
+      // Filter out any null/undefined jobs and normalize job IDs
+      let jobsData = rawJobs
+        .filter(job => job !== null && job !== undefined)
+        .map(job => ({
+          ...job,
+          id: job.id || job._id || (job._id ? job._id.toString() : null)
+        }));
+
       if (filters.useLocation && userLocation && typeof userLocation.lat === 'number' && typeof userLocation.lng === 'number') {
         // Compute fallback distances for jobs without distance_km using text location or coords
         jobsData = jobsData.map((job) => {
@@ -1127,35 +1136,35 @@ const BrowseJobsPage = () => {
                   <div className="space-y-4">
                     {jobs.map((job) => (
                       <Card 
-                        key={job.id} 
-                        className="hover:shadow-md transition-shadow duration-200 cursor-pointer border-l-4 border-l-transparent hover:border-l-blue-600"
+                        key={job.id || job._id || `job-${Math.random()}`} 
+                        className="hover:shadow-md transition-shadow duration-200 cursor-pointer border-l-4 border-l-transparent hover:border-l-blue-600 overflow-hidden w-full"
                         onClick={() => handleViewJobDetails(job)}
                       >
                         <CardContent className="p-4">
-                          <h3 className="text-xl font-semibold leading-tight mb-2" style={{color: '#121E3C'}}>
-                            {job.title}
+                          <h3 className="text-lg sm:text-xl font-semibold leading-tight mb-2 break-words overflow-hidden" style={{color: '#121E3C'}}>
+                            {job.title || 'Untitled Job'}
                           </h3>
 
                           {/* Meta information stacked */}
-                          <div className="space-y-1 text-sm text-gray-700">
-                            <div className="flex items-center">
-                              <Wrench size={16} className="mr-2 text-gray-500" />
-                              <span>{job.category}</span>
+                          <div className="space-y-2 text-sm text-gray-700">
+                            <div className="flex items-start min-w-0">
+                              <Wrench size={16} className="mr-2 mt-0.5 text-gray-500 flex-shrink-0" />
+                              <span className="break-words overflow-hidden">{job.category || 'No Category'}</span>
                             </div>
-                            <div className="flex items-center">
-                              <MapPin size={16} className="mr-2 text-gray-500" />
-                              <span>
-                                {job.location}
+                            <div className="flex items-start min-w-0">
+                              <MapPin size={16} className="mr-2 mt-0.5 text-gray-500 flex-shrink-0" />
+                              <span className="break-words overflow-hidden">
+                                {job.location || 'Location not specified'}
                                 {job.distance_km !== undefined && job.distance_km !== null && (
-                                  <span className="ml-1 text-gray-600">
+                                  <span className="ml-1 text-gray-600 font-medium">
                                     ({Number(job.distance_km).toFixed(1)} km)
                                   </span>
                                 )}
                               </span>
                             </div>
-                            <div className="flex items-center">
-                              <Clock size={16} className="mr-2 text-gray-500" />
-                              <span>{formatDate(job.created_at)}</span>
+                            <div className="flex items-start min-w-0">
+                              <Clock size={16} className="mr-2 mt-0.5 text-gray-500 flex-shrink-0" />
+                              <span className="flex-1">{formatDate(job.created_at)}</span>
                             </div>
                           </div>
                         </CardContent>

@@ -1054,7 +1054,9 @@ class Database:
     async def get_job_by_id(self, job_id: str) -> Optional[dict]:
         job = await self.database.jobs.find_one({"id": job_id})
         if job:
-            job['_id'] = str(job['_id'])
+            job_id_str = str(job['_id'])
+            job['_id'] = job_id_str
+            job['id'] = job_id_str
         return job
 
     @time_it
@@ -1079,7 +1081,9 @@ class Database:
             jobs = []
         
         for job in jobs:
-            job['_id'] = str(job['_id'])
+            job_id_str = str(job['_id'])
+            job['_id'] = job_id_str
+            job['id'] = job_id_str
         return jobs
 
     # ==========================================
@@ -1143,7 +1147,9 @@ class Database:
         # 5. Enrich job data
         final_jobs = []
         for job in jobs:
-            job["_id"] = str(job["_id"])
+            job_id_str = str(job["_id"])
+            job["_id"] = job_id_str
+            job["id"] = job_id_str
             
             # Use optimized helper for homeowner info
             self._enrich_job_homeowner(job, users_map, interests_map) # Note: interests_map is passed as job_counts_map here as it's what we want to show
@@ -1267,7 +1273,9 @@ class Database:
         if not job:
             return None
         
-        job["_id"] = str(job["_id"])
+        job_id_str = str(job["_id"])
+        job["_id"] = job_id_str
+        job["id"] = job_id_str
         
         # Parallel fetch for homeowner, interests, and job counts
         tasks = []
@@ -3239,7 +3247,9 @@ class Database:
 
         final_jobs = []
         for job in jobs:
-            job["_id"] = str(job["_id"])
+            job_id_str = str(job["_id"])
+            job["_id"] = job_id_str
+            job["id"] = job_id_str
             
             # Use optimized helper for homeowner info
             self._enrich_job_homeowner(job, users_map, homeowner_job_counts)
@@ -3436,7 +3446,9 @@ class Database:
         jobs_with_distance = []
         
         async def process_job(job):
-            job["_id"] = str(job["_id"])
+            job_id_str = str(job["_id"])
+            job["_id"] = job_id_str
+            job["id"] = job_id_str
             
             # Calculate distance
             distance = self.calculate_distance(
@@ -3602,7 +3614,11 @@ class Database:
 
             # Process jobs synchronously
             for job in raw_jobs:
-                job["_id"] = str(job["_id"])
+                # Ensure both id and _id are strings for frontend consistency
+                job_id_str = str(job["_id"])
+                job["_id"] = job_id_str
+                job["id"] = job_id_str
+                
                 jlat = job.get("latitude")
                 jlng = job.get("longitude")
                 
@@ -3642,7 +3658,10 @@ class Database:
                 )
                 jobs = await asyncio.wait_for(cursor.to_list(length=limit), timeout=10.0)
                 for job in jobs:
-                    job["_id"] = str(job["_id"])
+                    # Ensure both id and _id are strings for frontend consistency
+                    job_id_str = str(job["_id"])
+                    job["_id"] = job_id_str
+                    job["id"] = job_id_str
                 return jobs
             except Exception as e2:
                 logger.error(f"Fallback also failed: {e2}")
@@ -3708,7 +3727,11 @@ class Database:
 
                 # Process jobs synchronously (faster than parallel for small batches)
                 for job in raw_jobs:
-                    job["_id"] = str(job["_id"])
+                    # Ensure both id and _id are strings for frontend consistency
+                    job_id_str = str(job["_id"])
+                    job["_id"] = job_id_str
+                    job["id"] = job_id_str
+                    
                     jlat = job.get("latitude")
                     jlng = job.get("longitude")
                     
@@ -3747,7 +3770,10 @@ class Database:
                     return []
                     
                 for job in results:
-                    job["_id"] = str(job["_id"])
+                    # Ensure both id and _id are strings for frontend consistency
+                    job_id_str = str(job["_id"])
+                    job["_id"] = job_id_str
+                    job["id"] = job_id_str
                     job["distance_km"] = None
                 return results
 
@@ -3759,9 +3785,11 @@ class Database:
     async def _process_job_data(self, job: dict) -> dict:
         """Process and enrich job data with additional information"""
         try:
-            # Convert ObjectId to string
+            # Convert ObjectId to string and ensure both id and _id are present
             if "_id" in job:
-                job["_id"] = str(job["_id"])
+                job_id_str = str(job["_id"])
+                job["_id"] = job_id_str
+                job["id"] = job_id_str
             
             # Add any additional processing here if needed
             # For example: enrich with homeowner info, interests count, etc.
@@ -7902,7 +7930,9 @@ We may update this Cookie Policy to reflect changes in technology or regulations
         job_postings = await cursor.to_list(length=limit)
         
         for job in job_postings:
-            job['_id'] = str(job['_id'])
+            job_id_str = str(job['_id'])
+            job['_id'] = job_id_str
+            job['id'] = job_id_str
         return job_postings
 
     async def get_job_postings_count(self, filters: dict = None) -> int:
@@ -7914,7 +7944,9 @@ We may update this Cookie Policy to reflect changes in technology or regulations
         """Get job posting by slug"""
         job = await self.database.content_items.find_one({"slug": slug, "content_type": "job_posting"})
         if job:
-            job['_id'] = str(job['_id'])
+            job_id_str = str(job['_id'])
+            job['_id'] = job_id_str
+            job['id'] = job_id_str
         return job
 
     async def create_job_application(self, application_data: dict) -> str:
@@ -7929,7 +7961,9 @@ We may update this Cookie Policy to reflect changes in technology or regulations
         applications = await cursor.to_list(length=limit)
         
         for app in applications:
-            app['_id'] = str(app['_id'])
+            app_id_str = str(app['_id'])
+            app['_id'] = app_id_str
+            app['id'] = app_id_str
         return applications
 
     async def get_job_applications_count(self, filters: dict = None) -> int:
@@ -8038,7 +8072,9 @@ We may update this Cookie Policy to reflect changes in technology or regulations
             
             top_jobs = []
             async for job in self.database.content_items.aggregate(pipeline):
-                job["_id"] = str(job["_id"])
+                job_id_str = str(job["_id"])
+                job["_id"] = job_id_str
+                job["id"] = job_id_str
                 top_jobs.append(job)
             
             # Recent applications
@@ -8048,7 +8084,9 @@ We may update this Cookie Policy to reflect changes in technology or regulations
             ).sort("applied_at", -1).limit(10).to_list(length=10)
             
             for app in recent_applications:
-                app["_id"] = str(app["_id"])
+                app_id_str = str(app["_id"])
+                app["_id"] = app_id_str
+                app["id"] = app_id_str
             
             return {
                 "total_jobs": total_jobs,

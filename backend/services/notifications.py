@@ -360,21 +360,52 @@ class NotificationTemplateService:
                 channel=NotificationChannel.EMAIL,
                 subject_template="Contact Details Shared for: {job_title}",
                 content_template="""
-Hello {tradesperson_name},
-
-Excellent news! The homeowner has shared their contact details for the job you showed interest in:
-
-📋 Job: {job_title}
-📍 Location: {job_location}
-
-To access the homeowner's contact details, please pay the access fee of ₦1,000.
-
-💰 Pay and get contact details: {payment_url}
-
-This is your opportunity to connect directly with the homeowner and discuss the job details.
-
-Best regards,
-serviceHub Team
+<html>
+<head>
+    <style>
+        body { margin: 0; padding: 0; background: #f6f7fb; font-family: Arial, sans-serif; }
+        .container { max-width: 640px; margin: 0 auto; padding: 24px; }
+        .card { background: #ffffff; border: 1px solid #e6e8ef; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); overflow: hidden; }
+        .header { padding: 18px 20px; border-bottom: 1px solid #eef0f5; }
+        .logo { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .logo img { height: 28px; width: auto; }
+        .logo span { font-size: 22px; font-weight: bold; color: #0a1b3d; }
+        .title { margin: 0; font-size: 18px; color: #111827; }
+        .content { padding: 18px 20px; color: #374151; line-height: 1.6; }
+        .list { list-style: none; padding: 0; margin: 12px 0 0; }
+        .list li { margin: 8px 0; }
+        .label { color: #6b7280; display: inline-block; min-width: 140px; }
+        .value { color: #111827; font-weight: 600; }
+        .cta { display: inline-block; margin-top: 16px; padding: 12px 20px; background: #34D164; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; }
+        .footer { padding: 16px 20px; color: #6b7280; font-size: 12px; border-top: 1px solid #eef0f5; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <div class="logo">
+                    <img src="cid:logo" alt="ServiceHub Logo">
+                    <span>ServiceHub</span>
+                </div>
+                <h2 class="title">Contact Details Shared</h2>
+            </div>
+            <div class="content">
+                <p>Hello {tradesperson_name},</p>
+                <p>Excellent news! The homeowner has shared their contact details for the job you showed interest in:</p>
+                <ul class="list">
+                    <li><span class="label">Job</span> <span class="value">{job_title}</span></li>
+                    <li><span class="label">Location</span> <span class="value">{job_location}</span></li>
+                </ul>
+                <p>To access the homeowner's contact details and start the project, please pay the access fee of ₦1,000.</p>
+                <a class="cta" href="{payment_url}" target="_blank">Pay and Get Contact Details</a>
+                <p style="margin-top: 20px; font-size: 14px; color: #6b7280;">This is your opportunity to connect directly with the homeowner and discuss the job details.</p>
+            </div>
+            <div class="footer">serviceHub Team • Nigeria's Trusted Service Marketplace</div>
+        </div>
+    </div>
+</body>
+</html>
                 """,
                 variables=["tradesperson_name", "job_title", "job_location", "payment_url"]
             ),
@@ -396,21 +427,53 @@ serviceHub Team
                 channel=NotificationChannel.EMAIL,
                 subject_template="Job Submitted: {job_title}",
                 content_template="""
-Hello {homeowner_name},
-
-Your job has been received and is pending admin approval.
-
-📋 Job Title: {job_title}
-📍 Location: {job_location}
-💰 Budget: {job_budget}
-📅 Submitted: {post_date}
-
-We will notify you once your job is approved. After approval, qualified tradespeople in your area will be notified and can show interest.
-
-Manage your job: {manage_url}
-
-Best regards,
-serviceHub Team
+<html>
+<head>
+    <style>
+        body { margin: 0; padding: 0; background: #f6f7fb; font-family: Arial, sans-serif; }
+        .container { max-width: 640px; margin: 0 auto; padding: 24px; }
+        .card { background: #ffffff; border: 1px solid #e6e8ef; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); overflow: hidden; }
+        .header { padding: 18px 20px; border-bottom: 1px solid #eef0f5; }
+        .logo { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .logo img { height: 28px; width: auto; }
+        .logo span { font-size: 22px; font-weight: bold; color: #0a1b3d; }
+        .title { margin: 0; font-size: 18px; color: #111827; }
+        .content { padding: 18px 20px; color: #374151; line-height: 1.6; }
+        .list { list-style: none; padding: 0; margin: 12px 0 0; }
+        .list li { margin: 8px 0; }
+        .label { color: #6b7280; display: inline-block; min-width: 140px; }
+        .value { color: #111827; font-weight: 600; }
+        .cta { display: inline-block; margin-top: 16px; padding: 12px 20px; background: #165DFF; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; }
+        .footer { padding: 16px 20px; color: #6b7280; font-size: 12px; border-top: 1px solid #eef0f5; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <div class="logo">
+                    <img src="cid:logo" alt="ServiceHub Logo">
+                    <span>ServiceHub</span>
+                </div>
+                <h2 class="title">Job Received & Pending Approval</h2>
+            </div>
+            <div class="content">
+                <p>Hello {homeowner_name},</p>
+                <p>Your job has been received and is now being reviewed by our admin team.</p>
+                <ul class="list">
+                    <li><span class="label">Job Title</span> <span class="value">{job_title}</span></li>
+                    <li><span class="label">Location</span> <span class="value">{job_location}</span></li>
+                    <li><span class="label">Budget</span> <span class="value">{job_budget}</span></li>
+                    <li><span class="label">Submitted</span> <span class="value">{post_date}</span></li>
+                </ul>
+                <p>We will notify you once your job is approved. After approval, qualified tradespeople in your area will be notified and can show interest.</p>
+                <a class="cta" href="{manage_url}" target="_blank">Manage Your Job</a>
+            </div>
+            <div class="footer">serviceHub Team • Nigeria's Trusted Service Marketplace</div>
+        </div>
+    </div>
+</body>
+</html>
                 """,
                 variables=["homeowner_name", "job_title", "job_location", "job_budget", "post_date", "manage_url"]
             ),
@@ -432,22 +495,57 @@ serviceHub Team
                 channel=NotificationChannel.EMAIL,
                 subject_template="Payment Confirmed - Contact Details Available",
                 content_template="""
-Hello {tradesperson_name},
-
-Your payment of ₦1,000 has been confirmed! Here are the homeowner's contact details:
-
-📋 Job: {job_title}
-📍 Location: {job_location}
-
-👤 Homeowner: {homeowner_name}
-📧 Email: {homeowner_email}
-📱 Phone: {homeowner_phone}
-
-You can now contact the homeowner directly to discuss the job details and arrange a meeting.
-
-Best of luck with your project!
-
-serviceHub Team
+<html>
+<head>
+    <style>
+        body { margin: 0; padding: 0; background: #f6f7fb; font-family: Arial, sans-serif; }
+        .container { max-width: 640px; margin: 0 auto; padding: 24px; }
+        .card { background: #ffffff; border: 1px solid #e6e8ef; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); overflow: hidden; }
+        .header { padding: 18px 20px; border-bottom: 1px solid #eef0f5; background: #34D164; }
+        .logo { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .logo img { height: 28px; width: auto; filter: brightness(0) invert(1); }
+        .logo span { font-size: 22px; font-weight: bold; color: #ffffff; }
+        .title { margin: 0; font-size: 18px; color: #ffffff; }
+        .content { padding: 18px 20px; color: #374151; line-height: 1.6; }
+        .contact-box { background: #f9fafb; border: 1px dashed #d1d5db; border-radius: 8px; padding: 16px; margin: 16px 0; }
+        .list { list-style: none; padding: 0; margin: 0; }
+        .list li { margin: 8px 0; }
+        .label { color: #6b7280; display: inline-block; min-width: 120px; }
+        .value { color: #111827; font-weight: 600; }
+        .footer { padding: 16px 20px; color: #6b7280; font-size: 12px; border-top: 1px solid #eef0f5; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <div class="logo">
+                    <img src="cid:logo" alt="ServiceHub Logo">
+                    <span>ServiceHub</span>
+                </div>
+                <h2 class="title">Payment Confirmed!</h2>
+            </div>
+            <div class="content">
+                <p>Hello {tradesperson_name},</p>
+                <p>Your payment of ₦1,000 has been confirmed. You now have full access to the homeowner's contact details:</p>
+                
+                <div class="contact-box">
+                    <ul class="list">
+                        <li><span class="label">Job</span> <span class="value">{job_title}</span></li>
+                        <li><span class="label">Homeowner</span> <span class="value">{homeowner_name}</span></li>
+                        <li><span class="label">Email</span> <span class="value">{homeowner_email}</span></li>
+                        <li><span class="label">Phone</span> <span class="value">{homeowner_phone}</span></li>
+                    </ul>
+                </div>
+                
+                <p>You can now contact the homeowner directly to discuss the job details and arrange a meeting.</p>
+                <p>Best of luck with your project!</p>
+            </div>
+            <div class="footer">serviceHub Team • Nigeria's Trusted Service Marketplace</div>
+        </div>
+    </div>
+</body>
+</html>
                 """,
                 variables=["tradesperson_name", "job_title", "job_location", "homeowner_name", "homeowner_email", "homeowner_phone"]
             ),
@@ -469,21 +567,50 @@ serviceHub Team
                 channel=NotificationChannel.EMAIL,
                 subject_template="New Message: {job_title}",
                 content_template="""
-Hello {recipient_name},
-
-You have received a new message regarding your job:
-
-📋 Job: {job_title}
-👤 From: {sender_name}
-💬 Message: {message_preview}
-
-To view the full conversation and reply, please visit your messages:
-{conversation_url}
-
-Keep the conversation going to finalize your project details!
-
-Best regards,
-serviceHub Team
+<html>
+<head>
+    <style>
+        body { margin: 0; padding: 0; background: #f6f7fb; font-family: Arial, sans-serif; }
+        .container { max-width: 640px; margin: 0 auto; padding: 24px; }
+        .card { background: #ffffff; border: 1px solid #e6e8ef; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); overflow: hidden; }
+        .header { padding: 18px 20px; border-bottom: 1px solid #eef0f5; }
+        .logo { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .logo img { height: 28px; width: auto; }
+        .logo span { font-size: 22px; font-weight: bold; color: #0a1b3d; }
+        .title { margin: 0; font-size: 18px; color: #111827; }
+        .content { padding: 18px 20px; color: #374151; line-height: 1.6; }
+        .msg-box { background: #f3f4f6; border-left: 4px solid #165DFF; padding: 12px 16px; margin: 16px 0; font-style: italic; }
+        .cta { display: inline-block; margin-top: 16px; padding: 12px 20px; background: #165DFF; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; }
+        .footer { padding: 16px 20px; color: #6b7280; font-size: 12px; border-top: 1px solid #eef0f5; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <div class="logo">
+                    <img src="cid:logo" alt="ServiceHub Logo">
+                    <span>ServiceHub</span>
+                </div>
+                <h2 class="title">New Message Received</h2>
+            </div>
+            <div class="content">
+                <p>Hello {recipient_name},</p>
+                <p>You have received a new message regarding your job: <strong>{job_title}</strong></p>
+                
+                <div class="msg-box">
+                    <p style="margin: 0; color: #6b7280; font-size: 12px; font-style: normal; font-weight: 600;">FROM: {sender_name}</p>
+                    <p style="margin-top: 8px;">"{message_preview}..."</p>
+                </div>
+                
+                <p>To view the full conversation and reply, please visit your messages.</p>
+                <a class="cta" href="{conversation_url}" target="_blank">View Conversation & Reply</a>
+            </div>
+            <div class="footer">serviceHub Team • Nigeria's Trusted Service Marketplace</div>
+        </div>
+    </div>
+</body>
+</html>
                 """,
                 variables=["recipient_name", "sender_name", "job_title", "message_preview", "conversation_url"]
             ),
@@ -505,23 +632,58 @@ serviceHub Team
                 channel=NotificationChannel.EMAIL,
                 subject_template="Job Approved: {job_title}",
                 content_template="""
-Hello {homeowner_name},
+<html>
+<head>
+    <style>
+        body { margin: 0; padding: 0; background: #f6f7fb; font-family: Arial, sans-serif; }
+        .container { max-width: 640px; margin: 0 auto; padding: 24px; }
+        .card { background: #ffffff; border: 1px solid #e6e8ef; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); overflow: hidden; }
+        .header { padding: 18px 20px; border-bottom: 1px solid #eef0f5; background: #34D164; }
+        .logo { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .logo img { height: 28px; width: auto; filter: brightness(0) invert(1); }
+        .logo span { font-size: 22px; font-weight: bold; color: #ffffff; }
+        .title { margin: 0; font-size: 18px; color: #ffffff; }
+        .content { padding: 18px 20px; color: #374151; line-height: 1.6; }
+        .info-list { list-style: none; padding: 0; margin: 16px 0; }
+        .info-list li { margin: 8px 0; display: flex; }
+        .label { color: #6b7280; min-width: 120px; font-size: 14px; }
+        .value { color: #111827; font-weight: 600; font-size: 14px; }
+        .admin-note { background: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; padding: 12px; margin: 16px 0; color: #92400e; font-size: 14px; }
+        .cta { display: inline-block; margin-top: 16px; padding: 12px 20px; background: #165DFF; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; }
+        .footer { padding: 16px 20px; color: #6b7280; font-size: 12px; border-top: 1px solid #eef0f5; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <div class="logo">
+                    <img src="cid:logo" alt="ServiceHub Logo">
+                    <span>ServiceHub</span>
+                </div>
+                <h2 class="title">Great News! Your Job is Live</h2>
+            </div>
+            <div class="content">
+                <p>Hello {homeowner_name},</p>
+                <p>Your job posting has been approved and is now visible to qualified tradespeople on ServiceHub.</p>
+                
+                <ul class="info-list">
+                    <li><span class="label">Job Title:</span> <span class="value">{job_title}</span></li>
+                    <li><span class="label">Status:</span> <span class="value" style="color: #34D164;">✅ Approved & Active</span></li>
+                    <li><span class="label">Approved On:</span> <span class="value">{approved_at}</span></li>
+                </ul>
 
-Great news! Your job posting has been approved and is now live on serviceHub.
+                {admin_notes_html}
 
-📋 Job Title: {job_title}
-✅ Status: Approved and Active
-📅 Approved: {approved_at}
-👨‍💼 Reviewed by: Admin Team
-
-{admin_notes}
-
-Your job is now visible to all qualified tradespeople in your area. You should start receiving interest notifications soon.
-
-To view your job and manage applications, visit: {os.environ.get('FRONTEND_URL', 'https://my-servicehub.vercel.app')}/my-jobs
-
-Best regards,
-serviceHub Team
+                <p>Tradespeople in your area will be notified and can start showing interest immediately. You'll receive notifications as soon as they apply.</p>
+                
+                <a class="cta" href="https://my-servicehub.vercel.app/my-jobs" target="_blank">Manage Your Job & Applications</a>
+            </div>
+            <div class="footer">serviceHub Team • Nigeria's Trusted Service Marketplace</div>
+        </div>
+    </div>
+</body>
+</html>
                 """,
                 variables=["homeowner_name", "job_title", "approved_at", "admin_notes"]
             ),
@@ -530,7 +692,7 @@ serviceHub Team
                 type=NotificationType.JOB_APPROVED,
                 channel=NotificationChannel.SMS,
                 subject_template="Job Approved - serviceHub",
-                content_template=f"✅ Your job '{{job_title}}' has been approved and is now live! Tradespeople can now see and apply. Check: {os.environ.get('FRONTEND_URL', 'https://my-servicehub.vercel.app')}/my-jobs",
+                content_template=f"✅ Your job '{{job_title}}' has been approved and is now live! Tradespeople can now see and apply. Check: https://my-servicehub.vercel.app/my-jobs",
                 variables=["job_title"]
             )
         }
