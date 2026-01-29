@@ -888,17 +888,32 @@ async def get_certification_image(filename: str):
     try:
         from fastapi.responses import FileResponse
         import os
-        base_dir = os.environ.get("UPLOADS_DIR", os.path.join(os.getcwd(), "uploads"))
-        project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        project_uploads = os.path.join(project_root, "uploads")
+        
+        # Priority 1: Use UPLOADS_DIR from environment
+        env_uploads_dir = os.environ.get("UPLOADS_DIR")
+        
+        # Priority 2: Use relative paths from this file
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         backend_uploads = os.path.join(project_root, "backend", "uploads")
-        candidates = [
-            os.path.join(base_dir, "certifications", filename),
-            os.path.join(project_uploads, "certifications", filename),
+        root_uploads = os.path.join(project_root, "uploads")
+        
+        candidates = []
+        if env_uploads_dir:
+            candidates.append(os.path.join(env_uploads_dir, "certifications", filename))
+            # Also check if env_uploads_dir already points to certifications
+            candidates.append(os.path.join(env_uploads_dir, filename))
+            
+        candidates.extend([
             os.path.join(backend_uploads, "certifications", filename),
+            os.path.join(root_uploads, "certifications", filename),
             os.path.join(os.getcwd(), "uploads", "certifications", filename),
             os.path.join("/app", "uploads", "certifications", filename),
-        ]
+            os.path.join("/app", "backend", "uploads", "certifications", filename),
+        ])
+        
+        # Log candidates for debugging if needed
+        # logger.info(f"Searching for certification image {filename} in: {candidates}")
+        
         for fp in candidates:
             if os.path.exists(fp):
                 ext = os.path.splitext(fp)[1].lower()
@@ -912,10 +927,13 @@ async def get_certification_image(filename: str):
                     )
                 )
                 return FileResponse(fp, media_type=media_type, headers={"Cache-Control": "public, max-age=3600"})
+        
+        logger.warning(f"Certification image not found: {filename}. Checked: {candidates}")
         raise HTTPException(status_code=404, detail="Image not found")
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Error serving certification image {filename}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to serve image: {str(e)}")
 
 @router.post("/logout")
