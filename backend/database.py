@@ -250,6 +250,13 @@ class Database:
                         [("status", 1), ("category", 1), ("created_at", -1)],
                         name="jobs_status_category_createdAt"
                     )
+                    
+                    # CRITICAL INDEX for public job listing queries (status + expires_at + created_at)
+                    # This is essential because get_jobs() queries with: status='active' AND expires_at > now
+                    await self.database.jobs.create_index(
+                        [("status", 1), ("expires_at", 1), ("created_at", -1)],
+                        name="jobs_status_expires_createdAt"
+                    )
 
                     # Quotes indexes
                     await self.database.quotes.create_index([("job_id", 1)], name="quotes_job_id")
@@ -1050,6 +1057,7 @@ class Database:
             job['_id'] = str(job['_id'])
         return job
 
+    @time_it
     async def get_jobs(self, skip: int = 0, limit: int = 10, filters: dict = None) -> List[dict]:
         query = filters or {}
         
@@ -1450,6 +1458,7 @@ class Database:
             logger.error(f"Error in delete_job_completely for {job_id}: {e}")
             raise
 
+    @time_it
     async def get_jobs_count(self, filters: dict = None) -> int:
         query = filters or {}
         
@@ -3405,6 +3414,7 @@ class Database:
             pass
         return None
 
+    @time_it
     async def get_jobs_near_location(self, latitude: float, longitude: float, max_distance_km: int = 25, skip: int = 0, limit: int = 50) -> List[dict]:
         """Get jobs within specified distance from a location"""
         # Get all active jobs with location data
@@ -3480,6 +3490,7 @@ class Database:
         """Get all available (active) jobs"""
         return await self.get_jobs(skip=skip, limit=limit, filters={"status": "active"})
 
+    @time_it
     @time_it
     async def get_jobs_for_tradesperson(self, tradesperson_id: str, skip: int = 0, limit: int = 50) -> List[dict]:
         """Get jobs filtered by tradesperson's skills and location preferences"""
