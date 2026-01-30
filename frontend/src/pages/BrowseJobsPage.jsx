@@ -269,22 +269,36 @@ const BrowseJobsPage = () => {
   const loadUserLocationData = () => {
     // Check if user has saved location
     if (user?.latitude && user?.longitude) {
-      setUserLocation({ lat: user.latitude, lng: user.longitude });
-      setFilters(prev => ({ 
-        ...prev, 
-        maxDistance: user.travel_distance_km || 25,
-        useLocation: true 
-      }));
+      const newLoc = { lat: user.latitude, lng: user.longitude };
+      // Only update if different to prevent infinite re-render loops
+      if (!userLocation || userLocation.lat !== newLoc.lat || userLocation.lng !== newLoc.lng) {
+        setUserLocation(newLoc);
+      }
+      
+      if (!filters.useLocation || filters.maxDistance !== (user.travel_distance_km || 25)) {
+        setFilters(prev => ({ 
+          ...prev, 
+          maxDistance: user.travel_distance_km || 25,
+          useLocation: true 
+        }));
+      }
     } else if (user?.location) {
       const coords = resolveCoordinatesFromLocationText(user.location);
       if (coords && typeof coords.latitude === 'number' && typeof coords.longitude === 'number') {
-        // Convert util output { latitude, longitude } to map-friendly { lat, lng }
-        setUserLocation({ lat: coords.latitude, lng: coords.longitude });
-        setFilters(prev => ({
-          ...prev,
-          maxDistance: user?.travel_distance_km || DEFAULT_TRAVEL_DISTANCE_KM,
-          useLocation: true
-        }));
+        const newLoc = { lat: coords.latitude, lng: coords.longitude };
+        // Only update if different
+        if (!userLocation || userLocation.lat !== newLoc.lat || userLocation.lng !== newLoc.lng) {
+          setUserLocation(newLoc);
+        }
+        
+        const dist = user?.travel_distance_km || DEFAULT_TRAVEL_DISTANCE_KM;
+        if (!filters.useLocation || filters.maxDistance !== dist) {
+          setFilters(prev => ({
+            ...prev,
+            maxDistance: dist,
+            useLocation: true
+          }));
+        }
       }
     }
   };

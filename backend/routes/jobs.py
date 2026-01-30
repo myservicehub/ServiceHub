@@ -244,7 +244,7 @@ async def get_jobs_for_tradesperson(
         
         # Get tradesperson details for response
         tradesperson_info = {
-            "trade_categories": current_user.trade_categories if hasattr(current_user, 'trade_categories') else [],
+            "trade_categories": current_user.trade_categories if current_user.trade_categories else [],
             "location": current_user.location if hasattr(current_user, 'location') else None,
             "travel_distance_km": current_user.travel_distance_km if hasattr(current_user, 'travel_distance_km') else 25
         }

@@ -1071,7 +1071,15 @@ class Database:
             # For public job listings, only show active and non-expired jobs
             if 'status' not in query:
                 query['status'] = 'active'
-            query['expires_at'] = {'$gt': datetime.utcnow()}
+            
+            # Handle jobs that might not have an expires_at field or have it as None
+            # Only add expires_at filter if it's not already in the query
+            if 'expires_at' not in query:
+                query['$or'] = [
+                    {'expires_at': {'$gt': datetime.utcnow()}},
+                    {'expires_at': {'$exists': False}},
+                    {'expires_at': None}
+                ]
         
         try:
             cursor = self.database.jobs.find(query).sort("created_at", -1).skip(skip).limit(limit)
@@ -3436,13 +3444,18 @@ class Database:
     async def get_jobs_near_location(self, latitude: float, longitude: float, max_distance_km: int = 25, skip: int = 0, limit: int = 50) -> List[dict]:
         """Get jobs within specified distance from a location"""
         # Get all active jobs with location data
+        fetch_limit = limit * 3
         cursor = self.database.jobs.find({
             "status": "active",
             "latitude": {"$exists": True, "$ne": None},
             "longitude": {"$exists": True, "$ne": None}
-        }).skip(skip).limit(limit * 3)  # Get more to allow for distance filtering
+        }).skip(skip).limit(fetch_limit)  # Get more to allow for distance filtering
         
-        raw_jobs = await cursor.to_list(length=None)
+        try:
+            raw_jobs = await asyncio.wait_for(cursor.to_list(length=fetch_limit), timeout=10.0)
+        except asyncio.TimeoutError:
+            logger.warning("get_jobs_near_location timeout; returning empty")
+            return []
         jobs_with_distance = []
         
         async def process_job(job):
@@ -3559,7 +3572,7 @@ class Database:
                 # No location data, use skills-only filtering
                 print("Using skills-only filtering (no location data)")
                 cursor = self.database.jobs.find(job_filter).sort("created_at", -1).skip(skip).limit(limit)
-                jobs = await cursor.to_list(length=None)
+                jobs = await cursor.to_list(length=limit)
                 
                 # Process and enrich jobs data in parallel
                 tasks = [self._process_job_data(job) for job in jobs]
@@ -3579,20 +3592,30 @@ class Database:
         """Get jobs near location matching skills, including jobs without coordinates (optimized)."""
         try:
             # Base filter: active jobs only, non-expired (most important for performance)
+            # Handle jobs that might not have an expires_at field
             base_filter = {
                 "status": "active",
-                "expires_at": {"$gt": datetime.utcnow()}
+                "$or": [
+                    {"expires_at": {"$gt": datetime.utcnow()}},
+                    {"expires_at": {"$exists": False}},
+                    {"expires_at": None}
+                ]
             }
 
-            # Build skills filter using ONLY category $in (avoid expensive $regex)
-            # $regex on large collections causes extreme slowdowns and timeouts
+            # Build skills filter using both category and title (consistent with get_jobs_for_tradesperson)
             combined_filter = base_filter
             if skill_categories and len(skill_categories) > 0:
-                # Use only $in operator - much faster than $regex
+                # Optimized filter: category $in OR title regex
+                combined_pattern = "|".join([re.escape(cat) for cat in skill_categories])
                 combined_filter = {
                     "$and": [
                         base_filter,
-                        {"category": {"$in": skill_categories}}
+                        {
+                            "$or": [
+                                {"category": {"$in": skill_categories}},
+                                {"title": {"$regex": combined_pattern, "$options": "i"}}
+                            ]
+                        }
                     ]
                 }
 
@@ -3650,7 +3673,11 @@ class Database:
                     self.database.jobs
                     .find({
                         "status": "active",
-                        "expires_at": {"$gt": datetime.utcnow()}
+                        "$or": [
+                            {"expires_at": {"$gt": datetime.utcnow()}},
+                            {"expires_at": {"$exists": False}},
+                            {"expires_at": None}
+                        ]
                     })
                     .sort("created_at", -1)
                     .skip(skip)
@@ -3764,7 +3791,7 @@ class Database:
                     .limit(limit)
                 )
                 try:
-                    results = await asyncio.wait_for(cursor.to_list(length=None), timeout=10.0)
+                    results = await asyncio.wait_for(cursor.to_list(length=limit), timeout=10.0)
                 except asyncio.TimeoutError:
                     logger.warning(f"Search query (no location) timeout; returning empty results")
                     return []
@@ -5028,7 +5055,7 @@ class Database:
             job_ids = []
             try:
                 job_cursor = self.database.jobs.find({"$or": [{"homeowner_id": user_id}, {"homeowner.id": user_id}]}, {"id": 1})
-                jobs_for_user = await job_cursor.to_list(length=None)
+                jobs_for_user = await job_cursor.to_list(length=1000)  # Reasonable limit for cascading delete
                 job_ids = [j.get("id") for j in jobs_for_user if j.get("id")]
             except Exception as e:
                 logger.warning(f"Error collecting job IDs for user {user_id}: {e}")
@@ -5452,7 +5479,7 @@ class Database:
     async def get_custom_trades(self):
         """Get all custom trade categories added by admin"""
         try:
-            trades = await self.database.system_trades.find({"active": True}).to_list(length=None)
+            trades = await self.database.system_trades.find({"active": True}).to_list(length=1000)
             trade_list = []
             groups = {}
             
@@ -7443,7 +7470,7 @@ We may update this Cookie Policy to reflect changes in technology or regulations
                 {"$sort": {"_id": 1}}
             ]
             
-            results = await self.database.trade_category_questions.aggregate(pipeline).to_list(length=None)
+            results = await self.database.trade_category_questions.aggregate(pipeline).to_list(length=500)
             
             categories = []
             for result in results:

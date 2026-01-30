@@ -43,9 +43,7 @@ import {
   Contact,
   FileText,
   Info,
-  ExternalLink,
-  Shield,
-  Eye
+  ExternalLink
 } from 'lucide-react';
 import AuthenticatedImage from '../components/common/AuthenticatedImage';
 import { interestsAPI, portfolioAPI, tradespeopleAPI, jobsAPI } from '../api/services';
