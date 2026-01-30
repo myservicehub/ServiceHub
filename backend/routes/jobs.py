@@ -228,9 +228,12 @@ async def get_nearby_jobs(
 async def get_jobs_for_tradesperson(
     skip: int = Query(0, ge=0, description="Number of items to skip"),
     limit: int = Query(50, ge=1, le=100, description="Number of items to return"),
+    latitude: Optional[float] = Query(None, ge=-90, le=90, description="User latitude for location override"),
+    longitude: Optional[float] = Query(None, ge=-180, le=180, description="User longitude for location override"),
+    max_distance_km: Optional[int] = Query(None, ge=1, le=200, description="Maximum distance in kilometers override"),
     current_user: User = Depends(get_current_tradesperson)
 ):
-    """Get jobs filtered by tradesperson's skills and location preferences"""
+    """Get jobs filtered by tradesperson's skills and location preferences with optional overrides"""
     try:
         # Ensure user is a tradesperson
         if current_user.role != UserRole.TRADESPERSON:
@@ -239,14 +242,17 @@ async def get_jobs_for_tradesperson(
         jobs = await database.get_jobs_for_tradesperson(
             tradesperson_id=current_user.id,
             skip=skip,
-            limit=limit
+            limit=limit,
+            latitude=latitude,
+            longitude=longitude,
+            max_distance_km=max_distance_km
         )
         
         # Get tradesperson details for response
         tradesperson_info = {
             "trade_categories": current_user.trade_categories if current_user.trade_categories else [],
             "location": current_user.location if hasattr(current_user, 'location') else None,
-            "travel_distance_km": current_user.travel_distance_km if hasattr(current_user, 'travel_distance_km') else 25
+            "travel_distance_km": max_distance_km if max_distance_km is not None else (current_user.travel_distance_km if hasattr(current_user, 'travel_distance_km') else 25)
         }
         
         return {
@@ -254,7 +260,7 @@ async def get_jobs_for_tradesperson(
             "total": len(jobs),
             "filtering_info": {
                 "skills_filter": len(tradesperson_info["trade_categories"]) > 0,
-                "location_filter": current_user.latitude is not None and current_user.longitude is not None,
+                "location_filter": (latitude is not None and longitude is not None) or (current_user.latitude is not None and current_user.longitude is not None),
                 "filtered_by_skills": tradesperson_info["trade_categories"],
                 "max_distance_km": tradesperson_info["travel_distance_km"]
             },

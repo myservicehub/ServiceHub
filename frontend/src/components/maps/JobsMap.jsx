@@ -261,7 +261,7 @@ const JobsMap = ({
         <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600; color: #1f2937;">${job.title}</h3>
         <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280;">${job.category}</p>
         <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280;">📍 ${job.location}</p>
-        ${distance ? `<p style="margin: 0 0 8px 0; font-size: 14px; color: #059669;">📏 ${distance.toFixed(1)} km away</p>` : ''}
+        ${distance !== null ? `<p style="margin: 0 0 8px 0; font-size: 14px; color: #059669;">📏 ${distance < 1 ? '< 1' : distance.toFixed(1)} km away</p>` : ''}
         ${job.budget_min && job.budget_max ? 
           `<p style="margin: 0 0 12px 0; font-size: 14px; color: #059669; font-weight: 500;">
             💰 ₦${job.budget_min.toLocaleString()} - ₦${job.budget_max.toLocaleString()}

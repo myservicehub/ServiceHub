@@ -1056,7 +1056,9 @@ class Database:
         if job:
             job_id_str = str(job['_id'])
             job['_id'] = job_id_str
-            job['id'] = job_id_str
+            # Don't overwrite numeric id if it exists
+            if 'id' not in job:
+                job['id'] = job_id_str
         return job
 
     @time_it
@@ -1091,7 +1093,9 @@ class Database:
         for job in jobs:
             job_id_str = str(job['_id'])
             job['_id'] = job_id_str
-            job['id'] = job_id_str
+            # Don't overwrite numeric id if it exists
+            if 'id' not in job:
+                job['id'] = job_id_str
         return jobs
 
     # ==========================================
@@ -3524,8 +3528,10 @@ class Database:
         return await self.get_jobs(skip=skip, limit=limit, filters={"status": "active"})
 
     @time_it
-    async def get_jobs_for_tradesperson(self, tradesperson_id: str, skip: int = 0, limit: int = 50) -> List[dict]:
-        """Get jobs filtered by tradesperson's skills and location preferences"""
+    async def get_jobs_for_tradesperson(self, tradesperson_id: str, skip: int = 0, limit: int = 50,
+                                      latitude: float = None, longitude: float = None, 
+                                      max_distance_km: float = None) -> List[dict]:
+        """Get jobs filtered by tradesperson's skills and location preferences with optional overrides"""
         try:
             # Get tradesperson details
             tradesperson = await self.get_user_by_id(tradesperson_id)
@@ -3553,17 +3559,19 @@ class Database:
                 print(f"Skills filter applied (optimized): {tradesperson_categories}")
             
             # 2. LOCATION FILTERING - Show jobs within tradesperson's travel distance
-            if (tradesperson.get("latitude") is not None and 
-                tradesperson.get("longitude") is not None):
-                
-                max_distance = tradesperson.get("travel_distance_km", 25)  # Default 25km
-                print(f"Location filter applied: {max_distance}km radius")
+            # Use overrides if provided, otherwise fallback to tradesperson profile
+            lat = latitude if latitude is not None else tradesperson.get("latitude")
+            lng = longitude if longitude is not None else tradesperson.get("longitude")
+            max_dist = max_distance_km if max_distance_km is not None else tradesperson.get("travel_distance_km", 25)
+
+            if lat is not None and lng is not None:
+                print(f"Location filter applied: {max_dist}km radius at ({lat}, {lng})")
                 
                 # Use location-based filtering with skills filtering
                 return await self.get_jobs_near_location_with_skills(
-                    latitude=tradesperson["latitude"],
-                    longitude=tradesperson["longitude"],
-                    max_distance_km=max_distance,
+                    latitude=lat,
+                    longitude=lng,
+                    max_distance_km=max_dist,
                     skill_categories=tradesperson_categories,
                     skip=skip,
                     limit=limit
@@ -3640,7 +3648,9 @@ class Database:
                 # Ensure both id and _id are strings for frontend consistency
                 job_id_str = str(job["_id"])
                 job["_id"] = job_id_str
-                job["id"] = job_id_str
+                # Don't overwrite numeric id if it exists
+                if "id" not in job:
+                    job["id"] = job_id_str
                 
                 jlat = job.get("latitude")
                 jlng = job.get("longitude")
@@ -3654,7 +3664,8 @@ class Database:
                 
                 if dist is not None:
                     if dist <= float(max_distance_km):
-                        job["distance_km"] = round(dist, 2)
+                        # Ensure distance is at least 0.1 to avoid "0.0" display in some frontends
+                        job["distance_km"] = max(0.1, round(dist, 2))
                         jobs_within_distance.append(job)
                 else:
                     job["distance_km"] = None
@@ -3688,7 +3699,9 @@ class Database:
                     # Ensure both id and _id are strings for frontend consistency
                     job_id_str = str(job["_id"])
                     job["_id"] = job_id_str
-                    job["id"] = job_id_str
+                    # Don't overwrite numeric id if it exists
+                    if "id" not in job:
+                        job["id"] = job_id_str
                 return jobs
             except Exception as e2:
                 logger.error(f"Fallback also failed: {e2}")
@@ -3770,8 +3783,9 @@ class Database:
                             pass
                     
                     if dist is not None:
-                        if dist <= float(radius_km):
-                            job["distance_km"] = round(dist, 2)
+                        if dist <= radius_km:
+                            # Ensure distance is at least 0.1 to avoid "0.0" display
+                            job["distance_km"] = max(0.1, round(dist, 2))
                             jobs_within_distance.append(job)
                     else:
                         job["distance_km"] = None
@@ -3816,7 +3830,9 @@ class Database:
             if "_id" in job:
                 job_id_str = str(job["_id"])
                 job["_id"] = job_id_str
-                job["id"] = job_id_str
+                # Don't overwrite numeric id if it exists
+                if "id" not in job:
+                    job["id"] = job_id_str
             
             # Add any additional processing here if needed
             # For example: enrich with homeowner info, interests count, etc.
@@ -7433,12 +7449,24 @@ We may update this Cookie Policy to reflect changes in technology or regulations
                 try:
                     summary = self.compose_job_description_from_answers(answers_data)
                     job = await self.database.jobs.find_one({"id": answers_data["job_id"]})
-                    current_desc = (job or {}).get("description")
-                    if summary and (not current_desc or not str(current_desc).strip()):
-                        await self.database.jobs.update_one(
-                            {"id": answers_data["job_id"]},
-                            {"$set": {"description": summary, "updated_at": datetime.utcnow()}}
-                        )
+                    if job and summary:
+                        current_desc = job.get("description") or ""
+                        
+                        # If current description is empty or just whitespace, set it to summary
+                        if not current_desc.strip():
+                            new_desc = summary
+                        # If current description doesn't already contain a significant part of the summary
+                        # and it's not already the summary itself, we might want to append it.
+                        elif len(current_desc) < 100 and summary not in current_desc:
+                            new_desc = f"{current_desc}\n\nJob Details:\n{summary}"
+                        else:
+                            new_desc = current_desc
+                            
+                        if new_desc != current_desc:
+                            await self.database.jobs.update_one(
+                                {"id": answers_data["job_id"]},
+                                {"$set": {"description": new_desc, "updated_at": datetime.utcnow()}}
+                            )
                 except Exception:
                     pass
                 return answers_data
