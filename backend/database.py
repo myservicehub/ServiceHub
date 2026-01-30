@@ -154,7 +154,7 @@ class Database:
                         [("public_id", 1)],
                         name="unique_public_id",
                         unique=True,
-                        partialFilterExpression={"public_id", {"$type": "string"}}
+                        partialFilterExpression={"public_id": {"$type": "string"}}
                     )
                 except Exception as idx_err:
                     logger.warning(f"Failed to ensure users public_id index: {idx_err}")
@@ -255,7 +255,7 @@ class Database:
                     # This is essential because get_jobs() queries with: status='active' AND expires_at > now
                     await self.database.jobs.create_index(
                         [("status", 1), ("expires_at", 1), ("created_at", -1)],
-                        name="jobs_status_expires_createdAt"
+                        name="jobs_status_expiresAt_createdAt"
                     )
 
                     # Quotes indexes
