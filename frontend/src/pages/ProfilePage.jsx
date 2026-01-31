@@ -34,7 +34,8 @@ import {
   ChevronDown,
   ExternalLink,
   FileText,
-  Eye
+  Eye,
+  Maximize2
 } from 'lucide-react';
 import { AlertTriangle } from 'lucide-react';
 import AuthenticatedImage from '../components/common/AuthenticatedImage';
@@ -109,6 +110,8 @@ const ProfilePage = () => {
   const { toast } = useToast();
 
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [selectedCertImage, setSelectedCertImage] = useState(null);
+  const [showCertModal, setShowCertModal] = useState(false);
   // Add-skill modal / test states
   const [addSkillOpen, setAddSkillOpen] = useState(false);
   const [selectedSkill, setSelectedSkill] = useState('');
@@ -1147,78 +1150,67 @@ const ProfilePage = () => {
                         ) : (
                           <div className="space-y-4">
                             {Array.isArray(profileData.certifications) && profileData.certifications.length > 0 ? (
-                              profileData.certifications.map((c, index) => {
-                                const name = typeof c === 'string' ? c : (c?.name || '');
-                                const image_url = typeof c === 'string' ? '' : (c?.image_url || c?.image || '');
-                                const isPdf = image_url.toLowerCase().endsWith('.pdf');
-                                
-                                // Construct full URL for direct access if needed
-                                const getFullUrl = (url) => {
-                                  if (!url) return '';
-                                  if (url.startsWith('http')) return url;
-                                  const baseUrl = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/$/, '');
-                                  return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
-                                };
+                              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                                {profileData.certifications.map((c, index) => {
+                                  const name = typeof c === 'string' ? c : (c?.name || '');
+                                  const image_url = typeof c === 'string' ? '' : (c?.image_url || c?.image || '');
+                                  const isPdf = image_url.toLowerCase().endsWith('.pdf');
+                                  
+                                  const getFullUrl = (url) => {
+                                    if (!url) return '';
+                                    if (url.startsWith('http')) return url;
+                                    const baseUrl = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/$/, '');
+                                    return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+                                  };
 
-                                return (
-                                  <div key={index} className="flex flex-col p-4 border-2 border-gray-100 rounded-2xl bg-white hover:border-[#34D164]/30 transition-all shadow-sm">
-                                    <div className="flex items-center justify-between mb-3">
-                                      <div className="flex items-center space-x-3 min-w-0">
-                                        <div className="bg-green-100 p-2 rounded-lg">
-                                          <Award size={18} className="text-[#34D164]" />
-                                        </div>
-                                        <span className="font-bold text-gray-900 font-montserrat truncate text-sm sm:text-base">{name}</span>
-                                      </div>
-                                      {image_url && (
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          className="text-[#34D164] hover:text-[#2eb755] p-2 h-auto font-bold text-xs"
-                                          onClick={() => window.open(getFullUrl(image_url), '_blank')}
-                                        >
-                                          <ExternalLink size={14} className="sm:mr-1" />
-                                          <span className="hidden sm:inline">View Full</span>
-                                        </Button>
-                                      )}
-                                    </div>
-                                    
-                                    {image_url && (
-                                      <div className="mt-2">
-                                        {isPdf ? (
-                                          <div 
-                                            className="flex items-center p-4 bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-red-200 hover:bg-red-50/30 transition-all"
-                                            onClick={() => window.open(getFullUrl(image_url), '_blank')}
-                                          >
-                                            <div className="bg-white p-2 rounded-lg shadow-sm mr-4">
-                                              <FileText size={28} className="text-red-500" />
+                                  return (
+                                    <div 
+                                      key={index} 
+                                      className="group relative flex flex-col bg-white border border-gray-100 rounded-xl overflow-hidden hover:border-[#34D164] hover:shadow-md transition-all cursor-pointer"
+                                      onClick={() => {
+                                        if (isPdf) {
+                                          window.open(getFullUrl(image_url), '_blank');
+                                        } else {
+                                          setSelectedCertImage({ url: getFullUrl(image_url), name });
+                                          setShowCertModal(true);
+                                        }
+                                      }}
+                                    >
+                                      {/* Thumbnail area */}
+                                      <div className="aspect-square w-full bg-gray-50 flex items-center justify-center overflow-hidden">
+                                        {image_url ? (
+                                          isPdf ? (
+                                            <div className="flex flex-col items-center">
+                                              <FileText size={32} className="text-red-500 mb-1" />
+                                              <span className="text-[10px] font-bold text-gray-400">PDF</span>
                                             </div>
-                                            <div className="flex-1 min-w-0">
-                                              <p className="text-sm font-bold text-gray-800 truncate">Certification PDF</p>
-                                              <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Click to view document</p>
-                                            </div>
-                                          </div>
-                                        ) : (
-                                          <div className="w-full aspect-video sm:aspect-[21/9] rounded-xl overflow-hidden border-2 border-gray-100 bg-gray-50 shadow-inner relative group">
+                                          ) : (
                                             <AuthenticatedImage 
                                               src={image_url} 
                                               alt={name} 
-                                              className="w-full h-full object-cover"
+                                              className="w-full h-full object-cover transition-transform group-hover:scale-110"
                                             />
-                                            <div 
-                                              className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center cursor-pointer backdrop-blur-[2px]"
-                                              onClick={() => window.open(getFullUrl(image_url), '_blank')}
-                                            >
-                                              <div className="bg-white/20 p-3 rounded-full border border-white/40">
-                                                <Eye className="text-white" size={28} />
-                                              </div>
-                                            </div>
-                                          </div>
+                                          )
+                                        ) : (
+                                          <Award size={24} className="text-gray-200" />
                                         )}
+                                        
+                                        {/* Hover Overlay */}
+                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                          {isPdf ? <ExternalLink className="text-white" size={20} /> : <Maximize2 className="text-white" size={20} />}
+                                        </div>
                                       </div>
-                                    )}
-                                  </div>
-                                );
-                              })
+                                      
+                                      {/* Name area */}
+                                      <div className="p-2 bg-white">
+                                        <p className="text-[10px] sm:text-xs font-bold text-gray-700 truncate font-montserrat" title={name}>
+                                          {name}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
                             ) : (
                               <div className="text-center py-8 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
                                 <Award className="mx-auto h-12 w-12 text-gray-300 mb-3" />
@@ -1773,6 +1765,38 @@ const ProfilePage = () => {
           )}
 
           <DialogFooter />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCertModal} onOpenChange={setShowCertModal}>
+        <DialogContent className="sm:max-w-4xl p-0 bg-transparent border-none shadow-none">
+          <div className="relative group">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setShowCertModal(false)}
+              className="absolute -top-12 right-0 text-white hover:bg-white/20 z-50"
+            >
+              <X size={24} />
+            </Button>
+            
+            {selectedCertImage && (
+              <div className="flex flex-col items-center">
+                <div className="bg-white rounded-2xl p-2 shadow-2xl overflow-hidden max-h-[85vh] w-full">
+                  <AuthenticatedImage 
+                    src={selectedCertImage.url} 
+                    alt={selectedCertImage.name} 
+                    className="w-full h-auto object-contain max-h-[80vh] rounded-xl"
+                  />
+                </div>
+                <div className="mt-4 px-6 py-2 bg-black/60 backdrop-blur-md rounded-full border border-white/20">
+                  <p className="text-white font-montserrat font-bold text-sm tracking-wide">
+                    {selectedCertImage.name}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 
