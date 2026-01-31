@@ -7446,29 +7446,6 @@ We may update this Cookie Policy to reflect changes in technology or regulations
             result = await self.database.job_question_answers.insert_one(answers_data)
             if result.inserted_id:
                 answers_data['_id'] = str(result.inserted_id)
-                try:
-                    summary = self.compose_job_description_from_answers(answers_data)
-                    job = await self.database.jobs.find_one({"id": answers_data["job_id"]})
-                    if job and summary:
-                        current_desc = job.get("description") or ""
-                        
-                        # If current description is empty or just whitespace, set it to summary
-                        if not current_desc.strip():
-                            new_desc = summary
-                        # If current description doesn't already contain a significant part of the summary
-                        # and it's not already the summary itself, we might want to append it.
-                        elif len(current_desc) < 100 and summary not in current_desc:
-                            new_desc = f"{current_desc}\n\nJob Details:\n{summary}"
-                        else:
-                            new_desc = current_desc
-                            
-                        if new_desc != current_desc:
-                            await self.database.jobs.update_one(
-                                {"id": answers_data["job_id"]},
-                                {"$set": {"description": new_desc, "updated_at": datetime.utcnow()}}
-                            )
-                except Exception:
-                    pass
                 return answers_data
             return None
         except Exception as e:

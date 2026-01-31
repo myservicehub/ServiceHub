@@ -1264,16 +1264,6 @@ const BrowseJobsPage = () => {
                       <span><strong>Interest:</strong> {selectedJobDetails.interests_count || 0} tradespeople interested</span>
                     </div>
                   </div>
-                  
-                  {/* Job Description */}
-                  {selectedJobDetails.description && (
-                    <div className="mt-4">
-                      <h3 className="font-semibold mb-2 font-montserrat">Description</h3>
-                      <p className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">
-                        {selectedJobDetails.description}
-                      </p>
-                    </div>
-                  )}
 
                   {/* Job Requirements & Details from Trade Category Questions (Moved up for better visibility) */}
                   {selectedJobAnswers && selectedJobAnswers.answers && selectedJobAnswers.answers.length > 0 && (
