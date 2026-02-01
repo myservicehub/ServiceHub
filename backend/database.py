@@ -18,7 +18,7 @@ try:
     from .models.auth import UserRole
     from .models.reviews import (
         Review, ReviewCreate, ReviewSummary, ReviewRequest, 
-        ReviewStats, ReviewType, ReviewStatus
+        ReviewStats, ReviewType, ReviewStatus, ExternalReviewInvitation
     )
     from .models.admin import AdminRole, AdminStatus, AdminActivityType
 except ImportError:
@@ -341,6 +341,13 @@ class Database:
         if self.database is None:
             raise RuntimeError("Database unavailable: users collection not accessible")
         return self.database.users
+
+    @property
+    def external_review_invitations_collection(self):
+        """Access to external review invitations collection"""
+        if self.database is None:
+            raise RuntimeError("Database unavailable: external review invitations collection not accessible")
+        return self.database.external_review_invitations
 
     # Newsletter subscription operations
     async def get_newsletter_subscriber_by_email(self, email: str) -> Optional[dict]:
@@ -2752,6 +2759,25 @@ class Database:
         
         return reviews
 
+    # External Review Invitation Methods
+    async def create_external_review_invitation(self, invitation: ExternalReviewInvitation) -> bool:
+        """Create a new external review invitation"""
+        invitation_dict = invitation.dict()
+        result = await self.external_review_invitations_collection.insert_one(invitation_dict)
+        return result.acknowledged
+
+    async def get_external_review_invitation_by_token(self, token: str) -> Optional[dict]:
+        """Get external review invitation by token"""
+        return await self.external_review_invitations_collection.find_one({"token": token})
+
+    async def update_external_review_invitation(self, token: str, updates: dict) -> bool:
+        """Update external review invitation status or other fields"""
+        result = await self.external_review_invitations_collection.update_one(
+            {"token": token},
+            {"$set": {**updates, "updated_at": datetime.utcnow()}}
+        )
+        return result.modified_count > 0
+
     @property
     def reviews_collection(self):
         """Access to reviews collection"""
@@ -4824,7 +4850,10 @@ class Database:
                 self.database.user_verifications.count_documents({"referred_by": user_id, "verification_status": "verified"}),
                 self.database.portfolio.count_documents({"tradesperson_id": user_id}),
                 self._get_tradesperson_average_rating(user_id),
-                self.database.reviews.count_documents({"tradesperson_id": user_id})
+                self.database.reviews.count_documents({
+                    "$or": [{"tradesperson_id": user_id}, {"reviewee_id": user_id}],
+                    "status": ReviewStatus.PUBLISHED
+                })
             ]
             results = await asyncio.gather(*tasks)
             wallet = results[0]
@@ -4875,7 +4904,12 @@ class Database:
         """Helper method to calculate average rating for a tradesperson"""
         
         pipeline = [
-            {"$match": {"tradesperson_id": tradesperson_id}},
+            {
+                "$match": {
+                    "$or": [{"tradesperson_id": tradesperson_id}, {"reviewee_id": tradesperson_id}],
+                    "status": ReviewStatus.PUBLISHED
+                }
+            },
             {"$group": {"_id": None, "avg_rating": {"$avg": "$rating"}}}
         ]
         

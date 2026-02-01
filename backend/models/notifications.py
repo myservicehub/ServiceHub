@@ -20,6 +20,8 @@ class NotificationType(str, Enum):
     REVIEW_REMINDER = "review_reminder"  # Remind homeowners to leave reviews
     JOB_COMPLETED = "job_completed"  # Notify tradespeople when job is completed
     JOB_CANCELLED = "job_cancelled"  # Notify tradespeople when job is cancelled
+    EXTERNAL_REVIEW_INVITATION = "external_review_invitation"
+    NEW_REVIEW_RECEIVED = "new_review_received"
 
 class NotificationChannel(str, Enum):
     EMAIL = "email"
@@ -53,6 +55,8 @@ class NotificationPreferences(BaseModel):
     review_reminder: NotificationChannel = NotificationChannel.EMAIL  # Review reminders
     job_completed: NotificationChannel = NotificationChannel.BOTH  # Job completion notifications
     job_cancelled: NotificationChannel = NotificationChannel.BOTH  # Job cancellation notifications
+    external_review_invitation: NotificationChannel = NotificationChannel.BOTH
+    new_review_received: NotificationChannel = NotificationChannel.BOTH
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 

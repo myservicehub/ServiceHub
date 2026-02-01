@@ -864,6 +864,78 @@ serviceHub Team
             )
         }
 
+        # New Review Received templates
+        templates[NotificationType.NEW_REVIEW_RECEIVED] = {
+            NotificationChannel.EMAIL: NotificationTemplate(
+                id=str(uuid.uuid4()),
+                type=NotificationType.NEW_REVIEW_RECEIVED,
+                channel=NotificationChannel.EMAIL,
+                subject_template="New Review Received: {job_title}",
+                content_template="""
+Hello {reviewee_name},
+
+Congratulations! You've received a new review on serviceHub.
+
+👤 Reviewer: {reviewer_name}
+📋 Job: {job_title}
+⭐ Rating: {star_display} ({rating}/5)
+
+Your reputation is growing! Reviews help you win more jobs by building trust with potential clients.
+
+📝 View your review: {review_url}
+
+Keep up the great work!
+
+Best regards,
+serviceHub Team
+                """,
+                variables=["reviewee_name", "reviewer_name", "job_title", "rating", "star_display", "review_url"]
+            ),
+            NotificationChannel.SMS: NotificationTemplate(
+                id=str(uuid.uuid4()),
+                type=NotificationType.NEW_REVIEW_RECEIVED,
+                channel=NotificationChannel.SMS,
+                subject_template="New Review - serviceHub",
+                content_template="⭐ You received a new {rating}-star review from {reviewer_name} for '{job_title}'! View it here: {review_url}",
+                variables=["rating", "reviewer_name", "job_title", "review_url"]
+            )
+        }
+
+        # External Review Invitation templates
+        templates[NotificationType.EXTERNAL_REVIEW_INVITATION] = {
+            NotificationChannel.EMAIL: NotificationTemplate(
+                id=str(uuid.uuid4()),
+                type=NotificationType.EXTERNAL_REVIEW_INVITATION,
+                channel=NotificationChannel.EMAIL,
+                subject_template="Review Request from {tradesperson_name}",
+                content_template="""
+Hello {client_name},
+
+{tradesperson_name} has invited you to leave a review for the work they recently completed for you.
+
+📋 Job: {job_title}
+
+Reviews help professionals like {tradesperson_name} build their reputation and help other clients find reliable services. It only takes a minute to share your experience!
+
+📝 Leave Your Review: {review_url}
+
+Thank you for your feedback!
+
+Best regards,
+serviceHub Team
+                """,
+                variables=["client_name", "tradesperson_name", "job_title", "review_url"]
+            ),
+            NotificationChannel.SMS: NotificationTemplate(
+                id=str(uuid.uuid4()),
+                type=NotificationType.EXTERNAL_REVIEW_INVITATION,
+                channel=NotificationChannel.SMS,
+                subject_template="Review Request - serviceHub",
+                content_template="Hi {client_name}, {tradesperson_name} invited you to leave a review for '{job_title}'. Share your experience here: {review_url}",
+                variables=["client_name", "tradesperson_name", "job_title", "review_url"]
+            )
+        }
+
         # Job Rejection templates
         templates[NotificationType.JOB_REJECTED] = {
             NotificationChannel.EMAIL: NotificationTemplate(

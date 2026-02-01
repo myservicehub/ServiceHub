@@ -7,6 +7,11 @@ import uuid
 class ReviewType(str, Enum):
     HOMEOWNER_TO_TRADESPERSON = "homeowner_to_tradesperson"
     TRADESPERSON_TO_HOMEOWNER = "tradesperson_to_homeowner"
+    EXTERNAL_TO_TRADESPERSON = "external_to_tradesperson"
+
+class ReviewSource(str, Enum):
+    PLATFORM = "platform"
+    EXTERNAL = "external"
 
 class ReviewStatus(str, Enum):
     PENDING = "pending"
@@ -46,12 +51,13 @@ class ReviewCreate(BaseModel):
 class Review(BaseModel):
     """Complete review object"""
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    job_id: str = Field(..., description="ID of the completed job")
-    reviewer_id: str = Field(..., description="ID of user writing review")
+    job_id: Optional[str] = Field(None, description="ID of the completed job (optional for external)")
+    reviewer_id: Optional[str] = Field(None, description="ID of user writing review (optional for external)")
     reviewee_id: str = Field(..., description="ID of user being reviewed")
     reviewer_name: str = Field(..., description="Name of reviewer")
     reviewee_name: str = Field(..., description="Name of reviewee")
     review_type: ReviewType = Field(..., description="Type of review")
+    source: ReviewSource = Field(default=ReviewSource.PLATFORM, description="Source of review")
     rating: int = Field(..., ge=1, le=5, description="Overall star rating")
     title: str = Field(..., description="Review title")
     content: str = Field(..., description="Review content")
@@ -64,6 +70,7 @@ class Review(BaseModel):
     response_date: Optional[datetime] = Field(None, description="Date of response")
     job_title: Optional[str] = Field(None, description="Title of the job")
     job_category: Optional[str] = Field(None, description="Category of the job")
+    is_verified_external: bool = Field(default=False, description="Verified external review")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -197,3 +204,27 @@ class AdvancedReviewSearchResponse(BaseModel):
     page: int = Field(1, description="Current page")
     limit: int = Field(10, description="Items per page")
     total_pages: int = Field(0, description="Total pages")
+
+class ExternalReviewInvitation(BaseModel):
+    """External review invitation system"""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    tradesperson_id: str = Field(..., description="Tradesperson user ID")
+    client_name: str = Field(..., description="External client name")
+    client_email: Optional[str] = Field(None, description="External client email")
+    client_phone: Optional[str] = Field(None, description="External client phone")
+    job_title: str = Field(..., description="Job title")
+    job_description: Optional[str] = Field(None, description="Job description")
+    token: str = Field(default_factory=lambda: uuid.uuid4().hex, description="Unique link token")
+    status: str = Field(default="pending", description="pending, completed, expired")
+    invitation_sent_at: datetime = Field(default_factory=datetime.utcnow)
+    expires_at: datetime = Field(..., description="When invitation expires")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class ExternalReviewCreate(BaseModel):
+    """Create a new external review from invitation"""
+    token: str = Field(..., description="Invitation token")
+    rating: int = Field(..., ge=1, le=5)
+    title: str = Field(..., min_length=5, max_length=100)
+    content: str = Field(..., min_length=10, max_length=1000)
+    photos: Optional[List[str]] = Field(default=[])
+    would_recommend: bool = Field(default=True)

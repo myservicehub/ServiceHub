@@ -7,10 +7,13 @@ import Footer from '../components/Footer';
 import { reviewsAPI } from '../api/reviews';
 import { useToast } from '../hooks/use-toast';
 import { useAuth } from '../contexts/AuthContext';
+import RequestExternalReviewModal from '../components/reviews/RequestExternalReviewModal';
+import { CheckCircle2, ExternalLink } from 'lucide-react';
 
 const MyReceivedReviewsPage = () => {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [stats, setStats] = useState({
     totalReviews: 0,
     averageRating: 0,
@@ -143,13 +146,22 @@ const MyReceivedReviewsPage = () => {
       
       <div className="container mx-auto px-4 py-8">
         {/* Page Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold font-montserrat mb-2" style={{color: '#121E3C'}}>
-            My Received Reviews
-          </h1>
-          <p className="text-gray-600 font-lato">
-            Reviews and feedback from homeowners who hired you
-          </p>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl font-bold font-montserrat mb-2" style={{color: '#121E3C'}}>
+              My Received Reviews
+            </h1>
+            <p className="text-gray-600 font-lato">
+              Reviews and feedback from homeowners who hired you
+            </p>
+          </div>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+          >
+            <ExternalLink className="h-4 w-4" />
+            Request External Review
+          </button>
         </div>
 
         {loading ? (
@@ -246,8 +258,14 @@ const MyReceivedReviewsPage = () => {
                             <User className="h-6 w-6 text-gray-600" />
                           </div>
                           <div>
-                            <CardTitle className="text-lg font-montserrat">
+                            <CardTitle className="text-lg font-montserrat flex items-center gap-2">
                               {review.reviewer_name || 'Anonymous Homeowner'}
+                              {review.is_verified_external && (
+                                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 flex items-center gap-1">
+                                  <CheckCircle2 className="h-3 w-3" />
+                                  Verified External
+                                </Badge>
+                              )}
                             </CardTitle>
                             <div className="flex items-center gap-2 mt-1">
                               <div className="flex">
@@ -306,6 +324,11 @@ const MyReceivedReviewsPage = () => {
       </div>
 
       <Footer />
+      
+      <RequestExternalReviewModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+      />
     </div>
   );
 };

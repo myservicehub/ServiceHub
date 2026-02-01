@@ -90,6 +90,26 @@ export const reviewsAPI = {
       params: { page, limit }
     });
     return response.data;
+  },
+
+  // Invite an external client for a review
+  inviteExternalReview: async (inviteData) => {
+    const response = await apiClient.post('/reviews/invite-external', null, {
+      params: inviteData
+    });
+    return response.data;
+  },
+
+  // Get external invitation details (Public)
+  getExternalInvitation: async (token) => {
+    const response = await apiClient.get(`/reviews/external-invitation/${token}`);
+    return response.data;
+  },
+
+  // Submit an external review (Public)
+  submitExternalReview: async (reviewData) => {
+    const response = await apiClient.post('/reviews/submit-external', reviewData);
+    return response.data;
   }
 };
 

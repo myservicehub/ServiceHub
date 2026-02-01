@@ -4,7 +4,8 @@ from ..models.reviews import (
     Review, ReviewCreate, ReviewUpdate, ReviewResponse, ReviewSummary,
     ReviewsListResponse, ReviewStats, ReviewType, ReviewStatus,
     ReviewRequest, ReviewHelpful, ReviewFilters,
-    AdvancedReviewSearchRequest, AdvancedReviewSearchResponse
+    AdvancedReviewSearchRequest, AdvancedReviewSearchResponse,
+    ExternalReviewInvitation, ExternalReviewCreate, ReviewSource
 )
 from ..models.auth import User, UserRole
 from ..models.notifications import NotificationType
@@ -387,7 +388,7 @@ async def _notify_review_received(
         # Send notification
         notification = await notification_service.send_notification(
             user_id=reviewee["id"],
-            notification_type=NotificationType.NEW_REVIEW_RECEIVED,  # Need to add this type
+            notification_type=NotificationType.NEW_REVIEW_RECEIVED,
             template_data=template_data,
             user_preferences=preferences,
             recipient_email=reviewee.get("email"),
@@ -401,3 +402,180 @@ async def _notify_review_received(
         
     except Exception as e:
         logger.error(f"❌ Failed to send review notification for {review_id}: {str(e)}")
+
+# External Review Invitation Endpoints
+@router.post("/invite-external")
+async def invite_external_review(
+    client_name: str,
+    job_title: str,
+    client_email: Optional[str] = None,
+    client_phone: Optional[str] = None,
+    background_tasks: BackgroundTasks = None,
+    current_user: User = Depends(get_current_tradesperson)
+):
+    """Invite an external client to leave a review"""
+    try:
+        # Create invitation
+        invitation = ExternalReviewInvitation(
+            tradesperson_id=current_user.id,
+            client_name=client_name,
+            client_email=client_email,
+            client_phone=client_phone,
+            job_title=job_title,
+            expires_at=datetime.utcnow() + timedelta(days=30)
+        )
+        
+        # Save to database
+        success = await database.create_external_review_invitation(invitation)
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to create invitation")
+        
+        # Send notification (Email or SMS)
+        if background_tasks:
+            background_tasks.add_task(
+                _notify_external_review_invitation,
+                invitation=invitation,
+                tradesperson_name=current_user.name
+            )
+        
+        # Generate the review link
+        review_url = f"{os.environ.get('FRONTEND_URL', 'https://servicehub.ng')}/review/external/{invitation.token}"
+        
+        return {
+            "message": "Invitation sent successfully",
+            "token": invitation.token,
+            "review_url": review_url
+        }
+        
+    except Exception as e:
+        logger.error(f"Error creating external invitation: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to create invitation")
+
+@router.get("/external-invitation/{token}")
+async def get_external_invitation(token: str):
+    """Get external review invitation details by token (Public)"""
+    invitation = await database.get_external_review_invitation_by_token(token)
+    if not invitation:
+        raise HTTPException(status_code=404, detail="Invitation not found or expired")
+    
+    # Check if already completed
+    if invitation.get("status") == "completed":
+        raise HTTPException(status_code=400, detail="This review has already been completed")
+    
+    # Check expiry
+    if invitation.get("expires_at") < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="This invitation has expired")
+    
+    # Get tradesperson details
+    tradesperson = await database.get_user_by_id(invitation["tradesperson_id"])
+    tradesperson_name = tradesperson.get("name") if tradesperson else "Tradesperson"
+    
+    # Flatten response for frontend
+    return {
+        **invitation,
+        "tradesperson_name": tradesperson_name,
+        "tradesperson_business_name": tradesperson.get("business_name") if tradesperson else None
+    }
+
+@router.post("/submit-external")
+async def submit_external_review(
+    review_data: ExternalReviewCreate,
+    background_tasks: BackgroundTasks
+):
+    """Submit an external review using a valid token (Public)"""
+    try:
+        # Verify invitation
+        invitation = await database.get_external_review_invitation_by_token(review_data.token)
+        if not invitation:
+            raise HTTPException(status_code=404, detail="Invitation not found")
+        
+        if invitation.get("status") == "completed":
+            raise HTTPException(status_code=400, detail="This review has already been completed")
+            
+        if invitation.get("expires_at") < datetime.utcnow():
+            raise HTTPException(status_code=400, detail="This invitation has expired")
+            
+        # Get tradesperson details
+        tradesperson = await database.get_user_by_id(invitation["tradesperson_id"])
+        if not tradesperson:
+            raise HTTPException(status_code=404, detail="Tradesperson not found")
+            
+        # Create review object
+        review = Review(
+            reviewee_id=invitation["tradesperson_id"],
+            reviewer_name=invitation["client_name"],
+            reviewee_name=tradesperson.get("name", "Tradesperson"),
+            review_type=ReviewType.EXTERNAL_TO_TRADESPERSON,
+            source=ReviewSource.EXTERNAL,
+            rating=review_data.rating,
+            title=review_data.title,
+            content=review_data.content,
+            photos=review_data.photos or [],
+            would_recommend=review_data.would_recommend,
+            job_title=invitation["job_title"],
+            is_verified_external=True
+        )
+        
+        # Save review
+        created_review = await database.create_review(review)
+        
+        # Update invitation status
+        await database.update_external_review_invitation(
+            review_data.token, 
+            {"status": "completed", "completed_at": datetime.utcnow()}
+        )
+        
+        # Notify tradesperson
+        background_tasks.add_task(
+            _notify_review_received,
+            reviewee=tradesperson,
+            reviewer_name=invitation["client_name"],
+            job_title=invitation["job_title"],
+            review_id=created_review.id,
+            rating=review_data.rating
+        )
+        
+        return created_review
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error submitting external review: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to submit external review")
+
+async def _notify_external_review_invitation(invitation: ExternalReviewInvitation, tradesperson_name: str):
+    """Background task to notify external client of review invitation"""
+    try:
+        # Prepare template data
+        review_url = f"{os.environ.get('FRONTEND_URL', 'https://servicehub.ng')}/review/external/{invitation.token}"
+        
+        template_data = {
+            "client_name": invitation.client_name,
+            "tradesperson_name": tradesperson_name,
+            "job_title": invitation.job_title,
+            "review_url": review_url
+        }
+        
+        # Determine channel
+        if invitation.client_email:
+            # Send email invitation
+            await notification_service.send_notification(
+                user_id=None,  # External client has no user ID
+                notification_type=NotificationType.EXTERNAL_REVIEW_INVITATION,
+                template_data=template_data,
+                recipient_email=invitation.client_email
+            )
+            
+        if invitation.client_phone:
+            # Send SMS invitation
+            await notification_service.send_notification(
+                user_id=None,
+                notification_type=NotificationType.EXTERNAL_REVIEW_INVITATION,
+                template_data=template_data,
+                recipient_phone=invitation.client_phone
+            )
+            
+        logger.info(f"✅ External review invitation sent for token {invitation.token}")
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to send external review invitation: {str(e)}")
