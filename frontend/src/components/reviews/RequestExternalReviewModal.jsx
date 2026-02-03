@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { reviewsAPI } from '../../api/reviews';
-import { toast } from 'react-hot-toast';
+import { useToast } from '../../hooks/use-toast';
 
 const RequestExternalReviewModal = ({ isOpen, onClose }) => {
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     client_name: '',
@@ -18,11 +19,18 @@ const RequestExternalReviewModal = ({ isOpen, onClose }) => {
     setLoading(true);
     try {
       const response = await reviewsAPI.inviteExternalReview(formData);
-      toast.success('Invitation sent successfully!');
+      toast({
+        title: "Success",
+        description: "Invitation sent successfully!",
+      });
       onClose();
     } catch (error) {
       console.error('Error sending invitation:', error);
-      toast.error(error.response?.data?.detail || 'Failed to send invitation');
+      toast({
+        title: "Error",
+        description: error.response?.data?.detail || 'Failed to send invitation',
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }

@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
-import { Star, Calendar, MapPin, User, MessageSquare, Award } from 'lucide-react';
+import { Star, Calendar, MapPin, User, MessageSquare, Award, CheckCircle2, ExternalLink } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { reviewsAPI } from '../api/reviews';
 import { useToast } from '../hooks/use-toast';
 import { useAuth } from '../contexts/AuthContext';
 import RequestExternalReviewModal from '../components/reviews/RequestExternalReviewModal';
-import { CheckCircle2, ExternalLink } from 'lucide-react';
 
 const MyReceivedReviewsPage = () => {
   const [reviews, setReviews] = useState([]);

@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { reviewsAPI } from '../api/reviews';
 import StarRating from '../components/reviews/StarRating';
-import { toast } from 'react-hot-toast';
+import { useToast } from '../hooks/use-toast';
 
 const ExternalReviewPage = () => {
   const { token } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [invitation, setInvitation] = useState(null);
@@ -36,7 +37,11 @@ const ExternalReviewPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.rating === 0) {
-      toast.error('Please select a rating');
+      toast({
+        title: "Rating Required",
+        description: "Please select a rating",
+        variant: "destructive",
+      });
       return;
     }
     
@@ -46,10 +51,17 @@ const ExternalReviewPage = () => {
         token,
         ...formData
       });
-      toast.success('Thank you for your review!');
+      toast({
+        title: "Success",
+        description: "Thank you for your review!",
+      });
       navigate('/thanks'); // Assuming there's a thanks page or we can just show success state
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Failed to submit review');
+      toast({
+        title: "Error",
+        description: err.response?.data?.detail || 'Failed to submit review',
+        variant: "destructive",
+      });
     } finally {
       setSubmitting(false);
     }
