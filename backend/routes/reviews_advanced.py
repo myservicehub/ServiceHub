@@ -408,9 +408,9 @@ async def _notify_review_received(
 async def invite_external_review(
     client_name: str,
     job_title: str,
-    client_email: str,
-    client_phone: str,
-    background_tasks: BackgroundTasks,
+    client_email: Optional[str] = None,
+    client_phone: Optional[str] = None,
+    background_tasks: BackgroundTasks = None,
     current_user: User = Depends(get_current_tradesperson)
 ):
     """Invite an external client to leave a review"""
@@ -430,13 +430,20 @@ async def invite_external_review(
         if not success:
             raise HTTPException(status_code=500, detail="Failed to create invitation")
         
+        # Determine notification channel
+        # Use BOTH if both are provided, otherwise use what's available
+        notification_channel = "both"
+        if not client_email:
+            notification_channel = "sms"
+        elif not client_phone:
+            notification_channel = "email"
+
         # Send notification (Email or SMS)
-        if background_tasks:
-            background_tasks.add_task(
-                _notify_external_review_invitation,
-                invitation=invitation,
-                tradesperson_name=current_user.name
-            )
+        background_tasks.add_task(
+            _notify_external_review_invitation,
+            invitation=invitation,
+            tradesperson_name=current_user.name
+        )
         
         # Generate the review link
         review_url = f"{os.environ.get('FRONTEND_URL', 'https://servicehub.ng')}/review/external/{invitation.token}"
@@ -444,7 +451,8 @@ async def invite_external_review(
         return {
             "message": "Invitation sent successfully",
             "token": invitation.token,
-            "review_url": review_url
+            "review_url": review_url,
+            "channel": notification_channel
         }
         
     except Exception as e:
@@ -556,38 +564,61 @@ async def _notify_external_review_invitation(invitation: ExternalReviewInvitatio
             "review_url": review_url
         }
         
-        delivery_status = "sent"
+        email_sent = False
+        sms_sent = False
         
         # Determine channel and send
         if invitation.client_email:
             # Send email invitation
-            notification = await notification_service.send_notification(
-                user_id=None,  # External client has no user ID
-                notification_type=NotificationType.EXTERNAL_REVIEW_INVITATION,
-                template_data=template_data,
-                recipient_email=invitation.client_email
-            )
-            if notification.status == NotificationStatus.FAILED:
-                delivery_status = "failed"
+            try:
+                notification = await notification_service.send_notification(
+                    user_id=None,  # External client has no user ID
+                    notification_type=NotificationType.EXTERNAL_REVIEW_INVITATION,
+                    template_data=template_data,
+                    recipient_email=invitation.client_email
+                )
+                if notification.status == NotificationStatus.SENT:
+                    email_sent = True
+                    # Save notification to database
+                    try:
+                        await database.create_notification(notification)
+                    except Exception as db_err:
+                        logger.error(f"❌ Failed to save email notification to DB: {db_err}")
+            except Exception as e:
+                logger.error(f"❌ Email delivery failed for external review: {str(e)}")
             
-        if invitation.client_phone and delivery_status != "failed": # Only try SMS if email succeeded or wasn't provided
+        if invitation.client_phone:
             # Send SMS invitation
-            notification = await notification_service.send_notification(
-                user_id=None,
-                notification_type=NotificationType.EXTERNAL_REVIEW_INVITATION,
-                template_data=template_data,
-                recipient_phone=invitation.client_phone
-            )
-            if notification.status == NotificationStatus.FAILED:
-                delivery_status = "failed"
+            try:
+                notification = await notification_service.send_notification(
+                    user_id=None,
+                    notification_type=NotificationType.EXTERNAL_REVIEW_INVITATION,
+                    template_data=template_data,
+                    recipient_phone=invitation.client_phone
+                )
+                if notification.status == NotificationStatus.SENT:
+                    sms_sent = True
+                    # Save notification to database
+                    try:
+                        await database.create_notification(notification)
+                    except Exception as db_err:
+                        logger.error(f"❌ Failed to save SMS notification to DB: {db_err}")
+            except Exception as e:
+                logger.error(f"❌ SMS delivery failed for external review: {str(e)}")
         
         # Update invitation delivery status in database
+        delivery_status = "sent" if (email_sent or sms_sent) else "failed"
+        
         await database.update_external_review_invitation(
             invitation.token, 
-            {"delivery_status": delivery_status}
+            {
+                "delivery_status": delivery_status,
+                "email_sent": email_sent,
+                "sms_sent": sms_sent
+            }
         )
             
-        logger.info(f"✅ External review invitation sent for token {invitation.token} with status {delivery_status}")
+        logger.info(f"✅ External review invitation processed for token {invitation.token}. Email: {email_sent}, SMS: {sms_sent}")
         
     except Exception as e:
         logger.error(f"❌ Failed to send external review invitation: {str(e)}")

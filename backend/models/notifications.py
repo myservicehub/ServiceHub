@@ -73,7 +73,7 @@ class NotificationTemplate(BaseModel):
 class Notification(BaseModel):
     """Individual notification record"""
     id: str = Field(..., description="Unique identifier")
-    user_id: str = Field(..., description="Recipient user ID")
+    user_id: Optional[str] = Field(None, description="Recipient user ID")
     type: NotificationType = Field(..., description="Notification type")
     channel: NotificationChannel = Field(..., description="Delivery channel")
     recipient_email: Optional[str] = Field(None, description="Email recipient")
@@ -89,7 +89,7 @@ class Notification(BaseModel):
 
 class NotificationRequest(BaseModel):
     """Request to send a notification"""
-    user_id: str = Field(..., description="Recipient user ID")
+    user_id: Optional[str] = Field(None, description="Recipient user ID")
     type: NotificationType = Field(..., description="Notification type")
     template_data: Dict[str, Any] = Field(default={}, description="Template variables")
     override_channel: Optional[NotificationChannel] = Field(None, description="Override user preferences")

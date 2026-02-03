@@ -909,20 +909,52 @@ serviceHub Team
                 channel=NotificationChannel.EMAIL,
                 subject_template="Review Request from {tradesperson_name}",
                 content_template="""
-Hello {client_name},
-
-{tradesperson_name} has invited you to leave a review for the work they recently completed for you.
-
-📋 Job: {job_title}
-
-Reviews help professionals like {tradesperson_name} build their reputation and help other clients find reliable services. It only takes a minute to share your experience!
-
-📝 Leave Your Review: {review_url}
-
-Thank you for your feedback!
-
-Best regards,
-serviceHub Team
+<html>
+<head>
+  <meta charset=\"UTF-8\" />
+  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
+  <style>
+    body { margin: 0; padding: 0; background: #f6f7fb; font-family: Arial, sans-serif; }
+    .container { max-width: 640px; margin: 0 auto; padding: 24px; }
+    .card { background: #ffffff; border: 1px solid #e6e8ef; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); overflow: hidden; }
+    .header { padding: 18px 20px; border-bottom: 1px solid #eef0f5; background: #165DFF; color: #ffffff; }
+    .title { margin: 0; font-size: 18px; color: #ffffff; }
+    .content { padding: 18px 20px; color: #374151; line-height: 1.6; }
+    .job-box { background: #f9fafb; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #165DFF; }
+    .button { display: inline-block; padding: 12px 24px; background: #165DFF; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 16px; }
+    .footer { padding: 18px 20px; font-size: 12px; color: #6b7280; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class=\"container\">
+    <div class=\"card\">
+      <div class=\"header\">
+        <h1 class=\"title\">Review Request</h1>
+      </div>
+      <div class=\"content\">
+        <p>Hello {client_name},</p>
+        <p><strong>{tradesperson_name}</strong> has invited you to leave a review for the work they recently completed for you.</p>
+        
+        <div class=\"job-box\">
+          <strong>📋 Job:</strong> {job_title}
+        </div>
+        
+        <p>Reviews help professionals like {tradesperson_name} build their reputation and help other clients find reliable services. It only takes a minute to share your experience!</p>
+        
+        <div style=\"text-align: center;\">
+          <a href=\"{review_url}\" class=\"button\">Leave Your Review</a>
+        </div>
+        
+        <p>Thank you for your feedback!</p>
+      </div>
+      <div class=\"footer\">
+        <p>Sent by serviceHub Team</p>
+        <p>Building trust in local services</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
                 """,
                 variables=["client_name", "tradesperson_name", "job_title", "review_url"]
             ),
