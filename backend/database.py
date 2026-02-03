@@ -3588,7 +3588,19 @@ class Database:
             # Use overrides if provided, otherwise fallback to tradesperson profile
             lat = latitude if latitude is not None else tradesperson.get("latitude")
             lng = longitude if longitude is not None else tradesperson.get("longitude")
+            
+            # ATTEMPT TO RESOLVE COORDINATES IF MISSING
+            if lat is None or lng is None:
+                tp_location = tradesperson.get("location")
+                if tp_location:
+                    coords = await self.resolve_coordinates_from_text(tp_location)
+                    if coords:
+                        lat = coords.get("latitude")
+                        lng = coords.get("longitude")
+                        print(f"Resolved tradesperson coordinates from location text: {lat}, {lng}")
+
             max_dist = max_distance_km if max_distance_km is not None else tradesperson.get("travel_distance_km", 25)
+            tradesperson_state = tradesperson.get("location") # location field usually contains the state in this app
 
             if lat is not None and lng is not None:
                 print(f"Location filter applied: {max_dist}km radius at ({lat}, {lng})")
@@ -3600,7 +3612,8 @@ class Database:
                     max_distance_km=max_dist,
                     skill_categories=tradesperson_categories,
                     skip=skip,
-                    limit=limit
+                    limit=limit,
+                    tradesperson_state=tradesperson_state
                 )
             else:
                 # No location data, use skills-only filtering
@@ -3622,7 +3635,8 @@ class Database:
     @time_it
     async def get_jobs_near_location_with_skills(self, latitude: float, longitude: float, 
                                                max_distance_km: float, skill_categories: List[str],
-                                               skip: int = 0, limit: int = 50) -> List[dict]:
+                                               skip: int = 0, limit: int = 50,
+                                               tradesperson_state: Optional[str] = None) -> List[dict]:
         """Get jobs near location matching skills, including jobs without coordinates (optimized)."""
         try:
             # Base filter: active jobs only, non-expired (most important for performance)
@@ -3681,6 +3695,17 @@ class Database:
                 jlat = job.get("latitude")
                 jlng = job.get("longitude")
                 
+                # Attempt to resolve coordinates if missing
+                if jlat is None or jlng is None:
+                    job_location = job.get("state") or job.get("location")
+                    if job_location:
+                        coords = await self.resolve_coordinates_from_text(job_location)
+                        if coords:
+                            jlat = coords.get("latitude")
+                            jlng = coords.get("longitude")
+                            # Optionally update the job in background if we resolved coords
+                            # await self.update_job_location(job["id"], jlat, jlng) 
+                
                 dist = None
                 if jlat is not None and jlng is not None:
                     try:
@@ -3694,8 +3719,21 @@ class Database:
                         job["distance_km"] = max(0.1, round(dist, 2))
                         jobs_within_distance.append(job)
                 else:
+                    # No coordinates even after resolution attempt
                     job["distance_km"] = None
-                    jobs_without_coords.append(job)
+                    
+                    # If we have a tradesperson state, filter jobs without coordinates by state
+                    if tradesperson_state:
+                        job_state = job.get("state") or job.get("location")
+                        # Case-insensitive comparison
+                        if job_state and tradesperson_state.lower() in job_state.lower():
+                            jobs_without_coords.append(job)
+                        elif not job_state:
+                            # If job has no state info at all, include it as fallback
+                            jobs_without_coords.append(job)
+                    else:
+                        # No tradesperson state to filter by, include all without coords
+                        jobs_without_coords.append(job)
 
             # Sort by distance
             jobs_within_distance.sort(key=lambda x: x.get("distance_km", float("inf")))
