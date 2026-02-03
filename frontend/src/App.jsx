@@ -39,6 +39,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import TermsPage from "./pages/TermsPage";
 import CookiePolicyPage from "./pages/CookiePolicyPage";
+import ExternalReviewPage from "./pages/ExternalReviewPage";
 import { Toaster } from "./components/ui/toaster";
 import ScrollToTop from "./components/ScrollToTop";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
@@ -130,6 +131,7 @@ function App() {
               <Route path="/privacy-policy" element={<PrivacyPage />} />
               <Route path="/terms" element={<TermsPage />} />
               <Route path="/cookie-policy" element={<CookiePolicyPage />} />
+              <Route path="/review/external/:token" element={<ExternalReviewPage />} />
             </Routes>
             <Toaster />
 

@@ -55,7 +55,7 @@ const ExternalReviewPage = () => {
         title: "Success",
         description: "Thank you for your review!",
       });
-      navigate('/thanks'); // Assuming there's a thanks page or we can just show success state
+      setTimeout(() => navigate('/'), 3000);
     } catch (err) {
       toast({
         title: "Error",
