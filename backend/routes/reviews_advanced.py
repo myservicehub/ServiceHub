@@ -8,7 +8,7 @@ from ..models.reviews import (
     ExternalReviewInvitation, ExternalReviewCreate, ReviewSource
 )
 from ..models.auth import User, UserRole
-from ..models.notifications import NotificationType
+from ..models.notifications import NotificationType, NotificationStatus
 from ..auth.dependencies import get_current_user, get_current_homeowner, get_current_tradesperson
 from ..database import database
 from ..services.notifications import notification_service
@@ -556,26 +556,46 @@ async def _notify_external_review_invitation(invitation: ExternalReviewInvitatio
             "review_url": review_url
         }
         
-        # Determine channel
+        delivery_status = "sent"
+        
+        # Determine channel and send
         if invitation.client_email:
             # Send email invitation
-            await notification_service.send_notification(
+            notification = await notification_service.send_notification(
                 user_id=None,  # External client has no user ID
                 notification_type=NotificationType.EXTERNAL_REVIEW_INVITATION,
                 template_data=template_data,
                 recipient_email=invitation.client_email
             )
+            if notification.status == NotificationStatus.FAILED:
+                delivery_status = "failed"
             
-        if invitation.client_phone:
+        if invitation.client_phone and delivery_status != "failed": # Only try SMS if email succeeded or wasn't provided
             # Send SMS invitation
-            await notification_service.send_notification(
+            notification = await notification_service.send_notification(
                 user_id=None,
                 notification_type=NotificationType.EXTERNAL_REVIEW_INVITATION,
                 template_data=template_data,
                 recipient_phone=invitation.client_phone
             )
+            if notification.status == NotificationStatus.FAILED:
+                delivery_status = "failed"
+        
+        # Update invitation delivery status in database
+        await database.update_external_review_invitation(
+            invitation.token, 
+            {"delivery_status": delivery_status}
+        )
             
-        logger.info(f"✅ External review invitation sent for token {invitation.token}")
+        logger.info(f"✅ External review invitation sent for token {invitation.token} with status {delivery_status}")
         
     except Exception as e:
         logger.error(f"❌ Failed to send external review invitation: {str(e)}")
+        # Try to update status to failed if we can
+        try:
+            await database.update_external_review_invitation(
+                invitation.token, 
+                {"delivery_status": "failed"}
+            )
+        except:
+            pass

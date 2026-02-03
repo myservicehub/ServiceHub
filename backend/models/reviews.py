@@ -216,6 +216,7 @@ class ExternalReviewInvitation(BaseModel):
     job_description: Optional[str] = Field(None, description="Job description")
     token: str = Field(default_factory=lambda: uuid.uuid4().hex, description="Unique link token")
     status: str = Field(default="pending", description="pending, completed, expired")
+    delivery_status: str = Field(default="pending", description="pending, sent, failed")
     invitation_sent_at: datetime = Field(default_factory=datetime.utcnow)
     expires_at: datetime = Field(..., description="When invitation expires")
     created_at: datetime = Field(default_factory=datetime.utcnow)

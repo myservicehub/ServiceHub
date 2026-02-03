@@ -1742,7 +1742,8 @@ class Database:
                 "max_price": 0
             }
 
-    async def get_jobs_for_quoting(self, tradesperson_id: str, trade_categories: List[str], skip: int = 0, limit: int = 10) -> List[dict]:
+    async def get_jobs_for_quoting(self, tradesperson_id: str, trade_categories: List[str], 
+                                   tradesperson_location: str = None, skip: int = 0, limit: int = 10) -> List[dict]:
         """Get jobs available for a tradesperson to quote on (optimized)"""
         # Build query for jobs in tradesperson's categories
         match_query = {
@@ -1753,6 +1754,12 @@ class Database:
         if trade_categories:
             # Use $in for faster matching
             match_query["category"] = {"$in": trade_categories}
+
+        # Apply location filtering if provided (Lagos jobs for Lagos tradespeople, etc.)
+        if tradesperson_location:
+            # We use $regex to match the state in the location field for flexibility,
+            # but usually the location field itself is the state name.
+            match_query["location"] = {"$regex": f"^{re.escape(tradesperson_location)}$", "$options": "i"}
         
         # Get jobs and exclude ones already quoted on
         pipeline = [
@@ -1805,7 +1812,8 @@ class Database:
         jobs = await self.database.jobs.aggregate(pipeline).to_list(None)
         return jobs
 
-    async def get_available_jobs_count_for_quoting(self, tradesperson_id: str, trade_categories: List[str]) -> int:
+    async def get_available_jobs_count_for_quoting(self, tradesperson_id: str, trade_categories: List[str], 
+                                                  tradesperson_location: str = None) -> int:
         """Count available jobs for a tradesperson (optimized)"""
         match_query = {
             "status": "active",
@@ -1814,6 +1822,10 @@ class Database:
         
         if trade_categories:
             match_query["category"] = {"$in": trade_categories}
+
+        # Apply location filtering if provided
+        if tradesperson_location:
+            match_query["location"] = {"$regex": f"^{re.escape(tradesperson_location)}$", "$options": "i"}
         
         pipeline = [
             {"$match": match_query},
@@ -2734,13 +2746,18 @@ class Database:
         """Update cached review summary for user (internal method)"""
         summary = await self.get_user_review_summary(user_id)
         
+        # Add null checks for summary data
+        total_reviews = summary.total_reviews if summary and hasattr(summary, 'total_reviews') else 0
+        average_rating = summary.average_rating if summary and hasattr(summary, 'average_rating') else 0.0
+        recommendation_percentage = summary.recommendation_percentage if summary and hasattr(summary, 'recommendation_percentage') else 0.0
+
         # Update user profile with review stats
         await self.database.users.update_one(
             {"id": user_id},
             {"$set": {
-                "total_reviews": summary.total_reviews,
-                "average_rating": summary.average_rating,
-                "recommendation_percentage": summary.recommendation_percentage,
+                "total_reviews": total_reviews,
+                "average_rating": average_rating,
+                "recommendation_percentage": recommendation_percentage,
                 "review_summary_updated_at": datetime.utcnow()
             }}
         )
