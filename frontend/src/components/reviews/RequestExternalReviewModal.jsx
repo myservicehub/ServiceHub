@@ -95,11 +95,12 @@ const RequestExternalReviewModal = ({ isOpen, onClose }) => {
             </div>
 
             <div>
-              <label htmlFor="client_email" className="block text-sm font-medium text-gray-700">Client Email (Optional)</label>
+              <label htmlFor="client_email" className="block text-sm font-medium text-gray-700">Client Email *</label>
               <input
                 type="email"
                 name="client_email"
                 id="client_email"
+                required
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 value={formData.client_email}
                 onChange={handleChange}
@@ -107,11 +108,12 @@ const RequestExternalReviewModal = ({ isOpen, onClose }) => {
             </div>
 
             <div>
-              <label htmlFor="client_phone" className="block text-sm font-medium text-gray-700">Client Phone (Optional)</label>
+              <label htmlFor="client_phone" className="block text-sm font-medium text-gray-700">Client Phone *</label>
               <input
                 type="tel"
                 name="client_phone"
                 id="client_phone"
+                required
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 value={formData.client_phone}
                 onChange={handleChange}

@@ -1252,17 +1252,26 @@ class NotificationService:
     
     async def send_notification(
         self,
-        user_id: str,
+        user_id: Optional[str],
         notification_type: NotificationType,
         template_data: Dict[str, Any],
-        user_preferences: NotificationPreferences,
+        user_preferences: Optional[NotificationPreferences] = None,
         recipient_email: Optional[str] = None,
         recipient_phone: Optional[str] = None
     ) -> Notification:
         """Send notification based on user preferences"""
         
-        # Get user's preferred channel for this notification type
-        channel = getattr(user_preferences, notification_type.value, NotificationChannel.EMAIL)
+        # Determine channel: if user_preferences provided, use them; otherwise use BOTH or specific recipient
+        if user_preferences:
+            channel = getattr(user_preferences, notification_type.value, NotificationChannel.EMAIL)
+        else:
+            # Default logic when no preferences (e.g. external clients)
+            if recipient_email and recipient_phone:
+                channel = NotificationChannel.BOTH
+            elif recipient_phone:
+                channel = NotificationChannel.SMS
+            else:
+                channel = NotificationChannel.EMAIL
 
         # Create notification record
         notification = Notification(

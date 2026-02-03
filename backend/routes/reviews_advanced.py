@@ -408,9 +408,9 @@ async def _notify_review_received(
 async def invite_external_review(
     client_name: str,
     job_title: str,
-    client_email: Optional[str] = None,
-    client_phone: Optional[str] = None,
-    background_tasks: BackgroundTasks = None,
+    client_email: str,
+    client_phone: str,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_tradesperson)
 ):
     """Invite an external client to leave a review"""
