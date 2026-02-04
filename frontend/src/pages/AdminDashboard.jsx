@@ -345,7 +345,7 @@ const AdminDashboard = () => {
         setStats(data);
       } else if (activeTab === 'reviews-management') {
         setReviewsLoading(true);
-        const data = await adminReviewsAPI.getAllReviews({ page: reviewsPage, limit: reviewsLimit, status: reviewsStatus || '', min_rating: reviewsMinRating || '', review_type: 'homeowner_to_tradesperson', search: reviewsSearch || '' });
+        const data = await adminReviewsAPI.getAllReviews({ page: reviewsPage, limit: reviewsLimit, status: reviewsStatus || '', min_rating: reviewsMinRating || '', review_type: '', search: reviewsSearch || '' });
         const list = data.reviews || [];
         setReviews(list);
         const pagination = data.pagination || {};
