@@ -2785,7 +2785,14 @@ class Database:
 
     async def get_external_review_invitation_by_token(self, token: str) -> Optional[dict]:
         """Get external review invitation by token"""
-        return await self.external_review_invitations_collection.find_one({"token": token})
+        try:
+            doc = await self.external_review_invitations_collection.find_one({"token": token})
+            if doc:
+                doc["_id"] = str(doc["_id"])
+            return doc
+        except Exception as e:
+            logger.error(f"Error fetching external review invitation by token: {e}")
+            return None
 
     async def update_external_review_invitation(self, token: str, updates: dict) -> bool:
         """Update external review invitation status or other fields"""
