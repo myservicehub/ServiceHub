@@ -103,7 +103,7 @@ const ExternalReviewPage = () => {
               rating={formData.rating} 
               onRatingChange={(rating) => setFormData({...formData, rating})} 
               size="lg"
-              editable={true}
+              interactive={true}
             />
           </div>
 
