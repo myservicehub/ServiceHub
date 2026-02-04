@@ -176,7 +176,7 @@ const ContactManagementTab = ({
                 required
                 rows="3"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            placeholder="e.g., +2348141831420, support@servicehub.ng, or full address"
+            placeholder="e.g., +2348141831420, support@myservicehub.co, or full address"
               />
             </div>
             <div className="mb-4">

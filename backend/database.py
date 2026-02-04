@@ -6670,12 +6670,12 @@ We may update this Cookie Policy to reflect changes in technology or regulations
     async def initialize_default_contacts(self):
         """Initialize default contact information for any missing types"""
         try:
-            # Default contact information
+            # Default contact information matching Contact Us page
             default_contacts = [
                 {
                     "contact_type": "phone_support",
                     "label": "Customer Support",
-                    "value": "+234 901 234 5678",
+                    "value": "+2348141831420",
                     "is_active": True,
                     "display_order": 1,
                     "notes": "Primary customer support line"
@@ -6683,7 +6683,7 @@ We may update this Cookie Policy to reflect changes in technology or regulations
                 {
                     "contact_type": "phone_business",
                     "label": "Business Line",
-                    "value": "+234 901 234 5679",
+                    "value": "+2348141831420",
                     "is_active": True,
                     "display_order": 2,
                     "notes": "Business inquiries and partnerships"
@@ -6691,7 +6691,7 @@ We may update this Cookie Policy to reflect changes in technology or regulations
                 {
                     "contact_type": "email_support",
                     "label": "Support Email",
-                    "value": "support@servicehub.ng",
+                    "value": "support@myservicehub.co",
                     "is_active": True,
                     "display_order": 1,
                     "notes": "Customer support and technical issues"
@@ -6699,7 +6699,7 @@ We may update this Cookie Policy to reflect changes in technology or regulations
                 {
                     "contact_type": "email_business",
                     "label": "Business Email",
-                    "value": "business@servicehub.ng",
+                    "value": "support@myservicehub.co",
                     "is_active": True,
                     "display_order": 2,
                     "notes": "Business partnerships and corporate inquiries"
@@ -6707,7 +6707,7 @@ We may update this Cookie Policy to reflect changes in technology or regulations
                 {
                     "contact_type": "address_office",
                     "label": "Head Office",
-                    "value": "123 Tech District, Victoria Island, Lagos, Nigeria",
+                    "value": "ServiceHub Nigeria, 6, D Place Guest House, Off Omimi Link Road, Ekpan, Delta State, Nigeria",
                     "is_active": True,
                     "display_order": 1,
                     "notes": "Main office location"
@@ -6715,7 +6715,7 @@ We may update this Cookie Policy to reflect changes in technology or regulations
                 {
                     "contact_type": "social_facebook",
                     "label": "Facebook",
-                    "value": "https://facebook.com/servicehubng",
+                    "value": "https://www.facebook.com/share/18xd2rkVkV/",
                     "is_active": True,
                     "display_order": 1,
                     "notes": "Official Facebook page"
@@ -6723,7 +6723,7 @@ We may update this Cookie Policy to reflect changes in technology or regulations
                 {
                     "contact_type": "social_instagram",
                     "label": "Instagram",
-                    "value": "https://instagram.com/servicehubng",
+                    "value": "https://www.instagram.com/myservice_hub?igsh=MTg2cWwweGQ3MzdoMA==",
                     "is_active": True,
                     "display_order": 2,
                     "notes": "Official Instagram account"
@@ -6731,7 +6731,7 @@ We may update this Cookie Policy to reflect changes in technology or regulations
                 {
                     "contact_type": "social_youtube",
                     "label": "YouTube",
-                    "value": "https://youtube.com/@servicehubng",
+                    "value": "https://youtube.com/@myservicehub?si=bKHBrzZ-Hu4hjHW6",
                     "is_active": True,
                     "display_order": 3,
                     "notes": "Official YouTube channel"
@@ -6747,7 +6747,7 @@ We may update this Cookie Policy to reflect changes in technology or regulations
                 {
                     "contact_type": "website_url",
                     "label": "Website",
-                    "value": "https://servicehub.ng",
+                    "value": "https://myservicehub.co",
                     "is_active": True,
                     "display_order": 1,
                     "notes": "Main website URL"
@@ -6755,29 +6755,35 @@ We may update this Cookie Policy to reflect changes in technology or regulations
                 {
                     "contact_type": "business_hours",
                     "label": "Business Hours",
-                    "value": "Monday - Friday: 9:00 AM - 6:00 PM\nSaturday: 10:00 AM - 4:00 PM\nSunday: Closed",
+                    "value": "Monday - Friday: 8:00 AM - 6:00 PM\nSaturday: 9:00 AM - 2:00 PM\nSunday: Closed",
                     "is_active": True,
                     "display_order": 1,
                     "notes": "Standard operating hours"
                 }
             ]
             
-            # Get existing contact types
-            existing_contacts_docs = await self.database.contacts.find({}, {"contact_type": 1}).to_list(None)
-            existing_types = {c["contact_type"] for c in existing_contacts_docs}
+            # Get existing contacts to determine if we update or insert
+            existing_contacts_docs = await self.database.contacts.find({}).to_list(None)
+            # Create a map by contact_type for easy lookup
+            existing_map = {c["contact_type"]: c for c in existing_contacts_docs}
             
-            # Filter to only missing contacts
-            contacts_to_add = [c for c in default_contacts if c["contact_type"] not in existing_types]
+            updated_count = 0
+            created_count = 0
             
-            if not contacts_to_add:
-                print("All default contact types already exist")
-                return
+            for contact_data in default_contacts:
+                contact_type = contact_data["contact_type"]
+                if contact_type in existing_map:
+                    # Update existing contact to match defaults
+                    # Ensure we use the correct internal ID for the update
+                    contact_id = existing_map[contact_type].get("id") or str(existing_map[contact_type].get("_id"))
+                    await self.update_contact(contact_id, contact_data, "system")
+                    updated_count += 1
+                else:
+                    # Create new contact
+                    await self.create_contact(contact_data, "system")
+                    created_count += 1
             
-            # Insert missing default contacts
-            for contact_data in contacts_to_add:
-                await self.create_contact(contact_data, "system")
-            
-            print(f"Initialized {len(contacts_to_add)} default contact(s)")
+            print(f"Contact initialization complete: {updated_count} updated, {created_count} created")
             
         except Exception as e:
             print(f"Error initializing default contacts: {e}")

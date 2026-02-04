@@ -382,7 +382,7 @@ async def _notify_review_received(
             "job_title": job_title,
             "rating": rating,
             "star_display": "⭐" * rating,
-            "review_url": f"{os.environ.get('FRONTEND_URL', 'https://servicehub.ng')}/reviews/{review_id}"
+            "review_url": f"{os.environ.get('FRONTEND_URL', 'https://myservicehub.co')}/reviews/{review_id}"
         }
         
         # Send notification
@@ -461,7 +461,7 @@ async def invite_external_review(
         )
         
         # Generate the review link
-        review_url = f"{os.environ.get('FRONTEND_URL', 'https://servicehub.ng')}/review/external/{invitation.token}"
+        review_url = f"{os.environ.get('FRONTEND_URL', 'https://myservicehub.co')}/review/external/{invitation.token}"
         
         return {
             "message": "Invitation sent successfully",
@@ -567,7 +567,7 @@ async def _notify_external_review_invitation(invitation: ExternalReviewInvitatio
     """Background task to notify external client of review invitation"""
     try:
         # Prepare template data
-        review_url = f"{os.environ.get('FRONTEND_URL', 'https://servicehub.ng')}/review/external/{invitation.token}"
+        review_url = f"{os.environ.get('FRONTEND_URL', 'https://myservicehub.co')}/review/external/{invitation.token}"
         
         template_data = {
             "client_name": invitation.client_name,
