@@ -64,7 +64,7 @@ const RequestExternalReviewModal = ({ isOpen, onClose }) => {
               </h3>
               <div className="mt-2">
                 <p className="text-sm text-gray-500">
-                  Invite a client from outside the platform to review your work. This will help build your reputation on serviceHub.
+                  Invite a client you have worked for in the past outside ServiceHub platform to leave a review for the work you did for the client..
                 </p>
               </div>
             </div>
