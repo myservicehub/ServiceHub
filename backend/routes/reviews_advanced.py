@@ -408,13 +408,17 @@ async def _notify_review_received(
 async def invite_external_review(
     client_name: str,
     job_title: str,
-    client_email: Optional[str] = None,
+    client_email: str,
     client_phone: Optional[str] = None,
     background_tasks: BackgroundTasks = None,
     current_user: User = Depends(get_current_tradesperson)
 ):
     """Invite an external client to leave a review (Max 3 per tradesperson)"""
     try:
+        # Check if email is provided (extra safety check)
+        if not client_email:
+            raise HTTPException(status_code=400, detail="Client email is required.")
+
         # Check if tradesperson has already sent 3 invitations
         invitation_count = await database.external_review_invitations_collection.count_documents(
             {"tradesperson_id": current_user.id}

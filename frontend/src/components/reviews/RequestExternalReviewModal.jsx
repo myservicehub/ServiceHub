@@ -19,16 +19,6 @@ const RequestExternalReviewModal = ({ isOpen, onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Ensure at least one contact method is provided
-    if (!formData.client_email && !formData.client_phone) {
-      toast({
-        title: "Missing Information",
-        description: "Please provide either a client email or phone number for the invitation.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setLoading(true);
     try {
       const response = await reviewsAPI.inviteExternalReview(formData);
@@ -109,11 +99,12 @@ const RequestExternalReviewModal = ({ isOpen, onClose }) => {
             </div>
 
             <div>
-              <label htmlFor="client_email" className="block text-sm font-medium text-gray-700">Client Email (Optional)</label>
+              <label htmlFor="client_email" className="block text-sm font-medium text-gray-700">Client Email *</label>
               <input
                 type="email"
                 name="client_email"
                 id="client_email"
+                required
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 value={formData.client_email}
                 onChange={handleChange}
