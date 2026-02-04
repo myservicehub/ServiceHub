@@ -413,16 +413,28 @@ async def invite_external_review(
     background_tasks: BackgroundTasks = None,
     current_user: User = Depends(get_current_tradesperson)
 ):
-    """Invite an external client to leave a review"""
+    """Invite an external client to leave a review (Max 3 per tradesperson)"""
     try:
-        # Create invitation
+        # Check if tradesperson has already sent 3 invitations
+        invitation_count = await database.external_review_invitations_collection.count_documents(
+            {"tradesperson_id": current_user.id}
+        )
+        
+        if invitation_count >= 3:
+            raise HTTPException(
+                status_code=400, 
+                detail="You have reached the maximum limit of 3 external review invitations."
+            )
+
+        # Create invitation (Set very far future expiry as per request "shouldn't expire")
+        # We use status check for "one-time use" logic
         invitation = ExternalReviewInvitation(
             tradesperson_id=current_user.id,
             client_name=client_name,
             client_email=client_email,
             client_phone=client_phone,
             job_title=job_title,
-            expires_at=datetime.utcnow() + timedelta(days=30)
+            expires_at=datetime.utcnow() + timedelta(days=36500) # 100 years
         )
         
         # Save to database
@@ -431,7 +443,6 @@ async def invite_external_review(
             raise HTTPException(status_code=500, detail="Failed to create invitation")
         
         # Determine notification channel
-        # Use BOTH if both are provided, otherwise use what's available
         notification_channel = "both"
         if not client_email:
             notification_channel = "sms"
@@ -452,9 +463,12 @@ async def invite_external_review(
             "message": "Invitation sent successfully",
             "token": invitation.token,
             "review_url": review_url,
-            "channel": notification_channel
+            "channel": notification_channel,
+            "invitations_remaining": 3 - (invitation_count + 1)
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error creating external invitation: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to create invitation")
@@ -464,15 +478,11 @@ async def get_external_invitation(token: str):
     """Get external review invitation details by token (Public)"""
     invitation = await database.get_external_review_invitation_by_token(token)
     if not invitation:
-        raise HTTPException(status_code=404, detail="Invitation not found or expired")
+        raise HTTPException(status_code=404, detail="Invitation not found")
     
-    # Check if already completed
+    # Check if already completed (One-time use logic)
     if invitation.get("status") == "completed":
-        raise HTTPException(status_code=400, detail="This review has already been completed")
-    
-    # Check expiry
-    if invitation.get("expires_at") < datetime.utcnow():
-        raise HTTPException(status_code=400, detail="This invitation has expired")
+        raise HTTPException(status_code=400, detail="This review link has already been used and is no longer valid.")
     
     # Get tradesperson details
     tradesperson = await database.get_user_by_id(invitation["tradesperson_id"])
@@ -490,7 +500,7 @@ async def submit_external_review(
     review_data: ExternalReviewCreate,
     background_tasks: BackgroundTasks
 ):
-    """Submit an external review using a valid token (Public)"""
+    """Submit an external review using a valid token (Public, One-time use)"""
     try:
         # Verify invitation
         invitation = await database.get_external_review_invitation_by_token(review_data.token)
@@ -498,10 +508,7 @@ async def submit_external_review(
             raise HTTPException(status_code=404, detail="Invitation not found")
         
         if invitation.get("status") == "completed":
-            raise HTTPException(status_code=400, detail="This review has already been completed")
-            
-        if invitation.get("expires_at") < datetime.utcnow():
-            raise HTTPException(status_code=400, detail="This invitation has expired")
+            raise HTTPException(status_code=400, detail="This review link has already been used.")
             
         # Get tradesperson details
         tradesperson = await database.get_user_by_id(invitation["tradesperson_id"])
@@ -527,7 +534,7 @@ async def submit_external_review(
         # Save review
         created_review = await database.create_review(review)
         
-        # Update invitation status
+        # Update invitation status (Mark as used)
         await database.update_external_review_invitation(
             review_data.token, 
             {"status": "completed", "completed_at": datetime.utcnow()}
@@ -549,6 +556,7 @@ async def submit_external_review(
         raise
     except Exception as e:
         logger.error(f"Error submitting external review: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to submit review")
         raise HTTPException(status_code=500, detail="Failed to submit external review")
 
 async def _notify_external_review_invitation(invitation: ExternalReviewInvitation, tradesperson_name: str):
