@@ -370,7 +370,7 @@ async def _notify_new_message(sender: User, recipient_id: str, conversation: dic
             "sender_name": sender.name or sender.business_name or "User",
             "job_title": conversation.get("job_title", "Job"),
             "message_preview": message_content[:100] + "..." if len(message_content) > 100 else message_content,
-            "conversation_url": f"{os.environ.get('FRONTEND_URL', 'https://servicehub.ng')}/messages/{conversation['id']}"
+            "conversation_url": f"{os.environ.get('FRONTEND_URL', 'https://myservicehub.co')}/messages/{conversation['id']}"
         }
         
         # Send notification
@@ -692,7 +692,7 @@ async def _send_review_invitation(homeowner: User, tradesperson: dict, job: dict
             "tradesperson_name": tradesperson.get("business_name") or tradesperson.get("name", "Tradesperson"),
             "job_title": job.get("title", "Job"),
             "completion_date": datetime.utcnow().strftime("%B %d, %Y"),
-            "review_url": f"{os.environ.get('FRONTEND_URL', 'https://servicehub.ng')}/my-jobs?review={job['id']}"
+            "review_url": f"{os.environ.get('FRONTEND_URL', 'https://myservicehub.co')}/my-jobs?review={job['id']}"
         }
         
         # Send notification

@@ -270,9 +270,9 @@ def _get_test_template_data(notification_type: NotificationType, user: User) -> 
         "job_title": "Test Plumbing Job",
         "job_location": "Lagos, Nigeria",
         "job_budget": "₦50,000 - ₦100,000",
-        "view_url": f"{os.environ.get('FRONTEND_URL', 'https://servicehub.ng')}/my-jobs",
-        "manage_url": f"{os.environ.get('FRONTEND_URL', 'https://servicehub.ng')}/my-jobs",
-        "payment_url": f"{os.environ.get('FRONTEND_URL', 'https://servicehub.ng')}/payments",
+        "view_url": f"{os.environ.get('FRONTEND_URL', 'https://myservicehub.co')}/my-jobs",
+        "manage_url": f"{os.environ.get('FRONTEND_URL', 'https://myservicehub.co')}/my-jobs",
+        "payment_url": f"{os.environ.get('FRONTEND_URL', 'https://myservicehub.co')}/payments",
         "post_date": "Today",
         "tradesperson_experience": "5",
         "tradesperson_email": user.email,
@@ -280,7 +280,7 @@ def _get_test_template_data(notification_type: NotificationType, user: User) -> 
         "homeowner_phone": "+2348123456789"
     }
 
-    frontend_url = os.environ.get('FRONTEND_URL', 'https://servicehub.ng')
+    frontend_url = os.environ.get('FRONTEND_URL', 'https://myservicehub.co')
 
     if notification_type == NotificationType.NEW_MATCHING_JOB:
         return {

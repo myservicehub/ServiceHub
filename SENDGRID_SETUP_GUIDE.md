@@ -23,8 +23,9 @@ The sender email **MUST** be verified in SendGrid:
 1. **Navigate to Settings → Sender Authentication**
 2. **Single Sender Verification** (for testing):
    - Click "Create New Sender"
-   - Enter your email address (e.g., `no-reply@servicehub.ng`)
-   - Verify the email by clicking the link SendGrid sends
+   - Enter your email address (e.g., `no-reply@myservicehub.co`)
+   - Click "Create"
+3. Verify the email in your inbox.
    
    OR
 
@@ -41,7 +42,7 @@ The sender email **MUST** be verified in SendGrid:
 
    ```
    SENDGRID_API_KEY=SG.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-   SENDER_EMAIL=no-reply@servicehub.ng
+   SENDER_EMAIL=no-reply@myservicehub.co
    ```
 
    **Important Notes**:
@@ -81,22 +82,11 @@ If you still see errors, check:
 - Restart/redeploy your service after adding variables
 - Check Render logs to confirm variables are loaded
 
-## Testing
-
-After fixing the configuration:
-
-1. Try the forgot password flow again
-2. Check Render logs for:
-   - `✅ Password reset email sent successfully to user@example.com`
-3. Check the user's email inbox (and spam folder)
-4. The reset link should work: `https://servicehub.ng/reset-password?token=...`
-
-## Alternative: Use Mock Email Service (Development Only)
-
-If you want to test without SendGrid (emails won't actually be sent):
-- Don't set `SENDGRID_API_KEY` and `SENDER_EMAIL`
-- The system will automatically use `MockEmailService`
-- Check logs for `📧 MOCK EMAIL: to=...` messages
+## Local Testing
+1. Ensure `SENDGRID_API_KEY` and `SENDER_EMAIL` are in your `.env` file.
+2. The system will automatically use `SendGridEmailService` in production/staging.
+3. In local development, if these keys are missing, it falls back to `MockEmailService`.
+4. The reset link should work: `https://myservicehub.co/reset-password?token=...`
 
 ## Security Notes
 

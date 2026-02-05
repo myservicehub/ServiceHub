@@ -351,7 +351,7 @@ async def _notify_homeowner_new_interest(job: dict, tradesperson: dict, interest
             "job_location": job.get("location", ""),
             "tradesperson_name": tradesperson.get("business_name") or tradesperson.get("name", "A tradesperson"),
             "tradesperson_experience": str(tradesperson.get("experience_years", "N/A")),
-            "view_url": f"{os.environ.get('FRONTEND_URL', 'https://servicehub.ng')}/my-jobs"
+            "view_url": f"{os.environ.get('FRONTEND_URL', 'https://myservicehub.co')}/my-jobs"
         }
         
         # Send notification
@@ -390,8 +390,8 @@ async def _notify_tradesperson_contact_shared(job: dict, tradesperson_id: str, i
             "job_title": job.get("title", "Untitled Job"),
             "job_location": job.get("location", ""),
             "homeowner_name": job.get("homeowner", {}).get("name", "Homeowner"),
-            "payment_url": f"{os.environ.get('FRONTEND_URL', 'https://servicehub.ng')}/my-interests?pay={interest_id}",
-            "view_url": f"{os.environ.get('FRONTEND_URL', 'https://servicehub.ng')}/my-interests"
+            "payment_url": f"{os.environ.get('FRONTEND_URL', 'https://myservicehub.co')}/my-interests?pay={interest_id}",
+            "view_url": f"{os.environ.get('FRONTEND_URL', 'https://myservicehub.co')}/my-interests"
         }
         
         # Send notification
@@ -425,7 +425,7 @@ async def _notify_payment_confirmation(tradesperson: dict, job: dict, interest_i
             "job_location": job.get("location", ""),
             "homeowner_name": job.get("homeowner", {}).get("name", "Homeowner"),
             "access_fee": f"₦{access_fee:,.2f}",
-            "view_url": f"{os.environ.get('FRONTEND_URL', 'https://servicehub.ng')}/my-interests"
+            "view_url": f"{os.environ.get('FRONTEND_URL', 'https://myservicehub.co')}/my-interests"
         }
         
         # Send notification

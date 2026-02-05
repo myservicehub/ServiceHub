@@ -161,7 +161,7 @@ async def register_homeowner(registration_data: HomeownerRegistration):
                             email_service = None
                     dev_flag = os.environ.get('OTP_DEV_MODE', '0')
                     frontend_url = os.environ.get('FRONTEND_URL') or (
-                        'http://localhost:3000' if dev_flag in ('1', 'true', 'True') else 'https://servicehub.ng'
+                        'http://localhost:3000' if dev_flag in ('1', 'true', 'True') else 'https://myservicehub.co'
                     )
                     verify_link = f"{frontend_url.rstrip('/')}/verify-account?token={verification_token}"
                     if email_service:
@@ -1247,7 +1247,7 @@ async def request_password_reset(request_data: PasswordResetRequest):
         # Send password reset email
         try:
             # Get frontend URL from environment
-            frontend_url = os.environ.get('FRONTEND_URL', 'https://servicehub.ng')
+            frontend_url = os.environ.get('FRONTEND_URL', 'https://myservicehub.co')
             # Normalize to avoid double slashes when env has trailing '/'
             reset_link = f"{frontend_url.rstrip('/')}/reset-password?token={reset_token}"
             
@@ -1573,7 +1573,7 @@ async def request_email_verification(current_user: User = Depends(get_current_ac
                 email_service = MockEmailService()
             except Exception:
                 email_service = None
-        frontend_url = os.environ.get('FRONTEND_URL', 'https://servicehub.ng')
+        frontend_url = os.environ.get('FRONTEND_URL', 'https://myservicehub.co')
         verify_link = f"{frontend_url.rstrip('/')}/verify-account?token={verification_token}"
         if email_service:
             html = f"""

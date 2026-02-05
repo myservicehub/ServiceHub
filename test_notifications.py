@@ -106,7 +106,7 @@ class NotificationTester:
                 "sender_name": "Mike Plumber",
                 "job_title": "Kitchen Plumbing Repair",
                 "message_preview": "Hi, I can start the work tomorrow morning. What time works best for you?",
-                "conversation_url": "https://servicehub.ng/messages/conv-123"
+                "conversation_url": "https://myservicehub.co/messages/conv-123"
             }
             
             # Test EMAIL template rendering

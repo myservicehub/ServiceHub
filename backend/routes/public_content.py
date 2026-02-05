@@ -15,6 +15,45 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/public/content", tags=["public_content"])
 
+class ContactFormRequest(BaseModel):
+    name: str
+    email: EmailStr
+    subject: str
+    message: str
+
+@router.post("/submit-contact")
+async def submit_contact_form(request: ContactFormRequest):
+    """Handle contact form submissions by sending an email to support"""
+    
+    try:
+        # Prepare template data
+        template_data = {
+            "name": request.name,
+            "email": request.email,
+            "subject": request.subject,
+            "message": request.message,
+            "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+        
+        # Send notification to support email
+        # We use user_id=None as this is a system notification to support
+        support_email = os.environ.get('SUPPORT_EMAIL', 'support@myservicehub.co')
+        
+        await notification_service.send_notification(
+            user_id=None,
+            notification_type=NotificationType.CONTACT_FORM,
+            template_data=template_data,
+            recipient_email=support_email
+        )
+        
+        return {"message": "Message sent successfully"}
+        
+    except Exception as e:
+        logger.error(f"Error submitting contact form: {str(e)}")
+        # We still return 200 to the user but log the error
+        # Alternatively, raise 500 if you want the frontend to show an error
+        raise HTTPException(status_code=500, detail="Failed to send message. Please try again later.")
+
 @router.get("/blog")
 async def get_public_blog_posts(
     skip: int = Query(0, ge=0),

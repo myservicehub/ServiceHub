@@ -816,7 +816,7 @@ async def notify_job_completion(job_id: str, job: dict, homeowner: User):
                 preferences = await database.get_user_notification_preferences(tradesperson_id)
                 
                 # Prepare notification template data
-                frontend_url = os.environ.get('FRONTEND_URL', 'https://servicehub.ng')
+                frontend_url = os.environ.get('FRONTEND_URL', 'https://myservicehub.co')
                 template_data = {
                     "tradesperson_name": tradesperson_info.get("name", "Tradesperson"),
                     "job_title": job.get("title", "Untitled Job"),
@@ -889,7 +889,7 @@ async def _notify_job_posted_successfully(homeowner: dict, job: dict):
             "job_category": job.get("category", ""),
             "job_budget": job_budget,
             "post_date": "Today",
-            "manage_url": "https://servicehub.ng/my-jobs",
+            "manage_url": "https://myservicehub.co/my-jobs",
             "job_id": job.get("id"),
         }
         
@@ -928,7 +928,7 @@ async def notify_job_cancellation(job_id: str, job: dict, homeowner: User, reaso
                     logger.warning("Missing tradesperson_id in interest: %s", interest)
                     continue
                 preferences = await database.get_user_notification_preferences(tradesperson_id)
-                frontend_url = os.environ.get("FRONTEND_URL", "https://servicehub.ng")
+                frontend_url = os.environ.get("FRONTEND_URL", "https://myservicehub.co")
                 template_data = {
                     "tradesperson_name": tradesperson_info.get("name", "Tradesperson"),
                     "job_title": job.get("title", "Untitled Job"),
@@ -1013,7 +1013,7 @@ async def notify_matching_tradespeople_new_job(job: dict):
             category,
             ", ".join(sorted(synonyms)),
         )
-        frontend_url = os.environ.get("FRONTEND_URL", "https://servicehub.ng")
+        frontend_url = os.environ.get("FRONTEND_URL", "https://myservicehub.co")
         for tp in tradespeople:
             try:
                 tp_id = tp.get("id")
@@ -1324,7 +1324,7 @@ async def _notify_job_posted_successfully_old(homeowner: dict, job: dict):
             "job_category": job.get("category", ""),
             "job_budget": job_budget,
             "post_date": "Today",
-            "manage_url": "https://servicehub.ng/my-jobs"
+            "manage_url": "https://myservicehub.co/my-jobs"
         }
         
         # Send notification
@@ -1804,7 +1804,7 @@ async def register_and_post(payload: PublicJobPostRequest, background_tasks: Bac
                 
                 dev_flag = os.environ.get('OTP_DEV_MODE', '0')
                 frontend_url = os.environ.get('FRONTEND_URL') or (
-                    'http://localhost:3000' if dev_flag in ('1', 'true', 'True') else 'https://servicehub.ng'
+                    'http://localhost:3000' if dev_flag in ('1', 'true', 'True') else 'https://myservicehub.co'
                 )
                 verify_link = f"{frontend_url.rstrip('/')}/verify-account?token={verification_token}&next=/"
                 

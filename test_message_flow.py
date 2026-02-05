@@ -230,7 +230,7 @@ class MessageFlowTester:
                 "sender_name": self.test_data['tradesperson_user']['name'],
                 "job_title": conversation["job_title"],
                 "message_preview": message_content[:100],
-                "conversation_url": f"https://servicehub.ng/messages/{conversation['id']}"
+                "conversation_url": f"https://myservicehub.co/messages/{conversation['id']}"
             }
             
             self.log_result("Notification template data preparation", True, "Template data prepared successfully")

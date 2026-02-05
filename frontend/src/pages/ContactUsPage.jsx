@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '../hooks/use-toast';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { publicAPI } from '../api/public';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { contactSchema, formatPhoneE164 } from '../utils/validation';
@@ -66,8 +67,13 @@ const ContactUsPage = () => {
         phone: data.phone ? formatPhoneE164(data.phone, 'NG') : undefined,
       };
 
-      // Simulate form submission (replace with actual API call)
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Send contact form to backend
+      await publicAPI.submitContactForm({
+        name: payload.name,
+        email: payload.email,
+        subject: payload.subject,
+        message: payload.message
+      });
       
       toast({
         title: "Message Sent Successfully!",
@@ -80,7 +86,7 @@ const ContactUsPage = () => {
     } catch (error) {
       toast({
         title: "Error Sending Message",
-        description: "Please try again or contact us directly via email.",
+        description: error.response?.data?.detail || "Please try again or contact us directly via email.",
         variant: "destructive"
       });
     }

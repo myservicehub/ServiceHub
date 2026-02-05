@@ -186,7 +186,7 @@ const HelpCentrePage = () => {
     {
       icon: Mail,
       title: "Email Support", 
-      description: "support@servicehub.ng",
+      description: "support@myservicehub.co",
       availability: "Response within 24 hours",
       action: "Send Email"
     },
@@ -466,7 +466,7 @@ const HelpCentrePage = () => {
                     if (option.title === 'Live Chat') {
                       navigate('/contact');
                     } else if (option.title === 'Email Support') {
-                      window.open('mailto:support@servicehub.ng');
+                      window.open('mailto:support@myservicehub.co');
 } else if (option.title === 'Phone Support') {
         window.open('tel:+2348141831420');
 }

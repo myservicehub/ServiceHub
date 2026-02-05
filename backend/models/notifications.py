@@ -22,6 +22,7 @@ class NotificationType(str, Enum):
     JOB_CANCELLED = "job_cancelled"  # Notify tradespeople when job is cancelled
     EXTERNAL_REVIEW_INVITATION = "external_review_invitation"
     NEW_REVIEW_RECEIVED = "new_review_received"
+    CONTACT_FORM = "contact_form"
 
 class NotificationChannel(str, Enum):
     EMAIL = "email"
