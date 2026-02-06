@@ -55,7 +55,10 @@ async def quick_seed():
                 "experience_years": random.randint(1, 15),
                 "company_name": f"Professional {random.choice(trade_categories)} Services",
                 "description": f"Professional {random.choice(trade_categories).lower()} services in {random.choice(cities)}. Quality work guaranteed.",
-                "certifications": ["Trade License", "Insurance"],
+                "certifications": [
+                    {"name": "Trade License", "image_url": "/api/auth/certifications/image/sample_cert.jpg"},
+                    {"name": "Insurance", "image_url": "/api/auth/certifications/image/sample_cert.jpg"}
+                ],
                 "average_rating": round(random.uniform(3.5, 5.0), 1),
                 "total_reviews": random.randint(5, 50),
                 "total_jobs": random.randint(10, 100),

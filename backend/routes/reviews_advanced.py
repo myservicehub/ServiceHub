@@ -71,7 +71,7 @@ async def create_review(
         )
         
         # Save review
-        created_review = await database.create_review(review)
+        created_review = await database.create_advanced_review(review)
         
         # Send notification to reviewee
         background_tasks.add_task(

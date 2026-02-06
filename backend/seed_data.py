@@ -119,8 +119,12 @@ async def seed_tradespeople(count: int = 100):
         postcode = random.choice(NIGERIAN_POSTCODES)
         
         # Random certifications (0-3)
-        num_certs = random.randint(0, 3)
-        certs = random.sample(CERTIFICATIONS, num_certs) if num_certs > 0 else []
+        num_certs = random.randint(1, 3)
+        selected_certs = random.sample(CERTIFICATIONS, num_certs) if num_certs > 0 else []
+        certs = [
+            {"name": c, "image_url": "/api/auth/certifications/image/sample_cert.jpg"} 
+            for c in selected_certs
+        ]
         
         # Company name (70% chance of having one)
         company_name = None

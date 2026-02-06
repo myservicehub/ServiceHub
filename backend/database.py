@@ -29,7 +29,7 @@ except ImportError:
     from models.auth import UserRole
     from models.reviews import (
         Review, ReviewCreate, ReviewSummary, ReviewRequest, 
-        ReviewStats, ReviewType, ReviewStatus
+        ReviewStats, ReviewType, ReviewStatus, ExternalReviewInvitation
     )
     from models.admin import AdminRole, AdminStatus, AdminActivityType
 
@@ -2405,7 +2405,7 @@ class Database:
         return self.database.hiring_status
 
     # Review Management Methods (Trust & Quality System)
-    async def create_review(self, review: Review) -> Review:
+    async def create_advanced_review(self, review: Review) -> Review:
         """Create a new review"""
         review_dict = review.dict()
         review_dict["_id"] = review_dict["id"]
