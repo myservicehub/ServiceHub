@@ -80,7 +80,7 @@ const ReviewsSection = () => {
   const scrollToIndex = (idx) => {
     const el = sliderRef.current;
     if (!el) return;
-    const total = el.children.length;
+    const total = displayReviews.length;
     const targetIndex = Math.max(0, Math.min(idx, total - 1));
     const targetEl = el.children[targetIndex];
     if (targetEl && typeof targetEl.scrollIntoView === 'function') {
@@ -201,7 +201,7 @@ const ReviewsSection = () => {
               style={{ scrollBehavior: 'smooth' }}
               onScroll={handleScroll}
             >
-              {(loading ? Array.from({ length: 4 }) : displayReviews.slice(0, 8)).map((item, index) => (
+              {(loading ? Array.from({ length: 4 }) : displayReviews).map((item, index) => (
                 <Card
                   key={item?.id || index}
                   className="bg-white hover:shadow-lg transition-shadow duration-300 flex-shrink-0 snap-start min-w-full"
@@ -258,24 +258,52 @@ const ReviewsSection = () => {
               ))}
             </div>
 
-            {/* Navigation buttons */}
-            <div className="flex justify-center mt-6 gap-3">
-              <button
-                type="button"
-                onClick={() => scrollToIndex(currentIndex - 1)}
-                className="px-4 py-2 rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
-                aria-label="Previous reviews"
-              >
-                ‹
-              </button>
-              <button
-                type="button"
-                onClick={() => scrollToIndex(currentIndex + 1)}
-                className="px-4 py-2 rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
-                aria-label="Next reviews"
-              >
-                ›
-              </button>
+            {/* Navigation buttons and dots */}
+            <div className="flex flex-col items-center mt-8 gap-4">
+              <div className="flex justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => scrollToIndex(currentIndex - 1)}
+                  disabled={currentIndex === 0}
+                  className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all ${
+                    currentIndex === 0 
+                      ? 'border-gray-200 text-gray-300 cursor-not-allowed' 
+                      : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-100'
+                  }`}
+                  aria-label="Previous reviews"
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollToIndex(currentIndex + 1)}
+                  disabled={currentIndex >= displayReviews.length - 1}
+                  className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all ${
+                    currentIndex >= displayReviews.length - 1
+                      ? 'border-gray-200 text-gray-300 cursor-not-allowed' 
+                      : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-100'
+                  }`}
+                  aria-label="Next reviews"
+                >
+                  ›
+                </button>
+              </div>
+
+              {/* Pagination dots */}
+              {!loading && displayReviews.length > 1 && (
+                <div className="flex gap-2">
+                  {displayReviews.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => scrollToIndex(idx)}
+                      className={`w-2 h-2 rounded-full transition-all ${
+                        currentIndex === idx ? 'bg-green-600 w-4' : 'bg-gray-300'
+                      }`}
+                      aria-label={`Go to review ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 

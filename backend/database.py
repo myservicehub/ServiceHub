@@ -2071,9 +2071,10 @@ class Database:
         """Get featured reviews for homepage"""
         if not self.connected or self.database is None:
             return []
-        # Be lenient: show recent high-rated reviews regardless of legacy/advanced schema
+        # Be lenient: show recent reviews. We'll show reviews with rating >= 3
+        # so that users with few reviews can still see them in the featured section.
         filters = {
-            'rating': {'$gte': 4}
+            'rating': {'$gte': 3}
         }
         reviews = await self.get_reviews(limit=limit, filters=filters)
 
