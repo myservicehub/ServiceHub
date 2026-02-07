@@ -695,7 +695,8 @@ async def get_admin_stats(admin: dict = Depends(require_permission(AdminPermissi
             "last_login": admin.get("last_login")
         }
     }
-from fastapi import Form
+from fastapi import Form, HTTPException
+from ..utils.cache import get_cache
 
 @router.put("/trades/update")
 async def update_trade_proxy(
@@ -709,4 +710,13 @@ async def update_trade_proxy(
     success = await database.update_trade(old_name.strip(), new_name.strip(), group, description)
     if not success:
         raise HTTPException(status_code=404, detail="Trade category not found")
+    
+    # Invalidate stats caches
+    try:
+        cache = get_cache()
+        await cache.delete("stats:categories")
+        await cache.delete("stats:platform")
+    except Exception as e:
+        print(f"Error invalidating cache: {e}")
+
     return {"message": "Trade category updated successfully", "old_name": old_name, "new_name": new_name}

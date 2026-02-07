@@ -1356,16 +1356,8 @@ async def update_user_status(
 @router.get("/locations/states")
 async def get_all_states():
     """Get all Nigerian states"""
-    # Get states from database (new ones added by admin)
-    custom_states = await database.get_custom_states()
-    
-    # Get default states from constants
-    from models.nigerian_states import NIGERIAN_STATES
-    
-    # Combine both lists and remove duplicates
-    all_states = list(set(NIGERIAN_STATES + custom_states))
-    all_states.sort()  # Sort alphabetically
-    
+    # Use unified dynamic state fetching
+    all_states = await database.get_all_states_dynamic()
     return {"states": all_states}
 
 @router.post("/locations/states")
@@ -1431,14 +1423,16 @@ async def delete_state(state_name: str):
 @router.get("/locations/lgas")
 async def get_all_lgas():
     """Get all LGAs organized by state"""
+    from models.nigerian_lgas import get_all_lgas as get_static_all_lgas
+    
     # Get static LGAs
-    from models.nigerian_lgas import NIGERIAN_LGAS
+    static_lgas = get_static_all_lgas()
     
     # Get custom LGAs from database
     custom_lgas = await database.get_custom_lgas()
     
     # Merge both dictionaries
-    all_lgas = NIGERIAN_LGAS.copy()
+    all_lgas = static_lgas.copy()
     for state, lgas in custom_lgas.items():
         if state in all_lgas:
             # Merge LGAs for existing state
@@ -1446,25 +1440,27 @@ async def get_all_lgas():
         else:
             # Add new state with its LGAs
             all_lgas[state] = lgas
-    
+            
+    # Ensure all states from NIGERIAN_STATES are present even if they have no LGAs
+    from models.nigerian_states import NIGERIAN_STATES
+    for state in NIGERIAN_STATES:
+        if state not in all_lgas:
+            all_lgas[state] = []
+            
     return {"lgas": all_lgas}
 
 @router.get("/locations/lgas/{state_name}")
 async def get_lgas_for_state(state_name: str):
     """Get LGAs for a specific state"""
-    # Get static LGAs
-    from models.nigerian_lgas import get_lgas_for_state as get_static_lgas
-    static_lgas = get_static_lgas(state_name) or []
-    
-    # Get custom LGAs from database
-    custom_lgas = await database.get_custom_lgas()
-    dynamic_lgas = custom_lgas.get(state_name, [])
-    
-    # Combine both lists and remove duplicates
-    all_lgas = list(set(static_lgas + dynamic_lgas))
+    # Use unified dynamic LGA fetching
+    all_lgas = await database.get_lgas_for_state_dynamic(state_name)
     
     if not all_lgas:
-        raise HTTPException(status_code=404, detail="State not found or no LGAs available")
+        # Check if state exists
+        all_states = await database.get_all_states_dynamic()
+        if state_name not in all_states:
+            raise HTTPException(status_code=404, detail="State not found")
+        return {"state": state_name, "lgas": []}
     
     return {"state": state_name, "lgas": all_lgas}
 
@@ -1570,37 +1566,24 @@ async def delete_town(state_name: str, lga_name: str, town_name: str):
 @router.get("/trades")
 async def get_all_trades():
     """Get all trade categories (static + custom)"""
-    from models.trade_categories import NIGERIAN_TRADE_CATEGORIES, TRADE_CATEGORY_GROUPS
-    
-    # Get custom trades from database
-    custom_data = await database.get_custom_trades()
-    custom_trades = custom_data.get("trades", [])
-    custom_groups = custom_data.get("groups", {})
-    
-    # Combine static and custom trades
-    all_trades = list(set(NIGERIAN_TRADE_CATEGORIES + custom_trades))
-    all_trades.sort()  # Sort alphabetically
-    
-    # Combine static and custom groups
-    all_groups = TRADE_CATEGORY_GROUPS.copy()
-    for group, trades in custom_groups.items():
-        if group in all_groups:
-            # Merge with existing group
-            all_groups[group] = list(set(all_groups[group] + trades))
-        else:
-            # Add new group
-            all_groups[group] = trades
-    
-    return {
-        "trades": all_trades,
-        "groups": all_groups
-    }
+    try:
+        data = await database.get_effective_trades()
+        return data
+    except Exception as e:
+        logger.error(f"Error getting all trades: {e}")
+        from models.trade_categories import NIGERIAN_TRADE_CATEGORIES, TRADE_CATEGORY_GROUPS
+        return {
+            "trades": NIGERIAN_TRADE_CATEGORIES,
+            "groups": TRADE_CATEGORY_GROUPS
+        }
 
 @router.post("/trades")
 async def add_new_trade(
     trade_name: str = Form(...),
     group: str = Form("General Services"),
-    description: str = Form("")
+    description: str = Form(""),
+    icon: str = Form("🛠️"),
+    color: str = Form("from-blue-400 to-blue-600")
 ):
     """Add a new trade category"""
     
@@ -1612,10 +1595,19 @@ async def add_new_trade(
     if trade_name in NIGERIAN_TRADE_CATEGORIES:
         raise HTTPException(status_code=400, detail="Trade category already exists")
     
-    success = await database.add_new_trade(trade_name.strip(), group, description)
+    success = await database.add_new_trade(trade_name.strip(), group, description, icon, color)
     
     if not success:
         raise HTTPException(status_code=500, detail="Failed to add trade category")
+    
+    # Invalidate stats caches
+    try:
+        from ..utils.cache import get_cache
+        cache = get_cache()
+        await cache.delete("stats:categories")
+        await cache.delete("stats:platform")
+    except Exception as e:
+        logger.error(f"Error invalidating cache: {e}")
     
     return {
         "message": "Trade category added successfully",
@@ -1628,17 +1620,28 @@ async def update_trade(
     trade_name: str,
     new_name: str = Form(...),
     group: str = Form(""),
-    description: str = Form("")
+    description: str = Form(""),
+    icon: str = Form(None),
+    color: str = Form(None)
 ):
     """Update an existing trade category"""
     
     if not new_name.strip():
         raise HTTPException(status_code=400, detail="Trade name is required")
     
-    success = await database.update_trade(trade_name, new_name.strip(), group, description)
+    success = await database.update_trade(trade_name, new_name.strip(), group, description, icon, color)
     
     if not success:
         raise HTTPException(status_code=404, detail="Trade category not found")
+    
+    # Invalidate stats caches
+    try:
+        from ..utils.cache import get_cache
+        cache = get_cache()
+        await cache.delete("stats:categories")
+        await cache.delete("stats:platform")
+    except Exception as e:
+        logger.error(f"Error invalidating cache: {e}")
     
     return {
         "message": "Trade category updated successfully",
@@ -1651,7 +1654,9 @@ async def update_trade_by_form(
     old_name: str = Form(...),
     new_name: str = Form(...),
     group: str = Form(""),
-    description: str = Form("")
+    description: str = Form(""),
+    icon: str = Form(None),
+    color: str = Form(None)
 ):
     """Update trade category using form body instead of path param.
     Helps avoid proxy/path encoding issues for names with special characters.
@@ -1659,7 +1664,8 @@ async def update_trade_by_form(
     if not new_name.strip():
         raise HTTPException(status_code=400, detail="Trade name is required")
 
-    success = await database.update_trade(old_name.strip(), new_name.strip(), group, description)
+    success = await database.update_trade(old_name.strip(), new_name.strip(), group, description, icon, color)
+    
     if not success:
         # Determine if static trade exists to provide clearer error
         try:
@@ -1669,6 +1675,15 @@ async def update_trade_by_form(
         except Exception:
             pass
         raise HTTPException(status_code=404, detail="Trade category not found")
+
+    # Invalidate stats caches
+    try:
+        from ..utils.cache import get_cache
+        cache = get_cache()
+        await cache.delete("stats:categories")
+        await cache.delete("stats:platform")
+    except Exception as e:
+        logger.error(f"Error invalidating cache: {e}")
 
     return {
         "message": "Trade category updated successfully",
@@ -1684,6 +1699,15 @@ async def delete_trade(trade_name: str):
     
     if not success:
         raise HTTPException(status_code=404, detail="Trade category not found")
+    
+    # Invalidate stats caches
+    try:
+        from ..utils.cache import get_cache
+        cache = get_cache()
+        await cache.delete("stats:categories")
+        await cache.delete("stats:platform")
+    except Exception as e:
+        logger.error(f"Error invalidating cache: {e}")
     
     return {"message": f"Trade category '{trade_name}' deleted successfully"}
 

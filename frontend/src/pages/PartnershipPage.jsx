@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
+import { statsAPI } from '../api/services';
 import { 
   Handshake, 
   Building, 
@@ -32,6 +33,19 @@ import {
 
 const PartnershipPage = () => {
   const [selectedPartnership, setSelectedPartnership] = useState('trade-organizations');
+  const [platformStats, setPlatformStats] = useState(null);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const data = await statsAPI.getStats();
+        setPlatformStats(data);
+      } catch (err) {
+        console.error('Failed to fetch stats:', err);
+      }
+    };
+    fetchStats();
+  }, []);
 
   const partnershipTypes = [
     {
@@ -159,7 +173,7 @@ const PartnershipPage = () => {
     {
       icon: Users,
       title: 'Large User Base',
-      description: 'Access to thousands of verified homeowners and skilled tradespeople across 8 Nigerian states'
+      description: `Access to thousands of verified homeowners and skilled tradespeople across ${platformStats?.total_states || '8'} Nigerian states`
     },
     {
       icon: Shield,
@@ -184,9 +198,9 @@ const PartnershipPage = () => {
   ];
 
   const stats = [
-    { number: '8+', label: 'Nigerian States Covered' },
-    { number: '28+', label: 'Service Categories' },
-    { number: '1000+', label: 'Active Users' },
+    { number: platformStats?.total_states || '8', suffix: '+', label: 'Nigerian States Covered' },
+    { number: platformStats?.total_categories || '28', suffix: '+', label: 'Service Categories' },
+    { number: platformStats?.total_tradespeople || '1000', suffix: '+', label: 'Active Professionals' },
     { number: '95%', label: 'Customer Satisfaction' }
   ];
 
@@ -262,7 +276,7 @@ const PartnershipPage = () => {
               {stats.map((stat, index) => (
                 <div key={index} className="text-center">
                   <div className="text-4xl md:text-5xl font-bold font-montserrat mb-2" style={{color: '#34D164'}}>
-                    {stat.number}
+                    {stat.number}{stat.suffix}
                   </div>
                   <div className="text-gray-600 font-lato">
                     {stat.label}

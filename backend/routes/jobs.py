@@ -50,16 +50,8 @@ class PublicJobPostRequest(BaseModel):
 @router.get("/locations/states")
 async def get_states_public():
     """Get all available states for job posting and registration (public endpoint)"""
-    # Get states from database (new ones added by admin)
-    custom_states = await database.get_custom_states()
-    
-    # Get default states from constants
-    from ..models.nigerian_states import NIGERIAN_STATES
-    
-    # Combine both lists and remove duplicates
-    all_states = list(set(NIGERIAN_STATES + custom_states))
-    all_states.sort()  # Sort alphabetically
-    
+    # Use unified dynamic state fetching
+    all_states = await database.get_all_states_dynamic()
     return {"states": all_states}
 
 @router.post("/", response_model=Job)
@@ -70,28 +62,15 @@ async def create_job(
 ):
     """Create a new job posting"""
     try:
-        from ..models.nigerian_lgas import validate_lga_for_state, validate_zip_code
+        from ..models.nigerian_lgas import validate_zip_code
         
         # Convert to dict and prepare for database
         job_dict = job_data.dict()
         
-        # Validate LGA belongs to the specified state (check both static and dynamic LGAs)
-        static_valid = validate_lga_for_state(job_data.state, job_data.lga)
+        # Validate LGA belongs to the specified state (using unified dynamic fetcher)
+        all_lgas = await database.get_lgas_for_state_dynamic(job_data.state)
         
-        # Also check dynamic LGAs from database
-        dynamic_valid = False
-        try:
-            custom_lgas_cursor = database.database.system_locations.find({
-                "state": job_data.state,
-                "type": "lga"
-            })
-            custom_lgas_docs = await custom_lgas_cursor.to_list(length=None)
-            custom_lgas = [lga["name"] for lga in custom_lgas_docs]
-            dynamic_valid = job_data.lga in custom_lgas
-        except Exception as e:
-            logger.warning(f"Error checking dynamic LGAs: {e}")
-        
-        if not (static_valid or dynamic_valid):
+        if job_data.lga not in all_lgas:
             raise HTTPException(
                 status_code=400,
                 detail=f"LGA '{job_data.lga}' does not belong to state '{job_data.state}'",
@@ -281,6 +260,7 @@ async def get_jobs_for_tradesperson(
 async def search_jobs_with_location(
     q: Optional[str] = Query(None, description="Search query"),
     category: Optional[str] = Query(None, description="Job category filter"),
+    state: Optional[str] = Query(None, description="State filter"),
     latitude: Optional[float] = Query(None, ge=-90, le=90, description="User latitude for location filtering"),
     longitude: Optional[float] = Query(None, ge=-180, le=180, description="User longitude for location filtering"),
     max_distance_km: Optional[int] = Query(None, ge=1, le=200, description="Maximum distance in kilometers"),
@@ -292,6 +272,7 @@ async def search_jobs_with_location(
         jobs = await database.search_jobs_with_location(
             search_query=q,
             category=category,
+            state=state,
             user_latitude=latitude,
             user_longitude=longitude,
             max_distance_km=max_distance_km,
@@ -305,6 +286,7 @@ async def search_jobs_with_location(
             "search_params": {
                 "query": q,
                 "category": category,
+                "state": state,
                 "location_filter": {
                     "latitude": latitude,
                     "longitude": longitude,

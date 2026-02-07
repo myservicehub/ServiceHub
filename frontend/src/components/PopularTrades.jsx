@@ -89,14 +89,34 @@ const PopularTrades = () => {
     keys.forEach((k) => countsBySlug.set(toSlug(k), count));
   });
 
-  // Always display curated UI cards; overlay real counts when available
-  const displayTrades = defaultTrades.map((trade) => {
+  // Always display curated UI cards; overlay real counts when available.
+  // ALSO: Include any backend categories that aren't in our curated list!
+  const displayTrades = [...defaultTrades];
+  
+  // Update counts for curated cards
+  displayTrades.forEach((trade, idx) => {
     const slug = toSlug(trade.name || trade.title);
     const count = countsBySlug.get(slug);
-    return {
-      ...trade,
-      tradesperson_count: typeof count === 'number' ? count : 0,
-    };
+    if (typeof count === 'number') {
+      displayTrades[idx].tradesperson_count = count;
+      // Mark as matched so we don't add it again
+      countsBySlug.delete(slug);
+    }
+  });
+
+  // Add remaining backend categories that weren't in curated list
+  backendCategories.forEach((cat) => {
+    const slug = toSlug(cat.name || cat.title);
+    if (countsBySlug.has(slug)) {
+      displayTrades.push({
+        name: cat.name,
+        title: cat.title || cat.name,
+        description: cat.description || `Professional ${cat.name} services for your home and business.`,
+        tradesperson_count: typeof cat.tradesperson_count === 'number' ? cat.tradesperson_count : (cat.count || 0),
+        icon: cat.icon || '🛠️',
+        color: cat.color || 'from-green-400 to-green-600'
+      });
+    }
   });
 
   if (error) {

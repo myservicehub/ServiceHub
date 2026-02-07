@@ -278,6 +278,7 @@ class ReviewsResponse(BaseModel):
 class StatsResponse(BaseModel):
     total_tradespeople: int
     total_categories: int
+    total_states: int
     total_reviews: int
     average_rating: float
     total_jobs: int

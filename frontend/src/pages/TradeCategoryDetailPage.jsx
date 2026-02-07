@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Users, Clock, Star, MapPin, Phone, Mail, CheckCircle, AlertCircle, Info } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { statsAPI } from '../api/services';
 
 const TradeCategoryDetailPage = () => {
   const { categorySlug } = useParams();
@@ -887,11 +888,72 @@ const TradeCategoryDetailPage = () => {
   };
 
   useEffect(() => {
-    const categoryData = tradeCategories[categorySlug];
-    if (categoryData) {
-      setCategory(categoryData);
-    }
-    setLoading(false);
+    const fetchCategory = async () => {
+      try {
+        setLoading(true);
+        // First check hardcoded data
+        let categoryData = tradeCategories[categorySlug];
+        
+        if (!categoryData) {
+          // If not found, fetch from API to see if it's a dynamic category
+          const categories = await statsAPI.getCategories();
+          
+        const toSlug = (str) => String(str || '')
+          .toLowerCase()
+          .replace(/&/g, '')
+          .replace(/\//g, '-')
+          .replace(/\s+/g, '-')
+          .replace(/[^a-z0-9-]/g, '');
+
+        const dynamicCategory = categories.find(cat => toSlug(cat.name || cat.title) === categorySlug);
+        
+        if (dynamicCategory) {
+          const name = dynamicCategory.name || dynamicCategory.title;
+          
+          // Use hardcoded data if available, otherwise use dynamic data from backend
+          const hardcodedData = tradeCategories[categorySlug];
+          
+          categoryData = {
+            name: name,
+            description: dynamicCategory.description || hardcodedData?.description || `Professional ${name} services in Nigeria. Get connected with verified and background-checked ${name} experts for your home and business projects.`,
+            services: hardcodedData?.services || [
+              `Professional ${name} services`,
+              "Repairs and maintenance",
+              "Installation services",
+              "Consultation and estimates"
+            ],
+            averagePrice: hardcodedData?.averagePrice || "Based on project scope",
+            timeframe: hardcodedData?.timeframe || "Varies by project",
+            materials: hardcodedData?.materials || ["Materials provided on request", "Standard industry materials"],
+            whatToExpect: hardcodedData?.whatToExpect || `Expect professional service from verified ${name} experts. They will assess your needs, provide a quote, and complete the work to high standards.`,
+            whenToHire: hardcodedData?.whenToHire || `Hire when you need expert ${name} services, whether for new installations, urgent repairs, or routine maintenance.`,
+            tips: hardcodedData?.tips || [
+              "Always check references and past work",
+              "Get a detailed written quote",
+              "Confirm project timeline upfront",
+              "Discuss material costs and quality"
+            ],
+            redFlags: hardcodedData?.redFlags || [
+              "No verifiable experience or references",
+              "Pressure for full upfront payment",
+              "Lack of proper tools for the job",
+              "Vague or inconsistent pricing"
+            ]
+          };
+        }
+        }
+        
+        if (categoryData) {
+          setCategory(categoryData);
+        }
+      } catch (err) {
+        console.error('Error fetching category:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategory();
   }, [categorySlug]);
 
   if (loading) {

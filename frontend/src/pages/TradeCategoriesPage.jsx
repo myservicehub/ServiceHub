@@ -11,40 +11,112 @@ const TradeCategoriesPage = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTradespeople, setActiveTradespeople] = useState(52);
+  const [platformStats, setPlatformStats] = useState(null);
   const [categoryCountsBySlug, setCategoryCountsBySlug] = useState({});
+  const [tradeCategories, setTradeCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
-    statsAPI.getStats()
-      .then((d) => {
-        const count = Number(d.total_tradespeople ?? d.totalTradespeople ?? 52);
-        if (mounted) setActiveTradespeople(count);
-      })
-      .catch(() => {
-        // keep fallback
-      });
+    setLoading(true);
 
-    // Fetch per-category tradespeople counts from backend
-    statsAPI.getCategories()
-      .then((arr) => {
+    const fetchData = async () => {
+      try {
+        const stats = await statsAPI.getStats();
+        if (mounted) {
+          setPlatformStats(stats);
+          const count = Number(stats.total_tradespeople ?? stats.totalTradespeople ?? 52);
+          setActiveTradespeople(count);
+        }
+      } catch (err) {
+        console.warn('Failed to fetch stats:', err);
+      }
+
+      try {
+        const categoriesData = await statsAPI.getCategories();
+        const rawCategories = Array.isArray(categoriesData) ? categoriesData : (categoriesData?.categories || []);
+        
         const toSlug = (str) => String(str || '')
           .toLowerCase()
           .replace(/&/g, '')
           .replace(/\//g, '-')
           .replace(/\s+/g, '-')
           .replace(/[^a-z0-9-]/g, '');
-        const map = {};
-        (Array.isArray(arr) ? arr : (arr?.categories || [])).forEach((c) => {
+
+        const countsMap = {};
+        rawCategories.forEach((c) => {
           const slug = toSlug(c.name || c.title);
           const n = Number(c.tradesperson_count ?? 0);
-          if (slug) map[slug] = n;
+          if (slug) countsMap[slug] = n;
         });
-        if (mounted) setCategoryCountsBySlug(map);
-      })
-      .catch(() => {
-        // If API fails, default counts remain 0 for all categories
-        if (mounted) setCategoryCountsBySlug({});
-      });
+
+        if (mounted) {
+          setCategoryCountsBySlug(countsMap);
+          
+          // Hardcoded metadata (descriptions and icons)
+          const metaData = {
+            "Building": { description: "Professional building and construction services for residential and commercial projects", icon: "🏗️", popular: true },
+            "Concrete Works": { description: "Concrete mixing, pouring, finishing, and repair services", icon: "🏗️", popular: false },
+            "Tiling": { description: "Floor and wall tiling, ceramic, marble, and tile repair services", icon: "🧱", popular: false },
+            "Door & Window Installation": { description: "Door and window installation, repair, and replacement services", icon: "🚪", popular: false },
+            "Air Conditioning & Refrigeration": { description: "AC installation, repair, and refrigeration system services", icon: "❄️", popular: true },
+            "Plumbing": { description: "Water system installation, repairs, pipe fitting, and drainage solutions", icon: "🔧", popular: true },
+            "Home Extensions": { description: "Home extension and expansion construction services", icon: "🏠", popular: false },
+            "Scaffolding": { description: "Scaffolding installation, rental, and safety services", icon: "🪜", popular: false },
+            "Flooring": { description: "Floor installation, repairs, hardwood, tiles, and carpet services", icon: "🏠", popular: false },
+            "Bathroom Fitting": { description: "Complete bathroom installations, fittings, and renovation services", icon: "🛁", popular: false },
+            "Generator Services": { description: "Generator installation, repair, maintenance, and sales services", icon: "⚙️", popular: true },
+            "Welding": { description: "Metal welding, fabrication, and metalwork services", icon: "🔥", popular: false },
+            "Renovations": { description: "Home and office renovation and remodeling services", icon: "🔨", popular: true },
+            "Painting": { description: "Interior and exterior painting, wall finishes, and decorative services", icon: "🎨", popular: true },
+            "Carpentry": { description: "Custom woodwork, furniture repair, and wooden structure installations", icon: "🪚", popular: true },
+            "Interior Design": { description: "Professional interior design, decoration, and space planning services", icon: "🎨", popular: false },
+            "Solar & Inverter Installation": { description: "Solar panel installation, inverter setup, and renewable energy solutions", icon: "☀️", popular: true },
+            "Locksmithing": { description: "Lock installation, repair, key cutting, and security services", icon: "🔐", popular: false },
+            "Roofing": { description: "Roof installation, repairs, guttering, and waterproofing services", icon: "🏠", popular: true },
+            "Plastering/POP": { description: "Plastering, POP ceiling installation, and wall finishing services", icon: "🏛️", popular: false },
+            "Furniture Making": { description: "Custom furniture design, manufacturing, and upholstery services", icon: "🪑", popular: false },
+            "Electrical Repairs": { description: "Electrical installations, wiring, repairs, and maintenance services", icon: "⚡", popular: true },
+            "CCTV & Security Systems": { description: "CCTV installation, security system setup, and monitoring services", icon: "📹", popular: false },
+            "General Handyman Work": { description: "General repairs, maintenance, and small household fixes", icon: "🔨", popular: true },
+            "Cleaning": { description: "Home and office cleaning, deep cleaning, and sanitation services", icon: "🧹", popular: true },
+            "Relocation/Moving": { description: "Local moving, packing, loading, and relocation logistics", icon: "🚚", popular: false },
+            "Waste Disposal": { description: "Waste collection, junk removal, and disposal services", icon: "🗑️", popular: false },
+            "Recycling": { description: "Recyclables pickup, sorting, and eco-friendly material processing", icon: "♻️", popular: false }
+          };
+
+          // Merge backend categories with metadata
+          const mergedCategories = rawCategories.map(cat => {
+            const name = cat.name || cat.title;
+            
+            // Priority: 
+            // 1. Data directly from backend (cat.description, cat.icon)
+            // 2. Hardcoded metadata in this file (metaData[name])
+            // 3. Minimal fallback
+            
+            const hardcodedMeta = metaData[name] || {};
+            
+            return {
+              name,
+              description: cat.description || hardcodedMeta.description || `Professional ${name} services in Nigeria`,
+              icon: cat.icon || hardcodedMeta.icon || "🛠️",
+              popular: hardcodedMeta.popular || false,
+              tradesperson_count: countsMap[toSlug(name)] || 0
+            };
+          });
+
+          // Sort by name
+          mergedCategories.sort((a, b) => a.name.localeCompare(b.name));
+          setTradeCategories(mergedCategories);
+        }
+      } catch (err) {
+        console.warn('Failed to fetch categories:', err);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    fetchData();
     return () => { mounted = false; };
   }, []);
 
@@ -69,215 +141,6 @@ const TradeCategoriesPage = () => {
     const n = categoryCountsBySlug[slug];
     return typeof n === 'number' ? n : 0;
   };
-
-  // Nigerian Trade Categories with descriptions and icons
-  const tradeCategories = [
-    // Column 1
-    {
-      name: "Building",
-      description: "Professional building and construction services for residential and commercial projects",
-      icon: "🏗️",
-      popular: true,
-      serviceCount: "500+"
-    },
-    {
-      name: "Concrete Works",
-      description: "Concrete mixing, pouring, finishing, and repair services",
-      icon: "🏗️",
-      popular: false,
-      serviceCount: "180+"
-    },
-    {
-      name: "Tiling",
-      description: "Floor and wall tiling, ceramic, marble, and tile repair services",
-      icon: "🧱",
-      popular: false,
-      serviceCount: "200+"
-    },
-    {
-      name: "Door & Window Installation",
-      description: "Door and window installation, repair, and replacement services",
-      icon: "🚪",
-      popular: false,
-      serviceCount: "150+"
-    },
-    {
-      name: "Air Conditioning & Refrigeration",
-      description: "AC installation, repair, and refrigeration system services",
-      icon: "❄️",
-      popular: true,
-      serviceCount: "220+"
-    },
-    {
-      name: "Plumbing",
-      description: "Water system installation, repairs, pipe fitting, and drainage solutions",
-      icon: "🔧",
-      popular: true,
-      serviceCount: "350+"
-    },
-    
-    // Column 2
-    {
-      name: "Home Extensions",
-      description: "Home extension and expansion construction services",
-      icon: "🏠",
-      popular: false,
-      serviceCount: "120+"
-    },
-    {
-      name: "Scaffolding",
-      description: "Scaffolding installation, rental, and safety services",
-      icon: "🪜",
-      popular: false,
-      serviceCount: "80+"
-    },
-    {
-      name: "Flooring",
-      description: "Floor installation, repairs, hardwood, tiles, and carpet services",
-      icon: "🏠",
-      popular: false,
-      serviceCount: "170+"
-    },
-    {
-      name: "Bathroom Fitting",
-      description: "Complete bathroom installations, fittings, and renovation services",
-      icon: "🛁",
-      popular: false,
-      serviceCount: "140+"
-    },
-    {
-      name: "Generator Services",
-      description: "Generator installation, repair, maintenance, and sales services",
-      icon: "⚙️",
-      popular: true,
-      serviceCount: "200+"
-    },
-    {
-      name: "Welding",
-      description: "Metal welding, fabrication, and metalwork services",
-      icon: "🔥",
-      popular: false,
-      serviceCount: "110+"
-    },
-    
-    // Column 3
-    {
-      name: "Renovations",
-      description: "Home and office renovation and remodeling services",
-      icon: "🔨",
-      popular: true,
-      serviceCount: "280+"
-    },
-    {
-      name: "Painting",
-      description: "Interior and exterior painting, wall finishes, and decorative services",
-      icon: "🎨",
-      popular: true,
-      serviceCount: "300+"
-    },
-    {
-      name: "Carpentry",
-      description: "Custom woodwork, furniture repair, and wooden structure installations",
-      icon: "🪚",
-      popular: true,
-      serviceCount: "250+"
-    },
-    {
-      name: "Interior Design",
-      description: "Professional interior design, decoration, and space planning services",
-      icon: "🎨",
-      popular: false,
-      serviceCount: "90+"
-    },
-    {
-      name: "Solar & Inverter Installation",
-      description: "Solar panel installation, inverter setup, and renewable energy solutions",
-      icon: "☀️",
-      popular: true,
-      serviceCount: "130+"
-    },
-    {
-      name: "Locksmithing",
-      description: "Lock installation, repair, key cutting, and security services",
-      icon: "🔐",
-      popular: false,
-      serviceCount: "95+"
-    },
-    
-    // Column 4
-    {
-      name: "Roofing",
-      description: "Roof installation, repairs, guttering, and waterproofing services",
-      icon: "🏠",
-      popular: true,
-      serviceCount: "190+"
-    },
-    {
-      name: "Plastering/POP",
-      description: "Plastering, POP ceiling installation, and wall finishing services",
-      icon: "🏛️",
-      popular: false,
-      serviceCount: "160+"
-    },
-    {
-      name: "Furniture Making",
-      description: "Custom furniture design, manufacturing, and upholstery services",
-      icon: "🪑",
-      popular: false,
-      serviceCount: "140+"
-    },
-    {
-      name: "Electrical Repairs",
-      description: "Electrical installations, wiring, repairs, and maintenance services",
-      icon: "⚡",
-      popular: true,
-      serviceCount: "400+"
-    },
-    {
-      name: "CCTV & Security Systems",
-      description: "CCTV installation, security system setup, and monitoring services",
-      icon: "📹",
-      popular: false,
-      serviceCount: "120+"
-    },
-    {
-      name: "General Handyman Work",
-      description: "General repairs, maintenance, and small household fixes",
-      icon: "🔨",
-      popular: true,
-      serviceCount: "300+"
-    },
-    // General Services additions to reach 28 categories
-    {
-      name: "Cleaning",
-      description: "Home and office cleaning, deep cleaning, and sanitation services",
-      icon: "🧹",
-      popular: true,
-      serviceCount: "260+"
-    },
-    {
-      name: "Relocation/Moving",
-      description: "Local moving, packing, loading, and relocation logistics",
-      icon: "🚚",
-      popular: false,
-      serviceCount: "150+"
-    },
-    {
-      name: "Waste Disposal",
-      description: "Waste collection, junk removal, and disposal services",
-      icon: "🗑️",
-      popular: false,
-      serviceCount: "120+"
-    },
-    {
-      name: "Recycling",
-      description: "Recyclables pickup, sorting, and eco-friendly material processing",
-      icon: "♻️",
-      popular: false,
-      serviceCount: "90+"
-    },
-
-  ];
 
   // Filter categories based on search term
   const filteredCategories = tradeCategories.filter(category =>
@@ -318,7 +181,7 @@ const TradeCategoriesPage = () => {
                 </div>
                 <div className="bg-purple-50 rounded-lg p-6">
                   <div className="text-3xl font-bold font-montserrat text-purple-600">
-                    8
+                    {Number(platformStats?.total_states || 8)}
                   </div>
                   <div className="text-sm text-gray-600 font-lato">States Covered</div>
                 </div>

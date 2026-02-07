@@ -21,12 +21,28 @@ import {
   Award,
   Zap,
   ArrowRight,
-  Play
+  Play,
+  ChevronRight
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { statsAPI } from '../api/services';
 
 const HowItWorksPage = () => {
   const [activeTab, setActiveTab] = useState('homeowner');
   const { isTradesperson, isAuthenticated } = useAuth();
+  const [platformStats, setPlatformStats] = useState(null);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const data = await statsAPI.getStats();
+        setPlatformStats(data);
+      } catch (err) {
+        console.error('Failed to fetch stats:', err);
+      }
+    };
+    fetchStats();
+  }, []);
 
   // Ensure page loads from the very top when navigated to
   useEffect(() => {
@@ -46,7 +62,7 @@ const HowItWorksPage = () => {
       title: "Post Your Job",
       description: "Describe your project with details, location, timeline, and budget. It's free to post!",
       details: [
-        "Choose from 28+ service categories",
+        `Choose from ${platformStats?.total_categories || 28}+ service categories`,
         "Set your location and timeline", 
         "Add photos if helpful",
         "Specify your budget range"
@@ -199,9 +215,9 @@ const HowItWorksPage = () => {
   ];
 
   const stats = [
-    { number: "28+", label: "Service Categories" },
-    { number: "8", label: "Nigerian States" },
-    { number: "5,000+", label: "Active Tradespeople" },
+    { number: `${platformStats?.total_categories || 28}+`, label: "Service Categories" },
+    { number: platformStats?.total_states || "8", label: "Nigerian States" },
+    { number: platformStats?.total_tradespeople ? Number(platformStats.total_tradespeople).toLocaleString() + "+" : "5,000+", label: "Active Tradespeople" },
     { number: "5-200km", label: "Service Radius" }
   ];
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Card, CardContent } from '../components/ui/card';
@@ -14,8 +14,23 @@ import {
   Zap,
   Target
 } from 'lucide-react';
+import { statsAPI } from '../api/services';
 
 const AboutUsPage = () => {
+  const [platformStats, setPlatformStats] = useState(null);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const data = await statsAPI.getStats();
+        setPlatformStats(data);
+      } catch (err) {
+        console.error('Failed to fetch stats:', err);
+      }
+    };
+    fetchStats();
+  }, []);
+
   const coreValues = [
     {
       icon: Shield,
@@ -50,10 +65,10 @@ const AboutUsPage = () => {
   ];
 
   const stats = [
-    { number: "8", label: "Nigerian States Covered", suffix: "+" },
-    { number: "28", label: "Service Categories", suffix: "" },
-    { number: "100", label: "Verified Professionals", suffix: "%" },
-    { number: "24/7", label: "Platform Availability", suffix: "" }
+    { number: platformStats?.total_tradespeople || "5,000", suffix: "+", label: "Tradespeople" },
+    { number: platformStats?.total_categories || "28", suffix: "+", label: "Service Categories" },
+    { number: platformStats?.total_states || "8", suffix: "", label: "Nigerian States" },
+    { number: platformStats?.total_jobs || "1,200", suffix: "+", label: "Jobs Completed" }
   ];
 
   return (

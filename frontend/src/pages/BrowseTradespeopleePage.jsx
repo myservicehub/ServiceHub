@@ -28,18 +28,21 @@ import {
   CheckCircle,
   AlertCircle
 } from 'lucide-react';
-import { tradespeopleAPI } from '../api/services';
+import { tradespeopleAPI, statsAPI } from '../api/services';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
+import { useStates } from '../hooks/useStates';
 
 const BrowseTradespeopleePage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
+  const { states: locations } = useStates();
 
   const [tradespeople, setTradespeople] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingCategories, setLoadingCategories] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTrade, setSelectedTrade] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('');
@@ -52,25 +55,45 @@ const BrowseTradespeopleePage = () => {
   const [totalTradespeople, setTotalTradespeople] = useState(0);
   const [tradeCategories, setTradeCategories] = useState([]);
 
-  const locations = [
-    'Lagos', 'Abuja', 'Port Harcourt', 'Kano', 'Ibadan', 
-    'Benin City', 'Kaduna', 'Warri', 'Jos', 'Calabar'
+  const FALLBACK_TRADES = [
+    'Building', 'Concrete Works', 'Tiling', 'Door & Window Installation',
+    'Air Conditioning & Refrigeration', 'Plumbing', 'Home Extensions',
+    'Scaffolding', 'Flooring', 'Bathroom Fitting', 'Generator Services',
+    'Welding', 'Renovations', 'Painting', 'Carpentry', 'Interior Design',
+    'Solar & Inverter Installation', 'Locksmithing', 'Roofing',
+    'Plastering/POP', 'Furniture Making', 'Electrical Repairs',
+    'CCTV & Security Systems', 'General Handyman Work',
+    'Cleaning', 'Relocation/Moving', 'Waste Disposal', 'Recycling'
   ];
 
   useEffect(() => {
-    // Initialize trade categories with fallback
-    setTradeCategories([
-      'Building', 'Concrete Works', 'Tiling', 'Door & Window Installation',
-      'Air Conditioning & Refrigeration', 'Plumbing', 'Home Extensions',
-      'Scaffolding', 'Flooring', 'Bathroom Fitting', 'Generator Services',
-      'Welding', 'Renovations', 'Painting', 'Carpentry', 'Interior Design',
-      'Solar & Inverter Installation', 'Locksmithing', 'Roofing',
-      'Plastering/POP', 'Furniture Making', 'Electrical Repairs',
-      'CCTV & Security Systems', 'General Handyman Work',
-      // Additional services to maintain strict 28
-      'Cleaning', 'Relocation/Moving', 'Waste Disposal', 'Recycling'
-    ]);
+    const fetchTradeCategories = async () => {
+      try {
+        setLoadingCategories(true);
+        const response = await statsAPI.getCategories();
+        const cats = response.categories || response.data || response;
+        if (Array.isArray(cats)) {
+          const names = cats.map(c => c.name || c.title).filter(Boolean);
+          if (names.length > 0) {
+            setTradeCategories(names);
+          } else {
+            setTradeCategories(FALLBACK_TRADES);
+          }
+        } else {
+          setTradeCategories(FALLBACK_TRADES);
+        }
+      } catch (error) {
+        console.error('Failed to load trade categories:', error);
+        setTradeCategories(FALLBACK_TRADES);
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
     
+    fetchTradeCategories();
+  }, []);
+
+  useEffect(() => {
     // Get initial search params from URL or location state
     const searchParams = new URLSearchParams(location.search);
     const trade = searchParams.get('trade') || location.state?.trade || '';
@@ -467,9 +490,9 @@ const BrowseTradespeopleePage = () => {
               className="px-3 py-2 border rounded-md text-sm"
             >
               <option value="">All Locations</option>
-              {locations.map(location => (
-                <option key={location} value={location}>{location}</option>
-              ))}
+                    {locations.map(location => (
+                      <option key={location} value={location}>{location}</option>
+                    ))}
             </select>
 
             <select

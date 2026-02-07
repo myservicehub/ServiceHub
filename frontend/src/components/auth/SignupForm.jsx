@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
@@ -8,6 +8,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import useStates from '../../hooks/useStates';
+import apiClient from '../../api/client';
 import TradespersonRegistration from './TradespersonRegistration';
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -59,46 +60,37 @@ const SignupForm = ({ onClose, onSwitchToLogin, defaultTab = 'tradesperson', sho
   const { toast } = useToast();
   const navigate = useNavigate();
   const { states: nigerianStates, loading: statesLoading } = useStates();
+  const [tradeCategories, setTradeCategories] = useState([]);
+  const [loadingTrades, setLoadingTrades] = useState(true);
 
-  // Nigerian Trade Categories - Canonical 28 approved list
-  const tradeCategories = [
-    // Column 1
-    "Building",
-    "Concrete Works",
-    "Tiling",
-    "Door & Window Installation",
-    "Air Conditioning & Refrigeration",
-    "Plumbing",
-    
-    // Column 2
-    "Home Extensions",
-    "Scaffolding",
-    "Flooring",
-    "Bathroom Fitting",
-    "Generator Services",
-    "Welding",
-    
-    // Column 3
-    "Renovations",
-    "Painting",
-    "Carpentry",
-    "Interior Design",
-    "Solar & Inverter Installation",
-    "Locksmithing",
-    
-    // Column 4
-    "Roofing",
-    "Plastering/POP",
-    "Furniture Making",
-    "Electrical Repairs",
-    "CCTV & Security Systems",
-    "General Handyman Work",
-    // Additional services to maintain strict 28
-    "Cleaning",
-    "Relocation/Moving",
-    "Waste Disposal",
-    "Recycling"
-  ];
+  // Fetch trade categories from API
+  useEffect(() => {
+    const fetchTradeCategories = async () => {
+      try {
+        setLoadingTrades(true);
+        const response = await apiClient.get('/auth/trade-categories');
+        if (response.data && Array.isArray(response.data.categories)) {
+          setTradeCategories(response.data.categories);
+        }
+      } catch (err) {
+        console.error('Failed to fetch trade categories:', err);
+        // Fallback categories if API fails
+        setTradeCategories([
+          "Building", "Concrete Works", "Tiling", "Door & Window Installation",
+          "Air Conditioning & Refrigeration", "Plumbing", "Home Extensions",
+          "Scaffolding", "Flooring", "Bathroom Fitting", "Generator Services",
+          "Welding", "Renovations", "Painting", "Carpentry", "Interior Design",
+          "Solar & Inverter Installation", "Locksmithing", "Roofing",
+          "Plastering/POP", "Furniture Making", "Electrical Repairs",
+          "CCTV & Security Systems", "General Handyman Work",
+          "Cleaning", "Relocation/Moving", "Waste Disposal", "Recycling"
+        ]);
+      } finally {
+        setLoadingTrades(false);
+      }
+    };
+    fetchTradeCategories();
+  }, []);
 
   const onSubmit = async (values) => {
     try {

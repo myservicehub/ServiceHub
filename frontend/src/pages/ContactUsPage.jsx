@@ -4,7 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '../hooks/use-toast';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { useAuth } from '../contexts/AuthContext';
 import { publicAPI } from '../api/public';
+import { statsAPI } from '../api/services';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { contactSchema, formatPhoneE164 } from '../utils/validation';
@@ -14,6 +16,19 @@ const ContactUsPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [globalErrorMessage, setGlobalErrorMessage] = useState('');
+  const [platformStats, setPlatformStats] = useState(null);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const data = await statsAPI.getStats();
+        setPlatformStats(data);
+      } catch (err) {
+        console.error('Failed to fetch stats:', err);
+      }
+    };
+    fetchStats();
+  }, []);
 
   // React Hook Form setup with Zod schema
   const form = useForm({
@@ -398,7 +413,7 @@ const ContactUsPage = () => {
                     ServiceHub Nigeria, 6, D Place Guest House, Off Omimi Link Road, Ekpan, Delta State, Nigeria
                   </p>
                   <p className="text-xs text-gray-500">
-                    We serve 8 states accross Nigeria including FCT.
+                    We serve {platformStats?.total_states || '8'} states accross Nigeria including FCT.
                   </p>
                 </div>
               </div>

@@ -26,6 +26,7 @@ import { jobsAPI, interestsAPI } from '../api/services';
 import { walletAPI, tradeCategoryQuestionsAPI } from '../api/wallet';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
+import useStates from '../hooks/useStates';
 import { useNavigate, useLocation } from 'react-router-dom';
 import JobsMap from '../components/maps/JobsMap';
 import LocationSettingsModal from '../components/LocationSettingsModal';
@@ -34,44 +35,6 @@ import { notificationsAPI } from '../api/notifications';
 import { resolveCoordinatesFromLocationText, DEFAULT_TRAVEL_DISTANCE_KM, nearestStateFromCoordinates, computeDistanceKm } from '../utils/locationCoordinates';
 
 import AuthenticatedImage from '../components/common/AuthenticatedImage';
-
-const NIGERIAN_TRADE_CATEGORIES = [
-  // Column 1
-  "Building",
-  "Concrete Works",
-  "Tiling",
-  "Door & Window Installation",
-  "Air Conditioning & Refrigeration",
-  "Plumbing",
-  "Cleaning",
-  
-  // Column 2
-  "Home Extensions",
-  "Scaffolding",
-  "Flooring",
-  "Bathroom Fitting",
-  "Generator Services",
-  "Welding",
-  "Relocation/Moving",
-  
-  // Column 3
-  "Renovations",
-  "Painting",
-  "Carpentry",
-  "Interior Design",
-  "Solar & Inverter Installation",
-  "Locksmithing",
-  "Waste Disposal",
-  
-  // Column 4
-  "Roofing",
-  "Plastering/POP",
-  "Furniture Making",
-  "Electrical Repairs",
-  "CCTV & Security Systems",
-  "General Handyman Work",
-  "Recycling"
-];
 
 const BrowseJobsPage = () => {
   const [jobs, setJobs] = useState([]);
@@ -94,9 +57,46 @@ const BrowseJobsPage = () => {
   const [userInterests, setUserInterests] = useState(null);
   const [userInterestsLoading, setUserInterestsLoading] = useState(false);
   const [loadErrorCount, setLoadErrorCount] = useState(0); // Track errors to prevent infinite loops
+  const [tradeCategories, setTradeCategories] = useState([]);
+
+  const [filters, setFilters] = useState({
+    search: '',
+    category: '',
+    state: '',
+    status: 'open',
+    useLocation: false,
+    maxDistance: 25
+  });
+
+  // Fetch trade categories
+  useEffect(() => {
+    const fetchTrades = async () => {
+      try {
+        const response = await authAPI.getTradeCategories();
+        if (response && response.categories) {
+          setTradeCategories(response.categories);
+        }
+      } catch (err) {
+        console.error('Failed to fetch trades:', err);
+        // Fallback
+        setTradeCategories([
+          "Building", "Concrete Works", "Tiling", "Door & Window Installation",
+          "Air Conditioning & Refrigeration", "Plumbing", "Home Extensions",
+          "Scaffolding", "Flooring", "Bathroom Fitting", "Generator Services",
+          "Welding", "Renovations", "Painting", "Carpentry", "Interior Design",
+          "Solar & Inverter Installation", "Locksmithing", "Roofing",
+          "Plastering/POP", "Furniture Making", "Electrical Repairs",
+          "CCTV & Security Systems", "General Handyman Work", "Cleaning",
+          "Relocation/Moving", "Waste Disposal", "Recycling"
+        ]);
+      }
+    };
+    fetchTrades();
+  }, []);
 
   const { user, isAuthenticated, isTradesperson } = useAuth();
   const location = useLocation();
+  const { states: nigerianStates } = useStates();
   
   // Load user interests for tradespeople
   const loadUserInterests = async () => {
@@ -116,14 +116,18 @@ const BrowseJobsPage = () => {
     }
   };
   
-  const [filters, setFilters] = useState({
-    search: '',
-    category: '',
-    useLocation: false,
-    maxDistance: user?.travel_distance_km || 25
-  });
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Initialize filters when user data is available
+  useEffect(() => {
+    if (user?.travel_distance_km) {
+      setFilters(prev => ({
+        ...prev,
+        maxDistance: user.travel_distance_km
+      }));
+    }
+  }, [user?.travel_distance_km]);
 
   // 1. Initial Load: Basic data that doesn't depend on filters
   useEffect(() => {
@@ -150,6 +154,7 @@ const BrowseJobsPage = () => {
   }, [
     filters.search,
     filters.category,
+    filters.state,
     filters.useLocation,
     filters.maxDistance,
     userLocation,
@@ -316,10 +321,10 @@ const BrowseJobsPage = () => {
         typeof userLocation.lat === 'number' &&
         typeof userLocation.lng === 'number'
       ) {
-        // When a search or category filter is applied, use the search endpoint with location params.
+        // When a search, category, or state filter is applied, use the search endpoint with location params.
         // Otherwise, use the tradesperson endpoint which blends nearby and unlocated jobs
         // based on the user's saved location and travel distance.
-        if (filters.search || filters.category) {
+        if (filters.search || filters.category || filters.state) {
           const params = new URLSearchParams({
             latitude: userLocation.lat.toString(),
             longitude: userLocation.lng.toString(),
@@ -329,6 +334,7 @@ const BrowseJobsPage = () => {
           });
           if (filters.search) params.append('q', filters.search);
           if (filters.category) params.append('category', filters.category);
+          if (filters.state) params.append('state', filters.state);
           response = await jobsAPI.apiClient.get(`/jobs/search?${params.toString()}`);
         } else {
           const skip = (page - 1) * 50;
@@ -858,9 +864,22 @@ const BrowseJobsPage = () => {
                   className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato"
                 >
                   <option value="">All Categories</option>
-                  {NIGERIAN_TRADE_CATEGORIES.map((category) => (
+                  {tradeCategories.map((category) => (
                     <option key={category} value={category}>
                       {category}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  value={filters.state}
+                  onChange={(e) => setFilters(prev => ({ ...prev, state: e.target.value }))}
+                  className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato"
+                >
+                  <option value="">All States</option>
+                  {nigerianStates.map((state) => (
+                    <option key={state} value={state}>
+                      {state}
                     </option>
                   ))}
                 </select>

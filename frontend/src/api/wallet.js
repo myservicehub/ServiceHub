@@ -356,11 +356,13 @@ export const adminAPI = {
     return response.data;
   },
 
-  async addNewTrade(tradeName, group = 'General Services', description = '') {
+  async addNewTrade(tradeName, group = 'General Services', description = '', icon = '🛠️', color = 'from-blue-400 to-blue-600') {
     const formData = new FormData();
     formData.append('trade_name', tradeName);
     formData.append('group', group);
     formData.append('description', description);
+    formData.append('icon', icon);
+    formData.append('color', color);
     
     const response = await apiClient.post('/admin/trades', formData, {
       headers: {
@@ -370,12 +372,14 @@ export const adminAPI = {
     return response.data;
   },
 
-  async updateTrade(oldName, newName, group = '', description = '') {
+  async updateTrade(oldName, newName, group = '', description = '', icon = null, color = null) {
     const formData = new FormData();
     formData.append('old_name', oldName);
     formData.append('new_name', newName);
     formData.append('group', group);
     formData.append('description', description);
+    if (icon) formData.append('icon', icon);
+    if (color) formData.append('color', color);
 
     try {
       const response = await apiClient.put('/admin/trades/update', formData, {

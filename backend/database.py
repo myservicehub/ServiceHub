@@ -1908,9 +1908,11 @@ class Database:
             custom_data = await self.get_custom_trades()
             custom_trades = custom_data.get("trades", []) if custom_data else []
             total_categories = len(set(NIGERIAN_TRADE_CATEGORIES + custom_trades))
+            all_states = await self.get_all_states_dynamic()
             return {
                 "total_tradespeople": 0,
                 "total_categories": total_categories,
+                "total_states": len(all_states),
                 "total_reviews": 0,
                 "average_rating": 0.0,
                 "total_jobs": 0,
@@ -1942,34 +1944,24 @@ class Database:
             "status": "active"
         })
         
-        # Get total available categories from static trade categories
+        # Get total available categories and states
         try:
             from models.trade_categories import NIGERIAN_TRADE_CATEGORIES
-            # Get custom trades from database
             custom_data = await self.get_custom_trades()
             custom_trades = custom_data.get("trades", []) if custom_data else []
+            total_categories = len(set(NIGERIAN_TRADE_CATEGORIES + custom_trades))
             
-            # Combine static and custom trades
-            all_trades = list(set(NIGERIAN_TRADE_CATEGORIES + custom_trades))
-            total_categories = len(all_trades)
+            all_states = await self.get_all_states_dynamic()
+            total_states = len(all_states)
         except Exception as e:
-            logger.error(f"Error getting categories count: {e}")
-            # Fallback: count unique categories from tradespeople
-            users_with_categories = await self.database.users.find(
-                {"role": "tradesperson", "trade_categories": {"$exists": True, "$ne": None}},
-                {"trade_categories": 1}
-            ).to_list(length=None)
-            
-            all_categories = set()
-            for user in users_with_categories:
-                trade_categories = user.get("trade_categories", [])
-                if trade_categories:
-                    all_categories.update(trade_categories)
-            total_categories = len(all_categories)
+            logger.error(f"Error getting counts: {e}")
+            total_categories = 28 # Fallback
+            total_states = 8 # Fallback
 
         return {
             "total_tradespeople": total_tradespeople,
             "total_categories": total_categories,
+            "total_states": total_states,
             "total_reviews": total_reviews,
             "average_rating": average_rating,
             "total_jobs": total_jobs,
@@ -1978,9 +1970,9 @@ class Database:
 
     # Category operations
     async def get_categories_with_counts(self) -> List[dict]:
-        # Prepare friendly display metadata keyed by actual category names stored on users
-        # These names align with values in users.trade_categories
-        friendly_details = {
+        """Get all categories with tradesperson counts, merging static and dynamic trades"""
+        # Default metadata for standard categories
+        default_meta = {
             "Building": {
                 "title": "Building & Construction",
                 "description": "From foundation to roofing, find experienced builders for your construction projects. Quality workmanship guaranteed.",
@@ -2028,10 +2020,27 @@ class Database:
                     "tradesperson_count": 0,
                     **{k: v for k, v in meta.items() if k in ("description", "icon", "color", "title")}
                 }
-                for name, meta in friendly_details.items()
+                for name, meta in default_meta.items()
             ]
 
-        # Aggregate to count tradespeople by category from users collection
+        # 1. Get all trade settings from system_trades (active and inactive)
+        db_trades_cursor = self.database.system_trades.find({})
+        db_trades_list = await db_trades_cursor.to_list(length=None)
+        
+        # Create a map for metadata and active status
+        db_settings = {}
+        for ct in db_trades_list:
+            name = ct.get("name")
+            if name:
+                db_settings[name] = {
+                    "title": ct.get("title") or name,
+                    "description": ct.get("description", ""),
+                    "icon": ct.get("icon", "🛠️"),
+                    "color": ct.get("color", "from-gray-400 to-gray-600"),
+                    "active": ct.get("active", True)
+                }
+
+        # 2. Aggregate to count tradespeople by category from users collection
         pipeline = [
             {"$match": {"role": "tradesperson", "trade_categories": {"$exists": True, "$ne": None}}},
             {"$unwind": "$trade_categories"},
@@ -2042,29 +2051,57 @@ class Database:
             {"$sort": {"count": -1}}
         ]
         
-        results = await self.database.users.aggregate(pipeline).to_list(None)
+        agg_results = await self.database.users.aggregate(pipeline).to_list(None)
+        counts = {r["_id"]: r["count"] for r in agg_results}
 
-        # Build categories including all found results, with friendly metadata when available
+        # 3. Get all unique trade names (from static config + DB + aggregation results)
+        from .models.trade_categories import NIGERIAN_TRADE_CATEGORIES
+        
+        all_trade_names = set()
+        
+        # Add static categories if not explicitly disabled in DB
+        for name in NIGERIAN_TRADE_CATEGORIES:
+            setting = db_settings.get(name)
+            if setting:
+                if setting.get("active", True):
+                    all_trade_names.add(name)
+            else:
+                all_trade_names.add(name)
+        
+        # Add custom categories that are active
+        for name, setting in db_settings.items():
+            if name not in NIGERIAN_TRADE_CATEGORIES and setting.get("active", True):
+                all_trade_names.add(name)
+        
+        # Add categories from counts (in case some users have old categories)
+        # but only if they are not explicitly disabled
+        for name in counts.keys():
+            setting = db_settings.get(name)
+            if setting:
+                if setting.get("active", True):
+                    all_trade_names.add(name)
+            else:
+                all_trade_names.add(name)
+
+        # 4. Build final list
         categories = []
-        for result in results:
-            category_name = result.get("_id")
-            count = result.get("count", 0)
-            meta = friendly_details.get(category_name, {})
-
-            # Ensure minimal fields are present even if metadata is missing
+        for name in all_trade_names:
+            # Metadata priority: Database > Default Meta > Minimal Fallback
+            setting = db_settings.get(name)
+            meta = setting or default_meta.get(name) or {}
+            
             entry = {
-                "name": category_name,
-                "title": meta.get("title", category_name),
-                "tradesperson_count": count,
+                "name": name,
+                "title": meta.get("title") or name,
+                "description": meta.get("description", f"Find professional {name} services in your area."),
+                "icon": meta.get("icon", "🛠️"),
+                "color": meta.get("color", "from-blue-400 to-blue-600"),
+                "tradesperson_count": counts.get(name, 0)
             }
-
-            # Attach optional presentation fields if available
-            for key in ("description", "icon", "color"):
-                if key in meta:
-                    entry[key] = meta[key]
-
             categories.append(entry)
 
+        # Sort by count (descending), then name
+        categories.sort(key=lambda x: (-x["tradesperson_count"], x["name"]))
         return categories
 
     async def get_featured_reviews(self, limit: int = 6) -> List[dict]:
@@ -3804,13 +3841,14 @@ class Database:
         self,
         search_query: Optional[str] = None,
         category: Optional[str] = None,
+        state: Optional[str] = None,
         user_latitude: Optional[float] = None,
         user_longitude: Optional[float] = None,
         max_distance_km: Optional[int] = None,
         skip: int = 0,
         limit: int = 50,
     ) -> List[dict]:
-        """Search active, non-expired jobs with optional text/category filters and optional location radius (optimized)."""
+        """Search active, non-expired jobs with optional text/category/state filters and optional location radius (optimized)."""
         try:
             # Base filter: public active jobs that haven't expired
             base_filter: Dict[str, Any] = {
@@ -3818,17 +3856,39 @@ class Database:
                 "expires_at": {"$gt": datetime.utcnow()},
             }
 
-            # Text search on title/description - AVOID if possible (slow on large collections)
+            # Build query components
+            query_parts = []
+
+            # Text search on title/description
             if search_query and len(search_query.strip()) >= 2:
                 search_pattern = {"$regex": search_query, "$options": "i"}
-                base_filter["$or"] = [
-                    {"title": search_pattern},
-                    {"description": search_pattern},
-                ]
+                query_parts.append({
+                    "$or": [
+                        {"title": search_pattern},
+                        {"description": search_pattern},
+                    ]
+                })
 
-            # Category filter (exact, faster than regex)
+            # Category filter
             if category:
-                base_filter["category"] = category  # Use exact match instead of regex
+                query_parts.append({"category": category})
+
+            # State filter
+            if state:
+                query_parts.append({
+                    "$or": [
+                        {"state": {"$regex": f"^{re.escape(state)}$", "$options": "i"}},
+                        {"location": {"$regex": f"^{re.escape(state)}$", "$options": "i"}},
+                        {"state": {"$regex": state, "$options": "i"}},
+                        {"location": {"$regex": state, "$options": "i"}}
+                    ]
+                })
+
+            if query_parts:
+                if len(query_parts) == 1:
+                    base_filter.update(query_parts[0])
+                else:
+                    base_filter["$and"] = query_parts
 
             use_location = (user_latitude is not None and user_longitude is not None)
 
@@ -5328,6 +5388,45 @@ class Database:
         except Exception as e:
             print(f"Error deleting state: {e}")
             return False
+
+    # ==========================================
+    # UNIFIED LOCATION FETCHING
+    # ==========================================
+    
+    async def get_all_states_dynamic(self) -> List[str]:
+        """Get all states merging static and dynamic ones"""
+        try:
+            from models.nigerian_states import NIGERIAN_STATES
+            custom_states = await self.get_custom_states()
+            
+            all_states = list(set(NIGERIAN_STATES + custom_states))
+            all_states.sort()
+            return all_states
+        except Exception as e:
+            logger.error(f"Error in get_all_states_dynamic: {e}")
+            from models.nigerian_states import NIGERIAN_STATES
+            return sorted(NIGERIAN_STATES)
+
+    async def get_lgas_for_state_dynamic(self, state: str) -> List[str]:
+        """Get all LGAs for a state merging static and dynamic ones"""
+        try:
+            from models.nigerian_lgas import get_lgas_for_state as get_static_lgas
+            static_lgas = get_static_lgas(state) or []
+            
+            custom_lgas_cursor = self.database.system_locations.find({
+                "state": state,
+                "type": "lga"
+            })
+            custom_lgas_docs = await custom_lgas_cursor.to_list(length=None)
+            custom_lgas = [lga["name"] for lga in custom_lgas_docs]
+            
+            all_lgas = list(set(static_lgas + custom_lgas))
+            all_lgas.sort()
+            return all_lgas
+        except Exception as e:
+            logger.error(f"Error in get_lgas_for_state_dynamic for state {state}: {e}")
+            from models.nigerian_lgas import get_lgas_for_state as get_static_lgas
+            return sorted(get_static_lgas(state) or [])
     
     async def add_new_lga(self, state_name: str, lga_name: str, zip_codes: str = ""):
         """Add a new LGA to a state"""
@@ -5500,13 +5599,16 @@ class Database:
     # TRADE CATEGORIES MANAGEMENT METHODS (Admin)
     # ==========================================
     
-    async def add_new_trade(self, trade_name: str, group: str = "", description: str = ""):
+    async def add_new_trade(self, trade_name: str, group: str = "", description: str = "", icon: str = "🛠️", color: str = "from-blue-400 to-blue-600"):
         """Add a new trade category"""
         try:
             trade_doc = {
                 "name": trade_name,
+                "title": trade_name,
                 "group": group,
                 "description": description,
+                "icon": icon,
+                "color": color,
                 "created_at": datetime.now(),
                 "active": True
             }
@@ -5522,73 +5624,168 @@ class Database:
             print(f"Error adding trade: {e}")
             return False
     
-    async def update_trade(self, old_name: str, new_name: str, group: str = "", description: str = ""):
+    async def update_trade(self, old_name: str, new_name: str, group: str = "", description: str = "", icon: str = None, color: str = None):
         """Update an existing trade category.
-        Supports updating both custom and static categories by upserting a record when not present.
+        Supports updating both custom and static categories by handling renaming correctly.
         """
         try:
+            from .models.trade_categories import NIGERIAN_TRADE_CATEGORIES
             old_name = (old_name or "").strip()
             new_name = (new_name or "").strip()
             now = datetime.now()
             
-            update_set = {"name": new_name, "updated_at": now}
-            set_on_insert = {
-                "active": True,
-                "created_at": now
-            }
+            # Prepare data
+            update_set = {"name": new_name, "title": new_name, "updated_at": now, "active": True}
+            set_on_insert = {"created_at": now}
+            
+            if group: update_set["group"] = group
+            else: set_on_insert["group"] = "General Services"
+            
+            if description: update_set["description"] = description
+            else: set_on_insert["description"] = ""
+            
+            if icon: update_set["icon"] = icon
+            else: set_on_insert["icon"] = "🛠️"
+            
+            if color: update_set["color"] = color
+            else: set_on_insert["color"] = "from-blue-400 to-blue-600"
 
-            # Only set optional fields in update_set when provided
-            # If provided, they will be set on insert via $set too.
-            # If NOT provided, we need a default for insert, but don't want to overwrite existing.
-            if group:
-                update_set["group"] = group
-            else:
-                set_on_insert["group"] = "General Services"
-
-            if description:
-                update_set["description"] = description
-            else:
-                set_on_insert["description"] = ""
-
-            result = await self.database.system_trades.update_one(
-                {"name": {"$regex": f"^{re.escape(old_name)}$", "$options": "i"}},
-                {
-                    "$set": update_set,
-                    "$setOnInsert": set_on_insert
-                },
-                upsert=True
-            )
-
-            # Treat a matched document (even when no fields changed) as success to
-            # avoid misleading 404 "not found" errors on no-op updates.
-            matched = getattr(result, "matched_count", 0) > 0
-            modified = getattr(result, "modified_count", 0) > 0
-            upserted = getattr(result, "upserted_id", None) is not None
-            if matched or modified or upserted:
+            if old_name == new_name:
+                # Just update the existing record
+                await self.database.system_trades.update_one(
+                    {"name": {"$regex": f"^{re.escape(old_name)}$", "$options": "i"}},
+                    {"$set": update_set, "$setOnInsert": set_on_insert},
+                    upsert=True
+                )
                 return True
-
-            # Fallback: try matching by new_name in case existing record already uses new label
-            result2 = await self.database.system_trades.update_one(
-                {"name": {"$regex": f"^{re.escape(new_name)}$", "$options": "i"}},
-                {"$set": update_set},
-                upsert=False
-            )
-            matched2 = getattr(result2, "matched_count", 0) > 0
-            modified2 = getattr(result2, "modified_count", 0) > 0
-            return matched2 or modified2
+            else:
+                # Renaming logic
+                if old_name in NIGERIAN_TRADE_CATEGORIES:
+                    # 1. Create tombstone for static category
+                    await self.database.system_trades.update_one(
+                        {"name": {"$regex": f"^{re.escape(old_name)}$", "$options": "i"}},
+                        {"$set": {
+                            "name": old_name,
+                            "active": False,
+                            "updated_at": now,
+                            "is_tombstone": True
+                        }},
+                        upsert=True
+                    )
+                    # 2. Upsert new category record
+                    await self.database.system_trades.update_one(
+                        {"name": {"$regex": f"^{re.escape(new_name)}$", "$options": "i"}},
+                        {"$set": update_set, "$setOnInsert": set_on_insert},
+                        upsert=True
+                    )
+                else:
+                    # Custom trade renaming - just update the old record to new name
+                    await self.database.system_trades.update_one(
+                        {"name": {"$regex": f"^{re.escape(old_name)}$", "$options": "i"}},
+                        {"$set": update_set, "$setOnInsert": set_on_insert},
+                        upsert=True
+                    )
+                return True
         except Exception as e:
             print(f"Error updating trade: {e}")
             return False
     
     async def delete_trade(self, trade_name: str):
-        """Delete a trade category"""
+        """Delete a trade category. Handles both custom and static categories."""
         try:
-            result = await self.database.system_trades.delete_one({"name": trade_name})
-            return result.deleted_count > 0
+            from .models.trade_categories import NIGERIAN_TRADE_CATEGORIES
+            trade_name = (trade_name or "").strip()
+            
+            # Check if it exists in DB
+            existing = await self.database.system_trades.find_one({"name": trade_name})
+            
+            if existing:
+                # If it's in DB, we can either delete it or mark as inactive
+                # To support "hiding" static categories, we should mark as inactive if it's a static one
+                if trade_name in NIGERIAN_TRADE_CATEGORIES:
+                    await self.database.system_trades.update_one(
+                        {"name": trade_name},
+                        {"$set": {"active": False, "updated_at": datetime.now()}}
+                    )
+                    return True
+                else:
+                    # If it's purely custom, we can just delete it
+                    result = await self.database.system_trades.delete_one({"name": trade_name})
+                    return result.deleted_count > 0
+            else:
+                # If not in DB but it's a static category, create an inactive record to hide it
+                if trade_name in NIGERIAN_TRADE_CATEGORIES:
+                    await self.database.system_trades.insert_one({
+                        "name": trade_name,
+                        "title": trade_name,
+                        "active": False,
+                        "created_at": datetime.now(),
+                        "updated_at": datetime.now(),
+                        "is_tombstone": True
+                    })
+                    return True
+            
+            return False
         except Exception as e:
             print(f"Error deleting trade: {e}")
             return False
     
+    async def get_effective_trades(self):
+        """Get all available trade categories (static + custom) while respecting active/inactive status"""
+        try:
+            from .models.trade_categories import NIGERIAN_TRADE_CATEGORIES, TRADE_CATEGORY_GROUPS
+            
+            # Fetch all trade settings from DB
+            db_trades = await self.database.system_trades.find({}).to_list(length=1000)
+            
+            # Map of name -> doc
+            db_map = {t["name"]: t for t in db_trades}
+            
+            effective_trades = []
+            effective_groups = {}
+            
+            # Initialize with static groups but empty lists
+            for group in TRADE_CATEGORY_GROUPS:
+                effective_groups[group] = []
+
+            # Combine all names
+            all_names = list(set(NIGERIAN_TRADE_CATEGORIES + list(db_map.keys())))
+            
+            for name in all_names:
+                db_record = db_map.get(name)
+                is_static = name in NIGERIAN_TRADE_CATEGORIES
+                
+                # If it's inactive, skip it
+                if db_record and not db_record.get("active", True):
+                    continue
+                
+                # Determine group
+                group = "General Services"
+                if db_record and db_record.get("group"):
+                    group = db_record["group"]
+                elif is_static:
+                    # Find which static group it belongs to
+                    for g, trades in TRADE_CATEGORY_GROUPS.items():
+                        if name in trades:
+                            group = g
+                            break
+                
+                effective_trades.append(name)
+                if group not in effective_groups:
+                    effective_groups[group] = []
+                if name not in effective_groups[group]:
+                    effective_groups[group].append(name)
+            
+            effective_trades.sort()
+            
+            return {
+                "trades": effective_trades,
+                "groups": effective_groups
+            }
+        except Exception as e:
+            print(f"Error getting effective trades: {e}")
+            return {"trades": [], "groups": {}}
+
     async def get_custom_trades(self):
         """Get all custom trade categories added by admin"""
         try:
