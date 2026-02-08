@@ -2058,6 +2058,7 @@ class Database:
         from .models.trade_categories import NIGERIAN_TRADE_CATEGORIES
         
         all_trade_names = set()
+        static_names_lower = {n.lower() for n in NIGERIAN_TRADE_CATEGORIES}
         
         # Add static categories if not explicitly disabled in DB
         for name in NIGERIAN_TRADE_CATEGORIES:
@@ -2070,7 +2071,7 @@ class Database:
         
         # Add custom categories that are active
         for name, setting in db_settings.items():
-            if name not in NIGERIAN_TRADE_CATEGORIES and setting.get("active", True):
+            if name.lower() not in static_names_lower and setting.get("active", True):
                 all_trade_names.add(name)
         
         # Add categories from counts (in case some users have old categories)
@@ -2081,7 +2082,9 @@ class Database:
                 if setting.get("active", True):
                     all_trade_names.add(name)
             else:
-                all_trade_names.add(name)
+                # If it's not in DB settings, check if it's a static one (case-insensitive)
+                if name.lower() not in static_names_lower:
+                    all_trade_names.add(name)
 
         # 4. Build final list
         categories = []
@@ -5632,6 +5635,12 @@ class Database:
             from .models.trade_categories import NIGERIAN_TRADE_CATEGORIES
             old_name = (old_name or "").strip()
             new_name = (new_name or "").strip()
+            
+            # Find the actual static category name if it exists (case-insensitive)
+            static_match = next((n for n in NIGERIAN_TRADE_CATEGORIES if n.lower() == old_name.lower()), None)
+            if static_match:
+                old_name = static_match
+                
             now = datetime.now()
             
             # Prepare data
@@ -5696,21 +5705,26 @@ class Database:
             from .models.trade_categories import NIGERIAN_TRADE_CATEGORIES
             trade_name = (trade_name or "").strip()
             
-            # Check if it exists in DB
-            existing = await self.database.system_trades.find_one({"name": trade_name})
+            # Find actual static name if it exists (case-insensitive)
+            static_match = next((n for n in NIGERIAN_TRADE_CATEGORIES if n.lower() == trade_name.lower()), None)
+            if static_match:
+                trade_name = static_match
+                
+            # Check if it exists in DB (case-insensitive)
+            existing = await self.database.system_trades.find_one({"name": {"$regex": f"^{re.escape(trade_name)}$", "$options": "i"}})
             
             if existing:
                 # If it's in DB, we can either delete it or mark as inactive
                 # To support "hiding" static categories, we should mark as inactive if it's a static one
                 if trade_name in NIGERIAN_TRADE_CATEGORIES:
                     await self.database.system_trades.update_one(
-                        {"name": trade_name},
+                        {"_id": existing["_id"]},
                         {"$set": {"active": False, "updated_at": datetime.now()}}
                     )
                     return True
                 else:
                     # If it's purely custom, we can just delete it
-                    result = await self.database.system_trades.delete_one({"name": trade_name})
+                    result = await self.database.system_trades.delete_one({"_id": existing["_id"]})
                     return result.deleted_count > 0
             else:
                 # If not in DB but it's a static category, create an inactive record to hide it
@@ -5743,27 +5757,33 @@ class Database:
             
             effective_trades = []
             effective_groups = {}
+            trade_details = [] # Added for full trade info
+            static_names_lower = {n.lower() for n in NIGERIAN_TRADE_CATEGORIES}
             
             # Initialize with static groups but empty lists
             for group in TRADE_CATEGORY_GROUPS:
                 effective_groups[group] = []
 
-            # Combine all names
-            all_names = list(set(NIGERIAN_TRADE_CATEGORIES + list(db_map.keys())))
-            
-            for name in all_names:
+            # 1. Process static categories first
+            for name in NIGERIAN_TRADE_CATEGORIES:
                 db_record = db_map.get(name)
-                is_static = name in NIGERIAN_TRADE_CATEGORIES
                 
-                # If it's inactive, skip it
+                # If it's explicitly inactive in DB, skip it
                 if db_record and not db_record.get("active", True):
                     continue
                 
                 # Determine group
                 group = "General Services"
-                if db_record and db_record.get("group"):
-                    group = db_record["group"]
-                elif is_static:
+                description = ""
+                icon = "🛠️"
+                color = "from-blue-400 to-blue-600"
+
+                if db_record:
+                    if db_record.get("group"): group = db_record["group"]
+                    description = db_record.get("description", "")
+                    icon = db_record.get("icon", "🛠️")
+                    color = db_record.get("color", "from-blue-400 to-blue-600")
+                else:
                     # Find which static group it belongs to
                     for g, trades in TRADE_CATEGORY_GROUPS.items():
                         if name in trades:
@@ -5771,16 +5791,50 @@ class Database:
                             break
                 
                 effective_trades.append(name)
+                trade_details.append({
+                    "name": name,
+                    "group": group,
+                    "description": description,
+                    "icon": icon,
+                    "color": color,
+                    "is_static": True
+                })
+                if group not in effective_groups:
+                    effective_groups[group] = []
+                effective_groups[group].append(name)
+
+            # 2. Process custom categories from DB
+            for name, db_record in db_map.items():
+                # Skip if it's a static category (already handled) or inactive
+                if name.lower() in static_names_lower or not db_record.get("active", True):
+                    continue
+                    
+                group = db_record.get("group", "General Services")
+                description = db_record.get("description", "")
+                icon = db_record.get("icon", "🛠️")
+                color = db_record.get("color", "from-blue-400 to-blue-600")
+
+                effective_trades.append(name)
+                trade_details.append({
+                    "name": name,
+                    "group": group,
+                    "description": description,
+                    "icon": icon,
+                    "color": color,
+                    "is_static": False
+                })
                 if group not in effective_groups:
                     effective_groups[group] = []
                 if name not in effective_groups[group]:
                     effective_groups[group].append(name)
             
             effective_trades.sort()
+            trade_details.sort(key=lambda x: x["name"])
             
             return {
                 "trades": effective_trades,
-                "groups": effective_groups
+                "groups": effective_groups,
+                "trade_details": trade_details # Added
             }
         except Exception as e:
             print(f"Error getting effective trades: {e}")
@@ -5789,12 +5843,19 @@ class Database:
     async def get_custom_trades(self):
         """Get all custom trade categories added by admin"""
         try:
+            from .models.trade_categories import NIGERIAN_TRADE_CATEGORIES
+            static_names_lower = {n.lower() for n in NIGERIAN_TRADE_CATEGORIES}
+            
             trades = await self.database.system_trades.find({"active": True}).to_list(length=1000)
             trade_list = []
             groups = {}
             
             for trade in trades:
                 trade_name = trade["name"]
+                # Skip if it's a static category
+                if trade_name.lower() in static_names_lower:
+                    continue
+                    
                 trade_group = trade.get("group", "General Services")
                 
                 trade_list.append(trade_name)

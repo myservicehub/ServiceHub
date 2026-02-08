@@ -56,6 +56,8 @@ const AdminDashboard = () => {
   const [towns, setTowns] = useState([]);
   const [trades, setTrades] = useState([]);
   const [tradeGroups, setTradeGroups] = useState([]);
+  const [tradesByGroup, setTradesByGroup] = useState({});
+  const [tradeDetails, setTradeDetails] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   
@@ -251,6 +253,13 @@ const AdminDashboard = () => {
     })();
   }, [selectedNotification]);
 
+  const getTradeGroup = (tradeName) => {
+    for (const [group, members] of Object.entries(tradesByGroup)) {
+      if (members.includes(tradeName)) return group;
+    }
+    return 'General Services';
+  };
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -305,6 +314,8 @@ const AdminDashboard = () => {
           const data = await adminAPI.getAllTrades();
           console.log('Trade data received:', data);
           setTrades(data.trades || []);
+          setTradeDetails(data.trade_details || []);
+          setTradesByGroup(data.groups || {});
           // Extract group names from the groups object
           const groupNames = data.groups ? Object.keys(data.groups) : [];
           console.log('Extracted group names:', groupNames);
@@ -1975,10 +1986,11 @@ const AdminDashboard = () => {
                                         </>
                                       )}
                                     </div>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
+                                      </td>
+                                    </tr>
+                                  )
+                                  )}
+                              </tbody>
                           </table>
                         </div>
                         {/* Pagination */}
@@ -2988,18 +3000,24 @@ const AdminDashboard = () => {
                               const tradeName = formData.get('trade_name');
                               const group = formData.get('group');
                               const description = formData.get('description');
+                              const icon = formData.get('icon');
+                              const color = formData.get('color');
                               
                               console.log('Form submission data:', {
                                 tradeName,
                                 group,
-                                description
+                                description,
+                                icon,
+                                color
                               });
                               
                               try {
                                 const result = await adminAPI.addNewTrade(
                                   tradeName,
                                   group,
-                                  description
+                                  description,
+                                  icon,
+                                  color
                                 );
                                 console.log('API response:', result);
                                 
@@ -3048,7 +3066,9 @@ const AdminDashboard = () => {
                                     name="group"
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                   >
-                                    <option value="General Services">General Services</option>
+                                    {!tradeGroups.includes("General Services") && (
+                                      <option value="General Services">General Services</option>
+                                    )}
                                     {tradeGroups.map((group, index) => (
                                       <option key={index} value={group}>{group}</option>
                                     ))}
@@ -3063,6 +3083,32 @@ const AdminDashboard = () => {
                                     name="description"
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                     placeholder="Brief description"
+                                  />
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Icon (Emoji)
+                                  </label>
+                                  <input
+                                    type="text"
+                                    name="icon"
+                                    defaultValue="🛠️"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    placeholder="🛠️"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Color Class
+                                  </label>
+                                  <input
+                                    type="text"
+                                    name="color"
+                                    defaultValue="from-blue-400 to-blue-600"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Tailwind gradient class"
                                   />
                                 </div>
                               </div>
@@ -3110,26 +3156,41 @@ const AdminDashboard = () => {
                                 </tr>
                               </thead>
                               <tbody className="bg-white divide-y divide-gray-200">
-                                {trades.map((trade, index) => (
-                                  <tr key={index} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                      <div className="text-sm font-medium text-gray-900">
-                                        {trade}
-                                      </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                                        General Services
-                                      </span>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                      <div className="flex space-x-2">
-                                        <button
-                                          onClick={() => setEditingItem({ type: 'trade', name: trade })}
-                                          className="text-blue-600 hover:text-blue-900"
-                                        >
-                                          Edit
-                                        </button>
+                                {(tradeDetails.length > 0 ? tradeDetails : trades.map(t => ({ name: t, group: getTradeGroup(t) }))).map((tradeItem, index) => {
+                                  const trade = typeof tradeItem === 'string' ? tradeItem : tradeItem.name;
+                                  const group = typeof tradeItem === 'string' ? getTradeGroup(tradeItem) : tradeItem.group;
+                                  const icon = typeof tradeItem === 'string' ? '🛠️' : tradeItem.icon || '🛠️';
+                                  
+                                  return (
+                                    <tr key={index} className="hover:bg-gray-50">
+                                      <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="flex items-center">
+                                          <span className="mr-2 text-lg">{icon}</span>
+                                          <div className="text-sm font-medium text-gray-900">
+                                            {trade}
+                                          </div>
+                                        </div>
+                                      </td>
+                                      <td className="px-6 py-4 whitespace-nowrap">
+                                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                          {group}
+                                        </span>
+                                      </td>
+                                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <div className="flex space-x-2">
+                                          <button
+                                            onClick={() => setEditingItem({ 
+                                              type: 'trade', 
+                                              name: trade,
+                                              group: group,
+                                              description: tradeItem.description || '',
+                                              icon: tradeItem.icon || '🛠️',
+                                              color: tradeItem.color || 'from-blue-400 to-blue-600'
+                                            })}
+                                            className="text-blue-600 hover:text-blue-900"
+                                          >
+                                            Edit
+                                          </button>
                                         <button
                                           onClick={async () => {
                                             if (window.confirm(`Delete trade category "${trade}"?`)) {
@@ -3149,8 +3210,9 @@ const AdminDashboard = () => {
                                       </div>
                                     </td>
                                   </tr>
-                                ))}
-                              </tbody>
+                                );
+                              })}
+                            </tbody>
                             </table>
                           </div>
                         )}
@@ -4935,7 +4997,9 @@ const AdminDashboard = () => {
                     editingItem.name,
                     formData.get('new_name'),
                     formData.get('group'),
-                    formData.get('description')
+                    formData.get('description'),
+                    formData.get('icon'),
+                    formData.get('color')
                   );
                 }
                 
@@ -5010,9 +5074,13 @@ const AdminDashboard = () => {
                       </label>
                       <select
                         name="group"
+                        defaultValue={editingItem.group || "General Services"}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                       >
-                        <option value="General Services">General Services</option>
+                        {/* Only show "General Services" if it's not already in tradeGroups to avoid duplicates */}
+                        {!tradeGroups.includes("General Services") && (
+                          <option value="General Services">General Services</option>
+                        )}
                         {tradeGroups.map((group, index) => (
                           <option key={index} value={group}>{group}</option>
                         ))}
@@ -5025,9 +5093,36 @@ const AdminDashboard = () => {
                       <input
                         type="text"
                         name="description"
+                        defaultValue={editingItem.description || ""}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                         placeholder="Brief description"
                       />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Icon (Emoji)
+                        </label>
+                        <input
+                          type="text"
+                          name="icon"
+                          defaultValue={editingItem.icon || "🛠️"}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                          placeholder="🛠️"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Color Class
+                        </label>
+                        <input
+                          type="text"
+                          name="color"
+                          defaultValue={editingItem.color || "from-blue-400 to-blue-600"}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                          placeholder="Tailwind gradient class"
+                        />
+                      </div>
                     </div>
                   </>
                 )}
