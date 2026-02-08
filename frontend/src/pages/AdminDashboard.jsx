@@ -3000,24 +3000,18 @@ const AdminDashboard = () => {
                               const tradeName = formData.get('trade_name');
                               const group = formData.get('group');
                               const description = formData.get('description');
-                              const icon = formData.get('icon');
-                              const color = formData.get('color');
                               
                               console.log('Form submission data:', {
                                 tradeName,
                                 group,
-                                description,
-                                icon,
-                                color
+                                description
                               });
                               
                               try {
                                 const result = await adminAPI.addNewTrade(
                                   tradeName,
                                   group,
-                                  description,
-                                  icon,
-                                  color
+                                  description
                                 );
                                 console.log('API response:', result);
                                 
@@ -3086,32 +3080,6 @@ const AdminDashboard = () => {
                                   />
                                 </div>
                               </div>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Icon (Emoji)
-                                  </label>
-                                  <input
-                                    type="text"
-                                    name="icon"
-                                    defaultValue="🛠️"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                    placeholder="🛠️"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Color Class
-                                  </label>
-                                  <input
-                                    type="text"
-                                    name="color"
-                                    defaultValue="from-blue-400 to-blue-600"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                    placeholder="Tailwind gradient class"
-                                  />
-                                </div>
-                              </div>
                               <div className="flex space-x-2 mt-4">
                                 <button
                                   type="submit"
@@ -3159,13 +3127,11 @@ const AdminDashboard = () => {
                                 {(tradeDetails.length > 0 ? tradeDetails : trades.map(t => ({ name: t, group: getTradeGroup(t) }))).map((tradeItem, index) => {
                                   const trade = typeof tradeItem === 'string' ? tradeItem : tradeItem.name;
                                   const group = typeof tradeItem === 'string' ? getTradeGroup(tradeItem) : tradeItem.group;
-                                  const icon = typeof tradeItem === 'string' ? '🛠️' : tradeItem.icon || '🛠️';
                                   
                                   return (
                                     <tr key={index} className="hover:bg-gray-50">
                                       <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex items-center">
-                                          <span className="mr-2 text-lg">{icon}</span>
                                           <div className="text-sm font-medium text-gray-900">
                                             {trade}
                                           </div>
@@ -3183,9 +3149,7 @@ const AdminDashboard = () => {
                                               type: 'trade', 
                                               name: trade,
                                               group: group,
-                                              description: tradeItem.description || '',
-                                              icon: tradeItem.icon || '🛠️',
-                                              color: tradeItem.color || 'from-blue-400 to-blue-600'
+                                              description: tradeItem.description || ''
                                             })}
                                             className="text-blue-600 hover:text-blue-900"
                                           >
@@ -4977,33 +4941,32 @@ const AdminDashboard = () => {
               e.preventDefault();
               const formData = new FormData(e.target);
               
-              try {
-                if (editingItem.type === 'state') {
-                  await adminAPI.updateState(
-                    editingItem.name,
-                    formData.get('new_name'),
-                    formData.get('region'),
-                    formData.get('postcodes')
-                  );
-                } else if (editingItem.type === 'lga') {
-                  await adminAPI.updateLGA(
-                    editingItem.state,
-                    editingItem.name,
-                    formData.get('new_name'),
-                    formData.get('zip_codes')
-                  );
-                } else if (editingItem.type === 'trade') {
-                  await adminAPI.updateTrade(
-                    editingItem.name,
-                    formData.get('new_name'),
-                    formData.get('group'),
-                    formData.get('description'),
-                    formData.get('icon'),
-                    formData.get('color')
-                  );
-                }
-                
-                toast({ title: `${editingItem.type} updated successfully` });
+                              try {
+                                if (editingItem.type === 'state') {
+                                  await adminAPI.updateState(
+                                    editingItem.name,
+                                    formData.get('new_name'),
+                                    formData.get('region'),
+                                    formData.get('postcodes')
+                                  );
+                                } else if (editingItem.type === 'lga') {
+                                  await adminAPI.updateLGA(
+                                    editingItem.state,
+                                    editingItem.name,
+                                    formData.get('new_name'),
+                                    formData.get('zip_codes')
+                                  );
+                                } else if (editingItem.type === 'trade') {
+                                  // Use old name from editingItem.name, and new values from form
+                                  await adminAPI.updateTrade(
+                                    editingItem.name, // The original name to identify the record
+                                    formData.get('new_name'), // The potentially new name
+                                    formData.get('group'),
+                                    formData.get('description')
+                                  );
+                                }
+                                
+                                toast({ title: `${editingItem.type} updated successfully` });
                 setEditingItem(null);
                 fetchData();
               } catch (error) {
@@ -5097,32 +5060,6 @@ const AdminDashboard = () => {
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                         placeholder="Brief description"
                       />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Icon (Emoji)
-                        </label>
-                        <input
-                          type="text"
-                          name="icon"
-                          defaultValue={editingItem.icon || "🛠️"}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                          placeholder="🛠️"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Color Class
-                        </label>
-                        <input
-                          type="text"
-                          name="color"
-                          defaultValue={editingItem.color || "from-blue-400 to-blue-600"}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                          placeholder="Tailwind gradient class"
-                        />
-                      </div>
                     </div>
                   </>
                 )}

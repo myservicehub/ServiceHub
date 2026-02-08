@@ -5602,7 +5602,7 @@ class Database:
     # TRADE CATEGORIES MANAGEMENT METHODS (Admin)
     # ==========================================
     
-    async def add_new_trade(self, trade_name: str, group: str = "", description: str = "", icon: str = "🛠️", color: str = "from-blue-400 to-blue-600"):
+    async def add_new_trade(self, trade_name: str, group: str = "", description: str = ""):
         """Add a new trade category"""
         try:
             trade_doc = {
@@ -5610,8 +5610,6 @@ class Database:
                 "title": trade_name,
                 "group": group,
                 "description": description,
-                "icon": icon,
-                "color": color,
                 "created_at": datetime.now(),
                 "active": True
             }
@@ -5627,7 +5625,7 @@ class Database:
             print(f"Error adding trade: {e}")
             return False
     
-    async def update_trade(self, old_name: str, new_name: str, group: str = "", description: str = "", icon: str = None, color: str = None):
+    async def update_trade(self, old_name: str, new_name: str, group: str = "", description: str = ""):
         """Update an existing trade category.
         Supports updating both custom and static categories by handling renaming correctly.
         """
@@ -5653,12 +5651,6 @@ class Database:
             if description: update_set["description"] = description
             else: set_on_insert["description"] = ""
             
-            if icon: update_set["icon"] = icon
-            else: set_on_insert["icon"] = "🛠️"
-            
-            if color: update_set["color"] = color
-            else: set_on_insert["color"] = "from-blue-400 to-blue-600"
-
             if old_name == new_name:
                 # Just update the existing record
                 await self.database.system_trades.update_one(
