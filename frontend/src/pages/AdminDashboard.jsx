@@ -4957,7 +4957,7 @@ const AdminDashboard = () => {
                                     formData.get('zip_codes')
                                   );
                                 } else if (editingItem.type === 'trade') {
-                                  // Use old name from editingItem.name, and new values from form
+                                  // Use original name from editingItem.name to identify the record
                                   await adminAPI.updateTrade(
                                     editingItem.name, // The original name to identify the record
                                     formData.get('new_name'), // The potentially new name
