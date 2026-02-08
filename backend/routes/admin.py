@@ -1581,9 +1581,7 @@ async def get_all_trades():
 async def add_new_trade(
     trade_name: str = Form(...),
     group: str = Form("General Services"),
-    description: str = Form(""),
-    icon: str = Form("🛠️"),
-    color: str = Form("from-blue-400 to-blue-600")
+    description: str = Form("")
 ):
     """Add a new trade category"""
     
@@ -1595,7 +1593,7 @@ async def add_new_trade(
     if trade_name in NIGERIAN_TRADE_CATEGORIES:
         raise HTTPException(status_code=400, detail="Trade category already exists")
     
-    success = await database.add_new_trade(trade_name.strip(), group, description, icon, color)
+    success = await database.add_new_trade(trade_name.strip(), group, description)
     
     if not success:
         raise HTTPException(status_code=500, detail="Failed to add trade category")
@@ -1620,16 +1618,14 @@ async def update_trade(
     trade_name: str,
     new_name: str = Form(...),
     group: str = Form(""),
-    description: str = Form(""),
-    icon: str = Form(None),
-    color: str = Form(None)
+    description: str = Form("")
 ):
     """Update an existing trade category"""
     
     if not new_name.strip():
         raise HTTPException(status_code=400, detail="Trade name is required")
-    
-    success = await database.update_trade(trade_name, new_name.strip(), group, description, icon, color)
+
+    success = await database.update_trade(trade_name.strip(), new_name.strip(), group, description)
     
     if not success:
         raise HTTPException(status_code=404, detail="Trade category not found")
@@ -1654,9 +1650,7 @@ async def update_trade_by_form(
     old_name: str = Form(...),
     new_name: str = Form(...),
     group: str = Form(""),
-    description: str = Form(""),
-    icon: str = Form(None),
-    color: str = Form(None)
+    description: str = Form("")
 ):
     """Update trade category using form body instead of path param.
     Helps avoid proxy/path encoding issues for names with special characters.
@@ -1664,7 +1658,7 @@ async def update_trade_by_form(
     if not new_name.strip():
         raise HTTPException(status_code=400, detail="Trade name is required")
 
-    success = await database.update_trade(old_name.strip(), new_name.strip(), group, description, icon, color)
+    success = await database.update_trade(old_name.strip(), new_name.strip(), group, description)
     
     if not success:
         # Determine if static trade exists to provide clearer error
