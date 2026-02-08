@@ -5608,15 +5608,23 @@ class Database:
             trade_doc = {
                 "name": trade_name,
                 "title": trade_name,
-                "group": group,
-                "description": description,
+                "group": group or "General Services",
+                "description": description or "",
                 "created_at": datetime.now(),
+                "updated_at": datetime.now(),
                 "active": True
             }
             
-            # Check if trade already exists
-            existing = await self.database.system_trades.find_one({"name": trade_name})
+            # Check if trade already exists (case-insensitive)
+            existing = await self.database.system_trades.find_one({"name": {"$regex": f"^{re.escape(trade_name)}$", "$options": "i"}})
             if existing:
+                # If it's a tombstone, reactivate it instead of failing
+                if existing.get("is_tombstone") or not existing.get("active", True):
+                    await self.database.system_trades.update_one(
+                        {"_id": existing["_id"]},
+                        {"$set": {"active": True, "is_tombstone": False, "updated_at": datetime.now(), "group": group or "General Services", "description": description or ""}}
+                    )
+                    return True
                 return False
             
             await self.database.system_trades.insert_one(trade_doc)
@@ -5643,26 +5651,20 @@ class Database:
             
             # Prepare data
             update_set = {"name": new_name, "title": new_name, "updated_at": now, "active": True}
-            set_on_insert = {"created_at": now}
-            
             if group: update_set["group"] = group
-            else: set_on_insert["group"] = "General Services"
+            if description is not None: update_set["description"] = description
             
-            if description: update_set["description"] = description
-            else: set_on_insert["description"] = ""
-            
-            if old_name == new_name:
-                # Just update the existing record
-                await self.database.system_trades.update_one(
-                    {"name": {"$regex": f"^{re.escape(old_name)}$", "$options": "i"}},
-                    {"$set": update_set, "$setOnInsert": set_on_insert},
-                    upsert=True
-                )
-                return True
-            else:
-                # Renaming logic
-                if old_name in NIGERIAN_TRADE_CATEGORIES:
-                    # 1. Create tombstone for static category
+            # Case 1: Updating a static trade category
+            if old_name in NIGERIAN_TRADE_CATEGORIES:
+                if old_name == new_name:
+                    # Just update the override in DB
+                    await self.database.system_trades.update_one(
+                        {"name": {"$regex": f"^{re.escape(old_name)}$", "$options": "i"}},
+                        {"$set": update_set, "$setOnInsert": {"created_at": now}},
+                        upsert=True
+                    )
+                else:
+                    # Renaming a static trade -> Create a tombstone for old and new record for new name
                     await self.database.system_trades.update_one(
                         {"name": {"$regex": f"^{re.escape(old_name)}$", "$options": "i"}},
                         {"$set": {
@@ -5673,20 +5675,44 @@ class Database:
                         }},
                         upsert=True
                     )
-                    # 2. Upsert new category record
                     await self.database.system_trades.update_one(
                         {"name": {"$regex": f"^{re.escape(new_name)}$", "$options": "i"}},
-                        {"$set": update_set, "$setOnInsert": set_on_insert},
-                        upsert=True
-                    )
-                else:
-                    # Custom trade renaming - just update the old record to new name
-                    await self.database.system_trades.update_one(
-                        {"name": {"$regex": f"^{re.escape(old_name)}$", "$options": "i"}},
-                        {"$set": update_set, "$setOnInsert": set_on_insert},
+                        {"$set": update_set, "$setOnInsert": {"created_at": now}},
                         upsert=True
                     )
                 return True
+
+            # Case 2: Updating a custom trade category
+            # Find the existing custom trade record
+            existing = await self.database.system_trades.find_one({"name": {"$regex": f"^{re.escape(old_name)}$", "$options": "i"}})
+            if not existing:
+                # If not in DB, it might be a static trade that wasn't in our NIGERIAN_TRADE_CATEGORIES list
+                # or a custom trade that was deleted. Let's try to create it if it doesn't exist.
+                await self.database.system_trades.update_one(
+                    {"name": {"$regex": f"^{re.escape(new_name)}$", "$options": "i"}},
+                    {"$set": update_set, "$setOnInsert": {"created_at": now}},
+                    upsert=True
+                )
+                return True
+
+            # Check if we are renaming to a name that already exists
+            if old_name.lower() != new_name.lower():
+                conflict = await self.database.system_trades.find_one({"name": {"$regex": f"^{re.escape(new_name)}$", "$options": "i"}})
+                if conflict:
+                    # If conflict exists, we delete the old one and update the conflict record
+                    await self.database.system_trades.delete_one({"_id": existing["_id"]})
+                    await self.database.system_trades.update_one(
+                        {"_id": conflict["_id"]},
+                        {"$set": update_set}
+                    )
+                    return True
+
+            # Standard update for custom trade
+            await self.database.system_trades.update_one(
+                {"_id": existing["_id"]},
+                {"$set": update_set}
+            )
+            return True
         except Exception as e:
             print(f"Error updating trade: {e}")
             return False
