@@ -5400,14 +5400,17 @@ class Database:
         try:
             trade_doc = {
                 "name": trade_name,
-                "group": group,
-                "description": description,
+                "group": group or "General Services",
+                "description": description or "",
                 "created_at": datetime.now(),
+                "updated_at": datetime.now(),
                 "active": True
             }
             
-            # Check if trade already exists
-            existing = await self.database.system_trades.find_one({"name": trade_name})
+            # Check if trade already exists (case-insensitive)
+            existing = await self.database.system_trades.find_one(
+                {"name": {"$regex": f"^{re.escape(trade_name)}$", "$options": "i"}}
+            )
             if existing:
                 return False
             
@@ -5418,59 +5421,41 @@ class Database:
             return False
     
     async def update_trade(self, old_name: str, new_name: str, group: str = "", description: str = ""):
-        """Update an existing trade category.
-        Supports updating both custom and static categories by upserting a record when not present.
-        """
+        """Update an existing trade category."""
         try:
             old_name = (old_name or "").strip()
             new_name = (new_name or "").strip()
             now = datetime.now()
             
             update_set = {"name": new_name, "updated_at": now}
-            set_on_insert = {
-                "active": True,
-                "created_at": now
-            }
-
-            # Only set optional fields in update_set when provided
-            # If provided, they will be set on insert via $set too.
-            # If NOT provided, we need a default for insert, but don't want to overwrite existing.
             if group:
                 update_set["group"] = group
-            else:
-                set_on_insert["group"] = "General Services"
-
-            if description:
+            if description is not None:
                 update_set["description"] = description
-            else:
-                set_on_insert["description"] = ""
 
             # First, check if the trade exists with the old name
             existing = await self.database.system_trades.find_one(
                 {"name": {"$regex": f"^{re.escape(old_name)}$", "$options": "i"}}
             )
             
-            print(f"DEBUG: Looking for old_name='{old_name}', new_name='{new_name}'")
-            print(f"DEBUG: Found existing trade: {existing}")
-            
-            # Only update if the trade exists - never create new ones on update
             if not existing:
-                print(f"DEBUG: Trade not found, returning False")
                 return False
             
+            # If we are renaming, check if the new name already exists
+            if old_name.lower() != new_name.lower():
+                conflict = await self.database.system_trades.find_one(
+                    {"name": {"$regex": f"^{re.escape(new_name)}$", "$options": "i"}}
+                )
+                if conflict:
+                    # New name already exists, cannot rename to it
+                    return False
+
             result = await self.database.system_trades.update_one(
-                {"name": {"$regex": f"^{re.escape(old_name)}$", "$options": "i"}},
-                {
-                    "$set": update_set
-                },
-                upsert=False
+                {"_id": existing["_id"]},
+                {"$set": update_set}
             )
 
-            # Treat a matched document (even when no fields changed) as success
-            matched = getattr(result, "matched_count", 0) > 0
-            modified = getattr(result, "modified_count", 0) > 0
-            print(f"DEBUG: Update result - matched: {matched}, modified: {modified}")
-            return matched or modified
+            return result.matched_count > 0
         except Exception as e:
             print(f"Error updating trade: {e}")
             import traceback
