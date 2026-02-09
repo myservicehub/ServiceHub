@@ -5410,6 +5410,15 @@ class Database:
             else:
                 set_on_insert["description"] = ""
 
+            # First, check if the trade exists with the old name
+            existing = await self.database.system_trades.find_one(
+                {"name": {"$regex": f"^{re.escape(old_name)}$", "$options": "i"}}
+            )
+            
+            # Only update if the trade exists - never create new ones on update
+            if not existing:
+                return False
+            
             result = await self.database.system_trades.update_one(
                 {"name": {"$regex": f"^{re.escape(old_name)}$", "$options": "i"}},
                 {
@@ -5418,23 +5427,10 @@ class Database:
                 upsert=False
             )
 
-            # Treat a matched document (even when no fields changed) as success to
-            # avoid misleading 404 "not found" errors on no-op updates.
+            # Treat a matched document (even when no fields changed) as success
             matched = getattr(result, "matched_count", 0) > 0
             modified = getattr(result, "modified_count", 0) > 0
-            upserted = getattr(result, "upserted_id", None) is not None
-            if matched or modified or upserted:
-                return True
-
-            # Fallback: try matching by new_name in case existing record already uses new label
-            result2 = await self.database.system_trades.update_one(
-                {"name": {"$regex": f"^{re.escape(new_name)}$", "$options": "i"}},
-                {"$set": update_set},
-                upsert=False
-            )
-            matched2 = getattr(result2, "matched_count", 0) > 0
-            modified2 = getattr(result2, "modified_count", 0) > 0
-            return matched2 or modified2
+            return matched or modified
         except Exception as e:
             print(f"Error updating trade: {e}")
             return False
