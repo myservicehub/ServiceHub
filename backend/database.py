@@ -3211,14 +3211,15 @@ class Database:
         return result.modified_count > 0
 
     @time_it
-    async def get_jobs_with_access_fees(self, skip: int = 0, limit: int = 20) -> List[dict]:
+    async def get_jobs_with_access_fees(self, skip: int = 0, limit: int = 20) -> tuple[List[dict], int]:
         """Get all jobs with access fees for admin management (optimized)"""
         import asyncio
+        total_count = await self.database.jobs.count_documents({})
         cursor = self.database.jobs.find({}).sort("created_at", -1).skip(skip).limit(limit)
         jobs = await cursor.to_list(length=limit)
         
         if not jobs:
-            return []
+            return [], total_count
 
         # Extract IDs for batch fetching
         homeowner_ids = set()
@@ -3274,7 +3275,7 @@ class Database:
                 
             final_jobs.append(job)
             
-        return final_jobs
+        return final_jobs, total_count
 
     def _enrich_job_homeowner(self, job: dict, users_map: dict, job_counts_map: dict = None) -> dict:
         """Helper to enrich job with homeowner information from lookup map"""

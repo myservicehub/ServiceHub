@@ -1907,7 +1907,12 @@ const AdminDashboard = () => {
                                 <tr key={job.id} className="hover:bg-gray-50">
                                   <td className="px-6 py-4">
                                     <div>
-                                      <div className="font-medium text-gray-900 mb-1">{job.title}</div>
+                                      <div 
+                                        className="font-medium text-gray-900 mb-1 cursor-pointer hover:text-blue-600 transition-colors"
+                                        onClick={() => handleViewJobDetails(job)}
+                                      >
+                                        {job.title}
+                                      </div>
                                       <div className="text-sm text-gray-600 line-clamp-2">{job.description}</div>
                                       <div className="mt-1">
                                         <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
@@ -1972,6 +1977,12 @@ const AdminDashboard = () => {
                                       ) : (
                                         <>
                                           <button
+                                            onClick={() => handleViewJobDetails(job)}
+                                            className="text-indigo-600 hover:text-indigo-900 text-sm font-medium mr-2"
+                                          >
+                                            View Details
+                                          </button>
+                                          <button
                                             onClick={() => setEditingJobFee(job.id)}
                                             className="text-blue-600 hover:text-blue-900 text-sm font-medium"
                                           >
@@ -1996,7 +2007,7 @@ const AdminDashboard = () => {
                         {/* Pagination */}
                         <div className="px-6 py-4 border-t flex justify-between items-center bg-gray-50">
                           <div className="text-sm text-gray-500">
-                            Showing {(feesPage - 1) * feesLimit + 1} to {Math.min(feesPage * feesLimit, feesTotal)} of {feesTotal} entries
+                            Showing jobs {(feesPage - 1) * feesLimit + 1}–{Math.min(feesPage * feesLimit, feesTotal)} of {feesTotal}
                           </div>
                           <div className="flex space-x-2">
                             <button

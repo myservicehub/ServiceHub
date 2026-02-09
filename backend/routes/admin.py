@@ -106,7 +106,7 @@ async def reject_wallet_funding(
 async def get_jobs_with_access_fees(skip: int = 0, limit: int = 20):
     """Get all jobs with their access fees for admin management"""
     
-    jobs = await database.get_jobs_with_access_fees(skip=skip, limit=limit)
+    jobs, total_count = await database.get_jobs_with_access_fees(skip=skip, limit=limit)
     
     # Format jobs for admin view
     formatted_jobs = []
@@ -138,7 +138,7 @@ async def get_jobs_with_access_fees(skip: int = 0, limit: int = 20):
         "pagination": {
             "skip": skip,
             "limit": limit,
-            "total": len(formatted_jobs)
+            "total": total_count
         }
     }
 
