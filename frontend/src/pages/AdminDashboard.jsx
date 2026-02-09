@@ -25,6 +25,10 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('funding');
   const fundingTabRef = useRef(null);
   const usersTabRef = useRef(null);
+  const feesTabRef = useRef(null);
+  const reviewsTabRef = useRef(null);
+  const notificationsTabRef = useRef(null);
+  const questionsTabRef = useRef(null);
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [fundingRequests, setFundingRequests] = useState([]);
   const [jobs, setJobs] = useState([]);
@@ -232,6 +236,26 @@ const AdminDashboard = () => {
     if (!isLoggedIn || activeTab !== 'users') return;
     usersTabRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [usersPage]);
+
+  useEffect(() => {
+    if (!isLoggedIn || activeTab !== 'fees') return;
+    feesTabRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [feesPage]);
+
+  useEffect(() => {
+    if (!isLoggedIn || activeTab !== 'reviews-management') return;
+    reviewsTabRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [reviewsPage]);
+
+  useEffect(() => {
+    if (!isLoggedIn || activeTab !== 'notifications') return;
+    notificationsTabRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [notificationPage]);
+
+  useEffect(() => {
+    if (!isLoggedIn || activeTab !== 'skills') return;
+    questionsTabRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [questionsPage]);
 
   useEffect(() => {
     if (!isLoggedIn || activeTab !== 'reviews-management') return;
@@ -1841,7 +1865,7 @@ const AdminDashboard = () => {
 
               {/* Job Access Fees Management Tab */}
               {activeTab === 'fees' && (
-                <div className="space-y-6">
+                <div ref={feesTabRef} className="space-y-6">
                   <div className="flex justify-between items-center">
                     <h2 className="text-xl font-semibold">Job Access Fees Management</h2>
                     <div className="flex space-x-2">
@@ -3197,9 +3221,9 @@ const AdminDashboard = () => {
                 </div>
               )}
 
-              {/* Skills Questions Management Tab */}
+              {/* Skills Test Questions Management Tab */}
               {activeTab === 'skills' && (
-                <div className="space-y-6">
+                <div ref={questionsTabRef} className="space-y-6">
                   <div className="flex justify-between items-center">
                     <h2 className="text-xl font-semibold">Skills Test Questions Management</h2>
                     <button
@@ -3923,7 +3947,7 @@ const AdminDashboard = () => {
 
               {/* Notifications Management Tab */}
               {activeTab === 'notifications' && (
-                <div className="space-y-6">
+                <div ref={notificationsTabRef} className="space-y-6">
                   <div className="flex justify-between items-center">
                     <h2 className="text-xl font-semibold">Notifications Management</h2>
                     <button
@@ -4373,7 +4397,7 @@ const AdminDashboard = () => {
               )}
 
               {activeTab === 'reviews-management' && (
-                <div className="space-y-6">
+                <div ref={reviewsTabRef} className="space-y-6">
                   <div className="flex justify-between items-center">
                     <h2 className="text-xl font-semibold">Homeowner Reviews Management</h2>
                     <div className="flex items-center space-x-3">
