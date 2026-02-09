@@ -62,7 +62,8 @@ const ReviewsSection = () => {
       ...review,
       homeowner_name: homeowner_name || 'Unknown',
       comment: review.content || review.comment, // Handle both content and comment fields
-      location: review.job_location || review.location || 'Unknown Location'
+      location: review.tradesperson_location || review.job_location || review.location || 'Unknown Location',
+      tradesperson_display_name: review.tradesperson_name
     };
   };
 
@@ -135,7 +136,12 @@ const ReviewsSection = () => {
   }, [loading, displayReviews, companyByTpId]);
 
   const getCompanyDisplayName = (review) => {
-    // Strictly use company names for display; avoid personal names
+    // Priority 1: Use the explicit tradesperson_display_name attached by backend
+    if (review.tradesperson_display_name && review.tradesperson_display_name.trim()) {
+      return review.tradesperson_display_name.trim();
+    }
+    
+    // Priority 2: Use existing company name fields from the review object
     const fromReview = review.company_name || review.business_name || review.tradesperson_company;
     if (fromReview && typeof fromReview === 'string' && fromReview.trim()) {
       return fromReview.trim();

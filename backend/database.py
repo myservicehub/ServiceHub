@@ -2040,9 +2040,14 @@ class Database:
         """Get featured reviews for homepage"""
         if not self.connected or self.database is None:
             return []
-        # Be lenient: show recent high-rated reviews regardless of legacy/advanced schema
+        
+        # Be lenient: show recent high-rated reviews. 
+        # If there are very few reviews, we lower the rating threshold to ensure the slider isn't empty.
+        total_count = await self.get_reviews_count()
+        threshold = 4 if total_count > 3 else 1 # Show anything if very few reviews
+        
         filters = {
-            'rating': {'$gte': 4}
+            'rating': {'$gte': threshold}
         }
         reviews = await self.get_reviews(limit=limit, filters=filters)
 
@@ -2056,12 +2061,20 @@ class Database:
             if 'review_type' not in review:
                 review['review_type'] = 'homeowner_to_tradesperson'
 
-            # Attach job location when available
+            # Attach job location and tradesperson details when available
             job_id = review.get('job_id')
             if job_id:
                 job = await self.get_job_by_id(job_id)
                 if job:
                     review['job_location'] = job.get('location', '')
+
+            # Attach tradesperson's trading name and location
+            tp_id = review.get('tradesperson_id') or review.get('reviewee_id')
+            if tp_id:
+                tp = await self.get_user_by_id(tp_id)
+                if tp:
+                    review['tradesperson_name'] = tp.get('company_name') or tp.get('name', 'Trusted Tradesperson')
+                    review['tradesperson_location'] = tp.get('location', 'Unknown Location')
 
         return reviews
 
