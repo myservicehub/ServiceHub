@@ -18,7 +18,7 @@ try:
     from .models.auth import UserRole
     from .models.reviews import (
         Review, ReviewCreate, ReviewSummary, ReviewRequest, 
-        ReviewStats, ReviewType, ReviewStatus, ExternalReviewInvitation
+        ReviewStats, ReviewType, ReviewStatus
     )
     from .models.admin import AdminRole, AdminStatus, AdminActivityType
 except ImportError:
@@ -29,7 +29,7 @@ except ImportError:
     from models.auth import UserRole
     from models.reviews import (
         Review, ReviewCreate, ReviewSummary, ReviewRequest, 
-        ReviewStats, ReviewType, ReviewStatus, ExternalReviewInvitation
+        ReviewStats, ReviewType, ReviewStatus
     )
     from models.admin import AdminRole, AdminStatus, AdminActivityType
 
@@ -154,7 +154,7 @@ class Database:
                         [("public_id", 1)],
                         name="unique_public_id",
                         unique=True,
-                        partialFilterExpression={"public_id": {"$type": "string"}}
+                        partialFilterExpression={"public_id", {"$type": "string"}}
                     )
                 except Exception as idx_err:
                     logger.warning(f"Failed to ensure users public_id index: {idx_err}")
@@ -255,7 +255,7 @@ class Database:
                     # This is essential because get_jobs() queries with: status='active' AND expires_at > now
                     await self.database.jobs.create_index(
                         [("status", 1), ("expires_at", 1), ("created_at", -1)],
-                        name="jobs_status_expiresAt_createdAt"
+                        name="jobs_status_expires_createdAt"
                     )
 
                     # Quotes indexes
@@ -341,13 +341,6 @@ class Database:
         if self.database is None:
             raise RuntimeError("Database unavailable: users collection not accessible")
         return self.database.users
-
-    @property
-    def external_review_invitations_collection(self):
-        """Access to external review invitations collection"""
-        if self.database is None:
-            raise RuntimeError("Database unavailable: external review invitations collection not accessible")
-        return self.database.external_review_invitations
 
     # Newsletter subscription operations
     async def get_newsletter_subscriber_by_email(self, email: str) -> Optional[dict]:
@@ -1063,9 +1056,7 @@ class Database:
         if job:
             job_id_str = str(job['_id'])
             job['_id'] = job_id_str
-            # Don't overwrite numeric id if it exists
-            if 'id' not in job:
-                job['id'] = job_id_str
+            job['id'] = job_id_str
         return job
 
     @time_it
@@ -1080,15 +1071,7 @@ class Database:
             # For public job listings, only show active and non-expired jobs
             if 'status' not in query:
                 query['status'] = 'active'
-            
-            # Handle jobs that might not have an expires_at field or have it as None
-            # Only add expires_at filter if it's not already in the query
-            if 'expires_at' not in query:
-                query['$or'] = [
-                    {'expires_at': {'$gt': datetime.utcnow()}},
-                    {'expires_at': {'$exists': False}},
-                    {'expires_at': None}
-                ]
+            query['expires_at'] = {'$gt': datetime.utcnow()}
         
         try:
             cursor = self.database.jobs.find(query).sort("created_at", -1).skip(skip).limit(limit)
@@ -1100,9 +1083,7 @@ class Database:
         for job in jobs:
             job_id_str = str(job['_id'])
             job['_id'] = job_id_str
-            # Don't overwrite numeric id if it exists
-            if 'id' not in job:
-                job['id'] = job_id_str
+            job['id'] = job_id_str
         return jobs
 
     # ==========================================
@@ -1742,8 +1723,7 @@ class Database:
                 "max_price": 0
             }
 
-    async def get_jobs_for_quoting(self, tradesperson_id: str, trade_categories: List[str], 
-                                   tradesperson_location: str = None, skip: int = 0, limit: int = 10) -> List[dict]:
+    async def get_jobs_for_quoting(self, tradesperson_id: str, trade_categories: List[str], skip: int = 0, limit: int = 10) -> List[dict]:
         """Get jobs available for a tradesperson to quote on (optimized)"""
         # Build query for jobs in tradesperson's categories
         match_query = {
@@ -1754,12 +1734,6 @@ class Database:
         if trade_categories:
             # Use $in for faster matching
             match_query["category"] = {"$in": trade_categories}
-
-        # Apply location filtering if provided (Lagos jobs for Lagos tradespeople, etc.)
-        if tradesperson_location:
-            # We use $regex to match the state in the location field for flexibility,
-            # but usually the location field itself is the state name.
-            match_query["location"] = {"$regex": f"^{re.escape(tradesperson_location)}$", "$options": "i"}
         
         # Get jobs and exclude ones already quoted on
         pipeline = [
@@ -1812,8 +1786,7 @@ class Database:
         jobs = await self.database.jobs.aggregate(pipeline).to_list(None)
         return jobs
 
-    async def get_available_jobs_count_for_quoting(self, tradesperson_id: str, trade_categories: List[str], 
-                                                  tradesperson_location: str = None) -> int:
+    async def get_available_jobs_count_for_quoting(self, tradesperson_id: str, trade_categories: List[str]) -> int:
         """Count available jobs for a tradesperson (optimized)"""
         match_query = {
             "status": "active",
@@ -1822,10 +1795,6 @@ class Database:
         
         if trade_categories:
             match_query["category"] = {"$in": trade_categories}
-
-        # Apply location filtering if provided
-        if tradesperson_location:
-            match_query["location"] = {"$regex": f"^{re.escape(tradesperson_location)}$", "$options": "i"}
         
         pipeline = [
             {"$match": match_query},
@@ -1908,11 +1877,9 @@ class Database:
             custom_data = await self.get_custom_trades()
             custom_trades = custom_data.get("trades", []) if custom_data else []
             total_categories = len(set(NIGERIAN_TRADE_CATEGORIES + custom_trades))
-            all_states = await self.get_all_states_dynamic()
             return {
                 "total_tradespeople": 0,
                 "total_categories": total_categories,
-                "total_states": len(all_states),
                 "total_reviews": 0,
                 "average_rating": 0.0,
                 "total_jobs": 0,
@@ -1944,24 +1911,34 @@ class Database:
             "status": "active"
         })
         
-        # Get total available categories and states
+        # Get total available categories from static trade categories
         try:
             from models.trade_categories import NIGERIAN_TRADE_CATEGORIES
+            # Get custom trades from database
             custom_data = await self.get_custom_trades()
             custom_trades = custom_data.get("trades", []) if custom_data else []
-            total_categories = len(set(NIGERIAN_TRADE_CATEGORIES + custom_trades))
             
-            all_states = await self.get_all_states_dynamic()
-            total_states = len(all_states)
+            # Combine static and custom trades
+            all_trades = list(set(NIGERIAN_TRADE_CATEGORIES + custom_trades))
+            total_categories = len(all_trades)
         except Exception as e:
-            logger.error(f"Error getting counts: {e}")
-            total_categories = 28 # Fallback
-            total_states = 8 # Fallback
+            logger.error(f"Error getting categories count: {e}")
+            # Fallback: count unique categories from tradespeople
+            users_with_categories = await self.database.users.find(
+                {"role": "tradesperson", "trade_categories": {"$exists": True, "$ne": None}},
+                {"trade_categories": 1}
+            ).to_list(length=None)
+            
+            all_categories = set()
+            for user in users_with_categories:
+                trade_categories = user.get("trade_categories", [])
+                if trade_categories:
+                    all_categories.update(trade_categories)
+            total_categories = len(all_categories)
 
         return {
             "total_tradespeople": total_tradespeople,
             "total_categories": total_categories,
-            "total_states": total_states,
             "total_reviews": total_reviews,
             "average_rating": average_rating,
             "total_jobs": total_jobs,
@@ -1970,9 +1947,9 @@ class Database:
 
     # Category operations
     async def get_categories_with_counts(self) -> List[dict]:
-        """Get all categories with tradesperson counts, merging static and dynamic trades"""
-        # Default metadata for standard categories
-        default_meta = {
+        # Prepare friendly display metadata keyed by actual category names stored on users
+        # These names align with values in users.trade_categories
+        friendly_details = {
             "Building": {
                 "title": "Building & Construction",
                 "description": "From foundation to roofing, find experienced builders for your construction projects. Quality workmanship guaranteed.",
@@ -2020,27 +1997,10 @@ class Database:
                     "tradesperson_count": 0,
                     **{k: v for k, v in meta.items() if k in ("description", "icon", "color", "title")}
                 }
-                for name, meta in default_meta.items()
+                for name, meta in friendly_details.items()
             ]
 
-        # 1. Get all trade settings from system_trades (active and inactive)
-        db_trades_cursor = self.database.system_trades.find({})
-        db_trades_list = await db_trades_cursor.to_list(length=None)
-        
-        # Create a map for metadata and active status
-        db_settings = {}
-        for ct in db_trades_list:
-            name = ct.get("name")
-            if name:
-                db_settings[name] = {
-                    "title": ct.get("title") or name,
-                    "description": ct.get("description", ""),
-                    "icon": ct.get("icon", "🛠️"),
-                    "color": ct.get("color", "from-gray-400 to-gray-600"),
-                    "active": ct.get("active", True)
-                }
-
-        # 2. Aggregate to count tradespeople by category from users collection
+        # Aggregate to count tradespeople by category from users collection
         pipeline = [
             {"$match": {"role": "tradesperson", "trade_categories": {"$exists": True, "$ne": None}}},
             {"$unwind": "$trade_categories"},
@@ -2051,70 +2011,38 @@ class Database:
             {"$sort": {"count": -1}}
         ]
         
-        agg_results = await self.database.users.aggregate(pipeline).to_list(None)
-        counts = {r["_id"]: r["count"] for r in agg_results}
+        results = await self.database.users.aggregate(pipeline).to_list(None)
 
-        # 3. Get all unique trade names (from static config + DB + aggregation results)
-        from .models.trade_categories import NIGERIAN_TRADE_CATEGORIES
-        
-        all_trade_names = set()
-        static_names_lower = {n.lower() for n in NIGERIAN_TRADE_CATEGORIES}
-        
-        # Add static categories if not explicitly disabled in DB
-        for name in NIGERIAN_TRADE_CATEGORIES:
-            setting = db_settings.get(name)
-            if setting:
-                if setting.get("active", True):
-                    all_trade_names.add(name)
-            else:
-                all_trade_names.add(name)
-        
-        # Add custom categories that are active
-        for name, setting in db_settings.items():
-            if name.lower() not in static_names_lower and setting.get("active", True):
-                all_trade_names.add(name)
-        
-        # Add categories from counts (in case some users have old categories)
-        # but only if they are not explicitly disabled
-        for name in counts.keys():
-            setting = db_settings.get(name)
-            if setting:
-                if setting.get("active", True):
-                    all_trade_names.add(name)
-            else:
-                # If it's not in DB settings, check if it's a static one (case-insensitive)
-                if name.lower() not in static_names_lower:
-                    all_trade_names.add(name)
-
-        # 4. Build final list
+        # Build categories including all found results, with friendly metadata when available
         categories = []
-        for name in all_trade_names:
-            # Metadata priority: Database > Default Meta > Minimal Fallback
-            setting = db_settings.get(name)
-            meta = setting or default_meta.get(name) or {}
-            
+        for result in results:
+            category_name = result.get("_id")
+            count = result.get("count", 0)
+            meta = friendly_details.get(category_name, {})
+
+            # Ensure minimal fields are present even if metadata is missing
             entry = {
-                "name": name,
-                "title": meta.get("title") or name,
-                "description": meta.get("description", f"Find professional {name} services in your area."),
-                "icon": meta.get("icon", "🛠️"),
-                "color": meta.get("color", "from-blue-400 to-blue-600"),
-                "tradesperson_count": counts.get(name, 0)
+                "name": category_name,
+                "title": meta.get("title", category_name),
+                "tradesperson_count": count,
             }
+
+            # Attach optional presentation fields if available
+            for key in ("description", "icon", "color"):
+                if key in meta:
+                    entry[key] = meta[key]
+
             categories.append(entry)
 
-        # Sort by count (descending), then name
-        categories.sort(key=lambda x: (-x["tradesperson_count"], x["name"]))
         return categories
 
     async def get_featured_reviews(self, limit: int = 6) -> List[dict]:
         """Get featured reviews for homepage"""
         if not self.connected or self.database is None:
             return []
-        # Be lenient: show recent reviews. We'll show reviews with rating >= 3
-        # so that users with few reviews can still see them in the featured section.
+        # Be lenient: show recent high-rated reviews regardless of legacy/advanced schema
         filters = {
-            'rating': {'$gte': 3}
+            'rating': {'$gte': 4}
         }
         reviews = await self.get_reviews(limit=limit, filters=filters)
 
@@ -2446,7 +2374,7 @@ class Database:
         return self.database.hiring_status
 
     # Review Management Methods (Trust & Quality System)
-    async def create_advanced_review(self, review: Review) -> Review:
+    async def create_review(self, review: Review) -> Review:
         """Create a new review"""
         review_dict = review.dict()
         review_dict["_id"] = review_dict["id"]
@@ -2787,18 +2715,13 @@ class Database:
         """Update cached review summary for user (internal method)"""
         summary = await self.get_user_review_summary(user_id)
         
-        # Add null checks for summary data
-        total_reviews = summary.total_reviews if summary and hasattr(summary, 'total_reviews') else 0
-        average_rating = summary.average_rating if summary and hasattr(summary, 'average_rating') else 0.0
-        recommendation_percentage = summary.recommendation_percentage if summary and hasattr(summary, 'recommendation_percentage') else 0.0
-
         # Update user profile with review stats
         await self.database.users.update_one(
             {"id": user_id},
             {"$set": {
-                "total_reviews": total_reviews,
-                "average_rating": average_rating,
-                "recommendation_percentage": recommendation_percentage,
+                "total_reviews": summary.total_reviews,
+                "average_rating": summary.average_rating,
+                "recommendation_percentage": summary.recommendation_percentage,
                 "review_summary_updated_at": datetime.utcnow()
             }}
         )
@@ -2816,32 +2739,6 @@ class Database:
             reviews.append(Review(**doc))
         
         return reviews
-
-    # External Review Invitation Methods
-    async def create_external_review_invitation(self, invitation: ExternalReviewInvitation) -> bool:
-        """Create a new external review invitation"""
-        invitation_dict = invitation.dict()
-        result = await self.external_review_invitations_collection.insert_one(invitation_dict)
-        return result.acknowledged
-
-    async def get_external_review_invitation_by_token(self, token: str) -> Optional[dict]:
-        """Get external review invitation by token"""
-        try:
-            doc = await self.external_review_invitations_collection.find_one({"token": token})
-            if doc:
-                doc["_id"] = str(doc["_id"])
-            return doc
-        except Exception as e:
-            logger.error(f"Error fetching external review invitation by token: {e}")
-            return None
-
-    async def update_external_review_invitation(self, token: str, updates: dict) -> bool:
-        """Update external review invitation status or other fields"""
-        result = await self.external_review_invitations_collection.update_one(
-            {"token": token},
-            {"$set": {**updates, "updated_at": datetime.utcnow()}}
-        )
-        return result.modified_count > 0
 
     @property
     def reviews_collection(self):
@@ -3539,18 +3436,13 @@ class Database:
     async def get_jobs_near_location(self, latitude: float, longitude: float, max_distance_km: int = 25, skip: int = 0, limit: int = 50) -> List[dict]:
         """Get jobs within specified distance from a location"""
         # Get all active jobs with location data
-        fetch_limit = limit * 3
         cursor = self.database.jobs.find({
             "status": "active",
             "latitude": {"$exists": True, "$ne": None},
             "longitude": {"$exists": True, "$ne": None}
-        }).skip(skip).limit(fetch_limit)  # Get more to allow for distance filtering
+        }).skip(skip).limit(limit * 3)  # Get more to allow for distance filtering
         
-        try:
-            raw_jobs = await asyncio.wait_for(cursor.to_list(length=fetch_limit), timeout=10.0)
-        except asyncio.TimeoutError:
-            logger.warning("get_jobs_near_location timeout; returning empty")
-            return []
+        raw_jobs = await cursor.to_list(length=None)
         jobs_with_distance = []
         
         async def process_job(job):
@@ -3619,10 +3511,8 @@ class Database:
         return await self.get_jobs(skip=skip, limit=limit, filters={"status": "active"})
 
     @time_it
-    async def get_jobs_for_tradesperson(self, tradesperson_id: str, skip: int = 0, limit: int = 50,
-                                      latitude: float = None, longitude: float = None, 
-                                      max_distance_km: float = None) -> List[dict]:
-        """Get jobs filtered by tradesperson's skills and location preferences with optional overrides"""
+    async def get_jobs_for_tradesperson(self, tradesperson_id: str, skip: int = 0, limit: int = 50) -> List[dict]:
+        """Get jobs filtered by tradesperson's skills and location preferences"""
         try:
             # Get tradesperson details
             tradesperson = await self.get_user_by_id(tradesperson_id)
@@ -3650,41 +3540,26 @@ class Database:
                 print(f"Skills filter applied (optimized): {tradesperson_categories}")
             
             # 2. LOCATION FILTERING - Show jobs within tradesperson's travel distance
-            # Use overrides if provided, otherwise fallback to tradesperson profile
-            lat = latitude if latitude is not None else tradesperson.get("latitude")
-            lng = longitude if longitude is not None else tradesperson.get("longitude")
-            
-            # ATTEMPT TO RESOLVE COORDINATES IF MISSING
-            if lat is None or lng is None:
-                tp_location = tradesperson.get("location")
-                if tp_location:
-                    coords = await self.resolve_coordinates_from_text(tp_location)
-                    if coords:
-                        lat = coords.get("latitude")
-                        lng = coords.get("longitude")
-                        print(f"Resolved tradesperson coordinates from location text: {lat}, {lng}")
-
-            max_dist = max_distance_km if max_distance_km is not None else tradesperson.get("travel_distance_km", 25)
-            tradesperson_state = tradesperson.get("location") # location field usually contains the state in this app
-
-            if lat is not None and lng is not None:
-                print(f"Location filter applied: {max_dist}km radius at ({lat}, {lng})")
+            if (tradesperson.get("latitude") is not None and 
+                tradesperson.get("longitude") is not None):
+                
+                max_distance = tradesperson.get("travel_distance_km", 25)  # Default 25km
+                print(f"Location filter applied: {max_distance}km radius")
                 
                 # Use location-based filtering with skills filtering
                 return await self.get_jobs_near_location_with_skills(
-                    latitude=lat,
-                    longitude=lng,
-                    max_distance_km=max_dist,
+                    latitude=tradesperson["latitude"],
+                    longitude=tradesperson["longitude"],
+                    max_distance_km=max_distance,
                     skill_categories=tradesperson_categories,
                     skip=skip,
-                    limit=limit,
-                    tradesperson_state=tradesperson_state
+                    limit=limit
                 )
             else:
                 # No location data, use skills-only filtering
                 print("Using skills-only filtering (no location data)")
                 cursor = self.database.jobs.find(job_filter).sort("created_at", -1).skip(skip).limit(limit)
-                jobs = await cursor.to_list(length=limit)
+                jobs = await cursor.to_list(length=None)
                 
                 # Process and enrich jobs data in parallel
                 tasks = [self._process_job_data(job) for job in jobs]
@@ -3700,35 +3575,24 @@ class Database:
     @time_it
     async def get_jobs_near_location_with_skills(self, latitude: float, longitude: float, 
                                                max_distance_km: float, skill_categories: List[str],
-                                               skip: int = 0, limit: int = 50,
-                                               tradesperson_state: Optional[str] = None) -> List[dict]:
+                                               skip: int = 0, limit: int = 50) -> List[dict]:
         """Get jobs near location matching skills, including jobs without coordinates (optimized)."""
         try:
             # Base filter: active jobs only, non-expired (most important for performance)
-            # Handle jobs that might not have an expires_at field
             base_filter = {
                 "status": "active",
-                "$or": [
-                    {"expires_at": {"$gt": datetime.utcnow()}},
-                    {"expires_at": {"$exists": False}},
-                    {"expires_at": None}
-                ]
+                "expires_at": {"$gt": datetime.utcnow()}
             }
 
-            # Build skills filter using both category and title (consistent with get_jobs_for_tradesperson)
+            # Build skills filter using ONLY category $in (avoid expensive $regex)
+            # $regex on large collections causes extreme slowdowns and timeouts
             combined_filter = base_filter
             if skill_categories and len(skill_categories) > 0:
-                # Optimized filter: category $in OR title regex
-                combined_pattern = "|".join([re.escape(cat) for cat in skill_categories])
+                # Use only $in operator - much faster than $regex
                 combined_filter = {
                     "$and": [
                         base_filter,
-                        {
-                            "$or": [
-                                {"category": {"$in": skill_categories}},
-                                {"title": {"$regex": combined_pattern, "$options": "i"}}
-                            ]
-                        }
+                        {"category": {"$in": skill_categories}}
                     ]
                 }
 
@@ -3753,23 +3617,10 @@ class Database:
                 # Ensure both id and _id are strings for frontend consistency
                 job_id_str = str(job["_id"])
                 job["_id"] = job_id_str
-                # Don't overwrite numeric id if it exists
-                if "id" not in job:
-                    job["id"] = job_id_str
+                job["id"] = job_id_str
                 
                 jlat = job.get("latitude")
                 jlng = job.get("longitude")
-                
-                # Attempt to resolve coordinates if missing
-                if jlat is None or jlng is None:
-                    job_location = job.get("state") or job.get("location")
-                    if job_location:
-                        coords = await self.resolve_coordinates_from_text(job_location)
-                        if coords:
-                            jlat = coords.get("latitude")
-                            jlng = coords.get("longitude")
-                            # Optionally update the job in background if we resolved coords
-                            # await self.update_job_location(job["id"], jlat, jlng) 
                 
                 dist = None
                 if jlat is not None and jlng is not None:
@@ -3780,25 +3631,11 @@ class Database:
                 
                 if dist is not None:
                     if dist <= float(max_distance_km):
-                        # Ensure distance is at least 0.1 to avoid "0.0" display in some frontends
-                        job["distance_km"] = max(0.1, round(dist, 2))
+                        job["distance_km"] = round(dist, 2)
                         jobs_within_distance.append(job)
                 else:
-                    # No coordinates even after resolution attempt
                     job["distance_km"] = None
-                    
-                    # If we have a tradesperson state, filter jobs without coordinates by state
-                    if tradesperson_state:
-                        job_state = job.get("state") or job.get("location")
-                        # Case-insensitive comparison
-                        if job_state and tradesperson_state.lower() in job_state.lower():
-                            jobs_without_coords.append(job)
-                        elif not job_state:
-                            # If job has no state info at all, include it as fallback
-                            jobs_without_coords.append(job)
-                    else:
-                        # No tradesperson state to filter by, include all without coords
-                        jobs_without_coords.append(job)
+                    jobs_without_coords.append(job)
 
             # Sort by distance
             jobs_within_distance.sort(key=lambda x: x.get("distance_km", float("inf")))
@@ -3813,11 +3650,7 @@ class Database:
                     self.database.jobs
                     .find({
                         "status": "active",
-                        "$or": [
-                            {"expires_at": {"$gt": datetime.utcnow()}},
-                            {"expires_at": {"$exists": False}},
-                            {"expires_at": None}
-                        ]
+                        "expires_at": {"$gt": datetime.utcnow()}
                     })
                     .sort("created_at", -1)
                     .skip(skip)
@@ -3828,9 +3661,7 @@ class Database:
                     # Ensure both id and _id are strings for frontend consistency
                     job_id_str = str(job["_id"])
                     job["_id"] = job_id_str
-                    # Don't overwrite numeric id if it exists
-                    if "id" not in job:
-                        job["id"] = job_id_str
+                    job["id"] = job_id_str
                 return jobs
             except Exception as e2:
                 logger.error(f"Fallback also failed: {e2}")
@@ -3844,14 +3675,13 @@ class Database:
         self,
         search_query: Optional[str] = None,
         category: Optional[str] = None,
-        state: Optional[str] = None,
         user_latitude: Optional[float] = None,
         user_longitude: Optional[float] = None,
         max_distance_km: Optional[int] = None,
         skip: int = 0,
         limit: int = 50,
     ) -> List[dict]:
-        """Search active, non-expired jobs with optional text/category/state filters and optional location radius (optimized)."""
+        """Search active, non-expired jobs with optional text/category filters and optional location radius (optimized)."""
         try:
             # Base filter: public active jobs that haven't expired
             base_filter: Dict[str, Any] = {
@@ -3859,39 +3689,17 @@ class Database:
                 "expires_at": {"$gt": datetime.utcnow()},
             }
 
-            # Build query components
-            query_parts = []
-
-            # Text search on title/description
+            # Text search on title/description - AVOID if possible (slow on large collections)
             if search_query and len(search_query.strip()) >= 2:
                 search_pattern = {"$regex": search_query, "$options": "i"}
-                query_parts.append({
-                    "$or": [
-                        {"title": search_pattern},
-                        {"description": search_pattern},
-                    ]
-                })
+                base_filter["$or"] = [
+                    {"title": search_pattern},
+                    {"description": search_pattern},
+                ]
 
-            # Category filter
+            # Category filter (exact, faster than regex)
             if category:
-                query_parts.append({"category": category})
-
-            # State filter
-            if state:
-                query_parts.append({
-                    "$or": [
-                        {"state": {"$regex": f"^{re.escape(state)}$", "$options": "i"}},
-                        {"location": {"$regex": f"^{re.escape(state)}$", "$options": "i"}},
-                        {"state": {"$regex": state, "$options": "i"}},
-                        {"location": {"$regex": state, "$options": "i"}}
-                    ]
-                })
-
-            if query_parts:
-                if len(query_parts) == 1:
-                    base_filter.update(query_parts[0])
-                else:
-                    base_filter["$and"] = query_parts
+                base_filter["category"] = category  # Use exact match instead of regex
 
             use_location = (user_latitude is not None and user_longitude is not None)
 
@@ -3935,9 +3743,8 @@ class Database:
                             pass
                     
                     if dist is not None:
-                        if dist <= radius_km:
-                            # Ensure distance is at least 0.1 to avoid "0.0" display
-                            job["distance_km"] = max(0.1, round(dist, 2))
+                        if dist <= float(radius_km):
+                            job["distance_km"] = round(dist, 2)
                             jobs_within_distance.append(job)
                     else:
                         job["distance_km"] = None
@@ -3957,7 +3764,7 @@ class Database:
                     .limit(limit)
                 )
                 try:
-                    results = await asyncio.wait_for(cursor.to_list(length=limit), timeout=10.0)
+                    results = await asyncio.wait_for(cursor.to_list(length=None), timeout=10.0)
                 except asyncio.TimeoutError:
                     logger.warning(f"Search query (no location) timeout; returning empty results")
                     return []
@@ -3982,9 +3789,7 @@ class Database:
             if "_id" in job:
                 job_id_str = str(job["_id"])
                 job["_id"] = job_id_str
-                # Don't overwrite numeric id if it exists
-                if "id" not in job:
-                    job["id"] = job_id_str
+                job["id"] = job_id_str
             
             # Add any additional processing here if needed
             # For example: enrich with homeowner info, interests count, etc.
@@ -4340,7 +4145,7 @@ class Database:
             "verified_referrals": verified_referrals,
             "total_coins_earned": total_coins_earned,
             "referral_code": referral_code,
-            "referral_link": f"{os.environ.get('FRONTEND_URL', 'https://myservicehub.co')}/signup?ref={referral_code}"
+            "referral_link": f"{os.environ.get('FRONTEND_URL', 'https://servicehub.ng')}/signup?ref={referral_code}"
         }
 
     @time_it
@@ -4976,10 +4781,7 @@ class Database:
                 self.database.user_verifications.count_documents({"referred_by": user_id, "verification_status": "verified"}),
                 self.database.portfolio.count_documents({"tradesperson_id": user_id}),
                 self._get_tradesperson_average_rating(user_id),
-                self.database.reviews.count_documents({
-                    "$or": [{"tradesperson_id": user_id}, {"reviewee_id": user_id}],
-                    "status": ReviewStatus.PUBLISHED
-                })
+                self.database.reviews.count_documents({"tradesperson_id": user_id})
             ]
             results = await asyncio.gather(*tasks)
             wallet = results[0]
@@ -5030,12 +4832,7 @@ class Database:
         """Helper method to calculate average rating for a tradesperson"""
         
         pipeline = [
-            {
-                "$match": {
-                    "$or": [{"tradesperson_id": tradesperson_id}, {"reviewee_id": tradesperson_id}],
-                    "status": ReviewStatus.PUBLISHED
-                }
-            },
+            {"$match": {"tradesperson_id": tradesperson_id}},
             {"$group": {"_id": None, "avg_rating": {"$avg": "$rating"}}}
         ]
         
@@ -5231,7 +5028,7 @@ class Database:
             job_ids = []
             try:
                 job_cursor = self.database.jobs.find({"$or": [{"homeowner_id": user_id}, {"homeowner.id": user_id}]}, {"id": 1})
-                jobs_for_user = await job_cursor.to_list(length=1000)  # Reasonable limit for cascading delete
+                jobs_for_user = await job_cursor.to_list(length=None)
                 job_ids = [j.get("id") for j in jobs_for_user if j.get("id")]
             except Exception as e:
                 logger.warning(f"Error collecting job IDs for user {user_id}: {e}")
@@ -5391,45 +5188,6 @@ class Database:
         except Exception as e:
             print(f"Error deleting state: {e}")
             return False
-
-    # ==========================================
-    # UNIFIED LOCATION FETCHING
-    # ==========================================
-    
-    async def get_all_states_dynamic(self) -> List[str]:
-        """Get all states merging static and dynamic ones"""
-        try:
-            from models.nigerian_states import NIGERIAN_STATES
-            custom_states = await self.get_custom_states()
-            
-            all_states = list(set(NIGERIAN_STATES + custom_states))
-            all_states.sort()
-            return all_states
-        except Exception as e:
-            logger.error(f"Error in get_all_states_dynamic: {e}")
-            from models.nigerian_states import NIGERIAN_STATES
-            return sorted(NIGERIAN_STATES)
-
-    async def get_lgas_for_state_dynamic(self, state: str) -> List[str]:
-        """Get all LGAs for a state merging static and dynamic ones"""
-        try:
-            from models.nigerian_lgas import get_lgas_for_state as get_static_lgas
-            static_lgas = get_static_lgas(state) or []
-            
-            custom_lgas_cursor = self.database.system_locations.find({
-                "state": state,
-                "type": "lga"
-            })
-            custom_lgas_docs = await custom_lgas_cursor.to_list(length=None)
-            custom_lgas = [lga["name"] for lga in custom_lgas_docs]
-            
-            all_lgas = list(set(static_lgas + custom_lgas))
-            all_lgas.sort()
-            return all_lgas
-        except Exception as e:
-            logger.error(f"Error in get_lgas_for_state_dynamic for state {state}: {e}")
-            from models.nigerian_lgas import get_lgas_for_state as get_static_lgas
-            return sorted(get_static_lgas(state) or [])
     
     async def add_new_lga(self, state_name: str, lga_name: str, zip_codes: str = ""):
         """Add a new LGA to a state"""
@@ -5607,24 +5365,15 @@ class Database:
         try:
             trade_doc = {
                 "name": trade_name,
-                "title": trade_name,
-                "group": group or "General Services",
-                "description": description or "",
+                "group": group,
+                "description": description,
                 "created_at": datetime.now(),
-                "updated_at": datetime.now(),
                 "active": True
             }
             
-            # Check if trade already exists (case-insensitive)
-            existing = await self.database.system_trades.find_one({"name": {"$regex": f"^{re.escape(trade_name)}$", "$options": "i"}})
+            # Check if trade already exists
+            existing = await self.database.system_trades.find_one({"name": trade_name})
             if existing:
-                # If it's a tombstone, reactivate it instead of failing
-                if existing.get("is_tombstone") or not existing.get("active", True):
-                    await self.database.system_trades.update_one(
-                        {"_id": existing["_id"]},
-                        {"$set": {"active": True, "is_tombstone": False, "updated_at": datetime.now(), "group": group or "General Services", "description": description or ""}}
-                    )
-                    return True
                 return False
             
             await self.database.system_trades.insert_one(trade_doc)
@@ -5635,245 +5384,79 @@ class Database:
     
     async def update_trade(self, old_name: str, new_name: str, group: str = "", description: str = ""):
         """Update an existing trade category.
-        Supports updating both custom and static categories by handling renaming correctly.
+        Supports updating both custom and static categories by upserting a record when not present.
         """
         try:
-            from .models.trade_categories import NIGERIAN_TRADE_CATEGORIES
             old_name = (old_name or "").strip()
             new_name = (new_name or "").strip()
-            
-            # Find the actual static category name if it exists (case-insensitive)
-            static_match = next((n for n in NIGERIAN_TRADE_CATEGORIES if n.lower() == old_name.lower()), None)
-            if static_match:
-                old_name = static_match
-                
             now = datetime.now()
             
-            # Prepare data
-            update_set = {"name": new_name, "title": new_name, "updated_at": now, "active": True}
-            if group: update_set["group"] = group
-            if description is not None: update_set["description"] = description
-            
-            # Case 1: Updating a static trade category
-            if old_name in NIGERIAN_TRADE_CATEGORIES:
-                if old_name == new_name:
-                    # Just update the override in DB
-                    await self.database.system_trades.update_one(
-                        {"name": {"$regex": f"^{re.escape(old_name)}$", "$options": "i"}},
-                        {"$set": update_set, "$setOnInsert": {"created_at": now}},
-                        upsert=True
-                    )
-                else:
-                    # Renaming a static trade -> Create a tombstone for old and new record for new name
-                    await self.database.system_trades.update_one(
-                        {"name": {"$regex": f"^{re.escape(old_name)}$", "$options": "i"}},
-                        {"$set": {
-                            "name": old_name,
-                            "active": False,
-                            "updated_at": now,
-                            "is_tombstone": True
-                        }},
-                        upsert=True
-                    )
-                    await self.database.system_trades.update_one(
-                        {"name": {"$regex": f"^{re.escape(new_name)}$", "$options": "i"}},
-                        {"$set": update_set, "$setOnInsert": {"created_at": now}},
-                        upsert=True
-                    )
-                return True
+            update_set = {"name": new_name, "updated_at": now}
+            set_on_insert = {
+                "active": True,
+                "created_at": now
+            }
 
-            # Case 2: Updating a custom trade category
-            # Find the existing custom trade record
-            existing = await self.database.system_trades.find_one({"name": {"$regex": f"^{re.escape(old_name)}$", "$options": "i"}})
-            if not existing:
-                # If not in DB, it might be a static trade that wasn't in our NIGERIAN_TRADE_CATEGORIES list
-                # or a custom trade that was deleted. Let's try to create it if it doesn't exist.
-                await self.database.system_trades.update_one(
-                    {"name": {"$regex": f"^{re.escape(new_name)}$", "$options": "i"}},
-                    {"$set": update_set, "$setOnInsert": {"created_at": now}},
-                    upsert=True
-                )
-                return True
+            # Only set optional fields in update_set when provided
+            # If provided, they will be set on insert via $set too.
+            # If NOT provided, we need a default for insert, but don't want to overwrite existing.
+            if group:
+                update_set["group"] = group
+            else:
+                set_on_insert["group"] = "General Services"
 
-            # Check if we are renaming to a name that already exists
-            if old_name.lower() != new_name.lower():
-                conflict = await self.database.system_trades.find_one({"name": {"$regex": f"^{re.escape(new_name)}$", "$options": "i"}})
-                if conflict:
-                    # If conflict exists, we delete the old one and update the conflict record
-                    await self.database.system_trades.delete_one({"_id": existing["_id"]})
-                    await self.database.system_trades.update_one(
-                        {"_id": conflict["_id"]},
-                        {"$set": update_set}
-                    )
-                    return True
+            if description:
+                update_set["description"] = description
+            else:
+                set_on_insert["description"] = ""
 
-            # Standard update for custom trade
-            await self.database.system_trades.update_one(
-                {"_id": existing["_id"]},
-                {"$set": update_set}
+            result = await self.database.system_trades.update_one(
+                {"name": {"$regex": f"^{re.escape(old_name)}$", "$options": "i"}},
+                {
+                    "$set": update_set
+                },
+                upsert=False
             )
-            return True
+
+            # Treat a matched document (even when no fields changed) as success to
+            # avoid misleading 404 "not found" errors on no-op updates.
+            matched = getattr(result, "matched_count", 0) > 0
+            modified = getattr(result, "modified_count", 0) > 0
+            upserted = getattr(result, "upserted_id", None) is not None
+            if matched or modified or upserted:
+                return True
+
+            # Fallback: try matching by new_name in case existing record already uses new label
+            result2 = await self.database.system_trades.update_one(
+                {"name": {"$regex": f"^{re.escape(new_name)}$", "$options": "i"}},
+                {"$set": update_set},
+                upsert=False
+            )
+            matched2 = getattr(result2, "matched_count", 0) > 0
+            modified2 = getattr(result2, "modified_count", 0) > 0
+            return matched2 or modified2
         except Exception as e:
             print(f"Error updating trade: {e}")
             return False
     
     async def delete_trade(self, trade_name: str):
-        """Delete a trade category. Handles both custom and static categories."""
+        """Delete a trade category"""
         try:
-            from .models.trade_categories import NIGERIAN_TRADE_CATEGORIES
-            trade_name = (trade_name or "").strip()
-            
-            # Find actual static name if it exists (case-insensitive)
-            static_match = next((n for n in NIGERIAN_TRADE_CATEGORIES if n.lower() == trade_name.lower()), None)
-            if static_match:
-                trade_name = static_match
-                
-            # Check if it exists in DB (case-insensitive)
-            existing = await self.database.system_trades.find_one({"name": {"$regex": f"^{re.escape(trade_name)}$", "$options": "i"}})
-            
-            if existing:
-                # If it's in DB, we can either delete it or mark as inactive
-                # To support "hiding" static categories, we should mark as inactive if it's a static one
-                if trade_name in NIGERIAN_TRADE_CATEGORIES:
-                    await self.database.system_trades.update_one(
-                        {"_id": existing["_id"]},
-                        {"$set": {"active": False, "updated_at": datetime.now()}}
-                    )
-                    return True
-                else:
-                    # If it's purely custom, we can just delete it
-                    result = await self.database.system_trades.delete_one({"_id": existing["_id"]})
-                    return result.deleted_count > 0
-            else:
-                # If not in DB but it's a static category, create an inactive record to hide it
-                if trade_name in NIGERIAN_TRADE_CATEGORIES:
-                    await self.database.system_trades.insert_one({
-                        "name": trade_name,
-                        "title": trade_name,
-                        "active": False,
-                        "created_at": datetime.now(),
-                        "updated_at": datetime.now(),
-                        "is_tombstone": True
-                    })
-                    return True
-            
-            return False
+            result = await self.database.system_trades.delete_one({"name": trade_name})
+            return result.deleted_count > 0
         except Exception as e:
             print(f"Error deleting trade: {e}")
             return False
     
-    async def get_effective_trades(self):
-        """Get all available trade categories (static + custom) while respecting active/inactive status"""
-        try:
-            from .models.trade_categories import NIGERIAN_TRADE_CATEGORIES, TRADE_CATEGORY_GROUPS
-            
-            # Fetch all trade settings from DB
-            db_trades = await self.database.system_trades.find({}).to_list(length=1000)
-            
-            # Map of name -> doc
-            db_map = {t["name"]: t for t in db_trades}
-            
-            effective_trades = []
-            effective_groups = {}
-            trade_details = [] # Added for full trade info
-            static_names_lower = {n.lower() for n in NIGERIAN_TRADE_CATEGORIES}
-            
-            # Initialize with static groups but empty lists
-            for group in TRADE_CATEGORY_GROUPS:
-                effective_groups[group] = []
-
-            # 1. Process static categories first
-            for name in NIGERIAN_TRADE_CATEGORIES:
-                db_record = db_map.get(name)
-                
-                # If it's explicitly inactive in DB, skip it
-                if db_record and not db_record.get("active", True):
-                    continue
-                
-                # Determine group
-                group = "General Services"
-                description = ""
-                icon = "🛠️"
-                color = "from-blue-400 to-blue-600"
-
-                if db_record:
-                    if db_record.get("group"): group = db_record["group"]
-                    description = db_record.get("description", "")
-                    icon = db_record.get("icon", "🛠️")
-                    color = db_record.get("color", "from-blue-400 to-blue-600")
-                else:
-                    # Find which static group it belongs to
-                    for g, trades in TRADE_CATEGORY_GROUPS.items():
-                        if name in trades:
-                            group = g
-                            break
-                
-                effective_trades.append(name)
-                trade_details.append({
-                    "name": name,
-                    "group": group,
-                    "description": description,
-                    "icon": icon,
-                    "color": color,
-                    "is_static": True
-                })
-                if group not in effective_groups:
-                    effective_groups[group] = []
-                effective_groups[group].append(name)
-
-            # 2. Process custom categories from DB
-            for name, db_record in db_map.items():
-                # Skip if it's a static category (already handled) or inactive
-                if name.lower() in static_names_lower or not db_record.get("active", True):
-                    continue
-                    
-                group = db_record.get("group", "General Services")
-                description = db_record.get("description", "")
-                icon = db_record.get("icon", "🛠️")
-                color = db_record.get("color", "from-blue-400 to-blue-600")
-
-                effective_trades.append(name)
-                trade_details.append({
-                    "name": name,
-                    "group": group,
-                    "description": description,
-                    "icon": icon,
-                    "color": color,
-                    "is_static": False
-                })
-                if group not in effective_groups:
-                    effective_groups[group] = []
-                if name not in effective_groups[group]:
-                    effective_groups[group].append(name)
-            
-            effective_trades.sort()
-            trade_details.sort(key=lambda x: x["name"])
-            
-            return {
-                "trades": effective_trades,
-                "groups": effective_groups,
-                "trade_details": trade_details # Added
-            }
-        except Exception as e:
-            print(f"Error getting effective trades: {e}")
-            return {"trades": [], "groups": {}}
-
     async def get_custom_trades(self):
         """Get all custom trade categories added by admin"""
         try:
-            from .models.trade_categories import NIGERIAN_TRADE_CATEGORIES
-            static_names_lower = {n.lower() for n in NIGERIAN_TRADE_CATEGORIES}
-            
-            trades = await self.database.system_trades.find({"active": True}).to_list(length=1000)
+            trades = await self.database.system_trades.find({"active": True}).to_list(length=None)
             trade_list = []
             groups = {}
             
             for trade in trades:
                 trade_name = trade["name"]
-                # Skip if it's a static category
-                if trade_name.lower() in static_names_lower:
-                    continue
-                    
                 trade_group = trade.get("group", "General Services")
                 
                 trade_list.append(trade_name)
@@ -6947,12 +6530,12 @@ We may update this Cookie Policy to reflect changes in technology or regulations
     async def initialize_default_contacts(self):
         """Initialize default contact information for any missing types"""
         try:
-            # Default contact information matching Contact Us page
+            # Default contact information
             default_contacts = [
                 {
                     "contact_type": "phone_support",
                     "label": "Customer Support",
-                    "value": "+2348141831420",
+                    "value": "+234 901 234 5678",
                     "is_active": True,
                     "display_order": 1,
                     "notes": "Primary customer support line"
@@ -6960,7 +6543,7 @@ We may update this Cookie Policy to reflect changes in technology or regulations
                 {
                     "contact_type": "phone_business",
                     "label": "Business Line",
-                    "value": "+2348141831420",
+                    "value": "+234 901 234 5679",
                     "is_active": True,
                     "display_order": 2,
                     "notes": "Business inquiries and partnerships"
@@ -6968,7 +6551,7 @@ We may update this Cookie Policy to reflect changes in technology or regulations
                 {
                     "contact_type": "email_support",
                     "label": "Support Email",
-                    "value": "support@myservicehub.co",
+                    "value": "support@servicehub.ng",
                     "is_active": True,
                     "display_order": 1,
                     "notes": "Customer support and technical issues"
@@ -6976,7 +6559,7 @@ We may update this Cookie Policy to reflect changes in technology or regulations
                 {
                     "contact_type": "email_business",
                     "label": "Business Email",
-                    "value": "support@myservicehub.co",
+                    "value": "business@servicehub.ng",
                     "is_active": True,
                     "display_order": 2,
                     "notes": "Business partnerships and corporate inquiries"
@@ -6984,7 +6567,7 @@ We may update this Cookie Policy to reflect changes in technology or regulations
                 {
                     "contact_type": "address_office",
                     "label": "Head Office",
-                    "value": "ServiceHub Nigeria, 6, D Place Guest House, Off Omimi Link Road, Ekpan, Delta State, Nigeria",
+                    "value": "123 Tech District, Victoria Island, Lagos, Nigeria",
                     "is_active": True,
                     "display_order": 1,
                     "notes": "Main office location"
@@ -6992,7 +6575,7 @@ We may update this Cookie Policy to reflect changes in technology or regulations
                 {
                     "contact_type": "social_facebook",
                     "label": "Facebook",
-                    "value": "https://www.facebook.com/share/18xd2rkVkV/",
+                    "value": "https://facebook.com/servicehubng",
                     "is_active": True,
                     "display_order": 1,
                     "notes": "Official Facebook page"
@@ -7000,7 +6583,7 @@ We may update this Cookie Policy to reflect changes in technology or regulations
                 {
                     "contact_type": "social_instagram",
                     "label": "Instagram",
-                    "value": "https://www.instagram.com/myservice_hub?igsh=MTg2cWwweGQ3MzdoMA==",
+                    "value": "https://instagram.com/servicehubng",
                     "is_active": True,
                     "display_order": 2,
                     "notes": "Official Instagram account"
@@ -7008,7 +6591,7 @@ We may update this Cookie Policy to reflect changes in technology or regulations
                 {
                     "contact_type": "social_youtube",
                     "label": "YouTube",
-                    "value": "https://youtube.com/@myservicehub?si=bKHBrzZ-Hu4hjHW6",
+                    "value": "https://youtube.com/@servicehubng",
                     "is_active": True,
                     "display_order": 3,
                     "notes": "Official YouTube channel"
@@ -7024,7 +6607,7 @@ We may update this Cookie Policy to reflect changes in technology or regulations
                 {
                     "contact_type": "website_url",
                     "label": "Website",
-                    "value": "https://myservicehub.co",
+                    "value": "https://servicehub.ng",
                     "is_active": True,
                     "display_order": 1,
                     "notes": "Main website URL"
@@ -7032,35 +6615,29 @@ We may update this Cookie Policy to reflect changes in technology or regulations
                 {
                     "contact_type": "business_hours",
                     "label": "Business Hours",
-                    "value": "Monday - Friday: 8:00 AM - 6:00 PM\nSaturday: 9:00 AM - 2:00 PM\nSunday: Closed",
+                    "value": "Monday - Friday: 9:00 AM - 6:00 PM\nSaturday: 10:00 AM - 4:00 PM\nSunday: Closed",
                     "is_active": True,
                     "display_order": 1,
                     "notes": "Standard operating hours"
                 }
             ]
             
-            # Get existing contacts to determine if we update or insert
-            existing_contacts_docs = await self.database.contacts.find({}).to_list(None)
-            # Create a map by contact_type for easy lookup
-            existing_map = {c["contact_type"]: c for c in existing_contacts_docs}
+            # Get existing contact types
+            existing_contacts_docs = await self.database.contacts.find({}, {"contact_type": 1}).to_list(None)
+            existing_types = {c["contact_type"] for c in existing_contacts_docs}
             
-            updated_count = 0
-            created_count = 0
+            # Filter to only missing contacts
+            contacts_to_add = [c for c in default_contacts if c["contact_type"] not in existing_types]
             
-            for contact_data in default_contacts:
-                contact_type = contact_data["contact_type"]
-                if contact_type in existing_map:
-                    # Update existing contact to match defaults
-                    # Ensure we use the correct internal ID for the update
-                    contact_id = existing_map[contact_type].get("id") or str(existing_map[contact_type].get("_id"))
-                    await self.update_contact(contact_id, contact_data, "system")
-                    updated_count += 1
-                else:
-                    # Create new contact
-                    await self.create_contact(contact_data, "system")
-                    created_count += 1
+            if not contacts_to_add:
+                print("All default contact types already exist")
+                return
             
-            print(f"Contact initialization complete: {updated_count} updated, {created_count} created")
+            # Insert missing default contacts
+            for contact_data in contacts_to_add:
+                await self.create_contact(contact_data, "system")
+            
+            print(f"Initialized {len(contacts_to_add)} default contact(s)")
             
         except Exception as e:
             print(f"Error initializing default contacts: {e}")
@@ -7825,6 +7402,17 @@ We may update this Cookie Policy to reflect changes in technology or regulations
             result = await self.database.job_question_answers.insert_one(answers_data)
             if result.inserted_id:
                 answers_data['_id'] = str(result.inserted_id)
+                try:
+                    summary = self.compose_job_description_from_answers(answers_data)
+                    job = await self.database.jobs.find_one({"id": answers_data["job_id"]})
+                    current_desc = (job or {}).get("description")
+                    if summary and (not current_desc or not str(current_desc).strip()):
+                        await self.database.jobs.update_one(
+                            {"id": answers_data["job_id"]},
+                            {"$set": {"description": summary, "updated_at": datetime.utcnow()}}
+                        )
+                except Exception:
+                    pass
                 return answers_data
             return None
         except Exception as e:
@@ -7854,7 +7442,7 @@ We may update this Cookie Policy to reflect changes in technology or regulations
                 {"$sort": {"_id": 1}}
             ]
             
-            results = await self.database.trade_category_questions.aggregate(pipeline).to_list(length=500)
+            results = await self.database.trade_category_questions.aggregate(pipeline).to_list(length=None)
             
             categories = []
             for result in results:
