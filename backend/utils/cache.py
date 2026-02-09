@@ -107,6 +107,19 @@ class Cache:
             payload = obj
         return await self.set(key, payload, ttl)
 
+    async def delete(self, key: str):
+        if not self.enabled:
+            return False
+        await self._ensure_client()
+        if self._client is not None:
+            try:
+                await self._client.delete(key)
+                return True
+            except Exception:
+                pass
+        self._local.pop(key, None)
+        return True
+
 
 _global_cache: Cache | None = None
 

@@ -1870,13 +1870,9 @@ class Database:
     async def get_platform_stats(self) -> dict:
         # If database is not connected, return safe defaults
         if not self.connected or self.database is None:
-            try:
-                from models.trade_categories import NIGERIAN_TRADE_CATEGORIES
-            except Exception:
-                NIGERIAN_TRADE_CATEGORIES = []
-            custom_data = await self.get_custom_trades()
-            custom_trades = custom_data.get("trades", []) if custom_data else []
-            total_categories = len(set(NIGERIAN_TRADE_CATEGORIES + custom_trades))
+            effective_data = await self.get_effective_trades()
+            all_trades = effective_data.get("trades", [])
+            total_categories = len(all_trades)
             return {
                 "total_tradespeople": 0,
                 "total_categories": total_categories,
@@ -1920,13 +1916,9 @@ class Database:
         
         # Get total available categories from static trade categories
         try:
-            from models.trade_categories import NIGERIAN_TRADE_CATEGORIES
-            # Get custom trades from database
-            custom_data = await self.get_custom_trades()
-            custom_trades = custom_data.get("trades", []) if custom_data else []
-            
-            # Combine static and custom trades
-            all_trades = list(set(NIGERIAN_TRADE_CATEGORIES + custom_trades))
+            # Use get_effective_trades to get the correct filtered list of trades
+            effective_data = await self.get_effective_trades()
+            all_trades = effective_data.get("trades", [])
             total_categories = len(all_trades)
         except Exception as e:
             logger.error(f"Error getting categories count: {e}")
