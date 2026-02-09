@@ -5421,41 +5421,77 @@ class Database:
             return False
     
     async def update_trade(self, old_name: str, new_name: str, group: str = "", description: str = ""):
-        """Update an existing trade category."""
+        """Update an existing trade category (static or custom)."""
         try:
             old_name = (old_name or "").strip()
             new_name = (new_name or "").strip()
             now = datetime.now()
             
-            update_set = {"name": new_name, "updated_at": now}
-            if group:
-                update_set["group"] = group
-            if description is not None:
-                update_set["description"] = description
-
-            # First, check if the trade exists with the old name
+            # Check if it's a custom trade in the database
             existing = await self.database.system_trades.find_one(
                 {"name": {"$regex": f"^{re.escape(old_name)}$", "$options": "i"}}
             )
             
-            if not existing:
-                return False
-            
-            # If we are renaming, check if the new name already exists
-            if old_name.lower() != new_name.lower():
-                conflict = await self.database.system_trades.find_one(
-                    {"name": {"$regex": f"^{re.escape(new_name)}$", "$options": "i"}}
+            if existing:
+                # Update existing custom trade
+                update_set = {"name": new_name, "updated_at": now}
+                if group:
+                    update_set["group"] = group
+                if description is not None:
+                    update_set["description"] = description
+                
+                # If renaming, check for conflicts
+                if old_name.lower() != new_name.lower():
+                    conflict = await self.database.system_trades.find_one(
+                        {"name": {"$regex": f"^{re.escape(new_name)}$", "$options": "i"}}
+                    )
+                    if conflict:
+                        return False
+                
+                result = await self.database.system_trades.update_one(
+                    {"_id": existing["_id"]},
+                    {"$set": update_set}
                 )
-                if conflict:
-                    # New name already exists, cannot rename to it
-                    return False
-
-            result = await self.database.system_trades.update_one(
-                {"_id": existing["_id"]},
-                {"$set": update_set}
-            )
-
-            return result.matched_count > 0
+                return result.matched_count > 0
+            else:
+                # Check if it's a static trade (case-insensitive)
+                from models.trade_categories import NIGERIAN_TRADE_CATEGORIES, TRADE_CATEGORY_GROUPS
+                canonical_old_name = next((t for t in NIGERIAN_TRADE_CATEGORIES if t.lower() == old_name.lower()), None)
+                
+                if canonical_old_name:
+                    # It's a static trade being edited for the first time
+                    # Check if the new name conflicts with another trade
+                    # (either static or custom)
+                    if any(t.lower() == new_name.lower() for t in NIGERIAN_TRADE_CATEGORIES) and new_name.lower() != old_name.lower():
+                        return False
+                    
+                    conflict = await self.database.system_trades.find_one(
+                        {"name": {"$regex": f"^{re.escape(new_name)}$", "$options": "i"}}
+                    )
+                    if conflict:
+                        return False
+                    
+                    # Determine group if not provided
+                    if not group:
+                        for g_name, members in TRADE_CATEGORY_GROUPS.items():
+                            if canonical_old_name in members:
+                                group = g_name
+                                break
+                    
+                    # Create a new custom trade that "replaces" the static one
+                    trade_doc = {
+                        "name": new_name,
+                        "replaces": canonical_old_name, # Track which static trade this replaces
+                        "group": group or "General Services",
+                        "description": description or "",
+                        "created_at": now,
+                        "updated_at": now,
+                        "active": True
+                    }
+                    await self.database.system_trades.insert_one(trade_doc)
+                    return True
+                
+                return False
         except Exception as e:
             print(f"Error updating trade: {e}")
             import traceback
@@ -5463,14 +5499,115 @@ class Database:
             return False
     
     async def delete_trade(self, trade_name: str):
-        """Delete a trade category"""
+        """Delete a trade category (static or custom)"""
         try:
-            result = await self.database.system_trades.delete_one({"name": trade_name})
-            return result.deleted_count > 0
+            trade_name = (trade_name or "").strip()
+            # Check if it's in database
+            existing = await self.database.system_trades.find_one(
+                {"name": {"$regex": f"^{re.escape(trade_name)}$", "$options": "i"}}
+            )
+            
+            if existing:
+                # Perform hard delete instead of soft delete as per user request
+                result = await self.database.system_trades.delete_one({"_id": existing["_id"]})
+                return result.deleted_count > 0
+            else:
+                # Check if it's static (case-insensitive)
+                from models.trade_categories import NIGERIAN_TRADE_CATEGORIES
+                canonical_static_name = next((t for t in NIGERIAN_TRADE_CATEGORIES if t.lower() == trade_name.lower()), None)
+                if canonical_static_name:
+                    # Mark static trade as "hidden" by creating an inactive DB entry
+                    # This is still necessary because static trades are hardcoded in NIGERIAN_TRADE_CATEGORIES
+                    # The user wants "deleted entirely", but we can't delete from Python list easily without
+                    # changing the source code file. So we use the "hidden" mechanism in get_effective_trades.
+                    trade_doc = {
+                        "name": canonical_static_name,
+                        "replaces": canonical_static_name,
+                        "active": False,
+                        "created_at": datetime.now(),
+                        "updated_at": datetime.now()
+                    }
+                    await self.database.system_trades.insert_one(trade_doc)
+                    return True
+                
+                return False
         except Exception as e:
             print(f"Error deleting trade: {e}")
             return False
-    
+
+    async def get_effective_trades(self):
+        """Get combined list of static and custom trade categories"""
+        try:
+            from models.trade_categories import NIGERIAN_TRADE_CATEGORIES, TRADE_CATEGORY_GROUPS
+            
+            # Get ALL trade records from database
+            all_db_records_cursor = self.database.system_trades.find({})
+            all_db_records = await all_db_records_cursor.to_list(length=1000)
+            
+            # Categorize database records
+            active_custom_trades = [r for r in all_db_records if r.get("active", True)]
+            hidden_static_names = set()
+            replaced_static_names = set()
+            
+            for r in all_db_records:
+                if "replaces" in r:
+                    if r.get("active", True):
+                        replaced_static_names.add(r["replaces"].lower())
+                    else:
+                        # If inactive and has replaces, it's either a hidden static trade 
+                        # or a previously renamed trade that was then deleted
+                        hidden_static_names.add(r["replaces"].lower())
+                
+                # If a trade has the same name as a static one but is inactive, hide the static one
+                # Also check case-insensitively
+                if not r.get("active", True):
+                    static_match = next((t for t in NIGERIAN_TRADE_CATEGORIES if t.lower() == r["name"].lower()), None)
+                    if static_match:
+                        hidden_static_names.add(static_match.lower())
+            
+            # Build the effective list
+            effective_trades = []
+            
+            # Add static trades that are not replaced or hidden
+            for static_name in NIGERIAN_TRADE_CATEGORIES:
+                if static_name.lower() not in replaced_static_names and static_name.lower() not in hidden_static_names:
+                    # Also check if a custom trade with the EXACT same name exists and is active
+                    if not any(r["name"].lower() == static_name.lower() and r.get("active", True) for r in all_db_records):
+                        effective_trades.append(static_name)
+            
+            # Add all active custom trades
+            for ct in active_custom_trades:
+                effective_trades.append(ct["name"])
+                
+            # Sort unique names
+            all_trades = sorted(list(set(effective_trades)))
+            
+            # Build groups
+            effective_groups = {}
+            # Start with static groups
+            for group_name, members in TRADE_CATEGORY_GROUPS.items():
+                effective_groups[group_name] = [m for m in members if m.lower() not in replaced_static_names and m.lower() not in hidden_static_names]
+            
+            # Add custom trades to their groups
+            for ct in active_custom_trades:
+                group = ct.get("group", "General Services")
+                if group not in effective_groups:
+                    effective_groups[group] = []
+                if ct["name"] not in effective_groups[group]:
+                    effective_groups[group].append(ct["name"])
+            
+            return {
+                "trades": all_trades,
+                "groups": effective_groups
+            }
+        except Exception as e:
+            print(f"Error in get_effective_trades: {e}")
+            from models.trade_categories import NIGERIAN_TRADE_CATEGORIES, TRADE_CATEGORY_GROUPS
+            return {
+                "trades": NIGERIAN_TRADE_CATEGORIES,
+                "groups": TRADE_CATEGORY_GROUPS
+            }
+
     async def get_custom_trades(self):
         """Get all custom trade categories added by admin"""
         try:
