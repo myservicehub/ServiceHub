@@ -154,7 +154,7 @@ class Database:
                         [("public_id", 1)],
                         name="unique_public_id",
                         unique=True,
-                        partialFilterExpression={"public_id", {"$type": "string"}}
+                        partialFilterExpression={"public_id": {"$type": "string"}}
                     )
                 except Exception as idx_err:
                     logger.warning(f"Failed to ensure users public_id index: {idx_err}")
@@ -255,7 +255,7 @@ class Database:
                     # This is essential because get_jobs() queries with: status='active' AND expires_at > now
                     await self.database.jobs.create_index(
                         [("status", 1), ("expires_at", 1), ("created_at", -1)],
-                        name="jobs_status_expires_createdAt"
+                        name="jobs_status_expiresAt_createdAt"
                     )
 
                     # Quotes indexes
@@ -5092,6 +5092,41 @@ class Database:
     # LOCATION MANAGEMENT METHODS (Admin)
     # ==========================================
     
+    async def get_all_states_dynamic(self):
+        """Get all states combining static list and database custom states"""
+        try:
+            from models.nigerian_states import NIGERIAN_STATES
+            custom_states = await self.get_custom_states()
+            
+            # Combine and unique
+            all_states = list(set(NIGERIAN_STATES + custom_states))
+            return sorted(all_states)
+        except Exception as e:
+            print(f"Error in get_all_states_dynamic: {e}")
+            from models.nigerian_states import NIGERIAN_STATES
+            return NIGERIAN_STATES
+
+    async def get_lgas_for_state_dynamic(self, state_name: str):
+        """Get LGAs for a state combining static list and database custom LGAs"""
+        try:
+            from models.nigerian_lgas import get_lgas_for_state
+            static_lgas = get_lgas_for_state(state_name)
+            
+            # Get custom LGAs from database
+            custom_lgas_map = await self.get_custom_lgas()
+            custom_lgas = custom_lgas_map.get(state_name, [])
+            
+            # Combine and unique
+            all_lgas = list(set(static_lgas + custom_lgas))
+            return sorted(all_lgas)
+        except Exception as e:
+            print(f"Error in get_lgas_for_state_dynamic: {e}")
+            try:
+                from models.nigerian_lgas import get_lgas_for_state
+                return get_lgas_for_state(state_name)
+            except:
+                return []
+
     async def get_custom_lgas(self):
         """Get custom LGAs added by admin, organized by state"""
         try:
