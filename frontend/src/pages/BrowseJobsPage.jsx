@@ -26,7 +26,6 @@ import { jobsAPI, interestsAPI } from '../api/services';
 import { walletAPI, tradeCategoryQuestionsAPI } from '../api/wallet';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
-import useStates from '../hooks/useStates';
 import { useNavigate, useLocation } from 'react-router-dom';
 import JobsMap from '../components/maps/JobsMap';
 import LocationSettingsModal from '../components/LocationSettingsModal';
@@ -35,6 +34,44 @@ import { notificationsAPI } from '../api/notifications';
 import { resolveCoordinatesFromLocationText, DEFAULT_TRAVEL_DISTANCE_KM, nearestStateFromCoordinates, computeDistanceKm } from '../utils/locationCoordinates';
 
 import AuthenticatedImage from '../components/common/AuthenticatedImage';
+
+const NIGERIAN_TRADE_CATEGORIES = [
+  // Column 1
+  "Building",
+  "Concrete Works",
+  "Tiling",
+  "Door & Window Installation",
+  "Air Conditioning & Refrigeration",
+  "Plumbing",
+  "Cleaning",
+  
+  // Column 2
+  "Home Extensions",
+  "Scaffolding",
+  "Flooring",
+  "Bathroom Fitting",
+  "Generator Services",
+  "Welding",
+  "Relocation/Moving",
+  
+  // Column 3
+  "Renovations",
+  "Painting",
+  "Carpentry",
+  "Interior Design",
+  "Solar & Inverter Installation",
+  "Locksmithing",
+  "Waste Disposal",
+  
+  // Column 4
+  "Roofing",
+  "Plastering/POP",
+  "Furniture Making",
+  "Electrical Repairs",
+  "CCTV & Security Systems",
+  "General Handyman Work",
+  "Recycling"
+];
 
 const BrowseJobsPage = () => {
   const [jobs, setJobs] = useState([]);
@@ -57,46 +94,9 @@ const BrowseJobsPage = () => {
   const [userInterests, setUserInterests] = useState(null);
   const [userInterestsLoading, setUserInterestsLoading] = useState(false);
   const [loadErrorCount, setLoadErrorCount] = useState(0); // Track errors to prevent infinite loops
-  const [tradeCategories, setTradeCategories] = useState([]);
-
-  const [filters, setFilters] = useState({
-    search: '',
-    category: '',
-    state: '',
-    status: 'open',
-    useLocation: false,
-    maxDistance: 25
-  });
-
-  // Fetch trade categories
-  useEffect(() => {
-    const fetchTrades = async () => {
-      try {
-        const response = await authAPI.getTradeCategories();
-        if (response && response.categories) {
-          setTradeCategories(response.categories);
-        }
-      } catch (err) {
-        console.error('Failed to fetch trades:', err);
-        // Fallback
-        setTradeCategories([
-          "Building", "Concrete Works", "Tiling", "Door & Window Installation",
-          "Air Conditioning & Refrigeration", "Plumbing", "Home Extensions",
-          "Scaffolding", "Flooring", "Bathroom Fitting", "Generator Services",
-          "Welding", "Renovations", "Painting", "Carpentry", "Interior Design",
-          "Solar & Inverter Installation", "Locksmithing", "Roofing",
-          "Plastering/POP", "Furniture Making", "Electrical Repairs",
-          "CCTV & Security Systems", "General Handyman Work", "Cleaning",
-          "Relocation/Moving", "Waste Disposal", "Recycling"
-        ]);
-      }
-    };
-    fetchTrades();
-  }, []);
 
   const { user, isAuthenticated, isTradesperson } = useAuth();
   const location = useLocation();
-  const { states: nigerianStates } = useStates();
   
   // Load user interests for tradespeople
   const loadUserInterests = async () => {
@@ -116,51 +116,44 @@ const BrowseJobsPage = () => {
     }
   };
   
+  const [filters, setFilters] = useState({
+    search: '',
+    category: '',
+    useLocation: false,
+    maxDistance: user?.travel_distance_km || 25
+  });
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Initialize filters when user data is available
-  useEffect(() => {
-    if (user?.travel_distance_km) {
-      setFilters(prev => ({
-        ...prev,
-        maxDistance: user.travel_distance_km
-      }));
-    }
-  }, [user?.travel_distance_km]);
-
-  // 1. Initial Load: Basic data that doesn't depend on filters
   useEffect(() => {
     if (!isAuthenticated() || !isTradesperson()) {
       return;
     }
     loadWalletBalance();
-    loadUserLocationData(); // Initial location load from profile
-    loadUserInterests();
-  }, [isAuthenticated, isTradesperson]);
+    loadUserLocationData();
+    loadUserInterests(); // Load user's existing interests
+  }, [isAuthenticated, isTradesperson]); // Add authentication dependencies
 
-  // 2. Profile Changes: Sync local location/distance when profile updates
   useEffect(() => {
-    if (isAuthenticated() && isTradesperson() && user) {
-      loadUserLocationData();
-    }
-  }, [user?.latitude, user?.longitude, user?.location, user?.travel_distance_km]);
-
-  // 3. Filter/Location Changes: Load jobs
-  useEffect(() => {
+    // Reload user location (in case it changed) and refresh jobs whenever
+    // filters, user skills or saved coordinates update. This ensures that
+    // when a tradesperson adds a new skill or updates their profile location
+    // the Browse page reflects the change without a full page refresh.
     if (isAuthenticated() && isTradesperson()) {
+      // Re-evaluate saved profile coordinates into local userLocation
+      loadUserLocationData();
       loadJobsBasedOnFilters();
     }
   }, [
-    filters.search,
-    filters.category,
-    filters.state,
-    filters.useLocation,
-    filters.maxDistance,
+    filters,
     userLocation,
     isAuthenticated,
     isTradesperson,
-    user?.trade_categories
+    // Trigger when the authenticated user's skills or saved coords change
+    // so new skills immediately affect the job list.
+    user?.trade_categories,
+    user?.latitude,
+    user?.longitude,
   ]);
 
   // If the user received a recent job notification (e.g. NEW_MATCHING_JOB / JOB_POSTED)
@@ -276,36 +269,22 @@ const BrowseJobsPage = () => {
   const loadUserLocationData = () => {
     // Check if user has saved location
     if (user?.latitude && user?.longitude) {
-      const newLoc = { lat: user.latitude, lng: user.longitude };
-      // Only update if different to prevent infinite re-render loops
-      if (!userLocation || userLocation.lat !== newLoc.lat || userLocation.lng !== newLoc.lng) {
-        setUserLocation(newLoc);
-      }
-      
-      if (!filters.useLocation || filters.maxDistance !== (user.travel_distance_km || 25)) {
-        setFilters(prev => ({ 
-          ...prev, 
-          maxDistance: user.travel_distance_km || 25,
-          useLocation: true 
-        }));
-      }
+      setUserLocation({ lat: user.latitude, lng: user.longitude });
+      setFilters(prev => ({ 
+        ...prev, 
+        maxDistance: user.travel_distance_km || 25,
+        useLocation: true 
+      }));
     } else if (user?.location) {
       const coords = resolveCoordinatesFromLocationText(user.location);
       if (coords && typeof coords.latitude === 'number' && typeof coords.longitude === 'number') {
-        const newLoc = { lat: coords.latitude, lng: coords.longitude };
-        // Only update if different
-        if (!userLocation || userLocation.lat !== newLoc.lat || userLocation.lng !== newLoc.lng) {
-          setUserLocation(newLoc);
-        }
-        
-        const dist = user?.travel_distance_km || DEFAULT_TRAVEL_DISTANCE_KM;
-        if (!filters.useLocation || filters.maxDistance !== dist) {
-          setFilters(prev => ({
-            ...prev,
-            maxDistance: dist,
-            useLocation: true
-          }));
-        }
+        // Convert util output { latitude, longitude } to map-friendly { lat, lng }
+        setUserLocation({ lat: coords.latitude, lng: coords.longitude });
+        setFilters(prev => ({
+          ...prev,
+          maxDistance: user?.travel_distance_km || DEFAULT_TRAVEL_DISTANCE_KM,
+          useLocation: true
+        }));
       }
     }
   };
@@ -321,10 +300,10 @@ const BrowseJobsPage = () => {
         typeof userLocation.lat === 'number' &&
         typeof userLocation.lng === 'number'
       ) {
-        // When a search, category, or state filter is applied, use the search endpoint with location params.
+        // When a search or category filter is applied, use the search endpoint with location params.
         // Otherwise, use the tradesperson endpoint which blends nearby and unlocated jobs
         // based on the user's saved location and travel distance.
-        if (filters.search || filters.category || filters.state) {
+        if (filters.search || filters.category) {
           const params = new URLSearchParams({
             latitude: userLocation.lat.toString(),
             longitude: userLocation.lng.toString(),
@@ -334,18 +313,10 @@ const BrowseJobsPage = () => {
           });
           if (filters.search) params.append('q', filters.search);
           if (filters.category) params.append('category', filters.category);
-          if (filters.state) params.append('state', filters.state);
           response = await jobsAPI.apiClient.get(`/jobs/search?${params.toString()}`);
         } else {
           const skip = (page - 1) * 50;
-          const params = new URLSearchParams({
-            limit: '50',
-            skip: skip.toString(),
-            latitude: userLocation.lat.toString(),
-            longitude: userLocation.lng.toString(),
-            max_distance_km: filters.maxDistance.toString()
-          });
-          response = await jobsAPI.apiClient.get(`/jobs/for-tradesperson?${params.toString()}`);
+          response = await jobsAPI.apiClient.get(`/jobs/for-tradesperson?limit=50&skip=${skip}`);
         }
       } else {
         // Use regular job fetching for tradespeople
@@ -864,22 +835,9 @@ const BrowseJobsPage = () => {
                   className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato"
                 >
                   <option value="">All Categories</option>
-                  {tradeCategories.map((category) => (
+                  {NIGERIAN_TRADE_CATEGORIES.map((category) => (
                     <option key={category} value={category}>
                       {category}
-                    </option>
-                  ))}
-                </select>
-
-                <select
-                  value={filters.state}
-                  onChange={(e) => setFilters(prev => ({ ...prev, state: e.target.value }))}
-                  className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato"
-                >
-                  <option value="">All States</option>
-                  {nigerianStates.map((state) => (
-                    <option key={state} value={state}>
-                      {state}
                     </option>
                   ))}
                 </select>
@@ -1199,7 +1157,7 @@ const BrowseJobsPage = () => {
                                 {job.location || 'Location not specified'}
                                 {job.distance_km !== undefined && job.distance_km !== null && (
                                   <span className="ml-1 text-gray-600 font-medium">
-                                    ({Number(job.distance_km) < 1 ? '< 1' : Number(job.distance_km).toFixed(1)} km)
+                                    ({Number(job.distance_km).toFixed(1)} km)
                                   </span>
                                 )}
                               </span>
@@ -1283,126 +1241,6 @@ const BrowseJobsPage = () => {
                       <span><strong>Interest:</strong> {selectedJobDetails.interests_count || 0} tradespeople interested</span>
                     </div>
                   </div>
-
-                  {/* Job Requirements & Details from Trade Category Questions (Moved up for better visibility) */}
-                  {selectedJobAnswers && selectedJobAnswers.answers && selectedJobAnswers.answers.length > 0 && (
-                    <div className="mt-6 mb-2">
-                      <h3 className="font-semibold mb-3 font-montserrat">Job Specifics</h3>
-                      <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-4">
-                        {(() => {
-                          // Helper to detect file URLs
-                          const isFileUrl = (str) => {
-                            if (typeof str !== 'string') return false;
-                            return str.includes('/api/jobs/trade-questions/file/') || 
-                                   str.match(/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i) ||
-                                   str.startsWith('data:image/');
-                          };
-
-                          // Filter answers: show ONLY non-empty text answers that are NOT files
-                          const visibleAnswers = selectedJobAnswers.answers.filter(ans => {
-                            if ((ans.question_type || '').startsWith('file_upload')) return false;
-                            
-                            const val = ans.answer_text || (Array.isArray(ans.answer_value) ? ans.answer_value.join(', ') : (ans.answer_value ?? ''));
-                            
-                            // Check if the value itself looks like a file URL (or list of them)
-                            if (isFileUrl(val) || (typeof val === 'string' && val.split(',').some(part => isFileUrl(part.trim())))) {
-                              return false;
-                            }
-
-                            // Be more permissive with what we show (allow 0, false, etc.)
-                            if (val === undefined || val === null || String(val).trim() === '' || val === '—' || val === 'undefined') return false;
-                            return true;
-                          });
-
-                          // Find file uploads (images) to show separately
-                          const fileAnswers = (selectedJobAnswers.answers || []).filter(ans => {
-                            const val = ans.answer_value || ans.answer_text;
-                            const isFileUploadType = (ans.question_type || '').startsWith('file_upload');
-
-                            // If explicitly a file upload type
-                            if (isFileUploadType) {
-                              if (Array.isArray(val) && val.length > 0) return true;
-                              if (typeof val === 'string' && val.trim().length > 0 && val !== 'undefined') return true;
-                            }
-
-                            // Also check if the content looks like file URLs (even if type isn't file_upload)
-                            if (typeof val === 'string' && val !== 'undefined') {
-                               if (isFileUrl(val) || val.split(',').some(part => isFileUrl(part.trim()))) {
-                                 return true;
-                               }
-                            }
-                            
-                            return false;
-                          });
-
-                          if (visibleAnswers.length === 0 && fileAnswers.length === 0) return null;
-
-                          return (
-                            <>
-                              {visibleAnswers.map((answer, index) => (
-                                <div key={index} className="border-b border-green-200 last:border-b-0 pb-3 last:pb-0">
-                                  <div className="font-medium text-gray-800 font-lato mb-1 text-xs">
-                                    {answer.question_text}
-                                  </div>
-                                  <div className="text-gray-700 font-lato pl-3 text-sm">
-                                    <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                                    {answer.answer_text || answer.answer_value}
-                                  </div>
-                                </div>
-                              ))}
-
-                              {/* Attachments Section */}
-                              {fileAnswers.length > 0 && (
-                                <div className="pt-4 border-t border-green-200">
-                                  <h4 className="font-medium text-gray-800 font-lato mb-3">Attachments</h4>
-                                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                                    {fileAnswers.map((ans, idx) => {
-                                      // Handle both array and comma-separated string
-                                      let files = [];
-                                      const rawValue = ans.answer_value || ans.answer_text;
-                                      
-                                      if (Array.isArray(rawValue)) {
-                                        files = rawValue;
-                                      } else if (typeof rawValue === 'string') {
-                                        // Split by comma if present, otherwise just one item
-                                        files = rawValue.includes(',') 
-                                          ? rawValue.split(',').map(s => s.trim()) 
-                                          : [rawValue];
-                                      }
-
-                                      return files.map((url, fIdx) => {
-                                        const isImage = url.match(/\.(jpg|jpeg|png|gif|webp)$/i) || 
-                                                      url.startsWith('data:image/') ||
-                                                      url.includes('/api/jobs/trade-questions/file/');
-                                        
-                                        return (
-                                          <div key={`${idx}-${fIdx}`} className="relative group border rounded-lg overflow-hidden h-32 bg-gray-100">
-                                            {isImage ? (
-                                              <div className="w-full h-full">
-                                                <AuthenticatedImage 
-                                                  src={url} 
-                                                  alt={`Attachment ${fIdx + 1}`} 
-                                                  className="w-full h-full object-contain"
-                                                />
-                                              </div>
-                                            ) : (
-                                              <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                                <FileText size={32} />
-                                              </div>
-                                            )}
-                                          </div>
-                                        );
-                                      });
-                                    })}
-                                  </div>
-                                </div>
-                              )}
-                            </>
-                          );
-                        })()}
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 <div>
@@ -1442,6 +1280,136 @@ const BrowseJobsPage = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Job Requirements & Details from Trade Category Questions */}
+              {selectedJobAnswers && selectedJobAnswers.answers && selectedJobAnswers.answers.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="font-semibold mb-3 font-montserrat">Job Requirements & Details</h3>
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-4">
+                    {(() => {
+                      // Helper to detect file URLs
+                      const isFileUrl = (str) => {
+                        if (typeof str !== 'string') return false;
+                        return str.includes('/api/jobs/trade-questions/file/') || 
+                               str.match(/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i) ||
+                               str.startsWith('data:image/');
+                      };
+
+                      // Filter answers: show ONLY non-empty text answers that are NOT files
+                      const visibleAnswers = selectedJobAnswers.answers.filter(ans => {
+                        if ((ans.question_type || '').startsWith('file_upload')) return false;
+                        
+                        const val = ans.answer_text || (Array.isArray(ans.answer_value) ? ans.answer_value.join(', ') : (ans.answer_value ?? ''));
+                        
+                        // Check if the value itself looks like a file URL (or list of them)
+                        if (isFileUrl(val) || (typeof val === 'string' && val.split(',').some(part => isFileUrl(part.trim())))) {
+                          return false;
+                        }
+
+                        // Be more permissive with what we show (allow 0, false, etc.)
+                        if (val === undefined || val === null || String(val).trim() === '' || val === '—' || val === 'undefined') return false;
+                        return true;
+                      });
+
+                      // Find file uploads (images) to show separately
+                      const fileAnswers = (selectedJobAnswers.answers || []).filter(ans => {
+                        const val = ans.answer_value || ans.answer_text;
+                        const isFileUploadType = (ans.question_type || '').startsWith('file_upload');
+
+                        // If explicitly a file upload type
+                        if (isFileUploadType) {
+                          if (Array.isArray(val) && val.length > 0) return true;
+                          if (typeof val === 'string' && val.trim().length > 0 && val !== 'undefined') return true;
+                        }
+
+                        // Also check if the content looks like file URLs (even if type isn't file_upload)
+                        if (typeof val === 'string' && val !== 'undefined') {
+                           if (isFileUrl(val) || val.split(',').some(part => isFileUrl(part.trim()))) {
+                             return true;
+                           }
+                        }
+                        
+                        return false;
+                      });
+
+                      return (
+                        <>
+                          {visibleAnswers.map((answer, index) => (
+                            <div key={index} className="border-b border-green-200 last:border-b-0 pb-3 last:pb-0">
+                              <div className="font-medium text-gray-800 font-lato mb-1">
+                                {answer.question_text}
+                              </div>
+                              <div className="text-gray-700 font-lato pl-3">
+                                <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                {answer.answer_text || answer.answer_value}
+                              </div>
+                            </div>
+                          ))}
+
+                          {/* Attachments Section */}
+                          {fileAnswers.length > 0 && (
+                            <div className="pt-4 border-t border-green-200">
+                              <h4 className="font-medium text-gray-800 font-lato mb-3">Attachments</h4>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                {fileAnswers.map((ans, idx) => {
+                                  // Handle both array and comma-separated string
+                                  let files = [];
+                                  const rawValue = ans.answer_value || ans.answer_text;
+                                  
+                                  if (Array.isArray(rawValue)) {
+                                    files = rawValue;
+                                  } else if (typeof rawValue === 'string') {
+                                    // Split by comma if present, otherwise just one item
+                                    files = rawValue.includes(',') 
+                                      ? rawValue.split(',').map(s => s.trim()) 
+                                      : [rawValue];
+                                  }
+
+                                  return files.map((url, fIdx) => {
+                                    // Handle cases where the URL is a data URI or a remote URL
+                                    // Also check if it's a file path that ends with an image extension, regardless of case
+                                    const isImage = url.match(/\.(jpg|jpeg|png|gif|webp)$/i) || 
+                                                  url.startsWith('data:image/') ||
+                                                  // Fallback: assume it's an image if it's in the trade-questions path (common for uploads)
+                                                  // This helps with signed URLs or paths that might not match the regex perfectly
+                                                  url.includes('/api/jobs/trade-questions/file/');
+                                    
+                                    return (
+                                      <div key={`${idx}-${fIdx}`} className="relative group border rounded-lg overflow-hidden h-32 bg-gray-100">
+                                        {isImage ? (
+                                          <div className="w-full h-full">
+                                            <AuthenticatedImage 
+                                              src={url} 
+                                              alt={`Attachment ${fIdx + 1}`} 
+                                              className="w-full h-full object-contain"
+                                            />
+                                          </div>
+                                        ) : (
+                                          <a  
+                                            href={url} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-blue-600 bg-gray-50 hover:bg-gray-100 transition-colors"
+                                          >
+                                            <span className="text-xs font-medium px-2 text-center">Download File</span>
+                                          </a>
+                                        )}
+                                      </div>
+                                    );
+                                  });
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
+                  <div className="mt-2 text-xs text-gray-500 font-lato">
+                    Specific requirements provided by the homeowner
+                  </div>
+                </div>
+              )}
 
               {/* Action Buttons */}
               <div className="flex justify-between items-center pt-6 border-t">

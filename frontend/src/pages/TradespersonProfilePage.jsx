@@ -693,15 +693,7 @@ const TradespersonProfilePage = () => {
                                 <User size={20} className="text-gray-600" />
                               </div>
                               <div>
-                                <h4 className="font-medium flex items-center gap-2">
-                                  {review.reviewer_name}
-                                  {review.is_verified_external && (
-                                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] py-0 h-5 flex items-center gap-1">
-                                      <CheckCircle size={10} />
-                                      Verified External
-                                    </Badge>
-                                  )}
-                                </h4>
+                                <h4 className="font-medium">{review.reviewer_name}</h4>
                                 <div className="flex items-center gap-2">
                                   <div className="flex">{getStarRating(review.rating)}</div>
                                   <span className="text-sm text-gray-500">

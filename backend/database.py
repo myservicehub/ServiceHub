@@ -5415,8 +5415,12 @@ class Database:
                 {"name": {"$regex": f"^{re.escape(old_name)}$", "$options": "i"}}
             )
             
+            print(f"DEBUG: Looking for old_name='{old_name}', new_name='{new_name}'")
+            print(f"DEBUG: Found existing trade: {existing}")
+            
             # Only update if the trade exists - never create new ones on update
             if not existing:
+                print(f"DEBUG: Trade not found, returning False")
                 return False
             
             result = await self.database.system_trades.update_one(
@@ -5430,9 +5434,12 @@ class Database:
             # Treat a matched document (even when no fields changed) as success
             matched = getattr(result, "matched_count", 0) > 0
             modified = getattr(result, "modified_count", 0) > 0
+            print(f"DEBUG: Update result - matched: {matched}, modified: {modified}")
             return matched or modified
         except Exception as e:
             print(f"Error updating trade: {e}")
+            import traceback
+            traceback.print_exc()
             return False
     
     async def delete_trade(self, trade_name: str):
