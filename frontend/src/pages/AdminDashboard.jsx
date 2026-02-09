@@ -633,15 +633,38 @@ const AdminDashboard = () => {
     setSelectedJobDetails(job);
     setSelectedJobAnswers(null);
     setShowJobDetailsModal(true);
+    setLoading(true);
     
-    // Fetch job question answers
     try {
-      const answers = await tradeCategoryQuestionsAPI.getJobQuestionAnswers(job.id);
-      if (answers && answers.answers && answers.answers.length > 0) {
-        setSelectedJobAnswers(answers);
+      // Fetch full job details (including homeowner_details) and question answers in parallel
+      const [detailsResult, answersResult] = await Promise.allSettled([
+        adminAPI.getJobDetailsAdmin(job.id),
+        tradeCategoryQuestionsAPI.getJobQuestionAnswers(job.id)
+      ]);
+
+      if (detailsResult.status === 'fulfilled') {
+        const fullJob = detailsResult.value.job;
+        setSelectedJobDetails(prev => ({ ...prev, ...fullJob }));
+      }
+
+      if (answersResult.status === 'fulfilled') {
+        const answers = answersResult.value;
+        if (answers && answers.answers && answers.answers.length > 0) {
+          setSelectedJobAnswers(answers);
+        }
+      } else if (job._id && job._id !== job.id) {
+        // Try fallback with _id if id fails
+        try {
+          const altAnswers = await tradeCategoryQuestionsAPI.getJobQuestionAnswers(job._id);
+          if (altAnswers && altAnswers.answers && altAnswers.answers.length > 0) {
+            setSelectedJobAnswers(altAnswers);
+          }
+        } catch {}
       }
     } catch (error) {
-      console.error('Failed to fetch job question answers:', error);
+      console.error('Failed to fetch full job details:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -5300,186 +5323,277 @@ const AdminDashboard = () => {
                 ✕
               </button>
             </div>
-            <div className="p-6 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-medium mb-2">Basic Information</h4>
-                  <div className="space-y-2 text-sm">
-                    <div><strong>Title:</strong> {selectedJobDetails.title}</div>
-                    <div><strong>Category:</strong> {selectedJobDetails.category}</div>
-                    <div><strong>Location:</strong> {selectedJobDetails.location}</div>
-                    <div><strong>Status:</strong> <span className={`px-2 py-1 rounded text-xs ${getJobStatusColor(selectedJobDetails.status)}`}>{selectedJobDetails.status}</span></div>
-                    <div><strong>Timeline:</strong> {selectedJobDetails.timeline || 'Not specified'}</div>
-                  </div>
+            <div className="p-6 space-y-6">
+              {loading ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600 mb-4"></div>
+                  <p className="text-gray-500">Loading full job details...</p>
                 </div>
-                <div>
-                  <h4 className="font-medium mb-2">Budget & Fees</h4>
-                  <div className="space-y-2 text-sm">
-                    <div><strong>Budget:</strong> {selectedJobDetails.budget_min && selectedJobDetails.budget_max ? `₦${selectedJobDetails.budget_min.toLocaleString()} - ₦${selectedJobDetails.budget_max.toLocaleString()}` : 'Negotiable'}</div>
-                    <div><strong>Access Fee:</strong> ₦{selectedJobDetails.access_fee_naira?.toLocaleString() || '1,000'} ({selectedJobDetails.access_fee_coins || 10} coins)</div>
-                    <div><strong>Interests:</strong> {selectedJobDetails.interests_count || 0} tradespeople</div>
-                  </div>
-                </div>
-              </div>
-              
-              <div>
-                <h4 className="font-medium mb-2">Description</h4>
-                <div className="bg-gray-50 p-3 rounded text-sm">
-                  {selectedJobDetails.description}
-                </div>
-              </div>
-
-              {selectedJobAnswers && selectedJobAnswers.answers && selectedJobAnswers.answers.length > 0 && (
-                <div>
-                  <h4 className="font-medium mb-2 font-montserrat">Job Requirements & Details</h4>
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-4">
-                    {(() => {
-                      // Helper to detect file URLs
-                      const isFileUrl = (str) => {
-                        if (typeof str !== 'string') return false;
-                        return str.includes('/api/jobs/trade-questions/file/') || 
-                               str.match(/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i) ||
-                               str.startsWith('data:image/');
-                      };
-
-                      // Filter answers: show ONLY non-empty text answers that are NOT files
-                      const visibleAnswers = selectedJobAnswers.answers.filter(ans => {
-                        if ((ans.question_type || '').startsWith('file_upload')) return false;
-                        
-                        const val = ans.answer_text || (Array.isArray(ans.answer_value) ? ans.answer_value.join(', ') : (ans.answer_value ?? ''));
-                        
-                        // Check if the value itself looks like a file URL (or list of them)
-                        if (isFileUrl(val) || (typeof val === 'string' && val.split(',').some(part => isFileUrl(part.trim())))) {
-                          return false;
-                        }
-
-                        if (!val || String(val).trim() === '' || val === '—') return false;
-                        return true;
-                      });
-
-                      // Find file uploads (images) to show separately
-                      const fileAnswers = selectedJobAnswers.answers.filter(ans => {
-                        const val = ans.answer_value || ans.answer_text;
-                        const isFileUploadType = (ans.question_type || '').startsWith('file_upload');
-
-                        // If explicitly a file upload type
-                        if (isFileUploadType) {
-                          if (Array.isArray(val) && val.length > 0) return true;
-                          if (typeof val === 'string' && val.trim().length > 0) return true;
-                        }
-
-                        // Also check if the content looks like file URLs (even if type isn't file_upload)
-                        if (typeof val === 'string') {
-                           if (isFileUrl(val) || val.split(',').some(part => isFileUrl(part.trim()))) {
-                             return true;
-                           }
-                        }
-                        
-                        return false;
-                      });
-
-                      return (
-                        <>
-                          {visibleAnswers.map((answer, index) => (
-                            <div key={index} className="border-b border-green-200 last:border-b-0 pb-3 last:pb-0">
-                              <div className="font-medium text-gray-800 font-lato mb-1">
-                                {answer.question_text}
-                              </div>
-                              <div className="text-gray-700 font-lato pl-3">
-                                <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                                {answer.answer_text || answer.answer_value}
-                              </div>
-                            </div>
-                          ))}
-
-                          {/* Attachments Section */}
-                          {fileAnswers.length > 0 && (
-                            <div className="pt-4 border-t border-green-200">
-                              <h4 className="font-medium text-gray-800 font-lato mb-3">Attachments</h4>
-                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                                {fileAnswers.map((ans, idx) => {
-                                  // Handle both array and comma-separated string
-                                  let files = [];
-                                  const rawValue = ans.answer_value || ans.answer_text;
-                                  
-                                  if (Array.isArray(rawValue)) {
-                                    files = rawValue;
-                                  } else if (typeof rawValue === 'string') {
-                                    // Split by comma if present, otherwise just one item
-                                    files = rawValue.includes(',') 
-                                      ? rawValue.split(',').map(s => s.trim()) 
-                                      : [rawValue];
-                                  }
-
-                                  return files.map((url, fIdx) => {
-                                    // Handle cases where the URL is a data URI or a remote URL
-                                    // Also check if it's a file path that ends with an image extension, regardless of case
-                                    const isImage = url.match(/\.(jpg|jpeg|png|gif|webp)$/i) || 
-                                                  url.startsWith('data:image/') ||
-                                                  url.includes('/api/jobs/trade-questions/file/');
-                                    
-                                    return (
-                                      <div key={`${idx}-${fIdx}`} className="relative group border rounded-lg overflow-hidden h-32 bg-gray-100">
-                                        {isImage ? (
-                                          <div className="w-full h-full">
-                                            <AuthenticatedImage 
-                                              src={url} 
-                                              alt={`Attachment ${fIdx + 1}`} 
-                                              className="w-full h-full object-contain"
-                                            />
-                                          </div>
-                                        ) : (
-                                          <a  
-                                            href={url} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer"
-                                            className="flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-blue-600 bg-gray-50 hover:bg-gray-100 transition-colors"
-                                          >
-                                            <span className="text-xs font-medium px-2 text-center">Download File</span>
-                                          </a>
-                                        )}
-                                      </div>
-                                    );
-                                  });
-                                })}
-                              </div>
-                            </div>
-                          )}
-                        </>
-                      );
-                    })()}
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <h4 className="font-medium mb-2">Homeowner Information</h4>
-                <div className="space-y-2 text-sm">
-                  <div><strong>Name:</strong> {selectedJobDetails.homeowner?.name || 'Unknown'}</div>
-                  <div><strong>Email:</strong> {selectedJobDetails.homeowner?.email || 'Not available'}</div>
-                  <div><strong>Phone:</strong> {selectedJobDetails.homeowner?.phone || 'Not available'}</div>
-                </div>
-              </div>
-
-              {selectedJobDetails.interested_tradespeople && selectedJobDetails.interested_tradespeople.length > 0 && (
-                <div>
-                  <h4 className="font-medium mb-2">Interested Tradespeople</h4>
-                  <div className="space-y-2">
-                    {selectedJobDetails.interested_tradespeople.map((tp, index) => (
-                      <div key={index} className="bg-gray-50 p-3 rounded text-sm">
-                        <div className="flex justify-between">
-                          <span><strong>{tp.tradesperson_name}</strong> ({tp.tradesperson_email})</span>
-                          <span className={`px-2 py-1 rounded text-xs ${tp.status === 'paid_access' ? 'bg-green-100 text-green-800' : tp.status === 'contact_shared' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                            {tp.status}
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                      <h4 className="font-medium mb-3 flex items-center gap-2">
+                        <span className="w-1 h-4 bg-purple-500 rounded-full"></span>
+                        Basic Information
+                      </h4>
+                      <div className="space-y-3 text-sm">
+                        <div className="flex justify-between border-b border-gray-200 pb-2">
+                          <span className="text-gray-500">Title:</span>
+                          <span className="font-medium">{selectedJobDetails.title}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-gray-200 pb-2">
+                          <span className="text-gray-500">Category:</span>
+                          <span className="font-medium">{selectedJobDetails.category}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-gray-200 pb-2">
+                          <span className="text-gray-500">Location:</span>
+                          <span className="font-medium">{selectedJobDetails.location}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-gray-200 pb-2">
+                          <span className="text-gray-500">Status:</span>
+                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${getJobStatusColor(selectedJobDetails.status)}`}>
+                            {selectedJobDetails.status}
                           </span>
                         </div>
-                        <div className="text-gray-500 text-xs mt-1">
-                          Applied: {new Date(tp.created_at).toLocaleDateString()}
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Timeline:</span>
+                          <span className="font-medium">{selectedJobDetails.timeline || 'Not specified'}</span>
                         </div>
                       </div>
-                    ))}
+                    </div>
+
+                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                      <h4 className="font-medium mb-3 flex items-center gap-2">
+                        <span className="w-1 h-4 bg-green-500 rounded-full"></span>
+                        Budget & Fees
+                      </h4>
+                      <div className="space-y-3 text-sm">
+                        <div className="flex justify-between border-b border-gray-200 pb-2">
+                          <span className="text-gray-500">Budget:</span>
+                          <span className="font-medium text-green-700">
+                            {selectedJobDetails.budget_min && selectedJobDetails.budget_max 
+                              ? `₦${selectedJobDetails.budget_min.toLocaleString()} - ₦${selectedJobDetails.budget_max.toLocaleString()}` 
+                              : 'Negotiable'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between border-b border-gray-200 pb-2">
+                          <span className="text-gray-500">Access Fee:</span>
+                          <span className="font-medium">
+                            ₦{selectedJobDetails.access_fee_naira?.toLocaleString() || '1,000'} ({selectedJobDetails.access_fee_coins || 10} coins)
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Interests:</span>
+                          <span className="font-medium">{selectedJobDetails.interests_count || 0} tradespeople</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                  
+                  <div>
+                    <h4 className="font-medium mb-3 flex items-center gap-2">
+                      <span className="w-1 h-4 bg-purple-500 rounded-full"></span>
+                      Description
+                    </h4>
+                    <div className="bg-gray-50 p-4 rounded-lg text-sm border border-gray-100 shadow-sm">
+                      {selectedJobDetails.description ? (
+                        <div className="space-y-2">
+                          {selectedJobDetails.description.split('; ').map((item, idx) => {
+                            const parts = item.split(': ');
+                            if (parts.length > 1) {
+                              return (
+                                <div key={idx} className="flex gap-2">
+                                  <span className="font-semibold text-gray-700 shrink-0">{parts[0]}:</span>
+                                  <span className="text-gray-600">{parts.slice(1).join(': ')}</span>
+                                </div>
+                              );
+                            }
+                            return <div key={idx} className="text-gray-600">{item}</div>;
+                          })}
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 italic">No description provided</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {selectedJobAnswers && selectedJobAnswers.answers && selectedJobAnswers.answers.length > 0 && (
+                    <div>
+                      <h4 className="font-medium mb-3 flex items-center gap-2">
+                        <span className="w-1 h-4 bg-green-500 rounded-full"></span>
+                        Job Requirements & Details
+                      </h4>
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-4">
+                        {(() => {
+                          // Helper to detect file URLs
+                          const isFileUrl = (str) => {
+                            if (typeof str !== 'string') return false;
+                            return str.includes('/api/jobs/trade-questions/file/') || 
+                                   str.match(/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i) ||
+                                   str.startsWith('data:image/');
+                          };
+
+                          // Filter answers: show ONLY non-empty text answers that are NOT files
+                          const visibleAnswers = selectedJobAnswers.answers.filter(ans => {
+                            if ((ans.question_type || '').startsWith('file_upload')) return false;
+                            
+                            const val = ans.answer_text || (Array.isArray(ans.answer_value) ? ans.answer_value.join(', ') : (ans.answer_value ?? ''));
+                            
+                            if (isFileUrl(val) || (typeof val === 'string' && val.split(',').some(part => isFileUrl(part.trim())))) {
+                              return false;
+                            }
+
+                            if (!val || String(val).trim() === '' || val === '—') return false;
+                            return true;
+                          });
+
+                          // Find file uploads (images) to show separately
+                          const fileAnswers = selectedJobAnswers.answers.filter(ans => {
+                            const val = ans.answer_value || ans.answer_text;
+                            const isFileUploadType = (ans.question_type || '').startsWith('file_upload');
+
+                            if (isFileUploadType) {
+                              if (Array.isArray(val) && val.length > 0) return true;
+                              if (typeof val === 'string' && val.trim().length > 0) return true;
+                            }
+
+                            if (typeof val === 'string') {
+                               if (isFileUrl(val) || val.split(',').some(part => isFileUrl(part.trim()))) {
+                                 return true;
+                               }
+                            }
+                            
+                            return false;
+                          });
+
+                          return (
+                            <>
+                              {visibleAnswers.map((answer, index) => (
+                                <div key={index} className="border-b border-green-200 last:border-b-0 pb-3 last:pb-0">
+                                  <div className="font-medium text-gray-800 mb-1">
+                                    {answer.question_text}
+                                  </div>
+                                  <div className="text-gray-700 pl-3 flex items-start gap-2">
+                                    <span className="inline-block w-1.5 h-1.5 bg-green-500 rounded-full mt-1.5 shrink-0"></span>
+                                    <span>{answer.answer_text || (Array.isArray(answer.answer_value) ? answer.answer_value.join(', ') : answer.answer_value)}</span>
+                                  </div>
+                                </div>
+                              ))}
+
+                              {fileAnswers.length > 0 && (
+                                <div className="pt-4 border-t border-green-200">
+                                  <h4 className="font-medium text-gray-800 mb-3">Attachments</h4>
+                                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                                    {fileAnswers.map((ans, idx) => {
+                                      let files = [];
+                                      const rawValue = ans.answer_value || ans.answer_text;
+                                      
+                                      if (Array.isArray(rawValue)) {
+                                        files = rawValue;
+                                      } else if (typeof rawValue === 'string') {
+                                        files = rawValue.includes(',') 
+                                          ? rawValue.split(',').map(s => s.trim()) 
+                                          : [rawValue];
+                                      }
+
+                                      return files.map((url, fIdx) => {
+                                        const isImage = url.match(/\.(jpg|jpeg|png|gif|webp)$/i) || 
+                                                      url.startsWith('data:image/') ||
+                                                      url.includes('/api/jobs/trade-questions/file/');
+                                        
+                                        return (
+                                          <div key={`${idx}-${fIdx}`} className="relative group border border-green-200 rounded-lg overflow-hidden h-32 bg-white shadow-sm hover:shadow-md transition-shadow">
+                                            {isImage ? (
+                                              <div className="w-full h-full cursor-pointer" onClick={() => window.open(url, '_blank')}>
+                                                <AuthenticatedImage 
+                                                  src={url} 
+                                                  alt={`Attachment ${fIdx + 1}`} 
+                                                  className="w-full h-full object-cover"
+                                                />
+                                                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-opacity flex items-center justify-center">
+                                                  <span className="text-white opacity-0 group-hover:opacity-100 text-xs font-medium">View Full</span>
+                                                </div>
+                                              </div>
+                                            ) : (
+                                              <a  
+                                                href={url} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                className="flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-green-600 bg-gray-50 hover:bg-green-50 transition-colors"
+                                              >
+                                                <svg className="w-8 h-8 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                                </svg>
+                                                <span className="text-[10px] font-medium px-2 text-center truncate w-full">Download File</span>
+                                              </a>
+                                            )}
+                                          </div>
+                                        );
+                                      });
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  )}
+
+                  <div>
+                    <h4 className="font-medium mb-3 flex items-center gap-2">
+                      <span className="w-1 h-4 bg-blue-500 rounded-full"></span>
+                      Homeowner Information
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-blue-50 p-4 rounded-lg border border-blue-100 shadow-sm">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] text-blue-600 font-bold uppercase tracking-wider mb-1">Name</span>
+                        <span className="font-semibold text-gray-900">{selectedJobDetails.homeowner_details?.name || selectedJobDetails.homeowner_name || 'Unknown'}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] text-blue-600 font-bold uppercase tracking-wider mb-1">Email</span>
+                        <span className="font-semibold text-gray-900 break-all">{selectedJobDetails.homeowner_details?.email || selectedJobDetails.homeowner_email || 'Not available'}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] text-blue-600 font-bold uppercase tracking-wider mb-1">Phone</span>
+                        <span className="font-semibold text-gray-900">{selectedJobDetails.homeowner_details?.phone || 'Not available'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {selectedJobDetails.interested_tradespeople && selectedJobDetails.interested_tradespeople.length > 0 && (
+                    <div>
+                      <h4 className="font-medium mb-3 flex items-center gap-2">
+                        <span className="w-1 h-4 bg-yellow-500 rounded-full"></span>
+                        Interested Tradespeople ({selectedJobDetails.interested_tradespeople.length})
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {selectedJobDetails.interested_tradespeople.map((tp, index) => (
+                          <div key={index} className="bg-yellow-50 p-3 rounded-lg border border-yellow-100 text-sm shadow-sm">
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <div className="font-semibold text-gray-900">{tp.tradesperson_name}</div>
+                                <div className="text-xs text-gray-500 truncate max-w-[150px]">{tp.tradesperson_email}</div>
+                              </div>
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tighter ${
+                                tp.status === 'paid_access' ? 'bg-green-100 text-green-800' : 
+                                tp.status === 'contact_shared' ? 'bg-blue-100 text-blue-800' : 
+                                'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {tp.status.replace('_', ' ')}
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-gray-400 font-medium">
+                              Applied: {new Date(tp.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
