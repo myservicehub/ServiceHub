@@ -1911,6 +1911,13 @@ class Database:
             "status": "active"
         })
         
+        # Get total states
+        try:
+            from models.nigerian_states import NIGERIAN_STATES
+            total_states = len(NIGERIAN_STATES)
+        except Exception:
+            total_states = 37 # Default for Nigeria (36 + FCT)
+        
         # Get total available categories from static trade categories
         try:
             from models.trade_categories import NIGERIAN_TRADE_CATEGORIES
@@ -1939,6 +1946,7 @@ class Database:
         return {
             "total_tradespeople": total_tradespeople,
             "total_categories": total_categories,
+            "total_states": total_states,
             "total_reviews": total_reviews,
             "average_rating": average_rating,
             "total_jobs": total_jobs,
