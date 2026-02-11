@@ -3521,8 +3521,10 @@ class Database:
         return await self.get_jobs(skip=skip, limit=limit, filters={"status": "active"})
 
     @time_it
-    async def get_jobs_for_tradesperson(self, tradesperson_id: str, skip: int = 0, limit: int = 50) -> List[dict]:
-        """Get jobs filtered by tradesperson's skills and location preferences"""
+    async def get_jobs_for_tradesperson(self, tradesperson_id: str, skip: int = 0, limit: int = 50, 
+                                      latitude: float = None, longitude: float = None, 
+                                      max_distance_km: float = None) -> List[dict]:
+        """Get jobs filtered by tradesperson's skills and location preferences with optional overrides"""
         try:
             # Get tradesperson details
             tradesperson = await self.get_user_by_id(tradesperson_id)
@@ -3550,17 +3552,19 @@ class Database:
                 print(f"Skills filter applied (optimized): {tradesperson_categories}")
             
             # 2. LOCATION FILTERING - Show jobs within tradesperson's travel distance
-            if (tradesperson.get("latitude") is not None and 
-                tradesperson.get("longitude") is not None):
-                
-                max_distance = tradesperson.get("travel_distance_km", 25)  # Default 25km
-                print(f"Location filter applied: {max_distance}km radius")
+            # Use overrides if provided, otherwise use tradesperson's profile location
+            effective_lat = latitude if latitude is not None else tradesperson.get("latitude")
+            effective_lng = longitude if longitude is not None else tradesperson.get("longitude")
+            effective_max_dist = max_distance_km if max_distance_km is not None else tradesperson.get("travel_distance_km", 25)
+            
+            if effective_lat is not None and effective_lng is not None:
+                print(f"Location filter applied: {effective_max_dist}km radius around ({effective_lat}, {effective_lng})")
                 
                 # Use location-based filtering with skills filtering
                 return await self.get_jobs_near_location_with_skills(
-                    latitude=tradesperson["latitude"],
-                    longitude=tradesperson["longitude"],
-                    max_distance_km=max_distance,
+                    latitude=float(effective_lat),
+                    longitude=float(effective_lng),
+                    max_distance_km=float(effective_max_dist),
                     skill_categories=tradesperson_categories,
                     skip=skip,
                     limit=limit
