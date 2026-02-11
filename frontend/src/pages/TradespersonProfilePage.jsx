@@ -821,6 +821,12 @@ const TradespersonProfilePage = () => {
                             const getFullUrl = (url) => {
                               if (!url) return '';
                               if (url.startsWith('http')) return url;
+                              // If url is just a filename (no path separators), prepend the certification image API path
+                              if (!url.includes('/')) {
+                                return `/api/auth/certifications/image/${url}`;
+                              }
+                              // If url already starts with /api, return as-is
+                              if (url.startsWith('/api/')) return url;
                               const baseUrl = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/$/, '');
                               return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
                             };

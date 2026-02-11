@@ -151,12 +151,11 @@ export const adminAPI = {
 
   // Update job access fee
   async updateJobAccessFee(jobId, accessFeeNaira) {
-    const formData = new FormData();
-    formData.append('access_fee_naira', accessFeeNaira);
-    
-    const response = await apiClient.put(`/admin/jobs/${jobId}/access-fee`, formData, {
+    const response = await apiClient.put(`/admin/jobs/${jobId}/access-fee`, {
+      access_fee_naira: accessFeeNaira
+    }, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        'Content-Type': 'application/json',
       },
     });
     return response.data;
