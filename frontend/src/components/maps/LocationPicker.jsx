@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 import { MapPin, Crosshair, Search } from 'lucide-react';
+import { resolveCoordinatesFromLocationText, nearestStateFromCoordinates } from '../../utils/locationCoordinates';
 
 const LocationPicker = ({ 
   onLocationSelect, 
@@ -128,44 +129,52 @@ const LocationPicker = ({
 
       // Initialize search box if search is enabled
       if (showSearch && searchInputRef.current) {
-        const searchBoxInstance = new google.maps.places.SearchBox(searchInputRef.current);
-        setSearchBox(searchBoxInstance);
-
-        // Bias search results to map bounds
-        mapInstance.addListener('bounds_changed', () => {
-          searchBoxInstance.setBounds(mapInstance.getBounds());
-        });
-
-        // Listen for place selection
-        searchBoxInstance.addListener('places_changed', () => {
-          const places = searchBoxInstance.getPlaces();
-          
-          if (places.length === 0) return;
-
-          const place = places[0];
-          
-          if (!place.geometry || !place.geometry.location) return;
-
-          const location = {
-            lat: place.geometry.location.lat(),
-            lng: place.geometry.location.lng()
-          };
-
-          // Update map and marker
-          mapInstance.setCenter(location);
-          mapInstance.setZoom(15);
-          markerInstance.setPosition(location);
-          
-          setSelectedLocation(location);
-          
-          if (onLocationSelect) {
-            onLocationSelect({
-              ...location,
-              address: place.formatted_address,
-              placeId: place.place_id
-            });
-          }
-        });
+        if (google.maps.places && google.maps.places.SearchBox) {
+          const searchBoxInstance = new google.maps.places.SearchBox(searchInputRef.current);
+          setSearchBox(searchBoxInstance);
+          mapInstance.addListener('bounds_changed', () => {
+            searchBoxInstance.setBounds(mapInstance.getBounds());
+          });
+          searchBoxInstance.addListener('places_changed', () => {
+            const places = searchBoxInstance.getPlaces();
+            if (places.length === 0) return;
+            const place = places[0];
+            if (!place.geometry || !place.geometry.location) return;
+            const location = {
+              lat: place.geometry.location.lat(),
+              lng: place.geometry.location.lng()
+            };
+            mapInstance.setCenter(location);
+            mapInstance.setZoom(15);
+            markerInstance.setPosition(location);
+            setSelectedLocation(location);
+            if (onLocationSelect) {
+              onLocationSelect({
+                ...location,
+                address: place.formatted_address,
+                placeId: place.place_id
+              });
+            }
+          });
+        } else {
+          const inputEl = searchInputRef.current;
+          inputEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+              const query = inputEl.value;
+              const coords = resolveCoordinatesFromLocationText(query);
+              if (coords && typeof coords.latitude === 'number' && typeof coords.longitude === 'number') {
+                const location = { lat: coords.latitude, lng: coords.longitude };
+                mapInstance.setCenter(location);
+                mapInstance.setZoom(15);
+                markerInstance.setPosition(location);
+                setSelectedLocation({ ...location, address: query });
+                if (onLocationSelect) {
+                  onLocationSelect({ ...location, address: query });
+                }
+              }
+            }
+          }, { once: true });
+        }
       }
 
       setLoading(false);
@@ -217,6 +226,17 @@ const LocationPicker = ({
         }
       } catch (err) {
         console.error('Geocode failed for address:', address, err);
+        const coords = resolveCoordinatesFromLocationText(address);
+        if (coords && typeof coords.latitude === 'number' && typeof coords.longitude === 'number') {
+          const location = { lat: coords.latitude, lng: coords.longitude };
+          map.setCenter(location);
+          map.setZoom(typeof centerZoom === 'number' ? centerZoom : 13);
+          marker.setPosition(location);
+          setSelectedLocation({ ...location, address });
+          if (onLocationSelect) {
+            onLocationSelect({ ...location, address });
+          }
+        }
       }
     };
     if (centerAddress) {
@@ -254,6 +274,12 @@ const LocationPicker = ({
       }
     } catch (error) {
       console.error('Reverse geocoding failed:', error);
+      const stateName = nearestStateFromCoordinates(location.lat, location.lng);
+      const address = stateName || `Lat: ${location.lat.toFixed(6)}, Lng: ${location.lng.toFixed(6)}`;
+      setSelectedLocation(prev => ({ ...prev, address }));
+      if (onLocationSelect) {
+        onLocationSelect({ ...location, address });
+      }
     }
   };
 
