@@ -731,9 +731,12 @@ async def get_job_details_admin(job_id: str):
             raise HTTPException(status_code=404, detail="Job not found")
         
         # Get additional details in parallel
-        homeowner_email = job.get("homeowner", {}).get("email")
-        homeowner_id = job.get("homeowner", {}).get("id")
-        
+        # Robustly extract homeowner identification
+        homeowner_email = job.get("homeowner", {}).get("email") if isinstance(job.get("homeowner"), dict) else None
+        homeowner_id = job.get("homeowner_id")
+        if not homeowner_id and isinstance(job.get("homeowner"), dict):
+            homeowner_id = job["homeowner"].get("id")
+            
         logger.info(f"Job found. Homeowner email: {homeowner_email}, id: {homeowner_id}")
         
         tasks = [
@@ -741,8 +744,10 @@ async def get_job_details_admin(job_id: str):
             database.get_job_question_answers(job_id)
         ]
         
-        # Add homeowner fetch task
-        if homeowner_email:
+        # Add homeowner fetch task - try ID first, then email
+        if homeowner_id:
+            tasks.append(database.get_user_by_id(homeowner_id))
+        elif homeowner_email:
             tasks.append(database.get_user_by_email(homeowner_email))
         else:
             async def get_none(): return None
@@ -772,13 +777,19 @@ async def get_job_details_admin(job_id: str):
         end_time = time.time()
         logger.info(f"Job details fetched in {end_time - start_time:.4f}s for job {job_id}")
 
+        job_homeowner_obj = job.get("homeowner") if isinstance(job.get("homeowner"), dict) else {}
+        h_name = (homeowner.get("name") if (homeowner and not isinstance(homeowner, Exception)) else None) or job_homeowner_obj.get("name") or job.get("homeowner_name") or "Unknown"
+        h_email = (homeowner.get("email") if (homeowner and not isinstance(homeowner, Exception)) else None) or job_homeowner_obj.get("email") or job.get("homeowner_email") or "Unknown"
+        h_phone = (homeowner.get("phone") if (homeowner and not isinstance(homeowner, Exception)) else None) or job_homeowner_obj.get("phone") or job.get("homeowner_phone") or "Unknown"
+        h_ver_status = homeowner.get("verification_status") if (homeowner and not isinstance(homeowner, Exception)) else "unknown"
+
         job_details = {
             **job,
             "homeowner_details": {
-                "name": homeowner.get("name") if (homeowner and not isinstance(homeowner, Exception)) else "Unknown",
-                "email": homeowner.get("email") if (homeowner and not isinstance(homeowner, Exception)) else "Unknown",
-                "phone": homeowner.get("phone") if (homeowner and not isinstance(homeowner, Exception)) else "Unknown",
-                "verification_status": homeowner.get("verification_status") if (homeowner and not isinstance(homeowner, Exception)) else "unknown",
+                "name": h_name,
+                "email": h_email,
+                "phone": h_phone,
+                "verification_status": h_ver_status,
                 "total_jobs": homeowner_total_jobs
             },
             "interests_count": interests_count,

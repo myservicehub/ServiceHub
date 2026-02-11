@@ -1054,9 +1054,7 @@ class Database:
     async def get_job_by_id(self, job_id: str) -> Optional[dict]:
         job = await self.database.jobs.find_one({"id": job_id})
         if job:
-            job_id_str = str(job['_id'])
-            job['_id'] = job_id_str
-            job['id'] = job_id_str
+            job['_id'] = str(job['_id'])
         return job
 
     @time_it
@@ -1273,9 +1271,7 @@ class Database:
         if not job:
             return None
         
-        job_id_str = str(job["_id"])
-        job["_id"] = job_id_str
-        job["id"] = job_id_str
+        job["_id"] = str(job["_id"])
         
         # Parallel fetch for homeowner, interests, and job counts
         tasks = []

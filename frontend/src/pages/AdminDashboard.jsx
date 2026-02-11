@@ -645,6 +645,11 @@ const AdminDashboard = () => {
       if (detailsResult.status === 'fulfilled') {
         const fullJob = detailsResult.value.job;
         setSelectedJobDetails(prev => ({ ...prev, ...fullJob }));
+        
+        // Use question_answers from details if available and no separate answers yet
+        if (fullJob.question_answers && fullJob.question_answers.answers && fullJob.question_answers.answers.length > 0) {
+          setSelectedJobAnswers(fullJob.question_answers);
+        }
       }
 
       if (answersResult.status === 'fulfilled') {
@@ -652,7 +657,7 @@ const AdminDashboard = () => {
         if (answers && answers.answers && answers.answers.length > 0) {
           setSelectedJobAnswers(answers);
         }
-      } else if (job._id && job._id !== job.id) {
+      } else if (job._id && job._id !== job.id && (!selectedJobAnswers || !selectedJobAnswers.answers)) {
         // Try fallback with _id if id fails
         try {
           const altAnswers = await tradeCategoryQuestionsAPI.getJobQuestionAnswers(job._id);
@@ -5394,26 +5399,28 @@ const AdminDashboard = () => {
                   <div>
                     <h4 className="font-medium mb-3 flex items-center gap-2">
                       <span className="w-1 h-4 bg-purple-500 rounded-full"></span>
-                      Description
+                      Job Description
                     </h4>
-                    <div className="bg-gray-50 p-4 rounded-lg text-sm border border-gray-100 shadow-sm">
+                    <div className="bg-gray-50 p-5 rounded-lg text-sm border border-gray-100 shadow-sm">
                       {selectedJobDetails.description ? (
-                        <div className="space-y-2">
+                        <div className="grid grid-cols-1 gap-y-3">
                           {selectedJobDetails.description.split('; ').map((item, idx) => {
                             const parts = item.split(': ');
                             if (parts.length > 1) {
                               return (
-                                <div key={idx} className="flex gap-2">
-                                  <span className="font-semibold text-gray-700 shrink-0">{parts[0]}:</span>
-                                  <span className="text-gray-600">{parts.slice(1).join(': ')}</span>
+                                <div key={idx} className="flex flex-col sm:flex-row sm:gap-4 border-b border-gray-100 pb-2 last:border-0 last:pb-0">
+                                  <span className="font-bold text-gray-700 sm:w-1/3 shrink-0">{parts[0]}</span>
+                                  <span className="text-gray-600 flex-1">{parts.slice(1).join(': ')}</span>
                                 </div>
                               );
                             }
-                            return <div key={idx} className="text-gray-600">{item}</div>;
+                            return <div key={idx} className="text-gray-600 py-1">{item}</div>;
                           })}
                         </div>
                       ) : (
-                        <span className="text-gray-400 italic">No description provided</span>
+                        <div className="flex items-center justify-center py-4">
+                          <span className="text-gray-400 italic">No detailed description provided for this job</span>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -5467,6 +5474,11 @@ const AdminDashboard = () => {
                             return false;
                           });
 
+                          // Log for debugging
+                          if (fileAnswers.length > 0) {
+                            console.log('🖼️ Found file attachments for admin view:', fileAnswers);
+                          }
+
                           return (
                             <>
                               {visibleAnswers.map((answer, index) => (
@@ -5483,7 +5495,12 @@ const AdminDashboard = () => {
 
                               {fileAnswers.length > 0 && (
                                 <div className="pt-4 border-t border-green-200">
-                                  <h4 className="font-medium text-gray-800 mb-3">Attachments</h4>
+                                  <h4 className="font-medium text-gray-800 mb-3 flex items-center gap-2">
+                                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    Job Attachments ({fileAnswers.reduce((acc, ans) => acc + (Array.isArray(ans.answer_value || ans.answer_text) ? (ans.answer_value || ans.answer_text).length : 1), 0)})
+                                  </h4>
                                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                                     {fileAnswers.map((ans, idx) => {
                                       let files = [];
@@ -5498,16 +5515,25 @@ const AdminDashboard = () => {
                                       }
 
                                       return files.map((url, fIdx) => {
-                                        const isImage = url.match(/\.(jpg|jpeg|png|gif|webp)$/i) || 
-                                                      url.startsWith('data:image/') ||
-                                                      url.includes('/api/jobs/trade-questions/file/');
+                                        // Ensure the URL is absolute or properly prefixed
+                                        let finalUrl = url;
+                                        if (typeof url === 'string' && !url.startsWith('http') && !url.startsWith('data:') && !url.startsWith('/')) {
+                                          // If it's just a filename from a job, prefix it
+                                          finalUrl = `/api/jobs/trade-questions/file/${selectedJobDetails.id}/${url}`;
+                                        }
+
+                                        const isImage = typeof finalUrl === 'string' && (
+                                          finalUrl.match(/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i) || 
+                                          finalUrl.startsWith('data:image/') ||
+                                          finalUrl.includes('/api/jobs/trade-questions/file/')
+                                        );
                                         
                                         return (
                                           <div key={`${idx}-${fIdx}`} className="relative group border border-green-200 rounded-lg overflow-hidden h-32 bg-white shadow-sm hover:shadow-md transition-shadow">
                                             {isImage ? (
-                                              <div className="w-full h-full cursor-pointer" onClick={() => window.open(url, '_blank')}>
+                                              <div className="w-full h-full cursor-pointer" onClick={() => window.open(finalUrl, '_blank')}>
                                                 <AuthenticatedImage 
-                                                  src={url} 
+                                                  src={finalUrl} 
                                                   alt={`Attachment ${fIdx + 1}`} 
                                                   className="w-full h-full object-cover"
                                                 />
@@ -5517,7 +5543,7 @@ const AdminDashboard = () => {
                                               </div>
                                             ) : (
                                               <a  
-                                                href={url} 
+                                                href={finalUrl} 
                                                 target="_blank" 
                                                 rel="noopener noreferrer"
                                                 className="flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-green-600 bg-gray-50 hover:bg-green-50 transition-colors"
@@ -5550,15 +5576,27 @@ const AdminDashboard = () => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-blue-50 p-4 rounded-lg border border-blue-100 shadow-sm">
                       <div className="flex flex-col">
                         <span className="text-[10px] text-blue-600 font-bold uppercase tracking-wider mb-1">Name</span>
-                        <span className="font-semibold text-gray-900">{selectedJobDetails.homeowner_details?.name || selectedJobDetails.homeowner_name || 'Unknown'}</span>
+                        <span className="font-semibold text-gray-900">
+                          {selectedJobDetails.homeowner_details?.name && selectedJobDetails.homeowner_details.name !== 'Unknown' 
+                            ? selectedJobDetails.homeowner_details.name 
+                            : (selectedJobDetails.homeowner_name || selectedJobDetails.homeowner?.name || 'Unknown')}
+                        </span>
                       </div>
                       <div className="flex flex-col">
                         <span className="text-[10px] text-blue-600 font-bold uppercase tracking-wider mb-1">Email</span>
-                        <span className="font-semibold text-gray-900 break-all">{selectedJobDetails.homeowner_details?.email || selectedJobDetails.homeowner_email || 'Not available'}</span>
+                        <span className="font-semibold text-gray-900 break-all">
+                          {selectedJobDetails.homeowner_details?.email && selectedJobDetails.homeowner_details.email !== 'Unknown'
+                            ? selectedJobDetails.homeowner_details.email 
+                            : (selectedJobDetails.homeowner_email || selectedJobDetails.homeowner?.email || 'Not available')}
+                        </span>
                       </div>
                       <div className="flex flex-col">
                         <span className="text-[10px] text-blue-600 font-bold uppercase tracking-wider mb-1">Phone</span>
-                        <span className="font-semibold text-gray-900">{selectedJobDetails.homeowner_details?.phone || 'Not available'}</span>
+                        <span className="font-semibold text-gray-900">
+                          {selectedJobDetails.homeowner_details?.phone && selectedJobDetails.homeowner_details.phone !== 'Unknown'
+                            ? selectedJobDetails.homeowner_details.phone 
+                            : (selectedJobDetails.homeowner_phone || selectedJobDetails.homeowner?.phone || 'Not available')}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -5933,9 +5971,10 @@ const AdminDashboard = () => {
                 <div>
                   <h4 className="text-lg font-medium mb-3">Homeowner Info</h4>
                   <div className="space-y-2">
-                    <div><strong>Name:</strong> {selectedJob.homeowner?.name || 'Unknown'}</div>
-                    <div><strong>Email:</strong> {selectedJob.homeowner?.email || 'Not provided'}</div>
-                    <div><strong>Total Jobs:</strong> {selectedJob.homeowner?.total_jobs || 0}</div>
+                    <div><strong>Name:</strong> {selectedJob.homeowner_details?.name || selectedJob.homeowner?.name || 'Unknown'}</div>
+                    <div><strong>Email:</strong> {selectedJob.homeowner_details?.email || selectedJob.homeowner?.email || 'Not provided'}</div>
+                    <div><strong>Phone:</strong> {selectedJob.homeowner_details?.phone || selectedJob.homeowner?.phone || 'Not available'}</div>
+                    <div><strong>Total Jobs:</strong> {selectedJob.homeowner_details?.total_jobs || selectedJob.homeowner?.total_jobs || 0}</div>
                   </div>
                 </div>
               </div>
