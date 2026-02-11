@@ -75,6 +75,15 @@ app = FastAPI(lifespan=lifespan, redirect_slashes=False)
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     """Log all HTTP requests with timing and response status."""
+    if request.method == "OPTIONS":
+        # For OPTIONS requests, we want to be careful not to break preflight
+        try:
+            response = await call_next(request)
+            return response
+        except Exception as e:
+            logger.error(f"Error in OPTIONS request: {str(e)}")
+            return JSONResponse(status_code=400, content={"detail": "Invalid OPTIONS request"})
+
     request_id = str(uuid.uuid4())
     start_time = time.time()
     
@@ -111,14 +120,19 @@ api_router = APIRouter()
 # "https://my-servicehub.vercel.app, http://localhost:3001"
 allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "*")
 if allowed_origins_env.strip() == "*" or allowed_origins_env.strip() == "":
-    allowed_origins = ["*"]
+    # Note: allow_origins=["*"] cannot be used with allow_credentials=True in Starlette
+    # Instead, we use allow_origin_regex=".*" to allow all origins with credentials
+    allowed_origins = []
+    allow_origin_regex = ".*"
 else:
     allowed_origins = [o.strip() for o in allowed_origins_env.split(",") if o.strip()]
+    allow_origin_regex = None
 
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
     allow_origins=allowed_origins,
+    allow_origin_regex=allow_origin_regex,
     allow_methods=["*"],
     allow_headers=["*"],
 )

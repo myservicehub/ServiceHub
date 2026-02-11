@@ -2,8 +2,11 @@ FROM python:3.11-slim
 WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+# Copy only requirements first to leverage Docker layer caching
 COPY backend/requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
+
+# Copy the rest of the application
 COPY backend /app/backend
 ENV PORT=8000
 ENV UPLOADS_DIR=/app/backend/uploads
