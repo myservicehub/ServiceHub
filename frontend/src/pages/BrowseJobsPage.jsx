@@ -1290,11 +1290,71 @@ const BrowseJobsPage = () => {
               {selectedJobDetails.description && (
                 <div className="mb-6">
                   <h3 className="font-semibold mb-3 font-montserrat">Job Description</h3>
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-gray-700 whitespace-pre-wrap font-lato">
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-gray-700 whitespace-pre-wrap font-lato leading-relaxed">
                     {selectedJobDetails.description}
                   </div>
                 </div>
               )}
+
+              {/* Job Images from Attachments */}
+              {selectedJobAnswers && selectedJobAnswers.answers && (() => {
+                const fileAnswers = (selectedJobAnswers.answers || []).filter(ans => {
+                  const val = ans.answer_value || ans.answer_text;
+                  const isFileUploadType = (ans.question_type || '').startsWith('file_upload');
+                  if (isFileUploadType) {
+                    if (Array.isArray(val) && val.length > 0) return true;
+                    if (typeof val === 'string' && val.trim().length > 0 && val !== 'undefined') return true;
+                  }
+                  if (typeof val === 'string' && val !== 'undefined') {
+                    const isFileUrl = (str) => {
+                      if (typeof str !== 'string') return false;
+                      return str.includes('/api/jobs/trade-questions/file/') || 
+                             str.match(/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i) ||
+                             str.startsWith('data:image/');
+                    };
+                    if (isFileUrl(val) || val.split(',').some(part => isFileUrl(part.trim()))) {
+                      return true;
+                    }
+                  }
+                  return false;
+                });
+
+                return fileAnswers.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="font-semibold mb-3 font-montserrat">Job Images</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                      {fileAnswers.map((ans, idx) => {
+                        let files = [];
+                        const rawValue = ans.answer_value || ans.answer_text;
+                        
+                        if (Array.isArray(rawValue)) {
+                          files = rawValue;
+                        } else if (typeof rawValue === 'string') {
+                          files = rawValue.includes(',') 
+                            ? rawValue.split(',').map(s => s.trim()) 
+                            : [rawValue];
+                        }
+
+                        return files.map((url, fIdx) => {
+                          const isImage = url.match(/\.(jpg|jpeg|png|gif|webp)$/i) || 
+                                        url.startsWith('data:image/') ||
+                                        url.includes('/api/jobs/trade-questions/file/');
+                          
+                          return isImage && (
+                            <div key={`${idx}-${fIdx}`} className="relative group border rounded-lg overflow-hidden h-32 bg-gray-100 hover:shadow-md transition-shadow">
+                              <AuthenticatedImage 
+                                src={url} 
+                                alt={`Job image ${fIdx + 1}`} 
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          );
+                        });
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Job Requirements & Details from Trade Category Questions */}
               {selectedJobAnswers && selectedJobAnswers.answers && selectedJobAnswers.answers.length > 0 && (
