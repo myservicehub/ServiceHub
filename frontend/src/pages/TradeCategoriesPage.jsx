@@ -85,29 +85,34 @@ const TradeCategoriesPage = () => {
             "Recycling": { description: "Recyclables pickup, sorting, and eco-friendly material processing", icon: "♻️", popular: false }
           };
 
-          // Merge backend categories with metadata
-          const mergedCategories = rawCategories.map(cat => {
-            const name = cat.name || cat.title;
-            
-            // Priority: 
-            // 1. Data directly from backend (cat.description, cat.icon)
-            // 2. Hardcoded metadata in this file (metaData[name])
-            // 3. Minimal fallback
-            
-            const hardcodedMeta = metaData[name] || {};
-            
-            return {
-              name,
-              description: cat.description || hardcodedMeta.description || `Professional ${name} services in Nigeria`,
-              icon: cat.icon || hardcodedMeta.icon || "🛠️",
-              popular: hardcodedMeta.popular || false,
-              tradesperson_count: countsMap[toSlug(name)] || 0
-            };
-          });
+          const curatedNames = Object.keys(metaData);
+          const curatedCategories = curatedNames.map((name) => ({
+            name,
+            description: metaData[name]?.description || `Professional ${name} services in Nigeria`,
+            icon: metaData[name]?.icon || "🛠️",
+            popular: !!metaData[name]?.popular,
+            tradesperson_count: countsMap[toSlug(name)] || 0
+          }));
+          
+          const extras = rawCategories
+            .filter(cat => {
+              const n = cat.name || cat.title;
+              return n && !curatedNames.includes(n);
+            })
+            .map(cat => {
+              const name = cat.name || cat.title;
+              return {
+                name,
+                description: cat.description || `Professional ${name} services in Nigeria`,
+                icon: cat.icon || "🛠️",
+                popular: false,
+                tradesperson_count: countsMap[toSlug(name)] || 0
+              };
+            });
 
-          // Sort by name
-          mergedCategories.sort((a, b) => a.name.localeCompare(b.name));
-          setTradeCategories(mergedCategories);
+          const finalCategories = [...curatedCategories, ...extras];
+          finalCategories.sort((a, b) => a.name.localeCompare(b.name));
+          setTradeCategories(finalCategories);
         }
       } catch (err) {
         console.warn('Failed to fetch categories:', err);

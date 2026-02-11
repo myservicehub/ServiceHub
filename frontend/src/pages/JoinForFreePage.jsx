@@ -1,14 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import TradespersonRegistration from '../components/auth/TradespersonRegistration';
 import { Button } from '../components/ui/button';
 import { CheckCircle, Users, Star, TrendingUp, Zap, DollarSign } from 'lucide-react';
+import { statsAPI } from '../api/services';
 
 const JoinForFreePage = () => {
   const navigate = useNavigate();
   const [showRegistration, setShowRegistration] = useState(false);
+  const [platformStats, setPlatformStats] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchStats = async () => {
+      try {
+        const stats = await statsAPI.getStats();
+        if (mounted) setPlatformStats(stats);
+      } catch (e) {}
+    };
+    fetchStats();
+    const intervalId = setInterval(fetchStats, 60000);
+    return () => {
+      mounted = false;
+      clearInterval(intervalId);
+    };
+  }, []);
 
   const benefits = [
     {
@@ -23,7 +41,7 @@ const JoinForFreePage = () => {
     },
     {
       icon: Users,
-      title: "200+ Active Users Daily",
+      title: "100+ Active Users Daily",
       description: "Connect with homeowners actively looking for your services"
     },
     {
@@ -140,11 +158,15 @@ const JoinForFreePage = () => {
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8">
                 <div className="grid grid-cols-2 gap-6">
                   <div>
-                    <div className="text-4xl font-bold text-white">251K+</div>
+                    <div className="text-4xl font-bold text-white">
+                      {Number(platformStats?.total_tradespeople || 0).toLocaleString()}+
+                    </div>
                     <div className="text-green-200">Tradespeople</div>
                   </div>
                   <div>
-                    <div className="text-4xl font-bold text-white">43+</div>
+                    <div className="text-4xl font-bold text-white">
+                      {Number(platformStats?.total_categories || 28)}+
+                    </div>
                     <div className="text-green-200">Trade Categories</div>
                   </div>
                   <div>

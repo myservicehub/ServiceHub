@@ -9,34 +9,41 @@ import os
 import jwt
 from datetime import datetime, timedelta
 from ..models.admin import AdminRole, AdminPermission, get_admin_permissions
+import logging
 
 security = HTTPBearer()
+logger = logging.getLogger(__name__)
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> User:
     """Get current authenticated user from JWT token."""
     token = credentials.credentials
     
+    # First try to verify as a regular user token
     try:
-        # First try to verify as a regular user token
         try:
             payload = verify_token(token)
-            user_id: str = payload.get("sub")
-            if user_id is None:
-                raise HTTPException(status_code=401)
+        except jwt.ExpiredSignatureError:
+            logger.info("Expired user token presented for authentication")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token has expired",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
         except Exception:
-            # If standard verification fails, check if it's an admin token
+            # If standard verification fails, try admin token
             try:
-                # Admin tokens use a different secret and structure
-                # Import here to avoid circular imports
                 from ..routes.admin_management import JWT_SECRET as ADMIN_JWT_SECRET, JWT_ALGORITHM as ADMIN_JWT_ALGORITHM
-                
                 payload = jwt.decode(token, ADMIN_JWT_SECRET, algorithms=[ADMIN_JWT_ALGORITHM])
                 admin_id = payload.get("admin_id")
                 if not admin_id:
-                    raise HTTPException(status_code=401)
-                
-                # It's an admin token! Create a synthetic User object with ADMIN role
-                # This allows admins to pass through endpoints expecting a User object
+                    logger.info("Admin token decoded but missing admin_id claim")
+                    raise HTTPException(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        detail="Invalid admin token",
+                        headers={"WWW-Authenticate": "Bearer"},
+                    )
+
+                # It's an admin token — synthesize a User with ADMIN role so admin-authenticated requests succeed
                 return User(
                     id=admin_id,
                     name=payload.get("username") or "Admin",
@@ -47,13 +54,31 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
                     location="",
                     postcode=""
                 )
+            except jwt.ExpiredSignatureError:
+                logger.info("Expired admin token presented for authentication")
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Admin token has expired",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
             except Exception:
-                # If both fail, raise the original error
+                logger.info("Token verification failed for provided credentials")
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Could not validate credentials",
                     headers={"WWW-Authenticate": "Bearer"},
                 )
+
+        # At this point payload should be available from either user or admin token decode
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            # Admin tokens will not have 'sub' but will be handled earlier; for user tokens, missing sub means invalid
+            logger.info("Token missing subject ('sub') claim")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token payload",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
 
     except HTTPException:
         raise

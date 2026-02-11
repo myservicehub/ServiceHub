@@ -275,7 +275,7 @@ const Header = () => {
                   className="font-lato text-white hover:opacity-90" 
                   style={{backgroundColor: '#34D164'}}
                 >
-                  {isPostJobPage ? 'Create homeowner account' : 'Join serviceHub'}
+                  Join serviceHub
                 </Button>
               </>
             )}
@@ -607,7 +607,7 @@ const Header = () => {
                       className="font-lato text-white justify-start" 
                       style={{backgroundColor: '#34D164'}}
                     >
-                      {isPostJobPage ? 'Create homeowner account' : 'Join serviceHub'}
+                      Join serviceHub
                     </Button>
                   </>
                 )}
