@@ -1290,9 +1290,47 @@ const BrowseJobsPage = () => {
               {selectedJobDetails.description && (
                 <div className="mb-6">
                   <h3 className="font-semibold mb-3 font-montserrat">Job Description</h3>
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-gray-700 whitespace-pre-wrap font-lato leading-relaxed">
-                    {selectedJobDetails.description}
-                  </div>
+                  {(() => {
+                    const desc = String(selectedJobDetails.description || '').trim();
+                    // Convert semicolon-delimited summary into readable bullets
+                    const parts = desc.split(';').map(s => s.trim()).filter(Boolean);
+                    if (parts.length > 1) {
+                      return (
+                        <ul className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-gray-700 font-lato leading-relaxed space-y-2">
+                          {parts.map((item, idx) => {
+                            // Prefer split on '?:' (question style), else last ':' as label/value divider
+                            const qIdx = item.indexOf('?:');
+                            let label = '';
+                            let value = '';
+                            if (qIdx >= 0) {
+                              label = item.slice(0, qIdx + 2).trim();
+                              value = item.slice(qIdx + 2).trim();
+                            } else {
+                              const cIdx = item.lastIndexOf(':');
+                              if (cIdx > 0) {
+                                label = item.slice(0, cIdx + 1).trim();
+                                value = item.slice(cIdx + 1).trim();
+                              } else {
+                                value = item;
+                              }
+                            }
+                            return (
+                              <li key={idx} className="flex">
+                                {label ? <span className="font-semibold mr-2">{label}</span> : null}
+                                <span className="text-gray-700">{value}</span>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      );
+                    }
+                    // Fallback to original block if no clear structure
+                    return (
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-gray-700 whitespace-pre-wrap font-lato leading-relaxed">
+                        {desc}
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 
