@@ -126,6 +126,7 @@ const BrowseJobsPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log('BrowseJobsPage mounted. Auth:', isAuthenticated(), 'Tradesperson:', isTradesperson());
     if (!isAuthenticated() || !isTradesperson()) {
       return;
     }
@@ -135,6 +136,7 @@ const BrowseJobsPage = () => {
   }, [isAuthenticated, isTradesperson]); // Add authentication dependencies
 
   useEffect(() => {
+    console.log('Effect triggered for filters/location/auth. Filters:', filters, 'Location:', userLocation);
     // Reload user location (in case it changed) and refresh jobs whenever
     // filters, user skills or saved coordinates update. This ensures that
     // when a tradesperson adds a new skill or updates their profile location
@@ -290,6 +292,7 @@ const BrowseJobsPage = () => {
   };
 
   const loadJobsBasedOnFilters = async (page = 1) => {
+    console.log('loadJobsBasedOnFilters called. Filters:', filters, 'Location:', userLocation);
     try {
       setLoading(true);
       let response;
@@ -313,21 +316,26 @@ const BrowseJobsPage = () => {
           });
           if (filters.search) params.append('q', filters.search);
           if (filters.category) params.append('category', filters.category);
+          console.log('Fetching from /jobs/search with params:', params.toString());
           response = await jobsAPI.apiClient.get(`/jobs/search?${params.toString()}`);
         } else {
           const skip = (page - 1) * 50;
+          console.log('Fetching from /jobs/for-tradesperson with skip:', skip);
           response = await jobsAPI.apiClient.get(`/jobs/for-tradesperson?limit=50&skip=${skip}`);
         }
       } else {
         // Use regular job fetching for tradespeople
         const skip = (page - 1) * 50;
+        console.log('Fetching from /jobs/for-tradesperson (no location) with skip:', skip);
         response = await jobsAPI.apiClient.get(`/jobs/for-tradesperson?limit=50&skip=${skip}`);
       }
 
+      console.log('API Response:', response.data);
       // Success: reset error counter
       setLoadErrorCount(0);
 
       let rawJobs = response.data.jobs || [];
+      console.log('Raw jobs count:', rawJobs.length);
       
       // Filter out any null/undefined jobs and normalize job IDs
       let jobsData = rawJobs
@@ -336,6 +344,8 @@ const BrowseJobsPage = () => {
           ...job,
           id: job.id || job._id || (job._id ? job._id.toString() : null)
         }));
+
+      console.log('Normalized jobs count:', jobsData.length);
 
       if (filters.useLocation && userLocation && typeof userLocation.lat === 'number' && typeof userLocation.lng === 'number') {
         // Compute fallback distances for jobs without distance_km using text location or coords
@@ -366,6 +376,7 @@ const BrowseJobsPage = () => {
         });
       }
       setJobs(jobsData);
+      console.log('Jobs data loaded in BrowseJobsPage:', jobsData);
       setPagination(response.data.pagination || null);
       // Prefetch question answers for the first visible jobs to improve modal open latency
       try {
@@ -1096,6 +1107,7 @@ const BrowseJobsPage = () => {
               </div>
             )}
             {/* Jobs List View */}
+            {console.log('Rendering Jobs List View. Loading:', loading, 'Jobs length:', jobs.length)}
             {viewMode === 'list' && (
               <>
                 {loading ? (
