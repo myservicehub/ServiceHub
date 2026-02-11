@@ -362,6 +362,13 @@ const BrowseJobsPage = () => {
           const db = (b && b.distance_km !== undefined && b.distance_km !== null) ? Number(b.distance_km) : Number.POSITIVE_INFINITY;
           return da - db;
         });
+        // When location filtering is enabled, exclude jobs outside the user's max distance
+        if (filters.useLocation && typeof filters.maxDistance === 'number') {
+          jobsData = jobsData.filter(job => {
+            if (job.distance_km === undefined || job.distance_km === null) return false;
+            return Number(job.distance_km) <= Number(filters.maxDistance);
+          });
+        }
       }
       setJobs(jobsData);
       setPagination(response.data.pagination || null);

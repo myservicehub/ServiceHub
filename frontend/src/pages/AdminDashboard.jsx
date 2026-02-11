@@ -212,6 +212,19 @@ const AdminDashboard = () => {
   
   const { toast } = useToast();
 
+  // Helpers for homeowner contact fallbacks
+  const getHomeownerEmail = (details) => {
+    return (details?.homeowner_details?.email && details.homeowner_details.email !== 'Unknown')
+      ? details.homeowner_details.email
+      : (details?.homeowner_email || details?.homeowner?.email || null);
+  };
+
+  const getHomeownerPhone = (details) => {
+    return (details?.homeowner_details?.phone && details.homeowner_details.phone !== 'Unknown')
+      ? details.homeowner_details.phone
+      : (details?.homeowner_phone || details?.homeowner?.phone || details?.homeowner?.mobile || details?.contact_phone || null);
+  };
+
   const getErrorMessage = (error, fallback) => {
     const message =
       error?.response?.data?.detail ||
@@ -5517,9 +5530,11 @@ const AdminDashboard = () => {
                                       return files.map((url, fIdx) => {
                                         // Ensure the URL is absolute or properly prefixed
                                         let finalUrl = url;
+                                        // Pick a reliable job id (some APIs return _id)
+                                        const jobIdForFiles = selectedJobDetails?.id || selectedJobDetails?._id || selectedJobDetails?.job_id || '';
                                         if (typeof url === 'string' && !url.startsWith('http') && !url.startsWith('data:') && !url.startsWith('/')) {
-                                          // If it's just a filename from a job, prefix it
-                                          finalUrl = `/api/jobs/trade-questions/file/${selectedJobDetails.id}/${url}`;
+                                          // If it's just a filename from a job, prefix it with the correct job id
+                                          finalUrl = `/api/jobs/trade-questions/file/${jobIdForFiles}/${url}`;
                                         }
 
                                         const isImage = typeof finalUrl === 'string' && (
@@ -5585,17 +5600,13 @@ const AdminDashboard = () => {
                       <div className="flex flex-col">
                         <span className="text-[10px] text-blue-600 font-bold uppercase tracking-wider mb-1">Email</span>
                         <span className="font-semibold text-gray-900 break-all">
-                          {selectedJobDetails.homeowner_details?.email && selectedJobDetails.homeowner_details.email !== 'Unknown'
-                            ? selectedJobDetails.homeowner_details.email 
-                            : (selectedJobDetails.homeowner_email || selectedJobDetails.homeowner?.email || 'Not available')}
+                          {getHomeownerEmail(selectedJobDetails) || 'Not available'}
                         </span>
                       </div>
                       <div className="flex flex-col">
                         <span className="text-[10px] text-blue-600 font-bold uppercase tracking-wider mb-1">Phone</span>
                         <span className="font-semibold text-gray-900">
-                          {selectedJobDetails.homeowner_details?.phone && selectedJobDetails.homeowner_details.phone !== 'Unknown'
-                            ? selectedJobDetails.homeowner_details.phone 
-                            : (selectedJobDetails.homeowner_phone || selectedJobDetails.homeowner?.phone || 'Not available')}
+                          {getHomeownerPhone(selectedJobDetails) || 'Not available'}
                         </span>
                       </div>
                     </div>
