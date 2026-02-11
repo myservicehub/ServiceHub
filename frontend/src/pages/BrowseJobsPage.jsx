@@ -1286,6 +1286,16 @@ const BrowseJobsPage = () => {
                 </div>
               </div>
 
+              {/* Job Description */}
+              {selectedJobDetails.description && (
+                <div className="mb-6">
+                  <h3 className="font-semibold mb-3 font-montserrat">Job Description</h3>
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-gray-700 whitespace-pre-wrap font-lato">
+                    {selectedJobDetails.description}
+                  </div>
+                </div>
+              )}
+
               {/* Job Requirements & Details from Trade Category Questions */}
               {selectedJobAnswers && selectedJobAnswers.answers && selectedJobAnswers.answers.length > 0 && (
                 <div className="mb-6">
