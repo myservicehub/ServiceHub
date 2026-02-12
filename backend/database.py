@@ -1053,6 +1053,14 @@ class Database:
 
     async def get_job_by_id(self, job_id: str) -> Optional[dict]:
         job = await self.database.jobs.find_one({"id": job_id})
+        if not job:
+            try:
+                from bson import ObjectId
+                if ObjectId.is_valid(job_id):
+                    doc = await self.database.jobs.find_one({"_id": ObjectId(job_id)})
+                    job = doc
+            except Exception:
+                job = None
         if job:
             job['_id'] = str(job['_id'])
         return job
@@ -1081,7 +1089,8 @@ class Database:
         for job in jobs:
             job_id_str = str(job['_id'])
             job['_id'] = job_id_str
-            job['id'] = job_id_str
+            if 'id' not in job:
+                job['id'] = job_id_str
         return jobs
 
     # ==========================================
@@ -1147,7 +1156,8 @@ class Database:
         for job in jobs:
             job_id_str = str(job["_id"])
             job["_id"] = job_id_str
-            job["id"] = job_id_str
+            if "id" not in job:
+                job["id"] = job_id_str
             
             # Use optimized helper for homeowner info
             self._enrich_job_homeowner(job, users_map, interests_map) # Note: interests_map is passed as job_counts_map here as it's what we want to show
@@ -3193,18 +3203,24 @@ class Database:
     async def update_job_access_fee(self, job_id: str, access_fee_naira: int) -> bool:
         """Update job access fee (admin only)"""
         access_fee_coins = access_fee_naira // 100  # Convert to coins
-        
-        result = await self.database.jobs.update_one(
-            {"id": job_id},
-            {
-                "$set": {
-                    "access_fee_naira": access_fee_naira,
-                    "access_fee_coins": access_fee_coins,
-                    "updated_at": datetime.utcnow()
-                }
+        update_doc = {
+            "$set": {
+                "access_fee_naira": access_fee_naira,
+                "access_fee_coins": access_fee_coins,
+                "updated_at": datetime.utcnow()
             }
-        )
-        return result.modified_count > 0
+        }
+        result = await self.database.jobs.update_one({"id": job_id}, update_doc)
+        if result.modified_count > 0:
+            return True
+        try:
+            from bson import ObjectId
+            if ObjectId.is_valid(job_id):
+                result2 = await self.database.jobs.update_one({"_id": ObjectId(job_id)}, update_doc)
+                return result2.modified_count > 0
+        except Exception:
+            pass
+        return False
 
     @time_it
     async def get_jobs_with_access_fees(self, skip: int = 0, limit: int = 20) -> tuple[List[dict], int]:
@@ -3259,7 +3275,8 @@ class Database:
         for job in jobs:
             job_id_str = str(job["_id"])
             job["_id"] = job_id_str
-            job["id"] = job_id_str
+            if "id" not in job:
+                job["id"] = job_id_str
             
             # Use optimized helper for homeowner info
             self._enrich_job_homeowner(job, users_map, homeowner_job_counts)
