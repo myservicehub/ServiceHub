@@ -61,6 +61,28 @@ const ContactManagementTab = ({
             Initialize Defaults
           </button>
           <button
+            onClick={async () => {
+              try {
+                if (!canManageContacts) {
+                  toast({ title: "Insufficient permissions", description: "You do not have permission to remove contacts.", variant: "destructive" });
+                  return;
+                }
+                if (!window.confirm('Remove both Business Line and Business Email from contacts?')) return;
+                const res = await adminAPI.removeBusinessContacts();
+                const count = res?.deleted_count ?? 0;
+                toast({ title: "Business contacts removed", description: `Deleted ${count} item(s)` });
+                fetchData();
+              } catch (error) {
+                const msg = error?.response?.data?.detail || "Failed to remove business contacts";
+                toast({ title: "Failed to remove business contacts", description: msg, variant: "destructive" });
+              }
+            }}
+            className={`text-sm ${canManageContacts ? 'text-red-600 hover:text-red-700' : 'text-gray-400 cursor-not-allowed'}`}
+            disabled={!canManageContacts}
+          >
+            Remove Business Line & Email
+          </button>
+          <button
             onClick={fetchData}
             className="text-blue-600 hover:text-blue-700"
           >

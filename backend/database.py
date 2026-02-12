@@ -6691,6 +6691,17 @@ We may update this Cookie Policy to reflect changes in technology or regulations
             print(f"Error deleting contact {contact_id}: {e}")
             return False
     
+    async def remove_business_contacts(self) -> int:
+        """Remove Business Line (phone_business) and Business Email (email_business) contacts."""
+        try:
+            result = await self.database.contacts.delete_many({
+                "contact_type": {"$in": ["phone_business", "email_business"]}
+            })
+            return int(result.deleted_count or 0)
+        except Exception as e:
+            print(f"Error removing business contacts: {e}")
+            return 0
+    
     async def get_public_contacts(self):
         """Get public contacts for website display (organized by type)"""
         try:
@@ -6732,28 +6743,12 @@ We may update this Cookie Policy to reflect changes in technology or regulations
                     "notes": "Primary customer support line"
                 },
                 {
-                    "contact_type": "phone_business",
-                    "label": "Business Line",
-                    "value": "+234 901 234 5679",
-                    "is_active": True,
-                    "display_order": 2,
-                    "notes": "Business inquiries and partnerships"
-                },
-                {
                     "contact_type": "email_support",
                     "label": "Support Email",
                     "value": "support@servicehub.ng",
                     "is_active": True,
                     "display_order": 1,
                     "notes": "Customer support and technical issues"
-                },
-                {
-                    "contact_type": "email_business",
-                    "label": "Business Email",
-                    "value": "business@servicehub.ng",
-                    "is_active": True,
-                    "display_order": 2,
-                    "notes": "Business partnerships and corporate inquiries"
                 },
                 {
                     "contact_type": "address_office",

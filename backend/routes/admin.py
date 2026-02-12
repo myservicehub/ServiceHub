@@ -1036,7 +1036,7 @@ async def update_contact(contact_id: str, contact_data: dict, admin: dict = Depe
     }
 
 @router.delete("/contacts/{contact_id}")
-async def delete_contact(contact_id: str):
+async def delete_contact(contact_id: str, admin: dict = Depends(require_permission(AdminPermission.MANAGE_CONTACTS))):
     """Delete a contact"""
     
     success = await database.delete_contact(contact_id)
@@ -1057,6 +1057,15 @@ async def initialize_default_contacts():
     
     return {
         "message": "Default contacts initialized successfully"
+    }
+
+@router.post("/contacts/remove-business")
+async def remove_business_contacts(admin: dict = Depends(require_permission(AdminPermission.MANAGE_CONTACTS))):
+    """Remove Business Line and Business Email contacts"""
+    deleted_count = await database.remove_business_contacts()
+    return {
+        "message": "Business contacts removed successfully",
+        "deleted_count": deleted_count
     }
 
 # ==========================================

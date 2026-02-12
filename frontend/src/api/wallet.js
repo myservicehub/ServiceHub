@@ -758,6 +758,11 @@ export const adminAPI = {
   async initializeDefaultContacts() {
     const response = await apiClient.post('/admin/contacts/initialize-defaults');
     return response.data;
+  },
+  
+  async removeBusinessContacts() {
+    const response = await apiClient.post('/admin/contacts/remove-business');
+    return response.data;
   }
 };
 
