@@ -122,23 +122,11 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
     setTimeRemaining(totalTrades * TIME_PER_TRADE_SECONDS);
   };
 
-  const handleSkipTest = () => {
-    // Mark as passed to allow progression when no questions exist
-    updateFormData('skillsTestPassed', true);
-    const skipResults = {
-      resultsByTrade: {},
-      overallScore: 100,
-      overallCorrect: 0,
-      overallTotal: 0,
-      passed: true,
-      completedAt: new Date().toISOString(),
-      timeUsed: 0
-    };
-    updateFormData('testScores', skipResults);
-    if (onTestComplete) {
-      onTestComplete(skipResults);
+  useEffect(() => {
+    if (noQuestionsAvailable) {
+      updateFormData('skillsTestPassed', false);
     }
-  };
+  }, [noQuestionsAvailable, updateFormData]);
 
   const handleAnswerSelect = (answerIndex) => {
     const trades = getTestedTrades();
@@ -337,14 +325,8 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
         ) : (
           <div className="space-y-3">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
-              No test questions are available yet for your selected trades. We’ll skip this step so you can continue.
+              No test questions are available yet for your selected trades. You cannot proceed until questions are available.
             </div>
-            <Button
-              onClick={handleSkipTest}
-              className="w-full bg-green-600 hover:bg-green-700 text-white py-3"
-            >
-              Continue without test
-            </Button>
           </div>
         )}
       </div>
