@@ -66,6 +66,9 @@ export const adminAPI = {
     if (response.data.access_token) {
       localStorage.setItem('admin_token', response.data.access_token);
       localStorage.setItem('admin_info', JSON.stringify(response.data.admin));
+      if (response.data.permissions) {
+        localStorage.setItem('admin_permissions', JSON.stringify(response.data.permissions));
+      }
     }
     
     return response.data;
@@ -89,6 +92,7 @@ export const adminAPI = {
       // Always clear local storage
       localStorage.removeItem('admin_token');
       localStorage.removeItem('admin_info');
+      localStorage.removeItem('admin_permissions');
     }
   },
 
@@ -103,6 +107,35 @@ export const adminAPI = {
   getCurrentAdmin() {
     const adminInfo = localStorage.getItem('admin_info');
     return adminInfo ? JSON.parse(adminInfo) : null;
+  },
+
+  // Get current admin + permissions from server, and cache them
+  async getMe() {
+    const response = await apiClient.get('/admin-management/me');
+    const { admin, permissions } = response.data || {};
+    if (admin) {
+      localStorage.setItem('admin_info', JSON.stringify(admin));
+    }
+    if (permissions) {
+      localStorage.setItem('admin_permissions', JSON.stringify(permissions));
+    }
+    return response.data;
+  },
+
+  // Get cached admin permissions
+  getPermissions() {
+    const p = localStorage.getItem('admin_permissions');
+    try {
+      return p ? JSON.parse(p) : [];
+    } catch {
+      return [];
+    }
+  },
+
+  // Check if current admin has a permission
+  hasPermission(permission) {
+    const perms = this.getPermissions();
+    return Array.isArray(perms) && perms.includes(permission);
   },
 
   // Get pending funding requests

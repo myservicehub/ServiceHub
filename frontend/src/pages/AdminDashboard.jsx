@@ -138,6 +138,27 @@ const AdminDashboard = () => {
   const [notificationPage, setNotificationPage] = useState(1);
   const [notificationPageSize, setNotificationPageSize] = useState(50);
   const [notificationTotal, setNotificationTotal] = useState(0);
+  const [adminPermissions, setAdminPermissions] = useState(adminAPI.getPermissions());
+
+  useEffect(() => {
+    let mounted = true;
+    const loadMe = async () => {
+      if (!isLoggedIn) return;
+      try {
+        const cached = adminAPI.getPermissions();
+        if (Array.isArray(cached) && cached.length > 0) {
+          if (mounted) setAdminPermissions(cached);
+          return;
+        }
+        const me = await adminAPI.getMe();
+        if (mounted) setAdminPermissions(me?.permissions || []);
+      } catch {
+        // ignore
+      }
+    };
+    loadMe();
+    return () => { mounted = false; };
+  }, [isLoggedIn]);
   const [activeNotificationTab, setActiveNotificationTab] = useState('notifications');
   const [selectedNotification, setSelectedNotification] = useState(null);
   const [selectedNotificationUser, setSelectedNotificationUser] = useState(null);
@@ -533,6 +554,10 @@ const AdminDashboard = () => {
       });
       
       setIsLoggedIn(true);
+      try {
+        const me = await adminAPI.getMe();
+        setAdminPermissions(me?.permissions || adminAPI.getPermissions());
+      } catch {}
       
       toast({
         title: "Login Successful",
@@ -4429,6 +4454,7 @@ const AdminDashboard = () => {
                   loading={loading}
                   fetchData={fetchData}
                   toast={toast}
+                  adminPermissions={adminPermissions}
                 />
               )}
 

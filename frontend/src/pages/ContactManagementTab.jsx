@@ -10,7 +10,8 @@ const ContactManagementTab = ({
   setEditingContact,
   loading,
   fetchData,
-  toast
+  toast,
+  adminPermissions = []
 }) => {
   
   // Group contacts by category for better organization
@@ -32,6 +33,8 @@ const ContactManagementTab = ({
     contactsByCategory[category].push(contact);
   });
 
+  const canManageContacts = Array.isArray(adminPermissions) && adminPermissions.includes('manage_contacts');
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -40,14 +43,20 @@ const ContactManagementTab = ({
           <button
             onClick={async () => {
               try {
+                if (!canManageContacts) {
+                  toast({ title: "Insufficient permissions", description: "You do not have permission to initialize contacts.", variant: "destructive" });
+                  return;
+                }
                 await adminAPI.initializeDefaultContacts();
                 toast({ title: "Default contacts initialized" });
                 fetchData();
               } catch (error) {
-                toast({ title: "Failed to initialize contacts", variant: "destructive" });
+                const msg = error?.response?.data?.detail || "Failed to initialize contacts";
+                toast({ title: "Failed to initialize contacts", description: msg, variant: "destructive" });
               }
             }}
-            className="text-blue-600 hover:text-blue-700 text-sm"
+            className={`text-sm ${canManageContacts ? 'text-blue-600 hover:text-blue-700' : 'text-gray-400 cursor-not-allowed'}`}
+            disabled={!canManageContacts}
           >
             Initialize Defaults
           </button>
@@ -59,6 +68,12 @@ const ContactManagementTab = ({
           </button>
         </div>
       </div>
+
+      {!canManageContacts && (
+        <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded">
+          You can view contacts but do not have permission to create, edit, or delete them. Please contact a super admin to grant the “manage_contacts” permission.
+        </div>
+      )}
 
       {/* Contact Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -92,8 +107,15 @@ const ContactManagementTab = ({
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Manage Contacts</h3>
         <button
-          onClick={() => setShowAddContact(true)}
-          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm"
+          onClick={() => {
+            if (!canManageContacts) {
+              toast({ title: "Insufficient permissions", description: "You do not have permission to add contacts.", variant: "destructive" });
+              return;
+            }
+            setShowAddContact(true);
+          }}
+          className={`text-white px-4 py-2 rounded-lg text-sm ${canManageContacts ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-400 cursor-not-allowed'}`}
+          disabled={!canManageContacts}
         >
           Add New Contact
         </button>
@@ -105,6 +127,10 @@ const ContactManagementTab = ({
           <h4 className="text-lg font-semibold mb-4">Add New Contact</h4>
           <form onSubmit={async (e) => {
             e.preventDefault();
+            if (!canManageContacts) {
+              toast({ title: "Insufficient permissions", description: "You do not have permission to add contacts.", variant: "destructive" });
+              return;
+            }
             const formData = new FormData(e.target);
             const contactData = {
               contact_type: formData.get('contact_type'),
@@ -121,7 +147,8 @@ const ContactManagementTab = ({
               setShowAddContact(false);
               fetchData();
             } catch (error) {
-              toast({ title: "Failed to create contact", variant: "destructive" });
+              const msg = error?.response?.data?.detail || "Failed to create contact";
+              toast({ title: "Failed to create contact", description: msg, variant: "destructive" });
             }
           }}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -307,6 +334,10 @@ const ContactManagementTab = ({
                             <div className="flex space-x-2">
                               <button
                                 onClick={() => {
+                                  if (!canManageContacts) {
+                                    toast({ title: "Insufficient permissions", description: "You do not have permission to edit contacts.", variant: "destructive" });
+                                    return;
+                                  }
                                   setEditingContact({
                                     id: contact.id,
                                     contact_type: contact.contact_type,
@@ -323,13 +354,18 @@ const ContactManagementTab = ({
                               </button>
                               <button
                                 onClick={async () => {
+                                  if (!canManageContacts) {
+                                    toast({ title: "Insufficient permissions", description: "You do not have permission to delete contacts.", variant: "destructive" });
+                                    return;
+                                  }
                                   if (window.confirm(`Delete contact "${contact.label}"?`)) {
                                     try {
                                       await adminAPI.deleteContact(contact.id);
                                       toast({ title: "Contact deleted successfully" });
                                       fetchData();
                                     } catch (error) {
-                                      toast({ title: "Failed to delete contact", variant: "destructive" });
+                                      const msg = error?.response?.data?.detail || "Failed to delete contact";
+                                      toast({ title: "Failed to delete contact", description: msg, variant: "destructive" });
                                     }
                                   }
                                 }}
@@ -369,6 +405,10 @@ const ContactManagementTab = ({
             <h4 className="text-lg font-semibold mb-4">Edit Contact</h4>
             <form onSubmit={async (e) => {
               e.preventDefault();
+              if (!canManageContacts) {
+                toast({ title: "Insufficient permissions", description: "You do not have permission to edit contacts.", variant: "destructive" });
+                return;
+              }
               const formData = new FormData(e.target);
               const contactData = {
                 label: formData.get('label'),
@@ -384,7 +424,8 @@ const ContactManagementTab = ({
                 setEditingContact(null);
                 fetchData();
               } catch (error) {
-                toast({ title: "Failed to update contact", variant: "destructive" });
+                const msg = error?.response?.data?.detail || "Failed to update contact";
+                toast({ title: "Failed to update contact", description: msg, variant: "destructive" });
               }
             }}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
