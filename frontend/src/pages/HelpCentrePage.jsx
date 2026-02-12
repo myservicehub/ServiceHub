@@ -31,12 +31,16 @@ const HelpCentrePage = () => {
     const fetchContacts = async () => {
       try {
         const data = await contactsAPI.getAllContacts();
-        const list = Array.isArray(data?.contacts) ? data.contacts : [];
-        const active = list.filter(c => c.is_active);
-        const map = active.reduce((acc, c) => {
-          acc[c.contact_type] = c;
-          return acc;
-        }, {});
+        const contactsObj = data?.contacts || {};
+        const map = {};
+        Object.entries(contactsObj).forEach(([type, arr]) => {
+          if (Array.isArray(arr) && arr.length > 0) {
+            const first = arr[0];
+            if (first && first.value) {
+              map[type] = first;
+            }
+          }
+        });
         setContactByType(map);
       } catch (e) {}
     };
