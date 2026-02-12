@@ -5409,34 +5409,7 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                   
-                  <div>
-                    <h4 className="font-medium mb-3 flex items-center gap-2">
-                      <span className="w-1 h-4 bg-purple-500 rounded-full"></span>
-                      Job Description
-                    </h4>
-                    <div className="bg-gray-50 p-5 rounded-lg text-sm border border-gray-100 shadow-sm">
-                      {selectedJobDetails.description ? (
-                        <div className="grid grid-cols-1 gap-y-3">
-                          {selectedJobDetails.description.split('; ').map((item, idx) => {
-                            const parts = item.split(': ');
-                            if (parts.length > 1) {
-                              return (
-                                <div key={idx} className="flex flex-col sm:flex-row sm:gap-4 border-b border-gray-100 pb-2 last:border-0 last:pb-0">
-                                  <span className="font-bold text-gray-700 sm:w-1/3 shrink-0">{parts[0]}</span>
-                                  <span className="text-gray-600 flex-1">{parts.slice(1).join(': ')}</span>
-                                </div>
-                              );
-                            }
-                            return <div key={idx} className="text-gray-600 py-1">{item}</div>;
-                          })}
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center py-4">
-                          <span className="text-gray-400 italic">No detailed description provided for this job</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  
 
                   {selectedJobAnswers && selectedJobAnswers.answers && selectedJobAnswers.answers.length > 0 && (
                     <div>

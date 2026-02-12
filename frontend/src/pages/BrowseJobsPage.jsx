@@ -380,11 +380,15 @@ const BrowseJobsPage = () => {
             toPrefetch.map(id => tradeCategoryQuestionsAPI.getJobQuestionAnswers(id).then(res => ({ id, res })))
           ).then(results => {
             results.forEach(r => {
-              if (r.status === 'fulfilled' && r.value && r.value.id) {
-                jobAnswersCache.current[r.value.id] = r.value.res || r.value;
-              } else if (r.status === 'fulfilled' && r.value && r.value.res && r.value.id) {
-                jobAnswersCache.current[r.value.id] = r.value.res;
-              } 
+              if (r.status === 'fulfilled' && r.value) {
+                const doc = r.value.res || r.value;
+                const keys = [];
+                if (r.value.id) keys.push(String(r.value.id));
+                if (doc && doc.id) keys.push(String(doc.id));
+                if (doc && doc._id) keys.push(String(doc._id));
+                if (doc && doc.job_id) keys.push(String(doc.job_id));
+                keys.forEach(k => { if (k) jobAnswersCache.current[k] = doc; });
+              }
             });
           }).catch(() => {});
         }
@@ -695,33 +699,29 @@ const BrowseJobsPage = () => {
       }
     } catch (_) {}
     setSelectedJobDetails(freshJob);
-    setSelectedJobAnswers(null); // Reset previous answers
+    const cached = jobAnswersCache.current[String(freshJob.id)] 
+                || jobAnswersCache.current[String(freshJob._id)] 
+                || jobAnswersCache.current[String(freshJob.job_id)];
+    setSelectedJobAnswers(cached || null);
     setShowJobModal(true);
     
     // Fetch job question answers
     try {
-      console.log('🔍 Fetching answers for job ID:', freshJob.id, '(_id:', freshJob._id, ')');
       let answers = await tradeCategoryQuestionsAPI.getJobQuestionAnswers(freshJob.id);
-      console.log('📋 Fetched answers document:', answers);
       
       // Fallback to _id if no answers found
       if ((!answers || !answers.answers || answers.answers.length === 0) && freshJob._id && freshJob._id !== freshJob.id) {
-        console.log('🔄 Trying to fetch answers using _id:', freshJob._id);
         const altAnswers = await tradeCategoryQuestionsAPI.getJobQuestionAnswers(freshJob._id);
         if (altAnswers && altAnswers.answers && altAnswers.answers.length > 0) {
-          console.log('✅ Found answers using _id!');
           answers = altAnswers;
         }
       }
 
       if (answers && answers.answers && answers.answers.length > 0) {
-        console.log('✅ Setting selected job answers with', answers.answers.length, 'answers');
         setSelectedJobAnswers(answers);
       } else {
-        console.log('ℹ️ No answers found for this job');
       }
     } catch (err) {
-      console.error('❌ Error fetching job answers:', err);
     }
   };
 
@@ -1293,65 +1293,7 @@ const BrowseJobsPage = () => {
                 </div>
               </div>
 
-              {/* Job Images from Attachments */}
-              {selectedJobAnswers && selectedJobAnswers.answers && (() => {
-                const fileAnswers = (selectedJobAnswers.answers || []).filter(ans => {
-                  const val = ans.answer_value || ans.answer_text;
-                  const isFileUploadType = (ans.question_type || '').startsWith('file_upload');
-                  if (isFileUploadType) {
-                    if (Array.isArray(val) && val.length > 0) return true;
-                    if (typeof val === 'string' && val.trim().length > 0 && val !== 'undefined') return true;
-                  }
-                  if (typeof val === 'string' && val !== 'undefined') {
-                    const isFileUrl = (str) => {
-                      if (typeof str !== 'string') return false;
-                      return str.includes('/api/jobs/trade-questions/file/') || 
-                             str.match(/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i) ||
-                             str.startsWith('data:image/');
-                    };
-                    if (isFileUrl(val) || val.split(',').some(part => isFileUrl(part.trim()))) {
-                      return true;
-                    }
-                  }
-                  return false;
-                });
-
-                return fileAnswers.length > 0 && (
-                  <div className="mb-6">
-                    <h3 className="font-semibold mb-3 font-montserrat">Job Images</h3>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                      {fileAnswers.map((ans, idx) => {
-                        let files = [];
-                        const rawValue = ans.answer_value || ans.answer_text;
-                        
-                        if (Array.isArray(rawValue)) {
-                          files = rawValue;
-                        } else if (typeof rawValue === 'string') {
-                          files = rawValue.includes(',') 
-                            ? rawValue.split(',').map(s => s.trim()) 
-                            : [rawValue];
-                        }
-
-                        return files.map((url, fIdx) => {
-                          const isImage = url.match(/\.(jpg|jpeg|png|gif|webp)$/i) || 
-                                        url.startsWith('data:image/') ||
-                                        url.includes('/api/jobs/trade-questions/file/');
-                          
-                          return isImage && (
-                            <div key={`${idx}-${fIdx}`} className="relative group border rounded-lg overflow-hidden h-32 bg-gray-100 hover:shadow-md transition-shadow">
-                              <AuthenticatedImage 
-                                src={url} 
-                                alt={`Job image ${fIdx + 1}`} 
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                          );
-                        });
-                      })}
-                    </div>
-                  </div>
-                );
-              })()}
+              
 
               {/* Job Requirements & Details from Trade Category Questions */}
               {selectedJobAnswers && selectedJobAnswers.answers && selectedJobAnswers.answers.length > 0 && (
