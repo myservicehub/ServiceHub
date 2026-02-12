@@ -1158,7 +1158,14 @@ const ProfilePage = () => {
                                   
                                   const getFullUrl = (url) => {
                                     if (!url) return '';
+                                    if (url.startsWith('data:')) return url;
                                     if (url.startsWith('http')) return url;
+                                    // Bare filename: point to certification image API
+                                    if (!url.includes('/')) {
+                                      return `/api/auth/certifications/image/${url}`;
+                                    }
+                                    // Already an API path
+                                    if (url.startsWith('/api/')) return url;
                                     const baseUrl = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/$/, '');
                                     return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
                                   };
@@ -1186,7 +1193,7 @@ const ProfilePage = () => {
                                             </div>
                                           ) : (
                                             <AuthenticatedImage 
-                                              src={image_url} 
+                                              src={getFullUrl(image_url)} 
                                               alt={name} 
                                               className="w-full h-full object-cover transition-transform group-hover:scale-110"
                                             />

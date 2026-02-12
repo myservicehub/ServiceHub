@@ -895,7 +895,12 @@ const InterestedTradespeopleePage = () => {
                             
                             const getFullUrl = (url) => {
                               if (!url) return '';
+                              if (url.startsWith('data:')) return url;
                               if (url.startsWith('http')) return url;
+                              if (!url.includes('/')) {
+                                return `/api/auth/certifications/image/${url}`;
+                              }
+                              if (url.startsWith('/api/')) return url;
                               const baseUrl = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/$/, '');
                               return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
                             };
@@ -923,7 +928,7 @@ const InterestedTradespeopleePage = () => {
                                 {image_url && !isPdf && (
                                   <div className="h-20 rounded overflow-hidden border bg-white shadow-sm mt-1">
                                     <AuthenticatedImage 
-                                      src={image_url} 
+                                      src={getFullUrl(image_url)} 
                                       alt={name} 
                                       className="w-full h-full object-cover"
                                     />

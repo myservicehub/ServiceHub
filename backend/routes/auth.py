@@ -14,7 +14,8 @@ from ..auth.security import (
     verify_refresh_token, create_password_reset_token, verify_password_reset_token,
     create_email_verification_token, verify_email_verification_token
 )
-from ..auth.dependencies import get_current_user, get_current_active_user, get_current_tradesperson
+from ..auth.dependencies import get_current_user, get_current_active_user, get_current_tradesperson, require_permission
+from ..models.admin import AdminPermission
 from ..database import database
 from ..models.trade_categories import NIGERIAN_TRADE_CATEGORIES, validate_trade_category
 from ..models.nigerian_states import NIGERIAN_STATES, validate_nigerian_state
@@ -873,11 +874,18 @@ async def upload_certification_image(
             raise HTTPException(status_code=413, detail="File too large")
         ext = os.path.splitext(file.filename or "")[1].lower() or ".jpg"
         name = f"{uuid.uuid4().hex}{ext}"
-        dest = CERT_UPLOAD_DIR / name
-        with open(dest, "wb") as f:
-            f.write(data)
-        url_path = f"/api/auth/certifications/image/{name}"
-        return {"filename": name, "content_type": file.content_type, "size": len(data), "url": url_path}
+        # Persist to disk as best-effort fallback (useful for local dev)
+        try:
+            dest = CERT_UPLOAD_DIR / name
+            with open(dest, "wb") as f:
+                f.write(data)
+        except Exception:
+            pass
+        # Always return a base64 data URL to avoid ephemeral storage issues
+        import base64
+        base64_data = base64.b64encode(data).decode("utf-8")
+        data_url = f"data:{file.content_type};base64,{base64_data}"
+        return {"filename": name, "content_type": file.content_type, "size": len(data), "url": data_url}
     except HTTPException:
         raise
     except Exception as e:
@@ -935,6 +943,93 @@ async def get_certification_image(filename: str):
     except Exception as e:
         logger.error(f"Error serving certification image {filename}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to serve image: {str(e)}")
+
+@router.post("/certifications/migrate-base64")
+async def migrate_existing_certifications_to_base64(admin: dict = Depends(require_permission(AdminPermission.VERIFY_USERS))):
+    """Convert existing certification image URLs to base64 data URLs when files are available on disk."""
+    try:
+        processed_users = 0
+        updated_users = 0
+        converted_images = 0
+        missing_files = 0
+        bad_entries = 0
+
+        cursor = database.users_collection.find({
+            "role": "tradesperson",
+            "certifications": {"$exists": True, "$ne": []}
+        })
+        users = await cursor.to_list(length=None)
+
+        import base64, mimetypes
+        for user in users:
+            processed_users += 1
+            certs = user.get("certifications", [])
+            changed = False
+            new_certs = []
+            for c in certs:
+                if isinstance(c, dict):
+                    name = c.get("name", "")
+                    url = c.get("image_url")
+                elif isinstance(c, str):
+                    name = ""
+                    url = c
+                    c = {"name": name, "image_url": url}
+                else:
+                    bad_entries += 1
+                    new_certs.append(c)
+                    continue
+
+                if url and isinstance(url, str) and url.startswith("data:"):
+                    new_certs.append(c)
+                    continue
+
+                filename = None
+                if url and isinstance(url, str):
+                    parts = url.split("/")
+                    if parts and parts[-1]:
+                        filename = parts[-1]
+                if not filename and url and "." in url and "/" not in url:
+                    filename = url
+                if not filename:
+                    new_certs.append(c)
+                    continue
+
+                path = CERT_UPLOAD_DIR / filename
+                if not path.exists():
+                    missing_files += 1
+                    new_certs.append(c)
+                    continue
+
+                try:
+                    with open(path, "rb") as f:
+                        data = f.read()
+                    ext = os.path.splitext(filename)[1].lower()
+                    content_type = mimetypes.types_map.get(ext, "application/octet-stream")
+                    data_url = f"data:{content_type};base64,{base64.b64encode(data).decode('utf-8')}"
+                    c["image_url"] = data_url
+                    converted_images += 1
+                    changed = True
+                    new_certs.append(c)
+                except Exception:
+                    new_certs.append(c)
+                    continue
+
+            if changed:
+                try:
+                    await database.update_user(user.get("id") or user.get("_id"), {"certifications": new_certs})
+                    updated_users += 1
+                except Exception:
+                    pass
+
+        return {
+            "processed_users": processed_users,
+            "updated_users": updated_users,
+            "converted_images": converted_images,
+            "missing_files": missing_files,
+            "bad_entries": bad_entries
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Migration failed: {str(e)}")
 
 @router.post("/logout")
 async def logout(current_user: User = Depends(get_current_user)):

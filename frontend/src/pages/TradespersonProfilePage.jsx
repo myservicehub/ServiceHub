@@ -820,6 +820,7 @@ const TradespersonProfilePage = () => {
                             
                             const getFullUrl = (url) => {
                               if (!url) return '';
+                              if (url.startsWith('data:')) return url;
                               if (url.startsWith('http')) return url;
                               // If url is just a filename (no path separators), prepend the certification image API path
                               if (!url.includes('/')) {
@@ -867,7 +868,7 @@ const TradespersonProfilePage = () => {
                                     ) : (
                                       <div className="w-full h-32 rounded-md overflow-hidden border bg-white shadow-sm">
                                         <AuthenticatedImage 
-                                          src={image_url} 
+                                          src={getFullUrl(image_url)} 
                                           alt={name} 
                                           className="w-full h-full object-cover"
                                         />
