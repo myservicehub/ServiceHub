@@ -687,20 +687,28 @@ const BrowseJobsPage = () => {
   };
 
   const handleViewJobDetails = async (job) => {
-    setSelectedJobDetails(job);
+    let freshJob = job;
+    try {
+      const res = await jobsAPI.getJob(job.id || job._id);
+      if (res && (res.id || res._id)) {
+        freshJob = { ...res, id: res.id || res._id };
+        setJobs(prev => Array.isArray(prev) ? prev.map(j => (j.id === freshJob.id ? { ...j, ...freshJob } : j)) : prev);
+      }
+    } catch (_) {}
+    setSelectedJobDetails(freshJob);
     setSelectedJobAnswers(null); // Reset previous answers
     setShowJobModal(true);
     
     // Fetch job question answers
     try {
-      console.log('🔍 Fetching answers for job ID:', job.id, '(_id:', job._id, ')');
-      let answers = await tradeCategoryQuestionsAPI.getJobQuestionAnswers(job.id);
+      console.log('🔍 Fetching answers for job ID:', freshJob.id, '(_id:', freshJob._id, ')');
+      let answers = await tradeCategoryQuestionsAPI.getJobQuestionAnswers(freshJob.id);
       console.log('📋 Fetched answers document:', answers);
       
       // Fallback to _id if no answers found
-      if ((!answers || !answers.answers || answers.answers.length === 0) && job._id && job._id !== job.id) {
-        console.log('🔄 Trying to fetch answers using _id:', job._id);
-        const altAnswers = await tradeCategoryQuestionsAPI.getJobQuestionAnswers(job._id);
+      if ((!answers || !answers.answers || answers.answers.length === 0) && freshJob._id && freshJob._id !== freshJob.id) {
+        console.log('🔄 Trying to fetch answers using _id:', freshJob._id);
+        const altAnswers = await tradeCategoryQuestionsAPI.getJobQuestionAnswers(freshJob._id);
         if (altAnswers && altAnswers.answers && altAnswers.answers.length > 0) {
           console.log('✅ Found answers using _id!');
           answers = altAnswers;

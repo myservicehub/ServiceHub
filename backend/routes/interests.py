@@ -87,35 +87,33 @@ async def get_job_interested_tradespeople(
             raise HTTPException(status_code=404, detail="Job not found")
         
         # Check ownership using ID or email
-            homeowner_data = job.get("homeowner", {})
-            # Robust ownership check - accept id, user_id, public_id or email
-            is_owner = False
-            try:
-                candidate_ids = set()
-                if getattr(current_user, 'id', None):
-                    candidate_ids.add(str(current_user.id))
-                if getattr(current_user, 'user_id', None):
-                    candidate_ids.add(str(current_user.user_id))
-                if getattr(current_user, 'public_id', None):
-                    candidate_ids.add(str(current_user.public_id))
+        homeowner_data = job.get("homeowner", {})
+        is_owner = False
+        try:
+            candidate_ids = set()
+            if getattr(current_user, 'id', None):
+                candidate_ids.add(str(current_user.id))
+            if getattr(current_user, 'user_id', None):
+                candidate_ids.add(str(current_user.user_id))
+            if getattr(current_user, 'public_id', None):
+                candidate_ids.add(str(current_user.public_id))
 
-                if homeowner_data.get("id") and str(homeowner_data.get("id")) in candidate_ids:
-                    is_owner = True
-                elif job.get("homeowner_id") and str(job.get("homeowner_id")) in candidate_ids:
-                    is_owner = True
-                elif homeowner_data.get("email") and homeowner_data.get("email") == getattr(current_user, 'email', None):
-                    is_owner = True
-            except Exception:
-                # fallback simple comparison
-                if homeowner_data.get("id") and str(homeowner_data.get("id")) == str(getattr(current_user, 'id', None)):
-                    is_owner = True
+            if homeowner_data.get("id") and str(homeowner_data.get("id")) in candidate_ids:
+                is_owner = True
+            elif job.get("homeowner_id") and str(job.get("homeowner_id")) in candidate_ids:
+                is_owner = True
+            elif homeowner_data.get("email") and homeowner_data.get("email") == getattr(current_user, 'email', None):
+                is_owner = True
+        except Exception:
+            if homeowner_data.get("id") and str(homeowner_data.get("id")) == str(getattr(current_user, 'id', None)):
+                is_owner = True
 
-            if not is_owner:
-                logger.warning(f"Unauthorized interests access attempt to job {job_id} by user {getattr(current_user,'id',None)}. Owner: {homeowner_data}, Owner ID: {job.get('homeowner_id')}")
-                raise HTTPException(
-                    status_code=403, 
-                    detail="Not authorized to view interests for this job"
-                )
+        if not is_owner:
+            logger.warning(f"Unauthorized interests access attempt to job {job_id} by user {getattr(current_user,'id',None)}. Owner: {homeowner_data}, Owner ID: {job.get('homeowner_id')}")
+            raise HTTPException(
+                status_code=403, 
+                detail="Not authorized to view interests for this job"
+            )
         
         # Get interested tradespeople (guard against DB errors and log details)
         try:
