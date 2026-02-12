@@ -4539,7 +4539,7 @@ const AdminDashboard = () => {
                                 <td className="px-6 py-4 text-sm text-gray-700">{(r.title || '').slice(0, 80)}</td>
                                 <td className="px-6 py-4 text-sm text-gray-700 max-w-xs overflow-auto whitespace-pre-wrap">{r.content}</td>
                                 <td className="px-6 py-4 text-sm text-gray-700">{r.status}</td>
-                                <td className="px-6 py-4 text-sm text-gray-700">{r.job_title || ''}</td>
+                                <td className="px-6 py-4 text-sm text-gray-700">{r.job_id || ''}</td>
                                 <td className="px-6 py-4 text-sm text-gray-700">
                                   <div className="flex space-x-2">
                                     {(r.status !== 'published') && (
