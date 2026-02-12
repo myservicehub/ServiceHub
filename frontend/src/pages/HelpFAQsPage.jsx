@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { contactsAPI } from '../api/wallet';
 
 const HelpFAQsPage = () => {
   const navigate = useNavigate();
@@ -12,6 +13,23 @@ const HelpFAQsPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('general');
   const [expandedFAQ, setExpandedFAQ] = useState(null);
+  const [contactByType, setContactByType] = useState({});
+
+  useEffect(() => {
+    const fetchContacts = async () => {
+      try {
+        const data = await contactsAPI.getAllContacts();
+        const list = Array.isArray(data?.contacts) ? data.contacts : [];
+        const active = list.filter(c => c.is_active);
+        const map = active.reduce((acc, c) => {
+          acc[c.contact_type] = c;
+          return acc;
+        }, {});
+        setContactByType(map);
+      } catch (e) {}
+    };
+    fetchContacts();
+  }, []);
 
   // Filter categories based on user role
   const getVisibleCategories = () => {
@@ -191,26 +209,30 @@ const HelpFAQsPage = () => {
     ]
   };
 
+  const supportEmail = contactByType['email_support']?.value || 'support@myservicehub.co';
+  const supportPhone = contactByType['phone_support']?.value || '+2348141831420';
+  const businessHours = contactByType['business_hours']?.value || '8:00 AM - 6:00 PM';
+
   const contactOptions = [
     {
       icon: Mail,
       title: "Email Support",
       description: "Get help via email",
-      contact: "support@myservicehub.co",
-      action: "mailto:support@myservicehub.co"
+      contact: supportEmail,
+      action: `mailto:${supportEmail}`
     },
     {
       icon: Phone,
       title: "Phone Support",
       description: "Call us directly",
-      contact: "+2348141831420",
-      action: "tel:+2348141831420"
+      contact: supportPhone,
+      action: `tel:${supportPhone.replace(/\s+/g, '')}`
     },
     {
       icon: MessageCircle,
       title: "Live Chat",
       description: "Chat with our team",
-      contact: "Available 8 AM - 6 PM",
+      contact: businessHours,
       action: "#"
     }
   ];
@@ -420,13 +442,7 @@ const HelpFAQsPage = () => {
 
             <div className="mt-8 p-6 bg-blue-50 border border-blue-200 rounded-lg">
               <h3 className="font-semibold text-blue-900 mb-2">Support Hours</h3>
-              <p className="text-blue-800">
-                Monday to Friday: 8:00 AM - 6:00 PM (West Africa Time)
-                <br />
-                Saturday: 9:00 AM - 2:00 PM (West Africa Time)
-                <br />
-                Sunday: Closed
-              </p>
+              <p className="text-blue-800">{businessHours}</p>
             </div>
           </div>
         </div>

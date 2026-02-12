@@ -7,6 +7,7 @@ import Footer from '../components/Footer';
 import { useAuth } from '../contexts/AuthContext';
 import { publicAPI } from '../api/public';
 import { statsAPI } from '../api/services';
+import { contactsAPI } from '../api/wallet';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { contactSchema, formatPhoneE164 } from '../utils/validation';
@@ -17,6 +18,7 @@ const ContactUsPage = () => {
   const { toast } = useToast();
   const [globalErrorMessage, setGlobalErrorMessage] = useState('');
   const [platformStats, setPlatformStats] = useState(null);
+  const [contactByType, setContactByType] = useState({});
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -28,6 +30,24 @@ const ContactUsPage = () => {
       }
     };
     fetchStats();
+  }, []);
+
+  useEffect(() => {
+    const fetchContacts = async () => {
+      try {
+        const data = await contactsAPI.getAllContacts();
+        const list = Array.isArray(data?.contacts) ? data.contacts : [];
+        const active = list.filter(c => c.is_active);
+        const map = active.reduce((acc, c) => {
+          acc[c.contact_type] = c;
+          return acc;
+        }, {});
+        setContactByType(map);
+      } catch (err) {
+        console.error('Failed to fetch contacts:', err);
+      }
+    };
+    fetchContacts();
   }, []);
 
   // React Hook Form setup with Zod schema
@@ -113,22 +133,30 @@ const ContactUsPage = () => {
     scrollToFirstError(errObj);
   };
 
+  const supportEmail = contactByType['email_support']?.value || 'support@myservicehub.co';
+  const supportPhone = contactByType['phone_support']?.value || '+2348141831420';
+  const businessHours = contactByType['business_hours']?.value || 'Available Monday to Friday, 8:00 AM - 6:00 PM (WAT)';
+  const socialFacebook = contactByType['social_facebook']?.value || 'https://www.facebook.com/share/18xd2rkVkV/';
+  const socialInstagram = contactByType['social_instagram']?.value || 'https://www.instagram.com/myservice_hub?igsh=MTg2cWwweGQ3MzdoMA==';
+  const socialYoutube = contactByType['social_youtube']?.value || 'https://youtube.com/@myservicehub?si=bKHBrzZ-Hu4hjHW6';
+  const socialTwitter = contactByType['social_twitter']?.value || 'https://x.com/myservice_hub';
+
   const contactMethods = [
     {
       icon: Mail,
       title: "Email Support",
       subtitle: "Get help via email",
-      contact: "support@myservicehub.co",
+      contact: supportEmail,
       description: "Send us your questions and we'll respond within 24 hours",
-      action: () => window.open('mailto:support@myservicehub.co')
+      action: () => window.open(`mailto:${supportEmail}`)
     },
     {
       icon: Phone,
       title: "Phone Support",
       subtitle: "Call us directly",
-      contact: "+2348141831420",
-      description: "Available Monday to Friday, 8:00 AM - 6:00 PM (WAT)",
-      action: () => window.open('tel:+2348141831420')
+      contact: supportPhone,
+      description: businessHours,
+      action: () => window.open(`tel:${supportPhone.replace(/\s+/g, '')}`)
     },
     {
       icon: MessageCircle,
@@ -144,25 +172,25 @@ const ContactUsPage = () => {
     {
       icon: Facebook,
       name: "Facebook",
-      url: "https://www.facebook.com/share/18xd2rkVkV/",
+      url: socialFacebook,
       color: "text-blue-600 hover:text-blue-700"
     },
     {
       icon: Instagram,
       name: "Instagram",
-      url: "https://www.instagram.com/myservice_hub?igsh=MTg2cWwweGQ3MzdoMA==",
+      url: socialInstagram,
       color: "text-pink-600 hover:text-pink-700"
     },
     {
       icon: Youtube,
       name: "YouTube",
-      url: "https://youtube.com/@myservicehub?si=bKHBrzZ-Hu4hjHW6",
+      url: socialYoutube,
       color: "text-red-600 hover:text-red-700"
     },
     {
       icon: Twitter,
       name: "Twitter",
-      url: "https://x.com/myservice_hub",
+      url: socialTwitter,
       color: "text-blue-400 hover:text-blue-500"
     }
   ];
@@ -469,17 +497,17 @@ const ContactUsPage = () => {
             </div>
 
             {/* Emergency Contact */}
-            <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
               <h3 className="text-xl font-semibold text-orange-900 mb-2">Need Urgent Help?</h3>
               <p className="text-orange-800 mb-4">
                 For urgent platform issues or emergency support during business hours
               </p>
               <div className="flex items-center text-orange-700">
                 <Phone className="w-4 h-4 mr-2" />
-                <span className="font-medium">+2348141831420</span>
+                  <span className="font-medium">{supportPhone}</span>
               </div>
               <p className="text-sm text-orange-600 mt-2">
-                Available Monday-Friday, 8 AM - 6 PM (WAT)
+                {businessHours}
               </p>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -19,11 +19,29 @@ import {
   Shield,
   Zap
 } from 'lucide-react';
+import { contactsAPI } from '../api/wallet';
 
 const HelpCentrePage = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedFAQ, setExpandedFAQ] = useState(null);
+  const [contactByType, setContactByType] = useState({});
+  
+  useEffect(() => {
+    const fetchContacts = async () => {
+      try {
+        const data = await contactsAPI.getAllContacts();
+        const list = Array.isArray(data?.contacts) ? data.contacts : [];
+        const active = list.filter(c => c.is_active);
+        const map = active.reduce((acc, c) => {
+          acc[c.contact_type] = c;
+          return acc;
+        }, {});
+        setContactByType(map);
+      } catch (e) {}
+    };
+    fetchContacts();
+  }, []);
   
   const handleSearch = () => {
     const q = (searchQuery || '').trim();
@@ -174,26 +192,30 @@ const HelpCentrePage = () => {
     }
   ];
 
+  const supportEmail = contactByType['email_support']?.value || 'support@myservicehub.co';
+  const supportPhone = contactByType['phone_support']?.value || '+2348141831420';
+  const businessHours = contactByType['business_hours']?.value || 'Mon-Fri, 9AM-6PM';
+
   const contactOptions = [
     {
       icon: MessageCircle,
       title: "Live Chat",
       description: "Chat with our support team",
-      availability: "Mon-Fri, 9AM-6PM",
+      availability: businessHours,
       action: "Start Chat",
       primary: true
     },
     {
       icon: Mail,
       title: "Email Support", 
-      description: "support@myservicehub.co",
+      description: supportEmail,
       availability: "Response within 24 hours",
       action: "Send Email"
     },
     {
       icon: Phone,
       title: "Phone Support",
-  description: "+2348141831420",
+      description: supportPhone,
       availability: "Mon-Fri, 9AM-5PM",
       action: "Call Now"
     }
@@ -466,10 +488,10 @@ const HelpCentrePage = () => {
                     if (option.title === 'Live Chat') {
                       navigate('/contact');
                     } else if (option.title === 'Email Support') {
-                      window.open('mailto:support@myservicehub.co');
-} else if (option.title === 'Phone Support') {
-        window.open('tel:+2348141831420');
-}
+                      window.open(`mailto:${supportEmail}`);
+                    } else if (option.title === 'Phone Support') {
+                      window.open(`tel:${supportPhone.replace(/\s+/g, '')}`);
+                    }
                   }}
                   className={'bg-green-600 hover:bg-green-700 text-white'}>
                   {option.action}
