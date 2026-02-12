@@ -104,7 +104,12 @@ async def submit_verification_documents(
             image.thumbnail((1920, 1920), Image.Resampling.LANCZOS)
         
         image.save(file_path, "JPEG", quality=90, optimize=True)
-        
+        try:
+            with open(file_path, "rb") as f:
+                _bytes = f.read()
+            b64_data = base64.b64encode(_bytes).decode("utf-8")
+        except Exception:
+            b64_data = None
     except Exception as e:
         raise HTTPException(status_code=400, detail="Invalid image file")
     
@@ -113,6 +118,7 @@ async def submit_verification_documents(
         user_id=current_user.id,
         document_type=document_type,
         document_url=filename,
+        document_image_base64=b64_data,
         full_name=full_name,
         document_number=document_number
     )

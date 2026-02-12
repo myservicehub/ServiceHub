@@ -71,7 +71,6 @@ async def upload_portfolio_image(
     image_base64: Optional[str] = Form(None),
     current_user: User = Depends(get_current_tradesperson)
 ):
-    """Upload a new portfolio image"""
     try:
         if not file and not image_base64:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Image is required")
@@ -87,15 +86,8 @@ async def upload_portfolio_image(
         else:
             file_content = await file.read()
             optimized_content = resize_image(file_content)
-        
-        # Generate unique filename
         unique_filename = f"{uuid.uuid4()}.jpg"
-        file_path = UPLOAD_DIR / unique_filename
-        
-        # Save file
-        with open(file_path, "wb") as f:
-            f.write(optimized_content)
-        
+        data_url = f"data:image/jpeg;base64,{base64.b64encode(optimized_content).decode('utf-8')}"
         # Create portfolio item data
         portfolio_data = {
             "id": str(uuid.uuid4()),
@@ -103,7 +95,7 @@ async def upload_portfolio_image(
             "title": title,
             "description": description,
             "category": category,
-            "image_url": f"/api/portfolio/images/{unique_filename}",
+            "image_url": data_url,
             "image_filename": unique_filename,
             "created_at": database.get_current_time(),
             "updated_at": database.get_current_time(),
@@ -118,9 +110,6 @@ async def upload_portfolio_image(
     except HTTPException:
         raise
     except Exception as e:
-        # Clean up file if database save fails
-        if 'file_path' in locals() and file_path.exists():
-            file_path.unlink()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to upload image: {str(e)}"

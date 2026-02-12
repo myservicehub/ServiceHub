@@ -44,11 +44,10 @@ async def upload_attachment(
         raise HTTPException(status_code=413, detail="File too large")
     ext = os.path.splitext(file.filename or "")[1].lower()
     name = f"{uuid.uuid4().hex}{ext}"
-    dest = attachments_dir / name
-    with open(dest, "wb") as f:
-        f.write(data)
-    url_path = f"/api/messages/attachments/{name}"
-    return {"filename": name, "content_type": file.content_type, "size": len(data), "url": url_path}
+    import base64
+    b64 = base64.b64encode(data).decode("utf-8")
+    data_url = f"data:{file.content_type};base64,{b64}"
+    return {"filename": name, "content_type": file.content_type, "size": len(data), "url": data_url}
 
 @router.get("/attachments/{filename}")
 async def get_attachment(
