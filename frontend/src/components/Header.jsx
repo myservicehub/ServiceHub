@@ -23,10 +23,9 @@ const Header = () => {
   const location = useLocation();
   const { user, isAuthenticated, isHomeowner, isTradesperson, logout } = useAuth();
 
-  // When on the Post Job page, ensure signup defaults to Homeowner
   const isPostJobPage = location?.pathname?.startsWith('/post-job');
-  const authDefaultTab = isPostJobPage ? 'homeowner' : 'tradesperson';
-  const authShowOnlyTradesperson = isPostJobPage ? false : true;
+  const authDefaultTab = 'tradesperson';
+  const authShowOnlyTradesperson = true;
 
   const handleAuthClick = (mode) => {
     setAuthMode(mode);
