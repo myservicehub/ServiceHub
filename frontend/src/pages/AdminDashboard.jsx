@@ -4539,7 +4539,16 @@ const AdminDashboard = () => {
                                 <td className="px-6 py-4 text-sm text-gray-700">{(r.title || '').slice(0, 80)}</td>
                                 <td className="px-6 py-4 text-sm text-gray-700 max-w-xs overflow-auto whitespace-pre-wrap">{r.content}</td>
                                 <td className="px-6 py-4 text-sm text-gray-700">{r.status}</td>
-                                <td className="px-6 py-4 text-sm text-gray-700">{r.job_id || ''}</td>
+                                <td className="px-6 py-4 text-sm text-gray-700">
+                                  <div className="flex items-center gap-2">
+                                    <span>{r.job_id || '—'}</span>
+                                    {(r.source === 'external' || r.review_type === 'external_to_tradesperson') ? (
+                                      <span className="text-xs px-2 py-0.5 rounded bg-purple-100 text-purple-700 border border-purple-200">External</span>
+                                    ) : (
+                                      <span className="text-xs px-2 py-0.5 rounded bg-green-100 text-green-700 border border-green-200">Homeowner</span>
+                                    )}
+                                  </div>
+                                </td>
                                 <td className="px-6 py-4 text-sm text-gray-700">
                                   <div className="flex space-x-2">
                                     {(r.status !== 'published') && (
