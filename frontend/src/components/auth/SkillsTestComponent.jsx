@@ -312,7 +312,7 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
                 <Trophy className="h-6 w-6 text-green-600" />
                 <div>
                   <span className="font-semibold text-lg text-green-800">{trade}</span>
-                  <p className="text-sm text-green-700">{((testQuestions[trade]||[]).length) || QUESTIONS_PER_TRADE} questions</p>
+                  <p className="text-sm text-green-700">{Array.isArray(testQuestions[trade]) ? testQuestions[trade].length : 0} questions</p>
                 </div>
               </div>
             ))}

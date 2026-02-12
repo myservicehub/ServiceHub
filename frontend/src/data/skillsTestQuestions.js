@@ -913,18 +913,7 @@ export const getQuestionsForTrades = (selectedTrades, questionsPerTrade = 20) =>
   const allQuestions = {};
 
   selectedTrades.forEach(trade => {
-    // Determine the base category that has questions
-    const baseCategory = skillsTestQuestions[trade]
-      ? trade
-      : TRADE_ALIAS_MAP[trade];
-
-    let sourceCategory = null;
-    if (baseCategory && skillsTestQuestions[baseCategory]) {
-      sourceCategory = baseCategory;
-    } else if (skillsTestQuestions["Building"]) {
-      // Safe global fallback to Building if nothing else matches
-      sourceCategory = "Building";
-    }
+    const sourceCategory = skillsTestQuestions[trade] ? trade : null;
 
     if (sourceCategory) {
       const tradeQuestions = skillsTestQuestions[sourceCategory] || [];
@@ -936,7 +925,6 @@ export const getQuestionsForTrades = (selectedTrades, questionsPerTrade = 20) =>
         allQuestions[trade] = tradeQuestions;
       }
     } else {
-      // If absolutely no fallback available, set empty array to allow skip logic upstream
       allQuestions[trade] = [];
     }
   });
