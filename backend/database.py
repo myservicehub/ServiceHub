@@ -7541,8 +7541,25 @@ We may update this Cookie Policy to reflect changes in technology or regulations
     async def get_questions_by_trade_category(self, trade_category: str) -> List[dict]:
         """Get all active questions for a specific trade category"""
         try:
+            alias_names = [trade_category]
+            try:
+                import re
+                doc = await self.database.system_trades.find_one(
+                    {"name": {"$regex": f"^{re.escape(trade_category)}$", "$options": "i"}}
+                )
+                if doc and doc.get("replaces"):
+                    alias_names.append(doc["replaces"])
+                # Also include any custom trades that replace this static name
+                async for rep in self.database.system_trades.find(
+                    {"replaces": {"$regex": f"^{re.escape(trade_category)}$", "$options": "i"}}
+                ):
+                    if rep.get("name"):
+                        alias_names.append(rep["name"])
+            except Exception:
+                pass
+            
             questions = await self.database.trade_category_questions.find({
-                "trade_category": trade_category,
+                "trade_category": {"$in": list(dict.fromkeys(alias_names))},
                 "is_active": True
             }).sort("display_order", 1).to_list(length=None)
             
@@ -7559,7 +7576,23 @@ We may update this Cookie Policy to reflect changes in technology or regulations
         try:
             filters = {}
             if trade_category:
-                filters["trade_category"] = trade_category
+                alias_names = [trade_category]
+                try:
+                    import re
+                    doc = await self.database.system_trades.find_one(
+                        {"name": {"$regex": f"^{re.escape(trade_category)}$", "$options": "i"}}
+                    )
+                    if doc and doc.get("replaces"):
+                        alias_names.append(doc["replaces"])
+                    # Include any custom trades that replace the given static name
+                    async for rep in self.database.system_trades.find(
+                        {"replaces": {"$regex": f"^{re.escape(trade_category)}$", "$options": "i"}}
+                    ):
+                        if rep.get("name"):
+                            alias_names.append(rep["name"])
+                except Exception:
+                    pass
+                filters["trade_category"] = {"$in": list(dict.fromkeys(alias_names))}
             
             questions = await self.database.trade_category_questions.find(filters).sort([
                 ("trade_category", 1), 
