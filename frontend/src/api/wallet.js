@@ -850,7 +850,7 @@ export const tradeCategoryQuestionsAPI = {
   
   async activateAllInactiveQuestions(tradeCategory = null) {
     const params = tradeCategory ? `?trade_category=${encodeURIComponent(tradeCategory)}` : '';
-    const response = await apiClient.put(`/admin/trade-questions/activate-all${params}`);
+    const response = await apiClient.put(`/admin/trade-questions/bulk/activate${params}`);
     return response.data;
   },
 
