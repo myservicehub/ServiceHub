@@ -22,7 +22,8 @@ import { useToast } from '../../hooks/use-toast';
 
 const TradeCategoryQuestionsManager = () => {
   const [questions, setQuestions] = useState([]);
-  const [categoriesWithQuestions, setCategoriesWithQuestions] = useState([]);
+  const [categoriesWithQuestionsActive, setCategoriesWithQuestionsActive] = useState([]);
+  const [categoriesWithQuestionsAll, setCategoriesWithQuestionsAll] = useState([]);
   const [tradeCategories, setTradeCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -235,7 +236,8 @@ const TradeCategoryQuestionsManager = () => {
   const loadCategoriesWithQuestions = async () => {
     try {
       const response = await tradeCategoryQuestionsAPI.getTradeCategoriesWithQuestions();
-      setCategoriesWithQuestions(response.categories || []);
+      setCategoriesWithQuestionsActive(response.categories || []);
+      setCategoriesWithQuestionsAll(response.categories_all || []);
     } catch (error) {
       console.error('Failed to load categories with questions:', error);
     }
@@ -363,6 +365,25 @@ const TradeCategoryQuestionsManager = () => {
       toast({
         title: "Error",
         description: "Failed to delete question",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleToggleActive = async (question) => {
+    try {
+      await tradeCategoryQuestionsAPI.updateTradeQuestion(question.id, { is_active: !question.is_active });
+      toast({
+        title: "Success",
+        description: !question.is_active ? "Question activated" : "Question deactivated",
+      });
+      await loadQuestions();
+      await loadCategoriesWithQuestions();
+    } catch (error) {
+      console.error('Failed to toggle active state:', error);
+      toast({
+        title: "Error",
+        description: "Failed to toggle active state",
         variant: "destructive",
       });
     }
@@ -548,7 +569,8 @@ const TradeCategoryQuestionsManager = () => {
             </div>
             <div className="text-sm text-gray-600">
               <div>Total Questions: {questions.length}</div>
-              <div>Categories with Questions: {categoriesWithQuestions.length}</div>
+              <div>Categories with Questions (active): {categoriesWithQuestionsActive.length}</div>
+              <div>Categories with Questions (all): {categoriesWithQuestionsAll.length}</div>
             </div>
           </div>
         </CardContent>
@@ -1227,6 +1249,14 @@ const TradeCategoryQuestionsManager = () => {
                         onClick={() => handleEditQuestion(question)}
                       >
                         <Edit2 size={16} />
+                      </Button>
+                      <Button
+                        variant={question.is_active ? "outline" : "default"}
+                        size="sm"
+                        onClick={() => handleToggleActive(question)}
+                        className={question.is_active ? "text-yellow-700 hover:text-yellow-800" : "bg-green-600 hover:bg-green-700"}
+                      >
+                        {question.is_active ? 'Deactivate' : 'Activate'}
                       </Button>
                       <Button
                         variant="outline"

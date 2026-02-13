@@ -2580,10 +2580,14 @@ async def reorder_trade_questions(trade_category: str, question_orders: List[dic
 async def get_trade_categories_with_questions():
     """Get all trade categories that have questions defined"""
     try:
-        categories = await database.get_trade_categories_with_questions()
+        data = await database.get_trade_categories_with_questions()
+        active = data.get("categories_active", [])
+        all_cats = data.get("categories_all", [])
         return {
-            "categories": categories,
-            "total_categories": len(categories)
+            "categories": active,  # backward compatibility: active only
+            "categories_all": all_cats,
+            "total_categories": len(active),
+            "total_categories_all": len(all_cats),
         }
     except Exception as e:
         logger.error(f"Error getting trade categories with questions: {str(e)}")

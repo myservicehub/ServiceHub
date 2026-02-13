@@ -7694,31 +7694,28 @@ We may update this Cookie Policy to reflect changes in technology or regulations
             logger.error(f"Error getting job question answers for {job_id}: {str(e)}")
             return None
     
-    async def get_trade_categories_with_questions(self) -> List[dict]:
-        """Get all trade categories that have questions defined"""
+    async def get_trade_categories_with_questions(self) -> dict:
+        """Get trade categories that have questions defined.
+        Returns both active-only aggregation and all (active + inactive).
+        """
         try:
-            pipeline = [
+            active_pipeline = [
                 {"$match": {"is_active": True}},
-                {"$group": {
-                    "_id": "$trade_category",
-                    "question_count": {"$sum": 1}
-                }},
-                {"$sort": {"_id": 1}}
+                {"$group": {"_id": "$trade_category", "question_count": {"$sum": 1}}},
+                {"$sort": {"_id": 1}},
             ]
-            
-            results = await self.database.trade_category_questions.aggregate(pipeline).to_list(length=None)
-            
-            categories = []
-            for result in results:
-                categories.append({
-                    "trade_category": result["_id"],
-                    "question_count": result["question_count"]
-                })
-            
-            return categories
+            all_pipeline = [
+                {"$group": {"_id": "$trade_category", "question_count": {"$sum": 1}}},
+                {"$sort": {"_id": 1}},
+            ]
+            active_results = await self.database.trade_category_questions.aggregate(active_pipeline).to_list(length=None)
+            all_results = await self.database.trade_category_questions.aggregate(all_pipeline).to_list(length=None)
+            categories_active = [{"trade_category": r["_id"], "question_count": r["question_count"]} for r in active_results]
+            categories_all = [{"trade_category": r["_id"], "question_count": r["question_count"]} for r in all_results]
+            return {"categories_active": categories_active, "categories_all": categories_all}
         except Exception as e:
             logger.error(f"Error getting trade categories with questions: {str(e)}")
-            return []
+            return {"categories_active": [], "categories_all": []}
 
     # ==========================================
     # ADMIN MANAGEMENT METHODS
