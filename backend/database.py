@@ -7625,6 +7625,20 @@ We may update this Cookie Policy to reflect changes in technology or regulations
             logger.error(f"Error reordering questions for {trade_category}: {str(e)}")
             return False
     
+    async def activate_all_inactive_trade_questions(self, trade_category: Optional[str] = None) -> int:
+        try:
+            filters = {"is_active": False}
+            if trade_category:
+                filters["trade_category"] = trade_category
+            result = await self.database.trade_category_questions.update_many(
+                filters,
+                {"$set": {"is_active": True, "updated_at": datetime.utcnow()}}
+            )
+            return getattr(result, "modified_count", 0)
+        except Exception as e:
+            logger.error(f"Error activating inactive trade questions: {str(e)}")
+            return 0
+    
     def compose_job_description_from_answers(self, answers_doc: Optional[dict]) -> str:
         trade_category = (answers_doc or {}).get("trade_category") or ""
         items = []

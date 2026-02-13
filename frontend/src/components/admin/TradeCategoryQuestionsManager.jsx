@@ -243,6 +243,25 @@ const TradeCategoryQuestionsManager = () => {
     }
   };
 
+  const handleActivateAllInactive = async () => {
+    try {
+      const response = await tradeCategoryQuestionsAPI.activateAllInactiveQuestions(selectedCategory || null);
+      toast({
+        title: "Success",
+        description: `Activated ${response.modified_count || 0} inactive questions`,
+      });
+      await loadQuestions();
+      await loadCategoriesWithQuestions();
+    } catch (error) {
+      console.error('Failed to activate inactive questions:', error);
+      toast({
+        title: "Error",
+        description: "Failed to activate inactive questions",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleCreateQuestion = async () => {
     try {
       if (!formData.trade_category || !formData.question_text) {
@@ -538,13 +557,21 @@ const TradeCategoryQuestionsManager = () => {
           <h2 className="text-2xl font-bold">Trade Category Questions</h2>
           <p className="text-gray-600">Manage dynamic questions for job posting by trade category</p>
         </div>
-        <Button 
-          onClick={() => { setShowCreateForm(true); scrollToFormTop(); }}
-          className="bg-green-600 hover:bg-green-700"
-        >
-          <Plus size={16} className="mr-2" />
-          Add Question
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={() => { setShowCreateForm(true); scrollToFormTop(); }}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            <Plus size={16} className="mr-2" />
+            Add Question
+          </Button>
+          <Button 
+            onClick={handleActivateAllInactive}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            Activate All Inactive
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}

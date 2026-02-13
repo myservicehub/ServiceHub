@@ -847,6 +847,12 @@ export const tradeCategoryQuestionsAPI = {
     const response = await apiClient.get('/admin/trade-categories-with-questions');
     return response.data;
   },
+  
+  async activateAllInactiveQuestions(tradeCategory = null) {
+    const params = tradeCategory ? `?trade_category=${encodeURIComponent(tradeCategory)}` : '';
+    const response = await apiClient.put(`/admin/trade-questions/activate-all${params}`);
+    return response.data;
+  },
 
   // Public methods for job posting
   async getJobPostingQuestions(tradeCategory) {

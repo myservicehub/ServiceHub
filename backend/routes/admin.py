@@ -2544,6 +2544,20 @@ async def update_trade_question(question_id: str, update_data: dict):
         logger.error(f"Error updating trade question {question_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to update trade question")
 
+@router.put("/trade-questions/activate-all")
+async def activate_all_inactive_trade_questions(trade_category: Optional[str] = None):
+    try:
+        modified = await database.activate_all_inactive_trade_questions(trade_category)
+        categories_with_questions = await database.get_trade_categories_with_questions()
+        return {
+            "message": "Activated inactive trade questions",
+            "modified_count": modified,
+            "categories_with_questions": categories_with_questions
+        }
+    except Exception as e:
+        logger.error(f"Error activating inactive trade questions: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to activate inactive trade questions")
+
 @router.delete("/trade-questions/{question_id}")
 async def delete_trade_question(question_id: str):
     """Delete a trade category question"""
