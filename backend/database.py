@@ -313,6 +313,32 @@ class Database:
                     except Exception as idx_err:
                         logger.warning(f"Failed to ensure tradespeople_verifications indexes: {idx_err}")
 
+                    # Trade Category Questions: indexes to optimize category lookups and ordering
+                    try:
+                        await self.database.trade_category_questions.create_index(
+                            [("trade_category", 1)],
+                            name="trade_questions_category"
+                        )
+                        await self.database.trade_category_questions.create_index(
+                            [("trade_category", 1), ("is_active", 1), ("display_order", 1)],
+                            name="trade_questions_category_active_order"
+                        )
+                    except Exception as idx_err:
+                        logger.warning(f"Failed to ensure trade_category_questions indexes: {idx_err}")
+
+                    # Skills Questions: indexes to optimize per-trade queries
+                    try:
+                        await self.database.skills_questions.create_index(
+                            [("trade_category", 1)],
+                            name="skills_questions_category"
+                        )
+                        await self.database.skills_questions.create_index(
+                            [("trade_category", 1), ("is_active", 1)],
+                            name="skills_questions_category_active"
+                        )
+                    except Exception as idx_err:
+                        logger.warning(f"Failed to ensure skills_questions indexes: {idx_err}")
+
                     logger.info("Performance optimization indexes ensured successfully")
                 except Exception as idx_err:
                     logger.warning(f"Failed to ensure performance indexes: {idx_err}")
@@ -7617,42 +7643,29 @@ We may update this Cookie Policy to reflect changes in technology or regulations
     async def _resolve_trade_aliases(self, trade_category: str) -> List[str]:
         try:
             import re
-            def normalize(name: str) -> str:
-                s = (name or "").lower().strip()
-                s = re.sub(r'[^a-z0-9]+', ' ', s)
-                words = [w for w in s.split() if w not in ("general", "work", "services", "and")]
-                return " ".join(words)
-            
             alias_names = [trade_category]
-            # Map via system_trades (custom replaces static)
             try:
                 doc = await self.database.system_trades.find_one(
                     {"name": {"$regex": f"^{re.escape(trade_category)}$", "$options": "i"}}
                 )
-                if doc and doc.get("replaces"):
-                    alias_names.append(doc["replaces"])
-                # Any custom trades that replace the selected static name
+                if doc:
+                    n = doc.get("name")
+                    if n:
+                        alias_names.append(n)
+                    r = doc.get("replaces")
+                    if r:
+                        alias_names.append(r)
                 async for rep in self.database.system_trades.find(
                     {"replaces": {"$regex": f"^{re.escape(trade_category)}$", "$options": "i"}}
                 ):
-                    if rep.get("name"):
-                        alias_names.append(rep["name"])
+                    n2 = rep.get("name")
+                    if n2:
+                        alias_names.append(n2)
+                    r2 = rep.get("replaces")
+                    if r2:
+                        alias_names.append(r2)
             except Exception:
                 pass
-            
-            # Normalization-based fallback: include DB categories that normalize to same value
-            try:
-                sel_norm = normalize(trade_category)
-                distinct_categories = await self.database.trade_category_questions.distinct("trade_category")
-                for cat in distinct_categories or []:
-                    try:
-                        if normalize(str(cat)) == sel_norm:
-                            alias_names.append(str(cat))
-                    except Exception:
-                        continue
-            except Exception:
-                pass
-            
             return list(dict.fromkeys([a for a in alias_names if (a or "").strip()]))
         except Exception:
             return [trade_category]
