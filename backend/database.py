@@ -7541,22 +7541,7 @@ We may update this Cookie Policy to reflect changes in technology or regulations
     async def get_questions_by_trade_category(self, trade_category: str) -> List[dict]:
         """Get all active questions for a specific trade category"""
         try:
-            alias_names = [trade_category]
-            try:
-                import re
-                doc = await self.database.system_trades.find_one(
-                    {"name": {"$regex": f"^{re.escape(trade_category)}$", "$options": "i"}}
-                )
-                if doc and doc.get("replaces"):
-                    alias_names.append(doc["replaces"])
-                # Also include any custom trades that replace this static name
-                async for rep in self.database.system_trades.find(
-                    {"replaces": {"$regex": f"^{re.escape(trade_category)}$", "$options": "i"}}
-                ):
-                    if rep.get("name"):
-                        alias_names.append(rep["name"])
-            except Exception:
-                pass
+            alias_names = await self._resolve_trade_aliases(trade_category)
             
             questions = await self.database.trade_category_questions.find({
                 "trade_category": {"$in": list(dict.fromkeys(alias_names))},
@@ -7576,22 +7561,7 @@ We may update this Cookie Policy to reflect changes in technology or regulations
         try:
             filters = {}
             if trade_category:
-                alias_names = [trade_category]
-                try:
-                    import re
-                    doc = await self.database.system_trades.find_one(
-                        {"name": {"$regex": f"^{re.escape(trade_category)}$", "$options": "i"}}
-                    )
-                    if doc and doc.get("replaces"):
-                        alias_names.append(doc["replaces"])
-                    # Include any custom trades that replace the given static name
-                    async for rep in self.database.system_trades.find(
-                        {"replaces": {"$regex": f"^{re.escape(trade_category)}$", "$options": "i"}}
-                    ):
-                        if rep.get("name"):
-                            alias_names.append(rep["name"])
-                except Exception:
-                    pass
+                alias_names = await self._resolve_trade_aliases(trade_category)
                 filters["trade_category"] = {"$in": list(dict.fromkeys(alias_names))}
             
             questions = await self.database.trade_category_questions.find(filters).sort([
@@ -7644,6 +7614,49 @@ We may update this Cookie Policy to reflect changes in technology or regulations
             logger.error(f"Error deleting trade category question {question_id}: {str(e)}")
             return False
     
+    async def _resolve_trade_aliases(self, trade_category: str) -> List[str]:
+        try:
+            import re
+            def normalize(name: str) -> str:
+                s = (name or "").lower().strip()
+                s = re.sub(r'[^a-z0-9]+', ' ', s)
+                words = [w for w in s.split() if w not in ("general", "work", "services", "and")]
+                return " ".join(words)
+            
+            alias_names = [trade_category]
+            # Map via system_trades (custom replaces static)
+            try:
+                doc = await self.database.system_trades.find_one(
+                    {"name": {"$regex": f"^{re.escape(trade_category)}$", "$options": "i"}}
+                )
+                if doc and doc.get("replaces"):
+                    alias_names.append(doc["replaces"])
+                # Any custom trades that replace the selected static name
+                async for rep in self.database.system_trades.find(
+                    {"replaces": {"$regex": f"^{re.escape(trade_category)}$", "$options": "i"}}
+                ):
+                    if rep.get("name"):
+                        alias_names.append(rep["name"])
+            except Exception:
+                pass
+            
+            # Normalization-based fallback: include DB categories that normalize to same value
+            try:
+                sel_norm = normalize(trade_category)
+                distinct_categories = await self.database.trade_category_questions.distinct("trade_category")
+                for cat in distinct_categories or []:
+                    try:
+                        if normalize(str(cat)) == sel_norm:
+                            alias_names.append(str(cat))
+                    except Exception:
+                        continue
+            except Exception:
+                pass
+            
+            return list(dict.fromkeys([a for a in alias_names if (a or "").strip()]))
+        except Exception:
+            return [trade_category]
+
     async def reorder_trade_category_questions(self, trade_category: str, question_orders: List[dict]) -> bool:
         """Reorder questions for a trade category"""
         try:
