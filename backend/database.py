@@ -4070,7 +4070,11 @@ class Database:
         return True
 
     async def _process_referral_rewards(self, verified_user_id: str):
-        """Process referral rewards when user gets verified"""
+        """Process referral rewards when user gets verified.
+        Awards coins based on verified user's role:
+        - Tradesperson (business verification approved): 10 coins
+        - Homeowner (identity verification approved): 5 coins
+        """
         if self.database is None:
             raise RuntimeError("Database unavailable: cannot process referral rewards")
         # Find pending referral for this user
@@ -4082,8 +4086,19 @@ class Database:
         if not referral:
             return
         
-        # Award 5 coins to referrer
-        coins_to_award = 5
+        # Determine award amount based on verified user's role/state
+        try:
+            verified_user = await self.get_user_by_id(verified_user_id)
+        except Exception:
+            verified_user = None
+        user_role = (verified_user or {}).get("role")
+        is_tradesperson_verified = bool((verified_user or {}).get("verified_tradesperson"))
+        # Tradespeople: credit only when business verification is complete
+        if user_role == UserRole.TRADESPERSON.value and is_tradesperson_verified:
+            coins_to_award = 10
+        else:
+            # Default homeowner identity verification reward
+            coins_to_award = 5
         referrer_id = referral["referrer_id"]
         
         # Get or create referrer's wallet
@@ -4106,7 +4121,7 @@ class Database:
             "amount_coins": coins_to_award,
             "amount_naira": coins_to_award * 100,
             "status": "confirmed",
-            "description": f"Referral reward for successful referral",
+            "description": "Referral reward for successful referral (full verification)",
             "reference": verified_user_id,
             "processed_at": datetime.utcnow()
         }
@@ -4239,17 +4254,56 @@ class Database:
         return referrals
 
     async def check_withdrawal_eligibility(self, user_id: str) -> dict:
-        """Check if user is eligible to withdraw referral coins"""
         wallet = await self.get_wallet_by_user_id(user_id)
-        
-        # Get referral coins
-        referral_transactions = await self.wallet_transactions_collection.find({
+        referral_rewards = await self.wallet_transactions_collection.find({
             "user_id": user_id,
             "transaction_type": "referral_reward",
             "status": "confirmed"
         }).to_list(length=None)
-        
-        referral_coins = sum(t.get("amount_coins", 0) for t in referral_transactions)
+        referral_conversions = await self.wallet_transactions_collection.find({
+            "user_id": user_id,
+            "transaction_type": "referral_conversion",
+            "status": "confirmed"
+        }).to_list(length=None)
+        referral_rewards_total = sum(t.get("amount_coins", 0) for t in referral_rewards)
+        referral_converted_total = sum(t.get("amount_coins", 0) for t in referral_conversions)
+        referral_coins = max(0, referral_rewards_total - referral_converted_total)
+        total_coins = wallet.get("balance_coins", 0)
+        can_withdraw = total_coins >= 5
+        return {
+            "total_coins": total_coins,
+            "referral_coins": referral_coins,
+            "regular_coins": max(0, total_coins - referral_coins),
+            "can_withdraw_referrals": can_withdraw,
+            "minimum_required": 5,
+            "shortfall": max(0, 5 - total_coins)
+        }
+
+    async def convert_referral_rewards_to_wallet(self, user_id: str) -> dict:
+        wallet = await self.get_wallet_by_user_id(user_id)
+        eligibility = await self.check_withdrawal_eligibility(user_id)
+        if not eligibility.get("can_withdraw_referrals"):
+            return {
+                "success": False,
+                "error": "minimum_required",
+                "minimum_required": eligibility.get("minimum_required", 5),
+                "shortfall": eligibility.get("shortfall", 0)
+            }
+        amount_to_convert = eligibility.get("referral_coins", 0)
+        if amount_to_convert <= 0:
+            return {"success": False, "error": "none_available"}
+        transaction_data = {
+            "wallet_id": wallet["id"],
+            "user_id": user_id,
+            "transaction_type": "referral_conversion",
+            "amount_coins": amount_to_convert,
+            "amount_naira": amount_to_convert * 100,
+            "status": "confirmed",
+            "description": "Converted referral rewards to wallet",
+            "processed_at": datetime.utcnow()
+        }
+        await self.create_wallet_transaction(transaction_data)
+        return {"success": True, "converted_coins": amount_to_convert}
 
     # ==========================================
     # TRADESPEOPLE REFERENCES VERIFICATION METHODS
@@ -4547,6 +4601,12 @@ class Database:
             {"id": user_id},
             {"$set": {"verified_tradesperson": True, "is_verified": True, "updated_at": datetime.utcnow()}}
         )
+        try:
+            # Process referral reward upon full business verification
+            await self._process_referral_rewards(user_id)
+        except Exception:
+            # Non-fatal if referral processing fails
+            pass
         return True
 
     async def reject_tradesperson_verification(self, verification_id: str, admin_id: str, admin_notes: str) -> bool:

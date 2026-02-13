@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { walletAPI } from '../../api/wallet';
+import { referralsAPI } from '../../api/referrals';
 import { useToast } from '../../hooks/use-toast';
 
 const WalletBalance = ({ showFundButton = true, onFundClick, refreshToken = 0 }) => {
@@ -14,7 +15,7 @@ const WalletBalance = ({ showFundButton = true, onFundClick, refreshToken = 0 })
   const fetchBalance = async () => {
     try {
       setLoading(true);
-      const data = await walletAPI.getBalance();
+      const data = await referralsAPI.getWalletWithReferrals();
       setBalance(data);
     } catch (error) {
       console.error('Failed to fetch wallet balance:', error);
@@ -25,6 +26,25 @@ const WalletBalance = ({ showFundButton = true, onFundClick, refreshToken = 0 })
       });
     } finally {
       setLoading(false);
+    }
+  };
+  
+  const handleWithdrawReferral = async () => {
+    try {
+      const data = await referralsAPI.withdrawReferralToWallet();
+      setBalance(data);
+      toast({
+        title: "Referral bonus converted",
+        description: "Referral rewards moved to your normal wallet balance",
+        variant: "default"
+      });
+    } catch (error) {
+      const msg = error?.response?.data?.detail || "Unable to convert referral rewards";
+      toast({
+        title: "Error",
+        description: msg,
+        variant: "destructive"
+      });
     }
   };
 
@@ -50,6 +70,22 @@ const WalletBalance = ({ showFundButton = true, onFundClick, refreshToken = 0 })
             <p className="text-sm text-gray-600">
               {balance?.balance_coins || 0} coins (1 coin = ₦100)
             </p>
+            <p className="text-sm text-gray-700">
+              Referral rewards: {balance?.referral_coins || 0} coins (₦{(balance?.referral_coins_naira || 0).toLocaleString()})
+            </p>
+            {balance?.can_withdraw_referrals ? (
+              <p className="text-xs text-green-600">Eligible to withdraw referral rewards</p>
+            ) : (
+              <p className="text-xs text-gray-500">Referral rewards withdrawable after minimum total balance</p>
+            )}
+            {balance?.can_withdraw_referrals && (balance?.referral_coins || 0) > 0 && (
+              <button
+                onClick={handleWithdrawReferral}
+                className="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md text-sm"
+              >
+                Withdraw referral bonus to balance
+              </button>
+            )}
           </div>
         </div>
         

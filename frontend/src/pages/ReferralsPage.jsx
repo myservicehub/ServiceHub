@@ -141,7 +141,7 @@ const ReferralsPage = () => {
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-800 mb-2">Referral Dashboard</h1>
             <p className="text-gray-600">
-              Earn 5 coins for every friend who joins and verifies their account
+              Earn rewards when your referrals verify: 5 coins for homeowners, 10 coins for tradespeople after business verification
             </p>
           </div>
 
@@ -294,7 +294,7 @@ const ReferralsPage = () => {
                       <div className="bg-green-100 text-green-600 rounded-full p-2 text-sm font-bold min-w-[2rem] h-8 flex items-center justify-center">4</div>
                       <div>
                         <h4 className="font-medium text-gray-800">You Earn Coins</h4>
-                        <p className="text-sm text-gray-600">Get 5 coins when they're verified</p>
+                        <p className="text-sm text-gray-600">Earn 5 coins when homeowners verify identity; earn 10 coins when tradespeople complete business verification</p>
                       </div>
                     </div>
                   </div>
@@ -304,8 +304,9 @@ const ReferralsPage = () => {
                 <div className="bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-lg border">
                   <h3 className="text-lg font-semibold text-green-800 mb-2">Earn Rewards</h3>
                   <div className="space-y-2 text-sm">
-                    <p><strong>5 coins</strong> per verified referral</p>
-                    <p><strong>Withdraw</strong> with minimum 15 coins</p>
+                    <p><strong>5 coins</strong> per verified homeowner referral</p>
+                    <p><strong>10 coins</strong> per verified tradesperson referral (business verification)</p>
+                    <p><strong>Withdraw</strong> with minimum 5 coins</p>
                     <p><strong>No limit</strong> on referrals</p>
                   </div>
                 </div>

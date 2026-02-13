@@ -40,6 +40,11 @@ export const referralsAPI = {
     const response = await apiClient.get('/referrals/withdrawal-eligibility');
     return response.data;
   },
+  
+  async withdrawReferralToWallet() {
+    const response = await apiClient.post('/referrals/withdraw-to-wallet');
+    return response.data;
+  },
 
   // Get verification document image URL
   getDocumentUrl(filename) {

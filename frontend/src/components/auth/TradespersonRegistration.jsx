@@ -72,6 +72,7 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
     firstName: '',
     lastName: '',
     email: '',
+    referralCode: '',
     password: '',
     phone: '',
     marketingConsent: false,
@@ -481,6 +482,7 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
         description: description,
         certifications: formData.certifications || [],
         business_type: formData.businessType,
+        referral_code: (formData.referralCode || '').trim(),
       };
 
       console.log('📤 Sending registration data:', registrationData);
@@ -806,6 +808,20 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
             Verification happens after registration. Codes will be sent automatically.
           </p>
         </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Referral code (optional)
+        </label>
+        <Input
+          placeholder="Enter a referral code if you have one"
+          value={formData.referralCode}
+          onChange={(e) => updateFormData('referralCode', e.target.value)}
+        />
+        <p className="text-xs text-gray-500 mt-1">
+          Using a friend’s code helps them earn rewards when your account is verified.
+        </p>
       </div>
 
       <div>
