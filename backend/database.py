@@ -5543,6 +5543,15 @@ class Database:
                     {"_id": existing["_id"]},
                     {"$set": update_set}
                 )
+                # If renamed, migrate any existing trade questions to the new category name
+                if result.matched_count > 0 and old_name.lower() != new_name.lower():
+                    try:
+                        await self.database.trade_category_questions.update_many(
+                            {"trade_category": {"$regex": f"^{re.escape(old_name)}$", "$options": "i"}},
+                            {"$set": {"trade_category": new_name, "updated_at": now}}
+                        )
+                    except Exception:
+                        pass
                 return result.matched_count > 0
             else:
                 # Check if it's a static trade (case-insensitive)
@@ -5580,6 +5589,15 @@ class Database:
                         "active": True
                     }
                     await self.database.system_trades.insert_one(trade_doc)
+                    # Migrate any existing trade questions from the old static name to the new custom name
+                    if canonical_old_name and canonical_old_name.lower() != new_name.lower():
+                        try:
+                            await self.database.trade_category_questions.update_many(
+                                {"trade_category": {"$regex": f"^{re.escape(canonical_old_name)}$", "$options": "i"}},
+                                {"$set": {"trade_category": new_name, "updated_at": now}}
+                            )
+                        except Exception:
+                            pass
                     return True
                 
                 return False
