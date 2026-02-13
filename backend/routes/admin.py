@@ -2598,7 +2598,7 @@ async def get_trade_categories_with_questions():
         active = data.get("categories_active", [])
         all_cats = data.get("categories_all", [])
         return {
-            "categories": active,  # backward compatibility: active only
+            "categories": active,
             "categories_all": all_cats,
             "total_categories": len(active),
             "total_categories_all": len(all_cats),
@@ -2606,3 +2606,19 @@ async def get_trade_categories_with_questions():
     except Exception as e:
         logger.error(f"Error getting trade categories with questions: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to retrieve trade categories with questions")
+    
+@router.get("/trade-questions/counts")
+async def get_trade_questions_counts(active_only: bool = False):
+    try:
+        data = await database.get_trade_categories_with_questions()
+        items = data.get("categories_active", []) if active_only else data.get("categories_all", [])
+        total = sum([i.get("question_count", 0) for i in items])
+        items_sorted = sorted(items, key=lambda x: (-x.get("question_count", 0), x.get("trade_category", "")))
+        return {
+            "counts": items_sorted,
+            "total_questions": total,
+            "active_only": active_only
+        }
+    except Exception as e:
+        logger.error(f"Error getting trade questions counts: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve trade questions counts")
