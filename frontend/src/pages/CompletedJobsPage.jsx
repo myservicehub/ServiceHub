@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import TradespersonLayout from '../layouts/TradespersonLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -199,8 +200,8 @@ const CompletedJobsPage = () => {
 
   if (loading) {
     return (
+      <TradespersonLayout>
       <div className="min-h-screen bg-gray-50">
-        <Header />
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
@@ -209,14 +210,14 @@ const CompletedJobsPage = () => {
             </div>
           </div>
         </div>
-        <Footer />
       </div>
+      </TradespersonLayout>
     );
   }
 
   return (
+    <TradespersonLayout>
     <div className="min-h-screen bg-gray-50">
-      <Header />
       
       <div className="container mx-auto px-4 py-8">
         {/* Page Header */}
@@ -424,8 +425,8 @@ const CompletedJobsPage = () => {
         </Card>
       </div>
 
-      <Footer />
     </div>
+    </TradespersonLayout>
   );
 };
 

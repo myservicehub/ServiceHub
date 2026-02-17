@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import TradespersonLayout from '../layouts/TradespersonLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -795,8 +796,8 @@ const BrowseJobsPage = () => {
 
 
   return (
+    <TradespersonLayout>
     <div className="min-h-screen bg-gray-50">
-      <Header />
       
       {/* Page Header */}
       <section className="py-8 bg-white border-b">
@@ -1484,8 +1485,6 @@ const BrowseJobsPage = () => {
         </div>
       )}
 
-      <Footer />
-      
       {/* Location Settings Modal */}
       <LocationSettingsModal
         isOpen={showLocationSettings}
@@ -1495,6 +1494,7 @@ const BrowseJobsPage = () => {
         currentTravelDistance={filters.maxDistance}
       />
     </div>
+    </TradespersonLayout>
   );
 };
 

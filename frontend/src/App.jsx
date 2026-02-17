@@ -41,6 +41,7 @@ import TermsPage from "./pages/TermsPage";
 import CookiePolicyPage from "./pages/CookiePolicyPage";
 import ExternalReviewPage from "./pages/ExternalReviewPage";
 import HomeownerDashboardLayout from "./layouts/HomeownerDashboardLayout";
+import TradespersonLayout from "./layouts/TradespersonLayout";
 import { DashboardOverview, DashboardMessages } from "./pages/dashboard/homeowner";
 import { Toaster } from "./components/ui/toaster";
 import ScrollToTop from "./components/ScrollToTop";
@@ -102,18 +103,18 @@ function App() {
               <Route path="/browse-tradespeople" element={<BrowseTradespeopleePage />} />
               <Route path="/job/:jobId/interested-tradespeople" element={<ProtectedRoute><InterestedTradespeopleePage /></ProtectedRoute>} />
               <Route path="/browse-jobs" element={<BrowseJobsPage />} />
-              <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><TradespersonLayout><ProfilePage /></TradespersonLayout></ProtectedRoute>} />
               <Route path="/tradesperson/:tradespersonId/portfolio" element={<ProtectedRoute><TradespersonPortfolioPage /></ProtectedRoute>} />
-              <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+              <Route path="/notifications" element={<ProtectedRoute><TradespersonLayout><NotificationsPage /></TradespersonLayout></ProtectedRoute>} />
               <Route path="/notifications/preferences" element={<ProtectedRoute><NotificationPreferencesPage /></ProtectedRoute>} />
               <Route path="/notifications/history" element={<ProtectedRoute><NotificationHistoryPage /></ProtectedRoute>} />
               <Route path="/reviews" element={<ReviewsPage />} />
               <Route path="/reviews/:userId" element={<ReviewsPage />} />
               <Route path="/my-reviews" element={<ProtectedRoute><MyReviewsPage /></ProtectedRoute>} />
               <Route path="/my-received-reviews" element={<ProtectedRoute><MyReceivedReviewsPage /></ProtectedRoute>} />
-              <Route path="/wallet" element={<ProtectedRoute><WalletPage /></ProtectedRoute>} />
+              <Route path="/wallet" element={<ProtectedRoute><TradespersonLayout><WalletPage /></TradespersonLayout></ProtectedRoute>} />
               <Route path="/admin" element={<RoleGuard allowedRoles={["admin"]}><AdminDashboard /></RoleGuard>} />
-              <Route path="/referrals" element={<ProtectedRoute><ReferralsPage /></ProtectedRoute>} />
+              <Route path="/referrals" element={<ProtectedRoute><TradespersonLayout><ReferralsPage /></TradespersonLayout></ProtectedRoute>} />
               <Route path="/verify-account" element={<VerifyAccountPage />} />
               <Route path="/about" element={<AboutUsPage />} />
               <Route path="/reviews-policy" element={<ReviewsPolicyPage />} />

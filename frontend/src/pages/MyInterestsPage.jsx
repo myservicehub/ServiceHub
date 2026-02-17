@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import TradespersonLayout from '../layouts/TradespersonLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -438,22 +439,22 @@ const MyInterestsPage = () => {
 
   if (loading) {
     return (
+      <TradespersonLayout>
       <div className="min-h-screen bg-gray-50">
-        <Header />
         <div className="flex items-center justify-center py-20">
           <div className="text-center">
             <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" style={{color: '#34D164'}} />
             <p className="text-gray-600">Loading your interests...</p>
           </div>
         </div>
-        <Footer />
       </div>
+      </TradespersonLayout>
     );
   }
 
   return (
+    <TradespersonLayout>
     <div className="min-h-screen bg-gray-50">
-      <Header />
       
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header Section */}
@@ -828,8 +829,8 @@ const MyInterestsPage = () => {
         />
       )}
 
-      <Footer />
     </div>
+    </TradespersonLayout>
   );
 };
 

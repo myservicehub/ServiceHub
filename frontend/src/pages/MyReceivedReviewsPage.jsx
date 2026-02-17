@@ -4,6 +4,7 @@ import { Badge } from '../components/ui/badge';
 import { Star, Calendar, MapPin, User, MessageSquare, Award, CheckCircle2, ExternalLink } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import TradespersonLayout from '../layouts/TradespersonLayout';
 import { reviewsAPI } from '../api/reviews';
 import { useToast } from '../hooks/use-toast';
 import { useAuth } from '../contexts/AuthContext';
@@ -140,8 +141,8 @@ const MyReceivedReviewsPage = () => {
   }
 
   return (
+    <TradespersonLayout>
     <div className="min-h-screen bg-gray-50">
-      <Header />
       
       <div className="container mx-auto px-4 py-8">
         {/* Page Header */}
@@ -322,13 +323,12 @@ const MyReceivedReviewsPage = () => {
         )}
       </div>
 
-      <Footer />
-      
       <RequestExternalReviewModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
       />
     </div>
+    </TradespersonLayout>
   );
 };
 
