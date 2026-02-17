@@ -25,7 +25,7 @@ const AuthModal = ({ isOpen, onClose, defaultMode = 'login', defaultTab = 'trade
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent 
-        className="max-w-4xl max-h-[90vh] overflow-y-auto p-0"
+        className="sm:max-w-md md:max-w-lg lg:max-w-xl max-h-[85vh] overflow-y-auto p-0 my-4 sm:my-8"
         onPointerDownOutside={(e) => { e.preventDefault(); }}
       >
         {/* Hidden title to satisfy accessibility requirements */}

@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -322,8 +320,7 @@ const NotificationsPage = () => {
 
   if (!isAuthenticated()) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
+      <div>
         <div className="container mx-auto px-4 py-16">
           <div className="max-w-md mx-auto text-center">
             <h1 className="text-2xl font-bold font-montserrat mb-4" style={{color: '#121E3C'}}>
@@ -341,213 +338,172 @@ const NotificationsPage = () => {
             </Button>
           </div>
         </div>
-        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
-          {/* Header Section */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
-            <div className="flex items-center mb-4 md:mb-0">
-              <Button
-                variant="ghost"
-                onClick={() => navigate(-1)}
-                className="mr-4 p-2"
+    <div className="space-y-6">
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#121E3C]">
+            Notifications
+          </h1>
+          <p className="text-gray-500 mt-1 text-sm">
+            {user?.role === 'homeowner' ? 'Job updates and tradesperson activity' : 'New job opportunities and updates'}
+          </p>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={refreshNotifications}
+            disabled={refreshing}
+            className="flex items-center gap-1.5"
+          >
+            <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
+            <span>Refresh</span>
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/notifications/preferences')}
+            className="flex items-center gap-1.5"
+          >
+            <Settings size={14} />
+            <span>Settings</span>
+          </Button>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-3 gap-3 sm:gap-4">
+        <div className="bg-white rounded-2xl p-3.5 sm:p-5 border border-gray-100 shadow-sm border-b-2 border-b-[#121E3C] overflow-hidden">
+          <div className="p-2 bg-[#121E3C]/10 rounded-xl w-fit mb-3">
+            <Bell className="w-5 h-5 text-[#121E3C]" />
+          </div>
+          <p className="text-2xl sm:text-3xl font-bold text-[#121E3C]">{pagination.total}</p>
+          <p className="text-xs sm:text-sm font-medium text-gray-500 mt-1 truncate">Total</p>
+        </div>
+
+        <div className="bg-white rounded-2xl p-3.5 sm:p-5 border border-gray-100 shadow-sm border-b-2 border-b-amber-400 overflow-hidden">
+          <div className="p-2 bg-amber-50 rounded-xl w-fit mb-3">
+            <BellRing className="w-5 h-5 text-amber-500" />
+          </div>
+          <p className="text-2xl sm:text-3xl font-bold text-[#121E3C]">{pagination.unread}</p>
+          <p className="text-xs sm:text-sm font-medium text-gray-500 mt-1 truncate">Unread</p>
+        </div>
+
+        <div className="bg-white rounded-2xl p-3.5 sm:p-5 border border-gray-100 shadow-sm border-b-2 border-b-[#34D164] overflow-hidden">
+          <div className="p-2 bg-[#34D164]/10 rounded-xl w-fit mb-3">
+            <CheckCheck className="w-5 h-5 text-[#34D164]" />
+          </div>
+          <p className="text-2xl sm:text-3xl font-bold text-[#121E3C]">{pagination.total - pagination.unread}</p>
+          <p className="text-xs sm:text-sm font-medium text-gray-500 mt-1 truncate">Read</p>
+        </div>
+      </div>
+
+      {/* Actions Bar */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              size="sm"
+              onClick={markAllAsRead}
+              disabled={actionLoading.has('mark-all') || pagination.unread === 0}
+              className="bg-[#34D164] hover:bg-[#2FBD59] text-white flex items-center gap-1.5"
+            >
+              {actionLoading.has('mark-all') ? (
+                <RefreshCw size={14} className="animate-spin" />
+              ) : (
+                <CheckCheck size={14} />
+              )}
+              <span>Mark All Read</span>
+            </Button>
+
+            <div className="flex items-center gap-2">
+              <Filter size={14} className="text-gray-400" />
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164]"
               >
-                <ArrowLeft size={20} />
-              </Button>
-              <div>
-                <h1 className="text-3xl font-bold font-montserrat" style={{color: '#121E3C'}}>
-                  Notifications
-                </h1>
-                <p className="text-gray-600 font-lato mt-1">
-                  {user?.role === 'homeowner' ? 'Job updates and tradesperson activity' : 'New job opportunities and updates'}
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={refreshNotifications}
-                disabled={refreshing}
-                className="flex items-center space-x-2"
-              >
-                <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
-                <span>Refresh</span>
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/notifications/preferences')}
-                className="flex items-center space-x-2"
-              >
-                <Settings size={16} />
-                <span>Settings</span>
-              </Button>
+                <option value="all">All Notifications</option>
+                <option value="unread">Unread Only</option>
+                <option value="read">Read Only</option>
+                <option value="new_interest">New Interest</option>
+                <option value="contact_shared">Contact Shared</option>
+                <option value="job_posted">Job Posted</option>
+                <option value="payment_confirmation">Payment Confirmation</option>
+                <option value="job_expiring">Job Expiring</option>
+                <option value="new_matching_job">Matching Jobs</option>
+              </select>
             </div>
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Total Notifications</p>
-                    <p className="text-2xl font-bold text-gray-900">{pagination.total}</p>
-                  </div>
-                  <div className="p-3 bg-blue-100 rounded-full">
-                    <Bell className="w-6 h-6 text-blue-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Unread</p>
-                    <p className="text-2xl font-bold text-red-600">{pagination.unread}</p>
-                  </div>
-                  <div className="p-3 bg-red-100 rounded-full">
-                    <BellRing className="w-6 h-6 text-red-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Read</p>
-                    <p className="text-2xl font-bold text-green-600">{pagination.total - pagination.unread}</p>
-                  </div>
-                  <div className="p-3 bg-green-100 rounded-full">
-                    <CheckCheck className="w-6 h-6 text-green-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search notifications..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 pr-4 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] w-full md:w-56"
+            />
           </div>
+        </div>
+      </div>
 
-          {/* Actions Bar */}
-          <Card className="mb-6">
-            <CardContent className="p-4">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
-                <div className="flex flex-wrap items-center space-x-2 space-y-2 md:space-y-0">
-                  <Button
-                    size="sm"
-                    onClick={markAllAsRead}
-                    disabled={actionLoading.has('mark-all') || pagination.unread === 0}
-                    className="flex items-center space-x-2"
-                    style={{backgroundColor: '#34D164'}}
-                  >
-                    {actionLoading.has('mark-all') ? (
-                      <RefreshCw size={16} className="animate-spin" />
-                    ) : (
-                      <CheckCheck size={16} />
-                    )}
-                    <span>Mark All Read</span>
-                  </Button>
-
-                  <div className="flex items-center space-x-2">
-                    <Filter size={16} className="text-gray-500" />
-                    <select
-                      value={filterType}
-                      onChange={(e) => setFilterType(e.target.value)}
-                      className="border border-gray-300 rounded px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                    >
-                      <option value="all">All Notifications</option>
-                      <option value="unread">Unread Only</option>
-                      <option value="read">Read Only</option>
-                      <option value="new_interest">New Interest</option>
-                      <option value="contact_shared">Contact Shared</option>
-                      <option value="job_posted">Job Posted</option>
-                      <option value="payment_confirmation">Payment Confirmation</option>
-                      <option value="job_expiring">Job Expiring</option>
-                      <option value="new_matching_job">Matching Jobs</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search notifications..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 w-full md:w-64"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Notifications List */}
-          {loading && notifications.length === 0 ? (
-            <Card>
-              <CardContent className="p-8">
-                <div className="text-center">
-                  <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-gray-400" />
-                  <p className="text-gray-600 font-lato">Loading notifications...</p>
-                </div>
-              </CardContent>
-            </Card>
-          ) : filteredNotifications.length === 0 ? (
-            <Card>
-              <CardContent className="p-8">
-                <div className="text-center">
-                  <Bell className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                  <h3 className="text-lg font-semibold font-montserrat mb-2">
-                    {notifications.length === 0 ? 'No notifications yet' : 'No matching notifications'}
-                  </h3>
-                  <p className="text-gray-600 font-lato">
-                    {notifications.length === 0 
-                      ? "You'll receive notifications here when there's activity on your account."
-                      : "Try adjusting your filters or search terms."
-                    }
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {filteredNotifications.map((notification) => (
-                <Card 
-                  key={notification.id}
-                  id={`notification-${notification.id}`}
-                  className={`transition-all duration-200 hover:shadow-md ${
-                    notification.status !== 'read' 
-                      ? 'border-l-4 border-l-blue-500 bg-blue-50/30' 
-                      : 'hover:bg-gray-50'
-                  }`}
-                >
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start space-x-4 flex-1">
+      {/* Notifications List */}
+      {loading && notifications.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-[#34D164] border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-400 text-sm">Loading notifications...</p>
+        </div>
+      ) : filteredNotifications.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
+          <div className="w-14 h-14 mx-auto bg-[#121E3C]/5 rounded-2xl flex items-center justify-center mb-4">
+            <Bell className="w-7 h-7 text-[#121E3C]/40" />
+          </div>
+          <h3 className="text-base font-semibold text-[#121E3C] mb-1">
+            {notifications.length === 0 ? 'No notifications yet' : 'No matching notifications'}
+          </h3>
+          <p className="text-sm text-gray-400">
+            {notifications.length === 0 
+              ? "You'll receive notifications here when there's activity on your account."
+              : "Try adjusting your filters or search terms."
+            }
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filteredNotifications.map((notification) => (
+            <div 
+              key={notification.id}
+              id={`notification-${notification.id}`}
+              className={`bg-white rounded-2xl border shadow-sm transition-all duration-200 hover:shadow-md ${
+                notification.status !== 'read' 
+                  ? 'border-l-4 border-l-[#34D164] border-gray-100' 
+                  : 'border-gray-100'
+              }`}
+            >
+              <div className="p-4 sm:p-5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
                         {/* Notification Icon */}
-                        <div className={`p-2 rounded-full text-2xl ${
-                          notification.status !== 'read' ? 'bg-blue-100' : 'bg-gray-100'
+                        <div className={`p-2 rounded-xl text-2xl ${
+                          notification.status !== 'read' ? 'bg-[#34D164]/10' : 'bg-gray-100'
                         }`}>
                           {getNotificationIcon(notification.type)}
                         </div>
 
                         {/* Notification Content */}
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <h3 className={`font-semibold font-montserrat ${
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className={`text-sm font-semibold truncate ${
                               notification.status !== 'read' 
                                 ? 'text-gray-900' 
                                 : 'text-gray-700'
@@ -556,11 +512,11 @@ const NotificationsPage = () => {
                             </h3>
                             
                             {notification.status !== 'read' && (
-                              <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                              <div className="w-2 h-2 bg-[#34D164] rounded-full"></div>
                             )}
                           </div>
 
-                          <div className="text-gray-600 font-lato mb-3 whitespace-pre-wrap">
+                          <div className="text-sm text-gray-600 mb-3 whitespace-pre-wrap break-words">
                             {expandedNotifications.has(notification.id) 
                               ? stripHtml(notification.content) 
                               : formatNotificationContent(notification.content)
@@ -572,13 +528,13 @@ const NotificationsPage = () => {
                               variant="ghost"
                               size="sm"
                               onClick={() => toggleNotificationExpansion(notification.id)}
-                              className="text-blue-600 hover:text-blue-800 p-0 h-auto font-normal"
+                              className="text-[#34D164] hover:text-[#2FBD59] p-0 h-auto font-normal text-xs"
                             >
                               {expandedNotifications.has(notification.id) ? 'Show less' : 'Show more'}
                             </Button>
                           )}
 
-                          <div className="flex flex-wrap items-center space-x-3 mt-3">
+                          <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-3">
                             <Badge variant="outline" className={getStatusBadgeColor(notification.status)}>
                               {notification.status || 'unknown'}
                             </Badge>
@@ -589,23 +545,23 @@ const NotificationsPage = () => {
                               </Badge>
                             )}
 
-                            <span className="text-sm text-gray-500 font-lato flex items-center">
-                              <Clock size={14} className="mr-1" />
-                              {formatNotificationDate(notification.created_at)}
+                            <span className="text-xs text-gray-500 flex items-center">
+                              <Clock size={12} className="mr-1 flex-shrink-0" />
+                              <span className="truncate">{formatNotificationDate(notification.created_at)}</span>
                             </span>
                           </div>
                         </div>
                       </div>
 
                       {/* Actions */}
-                      <div className="flex items-center space-x-2 ml-4">
+                      <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                         {notification.status !== 'read' && (
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => markAsRead(notification.id)}
                             disabled={actionLoading.has(notification.id)}
-                            className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                            className="text-[#34D164] hover:text-[#2FBD59] hover:bg-[#34D164]/10"
                             title="Mark as read"
                           >
                             {actionLoading.has(notification.id) ? (
@@ -632,54 +588,48 @@ const NotificationsPage = () => {
                         </Button>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
+              </div>
             </div>
-          )}
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <Card className="mt-8">
-              <CardContent className="p-4">
-                <div className="flex justify-between items-center">
-                  <div className="text-sm text-gray-600 font-lato">
-                    Showing {((currentPage - 1) * limit) + 1} to {Math.min(currentPage * limit, pagination.total)} of {pagination.total} notifications
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={currentPage === 1 || loading}
-                    >
-                      <ChevronLeft size={16} />
-                      Previous
-                    </Button>
-                    
-                    <span className="px-3 py-1 text-sm font-medium">
-                      Page {currentPage} of {totalPages}
-                    </span>
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage === totalPages || loading}
-                    >
-                      Next
-                      <ChevronRight size={16} />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          ))}
         </div>
-      </div>
-      
-      <Footer />
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+          <div className="flex justify-between items-center">
+            <div className="text-xs text-gray-400">
+              Showing {((currentPage - 1) * limit) + 1} to {Math.min(currentPage * limit, pagination.total)} of {pagination.total}
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1 || loading}
+              >
+                <ChevronLeft size={14} />
+                Previous
+              </Button>
+              
+              <span className="px-3 py-1 text-xs font-medium text-[#121E3C]">
+                {currentPage} / {totalPages}
+              </span>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages || loading}
+              >
+                Next
+                <ChevronRight size={14} />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

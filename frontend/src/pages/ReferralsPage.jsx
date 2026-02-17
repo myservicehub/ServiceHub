@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { referralsAPI } from '../api/referrals';
 import { useToast } from '../hooks/use-toast';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
 import { Copy, Share2, Users, Gift, CheckCircle, Clock, XCircle } from 'lucide-react';
 
 const ReferralsPage = () => {
@@ -112,8 +110,7 @@ const ReferralsPage = () => {
 
   if (!isAuthenticated()) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
+      <div>
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-md mx-auto bg-white p-8 rounded-lg shadow-sm border text-center">
             <h2 className="text-xl font-bold text-gray-800 mb-4">Sign In Required</h2>
@@ -126,209 +123,189 @@ const ReferralsPage = () => {
             </button>
           </div>
         </div>
-        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
-          {/* Page Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">Referral Dashboard</h1>
-            <p className="text-gray-600">
-              Earn rewards when your referrals verify: 5 coins for homeowners, 10 coins for tradespeople after business verification
-            </p>
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-bold text-[#121E3C]">Referrals</h1>
+        <p className="text-gray-500 mt-1 text-sm">
+          Earn rewards when your referrals verify: 5 coins for homeowners, 10 coins for tradespeople
+        </p>
+      </div>
+
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm animate-pulse">
+              <div className="h-10 w-10 bg-gray-100 rounded-xl mb-3"></div>
+              <div className="h-8 bg-gray-100 rounded w-1/3 mb-2"></div>
+              <div className="h-4 bg-gray-100 rounded w-1/2"></div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <>
+          {/* Referral Stats */}
+          <div className="grid grid-cols-3 gap-3 sm:gap-4">
+            <div className="bg-white rounded-2xl p-3.5 sm:p-5 border border-gray-100 shadow-sm border-b-2 border-b-[#121E3C] overflow-hidden">
+              <div className="p-2 bg-[#121E3C]/10 rounded-xl w-fit mb-3">
+                <Users className="h-5 w-5 text-[#121E3C]" />
+              </div>
+              <p className="text-2xl sm:text-3xl font-bold text-[#121E3C]">{stats?.total_referrals || 0}</p>
+              <p className="text-xs sm:text-sm font-medium text-gray-500 mt-1 truncate">Referrals</p>
+            </div>
+
+            <div className="bg-white rounded-2xl p-3.5 sm:p-5 border border-gray-100 shadow-sm border-b-2 border-b-[#34D164] overflow-hidden">
+              <div className="p-2 bg-[#34D164]/10 rounded-xl w-fit mb-3">
+                <CheckCircle className="h-5 w-5 text-[#34D164]" />
+              </div>
+              <p className="text-2xl sm:text-3xl font-bold text-[#121E3C]">{stats?.verified_referrals || 0}</p>
+              <p className="text-xs sm:text-sm font-medium text-gray-500 mt-1 truncate">Verified</p>
+            </div>
+
+            <div className="bg-white rounded-2xl p-3.5 sm:p-5 border border-gray-100 shadow-sm border-b-2 border-b-amber-400 overflow-hidden">
+              <div className="p-2 bg-amber-50 rounded-xl w-fit mb-3">
+                <Gift className="h-5 w-5 text-amber-500" />
+              </div>
+              <p className="text-2xl sm:text-3xl font-bold text-[#121E3C]">{stats?.total_coins_earned || 0}</p>
+              <p className="text-xs sm:text-sm font-medium text-gray-500 mt-1 truncate">Coins</p>
+            </div>
           </div>
 
-          {loading ? (
-            <div className="grid lg:grid-cols-3 gap-8">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="bg-white p-6 rounded-lg shadow-sm border animate-pulse">
-                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                  <div className="h-8 bg-gray-200 rounded w-1/2"></div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid lg:grid-cols-3 gap-8">
-              {/* Main Content */}
-              <div className="lg:col-span-2 space-y-8">
-                {/* Referral Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="bg-white p-6 rounded-lg shadow-sm border">
-                    <div className="flex items-center">
-                      <Users className="h-8 w-8 text-blue-600 mr-3" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Total Referrals</p>
-                        <p className="text-2xl font-bold text-blue-600">{stats?.total_referrals || 0}</p>
-                      </div>
-                    </div>
-                  </div>
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Main Content */}
+            <div className="lg:col-span-2 space-y-6">
 
-                  <div className="bg-white p-6 rounded-lg shadow-sm border">
-                    <div className="flex items-center">
-                      <CheckCircle className="h-8 w-8 text-green-600 mr-3" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Verified Referrals</p>
-                        <p className="text-2xl font-bold text-green-600">{stats?.verified_referrals || 0}</p>
-                      </div>
+              {/* Referral Code */}
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5">
+                <h3 className="text-sm sm:text-base font-semibold text-[#121E3C] mb-4">Your Referral Code</h3>
+                <div className="bg-[#F5F5F7] p-3 sm:p-4 rounded-xl border-2 border-dashed border-gray-200">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-xl sm:text-2xl font-bold text-[#34D164] font-mono truncate">{stats?.referral_code}</p>
+                      <p className="text-xs text-gray-400 mt-1">Share this code with friends</p>
                     </div>
-                  </div>
-
-                  <div className="bg-white p-6 rounded-lg shadow-sm border">
-                    <div className="flex items-center">
-                      <Gift className="h-8 w-8 text-yellow-600 mr-3" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Coins Earned</p>
-                        <p className="text-2xl font-bold text-yellow-600">{stats?.total_coins_earned || 0}</p>
-                      </div>
+                    <div className="flex gap-2 flex-shrink-0">
+                      <button
+                        onClick={copyReferralLink}
+                        className="bg-[#121E3C] hover:bg-[#121E3C]/90 text-white px-4 py-2 rounded-xl flex items-center gap-1.5 text-sm font-medium transition-colors"
+                      >
+                        <Copy size={14} />
+                        <span>Copy Link</span>
+                      </button>
+                      <button
+                        onClick={() => setShowShareModal(true)}
+                        className="bg-[#34D164] hover:bg-[#2FBD59] text-white px-4 py-2 rounded-xl flex items-center gap-1.5 text-sm font-medium transition-colors"
+                      >
+                        <Share2 size={14} />
+                        <span>Share</span>
+                      </button>
                     </div>
                   </div>
                 </div>
+              </div>
 
-                {/* Referral Code */}
-                <div className="bg-white p-6 rounded-lg shadow-sm border">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Your Referral Code</h3>
-                  <div className="bg-gray-50 p-4 rounded-lg border-2 border-dashed border-gray-300">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-2xl font-bold text-green-600 font-mono">{stats?.referral_code}</p>
-                        <p className="text-sm text-gray-600 mt-1">Share this code with friends</p>
-                      </div>
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={copyReferralLink}
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
-                        >
-                          <Copy size={16} />
-                          <span>Copy Link</span>
-                        </button>
-                        <button
-                          onClick={() => setShowShareModal(true)}
-                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
-                        >
-                          <Share2 size={16} />
-                          <span>Share</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+              {/* Recent Referrals */}
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div className="px-5 py-4 border-b border-gray-100">
+                  <h3 className="text-base font-semibold text-[#121E3C]">Recent Referrals</h3>
                 </div>
-
-                {/* Recent Referrals */}
-                <div className="bg-white p-6 rounded-lg shadow-sm border">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Referrals</h3>
-                  
-                  {referrals.length === 0 ? (
-                    <div className="text-center py-8">
-                      <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-600">No referrals yet</p>
-                      <p className="text-sm text-gray-500 mt-1">Share your referral code to start earning coins!</p>
+                
+                {referrals.length === 0 ? (
+                  <div className="p-8 text-center">
+                    <div className="w-12 h-12 mx-auto bg-[#121E3C]/5 rounded-xl flex items-center justify-center mb-3">
+                      <Users className="h-6 w-6 text-[#121E3C]/40" />
                     </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {referrals.map((referral) => (
-                        <div key={referral.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                          <div className="flex items-center space-x-4">
-                            <div className="bg-blue-100 p-2 rounded-full">
-                              <Users size={20} className="text-blue-600" />
-                            </div>
-                            <div>
-                              <h4 className="font-medium text-gray-800">{referral.referred_user_name}</h4>
-                              <p className="text-sm text-gray-600">
-                                {referral.referred_user_role} • Joined {formatDate(referral.created_at)}
-                              </p>
-                            </div>
+                    <p className="text-sm text-[#121E3C] font-medium">No referrals yet</p>
+                    <p className="text-xs text-gray-400 mt-1">Share your referral code to start earning coins!</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-gray-50">
+                    {referrals.map((referral) => (
+                      <div key={referral.id} className="flex items-center justify-between px-5 py-4 hover:bg-gray-50/50 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-[#121E3C]/5 rounded-xl flex items-center justify-center">
+                            <Users size={18} className="text-[#121E3C]/60" />
                           </div>
-                          <div className="text-right">
-                            {getStatusBadge(referral.status, referral.is_verified)}
-                            {referral.coins_earned > 0 && (
-                              <p className="text-sm text-green-600 mt-1">
-                                +{referral.coins_earned} coins earned
-                              </p>
-                            )}
+                          <div>
+                            <h4 className="text-sm font-medium text-[#121E3C]">{referral.referred_user_name}</h4>
+                            <p className="text-xs text-gray-400">
+                              {referral.referred_user_role} • {formatDate(referral.created_at)}
+                            </p>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Sidebar */}
-              <div className="space-y-6">
-                {/* How It Works */}
-                <div className="bg-white p-6 rounded-lg shadow-sm border">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">How It Works</h3>
-                  <div className="space-y-4">
-                    <div className="flex items-start space-x-3">
-                      <div className="bg-blue-100 text-blue-600 rounded-full p-2 text-sm font-bold min-w-[2rem] h-8 flex items-center justify-center">1</div>
-                      <div>
-                        <h4 className="font-medium text-gray-800">Share Your Code</h4>
-                        <p className="text-sm text-gray-600">Send your referral code to friends and family</p>
+                        <div className="text-right">
+                          {getStatusBadge(referral.status, referral.is_verified)}
+                          {referral.coins_earned > 0 && (
+                            <p className="text-xs text-[#34D164] font-medium mt-1">
+                              +{referral.coins_earned} coins
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    
-                    <div className="flex items-start space-x-3">
-                      <div className="bg-blue-100 text-blue-600 rounded-full p-2 text-sm font-bold min-w-[2rem] h-8 flex items-center justify-center">2</div>
-                      <div>
-                        <h4 className="font-medium text-gray-800">They Sign Up</h4>
-                        <p className="text-sm text-gray-600">Friends create account using your referral code</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-start space-x-3">
-                      <div className="bg-blue-100 text-blue-600 rounded-full p-2 text-sm font-bold min-w-[2rem] h-8 flex items-center justify-center">3</div>
-                      <div>
-                        <h4 className="font-medium text-gray-800">They Verify</h4>
-                        <p className="text-sm text-gray-600">Friends upload ID for account verification</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start space-x-3">
-                      <div className="bg-green-100 text-green-600 rounded-full p-2 text-sm font-bold min-w-[2rem] h-8 flex items-center justify-center">4</div>
-                      <div>
-                        <h4 className="font-medium text-gray-800">You Earn Coins</h4>
-                        <p className="text-sm text-gray-600">Earn 5 coins when homeowners verify identity; earn 10 coins when tradespeople complete business verification</p>
-                      </div>
-                    </div>
+                    ))}
                   </div>
-                </div>
-
-                {/* Rewards Info */}
-                <div className="bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-lg border">
-                  <h3 className="text-lg font-semibold text-green-800 mb-2">Earn Rewards</h3>
-                  <div className="space-y-2 text-sm">
-                    <p><strong>5 coins</strong> per verified homeowner referral</p>
-                    <p><strong>10 coins</strong> per verified tradesperson referral (business verification)</p>
-                    <p><strong>Withdraw</strong> with minimum 5 coins</p>
-                    <p><strong>No limit</strong> on referrals</p>
-                  </div>
-                </div>
-
-                {/* Verify Account CTA */}
-                <div className="bg-yellow-50 p-6 rounded-lg border border-yellow-200">
-                  <h3 className="text-lg font-semibold text-yellow-800 mb-2">Verify Your Account</h3>
-                  <p className="text-sm text-yellow-700 mb-4">
-                    Verify your identity to build trust and unlock all features
-                  </p>
-                  <button
-                    onClick={() => window.location.href = '/verify-account'}
-                    className="w-full bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg text-sm"
-                  >
-                    Upload ID Documents
-                  </button>
-                </div>
+                )}
               </div>
             </div>
-          )}
-        </div>
-      </div>
+
+            {/* Sidebar */}
+            <div className="space-y-4">
+              {/* How It Works */}
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                <h3 className="text-sm font-semibold text-[#121E3C] mb-4">How It Works</h3>
+                <div className="space-y-4">
+                  {[
+                    { step: '1', title: 'Share Your Code', desc: 'Send your referral code to friends and family' },
+                    { step: '2', title: 'They Sign Up', desc: 'Friends create account using your referral code' },
+                    { step: '3', title: 'They Verify', desc: 'Friends upload ID for account verification' },
+                    { step: '4', title: 'You Earn Coins', desc: '5 coins for homeowners, 10 for tradespeople' },
+                  ].map((item) => (
+                    <div key={item.step} className="flex items-start gap-3">
+                      <div className="w-7 h-7 rounded-lg bg-[#34D164] flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5">
+                        {item.step}
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-[#121E3C]">{item.title}</h4>
+                        <p className="text-xs text-gray-400 mt-0.5">{item.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Rewards Info */}
+              <div className="bg-[#121E3C] rounded-2xl p-5 text-white">
+                <h3 className="text-sm font-semibold mb-3">Earn Rewards</h3>
+                <div className="space-y-2 text-xs text-white/70">
+                  <p><span className="text-[#34D164] font-semibold">5 coins</span> per verified homeowner referral</p>
+                  <p><span className="text-[#34D164] font-semibold">10 coins</span> per verified tradesperson referral</p>
+                  <p><span className="text-white font-semibold">Withdraw</span> with minimum 5 coins</p>
+                  <p><span className="text-white font-semibold">No limit</span> on referrals</p>
+                </div>
+              </div>
+
+              {/* Verify Account CTA */}
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                <h3 className="text-sm font-semibold text-[#121E3C] mb-2">Verify Your Account</h3>
+                <p className="text-xs text-gray-400 mb-4">
+                  Verify your identity to build trust and unlock all features
+                </p>
+                <button
+                  onClick={() => window.location.href = '/verify-account'}
+                  className="w-full bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors"
+                >
+                  Upload ID Documents
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Share Modal */}
       {showShareModal && (
@@ -387,7 +364,6 @@ const ReferralsPage = () => {
         </div>
       )}
 
-      <Footer />
     </div>
   );
 };

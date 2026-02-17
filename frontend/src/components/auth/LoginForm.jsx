@@ -34,6 +34,8 @@ const LoginForm = ({ onClose, onSwitchToSignup, onSwitchToForgotPassword }) => {
         if (onClose) onClose();
         if (result.user.role === 'tradesperson') {
           navigate('/browse-jobs');
+        } else if (result.user.role === 'homeowner') {
+          navigate('/dashboard');
         } else {
           navigate('/');
         }
@@ -49,7 +51,7 @@ const LoginForm = ({ onClose, onSwitchToSignup, onSwitchToForgotPassword }) => {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full border-0 shadow-none">
       <CardHeader className="text-center">
         <CardTitle className="text-2xl font-bold font-montserrat" style={{color: '#121E3C'}}>
           Welcome Back

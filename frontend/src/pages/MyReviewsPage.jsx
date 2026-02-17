@@ -7,8 +7,6 @@ import {
   Star, Calendar, MapPin, Edit, Trash2, MessageCircle, 
   ThumbsUp, Eye, User, Briefcase, Clock, AlertCircle 
 } from 'lucide-react';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
 import ReviewForm from '../components/reviews/ReviewForm';
 import { reviewsAPI } from '../api/reviews';
 import { useToast } from '../hooks/use-toast';
@@ -142,170 +140,137 @@ const MyReviewsPage = () => {
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      published: { label: 'Published', className: 'bg-green-100 text-green-800' },
-      pending: { label: 'Pending Review', className: 'bg-yellow-100 text-yellow-800' },
-      moderated: { label: 'Under Review', className: 'bg-blue-100 text-blue-800' },
-      flagged: { label: 'Flagged', className: 'bg-red-100 text-red-800' },
-      hidden: { label: 'Hidden', className: 'bg-gray-100 text-gray-800' }
+      published: { label: 'Published', className: 'bg-[#34D164]/10 text-[#34D164]' },
+      pending: { label: 'Pending Review', className: 'bg-amber-50 text-amber-600' },
+      moderated: { label: 'Under Review', className: 'bg-blue-50 text-blue-600' },
+      flagged: { label: 'Flagged', className: 'bg-red-50 text-red-500' },
+      hidden: { label: 'Hidden', className: 'bg-gray-100 text-gray-500' }
     };
     
     const config = statusConfig[status] || statusConfig.published;
-    return <Badge className={config.className}>{config.label}</Badge>;
+    return <span className={`px-2.5 py-1 rounded-lg text-xs font-medium ${config.className}`}>{config.label}</span>;
   };
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <div className="container mx-auto px-4 py-16">
-          <div className="max-w-md mx-auto text-center">
-            <h1 className="text-2xl font-bold font-montserrat mb-4" style={{color: '#121E3C'}}>
-              Sign In Required
-            </h1>
-            <p className="text-gray-600 font-lato mb-6">
-              Please sign in to view your reviews.
-            </p>
-          </div>
+      <div className="container mx-auto px-4 py-16">
+        <div className="max-w-md mx-auto text-center">
+          <h1 className="text-2xl font-bold font-montserrat mb-4" style={{color: '#121E3C'}}>
+            Sign In Required
+          </h1>
+          <p className="text-gray-600 font-lato mb-6">
+            Please sign in to view your reviews.
+          </p>
         </div>
-        <Footer />
       </div>
     );
   }
 
   if (!isHomeowner()) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <div className="container mx-auto px-4 py-16">
-          <div className="max-w-md mx-auto text-center">
-            <h1 className="text-2xl font-bold font-montserrat mb-4" style={{color: '#121E3C'}}>
-              Homeowner Access Only
-            </h1>
-            <p className="text-gray-600 font-lato mb-6">
-              This page is only available to homeowners.
-            </p>
-          </div>
+      <div className="container mx-auto px-4 py-16">
+        <div className="max-w-md mx-auto text-center">
+          <h1 className="text-2xl font-bold font-montserrat mb-4" style={{color: '#121E3C'}}>
+            Homeowner Access Only
+          </h1>
+          <p className="text-gray-600 font-lato mb-6">
+            This page is only available to homeowners.
+          </p>
         </div>
-        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      
-      <section className="py-8 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto">
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold font-montserrat mb-2" style={{color: '#121E3C'}}>
-                My Reviews
-              </h1>
-              <p className="text-gray-600 font-lato">
-                Manage your reviews and feedback for tradespeople you've worked with.
-              </p>
-            </div>
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-bold text-[#121E3C]">
+          My Reviews
+        </h1>
+        <p className="text-gray-500 mt-1 text-sm">
+          Manage your reviews and feedback for tradespeople you've worked with.
+        </p>
+      </div>
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center">
-                    <div className="p-2 bg-blue-100 rounded-lg">
-                      <MessageCircle className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-600">Total Reviews</p>
-                      <p className="text-2xl font-semibold text-gray-900">{stats.totalReviews}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center">
-                    <div className="p-2 bg-yellow-100 rounded-lg">
-                      <Star className="w-6 h-6 text-yellow-600" />
-                    </div>
-                    <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-600">Average Rating</p>
-                      <p className="text-2xl font-semibold text-gray-900">{stats.averageRating}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center">
-                    <div className="p-2 bg-green-100 rounded-lg">
-                      <ThumbsUp className="w-6 h-6 text-green-600" />
-                    </div>
-                    <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-600">Helpful Votes</p>
-                      <p className="text-2xl font-semibold text-gray-900">{stats.totalHelpfulVotes}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-3 gap-3 sm:gap-4">
+        <div className="bg-white rounded-2xl p-3.5 sm:p-5 border border-gray-100 shadow-sm border-b-2 border-b-[#121E3C] overflow-hidden">
+          <div className="p-2 bg-[#121E3C]/10 rounded-xl w-fit mb-3">
+            <MessageCircle className="w-5 h-5 text-[#121E3C]" />
+          </div>
+          <p className="text-2xl sm:text-3xl font-bold text-[#121E3C]">{stats.totalReviews}</p>
+          <p className="text-xs sm:text-sm font-medium text-gray-500 mt-1 truncate">Total Reviews</p>
+        </div>
+        
+        <div className="bg-white rounded-2xl p-3.5 sm:p-5 border border-gray-100 shadow-sm border-b-2 border-b-amber-400 overflow-hidden">
+          <div className="p-2 bg-amber-50 rounded-xl w-fit mb-3">
+            <Star className="w-5 h-5 text-amber-500" />
+          </div>
+          <p className="text-2xl sm:text-3xl font-bold text-[#121E3C]">{stats.averageRating}</p>
+          <p className="text-xs sm:text-sm font-medium text-gray-500 mt-1 truncate">Avg Rating</p>
+        </div>
+        
+        <div className="bg-white rounded-2xl p-3.5 sm:p-5 border border-gray-100 shadow-sm border-b-2 border-b-[#34D164] overflow-hidden">
+          <div className="p-2 bg-[#34D164]/10 rounded-xl w-fit mb-3">
+            <ThumbsUp className="w-5 h-5 text-[#34D164]" />
+          </div>
+          <p className="text-2xl sm:text-3xl font-bold text-[#121E3C]">{stats.totalHelpfulVotes}</p>
+          <p className="text-xs sm:text-sm font-medium text-gray-500 mt-1 truncate">Helpful</p>
+        </div>
+      </div>
 
-            {/* Reviews List */}
-            {loading ? (
-              <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{borderColor: '#34D164'}}></div>
-                <p className="text-gray-600 font-lato">Loading your reviews...</p>
-              </div>
-            ) : reviews.length === 0 ? (
-              <Card>
-                <CardContent className="text-center py-12">
-                  <Star size={48} className="mx-auto text-gray-400 mb-4" />
-                  <h3 className="text-lg font-semibold font-montserrat text-gray-900 mb-2">
-                    No Reviews Yet
-                  </h3>
-                  <p className="text-gray-600 font-lato mb-6">
-                    You haven't left any reviews yet. When you complete jobs and work with tradespeople, you can leave reviews to help other homeowners.
-                  </p>
-                  <Button
-                    onClick={() => window.location.href = '/my-jobs'}
-                    className="text-white font-lato"
-                    style={{backgroundColor: '#34D164'}}
-                  >
-                    <Briefcase size={16} className="mr-2" />
-                    View My Jobs
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-6">
-                {reviews.map((review) => (
-                  <Card key={review.id} className="hover:shadow-lg transition-shadow duration-300">
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <CardTitle className="text-xl font-bold font-montserrat" style={{color: '#121E3C'}}>
-                              {review.title}
-                            </CardTitle>
-                            {getStatusBadge(review.status)}
-                          </div>
+      {/* Reviews List */}
+      {loading ? (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-[#34D164] border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-400 text-sm">Loading your reviews...</p>
+        </div>
+      ) : reviews.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
+          <div className="w-14 h-14 mx-auto bg-[#121E3C]/5 rounded-2xl flex items-center justify-center mb-4">
+            <Star size={28} className="text-[#121E3C]/40" />
+          </div>
+          <h3 className="text-base font-semibold text-[#121E3C] mb-1">No Reviews Yet</h3>
+          <p className="text-sm text-gray-400 mb-5 max-w-xs mx-auto">
+            When you complete jobs and work with tradespeople, you can leave reviews to help other homeowners.
+          </p>
+          <Button
+            onClick={() => window.location.href = '/my-jobs'}
+            className="bg-[#34D164] hover:bg-[#2FBD59] text-white"
+          >
+            <Briefcase size={16} className="mr-2" />
+            View My Jobs
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {reviews.map((review) => (
+            <div key={review.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
+              <div className="p-4 sm:p-5">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-2">
+                      <h3 className="text-sm sm:text-base font-semibold text-[#121E3C] truncate">
+                        {review.title}
+                      </h3>
+                      {getStatusBadge(review.status)}
+                    </div>
                           
-                          <div className="flex items-center space-x-4 text-sm text-gray-600 font-lato mb-3">
-                            <span className="flex items-center">
-                              <User size={14} className="mr-1" />
-                              {review.reviewee_name}
-                            </span>
-                            <span className="flex items-center">
-                              <Briefcase size={14} className="mr-1" />
-                              {review.job_title}
-                            </span>
-                            <span className="flex items-center">
-                              <Calendar size={14} className="mr-1" />
-                              {formatDate(review.created_at)}
-                            </span>
-                          </div>
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400 mb-3">
+                      <span className="flex items-center gap-1">
+                        <User size={12} />
+                        {review.reviewee_name}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Briefcase size={12} />
+                        {review.job_title}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Calendar size={12} />
+                        {formatDate(review.created_at)}
+                      </span>
+                    </div>
                           
                           <div className="flex items-center space-x-2 mb-3">
                             <div className="flex items-center">
@@ -322,24 +287,19 @@ const MyReviewsPage = () => {
                           </div>
                         </div>
                         
-                        <div className="flex space-x-2 ml-4">
-                          <Button
-                            onClick={() => handleEditReview(review)}
-                            variant="outline"
-                            size="sm"
-                            className="font-lato"
-                          >
-                            <Edit size={14} className="mr-1" />
-                            Edit
-                          </Button>
-                        </div>
-                      </div>
-                    </CardHeader>
-
-                    <CardContent>
-                      <p className="text-gray-700 font-lato mb-4 line-clamp-3">
-                        {review.content}
-                      </p>
+                  <Button
+                    onClick={() => handleEditReview(review)}
+                    variant="outline"
+                    size="sm"
+                    className="flex-shrink-0"
+                  >
+                    <Edit size={14} className="mr-1" />
+                    Edit
+                  </Button>
+                </div>
+                <p className="text-sm text-gray-600 mb-4 line-clamp-3">
+                  {review.content}
+                </p>
                       
                       {/* Category Ratings */}
                       {review.category_ratings && Object.keys(review.category_ratings).length > 0 && (
@@ -362,17 +322,18 @@ const MyReviewsPage = () => {
                       {review.photos && review.photos.length > 0 && (
                         <div className="mb-4">
                           <h4 className="text-sm font-semibold text-gray-900 mb-2">Photos:</h4>
-                          <div className="flex space-x-2">
+                          <div className="flex flex-wrap gap-2">
                             {review.photos.slice(0, 3).map((photo, index) => (
-                              <img
-                                key={index}
-                                src={photo}
-                                alt={`Review photo ${index + 1}`}
-                                className="w-16 h-16 object-cover rounded-lg"
-                              />
+                              <div key={index} className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+                                <img
+                                  src={photo}
+                                  alt={`Review photo ${index + 1}`}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
                             ))}
                             {review.photos.length > 3 && (
-                              <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center text-xs text-gray-600">
+                              <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center text-xs text-gray-600 flex-shrink-0">
                                 +{review.photos.length - 3}
                               </div>
                             )}
@@ -380,8 +341,8 @@ const MyReviewsPage = () => {
                         </div>
                       )}
                       
-                      {/* Footer */}
-                      <div className="flex justify-between items-center pt-4 border-t border-gray-100 text-sm text-gray-500">
+                {/* Footer */}
+                <div className="flex justify-between items-center pt-4 border-t border-gray-100 text-xs text-gray-400">
                         <span>
                           {review.helpful_count > 0 && (
                             <span className="flex items-center">
@@ -399,32 +360,27 @@ const MyReviewsPage = () => {
                         )}
                       </div>
                       
-                      {/* Tradesperson Response */}
-                      {review.response && (
-                        <div className="mt-4 p-3 bg-gray-50 rounded-lg border-l-4 border-blue-500">
-                          <div className="flex items-center mb-2">
-                            <User size={14} className="mr-2 text-blue-600" />
-                            <span className="text-sm font-semibold text-blue-900">
-                              {review.reviewee_name} responded:
-                            </span>
-                            <span className="text-xs text-gray-500 ml-2">
-                              {formatDate(review.response_date)}
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-700">{review.response}</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
+                {/* Tradesperson Response */}
+                {review.response && (
+                  <div className="mt-4 p-3 bg-[#121E3C]/5 rounded-xl border-l-3 border-[#121E3C]">
+                    <div className="flex items-center mb-1">
+                      <User size={12} className="mr-1.5 text-[#121E3C]" />
+                      <span className="text-xs font-semibold text-[#121E3C]">
+                        {review.reviewee_name} responded:
+                      </span>
+                      <span className="text-xs text-gray-400 ml-2">
+                        {formatDate(review.response_date)}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600">{review.response}</p>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </div>
+          ))}
         </div>
-      </section>
+      )}
 
-      <Footer />
-      
       {/* Edit Review Modal */}
       {showEditModal && reviewToEdit && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

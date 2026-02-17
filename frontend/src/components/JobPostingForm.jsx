@@ -2852,7 +2852,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
 
   return (
     <>
-      <div className="max-w-2xl mx-auto p-6" ref={formTopRef} tabIndex={-1}>
+      <div className="max-w-2xl mx-auto px-0 sm:px-2" ref={formTopRef} tabIndex={-1}>
         <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
@@ -2883,7 +2883,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
               
               {/* Navigation Buttons - Hide when in one-by-one questions mode */}
               {!(currentStep === 1 && tradeQuestions.length > 0 && showQuestionsOneByOne && getVisibleQuestions().length > 0) && (
-                <div className="flex flex-col sm:flex-row justify-between pt-8 border-t gap-3">
+                <div className="flex flex-col sm:flex-row justify-between pt-8 border-t gap-3 relative z-10 pb-4">
                   <Button
                     type="button"
                     variant="outline"

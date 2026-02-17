@@ -145,7 +145,7 @@ const SignupForm = ({ onClose, onSwitchToLogin, defaultTab = 'tradesperson', sho
         if (currentTab === 'tradesperson') {
           navigate('/browse-jobs');
         } else {
-          navigate('/');
+          navigate('/dashboard');
         }
       } else {
         const errorMessage = typeof result?.error === 'string'
@@ -169,7 +169,7 @@ const SignupForm = ({ onClose, onSwitchToLogin, defaultTab = 'tradesperson', sho
   }
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
+    <Card className="w-full border-0 shadow-none">
       <CardHeader className="text-center">
         <CardTitle className="text-2xl font-bold font-montserrat" style={{color: '#121E3C'}}>
           Join serviceHub

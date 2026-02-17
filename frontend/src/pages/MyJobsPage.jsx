@@ -12,10 +12,8 @@ import {
 import { 
   Calendar, MapPin, Clock, Users, Heart, TrendingUp, 
   Edit3, X, RotateCcw, AlertCircle, CheckCircle, Star, Briefcase,
-  User, DollarSign, MessageSquare, ChevronDown, MessageCircle 
+  User, DollarSign, MessageSquare, ChevronDown, ChevronUp, MessageCircle, MoreHorizontal 
 } from 'lucide-react';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
 import ChatModal from '../components/ChatModal';
 import JobEditModal from '../components/JobEditModal';
 import JobCloseModal from '../components/JobCloseModal';
@@ -33,6 +31,19 @@ const MyJobsPage = () => {
   const [selectedJob, setSelectedJob] = useState(null);
   const [interestedTradespeople, setInterestedTradespeople] = useState([]);
   const [activeJobStatus, setActiveJobStatus] = useState('all'); // Added state for job status filter
+  const [expandedJobs, setExpandedJobs] = useState(new Set());
+
+  const toggleJobExpanded = (jobId) => {
+    setExpandedJobs(prev => {
+      const next = new Set(prev);
+      if (next.has(jobId)) {
+        next.delete(jobId);
+      } else {
+        next.add(jobId);
+      }
+      return next;
+    });
+  };
   const [loading, setLoading] = useState(true);
   const [interestsLoading, setInterestsLoading] = useState(false);
   const [showInterestedModal, setShowInterestedModal] = useState(false);
@@ -515,17 +526,17 @@ const MyJobsPage = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'active':
-        return 'bg-green-100 text-green-800';
-      case 'completed':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-[#34D164]/10 text-[#34D164]';
       case 'in_progress':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-amber-50 text-amber-600';
+      case 'completed':
+        return 'bg-[#121E3C]/10 text-[#121E3C]';
       case 'pending_approval':
-        return 'bg-amber-100 text-amber-700';
+        return 'bg-yellow-50 text-yellow-600';
       case 'cancelled':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-50 text-red-500';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 text-gray-600';
     }
   };
 
@@ -550,35 +561,27 @@ const MyJobsPage = () => {
   // Show a lightweight loading state while auth context resolves user
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <div className="container mx-auto px-4 py-16">
-          <div className="max-w-md mx-auto">
-            <div className="h-6 bg-gray-200 rounded mb-4 animate-pulse"></div>
-            <div className="h-4 bg-gray-200 rounded mb-2 animate-pulse"></div>
-            <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse"></div>
-          </div>
+      <div className="container mx-auto px-4 py-16">
+        <div className="max-w-md mx-auto">
+          <div className="h-6 bg-gray-200 rounded mb-4 animate-pulse"></div>
+          <div className="h-4 bg-gray-200 rounded mb-2 animate-pulse"></div>
+          <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse"></div>
         </div>
-        <Footer />
       </div>
     );
   }
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <div className="container mx-auto px-4 py-16">
-          <div className="max-w-md mx-auto text-center">
-            <h1 className="text-2xl font-bold font-montserrat mb-4" style={{color: '#121E3C'}}>
-              Sign In Required
-            </h1>
-            <p className="text-gray-600 font-lato mb-6">
-              Please sign in to view your jobs and manage quotes.
-            </p>
-          </div>
+      <div className="container mx-auto px-4 py-16">
+        <div className="max-w-md mx-auto text-center">
+          <h1 className="text-2xl font-bold font-montserrat mb-4" style={{color: '#121E3C'}}>
+            Sign In Required
+          </h1>
+          <p className="text-gray-600 font-lato mb-6">
+            Please sign in to view your jobs and manage quotes.
+          </p>
         </div>
-        <Footer />
       </div>
     );
   }
@@ -586,19 +589,15 @@ const MyJobsPage = () => {
   // Only gate once user data is available
   if (!authLoading && user?.role !== 'homeowner') {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <div className="container mx-auto px-4 py-16">
-          <div className="max-w-md mx-auto text-center">
-            <h1 className="text-2xl font-bold font-montserrat mb-4" style={{color: '#121E3C'}}>
-              Homeowner Access Only
-            </h1>
-            <p className="text-gray-600 font-lato mb-6">
-              This page is only available to homeowners.
-            </p>
-          </div>
+      <div className="container mx-auto px-4 py-16">
+        <div className="max-w-md mx-auto text-center">
+          <h1 className="text-2xl font-bold font-montserrat mb-4" style={{color: '#121E3C'}}>
+            Homeowner Access Only
+          </h1>
+          <p className="text-gray-600 font-lato mb-6">
+            This page is only available to homeowners.
+          </p>
         </div>
-        <Footer />
       </div>
     );
   }
@@ -606,8 +605,7 @@ const MyJobsPage = () => {
   // Show interested tradespeople modal
   if (showInterestedModal && selectedJob) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
+      <div>
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-4xl mx-auto">
             {/* Back Button */}
@@ -751,131 +749,94 @@ const MyJobsPage = () => {
             </div>
           </div>
         </div>
-        
-        <Footer />
       </div>
     );
   }
 
   // Show jobs list
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
+    <div>
       
       {/* Page Header */}
-      <section className="py-8 bg-white border-b">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <h1 className="text-3xl font-bold font-montserrat mb-4" style={{color: '#121E3C'}}>
-              My Jobs
-            </h1>
-            <p className="text-lg text-gray-600 font-lato">
-              Manage your posted jobs and review interested tradespeople.
-            </p>
-          </div>
-        </div>
-      </section>
+      <div className="mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-[#121E3C]">
+          My Jobs
+        </h1>
+        <p className="text-gray-500 mt-1 text-sm">
+          Manage your posted jobs and review interested tradespeople.
+        </p>
+      </div>
 
       {/* Jobs List */}
-      <section className="py-8">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
+      <div>
             {loading ? (
               <div className="space-y-6">
                 {Array.from({ length: 3 }).map((_, index) => (
-                  <Card key={index} className="animate-pulse">
-                    <CardContent className="p-6">
-                      <div className="h-6 bg-gray-200 rounded mb-4"></div>
-                      <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                    </CardContent>
-                  </Card>
+                  <div key={index} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm animate-pulse">
+                    <div className="h-5 bg-gray-100 rounded w-3/4 mb-3"></div>
+                    <div className="h-4 bg-gray-100 rounded w-1/2 mb-2"></div>
+                    <div className="h-4 bg-gray-100 rounded w-1/3"></div>
+                  </div>
                 ))}
               </div>
             ) : jobs.length === 0 ? (
-              <div className="text-center py-12">
-                <Briefcase className="h-16 w-16 text-gray-400 mx-auto mb-6" />
-                <h3 className="text-xl font-semibold font-montserrat mb-4" style={{color: '#121E3C'}}>
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
+                <div className="w-16 h-16 mx-auto bg-[#121E3C]/5 rounded-2xl flex items-center justify-center mb-5">
+                  <Briefcase className="h-8 w-8 text-[#121E3C]/40" />
+                </div>
+                <h3 className="text-lg font-semibold text-[#121E3C] mb-2">
                   No jobs posted yet
                 </h3>
-                <p className="text-gray-600 font-lato mb-6 max-w-md mx-auto">
+                <p className="text-gray-400 text-sm mb-6 max-w-sm mx-auto">
                   Once you post your first job, you'll be able to track its progress and see completed jobs here.
                 </p>
-                
-                {/* Development/Testing Button */}
-                <div className="space-y-4">
-                  <Button 
-                    onClick={() => window.location.href = '/post-job'}
-                    className="bg-[#34D164] hover:bg-[#245a32] text-white font-montserrat"
-                  >
-                    Post Your First Job
-                  </Button>
-                </div>
+                <Button 
+                  onClick={() => window.location.href = '/post-job'}
+                  className="bg-[#34D164] hover:bg-[#2FBD59] text-white shadow-md shadow-[#34D164]/20"
+                >
+                  Post Your First Job
+                </Button>
               </div>
             ) : (
               <>
                 {/* Jobs Summary Statistics */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-gray-600 font-lato">Total Jobs</p>
-                          <p className="text-2xl font-bold font-montserrat" style={{color: '#121E3C'}}>
-                            {jobs.length}
-                          </p>
-                        </div>
-                        <Briefcase className="h-8 w-8 text-blue-600" />
-                      </div>
-                    </CardContent>
-                  </Card>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+                  <div className="bg-white rounded-2xl p-3.5 sm:p-5 border border-gray-100 shadow-sm border-b-2 border-b-[#121E3C] overflow-hidden">
+                    <div className="p-2 bg-[#121E3C]/10 rounded-xl w-fit mb-3">
+                      <Briefcase className="h-5 w-5 text-[#121E3C]" />
+                    </div>
+                    <p className="text-2xl sm:text-3xl font-bold text-[#121E3C]">{jobs.length}</p>
+                    <p className="text-xs sm:text-sm font-medium text-gray-500 mt-1 truncate">Total Jobs</p>
+                  </div>
                   
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-gray-600 font-lato">Completed</p>
-                          <p className="text-2xl font-bold font-montserrat text-green-600">
-                            {jobs.filter(job => job.status === 'completed').length}
-                          </p>
-                        </div>
-                        <CheckCircle className="h-8 w-8 text-green-600" />
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <div className="bg-white rounded-2xl p-3.5 sm:p-5 border border-gray-100 shadow-sm border-b-2 border-b-[#34D164] overflow-hidden">
+                    <div className="p-2 bg-[#34D164]/10 rounded-xl w-fit mb-3">
+                      <CheckCircle className="h-5 w-5 text-[#34D164]" />
+                    </div>
+                    <p className="text-2xl sm:text-3xl font-bold text-[#121E3C]">{jobs.filter(job => job.status === 'completed').length}</p>
+                    <p className="text-xs sm:text-sm font-medium text-gray-500 mt-1 truncate">Completed</p>
+                  </div>
                   
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-gray-600 font-lato">Active</p>
-                          <p className="text-2xl font-bold font-montserrat text-blue-600">
-                            {jobs.filter(job => job.status === 'active').length}
-                          </p>
-                        </div>
-                        <Clock className="h-8 w-8 text-blue-600" />
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <div className="bg-white rounded-2xl p-3.5 sm:p-5 border border-gray-100 shadow-sm border-b-2 border-b-amber-400 overflow-hidden">
+                    <div className="p-2 bg-amber-50 rounded-xl w-fit mb-3">
+                      <Clock className="h-5 w-5 text-amber-500" />
+                    </div>
+                    <p className="text-2xl sm:text-3xl font-bold text-[#121E3C]">{jobs.filter(job => job.status === 'active').length}</p>
+                    <p className="text-xs sm:text-sm font-medium text-gray-500 mt-1 truncate">Active</p>
+                  </div>
                   
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-gray-600 font-lato">In Progress</p>
-                          <p className="text-2xl font-bold font-montserrat text-orange-600">
-                            {jobs.filter(job => job.status === 'in_progress').length}
-                          </p>
-                        </div>
-                        <Clock className="h-8 w-8 text-orange-600" />
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <div className="bg-white rounded-2xl p-3.5 sm:p-5 border border-gray-100 shadow-sm border-b-2 border-b-purple-400 overflow-hidden">
+                    <div className="p-2 bg-purple-50 rounded-xl w-fit mb-3">
+                      <TrendingUp className="h-5 w-5 text-purple-500" />
+                    </div>
+                    <p className="text-2xl sm:text-3xl font-bold text-[#121E3C]">{jobs.filter(job => job.status === 'in_progress').length}</p>
+                    <p className="text-xs sm:text-sm font-medium text-gray-500 mt-1 truncate">In Progress</p>
+                  </div>
                 </div>
 
                 {/* Job Status Filter Dropdown */}
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold font-montserrat text-gray-900">My Posted Jobs</h2>
+                  <h2 className="text-lg font-semibold text-[#121E3C]">My Posted Jobs</h2>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline" className="flex items-center space-x-2 px-4 py-2">
@@ -903,296 +864,247 @@ const MyJobsPage = () => {
                 {/* Jobs List */}
                 <div className="space-y-6">
                   {getFilteredJobs().length === 0 ? (
-                    <Card>
-                      <CardContent className="p-8 text-center">
-                        <Briefcase className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold text-gray-600 mb-2">
-                          No {getJobStatusDisplayText(activeJobStatus).toLowerCase()} found
-                        </h3>
-                        <p className="text-gray-500">
-                          {activeJobStatus === 'all' 
-                            ? "You haven't posted any jobs yet." 
-                            : `You don't have any ${getJobStatusDisplayText(activeJobStatus).toLowerCase()} jobs.`}
-                        </p>
-                      </CardContent>
-                    </Card>
+                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
+                      <div className="w-12 h-12 mx-auto bg-[#121E3C]/5 rounded-xl flex items-center justify-center mb-3">
+                        <Briefcase className="h-6 w-6 text-[#121E3C]/40" />
+                      </div>
+                      <h3 className="text-base font-semibold text-[#121E3C] mb-1">
+                        No {getJobStatusDisplayText(activeJobStatus).toLowerCase()} found
+                      </h3>
+                      <p className="text-sm text-gray-400">
+                        {activeJobStatus === 'all' 
+                          ? "You haven't posted any jobs yet." 
+                          : `You don't have any ${getJobStatusDisplayText(activeJobStatus).toLowerCase()} jobs.`}
+                      </p>
+                    </div>
                   ) : (
                     getFilteredJobs()
                       .filter(job => job && job.id) // Additional safety check
                       .map((job) => (
-                        <Card key={job.id} className="hover:shadow-lg transition-shadow duration-300">
-                          <CardHeader>
-                            <div className="space-y-3">
-                              {/* Title & Status */}
-                              <div className="flex items-center gap-2">
-                                <CardTitle className="text-xl font-bold font-montserrat" style={{color: '#121E3C'}}>
-                                  {job.title}
-                                </CardTitle>
-                                <Badge className={getStatusColor(job.status)}>
-                                  {getJobStatusLabel(job.status)}
-                                </Badge>
+                        <div key={job.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
+                          <div className="p-4 sm:p-5 pb-3">
+                            <div className="space-y-2">
+                              {/* Title & Status Row */}
+                              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-2">
+                                <div className="flex items-center gap-2 flex-wrap min-w-0">
+                                  <h3 className="text-sm sm:text-base font-semibold text-[#121E3C] truncate">
+                                    {job.title}
+                                  </h3>
+                                  <span className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-[10px] sm:text-xs font-medium whitespace-nowrap ${getStatusColor(job.status)}`}>
+                                    {getJobStatusLabel(job.status)}
+                                  </span>
+                                </div>
+                                {job.budget_min && job.budget_max && (
+                                  <div className="flex-shrink-0">
+                                    <div className="text-xs sm:text-sm font-bold text-[#34D164]">
+                                      {formatCurrency(job.budget_min)} - {formatCurrency(job.budget_max)}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
 
-                              {/* Meta info */}
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-600 font-lato">
-                                <div className="flex items-center">
-                                  <MapPin size={14} className="mr-1" />
-                                  {job.location}
-                                </div>
-                                <div className="flex items-center sm:justify-end">
-                                  <Calendar size={14} className="mr-1" />
-                                  <span>Posted {formatDate(job.created_at)}</span>
-                                </div>
-                                <div className="flex items-center">
-                                  <Heart size={14} className="mr-1" />
-                                  <span>{job.interests_count || 0} interested</span>
-                                </div>
-                                <div className="flex items-center sm:justify-end">
-                                  <span>Job ID: {job.id}</span>
-                                </div>
-
-                                {/* Budget (separate row for mobile, aligned right on larger screens) */}
-                                <div className="sm:col-span-2 flex items-center sm:justify-between">
-                                  {job.budget_min && job.budget_max ? (
-                                    <div className="flex items-baseline gap-2">
-                                      <div className="text-lg font-bold font-montserrat" style={{color: '#34D164'}}>
-                                        {formatCurrency(job.budget_min)} - {formatCurrency(job.budget_max)}
-                                      </div>
-                                      <div className="text-sm text-gray-500 font-lato">Budget Range</div>
-                                    </div>
-                                  ) : (
-                                    <div className="text-sm text-gray-500 font-lato">Budget not specified</div>
-                                  )}
-                                </div>
+                              {/* Key meta - compact row */}
+                              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-400">
+                                <span className="flex items-center truncate">
+                                  <MapPin size={12} className="mr-1 flex-shrink-0" />
+                                  <span className="truncate">{job.location}</span>
+                                </span>
+                                <span className="flex items-center flex-shrink-0">
+                                  <Calendar size={12} className="mr-1" />
+                                  {formatDate(job.created_at)}
+                                </span>
+                                {(job.interests_count || 0) > 0 && (
+                                  <span className="flex items-center text-[#34D164] font-medium flex-shrink-0">
+                                    <Users size={12} className="mr-1" />
+                                    {job.interests_count} interested
+                                  </span>
+                                )}
                               </div>
                             </div>
-                          </CardHeader>
+                          </div>
 
-                          <CardContent>
-                            {/* Job Description */}
+                          <div className="px-4 sm:px-5 pb-4 sm:pb-5">
+                            {/* Description - truncated */}
                             {job.description && (
-                              <div className="mb-4">
-                                <p className="text-gray-700 font-lato line-clamp-2">
-                                  {job.description}
-                                </p>
-                              </div>
+                              <p className="text-sm text-gray-600 font-lato line-clamp-2 mb-3">
+                                {job.description}
+                              </p>
                             )}
 
-                            {/* Job Details */}
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4 text-sm">
-                              <div className="flex items-center text-gray-600">
-                                <Clock size={14} className="mr-2" />
-                                <span className="font-lato">Timeline: {job.timeline}</span>
-                              </div>
-                              <div className="flex items-center text-gray-600">
-                                <Calendar size={14} className="mr-2" />
-                                <span className="font-lato">Category: {job.category}</span>
-                              </div>
-                              <div className="flex items-center text-gray-600">
-                                <TrendingUp size={14} className="mr-2" />
-                                <span className="font-lato">
-                                  Expires: {formatDate(job.expires_at)}
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Action Area */}
-                            <div className="pt-4 border-t flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                              <div className="text-sm text-gray-500 font-lato">
-                                {job.interests_count > 0 
-                                  ? `${job.interests_count} tradesperson${job.interests_count > 1 ? 's' : ''} interested`
-                                  : 'No interested tradespeople yet'
-                                }
-                              </div>
-
-                              {/* View Interested Button */}
-                              <Button
-                                onClick={() => handleViewInterestedTradespeople(job)}
-                                className="w-full sm:w-auto text-white font-lato"
-                                style={{backgroundColor: '#34D164'}}
-                                disabled={!job.interests_count || job.interests_count === 0}
-                              >
-                                <Users size={16} className="mr-2" />
-                                View Interested ({job.interests_count || 0})
-                              </Button>
-                              
-                              {/* Edit Button - Only for active jobs */}
-                              {job.status === 'active' && (
-                                <Button
-                                  onClick={() => handleEditJob(job)}
-                                  variant="outline"
-                                  className="font-lato"
-                                >
-                                  <Edit3 size={16} className="mr-2" />
-                                  Edit
-                                </Button>
-                              )}
+                            {/* Expandable details */}
+                            {expandedJobs.has(job.id) && (
+                              <div className="mb-3 p-3 bg-gray-50 rounded-lg space-y-2 text-sm animate-in fade-in duration-200">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-gray-600">
+                                  {job.timeline && (
+                                    <div className="flex items-center">
+                                      <Clock size={13} className="mr-1.5 text-gray-400" />
+                                      <span className="font-lato">{job.timeline}</span>
+                                    </div>
+                                  )}
+                                  {job.category && (
+                                    <div className="flex items-center">
+                                      <Briefcase size={13} className="mr-1.5 text-gray-400" />
+                                      <span className="font-lato">{job.category}</span>
+                                    </div>
+                                  )}
+                                  {job.expires_at && (
+                                    <div className="flex items-center">
+                                      <TrendingUp size={13} className="mr-1.5 text-gray-400" />
+                                      <span className="font-lato">Expires {formatDate(job.expires_at)}</span>
+                                    </div>
+                                  )}
+                                </div>
 
                                 {/* Completed Job Details - Only for completed jobs */}
                                 {job.status === 'completed' && (
-                                  <div className="bg-green-50 p-4 rounded-lg space-y-3">
+                                  <div className="bg-green-50 p-3 rounded-lg space-y-2 mt-2">
                                     <div className="flex items-center text-green-700">
-                                      <CheckCircle size={16} className="mr-2" />
-                                      <span className="font-semibold font-montserrat">Job Completed Successfully</span>
+                                      <CheckCircle size={14} className="mr-1.5" />
+                                      <span className="font-semibold text-sm font-montserrat">Job Completed</span>
                                     </div>
-                                    
                                     {job.completed_at && (
-                                      <div className="flex items-center text-sm text-gray-600 font-lato">
-                                        <Calendar size={14} className="mr-2" />
+                                      <div className="flex items-center text-xs text-gray-600 font-lato">
+                                        <Calendar size={12} className="mr-1.5" />
                                         <span>Completed on: {new Date(job.completed_at).toLocaleDateString()}</span>
                                       </div>
                                     )}
-                                    
                                     {job.hired_tradesperson && (
-                                      <div className="flex items-center text-sm text-gray-600 font-lato">
-                                        <User size={14} className="mr-2" />
+                                      <div className="flex items-center text-xs text-gray-600 font-lato">
+                                        <User size={12} className="mr-1.5" />
                                         <span>Hired: {job.hired_tradesperson.name || 'Tradesperson'}</span>
                                         {job.hired_tradesperson.rating && (
                                           <div className="flex items-center ml-2">
-                                            <Star size={12} className="text-yellow-400 fill-yellow-400" />
-                                            <span className="ml-1">{job.hired_tradesperson.rating}</span>
+                                            <Star size={11} className="text-yellow-400 fill-yellow-400" />
+                                            <span className="ml-0.5">{job.hired_tradesperson.rating}</span>
                                           </div>
                                         )}
                                       </div>
                                     )}
-                                    
                                     {job.final_cost && (
-                                      <div className="flex items-center text-sm text-gray-600 font-lato">
-                                        <DollarSign size={14} className="mr-2" />
+                                      <div className="flex items-center text-xs text-gray-600 font-lato">
+                                        <DollarSign size={12} className="mr-1.5" />
                                         <span>Final Cost: ₦{job.final_cost.toLocaleString()}</span>
                                       </div>
                                     )}
-                                    
-                                    <div className="flex items-center justify-between pt-2 border-t border-green-200">
-                                      <div className="flex items-center text-sm">
-                                        {pendingReviewJobs.has(job.id) ? (
-                                          <div className="flex items-center text-amber-600">
-                                            <Clock size={14} className="mr-1" />
-                                            <span>Review pending</span>
-                                          </div>
-                                        ) : (hasMyReview(job) || job.review_given) ? (
-                                          <div className="flex items-center text-green-600">
-                                            <CheckCircle size={14} className="mr-1" />
-                                            <span>Review completed</span>
-                                          </div>
-                                        ) : canLeaveReview(job) ? (
-                                          <div className="flex items-center text-amber-600">
-                                            <Clock size={14} className="mr-1" />
-                                            <span>Review pending</span>
-                                          </div>
-                                        ) : (
-                                          <div className="flex items-center text-gray-500">
-                                            <MessageSquare size={14} className="mr-1" />
-                                            <span>Review not available</span>
-                                          </div>
-                                        )}
-                                      </div>
-                                      
-                                      {job.hired_tradesperson && (
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          className="text-xs font-lato"
-                                          onClick={() => {/* Handle view tradesperson profile */}}
-                                        >
-                                          View Profile
-                                        </Button>
+                                    <div className="flex items-center text-xs pt-1">
+                                      {pendingReviewJobs.has(job.id) ? (
+                                        <span className="flex items-center text-amber-600"><Clock size={12} className="mr-1" />Review pending</span>
+                                      ) : (hasMyReview(job) || job.review_given) ? (
+                                        <span className="flex items-center text-green-600"><CheckCircle size={12} className="mr-1" />Review completed</span>
+                                      ) : canLeaveReview(job) ? (
+                                        <span className="flex items-center text-amber-600"><Clock size={12} className="mr-1" />Review pending</span>
+                                      ) : (
+                                        <span className="flex items-center text-gray-500"><MessageSquare size={12} className="mr-1" />Review not available</span>
                                       )}
                                     </div>
                                   </div>
                                 )}
+                              </div>
+                            )}
 
-                                {/* Leave Review Button - For completed jobs (disabled when pending or already reviewed) */}
-                                {job.status === 'completed' && (
-                                  <div className="flex flex-col space-y-2">
-                                    <Button
-                                      onClick={() => handleLeaveReview(job)}
-                                      className="font-lato text-white"
-                                      style={{backgroundColor: '#34D164'}}
-                                      disabled={pendingReviewJobs.has(job.id) || hasMyReview(job) || !canLeaveReview(job)}
-                                    >
-                                      <Star size={16} className="mr-2" />
-                                      Leave Review
-                                    </Button>
-                                    {pendingReviewJobs.has(job.id) && (
-                                      <div className="flex items-center text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
-                                        <Clock size={12} className="mr-1" />
-                                        Review pending
-                                      </div>
-                                    )}
-                                  </div>
+                            {/* Action Row - clean layout */}
+                            <div className="pt-3 border-t flex items-center justify-between gap-2">
+                              {/* Left: expand toggle */}
+                              <button
+                                onClick={() => toggleJobExpanded(job.id)}
+                                className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 font-lato transition-colors"
+                              >
+                                {expandedJobs.has(job.id) ? (
+                                  <><ChevronUp size={16} /> Less details</>
+                                ) : (
+                                  <><ChevronDown size={16} /> More details</>
+                                )}
+                              </button>
+
+                              {/* Right: action buttons */}
+                              <div className="flex items-center gap-2">
+                                {/* Primary CTA */}
+                                {job.status === 'completed' && canLeaveReview(job) && (
+                                  <Button
+                                    onClick={() => handleLeaveReview(job)}
+                                    size="sm"
+                                    className="font-lato text-white text-sm"
+                                    style={{backgroundColor: '#34D164'}}
+                                    disabled={pendingReviewJobs.has(job.id) || hasMyReview(job)}
+                                  >
+                                    <Star size={14} className="mr-1.5" />
+                                    Leave Review
+                                  </Button>
                                 )}
 
-                                {/* Mark as Completed Button - Only show after hiring status answered */}
+                                {(job.interests_count || 0) > 0 && job.status !== 'completed' && (
+                                  <Button
+                                    onClick={() => handleViewInterestedTradespeople(job)}
+                                    size="sm"
+                                    className="text-white font-lato text-sm"
+                                    style={{backgroundColor: '#34D164'}}
+                                  >
+                                    <Users size={14} className="mr-1.5" />
+                                    View Interested ({job.interests_count})
+                                  </Button>
+                                )}
+
                                 {(job.status === 'active' || job.status === 'in_progress') && 
                                  jobHiringStatuses[job.id]?.hasAnswered && (
                                   <Button
                                     onClick={() => handleCompleteJob(job.id)}
-                                    className="font-lato text-white"
+                                    size="sm"
+                                    className="font-lato text-white text-sm"
                                     style={{backgroundColor: '#34D164'}}
                                     disabled={completingJobId === job.id}
                                   >
-                                    {completingJobId === job.id ? (
-                                      <>
-                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                        Completing...
-                                      </>
-                                    ) : (
-                                      <>
-                                        <CheckCircle size={16} className="mr-2" />
-                                        Mark as Completed
-                                      </>
+                                    {completingJobId === job.id ? 'Completing...' : (
+                                      <><CheckCircle size={14} className="mr-1.5" />Complete</>
                                     )}
                                   </Button>
                                 )}
 
-                                {/* Close Job Button - Only for active jobs */}
-                                {job.status === 'active' && (
-                                  <Button
-                                    onClick={() => handleCloseJob(job)}
-                                    variant="outline"
-                                    className="font-lato text-red-600 border-red-200 hover:bg-red-50"
-                                  >
-                                    <X size={16} className="mr-2" />
-                                    Close Job
-                                  </Button>
-                                )}
-
-                                {/* Reopen Button - Only for cancelled jobs */}
-                                {job.status === 'cancelled' && (
-                                  <Button
-                                    onClick={() => handleReopenJob(job.id)}
-                                    variant="outline"
-                                    className="font-lato text-green-600 border-green-200 hover:bg-green-50"
-                                    disabled={reopeningJobId === job.id}
-                                  >
-                                    {reopeningJobId === job.id ? (
-                                      <>
-                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600 mr-2"></div>
-                                        Reopening...
-                                      </>
-                                    ) : (
-                                      <>
-                                        <RotateCcw size={16} className="mr-2" />
-                                        Reopen Job
-                                      </>
-                                    )}
-                                  </Button>
+                                {/* Secondary actions in overflow menu */}
+                                {(job.status === 'active' || job.status === 'cancelled') && (
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="outline" size="sm" className="px-2">
+                                        <MoreHorizontal size={16} />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-44">
+                                      {job.status === 'active' && (
+                                        <>
+                                          <DropdownMenuItem onClick={() => handleEditJob(job)} className="cursor-pointer">
+                                            <Edit3 size={14} className="mr-2" /> Edit Job
+                                          </DropdownMenuItem>
+                                          <DropdownMenuItem onClick={() => handleStartQuickChat(job)} className="cursor-pointer">
+                                            <MessageCircle size={14} className="mr-2" /> Chat
+                                          </DropdownMenuItem>
+                                          <DropdownMenuItem onClick={() => handleCloseJob(job)} className="cursor-pointer text-red-600">
+                                            <X size={14} className="mr-2" /> Close Job
+                                          </DropdownMenuItem>
+                                        </>
+                                      )}
+                                      {job.status === 'cancelled' && (
+                                        <DropdownMenuItem
+                                          onClick={() => handleReopenJob(job.id)}
+                                          disabled={reopeningJobId === job.id}
+                                          className="cursor-pointer text-green-600"
+                                        >
+                                          <RotateCcw size={14} className="mr-2" />
+                                          {reopeningJobId === job.id ? 'Reopening...' : 'Reopen Job'}
+                                        </DropdownMenuItem>
+                                      )}
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
                                 )}
                               </div>
-                          </CardContent>
-                        </Card>
+                            </div>
+                          </div>
+                        </div>
                       ))
                   )}
                 </div>
               </>
             )}
-          </div>
-        </div>
-      </section>
+      </div>
 
-      <Footer />
-      
       {/* Job Edit Modal */}
       <JobEditModal
         isOpen={showEditModal}

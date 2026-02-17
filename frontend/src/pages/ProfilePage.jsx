@@ -1,6 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -605,23 +603,18 @@ const ProfilePage = () => {
   // Show loading while authentication is being checked
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <div className="container mx-auto px-4 py-16">
-          <div className="max-w-md mx-auto text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-4" style={{borderColor: '#34D164'}}></div>
-            <p className="text-gray-600 font-lato">Loading your profile...</p>
-          </div>
+      <div className="container mx-auto px-4 py-16">
+        <div className="max-w-md mx-auto text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-4" style={{borderColor: '#34D164'}}></div>
+          <p className="text-gray-600 font-lato">Loading your profile...</p>
         </div>
-        <Footer />
       </div>
     );
   }
 
   if (!isAuthenticated() || !profileData) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
+      <div>
         <div className="container mx-auto px-4 py-16">
           <div className="max-w-md mx-auto text-center">
             <h1 className="text-2xl font-bold font-montserrat mb-4" style={{color: '#121E3C'}}>
@@ -639,14 +632,12 @@ const ProfilePage = () => {
             </Button>
           </div>
         </div>
-        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
+    <div>
       
       {/* Page Header */}
       <section className="py-8 bg-white border-b">
@@ -1807,7 +1798,6 @@ const ProfilePage = () => {
         </DialogContent>
       </Dialog>
 
-      <Footer />
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import "./App.css";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import HomePage from "./components/HomePage";
 import PostJobPage from "./pages/PostJobPage";
 import MyJobsPage from "./pages/MyJobsPage";
@@ -40,6 +40,8 @@ import PrivacyPage from "./pages/PrivacyPage";
 import TermsPage from "./pages/TermsPage";
 import CookiePolicyPage from "./pages/CookiePolicyPage";
 import ExternalReviewPage from "./pages/ExternalReviewPage";
+import HomeownerDashboardLayout from "./layouts/HomeownerDashboardLayout";
+import { DashboardOverview, DashboardMessages } from "./pages/dashboard/homeowner";
 import { Toaster } from "./components/ui/toaster";
 import ScrollToTop from "./components/ScrollToTop";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
@@ -132,6 +134,20 @@ function App() {
               <Route path="/terms" element={<TermsPage />} />
               <Route path="/cookie-policy" element={<CookiePolicyPage />} />
               <Route path="/review/external/:token" element={<ExternalReviewPage />} />
+
+              {/* Homeowner Dashboard Portal */}
+              <Route path="/dashboard" element={<HomeownerDashboardLayout />}>
+                <Route index element={<DashboardOverview />} />
+                <Route path="jobs" element={<MyJobsPage />} />
+                <Route path="jobs/:jobId/interested" element={<InterestedTradespeopleePage />} />
+                <Route path="post-job" element={<PostJobPage />} />
+                <Route path="messages" element={<DashboardMessages />} />
+                <Route path="reviews" element={<MyReviewsPage />} />
+                <Route path="notifications" element={<NotificationsPage />} />
+                <Route path="wallet" element={<WalletPage />} />
+                <Route path="referrals" element={<ReferralsPage />} />
+                <Route path="settings" element={<ProfilePage />} />
+              </Route>
             </Routes>
             <Toaster />
 

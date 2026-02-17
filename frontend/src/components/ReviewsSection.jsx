@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Card, CardContent } from './ui/card';
-import { Star, MapPin } from 'lucide-react';
+import { Star, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
 import { reviewsAPI, tradespeopleAPI } from '../api/services';
 import { useAPI } from '../hooks/useAPI';
 
@@ -192,7 +192,7 @@ const ReviewsSection = () => {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-              Millions of genuine reviews
+              Verified reviews from real homeowners
             </h2>
             <p className="text-xl text-gray-600">
               Reviews on serviceHub are written by customers like you.
@@ -240,7 +240,7 @@ const ReviewsSection = () => {
                     ) : (
                       <>
                         <div className="flex items-center mb-4">
-                          <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center text-white font-semibold mr-3">
+                          <div className="w-10 h-10 bg-servicehub-navy rounded-full flex items-center justify-center text-white font-semibold mr-3">
                             {getInitials(getCompanyDisplayName(item))}
                           </div>
                           <div>
@@ -271,27 +271,27 @@ const ReviewsSection = () => {
                   type="button"
                   onClick={() => scrollToIndex(currentIndex - 1)}
                   disabled={currentIndex === 0}
-                  className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all ${
+                  className={`w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
                     currentIndex === 0 
                       ? 'border-gray-200 text-gray-300 cursor-not-allowed' 
-                      : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-100'
+                      : 'border-gray-300 bg-white text-gray-700 hover:bg-green-50 hover:border-green-400 hover:text-green-600 shadow-sm hover:shadow-md'
                   }`}
                   aria-label="Previous reviews"
                 >
-                  ‹
+                  <ChevronLeft size={22} />
                 </button>
                 <button
                   type="button"
                   onClick={() => scrollToIndex(currentIndex + 1)}
                   disabled={currentIndex >= displayReviews.length - 1}
-                  className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all ${
+                  className={`w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
                     currentIndex >= displayReviews.length - 1
                       ? 'border-gray-200 text-gray-300 cursor-not-allowed' 
-                      : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-100'
+                      : 'border-gray-300 bg-white text-gray-700 hover:bg-green-50 hover:border-green-400 hover:text-green-600 shadow-sm hover:shadow-md'
                   }`}
                   aria-label="Next reviews"
                 >
-                  ›
+                  <ChevronRight size={22} />
                 </button>
               </div>
 
@@ -315,7 +315,7 @@ const ReviewsSection = () => {
 
           <div className="text-center mt-12">
             <p className="text-gray-600 mb-6">
-              Join thousands of satisfied homeowners who found their perfect tradesperson on serviceHub
+              Find your perfect tradesperson and share your experience on serviceHub
             </p>
             <div className="flex flex-wrap justify-center gap-2 text-sm text-gray-500">
               <span className="bg-white px-3 py-1 rounded-full">⭐ 4.8/5 average rating</span>

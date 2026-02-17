@@ -99,7 +99,7 @@ const ForgotPasswordForm = ({ onClose, onBackToLogin }) => {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full border-0 shadow-none">
       <CardHeader className="text-center">
         <CardTitle className="text-2xl font-bold font-montserrat" style={{color: '#121E3C'}}>
           {showSuccess ? 'Check Your Email' : 'Forgot Password?'}
