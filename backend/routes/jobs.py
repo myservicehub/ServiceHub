@@ -1331,7 +1331,7 @@ async def _notify_job_posted_successfully_old(homeowner: dict, job: dict):
 # TRADE CATEGORY QUESTIONS FOR JOB POSTING
 # ==========================================
 
-@router.get("/trade-questions/{trade_category}")
+@router.get("/trade-questions/{trade_category:path}")
 async def get_trade_category_questions(trade_category: str):
     """Get questions for a specific trade category (for job posting)"""
     try:
