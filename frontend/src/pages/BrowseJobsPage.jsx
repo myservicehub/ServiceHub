@@ -375,10 +375,15 @@ const BrowseJobsPage = () => {
       setPagination(response.data.pagination || null);
       // Prefetch question answers for all visible jobs to improve modal open latency
       try {
-        const toPrefetch = jobsData.map(j => j.id || j._id).filter(Boolean);
+        const toPrefetch = jobsData.map(j => j.id || j._id || j.job_id).filter(Boolean);
         if (toPrefetch.length > 0) {
+          const uniqueIds = Array.from(new Set(toPrefetch.flatMap((id) => {
+            const s = String(id);
+            const trimmed = s.replace(/^0+/, '') || s;
+            return [s, trimmed];
+          })));
           Promise.allSettled(
-            toPrefetch.map(id => tradeCategoryQuestionsAPI.getJobQuestionAnswers(id).then(res => ({ id, res })))
+            uniqueIds.map(id => tradeCategoryQuestionsAPI.getJobQuestionAnswers(id).then(res => ({ id, res })))
           ).then(results => {
             results.forEach(r => {
               if (r.status === 'fulfilled' && r.value) {
@@ -388,6 +393,10 @@ const BrowseJobsPage = () => {
                 if (doc && doc.id) keys.push(String(doc.id));
                 if (doc && doc._id) keys.push(String(doc._id));
                 if (doc && doc.job_id) keys.push(String(doc.job_id));
+                if (r.value.id) {
+                  const t = String(r.value.id).replace(/^0+/, '') || String(r.value.id);
+                  keys.push(t);
+                }
                 keys.forEach(k => { if (k) jobAnswersCache.current[k] = doc; });
               }
             });
@@ -708,26 +717,39 @@ const BrowseJobsPage = () => {
     
     // Fetch job question answers
     try {
-      let answers = await tradeCategoryQuestionsAPI.getJobQuestionAnswers(freshJob.id);
-      
-      // Fallback to _id if no answers found
-      if ((!answers || !answers.answers || answers.answers.length === 0) && freshJob._id && freshJob._id !== freshJob.id) {
-        const altAnswers = await tradeCategoryQuestionsAPI.getJobQuestionAnswers(freshJob._id);
-        if (altAnswers && altAnswers.answers && altAnswers.answers.length > 0) {
-          answers = altAnswers;
-        }
+      const tryIds = [];
+      const pushIf = (v) => { if (v !== undefined && v !== null) tryIds.push(String(v)); };
+      pushIf(freshJob.id);
+      pushIf(freshJob._id);
+      pushIf(freshJob.job_id);
+      // Add zero-trimmed variants
+      const base = String(freshJob.id || freshJob.job_id || freshJob._id || '');
+      if (base) {
+        const trimmed = base.replace(/^0+/, '') || base;
+        if (!tryIds.includes(trimmed)) tryIds.push(trimmed);
       }
-      // Fallback to job_id if present (legacy shape)
-      if ((!answers || !answers.answers || answers.answers.length === 0) && freshJob.job_id && freshJob.job_id !== freshJob.id) {
-        const alt2 = await tradeCategoryQuestionsAPI.getJobQuestionAnswers(freshJob.job_id);
-        if (alt2 && alt2.answers && alt2.answers.length > 0) {
-          answers = alt2;
+
+      let answers = null;
+      for (const jid of tryIds) {
+        try {
+          const resAns = await tradeCategoryQuestionsAPI.getJobQuestionAnswers(jid);
+          if (resAns && Array.isArray(resAns.answers) && resAns.answers.length > 0) {
+            answers = resAns;
+            break;
+          }
+        } catch (_) {}
+      }
+
+      // Fallback: check embedded answers on the job document if available
+      if (!answers || !answers.answers || answers.answers.length === 0) {
+        const embedded = freshJob.question_answers || (freshJob.job_details && freshJob.job_details.question_answers);
+        if (embedded && Array.isArray(embedded.answers) && embedded.answers.length > 0) {
+          answers = embedded;
         }
       }
 
       if (answers && answers.answers && answers.answers.length > 0) {
         setSelectedJobAnswers(answers);
-      } else {
       }
     } catch (err) {
     }
