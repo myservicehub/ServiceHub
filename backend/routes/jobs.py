@@ -1412,15 +1412,32 @@ async def get_job_question_answers(job_id: str):
     """Get answers to trade category questions for a job (accessible to job owner and interested tradespeople)"""
     try:
         answers = await database.get_job_question_answers(job_id)
-        
-        if not answers:
-            return {
-                "job_id": job_id,
-                "answers": [],
-                "message": "No answers found for this job"
-            }
-        
-        return answers
+        if answers and answers.get("answers"):
+            return answers
+
+        # Fallback: some legacy jobs may have answers embedded on the job document
+        try:
+            job = await database.get_job_by_id(job_id)
+            qa = None
+            if job:
+                qa = job.get("question_answers") or (job.get("job_details") or {}).get("question_answers")
+                # Normalize to the same shape used by job_question_answers
+                if isinstance(qa, dict) and qa.get("answers"):
+                    qa_doc = {
+                        "job_id": job.get("id") or job_id,
+                        "trade_category": qa.get("trade_category") or job.get("category") or "",
+                        "answers": qa.get("answers") or [],
+                        "_id": qa.get("_id") if qa.get("_id") else None,
+                    }
+                    return qa_doc
+        except Exception:
+            pass
+
+        return {
+            "job_id": job_id,
+            "answers": [],
+            "message": "No answers found for this job"
+        }
     except Exception as e:
         logger.error(f"Error getting job question answers for {job_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to retrieve job question answers")

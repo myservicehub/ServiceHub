@@ -717,6 +717,13 @@ const BrowseJobsPage = () => {
           answers = altAnswers;
         }
       }
+      // Fallback to job_id if present (legacy shape)
+      if ((!answers || !answers.answers || answers.answers.length === 0) && freshJob.job_id && freshJob.job_id !== freshJob.id) {
+        const alt2 = await tradeCategoryQuestionsAPI.getJobQuestionAnswers(freshJob.job_id);
+        if (alt2 && alt2.answers && alt2.answers.length > 0) {
+          answers = alt2;
+        }
+      }
 
       if (answers && answers.answers && answers.answers.length > 0) {
         setSelectedJobAnswers(answers);
