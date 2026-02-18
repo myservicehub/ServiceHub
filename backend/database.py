@@ -7889,7 +7889,45 @@ We may update this Cookie Policy to reflect changes in technology or regulations
     async def get_job_question_answers(self, job_id: str) -> dict:
         """Get answers to trade category questions for a job"""
         try:
-            answers = await self.database.job_question_answers.find_one({"job_id": job_id})
+            candidates = []
+            if job_id is not None:
+                candidates.append(job_id)
+                try:
+                    s = str(job_id)
+                    if s.isdigit():
+                        candidates.append(str(int(s)))
+                        try:
+                            candidates.append(int(s))
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
+                try:
+                    from bson import ObjectId
+                    if ObjectId.is_valid(str(job_id)):
+                        candidates.append(ObjectId(str(job_id)))
+                except Exception:
+                    pass
+            answers = await self.database.job_question_answers.find_one({"job_id": {"$in": candidates}})
+            if not answers:
+                try:
+                    job = await self.get_job_by_id(job_id)
+                except Exception:
+                    job = None
+                if job:
+                    jids = []
+                    try:
+                        if job.get("id") is not None:
+                            jids.append(job.get("id"))
+                            jids.append(str(job.get("id")))
+                    except Exception:
+                        pass
+                    try:
+                        if job.get("_id") is not None:
+                            jids.append(str(job.get("_id")))
+                    except Exception:
+                        pass
+                    answers = await self.database.job_question_answers.find_one({"job_id": {"$in": jids}})
             if answers:
                 answers['_id'] = str(answers['_id'])
             return answers
