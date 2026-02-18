@@ -132,6 +132,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
   const [endAfterQuestionId, setEndAfterQuestionId] = useState(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [questionAnswersOtherText, setQuestionAnswersOtherText] = useState({});
+  const lgaAbortRef = useRef(null);
 
   const { loginWithToken, isAuthenticated, user: currentUser, loading } = useAuth();
   const { toast } = useToast();
@@ -261,7 +262,11 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
     setLoadingLGAs(true);
     try {
       const base = (process.env.REACT_APP_BACKEND_URL ? process.env.REACT_APP_BACKEND_URL + '/api' : (apiClient?.defaults?.baseURL || '/api'));
-      const resp = await fetch(`${base}/auth/lgas/${encodeURIComponent(state)}`);
+      if (lgaAbortRef.current) {
+        try { lgaAbortRef.current.abort(); } catch {}
+      }
+      lgaAbortRef.current = new AbortController();
+      const resp = await fetch(`${base}/auth/lgas/${encodeURIComponent(state)}`, { signal: lgaAbortRef.current.signal });
       if (resp.ok) {
         const data = await resp.json();
         setAvailableLGAs(data.lgas || []);

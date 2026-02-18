@@ -349,6 +349,18 @@ class Database:
                 except Exception as idx_err:
                     logger.warning(f"Failed to ensure performance indexes: {idx_err}")
 
+                try:
+                    await self.database.system_locations.create_index(
+                        [("type", 1), ("state", 1)],
+                        name="system_locations_type_state"
+                    )
+                    await self.database.system_locations.create_index(
+                        [("type", 1), ("state", 1), ("name", 1)],
+                        name="system_locations_type_state_name"
+                    )
+                except Exception as idx_err:
+                    logger.warning(f"Failed to ensure system_locations indexes: {idx_err}")
+
                 logger.info("Database indexes ensured successfully")
             except Exception as e:
                 logger.error(f"Failed to ensure database indexes: {e}")
@@ -1084,8 +1096,24 @@ class Database:
             return False
 
     async def get_job_by_id(self, job_id: str) -> Optional[dict]:
+        # Try exact match on the canonical short id
         job = await self.database.jobs.find_one({"id": job_id})
         if not job:
+            # Fallback: strip leading zeros and try legacy numeric id variants
+            try:
+                trimmed = job_id.lstrip("0")
+                if trimmed:
+                    job = await self.database.jobs.find_one({"id": trimmed})
+            except Exception:
+                pass
+        if not job:
+            # Fallback: some legacy records may store job_id instead of id
+            try:
+                job = await self.database.jobs.find_one({"job_id": job_id}) or await self.database.jobs.find_one({"job_id": job_id.lstrip("0")})
+            except Exception:
+                pass
+        if not job:
+            # Fallback: allow Mongo ObjectId string
             try:
                 from bson import ObjectId
                 if ObjectId.is_valid(job_id):
@@ -1095,6 +1123,8 @@ class Database:
                 job = None
         if job:
             job['_id'] = str(job['_id'])
+            if "id" not in job:
+                job["id"] = job.get("job_id") or job["_id"]
         return job
 
     @time_it
@@ -5230,16 +5260,10 @@ class Database:
             return NIGERIAN_STATES
 
     async def get_lgas_for_state_dynamic(self, state_name: str):
-        """Get LGAs for a state combining static list and database custom LGAs"""
         try:
             from models.nigerian_lgas import get_lgas_for_state
             static_lgas = get_lgas_for_state(state_name)
-            
-            # Get custom LGAs from database
-            custom_lgas_map = await self.get_custom_lgas()
-            custom_lgas = custom_lgas_map.get(state_name, [])
-            
-            # Combine and unique
+            custom_lgas = await self.get_custom_lgas_for_state(state_name)
             all_lgas = list(set(static_lgas + custom_lgas))
             return sorted(all_lgas)
         except Exception as e:
@@ -5251,12 +5275,10 @@ class Database:
                 return []
 
     async def get_custom_lgas(self):
-        """Get custom LGAs added by admin, organized by state"""
         try:
             lgas_cursor = self.database.system_locations.find({"type": "lga"})
             lgas = await lgas_cursor.to_list(length=None)
             
-            # Organize by state
             lgas_by_state = {}
             for lga in lgas:
                 state = lga["state"]
@@ -5268,6 +5290,15 @@ class Database:
         except Exception as e:
             print(f"Error getting custom LGAs: {e}")
             return {}
+    
+    async def get_custom_lgas_for_state(self, state_name: str):
+        try:
+            lgas_cursor = self.database.system_locations.find({"type": "lga", "state": state_name})
+            lgas = await lgas_cursor.to_list(length=None)
+            return [lga["name"] for lga in lgas]
+        except Exception as e:
+            print(f"Error getting custom LGAs for state: {e}")
+            return []
     
     async def get_custom_states(self):
         """Get custom states added by admin"""

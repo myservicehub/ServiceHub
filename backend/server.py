@@ -11,6 +11,7 @@ import asyncio
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from .utils.limiter import limiter
+import logging
 
 # Import database and routes (support both package and script execution)
 try:
@@ -43,6 +44,7 @@ load_dotenv(ROOT_DIR / '.env')
 
 # Initialize production logger
 logger = get_logger('server')
+logging.getLogger("passlib.handlers.bcrypt").setLevel(logging.ERROR)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
