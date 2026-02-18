@@ -3615,11 +3615,37 @@ class Database:
             job_filter = {"status": "active"}
             
             # 1. SKILLS FILTERING - Only show jobs matching tradesperson's trade categories
-            tradesperson_categories = tradesperson.get("trade_categories", [])
-            # Also include profession in skills matching if it exists
+            tradesperson_categories_raw = tradesperson.get("trade_categories", [])
             profession = tradesperson.get("profession")
-            if profession and profession not in tradesperson_categories:
-                tradesperson_categories = list(tradesperson_categories) + [profession]
+            if profession and profession not in tradesperson_categories_raw:
+                tradesperson_categories_raw = list(tradesperson_categories_raw) + [profession]
+            def _expand_aliases(categories: List[str]) -> List[str]:
+                alias_map = {
+                    "Cleaning Work": ["Cleaning Service", "Cleaning Services"],
+                    "Cleaning Service": ["Cleaning Work", "Cleaning Services"],
+                    "Cleaning Services": ["Cleaning Work", "Cleaning Service"],
+                }
+                out = set()
+                for c in categories:
+                    out.add(c)
+                    for k, v in alias_map.items():
+                        if c.strip().lower() == k.lower():
+                            for a in v:
+                                out.add(a)
+                            break
+                    lc = c.strip().lower()
+                    if lc.endswith(" work"):
+                        base = c[: -len(" work")]
+                        out.add(base + " Service")
+                        out.add(base + " Services")
+                    elif lc.endswith(" service"):
+                        base = c[: -len(" service")]
+                        out.add(base + " Services")
+                    elif lc.endswith(" services"):
+                        base = c[: -len(" services")]
+                        out.add(base + " Service")
+                return list(out)
+            tradesperson_categories = _expand_aliases(tradesperson_categories_raw)
             
             if tradesperson_categories:
                 # Use $in for category matching (faster than regex) and combined regex for title
