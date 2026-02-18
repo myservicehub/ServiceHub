@@ -261,7 +261,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
     
     setLoadingLGAs(true);
     try {
-      const base = (process.env.REACT_APP_BACKEND_URL ? process.env.REACT_APP_BACKEND_URL + '/api' : (apiClient?.defaults?.baseURL || '/api'));
+      const base = (import.meta?.env?.VITE_BACKEND_URL ? `${import.meta.env.VITE_BACKEND_URL}/api` : (apiClient?.defaults?.baseURL || '/api'));
       if (lgaAbortRef.current) {
         try { lgaAbortRef.current.abort(); } catch {}
       }
