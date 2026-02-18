@@ -1305,14 +1305,88 @@ const BrowseJobsPage = () => {
 
               
 
-              {selectedJobDetails.description && (
-                <div className="mb-6">
-                  <h3 className="font-semibold mb-3 font-montserrat">Job Description</h3>
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-700 font-lato">
-                    {selectedJobDetails.description}
-                  </div>
-                </div>
-              )}
+              {(() => {
+                const isAuto = !!(selectedJobAnswers && selectedJobDetails.description && selectedJobDetails.description.includes(' job details: '));
+                if (!isAuto && selectedJobDetails.description) {
+                  return (
+                    <div className="mb-6">
+                      <h3 className="font-semibold mb-3 font-montserrat">Job Description</h3>
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-700 font-lato">
+                        {selectedJobDetails.description}
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
+              {(() => {
+                const answers = (selectedJobAnswers && selectedJobAnswers.answers) ? selectedJobAnswers.answers : [];
+                const isFileUrl = (str) => {
+                  if (typeof str !== 'string') return false;
+                  return str.includes('/api/jobs/trade-questions/file/') ||
+                         str.match(/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i) ||
+                         str.startsWith('data:image/');
+                };
+                const fileAnswers = answers.filter(ans => {
+                  const val = ans.answer_value || ans.answer_text;
+                  const isUpload = (ans.question_type || '').startsWith('file_upload');
+                  if (isUpload) {
+                    if (Array.isArray(val) && val.length > 0) return true;
+                    if (typeof val === 'string' && val.trim().length > 0 && val !== 'undefined') return true;
+                  }
+                  if (typeof val === 'string' && val !== 'undefined') {
+                    if (isFileUrl(val) || val.split(',').some(part => isFileUrl(part.trim()))) {
+                      return true;
+                    }
+                  }
+                  return false;
+                });
+                if (fileAnswers.length > 0) {
+                  return (
+                    <div className="mb-6">
+                      <h3 className="font-semibold mb-3 font-montserrat">Photos</h3>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        {fileAnswers.map((ans, idx) => {
+                          let files = [];
+                          const rawValue = ans.answer_value || ans.answer_text;
+                          if (Array.isArray(rawValue)) {
+                            files = rawValue;
+                          } else if (typeof rawValue === 'string') {
+                            files = rawValue.includes(',') ? rawValue.split(',').map(s => s.trim()) : [rawValue];
+                          }
+                          return files.map((url, fIdx) => {
+                            const isImage = url.match(/\.(jpg|jpeg|png|gif|webp)$/i) || url.startsWith('data:image/') || url.includes('/api/jobs/trade-questions/file/');
+                            return (
+                              <div key={`${idx}-${fIdx}`} className="relative group border rounded-lg overflow-hidden h-32 bg-gray-100">
+                                {isImage ? (
+                                  <div className="w-full h-full">
+                                    <AuthenticatedImage 
+                                      src={url} 
+                                      alt={`Photo ${fIdx + 1}`} 
+                                      className="w-full h-full object-contain"
+                                    />
+                                  </div>
+                                ) : (
+                                  <a  
+                                    href={url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-blue-600 bg-gray-50 hover:bg-gray-100 transition-colors"
+                                  >
+                                    <span className="text-xs font-medium px-2 text-center">Download File</span>
+                                  </a>
+                                )}
+                              </div>
+                            );
+                          });
+                        })}
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
 
               {/* Job Requirements & Details from Trade Category Questions */}
               {selectedJobAnswers && selectedJobAnswers.answers && selectedJobAnswers.answers.length > 0 && (
@@ -1379,61 +1453,7 @@ const BrowseJobsPage = () => {
                             </div>
                           ))}
 
-                          {/* Attachments Section */}
-                          {fileAnswers.length > 0 && (
-                            <div className="pt-4 border-t border-green-200">
-                              <h4 className="font-medium text-gray-800 font-lato mb-3">Attachments</h4>
-                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                                {fileAnswers.map((ans, idx) => {
-                                  // Handle both array and comma-separated string
-                                  let files = [];
-                                  const rawValue = ans.answer_value || ans.answer_text;
-                                  
-                                  if (Array.isArray(rawValue)) {
-                                    files = rawValue;
-                                  } else if (typeof rawValue === 'string') {
-                                    // Split by comma if present, otherwise just one item
-                                    files = rawValue.includes(',') 
-                                      ? rawValue.split(',').map(s => s.trim()) 
-                                      : [rawValue];
-                                  }
-
-                                  return files.map((url, fIdx) => {
-                                    // Handle cases where the URL is a data URI or a remote URL
-                                    // Also check if it's a file path that ends with an image extension, regardless of case
-                                    const isImage = url.match(/\.(jpg|jpeg|png|gif|webp)$/i) || 
-                                                  url.startsWith('data:image/') ||
-                                                  // Fallback: assume it's an image if it's in the trade-questions path (common for uploads)
-                                                  // This helps with signed URLs or paths that might not match the regex perfectly
-                                                  url.includes('/api/jobs/trade-questions/file/');
-                                    
-                                    return (
-                                      <div key={`${idx}-${fIdx}`} className="relative group border rounded-lg overflow-hidden h-32 bg-gray-100">
-                                        {isImage ? (
-                                          <div className="w-full h-full">
-                                            <AuthenticatedImage 
-                                              src={url} 
-                                              alt={`Attachment ${fIdx + 1}`} 
-                                              className="w-full h-full object-contain"
-                                            />
-                                          </div>
-                                        ) : (
-                                          <a  
-                                            href={url} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer"
-                                            className="flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-blue-600 bg-gray-50 hover:bg-gray-100 transition-colors"
-                                          >
-                                            <span className="text-xs font-medium px-2 text-center">Download File</span>
-                                          </a>
-                                        )}
-                                      </div>
-                                    );
-                                  });
-                                })}
-                              </div>
-                            </div>
-                          )}
+                          
                         </>
                       );
                     })()}

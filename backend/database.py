@@ -3742,10 +3742,10 @@ class Database:
 
             # Process jobs synchronously
             for job in raw_jobs:
-                # Ensure both id and _id are strings for frontend consistency
                 job_id_str = str(job["_id"])
                 job["_id"] = job_id_str
-                job["id"] = job_id_str
+                if not job.get("id"):
+                    job["id"] = job_id_str
                 
                 jlat = job.get("latitude")
                 jlng = job.get("longitude")
@@ -3925,7 +3925,8 @@ class Database:
             if "_id" in job:
                 job_id_str = str(job["_id"])
                 job["_id"] = job_id_str
-                job["id"] = job_id_str
+                if not job.get("id"):
+                    job["id"] = job_id_str
             
             # Add any additional processing here if needed
             # For example: enrich with homeowner info, interests count, etc.
