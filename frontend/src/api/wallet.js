@@ -496,8 +496,21 @@ export const adminAPI = {
   // ==========================================
   
   // Get all jobs with access fees
-  getJobsWithAccessFees: async (skip = 0, limit = 20) => {
-    const response = await apiClient.get(`/admin/jobs/access-fees?skip=${skip}&limit=${limit}`);
+  getJobsWithAccessFees: async (skip = 0, limit = 20, search = null) => {
+    const params = new URLSearchParams({
+      skip: skip.toString(),
+      limit: limit.toString()
+    });
+    if (search) {
+      params.append('search', String(search));
+      const s = String(search).trim();
+      const isHex24 = /^[a-f0-9]{24}$/i.test(s);
+      const isDigits = /^\d+$/.test(s);
+      if (isHex24 || isDigits) {
+        params.append('job_id', s);
+      }
+    }
+    const response = await apiClient.get(`/admin/jobs/access-fees?${params.toString()}`);
     return response.data;
   },
 

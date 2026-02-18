@@ -103,10 +103,10 @@ async def reject_wallet_funding(
 # ==========================================
 
 @router.get("/jobs/access-fees")
-async def get_jobs_with_access_fees(skip: int = 0, limit: int = 20):
+async def get_jobs_with_access_fees(skip: int = 0, limit: int = 20, search: Optional[str] = None, job_id: Optional[str] = None):
     """Get all jobs with their access fees for admin management"""
     
-    jobs, total_count = await database.get_jobs_with_access_fees(skip=skip, limit=limit)
+    jobs, total_count = await database.get_jobs_with_access_fees(skip=skip, limit=limit, search=search, job_id=job_id)
     
     # Format jobs for admin view
     formatted_jobs = []

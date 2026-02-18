@@ -5392,6 +5392,10 @@ const AdminDashboard = () => {
                       </h4>
                       <div className="space-y-3 text-sm">
                         <div className="flex justify-between border-b border-gray-200 pb-2">
+                          <span className="text-gray-500">Job ID:</span>
+                          <span className="font-mono font-medium">{selectedJobDetails.id || selectedJobDetails._id}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-gray-200 pb-2">
                           <span className="text-gray-500">Title:</span>
                           <span className="font-medium">{selectedJobDetails.title}</span>
                         </div>

@@ -3285,11 +3285,60 @@ class Database:
         return False
 
     @time_it
-    async def get_jobs_with_access_fees(self, skip: int = 0, limit: int = 20) -> tuple[List[dict], int]:
-        """Get all jobs with access fees for admin management (optimized)"""
+    async def get_jobs_with_access_fees(self, skip: int = 0, limit: int = 20, search: Optional[str] = None, job_id: Optional[str] = None) -> tuple[List[dict], int]:
+        """Get all jobs with access fees for admin management (optimized) with optional filtering"""
         import asyncio
-        total_count = await self.database.jobs.count_documents({})
-        cursor = self.database.jobs.find({}).sort("created_at", -1).skip(skip).limit(limit)
+        query: Dict[str, Any] = {}
+        try:
+            # Prefer explicit job_id filter when provided
+            if job_id:
+                or_conditions = []
+                try:
+                    int_id = int(job_id)
+                    or_conditions.append({"id": int_id})
+                except Exception:
+                    pass
+                or_conditions.append({"id": str(job_id)})
+                try:
+                    from bson import ObjectId
+                    if ObjectId.is_valid(str(job_id)):
+                        or_conditions.append({"_id": ObjectId(str(job_id))})
+                except Exception:
+                    pass
+                if or_conditions:
+                    query["$or"] = or_conditions
+            elif search:
+                s = str(search).strip()
+                # If search looks like an ID, treat it as job_id
+                looks_like_hex = bool(re.match(r"^[a-f0-9]{24}$", s, flags=re.IGNORECASE))
+                looks_like_digits = s.isdigit()
+                if looks_like_hex or looks_like_digits:
+                    or_conditions = []
+                    try:
+                        int_id = int(s)
+                        or_conditions.append({"id": int_id})
+                    except Exception:
+                        pass
+                    or_conditions.append({"id": s})
+                    try:
+                        from bson import ObjectId
+                        if ObjectId.is_valid(s):
+                            or_conditions.append({"_id": ObjectId(s)})
+                    except Exception:
+                        pass
+                    if or_conditions:
+                        query["$or"] = or_conditions
+                else:
+                    query["$or"] = [
+                        {"title": {"$regex": s, "$options": "i"}},
+                        {"category": {"$regex": s, "$options": "i"}},
+                        {"location": {"$regex": s, "$options": "i"}},
+                        {"homeowner.email": {"$regex": s, "$options": "i"}},
+                    ]
+        except Exception:
+            query = {}
+        total_count = await self.database.jobs.count_documents(query or {})
+        cursor = self.database.jobs.find(query or {}).sort("created_at", -1).skip(skip).limit(limit)
         jobs = await cursor.to_list(length=limit)
         
         if not jobs:
