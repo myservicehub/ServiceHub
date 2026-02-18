@@ -17,6 +17,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy over SSH
+        id: deploy_ssh
         uses: appleboy/ssh-action@v1.1.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -24,7 +25,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: 22
           script_stop: true
-          command_timeout: 300s
+          command_timeout: 600s
           script: |
             set -e
             cd "${{ secrets.SERVER_PATH }}"
@@ -33,3 +34,14 @@ jobs:
             docker compose pull
             docker compose up -d --build --remove-orphans
             docker compose ps
+        continue-on-error: true
+
+      - name: Setup doctl
+        if: ${{ steps.deploy_ssh.outcome == 'failure' }}
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DO_TOKEN }}
+
+      - name: Fallback deploy to DigitalOcean App Platform
+        if: ${{ steps.deploy_ssh.outcome == 'failure' }}
+        run: doctl apps create-deployment ${{ secrets.DO_APP_ID }}
