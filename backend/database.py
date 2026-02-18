@@ -3634,6 +3634,8 @@ class Database:
                                 out.add(a)
                             break
                     lc = c.strip().lower()
+                    # Normalize to a base form by stripping common suffixes
+                    base = c.strip()
                     if lc.endswith(" work"):
                         base = c[: -len(" work")]
                         out.add(base + " Service")
@@ -3644,6 +3646,11 @@ class Database:
                     elif lc.endswith(" services"):
                         base = c[: -len(" services")]
                         out.add(base + " Service")
+                    else:
+                        # If it's a bare base like "Cleaning", include common variants
+                        out.add(base + " Work")
+                        out.add(base + " Service")
+                        out.add(base + " Services")
                 return list(out)
             tradesperson_categories = _expand_aliases(tradesperson_categories_raw)
             
