@@ -890,6 +890,9 @@ const MyJobsPage = () => {
                                   <h3 className="text-sm sm:text-base font-semibold text-[#121E3C] truncate">
                                     {job.title}
                                   </h3>
+                                  <span className="text-[10px] sm:text-xs text-gray-500 font-mono">
+                                    #{job.id}
+                                  </span>
                                   <span className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-[10px] sm:text-xs font-medium whitespace-nowrap ${getStatusColor(job.status)}`}>
                                     {getJobStatusLabel(job.status)}
                                   </span>

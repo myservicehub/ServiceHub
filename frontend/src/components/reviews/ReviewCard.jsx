@@ -98,7 +98,7 @@ const ReviewCard = ({
             </div>
 
             {/* Job Info */}
-            {review.job_title && (
+            {(review.job_title || review.job_id) && (
               <div className="flex items-center space-x-2 mb-3">
                 <Badge variant="secondary" className="text-xs">
                   {review.job_title}
@@ -106,6 +106,11 @@ const ReviewCard = ({
                 {review.job_category && (
                   <Badge variant="outline" className="text-xs">
                     {review.job_category}
+                  </Badge>
+                )}
+                {review.job_id && (
+                  <Badge variant="outline" className="text-xs">
+                    ID: {review.job_id}
                   </Badge>
                 )}
               </div>

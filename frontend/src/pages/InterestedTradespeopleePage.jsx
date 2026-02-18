@@ -666,6 +666,10 @@ const InterestedTradespeopleePage = () => {
                     <h3 className="font-semibold mb-2">Job Details:</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                       <div>
+                        <span className="text-gray-600">ID:</span>
+                        <span className="ml-2 font-medium">{job.id || job._id || job.job_id}</span>
+                      </div>
+                      <div>
                         <span className="text-gray-600">Title:</span>
                         <span className="ml-2 font-medium">{job.title}</span>
                       </div>

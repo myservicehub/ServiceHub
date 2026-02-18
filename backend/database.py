@@ -3679,7 +3679,8 @@ class Database:
                     max_distance_km=float(effective_max_dist),
                     skill_categories=tradesperson_categories,
                     skip=skip,
-                    limit=limit
+                    limit=limit,
+                    user_state=(tradesperson.get("state") or tradesperson.get("location"))
                 )
             else:
                 # No location data, use skills-only filtering
@@ -3701,8 +3702,9 @@ class Database:
     @time_it
     async def get_jobs_near_location_with_skills(self, latitude: float, longitude: float, 
                                                max_distance_km: float, skill_categories: List[str],
-                                               skip: int = 0, limit: int = 50) -> List[dict]:
-        """Get jobs near location matching skills, including jobs without coordinates (optimized)."""
+                                               skip: int = 0, limit: int = 50, user_state: Optional[str] = None) -> List[dict]:
+        """Get jobs near location matching skills.
+        Jobs without coordinates are included only if they match the user's state."""
         try:
             # Base filter: active jobs only, non-expired (most important for performance)
             base_filter = {
@@ -3761,7 +3763,15 @@ class Database:
                         jobs_within_distance.append(job)
                 else:
                     job["distance_km"] = None
-                    jobs_without_coords.append(job)
+                    if user_state:
+                        jstate = job.get("state") or job.get("location")
+                        try:
+                            if isinstance(jstate, str) and jstate.strip().lower() == str(user_state).strip().lower():
+                                jobs_without_coords.append(job)
+                        except Exception:
+                            pass
+                    else:
+                        jobs_without_coords.append(job)
 
             # Sort by distance
             jobs_within_distance.sort(key=lambda x: x.get("distance_km", float("inf")))

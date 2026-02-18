@@ -634,6 +634,9 @@ const MyInterestsPage = () => {
                           
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
                             <div className="flex items-center gap-2">
+                              <span className="font-mono text-gray-500">#{interest.job_id}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
                               <MapPin size={16} />
                               <span>{interest.job_location}</span>
                             </div>

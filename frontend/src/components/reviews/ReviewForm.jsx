@@ -150,6 +150,7 @@ const ReviewForm = ({
         </CardTitle>
         <div className="text-gray-600 font-lato">
           <p><strong>Job:</strong> {jobTitle}</p>
+          <p><strong>Job ID:</strong> {jobId}</p>
           <p><strong>For:</strong> {revieweeName}</p>
         </div>
       </CardHeader>

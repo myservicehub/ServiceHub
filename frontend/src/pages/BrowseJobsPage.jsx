@@ -1161,6 +1161,11 @@ const BrowseJobsPage = () => {
                           {/* Meta information stacked */}
                           <div className="space-y-2 text-sm text-gray-700">
                             <div className="flex items-start min-w-0">
+                              <span className="break-words overflow-hidden">
+                                <strong>Job ID:</strong> {job.id || job._id || job.job_id}
+                              </span>
+                            </div>
+                            <div className="flex items-start min-w-0">
                               <Wrench size={16} className="mr-2 mt-0.5 text-gray-500 flex-shrink-0" />
                               <span className="break-words overflow-hidden">{job.category || 'No Category'}</span>
                             </div>
@@ -1238,6 +1243,10 @@ const BrowseJobsPage = () => {
                   <h3 className="font-semibold mb-3 font-montserrat">Job Details</h3>
                   <div className="space-y-3 text-sm">
                     <div className="flex items-center">
+                      <span className="mr-2 text-gray-500">#</span>
+                      <span><strong>Job ID:</strong> {selectedJobDetails.id || selectedJobDetails._id || selectedJobDetails.job_id}</span>
+                    </div>
+                    <div className="flex items-center">
                       <MapPin size={16} className="mr-2 text-gray-500" />
                       <span><strong>Location:</strong> {selectedJobDetails.location}</span>
                     </div>
@@ -1295,6 +1304,15 @@ const BrowseJobsPage = () => {
               </div>
 
               
+
+              {selectedJobDetails.description && (
+                <div className="mb-6">
+                  <h3 className="font-semibold mb-3 font-montserrat">Job Description</h3>
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-700 font-lato">
+                    {selectedJobDetails.description}
+                  </div>
+                </div>
+              )}
 
               {/* Job Requirements & Details from Trade Category Questions */}
               {selectedJobAnswers && selectedJobAnswers.answers && selectedJobAnswers.answers.length > 0 && (
