@@ -709,49 +709,85 @@ const BrowseJobsPage = () => {
       }
     } catch (_) {}
     setSelectedJobDetails(freshJob);
-    const cached = jobAnswersCache.current[String(freshJob.id)] 
-                || jobAnswersCache.current[String(freshJob._id)] 
-                || jobAnswersCache.current[String(freshJob.job_id)];
-    setSelectedJobAnswers(cached || null);
+    
+    // First, check for embedded answers in the job object (fastest, no API call)
+    let answers = null;
+    const embedded = freshJob.question_answers || 
+                     (freshJob.job_details && freshJob.job_details.question_answers) ||
+                     (freshJob.answers && Array.isArray(freshJob.answers) ? { answers: freshJob.answers } : null);
+    
+    if (embedded && Array.isArray(embedded.answers) && embedded.answers.length > 0) {
+      answers = embedded;
+      setSelectedJobAnswers(answers);
+      jobAnswersCache.current[String(freshJob.id || freshJob._id || freshJob.job_id)] = answers;
+    } else {
+      // Check cache
+      const cached = jobAnswersCache.current[String(freshJob.id)] 
+                  || jobAnswersCache.current[String(freshJob._id)] 
+                  || jobAnswersCache.current[String(freshJob.job_id)];
+      if (cached && cached.answers && cached.answers.length > 0) {
+        answers = cached;
+        setSelectedJobAnswers(answers);
+      } else {
+        setSelectedJobAnswers(null);
+      }
+    }
+    
     setShowJobModal(true);
     
-    // Fetch job question answers
-    try {
-      const tryIds = [];
-      const pushIf = (v) => { if (v !== undefined && v !== null) tryIds.push(String(v)); };
-      pushIf(freshJob.id);
-      pushIf(freshJob._id);
-      pushIf(freshJob.job_id);
-      // Add zero-trimmed variants
-      const base = String(freshJob.id || freshJob.job_id || freshJob._id || '');
-      if (base) {
-        const trimmed = base.replace(/^0+/, '') || base;
-        if (!tryIds.includes(trimmed)) tryIds.push(trimmed);
-      }
-
-      let answers = null;
-      for (const jid of tryIds) {
-        try {
-          const resAns = await tradeCategoryQuestionsAPI.getJobQuestionAnswers(jid);
-          if (resAns && Array.isArray(resAns.answers) && resAns.answers.length > 0) {
-            answers = resAns;
-            break;
-          }
-        } catch (_) {}
-      }
-
-      // Fallback: check embedded answers on the job document if available
-      if (!answers || !answers.answers || answers.answers.length === 0) {
-        const embedded = freshJob.question_answers || (freshJob.job_details && freshJob.job_details.question_answers);
-        if (embedded && Array.isArray(embedded.answers) && embedded.answers.length > 0) {
-          answers = embedded;
+    // Only fetch from API if we don't have answers yet (avoid timeout if answers are already embedded)
+    if (!answers || !answers.answers || answers.answers.length === 0) {
+      // Fetch job question answers from API (with timeout protection)
+      try {
+        const tryIds = [];
+        const pushIf = (v) => { if (v !== undefined && v !== null) tryIds.push(String(v)); };
+        pushIf(freshJob.id);
+        pushIf(freshJob._id);
+        pushIf(freshJob.job_id);
+        // Add zero-trimmed variants
+        const base = String(freshJob.id || freshJob.job_id || freshJob._id || '');
+        if (base) {
+          const trimmed = base.replace(/^0+/, '') || base;
+          if (!tryIds.includes(trimmed)) tryIds.push(trimmed);
         }
-      }
 
-      if (answers && answers.answers && answers.answers.length > 0) {
-        setSelectedJobAnswers(answers);
+        // Try fetching with a timeout promise
+        const fetchWithTimeout = (jid) => {
+          return Promise.race([
+            tradeCategoryQuestionsAPI.getJobQuestionAnswers(jid),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Timeout')), 10000) // 10 second timeout
+            )
+          ]);
+        };
+
+        let apiAnswers = null;
+        for (const jid of tryIds) {
+          try {
+            const resAns = await fetchWithTimeout(jid);
+            if (resAns && Array.isArray(resAns.answers) && resAns.answers.length > 0) {
+              apiAnswers = resAns;
+              break;
+            }
+          } catch (err) {
+            // Continue to next ID or fallback
+            console.warn(`Failed to fetch answers for job ID ${jid}:`, err.message);
+          }
+        }
+
+        if (apiAnswers && apiAnswers.answers && apiAnswers.answers.length > 0) {
+          console.log('✅ Fetched job question answers from API:', apiAnswers);
+          setSelectedJobAnswers(apiAnswers);
+          jobAnswersCache.current[String(freshJob.id || freshJob._id || freshJob.job_id)] = apiAnswers;
+        } else {
+          console.log('⚠️ No answers found from API for job:', freshJob.id || freshJob._id || freshJob.job_id);
+        }
+      } catch (err) {
+        console.error('Error fetching job question answers:', err);
+        // Don't set error state, just use what we have (embedded or cached)
       }
-    } catch (err) {
+    } else {
+      console.log('✅ Using embedded/cached answers:', answers);
     }
   };
 
@@ -1418,80 +1454,140 @@ const BrowseJobsPage = () => {
               })()}
 
               {/* Job Requirements & Details from Trade Category Questions */}
-              {selectedJobAnswers && selectedJobAnswers.answers && selectedJobAnswers.answers.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="font-semibold mb-3 font-montserrat">Job Requirements & Details</h3>
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-4">
-                    {(() => {
-                      // Helper to detect file URLs
-                      const isFileUrl = (str) => {
-                        if (typeof str !== 'string') return false;
-                        return str.includes('/api/jobs/trade-questions/file/') || 
-                               str.match(/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i) ||
-                               str.startsWith('data:image/');
-                      };
+              {(() => {
+                // Get answers from multiple possible sources
+                const answersData = selectedJobAnswers || 
+                                  (selectedJobDetails?.question_answers) ||
+                                  (selectedJobDetails?.job_details?.question_answers) ||
+                                  (selectedJobDetails?.answers ? { answers: selectedJobDetails.answers } : null);
+                
+                const answers = answersData?.answers || [];
+                
+                // Debug logging
+                if (selectedJobDetails) {
+                  console.log('🔍 Checking for job requirements:', {
+                    selectedJobAnswers: !!selectedJobAnswers,
+                    answersCount: answers.length,
+                    jobId: selectedJobDetails.id || selectedJobDetails._id || selectedJobDetails.job_id,
+                    hasEmbedded: !!(selectedJobDetails?.question_answers || selectedJobDetails?.job_details?.question_answers)
+                  });
+                }
+                
+                if (!answers || answers.length === 0) {
+                  console.log('⚠️ No answers to display for job requirements');
+                  return null;
+                }
+                
+                // Helper to detect file URLs
+                const isFileUrl = (str) => {
+                  if (typeof str !== 'string') return false;
+                  return str.includes('/api/jobs/trade-questions/file/') || 
+                         str.match(/\.(jpg|jpeg|png|gif|webp|pdf)(\?.*)?$/i) ||
+                         str.startsWith('data:image/') ||
+                         str.startsWith('data:application/');
+                };
 
-                      // Filter answers: show ONLY non-empty text answers that are NOT files
-                      const visibleAnswers = selectedJobAnswers.answers.filter(ans => {
-                        if ((ans.question_type || '').startsWith('file_upload')) return false;
-                        
-                        const val = ans.answer_text || (Array.isArray(ans.answer_value) ? ans.answer_value.join(', ') : (ans.answer_value ?? ''));
-                        
-                        // Check if the value itself looks like a file URL (or list of them)
-                        if (isFileUrl(val) || (typeof val === 'string' && val.split(',').some(part => isFileUrl(part.trim())))) {
-                          return false;
-                        }
+                // Filter answers: show ONLY non-empty text answers that are NOT files
+                const visibleAnswers = answers.filter(ans => {
+                  if ((ans.question_type || '').startsWith('file_upload')) return false;
+                  
+                  const val = ans.answer_text || (Array.isArray(ans.answer_value) ? ans.answer_value.join(', ') : (ans.answer_value ?? ''));
+                  
+                  // Check if the value itself looks like a file URL (or list of them)
+                  if (isFileUrl(val) || (typeof val === 'string' && val.split(',').some(part => isFileUrl(part.trim())))) {
+                    return false;
+                  }
 
-                        // Be more permissive with what we show (allow 0, false, etc.)
-                        if (val === undefined || val === null || String(val).trim() === '' || val === '—' || val === 'undefined') return false;
-                        return true;
-                      });
+                  // Be more permissive with what we show (allow 0, false, etc.)
+                  if (val === undefined || val === null || String(val).trim() === '' || val === '—' || val === 'undefined') return false;
+                  return true;
+                });
 
-                      // Find file uploads (images) to show separately
-                      const fileAnswers = (selectedJobAnswers.answers || []).filter(ans => {
-                        const val = ans.answer_value || ans.answer_text;
-                        const isFileUploadType = (ans.question_type || '').startsWith('file_upload');
+                // Find file uploads (images) to show separately
+                const fileAnswers = answers.filter(ans => {
+                  const val = ans.answer_value || ans.answer_text;
+                  const isFileUploadType = (ans.question_type || '').startsWith('file_upload');
 
-                        // If explicitly a file upload type
-                        if (isFileUploadType) {
-                          if (Array.isArray(val) && val.length > 0) return true;
-                          if (typeof val === 'string' && val.trim().length > 0 && val !== 'undefined') return true;
-                        }
+                  // If explicitly a file upload type
+                  if (isFileUploadType) {
+                    if (Array.isArray(val) && val.length > 0) return true;
+                    if (typeof val === 'string' && val.trim().length > 0 && val !== 'undefined') return true;
+                  }
 
-                        // Also check if the content looks like file URLs (even if type isn't file_upload)
-                        if (typeof val === 'string' && val !== 'undefined') {
-                           if (isFileUrl(val) || val.split(',').some(part => isFileUrl(part.trim()))) {
-                             return true;
-                           }
-                        }
-                        
-                        return false;
-                      });
+                  // Also check if the content looks like file URLs (even if type isn't file_upload)
+                  if (typeof val === 'string' && val !== 'undefined') {
+                     if (isFileUrl(val) || val.split(',').some(part => isFileUrl(part.trim()))) {
+                       return true;
+                     }
+                  }
+                  
+                  return false;
+                });
 
-                      return (
-                        <>
-                          {visibleAnswers.map((answer, index) => (
-                            <div key={index} className="border-b border-green-200 last:border-b-0 pb-3 last:pb-0">
-                              <div className="font-medium text-gray-800 font-lato mb-1">
-                                {answer.question_text}
-                              </div>
-                              <div className="text-gray-700 font-lato pl-3">
-                                <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                                {answer.answer_text || answer.answer_value}
-                              </div>
-                            </div>
-                          ))}
+                // Only show section if there are visible answers or file attachments
+                if (visibleAnswers.length === 0 && fileAnswers.length === 0) return null;
 
-                          
-                        </>
-                      );
-                    })()}
+                return (
+                  <div className="mb-6">
+                    <h3 className="font-semibold mb-3 font-montserrat">Job Requirements & Details</h3>
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-4">
+                      {visibleAnswers.map((answer, index) => (
+                        <div key={index} className="border-b border-green-200 last:border-b-0 pb-3 last:pb-0">
+                          <div className="font-medium text-gray-800 font-lato mb-1">
+                            {answer.question_text || answer.question}
+                          </div>
+                          <div className="text-gray-700 font-lato pl-3">
+                            <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                            {answer.answer_text || (Array.isArray(answer.answer_value) ? answer.answer_value.join(', ') : answer.answer_value) || ''}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {/* Show attachments if any */}
+                    {fileAnswers.length > 0 && (
+                      <div className="mt-4">
+                        <h4 className="font-semibold mb-2 font-montserrat">Job Attachments ({fileAnswers.length})</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          {fileAnswers.map((ans, idx) => {
+                            const files = Array.isArray(ans.answer_value) ? ans.answer_value : [ans.answer_value || ans.answer_text].filter(Boolean);
+                            return files.map((url, fIdx) => {
+                              if (!url || url === 'undefined') return null;
+                              const isImage = /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url) || url.startsWith('data:image/');
+                              return (
+                                <div key={`${idx}-${fIdx}`} className="relative group border rounded-lg overflow-hidden h-32 bg-gray-100">
+                                  {isImage ? (
+                                    <div className="w-full h-full">
+                                      <AuthenticatedImage 
+                                        src={url} 
+                                        alt={`Photo ${fIdx + 1}`} 
+                                        className="w-full h-full object-contain"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <a  
+                                      href={url} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-blue-600 bg-gray-50 hover:bg-gray-100 transition-colors"
+                                    >
+                                      <span className="text-xs font-medium px-2 text-center">Download File</span>
+                                    </a>
+                                  )}
+                                </div>
+                              );
+                            });
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="mt-2 text-xs text-gray-500 font-lato">
+                      Specific requirements provided by the homeowner
+                    </div>
                   </div>
-                  <div className="mt-2 text-xs text-gray-500 font-lato">
-                    Specific requirements provided by the homeowner
-                  </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Action Buttons */}
               <div className="flex justify-between items-center pt-6 border-t">
