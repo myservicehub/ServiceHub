@@ -258,6 +258,12 @@ class Database:
                         name="jobs_status_expiresAt_createdAt"
                     )
 
+                    # CRITICAL INDEX for geospatial queries
+                    await self.database.jobs.create_index(
+                        [("location_coords", "2dsphere")],
+                        name="jobs_location_2dsphere"
+                    )
+
                     # Quotes indexes
                     await self.database.quotes.create_index([("job_id", 1)], name="quotes_job_id")
                     await self.database.quotes.create_index([("tradesperson_id", 1)], name="quotes_tradesperson_id")

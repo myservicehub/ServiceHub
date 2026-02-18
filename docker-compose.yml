@@ -22,6 +22,14 @@ services:
     expose:
       - "8000"
     restart: unless-stopped
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:alpine
+    expose:
+      - "6379"
+    restart: unless-stopped
 
   web:
     build:

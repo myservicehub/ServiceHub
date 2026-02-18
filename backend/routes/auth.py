@@ -25,6 +25,8 @@ import uuid
 import logging
 import os
 from pathlib import Path
+from ..utils.limiter import limiter
+from fastapi import Request
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +43,8 @@ CERT_UPLOAD_DIR = BASE_UPLOADS / "certifications"
 CERT_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 @router.post("/register/homeowner")
-async def register_homeowner(registration_data: HomeownerRegistration):
+@limiter.limit("5/minute")
+async def register_homeowner(request: Request, registration_data: HomeownerRegistration):
     """Register a new homeowner account"""
     try:
         allow = os.getenv("ALLOW_HOMEOWNER_STANDALONE_SIGNUP", "0")
@@ -330,7 +333,8 @@ async def register_homeowner(registration_data: HomeownerRegistration):
         )
 
 @router.post("/register/tradesperson", response_model=LoginResponse)
-async def register_tradesperson(registration_data: TradespersonRegistration):
+@limiter.limit("5/minute")
+async def register_tradesperson(request: Request, registration_data: TradespersonRegistration):
     """Register a new tradesperson account"""
     try:
         logger.warning(
@@ -603,7 +607,8 @@ async def register_tradesperson(registration_data: TradespersonRegistration):
         )
 
 @router.post("/login", response_model=LoginResponse)
-async def login(login_data: UserLogin):
+@limiter.limit("10/minute")
+async def login(request: Request, login_data: UserLogin):
     """Authenticate user and return access token"""
     try:
         # Get user by email

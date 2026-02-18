@@ -1,48 +1,50 @@
-import React, { useEffect } from "react";
+import React, { useEffect, Suspense, lazy } from "react";
 import "./App.css";
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
-import HomePage from "./components/HomePage";
-import PostJobPage from "./pages/PostJobPage";
-import MyJobsPage from "./pages/MyJobsPage";
-import MyInterestsPage from "./pages/MyInterestsPage";
-import CompletedJobsPage from "./pages/CompletedJobsPage";
-import TradespersonProfilePage from "./pages/TradespersonProfilePage";
-import BrowseTradespeopleePage from "./pages/BrowseTradespeopleePage";
-import InterestedTradespeopleePage from "./pages/InterestedTradespeopleePage";
-import BrowseJobsPage from "./pages/BrowseJobsPage";
-import ProfilePage from "./pages/ProfilePage";
-import TradespersonPortfolioPage from "./pages/TradespersonPortfolioPage";
-import NotificationPreferencesPage from "./pages/NotificationPreferencesPage";
-import NotificationHistoryPage from "./pages/NotificationHistoryPage";
-import NotificationsPage from "./pages/NotificationsPage";
-import ReviewsPage from "./pages/ReviewsPage";
-import MyReviewsPage from "./pages/MyReviewsPage";
-import MyReceivedReviewsPage from "./pages/MyReceivedReviewsPage";
-import WalletPage from "./pages/WalletPage";
-import AdminDashboard from "./pages/AdminDashboard";
-import ReferralsPage from "./pages/ReferralsPage";
-import VerifyAccountPage from "./pages/VerifyAccountPage";
-import AboutUsPage from "./pages/AboutUsPage";
-import ReviewsPolicyPage from "./pages/ReviewsPolicyPage";
-import HowItWorksPage from "./pages/HowItWorksPage";
-import PartnershipPage from "./pages/PartnershipPage";
-import TradeCategoriesPage from "./pages/TradeCategoriesPage";
-import TradeCategoryDetailPage from "./pages/TradeCategoryDetailPage";
-import HelpFAQsPage from "./pages/HelpFAQsPage";
-import ContactUsPage from "./pages/ContactUsPage";
-import JoinForFreePage from "./pages/JoinForFreePage";
-import HelpCentrePage from "./pages/HelpCentrePage";
-import BlogPage from "./pages/BlogPage";
-import CareersPage from "./pages/CareersPage";
-import TradespersonRegistrationDemo from "./pages/TradespersonRegistrationDemo";
-import ResetPasswordPage from "./pages/ResetPasswordPage";
-import PrivacyPage from "./pages/PrivacyPage";
-import TermsPage from "./pages/TermsPage";
-import CookiePolicyPage from "./pages/CookiePolicyPage";
-import ExternalReviewPage from "./pages/ExternalReviewPage";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import HomeownerDashboardLayout from "./layouts/HomeownerDashboardLayout";
 import TradespersonLayout from "./layouts/TradespersonLayout";
 import { DashboardOverview, DashboardMessages } from "./pages/dashboard/homeowner";
+
+// Lazy load pages for performance optimization
+const HomePage = lazy(() => import("./components/HomePage"));
+const PostJobPage = lazy(() => import("./pages/PostJobPage"));
+const MyJobsPage = lazy(() => import("./pages/MyJobsPage"));
+const MyInterestsPage = lazy(() => import("./pages/MyInterestsPage"));
+const CompletedJobsPage = lazy(() => import("./pages/CompletedJobsPage"));
+const TradespersonProfilePage = lazy(() => import("./pages/TradespersonProfilePage"));
+const BrowseTradespeopleePage = lazy(() => import("./pages/BrowseTradespeopleePage"));
+const InterestedTradespeopleePage = lazy(() => import("./pages/InterestedTradespeopleePage"));
+const BrowseJobsPage = lazy(() => import("./pages/BrowseJobsPage"));
+const ProfilePage = lazy(() => import("./pages/ProfilePage"));
+const TradespersonPortfolioPage = lazy(() => import("./pages/TradespersonPortfolioPage"));
+const NotificationPreferencesPage = lazy(() => import("./pages/NotificationPreferencesPage"));
+const NotificationHistoryPage = lazy(() => import("./pages/NotificationHistoryPage"));
+const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
+const ReviewsPage = lazy(() => import("./pages/ReviewsPage"));
+const MyReviewsPage = lazy(() => import("./pages/MyReviewsPage"));
+const MyReceivedReviewsPage = lazy(() => import("./pages/MyReceivedReviewsPage"));
+const WalletPage = lazy(() => import("./pages/WalletPage"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const ReferralsPage = lazy(() => import("./pages/ReferralsPage"));
+const VerifyAccountPage = lazy(() => import("./pages/VerifyAccountPage"));
+const AboutUsPage = lazy(() => import("./pages/AboutUsPage"));
+const ReviewsPolicyPage = lazy(() => import("./pages/ReviewsPolicyPage"));
+const HowItWorksPage = lazy(() => import("./pages/HowItWorksPage"));
+const PartnershipPage = lazy(() => import("./pages/PartnershipPage"));
+const TradeCategoriesPage = lazy(() => import("./pages/TradeCategoriesPage"));
+const TradeCategoryDetailPage = lazy(() => import("./pages/TradeCategoryDetailPage"));
+const HelpFAQsPage = lazy(() => import("./pages/HelpFAQsPage"));
+const ContactUsPage = lazy(() => import("./pages/ContactUsPage"));
+const JoinForFreePage = lazy(() => import("./pages/JoinForFreePage"));
+const HelpCentrePage = lazy(() => import("./pages/HelpCentrePage"));
+const BlogPage = lazy(() => import("./pages/BlogPage"));
+const CareersPage = lazy(() => import("./pages/CareersPage"));
+const TradespersonRegistrationDemo = lazy(() => import("./pages/TradespersonRegistrationDemo"));
+const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
+const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
+const TermsPage = lazy(() => import("./pages/TermsPage"));
+const CookiePolicyPage = lazy(() => import("./pages/CookiePolicyPage"));
+const ExternalReviewPage = lazy(() => import("./pages/ExternalReviewPage"));
 import { Toaster } from "./components/ui/toaster";
 import ScrollToTop from "./components/ScrollToTop";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
@@ -93,8 +95,13 @@ function App() {
           <BrowserRouter>
             <ScrollToTop smooth={true} />
 
-            <Routes>
-              <Route path="/" element={<HomePage />} />
+            <Suspense fallback={
+              <div className="flex justify-center items-center min-h-screen">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-600"></div>
+              </div>
+            }>
+              <Routes>
+                <Route path="/" element={<HomePage />} />
               <Route path="/post-job" element={<PostJobPage />} />
               <Route path="/my-jobs" element={<ProtectedRoute><MyJobsPage /></ProtectedRoute>} />
               <Route path="/my-interests" element={<ProtectedRoute><MyInterestsPage /></ProtectedRoute>} />
@@ -150,6 +157,7 @@ function App() {
                 <Route path="settings" element={<ProfilePage />} />
               </Route>
             </Routes>
+            </Suspense>
             <Toaster />
 
           </BrowserRouter>

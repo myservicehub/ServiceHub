@@ -8,6 +8,9 @@ from pathlib import Path
 from datetime import datetime
 import uuid
 import asyncio
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from .utils.limiter import limiter
 
 # Import database and routes (support both package and script execution)
 try:
@@ -70,6 +73,10 @@ async def lifespan(app: FastAPI):
 
 # Create the main app with lifespan events  
 app = FastAPI(lifespan=lifespan, redirect_slashes=False)
+
+# Add rate limiter state and exception handler
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Add request logging middleware
 @app.middleware("http")
