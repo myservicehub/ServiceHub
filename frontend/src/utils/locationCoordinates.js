@@ -113,14 +113,14 @@ export const LGA_HINTS = {
 const normalizeText = (s) => (s || "").toLowerCase().replace(/\s+/g, " ").trim();
 
 const findStateFromText = (text) => {
-  const t = normalizeText(text);
+  const normalized = normalizeText(text);
   // direct match
   for (const state of Object.keys(STATE_CAPITAL_COORDS)) {
-    if (t.includes(state)) return state;
+    if (normalized.includes(state)) return state;
   }
   // alias match
-  for (const [alias, normalized] of Object.entries(STATE_ALIASES)) {
-    if (t.includes(alias)) return normalized;
+  for (const [alias, normalizedState] of Object.entries(STATE_ALIASES)) {
+    if (normalized.includes(alias)) return normalizedState;
   }
   return null;
 };
@@ -128,9 +128,9 @@ const findStateFromText = (text) => {
 export function resolveCoordinatesFromStructuredLocation({ state, lga, town, addressText }) {
   // Try town mapping first
   if (town) {
-    const t = Object.keys(CITY_COORDS).find((k) => normalizeText(town).includes(normalizeText(k)));
-    if (t) {
-      const { lat, lng } = CITY_COORDS[t];
+    const matchedCity = Object.keys(CITY_COORDS).find((k) => normalizeText(town).includes(normalizeText(k)));
+    if (matchedCity) {
+      const { lat, lng } = CITY_COORDS[matchedCity];
       return { latitude: lat, longitude: lng, source: "town" };
     }
   }
