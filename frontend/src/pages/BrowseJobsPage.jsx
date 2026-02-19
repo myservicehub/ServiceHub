@@ -86,7 +86,31 @@ const BrowseJobsPage = () => {
   const [selectedJobDetails, setSelectedJobDetails] = useState(null);
   const [selectedJobAnswers, setSelectedJobAnswers] = useState(null);
   const [showJobModal, setShowJobModal] = useState(false);
-  const [userLocation, setUserLocation] = useState(null);
+  // Initialize filters with user location if available to prevent double-fetch
+  const [filters, setFilters] = useState(() => ({
+    search: '',
+    category: '',
+    useLocation: !!(user?.latitude && user?.longitude) || !!user?.location,
+    maxDistance: user?.travel_distance_km || DEFAULT_TRAVEL_DISTANCE_KM
+  }));
+
+  // Initialize userLocation immediately if available
+  const [userLocation, setUserLocation] = useState(() => {
+    if (user?.latitude && user?.longitude) {
+      return { lat: user.latitude, lng: user.longitude };
+    }
+    // Try to resolve from location string if coordinates are missing
+    if (user?.location) {
+      const coords = resolveCoordinatesFromLocationText(user.location);
+      if (coords) return { lat: coords.latitude, lng: coords.longitude };
+    }
+    return null;
+  });
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const { user, isAuthenticated, isTradesperson } = useAuth();
+  const location = useLocation();
+
   const [locationLoading, setLocationLoading] = useState(false);
   const [showLocationSettings, setShowLocationSettings] = useState(false);
   const [loadingStates, setLoadingStates] = useState({
@@ -94,11 +118,8 @@ const BrowseJobsPage = () => {
   });
   const [userInterests, setUserInterests] = useState(null);
   const [userInterestsLoading, setUserInterestsLoading] = useState(false);
-  const [loadErrorCount, setLoadErrorCount] = useState(0); // Track errors to prevent infinite loops
+  const [loadErrorCount, setLoadErrorCount] = useState(0);
 
-  const { user, isAuthenticated, isTradesperson } = useAuth();
-  const location = useLocation();
-  
   // Load user interests for tradespeople
   const loadUserInterests = async () => {
     if (!isAuthenticated() || !isTradesperson()) return;
@@ -116,22 +137,16 @@ const BrowseJobsPage = () => {
       setUserInterestsLoading(false);
     }
   };
-  
-  const [filters, setFilters] = useState({
-    search: '',
-    category: '',
-    useLocation: false,
-    maxDistance: user?.travel_distance_km || 25
-  });
-  const { toast } = useToast();
-  const navigate = useNavigate();
 
   useEffect(() => {
     if (!isAuthenticated() || !isTradesperson()) {
       return;
     }
     loadWalletBalance();
-    loadUserLocationData();
+    // Only load location data if we don't have it yet to avoid re-triggering filters
+    if (!userLocation && !filters.useLocation) {
+      loadUserLocationData();
+    }
     loadUserInterests(); // Load user's existing interests
   }, [isAuthenticated, isTradesperson]); // Add authentication dependencies
 
@@ -142,16 +157,22 @@ const BrowseJobsPage = () => {
     }
   }, [
     filters,
-    userLocation,
+    // Only trigger if coordinates strictly change, not just object reference
+    userLocation?.lat,
+    userLocation?.lng,
     isAuthenticated,
     isTradesperson,
-    user?.trade_categories,
+    // Removing user?.trade_categories from dependencies to prevent re-fetch on profile sync
+    // user?.trade_categories, 
   ]);
 
   // Sync profile location changes to local state
   useEffect(() => {
     if (user?.latitude && user?.longitude) {
-      loadUserLocationData();
+      // Only update if actually different to prevent loop
+      if (user.latitude !== userLocation?.lat || user.longitude !== userLocation?.lng) {
+        loadUserLocationData();
+      }
     }
   }, [user?.latitude, user?.longitude, user?.location]);
 
