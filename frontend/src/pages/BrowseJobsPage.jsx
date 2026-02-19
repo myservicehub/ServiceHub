@@ -418,8 +418,8 @@ const BrowseJobsPage = () => {
                   if (doc && doc._id) keys.push(String(doc._id));
                   if (doc && doc.job_id) keys.push(String(doc.job_id));
                   if (r.value.id) {
-                    const t = String(r.value.id).replace(/^0+/, '') || String(r.value.id);
-                    keys.push(t);
+                    const sanitizedId = String(r.value.id).replace(/^0+/, '') || String(r.value.id);
+                    keys.push(sanitizedId);
                   }
                   keys.forEach(k => { if (k && jobAnswersCache.current) jobAnswersCache.current[k] = doc; });
                 }
