@@ -763,6 +763,14 @@ async def get_job(job_id: str):
         if not job:
             raise HTTPException(status_code=404, detail="Job not found")
         
+        # Attach question answers if available
+        try:
+            qa = await database.get_job_question_answers(job_id)
+            if qa:
+                job["question_answers"] = qa
+        except Exception as e:
+            logger.warning(f"Failed to fetch question answers for job {job_id}: {e}")
+
         return Job(**job)
         
     except HTTPException:

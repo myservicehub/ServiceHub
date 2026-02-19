@@ -149,6 +149,8 @@ class Job(BaseModel):
     approved_at: Optional[datetime] = None     # When approved/rejected
     approval_notes: Optional[str] = None       # Admin notes for approval/rejection
     
+    question_answers: Optional[dict] = None    # Trade category questions and answers
+    
     created_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
     expires_at: Optional[datetime] = None
