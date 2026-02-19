@@ -335,6 +335,8 @@ const BrowseJobsPage = () => {
           ...job,
           id: job.id || job._id || (job._id ? job._id.toString() : null)
         }));
+      
+      if (!Array.isArray(jobsData)) jobsData = [];
 
       if (filters.useLocation && userLocation && typeof userLocation.lat === 'number' && typeof userLocation.lng === 'number') {
         // Compute fallback distances for jobs without distance_km using text location or coords
@@ -375,35 +377,38 @@ const BrowseJobsPage = () => {
       setPagination(response.data.pagination || null);
       // Prefetch question answers for all visible jobs to improve modal open latency
       try {
-        const toPrefetch = jobsData.map(j => j.id || j._id || j.job_id).filter(Boolean);
-        if (toPrefetch.length > 0) {
-          const uniqueIds = Array.from(new Set(toPrefetch.flatMap((id) => {
-            const s = String(id);
-            const trimmed = s.replace(/^0+/, '') || s;
-            return [s, trimmed];
-          })));
-          Promise.allSettled(
-            uniqueIds.map(id => tradeCategoryQuestionsAPI.getJobQuestionAnswers(id).then(res => ({ id, res })))
-          ).then(results => {
-            results.forEach(r => {
-              if (r.status === 'fulfilled' && r.value) {
-                const doc = r.value.res || r.value;
-                const keys = [];
-                if (r.value.id) keys.push(String(r.value.id));
-                if (doc && doc.id) keys.push(String(doc.id));
-                if (doc && doc._id) keys.push(String(doc._id));
-                if (doc && doc.job_id) keys.push(String(doc.job_id));
-                if (r.value.id) {
-                  const t = String(r.value.id).replace(/^0+/, '') || String(r.value.id);
-                  keys.push(t);
+        if (tradeCategoryQuestionsAPI && typeof tradeCategoryQuestionsAPI.getJobQuestionAnswers === 'function') {
+          const toPrefetch = jobsData.map(j => j.id || j._id || j.job_id).filter(Boolean);
+          if (toPrefetch.length > 0) {
+            const uniqueIds = Array.from(new Set(toPrefetch.flatMap((id) => {
+              const s = String(id);
+              const trimmed = s.replace(/^0+/, '') || s;
+              return [s, trimmed];
+            })));
+            Promise.allSettled(
+              uniqueIds.map(id => tradeCategoryQuestionsAPI.getJobQuestionAnswers(id).catch(() => null).then(res => ({ id, res })))
+            ).then(results => {
+              results.forEach(r => {
+                if (r.status === 'fulfilled' && r.value && r.value.res) {
+                  const doc = r.value.res;
+                  const keys = [];
+                  if (r.value.id) keys.push(String(r.value.id));
+                  if (doc && doc.id) keys.push(String(doc.id));
+                  if (doc && doc._id) keys.push(String(doc._id));
+                  if (doc && doc.job_id) keys.push(String(doc.job_id));
+                  if (r.value.id) {
+                    const t = String(r.value.id).replace(/^0+/, '') || String(r.value.id);
+                    keys.push(t);
+                  }
+                  keys.forEach(k => { if (k && jobAnswersCache.current) jobAnswersCache.current[k] = doc; });
                 }
-                keys.forEach(k => { if (k) jobAnswersCache.current[k] = doc; });
-              }
-            });
-          }).catch(() => {});
+              });
+            }).catch(() => {});
+          }
         }
       } catch (e) {
         // ignore prefetch errors
+        console.warn('Prefetch error:', e);
       }
     } catch (error) {
       console.error('Failed to load jobs:', error);

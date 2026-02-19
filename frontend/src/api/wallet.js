@@ -888,6 +888,7 @@ export const tradeCategoryQuestionsAPI = {
   },
 
   async getJobQuestionAnswers(jobId) {
+    if (!jobId) return null;
     const response = await apiClient.get(`/jobs/trade-questions/answers/${encodeURIComponent(jobId)}`);
     return response.data;
   }
