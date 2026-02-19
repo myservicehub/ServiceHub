@@ -1404,8 +1404,34 @@ const BrowseJobsPage = () => {
                 return null;
               })()}
 
+              {/* Hide standalone Photos section if we have structured answers (they are shown in attachments) */}
               {(() => {
+                // If we have structured answers with file uploads, they are already shown in "Job Attachments" below
                 const answers = (selectedJobAnswers && selectedJobAnswers.answers) ? selectedJobAnswers.answers : [];
+                const hasFileAnswers = answers.some(ans => {
+                  const val = ans.answer_value || ans.answer_text;
+                  const isUpload = (ans.question_type || '').startsWith('file_upload');
+                  
+                  if (isUpload) {
+                    if (Array.isArray(val) && val.length > 0) return true;
+                    if (typeof val === 'string' && val.trim().length > 0 && val !== 'undefined') return true;
+                  }
+                  
+                  // Also check for string URLs
+                  if (typeof val === 'string' && val !== 'undefined') {
+                    if (val.includes('/api/jobs/trade-questions/file/') || 
+                        val.match(/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i) ||
+                        val.startsWith('data:image/')) {
+                      return true;
+                    }
+                  }
+                  return false;
+                });
+
+                // If we have structured file answers, don't show this separate Photos section
+                if (hasFileAnswers) return null;
+
+                // Otherwise, keep the logic to show photos if they exist separately (legacy support)
                 const isFileUrl = (str) => {
                   if (typeof str !== 'string') return false;
                   return str.includes('/api/jobs/trade-questions/file/') ||
