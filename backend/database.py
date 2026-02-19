@@ -915,41 +915,44 @@ class Database:
 
     # Job operations
     async def generate_job_id(self, digits: int = 6) -> str:
-        """Generate a unique numeric job ID with fixed length.
-
-        Uses an atomic counter in the `counters` collection to avoid collisions
-        under concurrency. Wraps within the available range and skips any
-        currently-used IDs by probing forward until a free slot is found.
-        """
+        """Generate a unique numeric job ID."""
         if self.database is None:
             raise RuntimeError("Database unavailable: cannot generate job ID")
-
         max_value = (10 ** digits) - 1
-
-        # Atomically increment counter and get current sequence
+        try:
+            i = 1
+            while i <= max_value:
+                width = 3 if i < 100 else (4 if i < 1000 else len(str(i)))
+                candidate_lowest = f"{i:0{width}d}"
+                exists_lowest = await self.database.jobs.find_one({"id": candidate_lowest})
+                if not exists_lowest:
+                    try:
+                        await self.database.counters.update_one({"_id": "jobs"}, {"$set": {"seq": i}}, upsert=True)
+                    except Exception:
+                        pass
+                    return candidate_lowest
+                i += 1
+        except Exception:
+            pass
         counter = await self.database.counters.find_one_and_update(
             {"_id": "jobs"},
             {"$inc": {"seq": 1}},
             upsert=True,
             return_document=True
         )
-
         seq = int(counter.get("seq", 1))
-        # Constrain to range and avoid 0 by starting at 1
         seq = (seq % (max_value + 1)) or 1
-        candidate = f"{seq:0{digits}d}"
-
-        # If wrap-around hits an existing ID, probe forward up to the range size
+        width = 3 if seq < 100 else (4 if seq < 1000 else len(str(seq)))
+        candidate = f"{seq:0{width}d}"
         for _ in range(max_value):
             exists = await self.database.jobs.find_one({"id": candidate})
             if not exists:
                 return candidate
-            # Move to next sequence value in range
             seq = (seq + 1) % (max_value + 1)
             if seq == 0:
                 seq = 1
-            candidate = f"{seq:0{digits}d}"
-
+            width = 3 if seq < 100 else (4 if seq < 1000 else len(str(seq)))
+            candidate = f"{seq:0{width}d}"
         raise RuntimeError("Unable to generate unique job ID")
 
     async def generate_user_public_id(self, length: int = 7) -> str:
