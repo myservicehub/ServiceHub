@@ -75,6 +75,11 @@ const NIGERIAN_TRADE_CATEGORIES = [
 ];
 
 const BrowseJobsPage = () => {
+  const { user, isAuthenticated, isTradesperson } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [jobs, setJobs] = useState([]);
   const jobAnswersCache = useRef({});
   const [loading, setLoading] = useState(true);
@@ -106,10 +111,6 @@ const BrowseJobsPage = () => {
     }
     return null;
   });
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  const { user, isAuthenticated, isTradesperson } = useAuth();
-  const location = useLocation();
 
   const [locationLoading, setLocationLoading] = useState(false);
   const [showLocationSettings, setShowLocationSettings] = useState(false);
