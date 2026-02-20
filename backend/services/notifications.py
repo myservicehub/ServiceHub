@@ -1435,28 +1435,33 @@ class NotificationService:
             # Determine final status based on channel preference and results
             if channel == NotificationChannel.EMAIL:
                 if email_failed:
-                    notification.status = NotificationStatus.FAILED
-                    # Raise error to surface it instead of silently failing
-                    raise Exception(f"Email notification failed (preferred channel: EMAIL): {str(email_error)}") from email_error
+                    # Even if email fails, we want to save the notification for in-app display
+                    notification.status = NotificationStatus.SENT
+                    notification.metadata["delivery_error"] = str(email_error)
+                    logger.error(f"⚠️ Email notification failed but saved for in-app: {str(email_error)}")
                 else:
                     notification.status = NotificationStatus.SENT
             elif channel == NotificationChannel.SMS:
                 if sms_failed:
-                    notification.status = NotificationStatus.FAILED
-                    # Raise error to surface it instead of silently failing
-                    raise Exception(f"SMS notification failed (preferred channel: SMS): {str(sms_error)}") from sms_error
+                    # Even if SMS fails, we want to save the notification for in-app display
+                    notification.status = NotificationStatus.SENT
+                    notification.metadata["delivery_error"] = str(sms_error)
+                    logger.error(f"⚠️ SMS notification failed but saved for in-app: {str(sms_error)}")
                 else:
                     notification.status = NotificationStatus.SENT
             elif channel == NotificationChannel.BOTH:
                 if email_failed and sms_failed:
-                    notification.status = NotificationStatus.FAILED
-                    # Raise error to surface it
-                    raise Exception(f"Both email and SMS notifications failed. Email error: {str(email_error)}, SMS error: {str(sms_error)}")
+                    # Both failed
+                    notification.status = NotificationStatus.SENT
+                    notification.metadata["delivery_error"] = f"Email: {str(email_error)}, SMS: {str(sms_error)}"
+                    logger.error(f"⚠️ Both channels failed but saved for in-app. Email: {str(email_error)}, SMS: {str(sms_error)}")
                 elif email_failed:
                     notification.status = NotificationStatus.SENT  # SMS succeeded
+                    notification.metadata["email_delivery_error"] = str(email_error)
                     logger.warning(f"⚠️ Email failed but SMS succeeded for notification {notification.id}")
                 elif sms_failed:
                     notification.status = NotificationStatus.SENT  # Email succeeded
+                    notification.metadata["sms_delivery_error"] = str(sms_error)
                     logger.warning(f"⚠️ SMS failed but email succeeded for notification {notification.id}")
                 else:
                     notification.status = NotificationStatus.SENT
@@ -1468,15 +1473,14 @@ class NotificationService:
                 logger.error(f"❌ Notification failed: {notification.id} (channel: {channel.value})")
 
         except Exception as e:
-            notification.status = NotificationStatus.FAILED
-            error_msg = f"❌ Notification processing failed: {notification.id} (type: {notification_type.value}, user: {user_id}, channel: {channel.value}) - {str(e)}"
-            logger.error(error_msg)
-            # Log full exception traceback
+            # If an unexpected error occurs (not just delivery failure), we still want to try to save it
+            notification.status = NotificationStatus.SENT
+            notification.metadata["system_error"] = str(e)
+            logger.error(f"❌ Notification processing error: {notification.id} - {str(e)}")
             import traceback
             logger.error(f"Notification error traceback:\n{traceback.format_exc()}")
-            # Re-raise to surface the error
-            raise
-
+            # Do NOT re-raise, so it can be saved to DB
+            
         return notification
     
     async def _send_email_notification(self, notification: Notification, template_data: Dict[str, Any]):
