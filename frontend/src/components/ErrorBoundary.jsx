@@ -24,6 +24,24 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
+    // Check for chunk load errors (MIME type mismatch or 404 on JS chunks)
+    const isChunkLoadError = error.message?.includes('dynamically imported module') || 
+                             error.message?.includes('Loading module from') ||
+                             error.name === 'ChunkLoadError';
+
+    if (isChunkLoadError) {
+      // Prevent infinite reload loops
+      const lastReload = sessionStorage.getItem('chunk_reload_ts');
+      const now = Date.now();
+      
+      if (!lastReload || now - parseInt(lastReload) > 10000) {
+        console.log('Chunk load error detected, reloading...');
+        sessionStorage.setItem('chunk_reload_ts', now.toString());
+        window.location.reload();
+        return;
+      }
+    }
+
     // Log error details
     console.error('ErrorBoundary caught an error:', error, errorInfo);
     
