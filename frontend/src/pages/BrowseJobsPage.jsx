@@ -145,7 +145,7 @@ const BrowseJobsPage = () => {
     }
     loadWalletBalance();
     // Only load location data if we don't have it yet to avoid re-triggering filters
-    if (!userLocation && !filters.useLocation) {
+    if (!userLocation) {
       loadUserLocationData();
     }
     loadUserInterests(); // Load user's existing interests
@@ -174,6 +174,9 @@ const BrowseJobsPage = () => {
       if (user.latitude !== userLocation?.lat || user.longitude !== userLocation?.lng) {
         loadUserLocationData();
       }
+    } else if (user?.location && !userLocation) {
+      // If we have a string location but no coords yet, try to resolve it
+      loadUserLocationData();
     }
   }, [user?.latitude, user?.longitude, user?.location]);
 
