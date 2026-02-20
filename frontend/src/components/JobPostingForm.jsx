@@ -2738,10 +2738,11 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
             ) : (
               <>
                 <Button
-                  onClick={async () => {
-                    // Proceed with posting using the current authenticated user
+                  onClick={() => {
+                    // Close modal to allow user to review details on Step 4 before posting
                     setShowAccountModal(false);
-                    await handleJobSubmissionForAuthenticatedUser();
+                    // Ensure we stay on the review step
+                    setCurrentStep(4);
                   }}
                   className="w-full text-white font-lato"
                   style={{backgroundColor: '#34D164'}}
