@@ -1976,10 +1976,10 @@ const AdminDashboard = () => {
                             <thead className="bg-gray-50">
                               <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                  Job Details
+                                  Job ID
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                  Job ID
+                                  Job Details
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                   Homeowner
@@ -1999,6 +1999,11 @@ const AdminDashboard = () => {
                               {jobsWithFees.map((job) => (
                                 <tr key={job.id} className="hover:bg-gray-50">
                                   <td className="px-6 py-4">
+                                    <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded select-all">
+                                      {job.id}
+                                    </span>
+                                  </td>
+                                  <td className="px-6 py-4">
                                     <div>
                                       <div 
                                         className="font-medium text-gray-900 mb-1 cursor-pointer hover:text-blue-600 transition-colors"
@@ -2013,11 +2018,6 @@ const AdminDashboard = () => {
                                         </span>
                                       </div>
                                     </div>
-                                  </td>
-                                  <td className="px-6 py-4">
-                                    <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded select-all">
-                                      {job.id}
-                                    </span>
                                   </td>
                                   <td className="px-6 py-4">
                                     <div>
