@@ -132,6 +132,7 @@ function App() {
               <Route path="/help" element={<HelpFAQsPage />} />
               <Route path="/contact" element={<ContactUsPage />} />
               <Route path="/join-for-free" element={<JoinForFreePage />} />
+              <Route path="/signup" element={<JoinForFreePage />} />
               <Route path="/help-centre" element={<HelpCentrePage />} />
               <Route path="/blog" element={<BlogPage />} />
               <Route path="/blog/:slug" element={<BlogPage />} />

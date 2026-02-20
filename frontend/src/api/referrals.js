@@ -14,12 +14,15 @@ export const referralsAPI = {
   },
 
   // Submit verification documents
-  async submitVerificationDocuments(documentType, fullName, documentNumber, documentImageFile) {
+  async submitVerificationDocuments(documentType, fullName, documentNumber, documentImageFile, selfieImageFile) {
     const formData = new FormData();
     formData.append('document_type', documentType);
     formData.append('full_name', fullName);
     formData.append('document_number', documentNumber);
     formData.append('document_image', documentImageFile);
+    if (selfieImageFile) {
+      formData.append('selfie_image', selfieImageFile);
+    }
     
     const response = await apiClient.post('/referrals/verify-documents', formData, {
       headers: {

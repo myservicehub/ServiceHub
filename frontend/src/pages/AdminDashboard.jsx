@@ -817,7 +817,7 @@ const AdminDashboard = () => {
       await adminReferralsAPI.approveVerification(verificationId, notes);
       toast({
         title: "Verification Approved",
-        description: "User has been verified and referral rewards processed"
+        description: "User identity has been verified."
       });
       fetchData();
     } catch (error) {
@@ -2390,6 +2390,27 @@ const AdminDashboard = () => {
                                       className="h-32 w-auto rounded border cursor-pointer hover:shadow-lg transition-shadow"
                                       onClick={() => {
                                         setVerificationViewerSrc(verificationDocBase64[verification.document_url]);
+                                        setVerificationViewerOpen(true);
+                                      }}
+                                    />
+                                  ) : (
+                                    <div className="h-32 w-full bg-gray-100 rounded border flex items-center justify-center text-xs text-gray-500">
+                                      Loading…
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
+                              {verification.selfie_url && (
+                                <div className="mb-4">
+                                  <p className="text-sm text-gray-600 mb-2">Selfie Image:</p>
+                                  {verificationDocBase64[verification.selfie_url] ? (
+                                    <img
+                                      src={verificationDocBase64[verification.selfie_url]}
+                                      alt="Selfie"
+                                      className="h-32 w-auto rounded border cursor-pointer hover:shadow-lg transition-shadow"
+                                      onClick={() => {
+                                        setVerificationViewerSrc(verificationDocBase64[verification.selfie_url]);
                                         setVerificationViewerOpen(true);
                                       }}
                                     />

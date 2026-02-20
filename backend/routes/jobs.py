@@ -1354,6 +1354,24 @@ async def get_trade_category_questions(trade_category: str):
         logger.error(f"Error getting questions for trade category {trade_category}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to retrieve trade category questions")
 
+def _extract_timeline_from_answers(answers: list) -> Optional[str]:
+    """Extract urgency/timeline from job question answers"""
+    if not answers:
+        return None
+        
+    for answer in answers:
+        q_text = str(answer.get('question_text', '')).lower()
+        # Look for urgency related questions
+        if 'urgent' in q_text or 'timeline' in q_text or 'when do you need' in q_text or 'how soon' in q_text:
+            # Return the human-readable answer text if available, else the value
+            val = answer.get('answer_text') or answer.get('answer_value')
+            # If value is a list (multiple choice), join it
+            if isinstance(val, list):
+                return ", ".join(str(v) for v in val)
+            return str(val) if val else None
+            
+    return None
+
 @router.post("/trade-questions/answers")
 async def save_job_question_answers(
     answers_data: dict,
@@ -1403,6 +1421,23 @@ async def save_job_question_answers(
         
         if not saved_answers:
             raise HTTPException(status_code=500, detail="Failed to save answers")
+        
+        # Extract urgency/timeline from answers and update job if found
+        timeline = _extract_timeline_from_answers(answers_data.get("answers", []))
+        if timeline:
+            try:
+                # Update job timeline field
+                if is_pending:
+                    # For pending jobs, we need to update the job_data inside the pending job doc
+                    await database.database.pending_jobs.update_one(
+                        {"id": job_id},
+                        {"$set": {"job_data.timeline": timeline}}
+                    )
+                else:
+                    await database.update_job(job_id, {"timeline": timeline})
+                logger.info(f"Updated job {job_id} timeline to: {timeline}")
+            except Exception as e:
+                logger.error(f"Failed to update job timeline from answers: {e}")
         
         return {
             "message": "Job question answers saved successfully",
@@ -1688,6 +1723,12 @@ async def register_and_post(payload: PublicJobPostRequest, background_tasks: Bac
         from ..models.nigerian_lgas import validate_lga_for_state, validate_zip_code
 
         job_data = payload.job
+        
+        # Extract urgency/timeline from answers if available
+        if payload.question_answers and payload.question_answers.get("answers"):
+            timeline = _extract_timeline_from_answers(payload.question_answers.get("answers"))
+            if timeline:
+                job_data.timeline = timeline
 
         static_valid = validate_lga_for_state(job_data.state, job_data.lga)
         dynamic_valid = False

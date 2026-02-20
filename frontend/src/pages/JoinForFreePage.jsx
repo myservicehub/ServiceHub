@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import TradespersonRegistration from '../components/auth/TradespersonRegistration';
@@ -9,8 +9,20 @@ import { statsAPI } from '../api/services';
 
 const JoinForFreePage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [showRegistration, setShowRegistration] = useState(false);
   const [platformStats, setPlatformStats] = useState(null);
+  const [referralCode, setReferralCode] = useState('');
+
+  useEffect(() => {
+    // Check for referral code in URL
+    const params = new URLSearchParams(location.search);
+    const ref = params.get('ref');
+    if (ref) {
+      setReferralCode(ref);
+      setShowRegistration(true);
+    }
+  }, [location.search]);
 
   useEffect(() => {
     let mounted = true;
@@ -332,7 +344,7 @@ const JoinForFreePage = () => {
                   ×
                 </button>
               </div>
-              <TradespersonRegistration />
+              <TradespersonRegistration referralCode={referralCode} />
             </div>
           </div>
         </div>

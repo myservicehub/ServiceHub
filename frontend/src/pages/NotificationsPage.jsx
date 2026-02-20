@@ -437,7 +437,6 @@ const NotificationsPage = () => {
                 <option value="new_interest">New Interest</option>
                 <option value="contact_shared">Contact Shared</option>
                 <option value="job_posted">Job Posted</option>
-                <option value="payment_confirmation">Payment Confirmation</option>
                 <option value="job_expiring">Job Expiring</option>
                 <option value="new_matching_job">Matching Jobs</option>
               </select>

@@ -4131,7 +4131,17 @@ class Database:
         
         return True
 
-    async def submit_verification_documents(self, user_id: str, document_type: str, document_url: str, full_name: str, document_number: str = None, document_image_base64: str = None) -> str:
+    async def submit_verification_documents(
+        self, 
+        user_id: str, 
+        document_type: str, 
+        document_url: str, 
+        full_name: str, 
+        document_number: str = None, 
+        document_image_base64: str = None,
+        selfie_url: str = None,
+        selfie_image_base64: str = None
+    ) -> str:
         """Submit verification documents"""
         if self.database is None:
             raise RuntimeError("Database unavailable: cannot submit verification documents")
@@ -4141,6 +4151,8 @@ class Database:
             "document_type": document_type,
             "document_url": document_url,
             "document_image_base64": document_image_base64,
+            "selfie_url": selfie_url,
+            "selfie_image_base64": selfie_image_base64,
             "full_name": full_name,
             "document_number": document_number,
             "status": "pending",
@@ -4214,7 +4226,10 @@ class Database:
                 )
                 # Process referral rewards for homeowners upon verification
                 await self._process_referral_rewards(verification["user_id"])
+            
             # For tradespeople, keep is_verified gated by business approval
+            # Do NOT set is_verified = True or verified_tradesperson = True here.
+            # That happens only in verify_tradesperson_business (Admin Dashboard -> Tradespeople Verification)
         else:
             # Rejection resets identity_verified and is_verified for homeowners
             update_fields = {"identity_verified": False, "updated_at": datetime.utcnow()}

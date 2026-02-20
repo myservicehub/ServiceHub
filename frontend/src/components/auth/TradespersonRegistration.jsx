@@ -60,7 +60,7 @@ const FALLBACK_TRADE_CATEGORIES = [
 // If needed, we can also create a separate hook for trade categories
 // For now, keeping them as constants since they're less frequently changed
 
-const TradespersonRegistration = ({ onClose, onComplete }) => {
+const TradespersonRegistration = ({ onClose, onComplete, referralCode }) => {
   const uploadSectionRef = useRef(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -72,7 +72,7 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
     firstName: '',
     lastName: '',
     email: '',
-    referralCode: '',
+    referralCode: referralCode || '',
     password: '',
     phone: '',
     marketingConsent: false,
@@ -93,6 +93,8 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
     idType: '',
     idDocument: null,
     idDocumentFile: null,
+    selfieDocument: null,
+    selfieDocumentFile: null,
     
     // Step 4: Skills Test Results
     skillsTestPassed: false,
@@ -328,18 +330,21 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
     }
   };
 
-  const handleFileUpload = async (file) => {
+  const handleFileUpload = async (file, type = 'id') => {
+    const docField = type === 'selfie' ? 'selfieDocument' : 'idDocument';
+    const fileField = type === 'selfie' ? 'selfieDocumentFile' : 'idDocumentFile';
+
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
     if (!allowedTypes.includes(file.type)) {
-      setErrors({ idDocument: 'Please upload a valid image (JPEG, PNG, WebP) or PDF file' });
+      setErrors(prev => ({ ...prev, [docField]: 'Please upload a valid image (JPEG, PNG, WebP) or PDF file' }));
       return;
     }
 
     // Validate file size (max 5MB)
     const maxSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
-      setErrors({ idDocument: 'File size must be less than 5MB' });
+      setErrors(prev => ({ ...prev, [docField]: 'File size must be less than 5MB' }));
       return;
     }
 
@@ -347,7 +352,7 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
     setUploadProgress(0);
 
     try {
-      // Simulate upload progress (in real app, this would be actual upload progress)
+      // Simulate upload progress
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => {
           if (prev >= 90) {
@@ -361,8 +366,6 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
       // Create a preview URL for the file
       const fileUrl = URL.createObjectURL(file);
       
-      // In a real application, you would upload to your server here
-      // For now, we'll just store the file info
       const fileInfo = {
         name: file.name,
         size: file.size,
@@ -373,19 +376,26 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
 
       setTimeout(() => {
         setUploadProgress(100);
-        updateFormData('idDocument', fileInfo);
-        updateFormData('idDocumentFile', file);
+        updateFormData(docField, fileInfo);
+        updateFormData(fileField, file);
         setIsUploading(false);
+        // Clear errors
+        setErrors(prev => {
+            const newErr = { ...prev };
+            delete newErr[docField];
+            return newErr;
+        });
+        
         toast({
           title: "Document uploaded successfully!",
-          description: `${file.name} has been uploaded for verification.`,
+          description: `${file.name} has been uploaded.`,
         });
       }, 1000);
 
     } catch (error) {
       setIsUploading(false);
       setUploadProgress(0);
-      setErrors({ idDocument: 'Upload failed. Please try again.' });
+      setErrors(prev => ({ ...prev, [docField]: 'Upload failed. Please try again.' }));
       toast({
         title: "Upload failed",
         description: "There was an error uploading your document. Please try again.",
@@ -394,12 +404,15 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
     }
   };
 
-  const removeUploadedFile = () => {
-    if (formData.idDocument?.url) {
-      URL.revokeObjectURL(formData.idDocument.url);
+  const removeUploadedFile = (type = 'id') => {
+    const docField = type === 'selfie' ? 'selfieDocument' : 'idDocument';
+    const fileField = type === 'selfie' ? 'selfieDocumentFile' : 'idDocumentFile';
+    
+    if (formData[docField]?.url) {
+      URL.revokeObjectURL(formData[docField].url);
     }
-    updateFormData('idDocument', null);
-    updateFormData('idDocumentFile', null);
+    updateFormData(docField, null);
+    updateFormData(fileField, null);
     setUploadProgress(0);
   };
 
@@ -499,7 +512,13 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
             const docType = typeMap[formData.idType] || 'passport';
             const fullName = `${formData.firstName} ${formData.lastName}`.trim();
             const { referralsAPI } = await import('../../api/referrals');
-            await referralsAPI.submitVerificationDocuments(docType, fullName, '', formData.idDocumentFile);
+            await referralsAPI.submitVerificationDocuments(
+                docType, 
+                fullName, 
+                '', 
+                formData.idDocumentFile,
+                formData.selfieDocumentFile
+            );
           }
         } catch (e) {
         }
@@ -672,6 +691,9 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
                                  process.env.NODE_ENV === 'development';
         if (!isDemoEnvironment && !formData.idDocument) {
           newErrors.idDocument = 'Please upload your ID document';
+        }
+        if (!isDemoEnvironment && !formData.selfieDocument) {
+          newErrors.selfieDocument = 'Please upload a selfie for verification';
         }
         break;
       case 4:
@@ -1313,6 +1335,86 @@ const TradespersonRegistration = ({ onClose, onComplete }) => {
           )}
 
           {errors.idDocument && <p className="text-red-500 text-sm">{errors.idDocument}</p>}
+        </div>
+      )}
+
+      {/* Selfie Upload Section */}
+      {formData.idType && (
+        <div className="space-y-4">
+          <label className="block text-sm font-medium text-gray-700">
+            Upload a Selfie
+          </label>
+          <p className="text-sm text-gray-600">
+            Please upload a clear photo of yourself to verify against your ID document.
+          </p>
+
+          {!formData.selfieDocument ? (
+            <div 
+              className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors border-gray-300 hover:border-green-400 ${isUploading ? 'pointer-events-none opacity-50' : ''}`}
+            >
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    handleFileUpload(file, 'selfie');
+                  }
+                }}
+                className="hidden"
+                id="selfie-document-upload"
+                disabled={isUploading}
+              />
+              <label
+                htmlFor="selfie-document-upload"
+                className="cursor-pointer"
+              >
+                <div className="space-y-3">
+                  <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-gray-100 text-gray-400">
+                    <ImageIcon className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      Click to upload selfie
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      JPEG, PNG, or WebP up to 5MB
+                    </p>
+                  </div>
+                </div>
+              </label>
+            </div>
+          ) : (
+            <div className="border border-gray-200 rounded-lg p-4">
+              <div className="flex items-center space-x-4">
+                <div className="flex-shrink-0">
+                    <img
+                      src={formData.selfieDocument.url}
+                      alt="Selfie"
+                      className="w-16 h-16 object-cover rounded-lg border"
+                    />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {formData.selfieDocument.name}
+                  </p>
+                  <div className="flex items-center space-x-2 mt-1">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span className="text-xs text-green-600">Uploaded successfully</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeUploadedFile('selfie')}
+                  className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {errors.selfieDocument && <p className="text-red-500 text-sm">{errors.selfieDocument}</p>}
         </div>
       )}
 

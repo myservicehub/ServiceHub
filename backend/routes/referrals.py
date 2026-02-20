@@ -57,6 +57,8 @@ async def submit_verification_documents(
     document_number: str = Form(""),
     document_image: UploadFile = File(None),
     document_image_base64: str = Form(None),
+    selfie_image: UploadFile = File(None),
+    selfie_image_base64: str = Form(None),
     current_user = Depends(get_current_user)
 ):
     """Submit documents for identity verification"""
@@ -82,10 +84,10 @@ async def submit_verification_documents(
     upload_dir = os.path.join(base_dir, "verification_documents")
     os.makedirs(upload_dir, exist_ok=True)
     
+    # Process ID Document
     filename = f"{current_user.id}_{document_type}_{uuid.uuid4().hex}.jpg"
     file_path = os.path.join(upload_dir, filename)
     
-    # Save and optimize image
     try:
         if document_image_base64:
             b64 = document_image_base64.split(",")[-1]
@@ -111,7 +113,43 @@ async def submit_verification_documents(
         except Exception:
             b64_data = None
     except Exception as e:
-        raise HTTPException(status_code=400, detail="Invalid image file")
+        raise HTTPException(status_code=400, detail="Invalid document image file")
+
+    # Process Selfie (Optional in backend to support older apps, but enforced in frontend)
+    selfie_filename = None
+    selfie_b64_data = None
+    
+    if selfie_image or selfie_image_base64:
+        if selfie_image and not selfie_image.content_type.startswith("image/"):
+             raise HTTPException(status_code=400, detail="Selfie must be an image file")
+             
+        selfie_filename = f"{current_user.id}_selfie_{uuid.uuid4().hex}.jpg"
+        selfie_path = os.path.join(upload_dir, selfie_filename)
+        
+        try:
+            if selfie_image_base64:
+                b64 = selfie_image_base64.split(",")[-1]
+                raw = base64.b64decode(b64)
+                image = Image.open(io.BytesIO(raw))
+            else:
+                image_data = await selfie_image.read()
+                image = Image.open(io.BytesIO(image_data))
+            
+            if image.mode in ("RGBA", "P"):
+                image = image.convert("RGB")
+                
+            if image.width > 1920 or image.height > 1920:
+                image.thumbnail((1920, 1920), Image.Resampling.LANCZOS)
+                
+            image.save(selfie_path, "JPEG", quality=90, optimize=True)
+            try:
+                with open(selfie_path, "rb") as f:
+                    _bytes = f.read()
+                selfie_b64_data = base64.b64encode(_bytes).decode("utf-8")
+            except Exception:
+                selfie_b64_data = None
+        except Exception as e:
+            raise HTTPException(status_code=400, detail="Invalid selfie image file")
     
     # Submit verification
     verification_id = await database.submit_verification_documents(
@@ -119,6 +157,8 @@ async def submit_verification_documents(
         document_type=document_type,
         document_url=filename,
         document_image_base64=b64_data,
+        selfie_url=selfie_filename,
+        selfie_image_base64=selfie_b64_data,
         full_name=full_name,
         document_number=document_number
     )

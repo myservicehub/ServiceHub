@@ -5,7 +5,7 @@ import { useToast } from '../hooks/use-toast';
 import { Copy, Share2, Users, Gift, CheckCircle, Clock, XCircle } from 'lucide-react';
 
 const ReferralsPage = () => {
-  const { isAuthenticated, isHomeowner } = useAuth();
+  const { isAuthenticated, isHomeowner, user } = useAuth();
   const [stats, setStats] = useState(null);
   const [referrals, setReferrals] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -288,7 +288,7 @@ const ReferralsPage = () => {
               </div>
 
               {/* Verify Account CTA */}
-              {!isHomeowner() && (
+              {!isHomeowner() && !user?.verified_tradesperson && (
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
                   <h3 className="text-sm font-semibold text-[#121E3C] mb-2">Verify Your Account</h3>
                   <p className="text-xs text-gray-400 mb-4">
