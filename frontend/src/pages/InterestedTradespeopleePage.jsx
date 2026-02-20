@@ -1077,6 +1077,7 @@ const InterestedTradespeopleePage = () => {
             otherParty={selectedTradespersonForChat}
             contactDetails={selectedTradespersonForChat.contactDetails}
             showContactDetails={selectedTradespersonForChat.showContactDetails}
+            jobStatus={job?.status} // Pass job status to chat modal
           />
         </>
       )}

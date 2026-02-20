@@ -6016,6 +6016,12 @@ class Database:
             
             for conv in conversations:
                 conv['_id'] = str(conv['_id'])
+                
+                # Fetch job status
+                if conv.get("job_id"):
+                    job = await self.database.jobs.find_one({"id": conv["job_id"]}, {"status": 1})
+                    if job:
+                        conv["job_status"] = job.get("status")
             
             return conversations
         except Exception as e:

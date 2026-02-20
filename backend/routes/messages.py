@@ -212,11 +212,10 @@ async def send_message(
             current_user.id != conversation["tradesperson_id"]):
             raise HTTPException(status_code=403, detail="Access denied")
         
-        # Check if job is completed and prevent homeowner from sending messages
-        if current_user.role == UserRole.HOMEOWNER:
-            job = await database.get_job_by_id(conversation["job_id"])
-            if job and job.get("status") == "completed":
-                raise HTTPException(status_code=403, detail="You cannot send messages after the job is completed")
+        # Check if job is completed and prevent ANY user from sending messages
+        job = await database.get_job_by_id(conversation["job_id"])
+        if job and job.get("status") == "completed":
+            raise HTTPException(status_code=403, detail="You cannot send messages after the job is completed")
         
         # Create message
         message = {

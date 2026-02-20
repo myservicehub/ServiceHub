@@ -204,36 +204,43 @@ const DashboardMessages = () => {
 
               {/* Message Input */}
               <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-100">
-                <div className="flex items-end gap-2">
-                  <div className="flex-1 relative">
-                    <textarea
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      placeholder="Type a message..."
-                      rows={1}
-                      className="w-full px-4 py-3 pr-12 bg-gray-50 border border-gray-200 rounded-2xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSendMessage(e);
-                        }
-                      }}
-                    />
-                    <button
-                      type="button"
-                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                    >
-                      <Paperclip className="w-5 h-5" />
-                    </button>
+                {selectedConversation?.job_status === 'completed' ? (
+                  <div className="p-4 bg-gray-50 text-center text-gray-500 rounded-lg flex items-center justify-center gap-2">
+                    <CheckCheck className="w-4 h-4 text-green-500" />
+                    <span>This job is completed. Chat is disabled.</span>
                   </div>
-                  <Button
-                    type="submit"
-                    disabled={!newMessage.trim() || sending}
-                    className="h-12 w-12 rounded-xl bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Send className="w-5 h-5" />
-                  </Button>
-                </div>
+                ) : (
+                  <div className="flex items-end gap-2">
+                    <div className="flex-1 relative">
+                      <textarea
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        placeholder="Type a message..."
+                        rows={1}
+                        className="w-full px-4 py-3 pr-12 bg-gray-50 border border-gray-200 rounded-2xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSendMessage(e);
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        <Paperclip className="w-5 h-5" />
+                      </button>
+                    </div>
+                    <Button
+                      type="submit"
+                      disabled={!newMessage.trim() || sending}
+                      className="h-12 w-12 rounded-xl bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Send className="w-5 h-5" />
+                    </Button>
+                  </div>
+                )}
               </form>
             </>
           ) : (

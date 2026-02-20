@@ -548,54 +548,63 @@ const ChatModal = ({
 
         {/* Message Input */}
         <div className="border-t p-4">
-          <div className="flex gap-3 items-end">
-            <div className="relative flex-1">
-              <Textarea
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Type your message..."
-                className="w-full min-h-[44px] max-h-32 resize-none pr-20"
-                disabled={sending}
-              />
-
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*,.pdf,.doc,.docx"
-                className="hidden"
-                onChange={handleFileChange}
-              />
-
-              <button
-                type="button"
-                onClick={handleAttachmentClick}
-                disabled={sending}
-                title="Attach file"
-                aria-label="Attach file"
-                className="absolute right-2 bottom-2 inline-flex items-center gap-1 px-2 py-1 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 shadow-sm"
-              >
-                <Paperclip className="w-4 h-4" />
-                <span className="text-xs">Attach</span>
-              </button>
+          {jobStatus === 'completed' ? (
+            <div className="p-3 bg-gray-50 text-gray-500 text-center text-sm rounded-lg flex items-center justify-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-green-500" />
+              <span>This job has been completed. Messaging is disabled.</span>
             </div>
-            
-            <Button
-              onClick={sendMessage}
-              disabled={!newMessage.trim() || sending}
-              className="self-end bg-green-600 hover:bg-green-700 text-white"
-            >
-              {sending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
-            </Button>
-          </div>
-          
-          <p className="text-xs text-gray-500 mt-2">
-            Press Enter to send, Shift+Enter for new line
-          </p>
+          ) : (
+            <>
+              <div className="flex gap-3 items-end">
+                <div className="relative flex-1">
+                  <Textarea
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Type your message..."
+                    className="w-full min-h-[44px] max-h-32 resize-none pr-20"
+                    disabled={sending}
+                  />
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*,.pdf,.doc,.docx"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={handleAttachmentClick}
+                    disabled={sending}
+                    title="Attach file"
+                    aria-label="Attach file"
+                    className="absolute right-2 bottom-2 inline-flex items-center gap-1 px-2 py-1 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 shadow-sm"
+                  >
+                    <Paperclip className="w-4 h-4" />
+                    <span className="text-xs">Attach</span>
+                  </button>
+                </div>
+                
+                <Button
+                  onClick={sendMessage}
+                  disabled={!newMessage.trim() || sending}
+                  className="self-end bg-green-600 hover:bg-green-700 text-white"
+                >
+                  {sending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                </Button>
+              </div>
+              
+              <p className="text-xs text-gray-500 mt-2">
+                Press Enter to send, Shift+Enter for new line
+              </p>
+            </>
+          )}
         </div>
       </div>
 

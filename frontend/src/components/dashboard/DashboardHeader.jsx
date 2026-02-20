@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../contexts/AuthContext';
+import NotificationIndicator from '../NotificationIndicator';
 import {
   Menu,
   Search,
-  Bell,
   ChevronDown,
   User,
   Settings,
@@ -17,23 +17,16 @@ import {
 const DashboardHeader = ({ onMenuClick, sidebarCollapsed }) => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const searchInputRef = useRef(null);
-  const notificationsRef = useRef(null);
   const profileRef = useRef(null);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
-        setNotificationsOpen(false);
-      }
       if (profileRef.current && !profileRef.current.contains(event.target)) {
         setProfileOpen(false);
       }
@@ -49,37 +42,6 @@ const DashboardHeader = ({ onMenuClick, sidebarCollapsed }) => {
       searchInputRef.current.focus();
     }
   }, [searchOpen]);
-
-  // Mock notifications - in production, fetch from API
-  useEffect(() => {
-    setNotifications([
-      {
-        id: 1,
-        title: 'New interest in your job',
-        message: 'A tradesperson is interested in "Kitchen Renovation"',
-        time: '5 min ago',
-        read: false,
-        type: 'interest',
-      },
-      {
-        id: 2,
-        title: 'Job approved',
-        message: 'Your job "Bathroom Fix" has been approved',
-        time: '1 hour ago',
-        read: false,
-        type: 'approval',
-      },
-      {
-        id: 3,
-        title: 'New message',
-        message: 'You have a new message from John Plumber',
-        time: '2 hours ago',
-        read: true,
-        type: 'message',
-      },
-    ]);
-    setUnreadCount(2);
-  }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -154,87 +116,7 @@ const DashboardHeader = ({ onMenuClick, sidebarCollapsed }) => {
           </div>
 
           {/* Notifications */}
-          <div className="relative" ref={notificationsRef}>
-            <button
-              onClick={() => setNotificationsOpen(!notificationsOpen)}
-              className={cn(
-                "relative p-2.5 rounded-xl transition-all duration-200",
-                notificationsOpen
-                  ? "bg-[#34D164]/10 text-[#34D164]"
-                  : "text-[#121E3C]/60 hover:text-[#121E3C] hover:bg-gray-100"
-              )}
-            >
-              <Bell className="w-5 h-5" />
-              {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 flex items-center justify-center w-4 h-4 text-[10px] font-bold bg-red-500 text-white rounded-full animate-in zoom-in duration-200">
-                  {unreadCount}
-                </span>
-              )}
-            </button>
-
-            {/* Notifications dropdown */}
-            {notificationsOpen && (
-              <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden animate-in slide-in-from-top-2 fade-in duration-200">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-                  <h3 className="font-semibold text-gray-900">Notifications</h3>
-                  {unreadCount > 0 && (
-                    <button className="text-xs font-medium text-[#34D164] hover:text-[#34D164]/80 transition-colors">
-                      Mark all read
-                    </button>
-                  )}
-                </div>
-
-                <div className="max-h-80 overflow-y-auto">
-                  {notifications.length > 0 ? (
-                    notifications.map((notification) => (
-                      <div
-                        key={notification.id}
-                        className={cn(
-                          "px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer",
-                          !notification.read && "bg-[#34D164]/5"
-                        )}
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className={cn(
-                            "flex-shrink-0 w-2 h-2 mt-2 rounded-full",
-                            notification.read ? "bg-gray-300" : "bg-[#34D164]"
-                          )} />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">
-                              {notification.title}
-                            </p>
-                            <p className="text-sm text-gray-500 truncate">
-                              {notification.message}
-                            </p>
-                            <p className="text-xs text-gray-400 mt-1">
-                              {notification.time}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="px-4 py-8 text-center">
-                      <Bell className="w-8 h-8 mx-auto text-gray-300 mb-2" />
-                      <p className="text-sm text-gray-500">No notifications yet</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="px-4 py-3 bg-gray-50 border-t border-gray-100">
-                  <button
-                    onClick={() => {
-                      navigate('/dashboard/notifications');
-                      setNotificationsOpen(false);
-                    }}
-                    className="w-full text-center text-sm font-medium text-[#34D164] hover:text-[#34D164]/80 transition-colors"
-                  >
-                    View all notifications
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+          <NotificationIndicator />
 
           {/* Profile dropdown */}
           <div className="relative" ref={profileRef}>
