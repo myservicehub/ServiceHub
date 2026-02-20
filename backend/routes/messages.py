@@ -71,6 +71,10 @@ async def create_conversation(
         if not job:
             raise HTTPException(status_code=404, detail="Job not found")
         
+        # Prevent creating conversation if job is completed (for homeowners)
+        if job.get("status") == "completed" and current_user.role == UserRole.HOMEOWNER:
+            raise HTTPException(status_code=403, detail="You cannot start a conversation for a completed job")
+        
         # Verify user is either the homeowner or an interested tradesperson with proper access
         if current_user.role == UserRole.HOMEOWNER:
             if job.get("homeowner", {}).get("id") != current_user.id:
@@ -208,6 +212,12 @@ async def send_message(
             current_user.id != conversation["tradesperson_id"]):
             raise HTTPException(status_code=403, detail="Access denied")
         
+        # Check if job is completed and prevent homeowner from sending messages
+        if current_user.role == UserRole.HOMEOWNER:
+            job = await database.get_job_by_id(conversation["job_id"])
+            if job and job.get("status") == "completed":
+                raise HTTPException(status_code=403, detail="You cannot send messages after the job is completed")
+        
         # Create message
         message = {
             "id": str(uuid.uuid4()),
@@ -300,6 +310,10 @@ async def get_or_create_conversation_for_job(
         if current_user.role == UserRole.HOMEOWNER:
             if homeowner_id != current_user.id:
                 raise HTTPException(status_code=403, detail="You can only create conversations for your own jobs")
+            
+            # Check if job is completed
+            if job.get("status") == "completed":
+                raise HTTPException(status_code=403, detail="You cannot start a conversation for a completed job")
 
             # CRITICAL FIX: Homeowners can only create conversations with tradespeople who have paid access
             interest = await database.get_interest_by_job_and_tradesperson(job_id, tradesperson_id)
