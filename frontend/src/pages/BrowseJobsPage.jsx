@@ -299,8 +299,28 @@ const BrowseJobsPage = () => {
         maxDistance: user.travel_distance_km || 25,
         useLocation: true 
       }));
-    } else if (user?.location) {
-      const coords = resolveCoordinatesFromLocationText(user.location);
+    } else {
+      // Prioritize user.state if available, then fallback to user.location
+      const stateToUse = user?.state;
+      const locationToUse = user?.location;
+      
+      let coords = null;
+      
+      // 1. Try structured location with state
+      if (stateToUse) {
+        coords = resolveCoordinatesFromStructuredLocation({
+          state: stateToUse,
+          lga: null,
+          town: null,
+          addressText: locationToUse || stateToUse
+        });
+      }
+      
+      // 2. Fallback to location text only if state resolution failed
+      if (!coords && locationToUse) {
+        coords = resolveCoordinatesFromLocationText(locationToUse);
+      }
+
       if (coords && typeof coords.latitude === 'number' && typeof coords.longitude === 'number') {
         // Convert util output { latitude, longitude } to map-friendly { lat, lng }
         setUserLocation({ lat: coords.latitude, lng: coords.longitude });

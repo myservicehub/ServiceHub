@@ -114,6 +114,10 @@ const normalizeText = (s) => (s || "").toLowerCase().replace(/\s+/g, " ").trim()
 
 const findStateFromText = (text) => {
   const normalized = normalizeText(text);
+  
+  // Special case: prevent "Delta" match if "Lagos" is present
+  if (normalized.includes('lagos')) return 'lagos';
+  
   // direct match
   for (const state of Object.keys(STATE_CAPITAL_COORDS)) {
     if (normalized.includes(state)) return state;
