@@ -5,7 +5,7 @@ import { useToast } from '../hooks/use-toast';
 import { Copy, Share2, Users, Gift, CheckCircle, Clock, XCircle } from 'lucide-react';
 
 const ReferralsPage = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isHomeowner } = useAuth();
   const [stats, setStats] = useState(null);
   const [referrals, setReferrals] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -133,7 +133,7 @@ const ReferralsPage = () => {
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-[#121E3C]">Referrals</h1>
         <p className="text-gray-500 mt-1 text-sm">
-          Earn rewards when your referrals verify: 5 coins for homeowners, 10 coins for tradespeople
+          Earn rewards when your referrals verify: 5 points for homeowners, 10 points for tradespeople
         </p>
       </div>
 
@@ -172,7 +172,7 @@ const ReferralsPage = () => {
                 <Gift className="h-5 w-5 text-amber-500" />
               </div>
               <p className="text-2xl sm:text-3xl font-bold text-[#121E3C]">{stats?.total_coins_earned || 0}</p>
-              <p className="text-xs sm:text-sm font-medium text-gray-500 mt-1 truncate">Coins</p>
+              <p className="text-xs sm:text-sm font-medium text-gray-500 mt-1 truncate">Points</p>
             </div>
           </div>
 
@@ -221,7 +221,7 @@ const ReferralsPage = () => {
                       <Users className="h-6 w-6 text-[#121E3C]/40" />
                     </div>
                     <p className="text-sm text-[#121E3C] font-medium">No referrals yet</p>
-                    <p className="text-xs text-gray-400 mt-1">Share your referral code to start earning coins!</p>
+                    <p className="text-xs text-gray-400 mt-1">Share your referral code to start earning points!</p>
                   </div>
                 ) : (
                   <div className="divide-y divide-gray-50">
@@ -242,7 +242,7 @@ const ReferralsPage = () => {
                           {getStatusBadge(referral.status, referral.is_verified)}
                           {referral.coins_earned > 0 && (
                             <p className="text-xs text-[#34D164] font-medium mt-1">
-                              +{referral.coins_earned} coins
+                              +{referral.coins_earned} points
                             </p>
                           )}
                         </div>
@@ -263,7 +263,7 @@ const ReferralsPage = () => {
                     { step: '1', title: 'Share Your Code', desc: 'Send your referral code to friends and family' },
                     { step: '2', title: 'They Sign Up', desc: 'Friends create account using your referral code' },
                     { step: '3', title: 'They Verify', desc: 'Friends upload ID for account verification' },
-                    { step: '4', title: 'You Earn Coins', desc: '5 coins for homeowners, 10 for tradespeople' },
+                    { step: '4', title: 'You Earn Points', desc: '5 points for homeowners, 10 for tradespeople' },
                   ].map((item) => (
                     <div key={item.step} className="flex items-start gap-3">
                       <div className="w-7 h-7 rounded-lg bg-[#34D164] flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5">
@@ -282,26 +282,28 @@ const ReferralsPage = () => {
               <div className="bg-[#121E3C] rounded-2xl p-5 text-white">
                 <h3 className="text-sm font-semibold mb-3">Earn Rewards</h3>
                 <div className="space-y-2 text-xs text-white/70">
-                  <p><span className="text-[#34D164] font-semibold">5 coins</span> per verified homeowner referral</p>
-                  <p><span className="text-[#34D164] font-semibold">10 coins</span> per verified tradesperson referral</p>
-                  <p><span className="text-white font-semibold">Withdraw</span> with minimum 5 coins</p>
+                  <p><span className="text-[#34D164] font-semibold">5 points</span> per verified homeowner referral</p>
+                  <p><span className="text-[#34D164] font-semibold">10 points</span> per verified tradesperson referral</p>
+                  <p><span className="text-white font-semibold">Withdraw</span> with minimum 5 points</p>
                   <p><span className="text-white font-semibold">No limit</span> on referrals</p>
                 </div>
               </div>
 
               {/* Verify Account CTA */}
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                <h3 className="text-sm font-semibold text-[#121E3C] mb-2">Verify Your Account</h3>
-                <p className="text-xs text-gray-400 mb-4">
-                  Verify your identity to build trust and unlock all features
-                </p>
-                <button
-                  onClick={() => window.location.href = '/verify-account'}
-                  className="w-full bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors"
-                >
-                  Upload ID Documents
-                </button>
-              </div>
+              {!isHomeowner() && (
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                  <h3 className="text-sm font-semibold text-[#121E3C] mb-2">Verify Your Account</h3>
+                  <p className="text-xs text-gray-400 mb-4">
+                    Verify your identity to build trust and unlock all features
+                  </p>
+                  <button
+                    onClick={() => window.location.href = '/verify-account'}
+                    className="w-full bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors"
+                  >
+                    Upload ID Documents
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </>
