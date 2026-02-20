@@ -578,6 +578,18 @@ async def approve_job(
             updated_job = await database.get_job_by_id(job_id)
             if updated_job:
                 background_tasks.add_task(notify_matching_tradespeople_new_job, updated_job)
+                
+                # Award 5 points to homeowner for job posting
+                homeowner_id = updated_job.get("homeowner_id")
+                if not homeowner_id and isinstance(updated_job.get("homeowner"), dict):
+                    homeowner_id = updated_job["homeowner"].get("id")
+                
+                if homeowner_id:
+                    try:
+                        await database.award_job_posting_points(homeowner_id, job_id)
+                        logger.info(f"Awarded 5 points to homeowner {homeowner_id} for job {job_id}")
+                    except Exception as e:
+                        logger.error(f"Failed to award job posting points: {e}")
         except Exception as e:
             logger.warning(f"Failed to enqueue matching job alerts: {str(e)}")
     

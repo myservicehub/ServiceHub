@@ -3158,7 +3158,7 @@ class Database:
                 "coin_conversion_rate": "1 coin = ₦100",
                 "max_access_fee": "₦10,000 (100 coins)",
                 "min_funding_amount": "Any positive amount",
-                "referral_reward": "5 coins per verified referral"
+                "referral_reward": "20 coins (Homeowner) / 10 coins (Tradesperson)"
             }
         }
 
@@ -4247,15 +4247,23 @@ class Database:
         # Determine award amount based on verified user's role/state
         try:
             verified_user = await self.get_user_by_id(verified_user_id)
+            referrer = await self.get_user_by_id(referrer_id)
         except Exception:
             verified_user = None
+            referrer = None
+
         user_role = (verified_user or {}).get("role")
+        referrer_role = (referrer or {}).get("role")
         is_tradesperson_verified = bool((verified_user or {}).get("verified_tradesperson"))
+
+        # Homeowners earn 20 points on any referral
+        if referrer_role == UserRole.HOMEOWNER.value:
+            coins_to_award = 20
         # Tradespeople: credit only when business verification is complete
-        if user_role == UserRole.TRADESPERSON.value and is_tradesperson_verified:
+        elif user_role == UserRole.TRADESPERSON.value and is_tradesperson_verified:
             coins_to_award = 10
         else:
-            # Default homeowner identity verification reward
+            # Default reward
             coins_to_award = 5
         referrer_id = referral["referrer_id"]
         
@@ -4310,6 +4318,51 @@ class Database:
             }
         )
 
+    async def award_job_posting_points(self, user_id: str, job_id: str):
+        """Award 5 points to homeowner for posting a job (called on approval)"""
+        if self.database is None:
+             return False
+        
+        # Check if reward already given for this job
+        existing_txn = await self.wallet_transactions_collection.find_one({
+            "user_id": user_id,
+            "transaction_type": "job_posting_reward",
+            "reference": job_id
+        })
+        if existing_txn:
+            return False
+
+        points = 5
+        
+        # Get or create wallet
+        wallet = await self.get_wallet_by_user_id(user_id)
+        if not wallet:
+            return False
+
+        # Update wallet
+        await self.wallets_collection.update_one(
+            {"user_id": user_id},
+            {
+                "$inc": {"balance_coins": points},
+                "$set": {"updated_at": datetime.utcnow()}
+            }
+        )
+        
+        # Create transaction
+        transaction_data = {
+            "wallet_id": wallet["id"],
+            "user_id": user_id,
+            "transaction_type": "job_posting_reward",
+            "amount_coins": points,
+            "amount_naira": 0,
+            "status": "confirmed",
+            "description": "Reward for posting a job",
+            "reference": job_id,
+            "processed_at": datetime.utcnow()
+        }
+        await self.create_wallet_transaction(transaction_data)
+        return True
+
     async def get_user_referral_stats(self, user_id: str) -> dict:
         """Get referral statistics for user"""
         # Get user's referral code
@@ -4333,15 +4386,9 @@ class Database:
             "status": "verified"
         })
         
-        # Get total coins earned from referrals
-        pipeline = [
-            {"$match": {"referrer_id": user_id, "status": "verified"}},
-            {"$group": {"_id": None, "total_coins": {"$sum": "$coins_earned"}}}
-        ]
-        
-        total_coins_earned = 0
-        async for doc in self.referrals_collection.aggregate(pipeline):
-            total_coins_earned = doc["total_coins"]
+        # Get user's wallet balance for total points
+        wallet = await self.get_wallet_by_user_id(user_id)
+        total_coins_earned = wallet.get("balance_coins", 0) if wallet else 0
         
         return {
             "total_referrals": total_referrals,
