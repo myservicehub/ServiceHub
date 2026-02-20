@@ -327,11 +327,18 @@ async def get_contact_details(
 async def _notify_homeowner_new_interest(job: dict, tradesperson: dict, interest_id: str):
     """Background task to notify homeowner of new interest"""
     try:
-        # Get homeowner details
-        homeowner_id = job.get("homeowner", {}).get("id")
+        # Get homeowner details - handle both object and flat structure
+        homeowner_id = job.get("homeowner", {}).get("id") or job.get("homeowner_id")
+        
         if not homeowner_id:
-            logger.warning("No homeowner ID found in job data")
-            return
+            logger.warning(f"No homeowner ID found in job data for job {job.get('id')}")
+            # Try to get from job object if it's a model dump
+            if hasattr(job, "homeowner_id"):
+                 homeowner_id = job.homeowner_id
+            
+            if not homeowner_id:
+                logger.error(f"Failed to extract homeowner_id from job {job}")
+                return
         
         # Get homeowner preferences
         preferences = await database.get_user_notification_preferences(homeowner_id)
@@ -339,8 +346,11 @@ async def _notify_homeowner_new_interest(job: dict, tradesperson: dict, interest
         # Get homeowner user details for contact info
         homeowner = await database.get_user_by_id(homeowner_id)
         if not homeowner:
-            logger.warning(f"Homeowner {homeowner_id} not found")
-            return
+            logger.warning(f"Homeowner {homeowner_id} not found in users collection")
+            # We can still send notification if we have ID, but we might miss name/email/phone
+            # Let's try to proceed with minimal data if homeowner is missing but we have ID
+            homeowner = {"id": homeowner_id, "name": "Homeowner"}
+
         
         # Prepare template data
         template_data = {

@@ -306,7 +306,7 @@ const NotificationsPage = () => {
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(n => 
-        n.title?.toLowerCase().includes(term) ||
+        (n.subject || n.title)?.toLowerCase().includes(term) ||
         n.content?.toLowerCase().includes(term) ||
         n.type?.toLowerCase().includes(term)
       );
@@ -507,7 +507,7 @@ const NotificationsPage = () => {
                                 ? 'text-gray-900' 
                                 : 'text-gray-700'
                             }`}>
-                              {notification.title || 'Notification'}
+                              {notification.subject || notification.title || 'Notification'}
                             </h3>
                             
                             {notification.status !== 'read' && (

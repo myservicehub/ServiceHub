@@ -213,7 +213,7 @@ const NotificationIndicator = () => {
                             <h4 className={`text-sm font-medium font-montserrat ${
                               isUnread ? 'text-gray-900' : 'text-gray-700'
                             }`}>
-                              {notification.subject}
+                              {notification.subject || notification.title || 'Notification'}
                             </h4>
                             {isUnread && (
                               <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 ml-2 mt-1"></div>
