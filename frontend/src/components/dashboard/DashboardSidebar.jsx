@@ -22,7 +22,7 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const DashboardSidebar = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) => {
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user, logout, isHomeowner } = useAuth();
 
   const navigation = [
     {
@@ -59,7 +59,8 @@ const DashboardSidebar = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
       href: '/dashboard/notifications',
       icon: Bell,
     },
-    {
+    // Wallet page is hidden for homeowners
+    !isHomeowner() && {
       name: 'Wallet',
       href: '/dashboard/wallet',
       icon: Wallet,
@@ -69,7 +70,7 @@ const DashboardSidebar = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
       href: '/dashboard/referrals',
       icon: Users,
     },
-  ];
+  ].filter(Boolean); // Filter out false/null values
 
   const secondaryNavigation = [
     {

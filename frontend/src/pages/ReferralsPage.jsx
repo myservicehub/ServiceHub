@@ -133,7 +133,7 @@ const ReferralsPage = () => {
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-[#121E3C]">Referrals</h1>
         <p className="text-gray-500 mt-1 text-sm">
-          Earn rewards when your referrals verify: 5 points for homeowners, 10 points for tradespeople
+          Earn rewards when you refer friends and family
         </p>
       </div>
 
@@ -263,7 +263,7 @@ const ReferralsPage = () => {
                     { step: '1', title: 'Share Your Code', desc: 'Send your referral code to friends and family' },
                     { step: '2', title: 'They Sign Up', desc: 'Friends create account using your referral code' },
                     { step: '3', title: 'They Verify', desc: 'Friends upload ID for account verification' },
-                    { step: '4', title: 'You Earn Points', desc: '5 points for homeowners, 10 for tradespeople' },
+                    { step: '4', title: 'You Earn Points', desc: '20 points per verified user' },
                   ].map((item) => (
                     <div key={item.step} className="flex items-start gap-3">
                       <div className="w-7 h-7 rounded-lg bg-[#34D164] flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5">
@@ -282,9 +282,7 @@ const ReferralsPage = () => {
               <div className="bg-[#121E3C] rounded-2xl p-5 text-white">
                 <h3 className="text-sm font-semibold mb-3">Earn Rewards</h3>
                 <div className="space-y-2 text-xs text-white/70">
-                  <p><span className="text-[#34D164] font-semibold">5 points</span> per verified homeowner referral</p>
-                  <p><span className="text-[#34D164] font-semibold">10 points</span> per verified tradesperson referral</p>
-                  <p><span className="text-white font-semibold">Withdraw</span> with minimum 5 points</p>
+                  <p><span className="text-[#34D164] font-semibold">20 points</span> per verified user</p>
                   <p><span className="text-white font-semibold">No limit</span> on referrals</p>
                 </div>
               </div>
