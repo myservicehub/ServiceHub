@@ -86,7 +86,6 @@ const WalletPage = () => {
               {[
                 { label: 'Coin Value', value: '1 coin = ₦100' },
                 { label: 'Min. Funding', value: '₦100' },
-                { label: 'Typical Access Fee', value: '5-100 coins' },
                 { label: 'Processing Time', value: 'Within 24hrs' },
               ].map((item) => (
                 <div key={item.label} className="flex justify-between text-sm">

@@ -2,49 +2,63 @@ import React, { useEffect, Suspense, lazy } from "react";
 import "./App.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import HomeownerDashboardLayout from "./layouts/HomeownerDashboardLayout";
-import TradespersonLayout from "./layouts/TradespersonLayout";
+import TradespersonDashboardLayout from "./layouts/TradespersonDashboardLayout";
 import { DashboardOverview, DashboardMessages } from "./pages/dashboard/homeowner";
+import { TradespersonOverview, TradespersonMessages } from "./pages/dashboard/tradesperson";
 
 // Lazy load pages for performance optimization
+// Public Pages
 const HomePage = lazy(() => import("./components/HomePage"));
-const PostJobPage = lazy(() => import("./pages/PostJobPage"));
-const MyJobsPage = lazy(() => import("./pages/MyJobsPage"));
-const MyInterestsPage = lazy(() => import("./pages/MyInterestsPage"));
-const CompletedJobsPage = lazy(() => import("./pages/CompletedJobsPage"));
-const TradespersonProfilePage = lazy(() => import("./pages/TradespersonProfilePage"));
-const BrowseTradespeopleePage = lazy(() => import("./pages/BrowseTradespeopleePage"));
-const InterestedTradespeopleePage = lazy(() => import("./pages/InterestedTradespeopleePage"));
-const BrowseJobsPage = lazy(() => import("./pages/BrowseJobsPage"));
-const ProfilePage = lazy(() => import("./pages/ProfilePage"));
-const TradespersonPortfolioPage = lazy(() => import("./pages/TradespersonPortfolioPage"));
-const NotificationPreferencesPage = lazy(() => import("./pages/NotificationPreferencesPage"));
-const NotificationHistoryPage = lazy(() => import("./pages/NotificationHistoryPage"));
-const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
-const ReviewsPage = lazy(() => import("./pages/ReviewsPage"));
-const MyReviewsPage = lazy(() => import("./pages/MyReviewsPage"));
-const MyReceivedReviewsPage = lazy(() => import("./pages/MyReceivedReviewsPage"));
-const WalletPage = lazy(() => import("./pages/WalletPage"));
-const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
-const ReferralsPage = lazy(() => import("./pages/ReferralsPage"));
-const VerifyAccountPage = lazy(() => import("./pages/VerifyAccountPage"));
 const AboutUsPage = lazy(() => import("./pages/AboutUsPage"));
-const ReviewsPolicyPage = lazy(() => import("./pages/ReviewsPolicyPage"));
 const HowItWorksPage = lazy(() => import("./pages/HowItWorksPage"));
 const PartnershipPage = lazy(() => import("./pages/PartnershipPage"));
+const ReviewsPolicyPage = lazy(() => import("./pages/ReviewsPolicyPage"));
 const TradeCategoriesPage = lazy(() => import("./pages/TradeCategoriesPage"));
 const TradeCategoryDetailPage = lazy(() => import("./pages/TradeCategoryDetailPage"));
+const BrowseTradespeopleePage = lazy(() => import("./pages/BrowseTradespeopleePage"));
+const TradespersonProfilePage = lazy(() => import("./pages/TradespersonProfilePage"));
+const TradespersonPortfolioPage = lazy(() => import("./pages/TradespersonPortfolioPage"));
+const ReviewsPage = lazy(() => import("./pages/ReviewsPage"));
+
+// Help & Support
 const HelpFAQsPage = lazy(() => import("./pages/HelpFAQsPage"));
 const ContactUsPage = lazy(() => import("./pages/ContactUsPage"));
+
+// Auth & Account
 const JoinForFreePage = lazy(() => import("./pages/JoinForFreePage"));
-const HelpCentrePage = lazy(() => import("./pages/HelpCentrePage"));
-const BlogPage = lazy(() => import("./pages/BlogPage"));
-const CareersPage = lazy(() => import("./pages/CareersPage"));
-const TradespersonRegistrationDemo = lazy(() => import("./pages/TradespersonRegistrationDemo"));
 const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
+const VerifyAccountPage = lazy(() => import("./pages/VerifyAccountPage"));
+
+// Legal Pages
 const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
 const CookiePolicyPage = lazy(() => import("./pages/CookiePolicyPage"));
+
+// Blog & Careers
+const BlogPage = lazy(() => import("./pages/BlogPage"));
+const CareersPage = lazy(() => import("./pages/CareersPage"));
+
+// External/Misc
 const ExternalReviewPage = lazy(() => import("./pages/ExternalReviewPage"));
+const TradespersonRegistrationDemo = lazy(() => import("./pages/TradespersonRegistrationDemo"));
+const ComingSoonPage = lazy(() => import("./pages/ComingSoonPage"));
+
+// Admin
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+
+// Dashboard Pages (used in both portals)
+const PostJobPage = lazy(() => import("./pages/PostJobPage"));
+const MyJobsPage = lazy(() => import("./pages/MyJobsPage"));
+const InterestedTradespeopleePage = lazy(() => import("./pages/InterestedTradespeopleePage"));
+const MyReviewsPage = lazy(() => import("./pages/MyReviewsPage"));
+const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
+const WalletPage = lazy(() => import("./pages/WalletPage"));
+const ReferralsPage = lazy(() => import("./pages/ReferralsPage"));
+const ProfilePage = lazy(() => import("./pages/ProfilePage"));
+const BrowseJobsPage = lazy(() => import("./pages/BrowseJobsPage"));
+const MyInterestsPage = lazy(() => import("./pages/MyInterestsPage"));
+const CompletedJobsPage = lazy(() => import("./pages/CompletedJobsPage"));
+const MyReceivedReviewsPage = lazy(() => import("./pages/MyReceivedReviewsPage"));
 import { Toaster } from "./components/ui/toaster";
 import ScrollToTop from "./components/ScrollToTop";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
@@ -101,51 +115,60 @@ function App() {
               </div>
             }>
               <Routes>
+                {/* ==================== PUBLIC ROUTES ==================== */}
+                {/* Homepage */}
                 <Route path="/" element={<HomePage />} />
-              <Route path="/post-job" element={<PostJobPage />} />
-              <Route path="/my-jobs" element={<ProtectedRoute><MyJobsPage /></ProtectedRoute>} />
-              <Route path="/my-interests" element={<ProtectedRoute><MyInterestsPage /></ProtectedRoute>} />
-              <Route path="/completed-jobs" element={<ProtectedRoute><CompletedJobsPage /></ProtectedRoute>} />
-              <Route path="/tradesperson/:id" element={<TradespersonProfilePage />} />
-              <Route path="/browse-tradespeople" element={<BrowseTradespeopleePage />} />
-              <Route path="/job/:jobId/interested-tradespeople" element={<ProtectedRoute><InterestedTradespeopleePage /></ProtectedRoute>} />
-              <Route path="/browse-jobs" element={<BrowseJobsPage />} />
-              <Route path="/profile" element={<ProtectedRoute><TradespersonLayout><ProfilePage /></TradespersonLayout></ProtectedRoute>} />
-              <Route path="/tradesperson/:tradespersonId/portfolio" element={<ProtectedRoute><TradespersonPortfolioPage /></ProtectedRoute>} />
-              <Route path="/notifications" element={<ProtectedRoute><TradespersonLayout><NotificationsPage /></TradespersonLayout></ProtectedRoute>} />
-              <Route path="/notifications/preferences" element={<ProtectedRoute><NotificationPreferencesPage /></ProtectedRoute>} />
-              <Route path="/notifications/history" element={<ProtectedRoute><NotificationHistoryPage /></ProtectedRoute>} />
-              <Route path="/reviews" element={<ReviewsPage />} />
-              <Route path="/reviews/:userId" element={<ReviewsPage />} />
-              <Route path="/my-reviews" element={<ProtectedRoute><MyReviewsPage /></ProtectedRoute>} />
-              <Route path="/my-received-reviews" element={<ProtectedRoute><MyReceivedReviewsPage /></ProtectedRoute>} />
-              <Route path="/wallet" element={<ProtectedRoute><TradespersonLayout><WalletPage /></TradespersonLayout></ProtectedRoute>} />
-              <Route path="/admin" element={<RoleGuard allowedRoles={["admin"]}><AdminDashboard /></RoleGuard>} />
-              <Route path="/referrals" element={<ProtectedRoute><TradespersonLayout><ReferralsPage /></TradespersonLayout></ProtectedRoute>} />
-              <Route path="/verify-account" element={<VerifyAccountPage />} />
-              <Route path="/about" element={<AboutUsPage />} />
-              <Route path="/reviews-policy" element={<ReviewsPolicyPage />} />
-              <Route path="/how-it-works" element={<HowItWorksPage />} />
-              <Route path="/partnerships" element={<PartnershipPage />} />
-              <Route path="/trade-categories" element={<TradeCategoriesPage />} />
-              <Route path="/trade-categories/:categorySlug" element={<TradeCategoryDetailPage />} />
-              <Route path="/help" element={<HelpFAQsPage />} />
-              <Route path="/contact" element={<ContactUsPage />} />
-              <Route path="/join-for-free" element={<JoinForFreePage />} />
-              <Route path="/signup" element={<JoinForFreePage />} />
-              <Route path="/help-centre" element={<HelpCentrePage />} />
-              <Route path="/blog" element={<BlogPage />} />
-              <Route path="/blog/:slug" element={<BlogPage />} />
-              <Route path="/careers" element={<CareersPage />} />
-              <Route path="/tradesperson-registration-demo" element={<TradespersonRegistrationDemo />} />
-              <Route path="/reset-password" element={<ResetPasswordPage />} />
-              <Route path="/privacy-policy" element={<PrivacyPage />} />
-              <Route path="/terms" element={<TermsPage />} />
-              <Route path="/cookie-policy" element={<CookiePolicyPage />} />
-              <Route path="/review/external/:token" element={<ExternalReviewPage />} />
+                
+                {/* Public Pages */}
+                <Route path="/about" element={<AboutUsPage />} />
+                <Route path="/how-it-works" element={<HowItWorksPage />} />
+                <Route path="/partnerships" element={<PartnershipPage />} />
+                <Route path="/reviews-policy" element={<ReviewsPolicyPage />} />
+                <Route path="/trade-categories" element={<TradeCategoriesPage />} />
+                <Route path="/trade-categories/:categorySlug" element={<TradeCategoryDetailPage />} />
+                <Route path="/browse-tradespeople" element={<BrowseTradespeopleePage />} />
+                <Route path="/tradesperson/:id" element={<TradespersonProfilePage />} />
+                <Route path="/tradesperson/:tradespersonId/portfolio" element={<TradespersonPortfolioPage />} />
+                <Route path="/reviews" element={<ReviewsPage />} />
+                <Route path="/reviews/:userId" element={<ReviewsPage />} />
+                
+                {/* Help & Support */}
+                <Route path="/help" element={<HelpFAQsPage />} />
+                <Route path="/help-centre" element={<HelpFAQsPage />} />
+                <Route path="/contact" element={<ContactUsPage />} />
+                
+                {/* Authentication & Account */}
+                <Route path="/join-for-free" element={<JoinForFreePage />} />
+                <Route path="/signup" element={<JoinForFreePage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="/verify-account" element={<VerifyAccountPage />} />
+                
+                {/* Legal Pages */}
+                <Route path="/privacy-policy" element={<PrivacyPage />} />
+                <Route path="/terms" element={<TermsPage />} />
+                <Route path="/cookie-policy" element={<CookiePolicyPage />} />
+                
+                {/* Blog & Careers */}
+                <Route path="/blog" element={<BlogPage />} />
+                <Route path="/blog/:slug" element={<BlogPage />} />
+                <Route path="/careers" element={<CareersPage />} />
+                <Route path="/coming-soon" element={<ComingSoonPage />} />
+                
+                {/* External Review (for email links) */}
+                <Route path="/review/external/:token" element={<ExternalReviewPage />} />
+                
+                {/* Post Job (public access - redirects to dashboard if authenticated) */}
+                <Route path="/post-job" element={<PostJobPage />} />
+                
+                {/* Demo/Dev Routes */}
+                <Route path="/tradesperson-registration-demo" element={<TradespersonRegistrationDemo />} />
+                
+                {/* ==================== ADMIN ROUTE ==================== */}
+                <Route path="/admin" element={<RoleGuard allowedRoles={["admin"]}><AdminDashboard /></RoleGuard>} />
 
-              {/* Homeowner Dashboard Portal */}
-              <Route path="/dashboard" element={<HomeownerDashboardLayout />}>
+                {/* ==================== HOMEOWNER DASHBOARD PORTAL ==================== */}
+                {/* Protected by HomeownerDashboardLayout - redirects non-homeowners to /join-for-free */}
+                <Route path="/dashboard" element={<HomeownerDashboardLayout />}>
                 <Route index element={<DashboardOverview />} />
                 <Route path="jobs" element={<MyJobsPage />} />
                 <Route path="jobs/:jobId/interested" element={<InterestedTradespeopleePage />} />
@@ -155,6 +178,23 @@ function App() {
                 <Route path="notifications" element={<NotificationsPage />} />
                 <Route path="wallet" element={<WalletPage />} />
                 <Route path="referrals" element={<ReferralsPage />} />
+                <Route path="settings" element={<ProfilePage />} />
+              </Route>
+
+                {/* ==================== TRADESPERSON DASHBOARD PORTAL ==================== */}
+                {/* Protected by TradespersonDashboardLayout - redirects non-tradespeople to /join-for-free */}
+                <Route path="/trades" element={<TradespersonDashboardLayout />}>
+                <Route index element={<TradespersonOverview />} />
+                <Route path="overview" element={<TradespersonOverview />} />
+                <Route path="browsejobs" element={<BrowseJobsPage />} />
+                <Route path="interests" element={<MyInterestsPage />} />
+                <Route path="completed" element={<CompletedJobsPage />} />
+                <Route path="messages" element={<TradespersonMessages />} />
+                <Route path="wallet" element={<WalletPage />} />
+                <Route path="reviews" element={<MyReceivedReviewsPage />} />
+                <Route path="notifications" element={<NotificationsPage />} />
+                <Route path="referrals" element={<ReferralsPage />} />
+                <Route path="profile" element={<ProfilePage />} />
                 <Route path="settings" element={<ProfilePage />} />
               </Route>
             </Routes>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -33,7 +34,8 @@ import {
   ExternalLink,
   FileText,
   Eye,
-  Maximize2
+  Maximize2,
+  MessageSquare
 } from 'lucide-react';
 import { AlertTriangle } from 'lucide-react';
 import AuthenticatedImage from '../components/common/AuthenticatedImage';
@@ -65,6 +67,11 @@ import {
 import SkillsTestComponent from '../components/auth/SkillsTestComponent';
 
 const ProfilePage = () => {
+  const location = useLocation();
+  
+  // Check if we're inside the dashboard route
+  const isInDashboard = location.pathname.startsWith('/trades') || location.pathname.startsWith('/dashboard');
+
   // Options loaded from backend for skill suggestions
   const [tradeCategoryOptions, setTradeCategoryOptions] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(false);
@@ -637,146 +644,126 @@ const ProfilePage = () => {
   }
 
   return (
-    <div>
+    <div className={isInDashboard ? "" : "min-h-screen bg-gray-50"}>
       
-      {/* Page Header */}
-      <section className="py-8 bg-white border-b">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold font-montserrat mb-2" style={{color: '#121E3C'}}>
-                  My Profile
-                </h1>
-                <p className="text-lg text-gray-600 font-lato">
-                  Manage your account information and preferences
-                </p>
-              </div>
-              
-              <div className="flex space-x-3">
-                {isEditing ? (
-                  <>
-                    <Button
-                      variant="outline"
-                      onClick={handleEditToggle}
-                      className="font-lato"
-                    >
-                      <X size={16} className="mr-2" />
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={handleSave}
-                      disabled={loading}
-                      className="text-white font-lato"
-                      style={{backgroundColor: '#34D164'}}
-                    >
-                      <Save size={16} className="mr-2" />
-                      {loading ? 'Saving...' : 'Save Changes'}
-                    </Button>
-                  </>
-                ) : (
-                  <Button
-                    onClick={handleEditToggle}
-                    className="text-white font-lato"
-                    style={{backgroundColor: '#34D164'}}
-                  >
-                    <Edit3 size={16} className="mr-2" />
-                    Edit Profile
-                  </Button>
-                )}
-              </div>
-            </div>
+      {/* Page Header - Modern Design */}
+      <div className="mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-[#121E3C]">My Profile</h1>
+            <p className="text-sm text-gray-500 mt-1">Manage your account and preferences</p>
+          </div>
+          
+          <div className="flex gap-2">
+            {isEditing ? (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={handleEditToggle}
+                  className="rounded-xl"
+                >
+                  <X size={16} className="mr-2" />
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSave}
+                  disabled={loading}
+                  className="bg-[#34D164] hover:bg-[#2ab854] text-white rounded-xl"
+                >
+                  <Save size={16} className="mr-2" />
+                  {loading ? 'Saving...' : 'Save'}
+                </Button>
+              </>
+            ) : (
+              <Button
+                onClick={handleEditToggle}
+                className="bg-[#34D164] hover:bg-[#2ab854] text-white rounded-xl"
+              >
+                <Edit3 size={16} className="mr-2" />
+                Edit Profile
+              </Button>
+            )}
           </div>
         </div>
-      </section>
+      </div>
+
+      {/* Tab Navigation - Horizontal Pills */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-1.5 mb-6 inline-flex flex-wrap gap-1">
+        {getAvailableTabs().map((tab) => (
+          <button
+            key={tab.value}
+            onClick={() => setActiveTab(tab.value)}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl transition-all ${
+              activeTab === tab.value
+                ? 'bg-[#121E3C] text-white shadow-sm'
+                : 'text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            {tab.value === 'profile' && <User size={16} />}
+            {tab.value === 'portfolio' && <Briefcase size={16} />}
+            {tab.value === 'reviews' && <Star size={16} />}
+            {tab.value === 'account' && <Settings size={16} />}
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
       {/* Profile Content */}
-      <section className="py-8">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              {/* Navigation Dropdown */}
-              <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold font-montserrat text-gray-900">Profile Management</h1>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="flex items-center space-x-2 px-4 py-2">
-                      <span>{getTabDisplayText(activeTab)}</span>
-                      <ChevronDown size={16} />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    {getAvailableTabs().map((tab) => (
-                      <DropdownMenuItem 
-                        key={tab.value}
-                        onClick={() => setActiveTab(tab.value)}
-                        className={`cursor-pointer ${activeTab === tab.value ? 'bg-gray-100' : ''}`}
-                      >
-                        <div className="flex items-center space-x-2">
-                          {tab.value === 'profile' && <User size={16} />}
-                          {tab.value === 'portfolio' && <Briefcase size={16} />}
-                          {tab.value === 'reviews' && <Star size={16} />}
-                          {tab.value === 'account' && <Settings size={16} />}
-                          {tab.value === 'activity' && <Clock size={16} />}
-                          <span>{tab.label}</span>
-                        </div>
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-
-              {/* Profile Information Tab */}
+      <div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          {/* Profile Information Tab */}
               <TabsContent value="profile" className="space-y-6">
                 {/* Basic Information Card */}
-                <Card id="basic-info-card">
-                  <CardHeader>
-                    <CardTitle className="flex items-center font-montserrat" style={{color: '#121E3C'}}>
-                      <User size={20} className="mr-2" style={{color: '#34D164'}} />
-                      Basic Information
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div id="basic-info-card" className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                  <div className="px-6 py-4 border-b border-gray-50 bg-gradient-to-r from-gray-50/50 to-white">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-[#34D164]/10 flex items-center justify-center">
+                        <User size={20} className="text-[#34D164]" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-[#121E3C]">Basic Information</h3>
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {/* Name Field */}
-                      <div>
-                        <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                           Full Name
                         </label>
                         {isEditing ? (
                           <Input
                             value={editData.name}
                             onChange={(e) => setEditData({...editData, name: e.target.value})}
-                            className="font-lato"
+                            className="font-lato h-11 rounded-xl border-gray-200"
                             placeholder="Enter your full name"
                           />
                         ) : (
-                          <p className="text-gray-700 font-lato py-2">{profileData.name}</p>
+                          <p className="text-[#121E3C] font-medium text-base">{profileData.name}</p>
                         )}
                       </div>
 
                       {/* User ID Field (Read-only) */}
-                      <div>
-                        <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                           User ID
                         </label>
-                        <p className="text-gray-700 font-lato py-2">{profileData.user_id || profileData.public_id || profileData.id}</p>
+                        <p className="text-[#121E3C] font-medium text-base">{profileData.user_id || profileData.public_id || profileData.id}</p>
                       </div>
 
                       {/* Email Field (Read-only) */}
-                      <div>
-                        <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                           Email Address
                         </label>
-                        <div className="flex items-center space-x-2">
-                          <p className="text-gray-700 font-lato py-2">{profileData.email}</p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-[#121E3C] font-medium text-base">{profileData.email}</p>
                           {profileData.email_verified ? (
-                            <Badge className="bg-green-100 text-green-800 text-xs">Verified</Badge>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Verified</span>
                           ) : (
                             <>
-                              <Badge className="bg-yellow-100 text-yellow-800 text-xs">Unverified</Badge>
-                              <Button size="sm" variant="outline" onClick={handleSendEmailOTP} disabled={emailOtpSending}>
-                                {emailOtpSending ? 'Sending…' : 'Verify Email'}
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">Unverified</span>
+                              <Button size="sm" variant="outline" onClick={handleSendEmailOTP} disabled={emailOtpSending} className="h-7 text-xs rounded-lg">
+                                {emailOtpSending ? 'Sending…' : 'Verify'}
                               </Button>
                             </>
                           )}
@@ -811,28 +798,28 @@ const ProfilePage = () => {
                       </div>
 
                       {/* Phone Field */}
-                      <div>
-                        <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                           Phone Number
                         </label>
                         {isEditing ? (
                           <Input
                             value={editData.phone}
                             onChange={(e) => setEditData({...editData, phone: e.target.value})}
-                            className="font-lato"
+                            className="font-lato h-11 rounded-xl border-gray-200"
                             placeholder="e.g., 08123456789"
                           />
                         ) : (
-                          <div className="flex flex-col gap-2">
-                            <div className="flex items-center gap-2">
-                              <p className="text-gray-700 font-lato py-2">{profileData.phone}</p>
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="text-[#121E3C] font-medium text-base">{profileData.phone}</p>
                               {profileData.phone_verified ? (
-                                <Badge className="bg-green-100 text-green-800 text-xs">Verified</Badge>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Verified</span>
                               ) : (
                                 <>
-                                  <Badge className="bg-yellow-100 text-yellow-800 text-xs">Unverified</Badge>
-                                  <Button size="sm" variant="outline" onClick={handleSendPhoneOTP} disabled={otpSending}>
-                                    {otpSending ? 'Sending…' : 'Verify Phone'}
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">Unverified</span>
+                                  <Button size="sm" variant="outline" onClick={handleSendPhoneOTP} disabled={otpSending} className="h-7 text-xs rounded-lg">
+                                    {otpSending ? 'Sending…' : 'Verify'}
                                   </Button>
                                 </>
                               )}
@@ -869,84 +856,86 @@ const ProfilePage = () => {
                       </div>
 
                       {/* Location Field */}
-                      <div>
-                        <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                           Location
                         </label>
                         {isEditing ? (
                           <Input
                             value={editData.location}
                             onChange={(e) => setEditData({...editData, location: e.target.value})}
-                            className="font-lato"
+                            className="font-lato h-11 rounded-xl border-gray-200"
                             placeholder="e.g., Lagos, Nigeria"
                           />
                         ) : (
-                          <p className="text-gray-700 font-lato py-2">{profileData.location}</p>
+                          <p className="text-[#121E3C] font-medium text-base">{profileData.location}</p>
                         )}
                       </div>
 
                       {/* Zipcode Field */}
-                      <div>
-                        <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                           Zipcode
                         </label>
                         {isEditing ? (
                           <Input
                             value={editData.postcode}
                             onChange={(e) => setEditData({...editData, postcode: e.target.value})}
-                            className="font-lato"
+                            className="font-lato h-11 rounded-xl border-gray-200"
                             placeholder="e.g., 101001"
                           />
                         ) : (
-                          <p className="text-gray-700 font-lato py-2">{profileData.postcode && profileData.postcode !== '000000' ? profileData.postcode : 'Not set'}</p>
+                          <p className="text-[#121E3C] font-medium text-base">{profileData.postcode && profileData.postcode !== '000000' ? profileData.postcode : 'Not set'}</p>
                         )}
                       </div>
 
                       {/* Role Badge */}
-                      <div>
-                        <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                           Account Type
                         </label>
-                        <Badge className="bg-blue-100 text-blue-800 text-sm py-1 px-3">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[#34D164]/10 text-[#34D164]">
                           {profileData.role === 'homeowner' ? 'Homeowner' : 'Tradesperson'}
-                        </Badge>
+                        </span>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
 
                 {/* Tradesperson Specific Fields */}
                 {isTradesperson() && (
                   <>
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center font-montserrat" style={{color: '#121E3C'}}>
-                          <Briefcase size={20} className="mr-2" style={{color: '#34D164'}} />
-                          Professional Information
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                      <div className="px-6 py-4 border-b border-gray-50 bg-gradient-to-r from-gray-50/50 to-white">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-[#121E3C]/10 flex items-center justify-center">
+                            <Briefcase size={20} className="text-[#121E3C]" />
+                          </div>
+                          <h3 className="text-lg font-semibold text-[#121E3C]">Professional Information</h3>
+                        </div>
+                      </div>
+                      <div className="p-6 space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           {/* Company Name */}
-                          <div>
-                            <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                               Company Name
                             </label>
                             {isEditing ? (
                               <Input
                                 value={editData.company_name}
                                 onChange={(e) => setEditData({...editData, company_name: e.target.value})}
-                                className="font-lato"
+                                className="font-lato h-11 rounded-xl border-gray-200"
                                 placeholder="Enter company name (optional)"
                               />
                             ) : (
-                              <p className="text-gray-700 font-lato py-2">{profileData.company_name || 'Not specified'}</p>
+                              <p className="text-[#121E3C] font-medium text-base">{profileData.company_name || 'Not specified'}</p>
                             )}
                           </div>
 
                           {/* Experience Years */}
-                          <div>
-                            <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                               Years of Experience
                             </label>
                             {isEditing ? (
@@ -956,100 +945,102 @@ const ProfilePage = () => {
                                 max="50"
                                 value={editData.experience_years}
                                 onChange={(e) => setEditData({...editData, experience_years: e.target.value})}
-                                className="font-lato"
+                                className="font-lato h-11 rounded-xl border-gray-200"
                                 placeholder="Years of experience"
                               />
                             ) : (
-                              <p className="text-gray-700 font-lato py-2">{profileData.experience_years} years</p>
+                              <p className="text-[#121E3C] font-medium text-base">{profileData.experience_years} years</p>
                             )}
                           </div>
                         </div>
 
                         {/* Description */}
-                        <div>
-                          <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                             Professional Description
                           </label>
                           {isEditing ? (
                             <Textarea
                               value={editData.description}
                               onChange={(e) => setEditData({...editData, description: e.target.value})}
-                              className="font-lato"
+                              className="font-lato rounded-xl border-gray-200"
                               rows={4}
                               placeholder="Describe your professional background and expertise..."
                             />
                           ) : (
-                            <p className="text-gray-700 font-lato py-2 break-words whitespace-pre-wrap">{profileData.description}</p>
+                            <p className="text-gray-600 text-sm leading-relaxed">{profileData.description}</p>
                           )}
                         </div>
 
                         {/* Trade Categories */}
-                        <div>
-                          <div className="flex items-center justify-between">
-                            <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
-                              Skills & Expertise
-                            </label>
-                            <div>
-                              <Button
-                                onClick={() => {
-                                  setSelectedSkill('');
-                                  setShowSkillTest(false);
-                                  setAddSkillOpen(true);
-                                }}
-                                disabled={(profileData.trade_categories || []).length >= 5}
-                                size="sm"
-                                className="ml-2"
-                              >
-                                Add Skill
-                              </Button>
-                            </div>
-                          </div>
-
+                        <div className="space-y-3">
+                          <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                            Skills & Expertise
+                          </label>
                           <div className="flex flex-wrap gap-2">
-                            {profileData.trade_categories?.map((category, index) => (
-                              <Badge key={index} variant="outline" className="text-sm">
-                                {category}
-                              </Badge>
-                            ))}
+                            {profileData.trade_categories?.length > 0 ? (
+                              profileData.trade_categories.map((category, index) => (
+                                <span key={index} className="inline-flex items-center px-4 py-2 rounded-xl text-sm font-medium bg-[#34D164]/10 text-[#121E3C] border border-[#34D164]/20">
+                                  {category}
+                                </span>
+                              ))
+                            ) : (
+                              <p className="text-sm text-gray-400 italic">No skills added yet</p>
+                            )}
                           </div>
+                          <Button
+                            onClick={() => {
+                              setSelectedSkill('');
+                              setShowSkillTest(false);
+                              setAddSkillOpen(true);
+                            }}
+                            disabled={(profileData.trade_categories || []).length >= 5}
+                            size="sm"
+                            variant="outline"
+                            className="h-9 text-sm rounded-xl border-dashed border-gray-300 hover:border-[#34D164] hover:text-[#34D164] w-full mt-2"
+                          >
+                            + Add Skill {(profileData.trade_categories || []).length > 0 && `(${(profileData.trade_categories || []).length}/5)`}
+                          </Button>
                         </div>
 
-                        {/* Rating and Reviews */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
-                          <div className="text-center">
-                            <div className="flex items-center justify-center space-x-1 mb-1">
-                              <Star size={16} className="text-yellow-400 fill-current" />
-                              <span className="text-lg font-bold font-montserrat" style={{color: '#34D164'}}>
+                        {/* Rating and Reviews Stats */}
+                        <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-100">
+                          <div className="text-center p-3 rounded-xl bg-amber-50/50">
+                            <div className="flex items-center justify-center gap-1 mb-1">
+                              <Star size={14} className="text-amber-500 fill-amber-500" />
+                              <span className="text-xl font-bold text-[#121E3C]">
                                 {profileData.average_rating?.toFixed(1) || '0.0'}
                               </span>
                             </div>
-                            <p className="text-sm text-gray-600 font-lato">Average Rating</p>
+                            <p className="text-xs text-gray-500">Average Rating</p>
                           </div>
-                          <div className="text-center">
-                            <div className="text-lg font-bold font-montserrat mb-1" style={{color: '#34D164'}}>
+                          <div className="text-center p-3 rounded-xl bg-blue-50/50">
+                            <div className="text-xl font-bold text-[#121E3C] mb-1">
                               {profileData.total_reviews || 0}
                             </div>
-                            <p className="text-sm text-gray-600 font-lato">Total Reviews</p>
+                            <p className="text-xs text-gray-500">Total Reviews</p>
                           </div>
-                          <div className="text-center">
-                            <div className="text-lg font-bold font-montserrat mb-1" style={{color: '#34D164'}}>
+                          <div className="text-center p-3 rounded-xl bg-green-50/50">
+                            <div className="text-xl font-bold text-[#121E3C] mb-1">
                               {profileData.total_jobs || 0}
                             </div>
-                            <p className="text-sm text-gray-600 font-lato">Jobs Completed</p>
+                            <p className="text-xs text-gray-500">Jobs Completed</p>
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </div>
 
                     {/* Certifications Card */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center font-montserrat" style={{color: '#121E3C'}}>
-                          <Award size={20} className="mr-2" style={{color: '#34D164'}} />
-                          Certifications
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
+                    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                      <div className="px-6 py-4 border-b border-gray-50 bg-gradient-to-r from-gray-50/50 to-white">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-amber-100/50 flex items-center justify-center">
+                            <Award size={20} className="text-amber-600" />
+                          </div>
+                          <h3 className="text-lg font-semibold text-[#121E3C]">Certifications</h3>
+                        </div>
+                      </div>
+                      <div className="p-6">
                         {isEditing ? (
                           <div className="space-y-4">
                             {(editData.certifications || []).map((cert, index) => (
@@ -1218,8 +1209,8 @@ const ProfilePage = () => {
                             )}
                           </div>
                         )}
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </div>
                   </>
                 )}
               </TabsContent>
@@ -1252,6 +1243,7 @@ const ProfilePage = () => {
                           <ImageUpload
                             onUploadSuccess={handlePortfolioUploadSuccess}
                             onCancel={() => setShowUploadForm(false)}
+                            userCategories={profileData?.trade_categories || []}
                           />
                         </div>
                       )}
@@ -1274,65 +1266,94 @@ const ProfilePage = () => {
               {isTradesperson() && (
                 <TabsContent value="reviews" className="space-y-6">
                   {/* Reviews Stats Cards */}
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                    <Card>
-                      <CardContent className="p-4">
-                        <div className="text-center">
-                          <div className="text-2xl font-bold font-montserrat" style={{color: '#121E3C'}}>
-                            {reviewStats.totalReviews}
-                          </div>
-                          <div className="text-sm text-gray-600 font-lato">Total Reviews</div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {/* Total Reviews */}
+                    <div className="bg-white rounded-2xl border border-gray-100 p-5 text-center">
+                      <div className="w-10 h-10 rounded-xl bg-blue-100/50 flex items-center justify-center mx-auto mb-3">
+                        <MessageSquare size={18} className="text-blue-600" />
+                      </div>
+                      <div className="text-2xl font-bold text-[#121E3C] mb-1">
+                        {reviewStats.totalReviews}
+                      </div>
+                      <div className="text-xs text-gray-500">Total Reviews</div>
+                    </div>
                     
-                    <Card>
-                      <CardContent className="p-4">
-                        <div className="text-center">
-                          <div className="flex items-center justify-center gap-1 mb-1">
-                            <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
-                            <div className="text-2xl font-bold font-montserrat text-yellow-600">
-                              {reviewStats.averageRating}
-                            </div>
-                          </div>
-                          <div className="text-sm text-gray-600 font-lato">Average Rating</div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                    {/* Average Rating */}
+                    <div className="bg-white rounded-2xl border border-gray-100 p-5 text-center">
+                      <div className="w-10 h-10 rounded-xl bg-amber-100/50 flex items-center justify-center mx-auto mb-3">
+                        <Star size={18} className="text-amber-500 fill-amber-500" />
+                      </div>
+                      <div className="text-2xl font-bold text-amber-500 mb-1">
+                        {reviewStats.averageRating}
+                      </div>
+                      <div className="text-xs text-gray-500">Average Rating</div>
+                    </div>
                     
-                    <Card>
-                      <CardContent className="p-4">
-                        <div className="text-center">
-                          <div className="text-2xl font-bold font-montserrat text-green-600">
-                            {reviewStats.fiveStars}
-                          </div>
-                          <div className="text-sm text-gray-600 font-lato">5-Star Reviews</div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                    {/* 5-Star Reviews */}
+                    <div className="bg-white rounded-2xl border border-gray-100 p-5 text-center">
+                      <div className="w-10 h-10 rounded-xl bg-green-100/50 flex items-center justify-center mx-auto mb-3">
+                        <Award size={18} className="text-green-600" />
+                      </div>
+                      <div className="text-2xl font-bold text-green-600 mb-1">
+                        {reviewStats.fiveStars}
+                      </div>
+                      <div className="text-xs text-gray-500">5-Star Reviews</div>
+                    </div>
                     
-                    <Card>
-                      <CardContent className="p-4">
-                        <div className="text-center">
-                          <div className="text-sm text-gray-600 font-lato mb-1">Rating Breakdown</div>
-                          <div className="text-xs text-gray-500 font-lato">
-                            <div>5★: {reviewStats.fiveStars} • 4★: {reviewStats.fourStars}</div>
-                            <div>3★: {reviewStats.threeStars} • 2★: {reviewStats.twoStars} • 1★: {reviewStats.oneStar}</div>
+                    {/* Rating Breakdown */}
+                    <div className="bg-white rounded-2xl border border-gray-100 p-5">
+                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3 text-center">Rating Breakdown</div>
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-gray-600">5★</span>
+                          <div className="flex-1 mx-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-green-500 rounded-full" style={{width: `${reviewStats.totalReviews > 0 ? (reviewStats.fiveStars / reviewStats.totalReviews * 100) : 0}%`}}></div>
                           </div>
+                          <span className="text-gray-500 w-4 text-right">{reviewStats.fiveStars}</span>
                         </div>
-                      </CardContent>
-                    </Card>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-gray-600">4★</span>
+                          <div className="flex-1 mx-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-green-400 rounded-full" style={{width: `${reviewStats.totalReviews > 0 ? (reviewStats.fourStars / reviewStats.totalReviews * 100) : 0}%`}}></div>
+                          </div>
+                          <span className="text-gray-500 w-4 text-right">{reviewStats.fourStars}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-gray-600">3★</span>
+                          <div className="flex-1 mx-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-amber-400 rounded-full" style={{width: `${reviewStats.totalReviews > 0 ? (reviewStats.threeStars / reviewStats.totalReviews * 100) : 0}%`}}></div>
+                          </div>
+                          <span className="text-gray-500 w-4 text-right">{reviewStats.threeStars}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-gray-600">2★</span>
+                          <div className="flex-1 mx-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-orange-400 rounded-full" style={{width: `${reviewStats.totalReviews > 0 ? (reviewStats.twoStars / reviewStats.totalReviews * 100) : 0}%`}}></div>
+                          </div>
+                          <span className="text-gray-500 w-4 text-right">{reviewStats.twoStars}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-gray-600">1★</span>
+                          <div className="flex-1 mx-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-red-400 rounded-full" style={{width: `${reviewStats.totalReviews > 0 ? (reviewStats.oneStar / reviewStats.totalReviews * 100) : 0}%`}}></div>
+                          </div>
+                          <span className="text-gray-500 w-4 text-right">{reviewStats.oneStar}</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Reviews List */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center font-montserrat" style={{color: '#121E3C'}}>
-                        <Star size={20} className="mr-2" style={{color: '#34D164'}} />
-                        Customer Reviews
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                  <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-gray-50 bg-gradient-to-r from-gray-50/50 to-white">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-amber-100/50 flex items-center justify-center">
+                          <Star size={20} className="text-amber-500 fill-amber-500" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-[#121E3C]">Customer Reviews</h3>
+                      </div>
+                    </div>
+                    <div className="p-6">
                       {reviewsLoading ? (
                         <div className="text-center py-8">
                           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
@@ -1349,73 +1370,70 @@ const ProfilePage = () => {
                         </div>
                       ) : (
                         <div className="space-y-6">
-                          {reviews.map((review) => (
-                            <div key={review.id} className="border-b border-gray-200 pb-6 last:border-b-0">
+                          {reviews.map((review, index) => (
+                            <div key={review.id} className={`${index !== reviews.length - 1 ? 'pb-5 mb-5 border-b border-gray-100' : ''}`}>
                               <div className="flex items-start justify-between mb-3">
                                 <div className="flex items-center gap-3">
-                                  <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                                    <User className="h-5 w-5 text-gray-600" />
+                                  <div className="h-11 w-11 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                                    <User className="h-5 w-5 text-gray-500" />
                                   </div>
                                   <div>
-                                    <div className="font-semibold font-montserrat" style={{color: '#121E3C'}}>
+                                    <div className="font-semibold text-[#121E3C]">
                                       {review.reviewer_name || 'Anonymous Homeowner'}
                                     </div>
                                     <div className="flex items-center gap-2 mt-1">
                                       <div className="flex">
-                                        {Array.from({ length: 5 }, (_, index) => (
+                                        {Array.from({ length: 5 }, (_, i) => (
                                           <Star
-                                            key={index}
-                                            className={`h-4 w-4 ${
-                                              index < review.rating 
-                                                ? 'text-yellow-400 fill-yellow-400' 
-                                                : 'text-gray-300'
+                                            key={i}
+                                            className={`h-3.5 w-3.5 ${
+                                              i < review.rating 
+                                                ? 'text-amber-400 fill-amber-400' 
+                                                : 'text-gray-200'
                                             }`}
                                           />
                                         ))}
                                       </div>
-                                      <Badge className={`
-                                        ${review.rating >= 4.5 ? 'bg-green-100 text-green-800' : ''}
-                                        ${review.rating >= 3.5 && review.rating < 4.5 ? 'bg-blue-100 text-blue-800' : ''}
-                                        ${review.rating >= 2.5 && review.rating < 3.5 ? 'bg-yellow-100 text-yellow-800' : ''}
-                                        ${review.rating < 2.5 ? 'bg-red-100 text-red-800' : ''}
+                                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                                        ${review.rating >= 4 ? 'bg-green-100 text-green-700' : ''}
+                                        ${review.rating === 3 ? 'bg-amber-100 text-amber-700' : ''}
+                                        ${review.rating < 3 ? 'bg-red-100 text-red-700' : ''}
                                       `}>
                                         {review.rating} Stars
-                                      </Badge>
+                                      </span>
                                     </div>
                                   </div>
                                 </div>
-                                <div className="text-right text-sm text-gray-500 font-lato">
-                                  <div className="flex items-center gap-1">
-                                    <Calendar className="h-4 w-4" />
-                                    {new Date(review.created_at).toLocaleDateString()}
-                                  </div>
+                                <div className="text-xs text-gray-400 flex items-center gap-1">
+                                  <Calendar className="h-3.5 w-3.5" />
+                                  {new Date(review.created_at).toLocaleDateString()}
                                 </div>
                               </div>
                               
                               {(review.content || review.comment) && (
-                                <div className="mb-3">
-                                  <p className="text-gray-700 font-lato leading-relaxed bg-gray-50 p-3 rounded-lg">
+                                <div className="mb-3 ml-14">
+                                  <p className="text-gray-600 text-sm leading-relaxed bg-gray-50/70 p-3 rounded-xl border border-gray-100">
                                     "{review.content || review.comment}"
                                   </p>
                                 </div>
                               )}
                               
                               {review.title && (
-                                <div className="mb-2">
-                                  <h4 className="font-semibold text-gray-800 font-montserrat">
+                                <div className="mb-2 ml-14">
+                                  <h4 className="font-medium text-[#121E3C] text-sm">
                                     "{review.title}"
                                   </h4>
                                 </div>
                               )}
                               
                               {review.job_title && (
-                                <div className="flex items-center gap-2 text-sm text-gray-600 font-lato">
-                                  <Briefcase className="h-4 w-4" />
+                                <div className="flex items-center gap-2 text-xs text-gray-500 ml-14">
+                                  <Briefcase className="h-3.5 w-3.5" />
                                   <span>Job: {review.job_title}</span>
                                   {review.job_location && (
                                     <>
                                       <span>•</span>
-                                      <MapPin className="h-4 w-4" />
+                                      <MapPin className="h-3.5 w-3.5" />
                                       <span>{review.job_location}</span>
                                     </>
                                   )}
@@ -1425,53 +1443,57 @@ const ProfilePage = () => {
                           ))}
                         </div>
                       )}
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 </TabsContent>
               )}
 
               {/* Account Settings Tab */}
               <TabsContent value="account" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center font-montserrat" style={{color: '#121E3C'}}>
-                      <Settings size={20} className="mr-2" style={{color: '#34D164'}} />
-                      Account Settings
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <h3 className="font-semibold font-montserrat mb-2" style={{color: '#121E3C'}}>
+                <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                  <div className="px-6 py-4 border-b border-gray-50 bg-gradient-to-r from-gray-50/50 to-white">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-[#34D164]/10 flex items-center justify-center">
+                        <Settings size={20} className="text-[#34D164]" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-[#121E3C]">Account Settings</h3>
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      {/* Account Status */}
+                      <div className="space-y-3">
+                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                           Account Status
-                        </h3>
-                        <div className="flex items-center space-x-2">
-                          <Shield size={16} style={{color: '#34D164'}} />
-                          <span className="text-gray-700 font-lato capitalize">{profileData.status}</span>
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                          <span className="text-[#121E3C] font-medium capitalize">{profileData.status}</span>
                         </div>
                       </div>
                       
-                      <div>
-                        <h3 className="font-semibold font-montserrat mb-2" style={{color: '#121E3C'}}>
+                      {/* Verification Status */}
+                      <div className="space-y-3">
+                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                           Verification Status
-                        </h3>
-                        <div className="space-y-1">
-                          <div className="flex items-center space-x-2">
-                            <Mail size={14} />
-                            <span className="text-sm font-lato">Email: </span>
+                        </label>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Mail size={14} className="text-gray-400" />
+                            <span className="text-sm text-gray-600">Email:</span>
                             {profileData.email_verified ? (
-                              <Badge className="bg-green-100 text-green-800 text-xs">Verified</Badge>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Verified</span>
                             ) : (
-                              <Badge className="bg-yellow-100 text-yellow-800 text-xs">Unverified</Badge>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">Unverified</span>
                             )}
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <Phone size={14} />
-                            <span className="text-sm font-lato">Phone: </span>
+                          <div className="flex items-center gap-2">
+                            <Phone size={14} className="text-gray-400" />
+                            <span className="text-sm text-gray-600">Phone:</span>
                             {profileData.phone_verified ? (
-                              <Badge className="bg-green-100 text-green-800 text-xs">Verified</Badge>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Verified</span>
                             ) : (
-                              <Badge className="bg-yellow-100 text-yellow-800 text-xs">Unverified</Badge>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">Unverified</span>
                             )}
                           </div>
                           {!profileData.phone_verified && (
@@ -1537,20 +1559,24 @@ const ProfilePage = () => {
                         </div>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-                <Card className="mt-6">
-                  <CardHeader>
-                    <CardTitle className="flex items-center font-montserrat" style={{color: '#121E3C'}}>
-                      <AlertTriangle size={20} className="mr-2 text-red-600" />
-                      Danger Zone
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <p className="text-sm text-red-700">Deleting your account is permanent and cannot be undone.</p>
+                  </div>
+                </div>
+
+                {/* Danger Zone */}
+                <div className="bg-white rounded-2xl border border-red-100 overflow-hidden">
+                  <div className="px-6 py-4 border-b border-red-50 bg-gradient-to-r from-red-50/30 to-white">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
+                        <AlertTriangle size={20} className="text-red-500" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-[#121E3C]">Danger Zone</h3>
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <p className="text-sm text-gray-600 mb-4">Deleting your account is permanent and cannot be undone.</p>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="destructive" disabled={deleteLoading}>
+                        <Button variant="outline" className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700" disabled={deleteLoading}>
                           {deleteLoading ? 'Deleting…' : 'Delete Account'}
                         </Button>
                       </AlertDialogTrigger>
@@ -1569,52 +1595,58 @@ const ProfilePage = () => {
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               </TabsContent>
 
               {/* Activity Tab */}
               <TabsContent value="activity" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center font-montserrat" style={{color: '#121E3C'}}>
-                      <Clock size={20} className="mr-2" style={{color: '#34D164'}} />
-                      Account Activity
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between py-2 border-b">
-                        <div className="flex items-center space-x-2">
-                          <Calendar size={16} style={{color: '#34D164'}} />
-                          <span className="font-lato">Member since</span>
+                <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                  <div className="px-6 py-4 border-b border-gray-50 bg-gradient-to-r from-gray-50/50 to-white">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-blue-100/50 flex items-center justify-center">
+                        <Clock size={20} className="text-blue-600" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-[#121E3C]">Account Activity</h3>
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-4 rounded-xl bg-gray-50/50 hover:bg-gray-50 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-lg bg-green-100 flex items-center justify-center">
+                            <Calendar size={16} className="text-green-600" />
+                          </div>
+                          <span className="text-[#121E3C] font-medium">Member since</span>
                         </div>
-                        <span className="text-gray-600 font-lato">{formatDate(profileData.created_at)}</span>
+                        <span className="text-gray-500 text-sm">{formatDate(profileData.created_at)}</span>
                       </div>
                       
-                      <div className="flex items-center justify-between py-2 border-b">
-                        <div className="flex items-center space-x-2">
-                          <Clock size={16} style={{color: '#34D164'}} />
-                          <span className="font-lato">Last login</span>
+                      <div className="flex items-center justify-between p-4 rounded-xl bg-gray-50/50 hover:bg-gray-50 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center">
+                            <Clock size={16} className="text-blue-600" />
+                          </div>
+                          <span className="text-[#121E3C] font-medium">Last login</span>
                         </div>
-                        <span className="text-gray-600 font-lato">{formatDate(profileData.last_login)}</span>
+                        <span className="text-gray-500 text-sm">{formatDate(profileData.last_login)}</span>
                       </div>
                       
-                      <div className="flex items-center justify-between py-2">
-                        <div className="flex items-center space-x-2">
-                          <Edit3 size={16} style={{color: '#34D164'}} />
-                          <span className="font-lato">Profile updated</span>
+                      <div className="flex items-center justify-between p-4 rounded-xl bg-gray-50/50 hover:bg-gray-50 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-lg bg-purple-100 flex items-center justify-center">
+                            <Edit3 size={16} className="text-purple-600" />
+                          </div>
+                          <span className="text-[#121E3C] font-medium">Profile updated</span>
                         </div>
-                        <span className="text-gray-600 font-lato">{formatDate(profileData.updated_at)}</span>
+                        <span className="text-gray-500 text-sm">{formatDate(profileData.updated_at)}</span>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               </TabsContent>
             </Tabs>
           </div>
-        </div>
-      </section>
 
       {/* Add Skill Modal / Skills Test */}
       <Dialog open={addSkillOpen} onOpenChange={setAddSkillOpen}>

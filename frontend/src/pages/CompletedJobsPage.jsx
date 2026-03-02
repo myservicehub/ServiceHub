@@ -27,7 +27,7 @@ import {
 import { interestsAPI } from '../api/services';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const CompletedJobsPage = () => {
   const [completedJobs, setCompletedJobs] = useState([]);
@@ -43,6 +43,10 @@ const CompletedJobsPage = () => {
   const { user, isAuthenticated, isTradesperson } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Check if we're inside the dashboard route
+  const isInDashboard = location.pathname.startsWith('/trades');
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -154,6 +158,23 @@ const CompletedJobsPage = () => {
     });
   };
 
+  const sortJobs = (jobs, sortBy) => {
+    return [...jobs].sort((a, b) => {
+      switch (sortBy) {
+        case 'completion_date':
+          return new Date(b.completed_at || b.updated_at) - new Date(a.completed_at || a.updated_at);
+        case 'earnings':
+          return (b.job_budget_max || 0) - (a.job_budget_max || 0);
+        case 'rating':
+          return (b.rating || 0) - (a.rating || 0);
+        case 'job_title':
+          return (a.job_title || '').localeCompare(b.job_title || '');
+        default:
+          return 0;
+      }
+    });
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return 'Unknown';
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -199,9 +220,8 @@ const CompletedJobsPage = () => {
   };
 
   if (loading) {
-    return (
-      <TradespersonLayout>
-      <div className="min-h-screen bg-gray-50">
+    const loadingContent = (
+      <div className={isInDashboard ? "" : "min-h-screen bg-gray-50"}>
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
@@ -211,221 +231,184 @@ const CompletedJobsPage = () => {
           </div>
         </div>
       </div>
-      </TradespersonLayout>
     );
+    
+    if (isInDashboard) return loadingContent;
+    return <TradespersonLayout>{loadingContent}</TradespersonLayout>;
   }
 
+  const pageContent = (
+    <div className={isInDashboard ? "" : "min-h-screen bg-gray-50"}>
+      
+      <div className={isInDashboard ? "" : "container mx-auto px-4 py-8"}>
+        {/* Header - Simplified */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl font-bold font-montserrat text-[#121E3C]">
+              Completed Jobs
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">
+              {completedJobs.length} project{completedJobs.length !== 1 ? 's' : ''} completed
+            </p>
+          </div>
+        </div>
+
+        {/* Stats Row - Enhanced */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div className="bg-white rounded-2xl border border-green-200 p-5 hover:shadow-md transition-all">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center mb-3">
+              <Trophy className="w-6 h-6 text-green-500" />
+            </div>
+            <p className="text-3xl font-bold text-[#121E3C] mb-1">{stats.totalCompleted}</p>
+            <p className="text-sm text-gray-500">Total Completed</p>
+          </div>
+          <div className="bg-white rounded-2xl border border-amber-200 p-5 hover:shadow-md transition-all">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-50 to-amber-100 flex items-center justify-center mb-3">
+              <Star className="w-6 h-6 text-amber-500" />
+            </div>
+            <p className="text-3xl font-bold text-[#121E3C] mb-1">{stats.avgRating ? `${stats.avgRating}★` : '-'}</p>
+            <p className="text-sm text-gray-500">Average Rating</p>
+          </div>
+          <div className="bg-white rounded-2xl border border-purple-200 p-5 hover:shadow-md transition-all">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-50 to-purple-100 flex items-center justify-center mb-3">
+              <TrendingUp className="w-6 h-6 text-purple-500" />
+            </div>
+            <p className="text-3xl font-bold text-[#121E3C] mb-1">{stats.thisMonth}</p>
+            <p className="text-sm text-gray-500">This Month</p>
+          </div>
+        </div>
+
+        {/* Filters - Compact */}
+        <div className="bg-white rounded-xl border border-gray-100 p-4 mb-6">
+          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+            <div className="flex flex-wrap gap-3">
+              <Select value={filterBy} onValueChange={setFilterBy}>
+                <SelectTrigger className="w-[140px] text-sm border-gray-200 rounded-xl">
+                  <SelectValue placeholder="Filter" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="this_month">This Month</SelectItem>
+                  <SelectItem value="this_quarter">This Quarter</SelectItem>
+                  <SelectItem value="this_year">This Year</SelectItem>
+                  <SelectItem value="high_value">High Value</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-[140px] text-sm border-gray-200 rounded-xl">
+                  <SelectValue placeholder="Sort" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="completion_date">Date</SelectItem>
+                  <SelectItem value="earnings">Earnings</SelectItem>
+                  <SelectItem value="rating">Rating</SelectItem>
+                  <SelectItem value="job_title">Title</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <span className="text-xs text-gray-500">{completedJobs.length} jobs</span>
+          </div>
+        </div>
+
+        {/* Jobs List */}
+        {completedJobs.length === 0 ? (
+          <div className="bg-white rounded-xl border border-gray-100 p-12 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
+              <Trophy className="w-8 h-8 text-gray-300" />
+            </div>
+            <h3 className="text-lg font-semibold text-[#121E3C] mb-2">No completed jobs</h3>
+            <p className="text-gray-500 text-sm mb-4">
+              {filterBy === 'all' 
+                ? "Complete your first job to see it here."
+                : "No jobs match this filter."
+              }
+            </p>
+            <Button 
+              onClick={() => navigate('/trades/interests')}
+              className="bg-[#34D164] hover:bg-[#2ab854] text-white rounded-xl"
+            >
+              View My Interests
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+            {sortJobs(filterCompletedJobs(completedJobs, filterBy), sortBy).map((job, index) => (
+              <div key={job.id || index} className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-xl hover:border-green-200 transition-all duration-300">
+                {/* Card Header */}
+                <div className="relative h-24 bg-gradient-to-br from-green-500 to-green-600 p-4 flex flex-col justify-between">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white/20 rounded-full backdrop-blur-sm">
+                      <CheckCircle size={12} className="text-white" />
+                      <span className="text-xs text-white font-medium">Completed</span>
+                    </div>
+                    {job.rating && (
+                      <div className="flex items-center gap-1 px-2 py-1 bg-amber-400 rounded-full">
+                        <Star size={10} className="text-white fill-white" />
+                        <span className="text-xs text-white font-bold">{job.rating}</span>
+                      </div>
+                    )}
+                  </div>
+                  <h3 className="text-white font-semibold text-lg leading-tight line-clamp-1">
+                    {job.job_title || 'Completed Job'}
+                  </h3>
+                </div>
+                
+                {/* Card Body */}
+                <div className="p-4">
+                  {/* Location */}
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
+                      <MapPin size={14} className="text-gray-500" />
+                    </div>
+                    <p className="text-sm text-[#121E3C] font-medium truncate flex-1">{job.job_location || 'Location'}</p>
+                  </div>
+                  
+                  {/* Homeowner */}
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
+                      <User size={14} className="text-gray-500" />
+                    </div>
+                    <span className="text-sm text-[#121E3C] font-medium truncate flex-1">{job.homeowner_name || 'Homeowner'}</span>
+                  </div>
+                  
+                  {/* Footer */}
+                  <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                    <span className="text-xs text-gray-400 flex items-center gap-1">
+                      <Calendar size={10} />
+                      {formatDate(job.completed_at || job.updated_at)}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs rounded-lg border-gray-200 hover:border-[#34D164] hover:text-[#34D164]"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/trades/browsejobs?job=${job.job_id || job.id}`);
+                      }}
+                    >
+                      <Eye size={12} className="mr-1" />
+                      More Details
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  // If inside dashboard, return content directly without TradespersonLayout wrapper
+  if (isInDashboard) {
+    return pageContent;
+  }
+
+  // Otherwise wrap in TradespersonLayout for standalone page
   return (
     <TradespersonLayout>
-    <div className="min-h-screen bg-gray-50">
-      
-      <div className="container mx-auto px-4 py-8">
-        {/* Page Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Completed Jobs</h1>
-          <p className="text-gray-600">View and manage your completed projects</p>
-        </div>
-
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Total Completed</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalCompleted}</p>
-                </div>
-                <div className="p-3 bg-green-100 rounded-full">
-                  <Trophy className="w-6 h-6 text-green-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Average Rating</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.avgRating || 'N/A'}</p>
-                </div>
-                <div className="p-3 bg-yellow-100 rounded-full">
-                  <Star className="w-6 h-6 text-yellow-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">This Month</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.thisMonth}</p>
-                </div>
-                <div className="p-3 bg-purple-100 rounded-full">
-                  <TrendingUp className="w-6 h-6 text-purple-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Filters and Sorting */}
-        <Card className="mb-6">
-          <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex items-center gap-2">
-                  <Filter className="w-4 h-4 text-gray-500" />
-                  <Select value={filterBy} onValueChange={setFilterBy}>
-                    <SelectTrigger className="w-48">
-                      <SelectValue placeholder="Filter by period" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Time</SelectItem>
-                      <SelectItem value="this_month">This Month</SelectItem>
-                      <SelectItem value="this_quarter">This Quarter</SelectItem>
-                      <SelectItem value="this_year">This Year</SelectItem>
-                      <SelectItem value="high_value">High Value (₦100k+)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <ArrowUpDown className="w-4 h-4 text-gray-500" />
-                  <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="w-48">
-                      <SelectValue placeholder="Sort by" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="completion_date">Completion Date</SelectItem>
-                      <SelectItem value="earnings">Earnings</SelectItem>
-                      <SelectItem value="rating">Rating</SelectItem>
-                      <SelectItem value="job_title">Job Title</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="text-sm text-gray-600">
-                Showing {completedJobs.length} completed jobs
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Completed Jobs List */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Briefcase className="w-5 h-5" />
-              Your Completed Jobs
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {completedJobs.length === 0 ? (
-              <div className="text-center py-12">
-                <Trophy className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No completed jobs found</h3>
-                <p className="text-gray-600 mb-4">
-                  {filterBy === 'all' 
-                    ? "You haven't completed any jobs yet. Keep working on your current projects!"
-                    : "No completed jobs found for the selected filter. Try adjusting your filter criteria."
-                  }
-                </p>
-                <Button 
-                  onClick={() => navigate('/my-interests')}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  View My Interests
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {completedJobs.map((job) => (
-                  <div key={job.id} className="border rounded-lg p-6 hover:bg-gray-50 transition-colors">
-                    <div className="flex flex-col lg:flex-row justify-between items-start gap-4">
-                      {/* Job Info */}
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between mb-3">
-                          <div>
-                            <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                              {job.job_title}
-                            </h3>
-                            <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
-                              <div className="flex items-center gap-1">
-                                <Building className="w-4 h-4" />
-                                {job.job_category}
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <MapPin className="w-4 h-4" />
-                                {job.job_location}
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Calendar className="w-4 h-4" />
-                                Completed {formatDate(job.completed_at || job.updated_at)}
-                              </div>
-                            </div>
-                          </div>
-                          {getStatusBadge(job)}
-                        </div>
-
-                        {/* Job Description */}
-                        {job.job_description && (
-                          <p className="text-gray-700 mb-3 line-clamp-2">
-                            {job.job_description}
-                          </p>
-                        )}
-
-                        {/* Homeowner Info */}
-                        <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
-                          <User className="w-4 h-4" />
-                          <span>Homeowner: {job.homeowner_name}</span>
-                        </div>
-
-                        {/* Job Details */}
-                        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-                          <div className="flex items-center gap-1">
-                            <DollarSign className="w-4 h-4" />
-                            <span>Budget: {formatCurrency(job.job_budget_min)} - {formatCurrency(job.job_budget_max)}</span>
-                          </div>
-                          {job.rating && (
-                            <div className="flex items-center gap-1">
-                              <span>Rating:</span> 
-                              {getRatingStars(job.rating)}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            // Navigate to job details or review
-                            toast({
-                              title: "Job Details",
-                              description: "Job details view coming soon.",
-                            });
-                          }}
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          View Details
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-    </div>
+      {pageContent}
     </TradespersonLayout>
   );
 };

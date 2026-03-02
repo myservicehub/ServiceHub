@@ -25,7 +25,15 @@ import {
   Clock,
   User,
   Home,
-  Briefcase
+  Briefcase,
+  Heart,
+  Phone,
+  ClipboardList,
+  Wallet,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Megaphone
 } from 'lucide-react';
 import { 
   notificationsAPI, 
@@ -37,6 +45,21 @@ import {
 } from '../api/notifications';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
+
+// SVG icon mapping for notification types (replaces emojis)
+const getNotificationSvgIcon = (type) => {
+  const iconMap = {
+    'new_interest': Heart,
+    'contact_shared': Phone,
+    'job_posted': ClipboardList,
+    'payment_confirmation': Wallet,
+    'job_expiring': AlertTriangle,
+    'new_matching_job': BellRing,
+    'job_approved': CheckCircle,
+    'job_rejected': XCircle,
+  };
+  return iconMap[type] || Megaphone;
+};
 
 const NotificationsPage = () => {
   const [notifications, setNotifications] = useState([]);
@@ -490,103 +513,96 @@ const NotificationsPage = () => {
               }`}
             >
               <div className="p-4 sm:p-5">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
-                        {/* Notification Icon */}
-                        <div className={`p-2 rounded-xl text-2xl ${
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
+                    {/* Notification Icon */}
+                    {(() => {
+                      const IconComponent = getNotificationSvgIcon(notification.type);
+                      return (
+                        <div className={`p-2.5 rounded-xl ${
                           notification.status !== 'read' ? 'bg-[#34D164]/10' : 'bg-gray-100'
                         }`}>
-                          {getNotificationIcon(notification.type)}
+                          <IconComponent className={`w-5 h-5 ${
+                            notification.status !== 'read' ? 'text-[#34D164]' : 'text-gray-400'
+                          }`} />
                         </div>
+                      );
+                    })()}
 
-                        {/* Notification Content */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className={`text-sm font-semibold truncate ${
-                              notification.status !== 'read' 
-                                ? 'text-gray-900' 
-                                : 'text-gray-700'
-                            }`}>
-                              {notification.subject || notification.title || 'Notification'}
-                            </h3>
-                            
-                            {notification.status !== 'read' && (
-                              <div className="w-2 h-2 bg-[#34D164] rounded-full"></div>
-                            )}
-                          </div>
-
-                          <div className="text-sm text-gray-600 mb-3 whitespace-pre-wrap break-words">
-                            {expandedNotifications.has(notification.id) 
-                              ? stripHtml(notification.content) 
-                              : formatNotificationContent(notification.content)
-                            }
-                          </div>
-
-                          {notification.content && notification.content.length > 120 && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => toggleNotificationExpansion(notification.id)}
-                              className="text-[#34D164] hover:text-[#2FBD59] p-0 h-auto font-normal text-xs"
-                            >
-                              {expandedNotifications.has(notification.id) ? 'Show less' : 'Show more'}
-                            </Button>
-                          )}
-
-                          <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-3">
-                            <Badge variant="outline" className={getStatusBadgeColor(notification.status)}>
-                              {notification.status || 'unknown'}
-                            </Badge>
-                            
-                            {notification.channel && (
-                              <Badge variant="outline" className={getChannelBadgeColor(notification.channel)}>
-                                {getChannelIcon(notification.channel)} {notification.channel}
-                              </Badge>
-                            )}
-
-                            <span className="text-xs text-gray-500 flex items-center">
-                              <Clock size={12} className="mr-1 flex-shrink-0" />
-                              <span className="truncate">{formatNotificationDate(notification.created_at)}</span>
-                            </span>
-                          </div>
-                        </div>
+                    {/* Notification Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className={`text-sm font-semibold truncate ${
+                          notification.status !== 'read' ? 'text-gray-900' : 'text-gray-700'
+                        }`}>
+                          {notification.subject || notification.title || 'Notification'}
+                        </h3>
+                        {notification.status !== 'read' && (
+                          <div className="w-2 h-2 bg-[#34D164] rounded-full"></div>
+                        )}
                       </div>
 
-                      {/* Actions */}
-                      <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-                        {notification.status !== 'read' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => markAsRead(notification.id)}
-                            disabled={actionLoading.has(notification.id)}
-                            className="text-[#34D164] hover:text-[#2FBD59] hover:bg-[#34D164]/10"
-                            title="Mark as read"
-                          >
-                            {actionLoading.has(notification.id) ? (
-                              <RefreshCw size={16} className="animate-spin" />
-                            ) : (
-                              <Check size={16} />
-                            )}
-                          </Button>
-                        )}
+                      <div className="text-sm text-gray-600 mb-3 whitespace-pre-wrap break-words">
+                        {expandedNotifications.has(notification.id) 
+                          ? stripHtml(notification.content) 
+                          : formatNotificationContent(notification.content)
+                        }
+                      </div>
 
+                      {notification.content && notification.content.length > 120 && (
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => deleteNotification(notification.id)}
-                          disabled={actionLoading.has(notification.id)}
-                          className="text-red-600 hover:text-red-800 hover:bg-red-50"
-                          title="Delete notification"
+                          onClick={() => toggleNotificationExpansion(notification.id)}
+                          className="text-[#34D164] hover:text-[#2FBD59] p-0 h-auto font-normal text-xs"
                         >
-                          {actionLoading.has(notification.id) ? (
-                            <RefreshCw size={16} className="animate-spin" />
-                          ) : (
-                            <Trash2 size={16} />
-                          )}
+                          {expandedNotifications.has(notification.id) ? 'Show less' : 'Show more'}
                         </Button>
+                      )}
+
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-3">
+                        <span className="text-xs text-gray-500 flex items-center">
+                          <Clock size={12} className="mr-1 flex-shrink-0" />
+                          <span className="truncate">{formatNotificationDate(notification.created_at)}</span>
+                        </span>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                    {notification.status !== 'read' && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => markAsRead(notification.id)}
+                        disabled={actionLoading.has(notification.id)}
+                        className="text-[#34D164] hover:text-[#2FBD59] hover:bg-[#34D164]/10"
+                        title="Mark as read"
+                      >
+                        {actionLoading.has(notification.id) ? (
+                          <RefreshCw size={16} className="animate-spin" />
+                        ) : (
+                          <Check size={16} />
+                        )}
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => deleteNotification(notification.id)}
+                      disabled={actionLoading.has(notification.id)}
+                      className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                      title="Delete notification"
+                    >
+                      {actionLoading.has(notification.id) ? (
+                        <RefreshCw size={16} className="animate-spin" />
+                      ) : (
+                        <Trash2 size={16} />
+                      )}
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
           ))}

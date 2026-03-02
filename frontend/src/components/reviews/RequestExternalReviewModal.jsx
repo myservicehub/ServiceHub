@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { X, Mail, User, Briefcase, Phone, Send, Star } from 'lucide-react';
 import { reviewsAPI } from '../../api/reviews';
 import { useToast } from '../../hooks/use-toast';
 
@@ -27,6 +28,7 @@ const RequestExternalReviewModal = ({ isOpen, onClose }) => {
         title: "Success",
         description: `Invitation sent successfully! You have ${response.invitations_remaining} invitations left.`,
       });
+      setFormData({ client_name: '', client_email: '', client_phone: '', job_title: '' });
       onClose();
     } catch (error) {
       console.error('Error sending invitation:', error);
@@ -49,94 +51,141 @@ const RequestExternalReviewModal = ({ isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        <div className="fixed inset-0 transition-opacity" aria-hidden="true" onClick={onClose}>
-          <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
-        </div>
+      <div className="flex items-center justify-center min-h-screen px-4 py-6">
+        {/* Backdrop */}
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity" 
+          aria-hidden="true" 
+          onClick={onClose}
+        />
 
-        <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-        <div className="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
-          <div>
-            <div className="mt-3 text-center sm:mt-5">
-              <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                Request External Review
-              </h3>
-              <div className="mt-2">
-                <p className="text-sm text-gray-500">
-                  Invite a client you have worked for in the past outside ServiceHub platform to leave a review for the work you did for the client..
-                </p>
+        {/* Modal */}
+        <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 fade-in duration-200">
+          {/* Header */}
+          <div className="relative bg-gradient-to-r from-[#34D164] to-[#2ab854] px-6 py-5">
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 p-1 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+            >
+              <X size={18} className="text-white" />
+            </button>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
+                <Star size={24} className="text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">Request External Review</h3>
+                <p className="text-white/80 text-sm">Invite past clients to review your work</p>
               </div>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="mt-5 sm:mt-6 space-y-4">
-            <div>
-              <label htmlFor="client_name" className="block text-sm font-medium text-gray-700">Client Name *</label>
-              <input
-                type="text"
-                name="client_name"
-                id="client_name"
-                required
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                value={formData.client_name}
-                onChange={handleChange}
-              />
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            {/* Client Name */}
+            <div className="space-y-1.5">
+              <label htmlFor="client_name" className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                Client Name *
+              </label>
+              <div className="relative">
+                <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  name="client_name"
+                  id="client_name"
+                  required
+                  placeholder="Enter client's full name"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#34D164]/20 focus:border-[#34D164] transition-all"
+                  value={formData.client_name}
+                  onChange={handleChange}
+                />
+              </div>
             </div>
 
-            <div>
-              <label htmlFor="job_title" className="block text-sm font-medium text-gray-700">Job Title *</label>
-              <input
-                type="text"
-                name="job_title"
-                id="job_title"
-                required
-                placeholder="e.g. Bathroom renovation"
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                value={formData.job_title}
-                onChange={handleChange}
-              />
+            {/* Job Title */}
+            <div className="space-y-1.5">
+              <label htmlFor="job_title" className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                Job Title *
+              </label>
+              <div className="relative">
+                <Briefcase size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  name="job_title"
+                  id="job_title"
+                  required
+                  placeholder="e.g. Kitchen renovation, Plumbing repair"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#34D164]/20 focus:border-[#34D164] transition-all"
+                  value={formData.job_title}
+                  onChange={handleChange}
+                />
+              </div>
             </div>
 
-            <div>
-              <label htmlFor="client_email" className="block text-sm font-medium text-gray-700">Client Email *</label>
-              <input
-                type="email"
-                name="client_email"
-                id="client_email"
-                required
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                value={formData.client_email}
-                onChange={handleChange}
-              />
+            {/* Client Email */}
+            <div className="space-y-1.5">
+              <label htmlFor="client_email" className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                Client Email *
+              </label>
+              <div className="relative">
+                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="email"
+                  name="client_email"
+                  id="client_email"
+                  required
+                  placeholder="client@email.com"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#34D164]/20 focus:border-[#34D164] transition-all"
+                  value={formData.client_email}
+                  onChange={handleChange}
+                />
+              </div>
             </div>
 
-            <div>
-              <label htmlFor="client_phone" className="block text-sm font-medium text-gray-700">Client Phone (Optional)</label>
-              <input
-                type="tel"
-                name="client_phone"
-                id="client_phone"
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                value={formData.client_phone}
-                onChange={handleChange}
-              />
+            {/* Client Phone */}
+            <div className="space-y-1.5">
+              <label htmlFor="client_phone" className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                Client Phone <span className="text-gray-400 normal-case">(Optional)</span>
+              </label>
+              <div className="relative">
+                <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="tel"
+                  name="client_phone"
+                  id="client_phone"
+                  placeholder="08012345678"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#34D164]/20 focus:border-[#34D164] transition-all"
+                  value={formData.client_phone}
+                  onChange={handleChange}
+                />
+              </div>
             </div>
 
-            <div className="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:flow-row-reverse">
+            {/* Actions */}
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:col-start-2 sm:text-sm disabled:opacity-50"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-[#34D164] hover:bg-[#2ab854] text-white rounded-xl text-sm font-medium transition-colors disabled:opacity-50"
               >
-                {loading ? 'Sending...' : 'Send Invitation'}
-              </button>
-              <button
-                type="button"
-                className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:col-start-1 sm:text-sm"
-                onClick={onClose}
-              >
-                Cancel
+                {loading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send size={16} />
+                    Send Invitation
+                  </>
+                )}
               </button>
             </div>
           </form>

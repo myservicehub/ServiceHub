@@ -21,7 +21,8 @@ import {
   Navigation,
   Settings,
   Crosshair,
-  Wrench
+  Wrench,
+  Eye
 } from 'lucide-react';
 import { jobsAPI, interestsAPI } from '../api/services';
 import { walletAPI, tradeCategoryQuestionsAPI } from '../api/wallet';
@@ -910,258 +911,148 @@ const BrowseJobsPage = () => {
 
 
 
-  return (
-    <TradespersonLayout>
-    <div className="min-h-screen bg-gray-50">
+  // Check if we're inside the dashboard route
+  const isInDashboard = location.pathname.startsWith('/trades');
+
+  const pageContent = (
+    <div className={isInDashboard ? "" : "min-h-screen bg-gray-50"}>
       
-      {/* Page Header */}
-      <section className="py-8 bg-white border-b">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <h1 className="text-3xl font-bold font-montserrat mb-4" style={{color: '#121E3C'}}>
-              Available Jobs
-            </h1>
-            <p className="text-lg text-gray-600 font-lato">
-              Browse jobs that match your skills and show your interest to homeowners.
-            </p>
-
-            {/* Verification Notice: browsing allowed, interest requires verification */}
-            {!user?.verified_tradesperson && (
-              <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold text-yellow-900 font-montserrat">Verification Pending</p>
-                    <p className="text-yellow-800 text-sm font-lato">
-                      You can browse jobs, but you must verify your business to show interest.
-                    </p>
+      {/* Page Header - Simplified for Dashboard */}
+      <section className={isInDashboard ? "mb-6" : "py-8 bg-white border-b"}>
+        <div className={isInDashboard ? "" : "container mx-auto px-4"}>
+          <div className={isInDashboard ? "" : "max-w-4xl mx-auto"}>
+            {/* Header with count */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+              <div>
+                <h1 className="text-2xl font-bold font-montserrat text-[#121E3C]">
+                  Browse Jobs
+                </h1>
+                <p className="text-sm text-gray-500 mt-1">
+                  {jobs.length} job{jobs.length !== 1 ? 's' : ''} matching your skills
+                </p>
+              </div>
+              
+              {/* Wallet quick info */}
+              {isTradesperson() && walletBalance && (
+                <div className="flex items-center gap-3 px-4 py-2 bg-[#121E3C]/5 rounded-xl">
+                  <div className="text-right">
+                    <p className="text-xs text-gray-500">Balance</p>
+                    <p className="text-sm font-semibold text-[#121E3C]">{walletBalance.balance_coins} coins</p>
                   </div>
-                  <Button onClick={() => navigate('/verify-account')} className="text-white font-lato" style={{ backgroundColor: '#34D164' }}>
-                    Go to Verification
+                  <Button
+                    onClick={() => navigate('/trades/wallet')}
+                    size="sm"
+                    className="bg-[#34D164] hover:bg-[#2ab854] text-white text-xs px-3 py-1.5 h-auto rounded-lg"
+                  >
+                    Top Up
                   </Button>
-                </div>
-              </div>
-            )}
-            
-            {/* Search and Filters */}
-            <div className="mt-6 space-y-4">
-              {/* Search Bar */}
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1 relative">
-                  <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search jobs by title, description, or location..."
-                    value={filters.search}
-                    onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato"
-                  />
-                </div>
-                
-                <select
-                  value={filters.category}
-                  onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
-                  className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato"
-                >
-                  <option value="">All Categories</option>
-                  {NIGERIAN_TRADE_CATEGORIES.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Location and View Controls */}
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                {/* Location Controls */}
-                <div className="flex items-center flex-wrap gap-3">
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="useLocation"
-                      checked={filters.useLocation}
-                      onChange={(e) => {
-                        const checked = e.target.checked;
-                        setFilters(prev => ({ ...prev, useLocation: checked }));
-                        // Use saved profile location instead of auto-triggering GPS
-                        if (checked) {
-                      if (user?.latitude && user?.longitude) {
-                        setUserLocation({ lat: user.latitude, lng: user.longitude });
-                        setFilters(prev => ({
-                          ...prev,
-                          maxDistance: user?.travel_distance_km || prev.maxDistance,
-                        }));
-                        const stateName = nearestStateFromCoordinates(user.latitude, user.longitude);
-                        toast({
-                          title: "Location filter enabled",
-                          description: stateName ? `Using your saved location: ${stateName}.` : "Using your saved profile location.",
-                        });
-                      } else if (user?.location) {
-                        const coords = resolveCoordinatesFromLocationText(user.location);
-                        if (coords && typeof coords.latitude === 'number' && typeof coords.longitude === 'number') {
-                          // Convert util output { latitude, longitude } to map-friendly { lat, lng }
-                          setUserLocation({ lat: coords.latitude, lng: coords.longitude });
-                          setFilters(prev => ({
-                            ...prev,
-                            maxDistance: user?.travel_distance_km || prev.maxDistance,
-                          }));
-                          const stateName = nearestStateFromCoordinates(coords.latitude, coords.longitude);
-                          toast({
-                            title: "Location filter enabled",
-                            description: stateName ? `Using your profile location: ${stateName}.` : `Using your profile location: ${user.location}.`,
-                          });
-                        } else {
-                              toast({
-                                title: "No saved coordinates",
-                                description: "Set your location in Settings or use GPS.",
-                                variant: "info",
-                              });
-                            }
-                          } else {
-                            toast({
-                              title: "No saved location",
-                              description: "Set your location in Settings or use GPS.",
-                              variant: "info",
-                            });
-                          }
-                        }
-                      }}
-                      className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                    />
-                    <label htmlFor="useLocation" className="text-sm font-medium text-gray-700 font-lato">
-                      Filter by location
-                    </label>
-                  </div>
-
-                  {filters.useLocation && (
-                    <>
-                      <div className="flex items-center flex-wrap gap-2">
-                        <span className="text-sm text-gray-600 font-lato">Within</span>
-                        <input
-                          type="range"
-                          min="5"
-                          max="100"
-                          value={filters.maxDistance}
-                          onChange={(e) => setFilters(prev => ({ ...prev, maxDistance: parseInt(e.target.value) }))}
-                          onMouseUp={(e) => commitTravelDistanceChange(parseInt(e.currentTarget.value))}
-                          onTouchEnd={(e) => commitTravelDistanceChange(parseInt(e.currentTarget.value))}
-                          onKeyUp={(e) => {
-                            if (['Enter', ' ', 'Spacebar'].includes(e.key)) {
-                              commitTravelDistanceChange(parseInt(e.currentTarget.value));
-                            }
-                          }}
-                          className="w-20"
-                        />
-                        <span className="text-sm font-medium text-gray-700 font-lato">
-                          {filters.maxDistance}km (≈ {Math.round(filters.maxDistance * 0.621371)}mi)
-                        </span>
-                      </div>
-
-                      <button
-                        onClick={getCurrentLocation}
-                        disabled={locationLoading}
-                        className="flex items-center space-x-1 px-3 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white rounded-lg text-sm font-lato"
-                      >
-                        <Crosshair size={14} />
-                        <span>{locationLoading ? 'Getting...' : 'Use GPS'}</span>
-                      </button>
-
-                      <button
-                        onClick={() => setShowLocationSettings(true)}
-                        className="flex items-center space-x-1 px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-lato"
-                      >
-                        <Settings size={14} />
-                        <span>Settings</span>
-                      </button>
-                    </>
-                  )}
-                </div>
-
-                {/* View Toggle */}
-                <div className="flex items-center bg-gray-100 rounded-lg p-1">
-                  <button
-                    onClick={() => setViewMode('list')}
-                    className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-lato transition-colors ${
-                      viewMode === 'list'
-                        ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    <List size={16} />
-                    <span>List</span>
-                  </button>
-                  <button
-                    onClick={() => setViewMode('map')}
-                    className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-lato transition-colors ${
-                      viewMode === 'map'
-                        ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    <Map size={16} />
-                    <span>Map</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Location Status */}
-              {userLocation && filters.useLocation && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                  <div className="flex items-center space-x-2">
-                    <Navigation size={16} className="text-green-600" />
-                    <span className="text-sm text-green-800 font-lato">
-                      Showing jobs within {filters.maxDistance}km (≈ {Math.round(filters.maxDistance * 0.621371)}mi) of your location
-                    </span>
-                  </div>
                 </div>
               )}
             </div>
 
-            {/* Wallet Balance & User Skills */}
-            <div className="mt-6 grid md:grid-cols-2 gap-6">
-              {/* Wallet Balance */}
-              {/* Wallet Balance - Only visible to tradespeople */}
-              {isTradesperson() && walletBalance && (
-                <div className="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-lg border">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="text-sm font-medium text-gray-700 font-lato">Wallet Balance</p>
-                      <p className="text-2xl font-bold text-green-600 font-montserrat">
-                        {walletBalance.balance_coins} coins
-                      </p>
-                      <p className="text-sm text-gray-600 font-lato">
-                        ₦{walletBalance.balance_naira.toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <Button
-                        onClick={() => navigate('/wallet')}
-                        className="text-white font-lato text-sm px-3 py-1"
-                        style={{backgroundColor: '#34D164'}}
-                      >
-                        Manage Wallet
-                      </Button>
-                      {walletBalance.balance_coins < 15 && (
-                        <p className="text-xs text-yellow-600 mt-1">
-                          ⚠️ Low balance
-                        </p>
-                      )}
-                    </div>
+            {/* Verification Notice - Compact */}
+            {!user?.verified_tradesperson && (
+              <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                    <User size={16} className="text-amber-600" />
                   </div>
+                  <p className="text-sm text-amber-800">
+                    <span className="font-medium">Verify your account</span> to show interest in jobs
+                  </p>
                 </div>
-              )}
+                <Button 
+                  onClick={() => navigate('/verify-account')} 
+                  size="sm"
+                  className="bg-amber-500 hover:bg-amber-600 text-white text-xs px-3 py-1.5 h-auto rounded-lg shrink-0"
+                >
+                  Verify Now
+                </Button>
+              </div>
+            )}
+            
+            {/* Search and Filters - Compact */}
+            <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+              <div className="flex flex-col lg:flex-row gap-3">
+                {/* Search Input */}
+                <div className="flex-1 relative">
+                  <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search jobs..."
+                    value={filters.search}
+                    onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                    className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/20 focus:border-[#34D164] transition-all"
+                  />
+                </div>
+                
+                {/* Category Select */}
+                <select
+                  value={filters.category}
+                  onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
+                  className="px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/20 focus:border-[#34D164] bg-white min-w-[160px]"
+                >
+                  <option value="">All Categories</option>
+                  {NIGERIAN_TRADE_CATEGORIES.map((category) => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
+                
+                {/* Location Toggle */}
+                <button
+                  onClick={() => {
+                    const newValue = !filters.useLocation;
+                    setFilters(prev => ({ ...prev, useLocation: newValue }));
+                    if (newValue && user?.latitude && user?.longitude) {
+                      setUserLocation({ lat: user.latitude, lng: user.longitude });
+                    }
+                  }}
+                  className={`flex items-center gap-2 px-4 py-2.5 text-sm rounded-xl border transition-all ${
+                    filters.useLocation 
+                      ? 'bg-[#34D164]/10 border-[#34D164] text-[#34D164]' 
+                      : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                  }`}
+                >
+                  <MapPin size={16} />
+                  <span className="hidden sm:inline">{filters.useLocation ? `${filters.maxDistance}km` : 'Near me'}</span>
+                </button>
+
+                {/* View Toggle */}
+                <div className="flex rounded-xl border border-gray-200 overflow-hidden">
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`px-3 py-2.5 text-sm transition-all ${
+                      viewMode === 'list' ? 'bg-[#121E3C] text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <List size={16} />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('map')}
+                    className={`px-3 py-2.5 text-sm transition-all ${
+                      viewMode === 'map' ? 'bg-[#121E3C] text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <Map size={16} />
+                  </button>
+                </div>
+              </div>
               
-              {/* User skills display */}
-              {user?.trade_categories && (
-                <div>
-                  <p className="text-sm font-medium text-gray-700 font-lato mb-2">Your Skills:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {user.trade_categories.map((category, index) => (
-                      <Badge key={index} className="bg-green-100 text-green-800">
-                        {category}
-                      </Badge>
-                    ))}
-                  </div>
+              {/* Distance Slider - Only when location filter is active */}
+              {filters.useLocation && (
+                <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-4">
+                  <span className="text-xs text-gray-500">Distance:</span>
+                  <input
+                    type="range"
+                    min="5"
+                    max="100"
+                    value={filters.maxDistance}
+                    onChange={(e) => setFilters(prev => ({ ...prev, maxDistance: parseInt(e.target.value) }))}
+                    onMouseUp={(e) => commitTravelDistanceChange(parseInt(e.currentTarget.value))}
+                    onTouchEnd={(e) => commitTravelDistanceChange(parseInt(e.currentTarget.value))}
+                    className="flex-1 h-1.5 accent-[#34D164]"
+                  />
+                  <span className="text-xs font-medium text-[#121E3C] min-w-[60px]">{filters.maxDistance} km</span>
                 </div>
               )}
             </div>
@@ -1170,45 +1061,9 @@ const BrowseJobsPage = () => {
       </section>
 
       {/* Jobs Display */}
-      <section className="py-8">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold font-montserrat" style={{color: '#121E3C'}}>
-                Available Jobs
-              </h2>
-              {jobs.length > 0 && (
-                <p className="text-gray-600 font-lato">
-                  {jobs.length} job{jobs.length !== 1 ? 's' : ''} found
-                  {viewMode === 'map' && ` • ${viewMode} view`}
-                </p>
-              )}
-            </div>
-
-            {/* Jobs Filtering Info */}
-            {isTradesperson() && user?.trade_categories && (
-              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
-                  <Filter className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm font-medium text-blue-800">Smart Job Filtering Active</span>
-                </div>
-                <div className="text-sm text-blue-700">
-                  <p className="mb-1">
-                    <strong>Skills Match:</strong> Showing jobs that match your skills: {user.trade_categories.join(', ')}
-                  </p>
-                  {filters.useLocation && userLocation && (
-                    <p>
-                      <strong>Location Filter:</strong> Within {filters.maxDistance}km of your location
-                    </p>
-                  )}
-                  {!filters.useLocation && (
-                    <p className="text-orange-600">
-                      💡 <strong>Tip:</strong> Enable location filtering to see jobs near you first
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
+      <section className={isInDashboard ? "" : "py-8"}>
+        <div className={isInDashboard ? "" : "container mx-auto px-4"}>
+          <div className={isInDashboard ? "" : "max-w-4xl mx-auto"}>
 
             {/* Map View */}
             {viewMode === 'map' && (
@@ -1261,47 +1116,60 @@ const BrowseJobsPage = () => {
                     </CardContent>
                   </Card>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                     {jobs.map((job) => (
-                      <Card 
+                      <div 
                         key={job.id || job._id || `job-${Math.random()}`} 
-                        className="hover:shadow-md transition-shadow duration-200 cursor-pointer border-l-4 border-l-transparent hover:border-l-blue-600 overflow-hidden w-full"
+                        className="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-md hover:border-[#34D164]/30 transition-all duration-300 cursor-pointer group"
                         onClick={() => handleViewJobDetails(job)}
                       >
-                        <CardContent className="p-4">
-                          <h3 className="text-lg sm:text-xl font-semibold leading-tight mb-2 break-words overflow-hidden" style={{color: '#121E3C'}}>
+                        {/* Top accent bar */}
+                        <div className="h-1 bg-gradient-to-r from-[#34D164] to-[#2ab854] group-hover:h-1.5 transition-all" />
+                        
+                        <div className="p-4">
+                          {/* Category & Posted */}
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-xs font-medium text-[#34D164] bg-[#34D164]/10 px-2 py-0.5 rounded">
+                              {job.category || 'General'}
+                            </span>
+                            <span className="text-xs text-gray-400">{formatDate(job.created_at)}</span>
+                          </div>
+                          
+                          {/* Job Title */}
+                          <h3 className="text-[#121E3C] font-semibold text-base leading-tight mb-3 line-clamp-2 group-hover:text-[#34D164] transition-colors">
                             {job.title || 'Untitled Job'}
                           </h3>
-
-                          {/* Meta information stacked */}
-                          <div className="space-y-2 text-sm text-gray-700">
-                            <div className="flex items-start min-w-0">
-                              <span className="break-words overflow-hidden">
-                                <strong>Job ID:</strong> {job.id || job._id || job.job_id}
-                              </span>
-                            </div>
-                            <div className="flex items-start min-w-0">
-                              <Wrench size={16} className="mr-2 mt-0.5 text-gray-500 flex-shrink-0" />
-                              <span className="break-words overflow-hidden">{job.category || 'No Category'}</span>
-                            </div>
-                            <div className="flex items-start min-w-0">
-                              <MapPin size={16} className="mr-2 mt-0.5 text-gray-500 flex-shrink-0" />
-                              <span className="break-words overflow-hidden">
-                                {job.location || 'Location not specified'}
-                                {job.distance_km !== undefined && job.distance_km !== null && (
-                                  <span className="ml-1 text-gray-600 font-medium">
-                                    ({Number(job.distance_km).toFixed(1)} km)
-                                  </span>
-                                )}
-                              </span>
-                            </div>
-                            <div className="flex items-start min-w-0">
-                              <Clock size={16} className="mr-2 mt-0.5 text-gray-500 flex-shrink-0" />
-                              <span className="flex-1">{formatDate(job.created_at)}</span>
-                            </div>
+                          
+                          {/* Location & Distance */}
+                          <div className="flex items-center gap-1.5 text-gray-500 mb-3">
+                            <MapPin size={13} className="shrink-0" />
+                            <span className="text-sm truncate">{job.location || 'Location TBD'}</span>
+                            {job.distance_km !== undefined && job.distance_km !== null && (
+                              <span className="text-xs text-[#34D164] font-medium ml-auto whitespace-nowrap">{Number(job.distance_km).toFixed(0)}km</span>
+                            )}
                           </div>
-                        </CardContent>
-                      </Card>
+                          
+                          {/* Bottom row: Budget & Interest count */}
+                          <div className="flex items-center justify-between pt-3 border-t border-gray-50">
+                            {(job.budget_min || job.budget_max) ? (
+                              <span className="text-sm font-semibold text-[#121E3C]">
+                                {job.budget_min && job.budget_max 
+                                  ? `₦${(job.budget_min/1000).toFixed(0)}k - ₦${(job.budget_max/1000).toFixed(0)}k`
+                                  : job.budget_max ? `Up to ₦${(job.budget_max/1000).toFixed(0)}k` : 'Flexible'
+                                }
+                              </span>
+                            ) : (
+                              <span className="text-sm text-gray-400">Flexible budget</span>
+                            )}
+                            {job.interests_count > 0 && (
+                              <div className="flex items-center gap-1 text-pink-500">
+                                <Heart size={12} className="fill-pink-500" />
+                                <span className="text-xs font-medium">{job.interests_count}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     ))}
 
                     {/* Pagination */}
@@ -1330,21 +1198,30 @@ const BrowseJobsPage = () => {
 
       {/* Job Details Modal */}
       {showJobModal && selectedJobDetails && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b p-6 z-10">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h2 className="text-2xl font-bold font-montserrat" style={{color: '#121E3C'}}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-100 p-6 z-10">
+              <div className="flex justify-between items-start gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">
+                      {selectedJobDetails.category}
+                    </span>
+                    {selectedJobDetails.interests_count > 0 && (
+                      <span className="flex items-center gap-1 text-pink-500 text-xs">
+                        <Heart size={12} className="fill-pink-500" />
+                        {selectedJobDetails.interests_count} interested
+                      </span>
+                    )}
+                  </div>
+                  <h2 className="text-xl font-bold text-[#121E3C] leading-tight">
                     {selectedJobDetails.title}
                   </h2>
-                  <Badge className="bg-blue-100 text-blue-800 mt-2">
-                    {selectedJobDetails.category}
-                  </Badge>
                 </div>
                 <button
                   onClick={() => setShowJobModal(false)}
-                  className="text-gray-500 hover:text-gray-700 text-xl"
+                  className="w-10 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 transition-colors"
                 >
                   ✕
                 </button>
@@ -1352,69 +1229,64 @@ const BrowseJobsPage = () => {
             </div>
 
             <div className="p-6">
-              {/* Job Overview */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div>
-                  <h3 className="font-semibold mb-3 font-montserrat">Job Details</h3>
-                  <div className="space-y-3 text-sm">
-                    <div className="flex items-center">
-                      <span className="mr-2 text-gray-500">#</span>
-                      <span><strong>Job ID:</strong> {selectedJobDetails.id || selectedJobDetails._id || selectedJobDetails.job_id}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <MapPin size={16} className="mr-2 text-gray-500" />
-                      <span><strong>Location:</strong> {selectedJobDetails.location}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Calendar size={16} className="mr-2 text-gray-500" />
-                      <span><strong>Posted:</strong> {formatDate(selectedJobDetails.created_at)}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Clock size={16} className="mr-2 text-gray-500" />
-                      <span><strong>Timeline:</strong> {selectedJobDetails.timeline || 'Flexible'}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Heart size={16} className="mr-2 text-gray-500" />
-                      <span><strong>Interest:</strong> {selectedJobDetails.interests_count || 0} tradespeople interested</span>
-                    </div>
-                  </div>
+              {/* Quick Info Cards */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                <div className="bg-gray-50 rounded-xl p-3">
+                  <MapPin size={16} className="text-gray-400 mb-1" />
+                  <p className="text-xs text-gray-500">Location</p>
+                  <p className="text-sm font-medium text-[#121E3C] truncate">{selectedJobDetails.location}</p>
                 </div>
+                <div className="bg-gray-50 rounded-xl p-3">
+                  <Calendar size={16} className="text-gray-400 mb-1" />
+                  <p className="text-xs text-gray-500">Posted</p>
+                  <p className="text-sm font-medium text-[#121E3C]">{formatDate(selectedJobDetails.created_at)}</p>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-3">
+                  <Clock size={16} className="text-gray-400 mb-1" />
+                  <p className="text-xs text-gray-500">Timeline</p>
+                  <p className="text-sm font-medium text-[#121E3C]">{selectedJobDetails.timeline || 'Flexible'}</p>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-3">
+                  <Briefcase size={16} className="text-gray-400 mb-1" />
+                  <p className="text-xs text-gray-500">Job ID</p>
+                  <p className="text-sm font-medium text-[#121E3C] truncate">{(selectedJobDetails.id || selectedJobDetails._id || selectedJobDetails.job_id)?.toString().slice(-8)}</p>
+                </div>
+              </div>
 
-                <div>
-                  <h3 className="font-semibold mb-3 font-montserrat">Budget & Payment</h3>
-                  <div className="space-y-3">
-                    {selectedJobDetails.budget_min && selectedJobDetails.budget_max ? (
-                      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                        <div className="text-2xl font-bold font-montserrat" style={{color: '#34D164'}}>
-                          {formatCurrency(selectedJobDetails.budget_min)} - {formatCurrency(selectedJobDetails.budget_max)}
-                        </div>
-                        <div className="text-sm text-gray-600">Budget Range</div>
+              {/* Budget Section */}
+              <div className="mb-6">
+                <h3 className="text-sm font-semibold text-[#121E3C] mb-3">Budget</h3>
+                <div className="flex flex-wrap gap-3">
+                  {selectedJobDetails.budget_min && selectedJobDetails.budget_max ? (
+                    <div className="flex-1 min-w-[200px] bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-xl p-4">
+                      <div className="text-2xl font-bold text-[#34D164]">
+                        {formatCurrency(selectedJobDetails.budget_min)} - {formatCurrency(selectedJobDetails.budget_max)}
                       </div>
-                    ) : (
-                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                        <div className="text-lg font-medium text-gray-700">Budget Negotiable</div>
-                        <div className="text-sm text-gray-600">Discuss pricing with homeowner</div>
-                      </div>
-                    )}
+                      <div className="text-xs text-green-700">Budget Range</div>
+                    </div>
+                  ) : (
+                    <div className="flex-1 min-w-[200px] bg-gray-50 border border-gray-200 rounded-xl p-4">
+                      <div className="text-lg font-semibold text-gray-700">Negotiable</div>
+                      <div className="text-xs text-gray-500">Discuss pricing with homeowner</div>
+                    </div>
+                  )}
 
-                    {/* Access Fee - Only visible to tradespeople */}
-                    {isTradesperson() && (
-                      (() => {
-                        const { vat, total, totalCoins } = computeVatInclusive(selectedJobDetails.access_fee_naira || 1000);
-                        return (
-                          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                            <div className="font-semibold text-yellow-800">
-                              VAT + Access Fee: {totalCoins} coins
-                            </div>
-                            <div className="text-sm text-yellow-700">
-                              ₦{total.toLocaleString()} total for contact details
-                              <div className="text-xs text-yellow-600">includes ₦{vat.toLocaleString()} VAT</div>
-                            </div>
+                  {/* Access Fee - Only visible to tradespeople */}
+                  {isTradesperson() && (
+                    (() => {
+                      const { vat, total, totalCoins } = computeVatInclusive(selectedJobDetails.access_fee_naira || 1000);
+                      return (
+                        <div className="flex-1 min-w-[200px] bg-amber-50 border border-amber-200 rounded-xl p-4">
+                          <div className="text-lg font-bold text-amber-700">
+                            {totalCoins} coins
                           </div>
-                        );
-                      })()
-                    )}
-                  </div>
+                          <div className="text-xs text-amber-600">
+                            Access fee (₦{total.toLocaleString()} incl. VAT)
+                          </div>
+                        </div>
+                      );
+                    })()
+                  )}
                 </div>
               </div>
 
@@ -1790,6 +1662,17 @@ const BrowseJobsPage = () => {
         currentTravelDistance={filters.maxDistance}
       />
     </div>
+  );
+
+  // If inside dashboard, return content directly without TradespersonLayout wrapper
+  if (isInDashboard) {
+    return pageContent;
+  }
+
+  // Otherwise wrap in TradespersonLayout for standalone page
+  return (
+    <TradespersonLayout>
+      {pageContent}
     </TradespersonLayout>
   );
 };

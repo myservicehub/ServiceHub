@@ -143,7 +143,7 @@ const JoinForFreePage = () => {
                   Start Registration - It's Free
                 </Button>
                 <Button
-                  onClick={() => navigate('/help-centre')}
+                  onClick={() => navigate('/help')}
                   className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 text-lg font-semibold"
                 >
                   Learn More

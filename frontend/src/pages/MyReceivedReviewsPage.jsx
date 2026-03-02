@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
-import { Star, Calendar, MapPin, User, MessageSquare, Award, CheckCircle2, ExternalLink } from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { Star, Calendar, MapPin, User, MessageSquare, Award, CheckCircle2, ExternalLink, Briefcase } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import TradespersonLayout from '../layouts/TradespersonLayout';
@@ -26,6 +28,10 @@ const MyReceivedReviewsPage = () => {
 
   const { toast } = useToast();
   const { user, isAuthenticated } = useAuth();
+  const location = useLocation();
+  
+  // Check if we're inside the dashboard route
+  const isInDashboard = location.pathname.startsWith('/trades');
 
   // Helper function to check if user is tradesperson
   const isTradesperson = () => user?.role === 'tradesperson';
@@ -140,183 +146,173 @@ const MyReceivedReviewsPage = () => {
     );
   }
 
-  return (
-    <TradespersonLayout>
-    <div className="min-h-screen bg-gray-50">
-      
-      <div className="container mx-auto px-4 py-8">
-        {/* Page Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+  const pageContent = (
+    <div className={isInDashboard ? "" : "min-h-screen bg-gray-50"}>
+      <div className={isInDashboard ? "" : "container mx-auto px-4 py-8"}>
+        {/* Header - Simplified */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-3xl font-bold font-montserrat mb-2" style={{color: '#121E3C'}}>
-              My Received Reviews
+            <h1 className="text-2xl font-bold font-montserrat text-[#121E3C]">
+              My Reviews
             </h1>
-            <p className="text-gray-600 font-lato">
-              Reviews and feedback from homeowners who hired you
+            <p className="text-sm text-gray-500 mt-1">
+              {stats.totalReviews} review{stats.totalReviews !== 1 ? 's' : ''} received
             </p>
           </div>
-          <button
+          <Button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            className="bg-[#34D164] hover:bg-[#2ab854] text-white text-sm px-4 py-2 rounded-xl"
           >
-            <ExternalLink className="h-4 w-4" />
-            Request External Review
-          </button>
+            <ExternalLink className="h-4 w-4 mr-2" />
+            Request Review
+          </Button>
         </div>
 
         {loading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
-            <p className="text-gray-600 font-lato">Loading your reviews...</p>
+          <div className="bg-white rounded-xl border border-gray-100 p-12 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#34D164] border-t-transparent mx-auto mb-4"></div>
+            <p className="text-gray-400 text-sm">Loading your reviews...</p>
           </div>
         ) : (
           <>
-            {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600 font-lato">Total Reviews</p>
-                      <p className="text-3xl font-bold font-montserrat" style={{color: '#121E3C'}}>
-                        {stats.totalReviews}
-                      </p>
-                    </div>
-                    <MessageSquare className="h-8 w-8 text-blue-600" />
+            {/* Stats Row */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <div className="bg-white rounded-xl border border-gray-100 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center">
+                    <MessageSquare className="w-5 h-5 text-blue-500" />
                   </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600 font-lato">Average Rating</p>
-                      <div className="flex items-center gap-2">
-                        <p className="text-3xl font-bold font-montserrat text-yellow-600">
-                          {stats.averageRating}
-                        </p>
-                        <div className="flex">
-                          {renderStars(Math.round(stats.averageRating))}
-                        </div>
-                      </div>
-                    </div>
-                    <Star className="h-8 w-8 text-yellow-500" />
+                  <div>
+                    <p className="text-xs text-gray-500">Total</p>
+                    <p className="text-2xl font-bold text-[#121E3C]">{stats.totalReviews}</p>
                   </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600 font-lato">5-Star Reviews</p>
-                      <p className="text-3xl font-bold font-montserrat text-green-600">
-                        {stats.fiveStars}
-                      </p>
-                    </div>
-                    <Award className="h-8 w-8 text-green-600" />
+                </div>
+              </div>
+              <div className="bg-white rounded-xl border border-gray-100 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center">
+                    <Star className="w-5 h-5 text-amber-500" />
                   </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600 font-lato">Rating Breakdown</p>
-                      <div className="text-sm text-gray-600 font-lato">
-                        <div>5★: {stats.fiveStars} • 4★: {stats.fourStars}</div>
-                        <div>3★: {stats.threeStars} • 2★: {stats.twoStars} • 1★: {stats.oneStar}</div>
-                      </div>
-                    </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Average</p>
+                    <p className="text-2xl font-bold text-[#121E3C]">{stats.averageRating || '-'}★</p>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
+              <div className="bg-white rounded-xl border border-gray-100 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-xl bg-green-50 flex items-center justify-center">
+                    <Award className="w-5 h-5 text-green-500" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">5 Stars</p>
+                    <p className="text-2xl font-bold text-[#121E3C]">{stats.fiveStars}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white rounded-xl border border-gray-100 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-xl bg-purple-50 flex items-center justify-center">
+                    <CheckCircle2 className="w-5 h-5 text-purple-500" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">4+ Stars</p>
+                    <p className="text-2xl font-bold text-[#121E3C]">{stats.fiveStars + stats.fourStars}</p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Reviews List */}
             {reviews.length === 0 ? (
-              <Card>
-                <CardContent className="p-12 text-center">
-                  <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold font-montserrat mb-2">No Reviews Yet</h3>
-                  <p className="text-gray-600 font-lato">
-                    You haven't received any reviews from homeowners yet. 
-                    Complete jobs and provide excellent service to start receiving reviews!
-                  </p>
-                </CardContent>
-              </Card>
+              <div className="bg-white rounded-xl border border-gray-100 p-12 text-center">
+                <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
+                  <MessageSquare className="w-8 h-8 text-gray-300" />
+                </div>
+                <h3 className="text-lg font-semibold text-[#121E3C] mb-2">No reviews yet</h3>
+                <p className="text-gray-500 text-sm">
+                  Complete jobs to start receiving reviews from homeowners.
+                </p>
+              </div>
             ) : (
-              <div className="space-y-6">
-                {reviews.map((review) => (
-                  <Card key={review.id} className="hover:shadow-lg transition-shadow">
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="h-12 w-12 rounded-full bg-gray-300 flex items-center justify-center">
-                            <User className="h-6 w-6 text-gray-600" />
+              <div className="space-y-4">
+                {reviews.map((review) => {
+                  const ratingColor = review.rating >= 4 ? 'text-green-500' : review.rating >= 3 ? 'text-amber-500' : 'text-red-500';
+                  const ratingBg = review.rating >= 4 ? 'bg-green-50' : review.rating >= 3 ? 'bg-amber-50' : 'bg-red-50';
+                  
+                  return (
+                    <div 
+                      key={review.id} 
+                      className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300"
+                    >
+                      {/* Card Header */}
+                      <div className="p-5">
+                        <div className="flex items-start gap-4">
+                          {/* Avatar with Rating */}
+                          <div className="relative">
+                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#121E3C] to-[#1a2d54] flex items-center justify-center shrink-0">
+                              <User className="w-7 h-7 text-white" />
+                            </div>
+                            <div className={`absolute -bottom-1 -right-1 w-7 h-7 rounded-lg ${ratingBg} flex items-center justify-center border-2 border-white shadow-sm`}>
+                              <span className={`text-xs font-bold ${ratingColor}`}>{review.rating}</span>
+                            </div>
                           </div>
-                          <div>
-                            <CardTitle className="text-lg font-montserrat flex items-center gap-2">
-                              {review.reviewer_name || 'Anonymous Homeowner'}
-                              {review.is_verified_external && (
-                                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 flex items-center gap-1">
-                                  <CheckCircle2 className="h-3 w-3" />
-                                  Verified External
-                                </Badge>
-                              )}
-                            </CardTitle>
-                            <div className="flex items-center gap-2 mt-1">
-                              <div className="flex">
-                                {renderStars(review.rating)}
+                          
+                          {/* Reviewer Info */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
+                              <div>
+                                <h3 className="text-lg font-semibold text-[#121E3C]">
+                                  {review.reviewer_name || 'Homeowner'}
+                                </h3>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <div className="flex gap-0.5">
+                                    {renderStars(review.rating)}
+                                  </div>
+                                  {review.is_verified_external && (
+                                    <Badge className="bg-blue-500 text-white text-xs px-2 py-0.5">
+                                      <CheckCircle2 size={10} className="mr-1" />
+                                      Verified
+                                    </Badge>
+                                  )}
+                                </div>
                               </div>
-                              <Badge className={getStatusBadgeColor(review.rating)}>
-                                {review.rating} Stars
-                              </Badge>
+                              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 rounded-lg">
+                                <Calendar size={12} className="text-gray-400" />
+                                <span className="text-xs text-gray-600">{new Date(review.created_at).toLocaleDateString()}</span>
+                              </div>
                             </div>
                           </div>
                         </div>
-                        <div className="text-right text-sm text-gray-500 font-lato">
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-4 w-4" />
-                            {new Date(review.created_at).toLocaleDateString()}
+                        
+                        {/* Review Content */}
+                        {(review.content || review.comment) && (
+                          <div className="mt-4 relative">
+                            <div className="absolute -left-1 top-0 text-4xl text-[#34D164]/20 font-serif">"</div>
+                            <p className="text-gray-700 pl-6 pr-2 py-2 text-sm leading-relaxed italic">
+                              {review.content || review.comment}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Card Footer - Job Info */}
+                      {review.job_title && (
+                        <div className="px-5 py-3 bg-gray-50/70 border-t border-gray-100 flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center">
+                            <Briefcase size={14} className="text-[#121E3C]" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-[#121E3C] truncate">{review.job_title}</p>
+                            {review.job_location && (
+                              <p className="text-xs text-gray-400">{review.job_location}</p>
+                            )}
                           </div>
                         </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      {(review.content || review.comment) && (
-                        <div className="mb-4">
-                          <p className="text-gray-700 font-lato leading-relaxed bg-gray-50 p-3 rounded-lg">
-                            "{review.content || review.comment}"
-                          </p>
-                        </div>
                       )}
-                      
-                      {review.title && (
-                        <div className="mb-3">
-                          <h4 className="font-semibold text-gray-800 font-montserrat">
-                            "{review.title}"
-                          </h4>
-                        </div>
-                      )}
-                      
-                      {review.job_title && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600 font-lato">
-                          <MapPin className="h-4 w-4" />
-                          <span>Job: {review.job_title}</span>
-                          {review.job_location && (
-                            <>
-                              <span>•</span>
-                              <span>{review.job_location}</span>
-                            </>
-                          )}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </>
@@ -328,6 +324,17 @@ const MyReceivedReviewsPage = () => {
         onClose={() => setIsModalOpen(false)} 
       />
     </div>
+  );
+
+  // If inside dashboard, return content directly without TradespersonLayout wrapper
+  if (isInDashboard) {
+    return pageContent;
+  }
+
+  // Otherwise wrap in TradespersonLayout for standalone page
+  return (
+    <TradespersonLayout>
+      {pageContent}
     </TradespersonLayout>
   );
 };

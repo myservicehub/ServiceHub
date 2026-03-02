@@ -2315,7 +2315,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                   <input
                     type="number"
                     id="field-budget_min"
-                    placeholder="5,000"
+                    placeholder=""
                     value={formData.budget_min}
                     onChange={(e) => updateFormData('budget_min', e.target.value)}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
@@ -2332,7 +2332,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                   <input
                     type="number"
                     id="field-budget_max"
-                    placeholder="15,000"
+                    placeholder=""
                     value={formData.budget_max}
                     onChange={(e) => updateFormData('budget_max', e.target.value)}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
@@ -2861,17 +2861,9 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       <div className="max-w-2xl mx-auto px-0 sm:px-2" ref={formTopRef} tabIndex={-1}>
         <Card>
           <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle className="text-2xl font-bold font-montserrat" style={{color: '#121E3C'}}>
-                Post a Job
-              </CardTitle>
-              <button
-                onClick={onClose}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ✕
-              </button>
-            </div>
+            <CardTitle className="text-xl font-bold font-montserrat text-center" style={{color: '#121E3C'}}>
+              Post a Job
+            </CardTitle>
           </CardHeader>
 
           <CardContent>

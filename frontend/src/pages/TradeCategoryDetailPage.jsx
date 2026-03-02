@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Users, Clock, Star, MapPin, Phone, Mail, CheckCircle, AlertCircle, Info } from 'lucide-react';
+import { ArrowLeft, Users, Clock, Star, MapPin, Phone, Mail, CheckCircle, AlertCircle, Info, Wrench, Package, Briefcase, Shield, ChevronRight, Sparkles } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import FinalCTA from '../components/FinalCTA';
 import { statsAPI } from '../api/services';
+import { Button } from '../components/ui/button';
 
 const TradeCategoryDetailPage = () => {
   const { categorySlug } = useParams();
@@ -960,17 +962,19 @@ const TradeCategoryDetailPage = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-4xl mx-auto">
-            <div className="animate-pulse">
-              <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
-              <div className="h-4 bg-gray-200 rounded w-2/3 mb-8"></div>
-              <div className="space-y-4">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="h-4 bg-gray-200 rounded w-full"></div>
-                ))}
-              </div>
+        <div className="relative py-20 bg-[#121E3C]">
+          <div className="container mx-auto px-6 md:px-8 lg:px-12">
+            <div className="max-w-3xl mx-auto animate-pulse">
+              <div className="h-10 bg-white/10 rounded-xl w-1/2 mx-auto mb-4"></div>
+              <div className="h-4 bg-white/10 rounded-lg w-2/3 mx-auto"></div>
             </div>
+          </div>
+        </div>
+        <div className="container mx-auto px-6 py-12">
+          <div className="max-w-4xl mx-auto grid grid-cols-2 gap-4 animate-pulse">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-40 bg-gray-200 rounded-2xl"></div>
+            ))}
           </div>
         </div>
       </div>
@@ -981,18 +985,25 @@ const TradeCategoryDetailPage = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Trade Category Not Found</h1>
-            <p className="text-gray-600 mb-8">The trade category you're looking for doesn't exist.</p>
-            <button
-              onClick={() => navigate('/trade-categories')}
-              className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium"
-            >
-              View All Categories
-            </button>
+        <section className="relative py-20 overflow-hidden">
+          <div className="absolute inset-0 bg-[#121E3C]" />
+          <div className="container relative z-10 mx-auto px-6 md:px-8 lg:px-12">
+            <div className="max-w-xl mx-auto text-center">
+              <div className="w-16 h-16 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <AlertCircle size={28} className="text-red-400" />
+              </div>
+              <h1 className="text-2xl font-bold font-montserrat text-white mb-3">Category Not Found</h1>
+              <p className="text-white/60 font-lato text-sm mb-8">The trade category you're looking for doesn't exist.</p>
+              <Button
+                onClick={() => navigate('/trade-categories')}
+                className="bg-[#34D164] hover:bg-[#2ab854] text-white px-6 py-2.5 rounded-full text-sm font-medium"
+              >
+                View All Categories
+              </Button>
+            </div>
           </div>
-        </div>
+        </section>
+        <Footer />
       </div>
     );
   }
@@ -1001,152 +1012,204 @@ const TradeCategoryDetailPage = () => {
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
+      {/* Hero Section */}
+      <section className="relative py-16 lg:py-20 overflow-hidden">
+        <div className="absolute inset-0">
+          <img 
+            src="/stock/bg5.jpg" 
+            alt="" 
+            className="w-full h-full object-cover"
+            loading="eager"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#121E3C]/90 via-[#121E3C]/85 to-[#121E3C]/95" />
+        </div>
+        
+        <div className="container relative z-10 mx-auto px-6 md:px-8 lg:px-12">
           {/* Back Button */}
           <button
             onClick={() => navigate('/trade-categories')}
-            className="flex items-center text-green-600 hover:text-green-700 mb-6 font-medium"
+            className="inline-flex items-center text-white/70 hover:text-white text-sm font-medium mb-8 transition-colors"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to All Categories
+            All Categories
           </button>
-
-          {/* Header */}
-          <div className="bg-white rounded-lg shadow-sm border p-8 mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">{category.name}</h1>
-            <p className="text-xl text-gray-600 mb-6">{category.description}</p>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="flex items-center">
-                <Clock className="w-5 h-5 text-green-600 mr-3" />
-                <div>
-                  <p className="font-semibold text-gray-900">Typical Duration</p>
-                  <p className="text-gray-600">{category.timeframe}</p>
-                </div>
-              </div>
-              <div className="flex items-center">
-                <Star className="w-5 h-5 text-green-600 mr-3" />
-                <div>
-                  <p className="font-semibold text-gray-900">Price Range</p>
-                  <p className="text-gray-600">{category.averagePrice}</p>
-                </div>
-              </div>
-              <div className="flex items-center">
-                <Users className="w-5 h-5 text-green-600 mr-3" />
-                <div>
-                  <p className="font-semibold text-gray-900">Find Professionals</p>
-                  <button
-                    onClick={() => navigate(`/browse-jobs?category=${encodeURIComponent(category.name)}`)}
-                    className="text-green-600 hover:text-green-700 font-medium"
-                  >
-                    Browse Jobs →
-                  </button>
-                </div>
-              </div>
+          
+          <div className="max-w-3xl">
+            <div className="w-14 h-14 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl flex items-center justify-center mb-6">
+              <Wrench size={24} className="text-[#34D164]" />
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Services Offered */}
-            <div className="bg-white rounded-lg shadow-sm border p-6">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Services Offered</h2>
-              <ul className="space-y-3">
-                {category.services.map((service, index) => (
-                  <li key={index} className="flex items-start">
-                    <CheckCircle className="w-5 h-5 text-green-600 mr-3 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-700">{service}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Common Materials */}
-            <div className="bg-white rounded-lg shadow-sm border p-6">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Common Materials Used</h2>
-              <div className="grid grid-cols-2 gap-3">
-                {category.materials.map((material, index) => (
-                  <div key={index} className="flex items-center">
-                    <div className="w-2 h-2 bg-green-600 rounded-full mr-3"></div>
-                    <span className="text-gray-700">{material}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* What to Expect */}
-            <div className="bg-white rounded-lg shadow-sm border p-6">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">What to Expect</h2>
-              <p className="text-gray-700 leading-relaxed">{category.whatToExpect}</p>
-            </div>
-
-            {/* When to Hire */}
-            <div className="bg-white rounded-lg shadow-sm border p-6">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">When to Hire</h2>
-              <p className="text-gray-700 leading-relaxed">{category.whenToHire}</p>
-            </div>
-          </div>
-
-          {/* Tips and Red Flags */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-            {/* Hiring Tips */}
-            <div className="bg-green-50 rounded-lg border border-green-200 p-6">
-              <div className="flex items-center mb-4">
-                <Info className="w-6 h-6 text-green-600 mr-3" />
-                <h2 className="text-2xl font-semibold text-green-900">Hiring Tips</h2>
-              </div>
-              <ul className="space-y-3">
-                {category.tips.map((tip, index) => (
-                  <li key={index} className="flex items-start">
-                    <CheckCircle className="w-4 h-4 text-green-600 mr-3 mt-1 flex-shrink-0" />
-                    <span className="text-green-800">{tip}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Red Flags */}
-            <div className="bg-red-50 rounded-lg border border-red-200 p-6">
-              <div className="flex items-center mb-4">
-                <AlertCircle className="w-6 h-6 text-red-600 mr-3" />
-                <h2 className="text-2xl font-semibold text-red-900">Red Flags to Avoid</h2>
-              </div>
-              <ul className="space-y-3">
-                {category.redFlags.map((flag, index) => (
-                  <li key={index} className="flex items-start">
-                    <AlertCircle className="w-4 h-4 text-red-600 mr-3 mt-1 flex-shrink-0" />
-                    <span className="text-red-800">{flag}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
-          {/* Call to Action */}
-          <div className="bg-white rounded-lg shadow-sm border p-8 mt-8 text-center">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-              Ready to find {category.name} professionals?
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Post your job for free and get quotes from verified {category.name.toLowerCase()} experts in your area.
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-montserrat text-white mb-4">
+              {category.name}
+            </h1>
+            <p className="text-white/70 font-lato text-sm md:text-base mb-8 max-w-2xl leading-relaxed">
+              {category.description}
             </p>
-            <div className="space-x-4">
-              <button
+            
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button 
                 onClick={() => navigate('/post-job')}
-                className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-medium"
+                className="bg-[#34D164] hover:bg-[#2ab854] text-white px-6 py-2.5 text-sm font-medium rounded-full transition-all duration-300 hover:scale-105"
               >
                 Post a Job
-              </button>
-              <button
-                onClick={() => navigate(`/browse-jobs?category=${encodeURIComponent(category.name)}`)}
-                className="border border-green-600 text-green-600 hover:bg-green-50 px-8 py-3 rounded-lg font-medium"
+              </Button>
+              <Button 
+                onClick={() => navigate(`/browse-tradespeople?category=${encodeURIComponent(category.name)}`)}
+                className="bg-white/10 backdrop-blur-sm border border-white/20 text-white px-6 py-2.5 text-sm font-medium rounded-full hover:bg-white/20 transition-all duration-300"
               >
                 Find Professionals
-              </button>
+              </Button>
             </div>
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* Quick Stats */}
+      <section className="relative py-8 overflow-hidden">
+        <div className="absolute inset-0 bg-[#121E3C]" />
+        <div className="container relative z-10 mx-auto px-6 md:px-8 lg:px-12">
+          <div className="max-w-4xl mx-auto grid grid-cols-3 gap-4">
+            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4 text-center">
+              <Clock size={18} className="text-[#34D164] mx-auto mb-2" />
+              <p className="text-white/50 text-[10px] uppercase tracking-wide mb-1">Duration</p>
+              <p className="text-white font-semibold text-sm">{category.timeframe}</p>
+            </div>
+            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4 text-center">
+              <Star size={18} className="text-[#34D164] mx-auto mb-2" />
+              <p className="text-white/50 text-[10px] uppercase tracking-wide mb-1">Price Range</p>
+              <p className="text-white font-semibold text-sm">{category.averagePrice}</p>
+            </div>
+            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4 text-center">
+              <Shield size={18} className="text-[#34D164] mx-auto mb-2" />
+              <p className="text-white/50 text-[10px] uppercase tracking-wide mb-1">Verified</p>
+              <p className="text-white font-semibold text-sm">Professionals</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Main Content */}
+      <section 
+        className="py-12 lg:py-14"
+        style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.97), rgba(255,255,255,0.97)), 
+            linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px),
+            linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px)`,
+          backgroundSize: '100% 100%, 20px 20px, 20px 20px'
+        }}
+      >
+        <div className="container mx-auto px-6 md:px-8 lg:px-12">
+          <div className="max-w-4xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {/* Services Offered */}
+              <div className="bg-white rounded-2xl border border-gray-100 p-6">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-10 h-10 bg-[#34D164]/10 rounded-xl flex items-center justify-center">
+                    <Briefcase size={18} className="text-[#34D164]" />
+                  </div>
+                  <h2 className="text-base font-semibold font-montserrat text-[#121E3C]">Services Offered</h2>
+                </div>
+                <ul className="space-y-2.5">
+                  {category.services.map((service, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <CheckCircle size={14} className="text-[#34D164] mt-0.5 shrink-0" />
+                      <span className="text-gray-600 font-lato text-sm">{service}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Common Materials */}
+              <div className="bg-white rounded-2xl border border-gray-100 p-6">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-10 h-10 bg-[#34D164]/10 rounded-xl flex items-center justify-center">
+                    <Package size={18} className="text-[#34D164]" />
+                  </div>
+                  <h2 className="text-base font-semibold font-montserrat text-[#121E3C]">Materials Used</h2>
+                </div>
+                <div className="grid grid-cols-2 gap-2.5">
+                  {category.materials.map((material, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 bg-[#34D164] rounded-full shrink-0"></span>
+                      <span className="text-gray-600 font-lato text-sm">{material}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* What to Expect */}
+              <div className="bg-white rounded-2xl border border-gray-100 p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-[#34D164]/10 rounded-xl flex items-center justify-center">
+                    <Sparkles size={18} className="text-[#34D164]" />
+                  </div>
+                  <h2 className="text-base font-semibold font-montserrat text-[#121E3C]">What to Expect</h2>
+                </div>
+                <p className="text-gray-600 font-lato text-sm leading-relaxed">{category.whatToExpect}</p>
+              </div>
+
+              {/* When to Hire */}
+              <div className="bg-white rounded-2xl border border-gray-100 p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-[#34D164]/10 rounded-xl flex items-center justify-center">
+                    <Clock size={18} className="text-[#34D164]" />
+                  </div>
+                  <h2 className="text-base font-semibold font-montserrat text-[#121E3C]">When to Hire</h2>
+                </div>
+                <p className="text-gray-600 font-lato text-sm leading-relaxed">{category.whenToHire}</p>
+              </div>
+            </div>
+
+            {/* Tips and Red Flags */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-5">
+              {/* Hiring Tips */}
+              <div className="bg-[#34D164]/5 border border-[#34D164]/10 rounded-2xl p-6">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-10 h-10 bg-[#34D164]/20 rounded-xl flex items-center justify-center">
+                    <Info size={18} className="text-[#34D164]" />
+                  </div>
+                  <h2 className="text-base font-semibold font-montserrat text-[#121E3C]">Hiring Tips</h2>
+                </div>
+                <ul className="space-y-2.5">
+                  {category.tips.map((tip, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <CheckCircle size={14} className="text-[#34D164] mt-0.5 shrink-0" />
+                      <span className="text-gray-700 font-lato text-sm">{tip}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Red Flags */}
+              <div className="bg-red-50/50 border border-red-100 rounded-2xl p-6">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
+                    <AlertCircle size={18} className="text-red-500" />
+                  </div>
+                  <h2 className="text-base font-semibold font-montserrat text-[#121E3C]">Red Flags to Avoid</h2>
+                </div>
+                <ul className="space-y-2.5">
+                  {category.redFlags.map((flag, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <AlertCircle size={14} className="text-red-400 mt-0.5 shrink-0" />
+                      <span className="text-gray-700 font-lato text-sm">{flag}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Call to Action */}
+      <FinalCTA 
+        badge={`Find ${category.name} experts`}
+        title={`Ready to find ${category.name} professionals?`}
+        subtitle={`Post your job for free and get quotes from verified ${category.name.toLowerCase()} experts in your area.`}
+        buttonText="Post a Job"
+        buttonLink="/post-job"
+        showAuthModal={false}
+      />
 
       <Footer />
     </div>

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronUp, Search, Phone, Mail, MessageCircle, HelpCircle, Users, Wallet, Briefcase, Shield } from 'lucide-react';
+import { ChevronDown, ChevronUp, Search, Phone, Mail, MessageCircle, HelpCircle, Users, Wallet, Briefcase, Shield, CreditCard, Settings, FileText, Star, ChevronRight, Zap } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { Button } from '../components/ui/button';
 import { contactsAPI } from '../api/wallet';
 
 const HelpFAQsPage = () => {
@@ -80,26 +81,114 @@ const HelpFAQsPage = () => {
     }
   }, [activeCategory, isAuthenticated, isTradesperson]);
 
+  // Help categories for Browse Help Topics section
+  const helpCategories = [
+    {
+      icon: Users,
+      title: "Getting Started",
+      description: "Learn how to set up your profile and get your first job",
+      articles: 8,
+      categoryId: "general"
+    },
+    {
+      icon: CreditCard,
+      title: "Payments & Earnings",
+      description: "Understanding how payments work and managing your earnings",
+      articles: 12,
+      categoryId: "payments"
+    },
+    {
+      icon: Settings,
+      title: "Account Management",
+      description: "Managing your profile, settings, and verification status",
+      articles: 15,
+      categoryId: "account"
+    },
+    {
+      icon: FileText,
+      title: "Job Management",
+      description: "How to find, apply for, and manage your jobs effectively",
+      articles: 10,
+      categoryId: "tradespeople"
+    },
+    {
+      icon: Star,
+      title: "Reviews & Ratings",
+      description: "Building your reputation and handling customer feedback",
+      articles: 6,
+      categoryId: "general"
+    },
+    {
+      icon: Shield,
+      title: "Safety & Policies",
+      description: "Platform policies, safety guidelines, and best practices",
+      articles: 9,
+      categoryId: "account"
+    }
+  ];
+
+  // Popular articles for the Popular Articles section
+  const popularArticles = [
+    {
+      title: "How to create a winning tradesperson profile",
+      category: "Getting Started",
+      readTime: "5 min read",
+      slug: 'winning-tradesperson-profile'
+    },
+    {
+      title: "Understanding ServiceHub's payment system",
+      category: "Payments & Earnings",
+      readTime: "3 min read",
+      slug: 'servicehub-payment-system'
+    },
+    {
+      title: "How to get more job requests",
+      category: "Job Management",
+      readTime: "7 min read",
+      slug: 'get-more-job-requests'
+    },
+    {
+      title: "Verification process and requirements",
+      category: "Account Management",
+      readTime: "4 min read",
+      slug: 'verification-process'
+    },
+    {
+      title: "Handling difficult customers professionally",
+      category: "Safety & Policies",
+      readTime: "6 min read",
+      slug: 'handling-difficult-customers'
+    }
+  ];
+
   const faqData = {
     general: [
       {
-        question: "What is serviceHub?",
-        answer: "serviceHub is Nigeria's leading digital marketplace that connects homeowners with verified, reliable tradespeople and service professionals. We help you find trusted professionals for home improvement, repairs, maintenance, and various other services across Nigeria."
+        question: "What is ServiceHub?",
+        answer: "ServiceHub is Nigeria's leading digital marketplace that connects homeowners with verified, reliable tradespeople and service professionals. We help you find trusted professionals for home improvement, repairs, maintenance, and various other services across Nigeria."
       },
       {
-        question: "How does serviceHub work?",
+        question: "How does ServiceHub work?",
         answer: "It's simple and FREE for homeowners! Post your job requirements for free, and qualified tradespeople can show interest in your job. You can then review their profiles, ratings, portfolios, and choose the best professional for your needs. Contact details and communication are completely free - no hidden charges for homeowners."
       },
       {
-        question: "Is serviceHub available across Nigeria?",
-        answer: "Yes! serviceHub operates across all 36 states and the Federal Capital Territory (FCT) in Nigeria. We have a growing network of verified professionals in major cities and towns nationwide."
+        question: "Is ServiceHub available across Nigeria?",
+        answer: "Yes! ServiceHub operates across all 36 states and the Federal Capital Territory (FCT) in Nigeria. We have a growing network of verified professionals in major cities and towns nationwide."
       },
       {
-        question: "How do I contact serviceHub support?",
+        question: "What types of jobs are available on ServiceHub?",
+        answer: "ServiceHub covers 43+ trade categories including plumbing, electrical work, painting, construction, carpentry, cleaning services, landscaping, and much more. Jobs range from small repairs to large renovation projects."
+      },
+      {
+        question: "What if I have a dispute with a tradesperson or customer?",
+        answer: "ServiceHub provides dispute resolution support. Contact our support team with details of the issue, and we'll mediate to find a fair solution. We maintain detailed job records to help resolve any disagreements professionally."
+      },
+      {
+        question: "How do I contact ServiceHub support?",
         answer: "You can reach our support team through multiple channels: Email us at support@myservicehub.co, call our customer service line, or use the live chat feature on our website. Our support team is available Monday to Friday, 8 AM to 6 PM (WAT)."
       },
       {
-        question: "Is my personal information safe on serviceHub?",
+        question: "Is my personal information safe on ServiceHub?",
         answer: "Absolutely! We take data security seriously. Your personal information is encrypted and stored securely. We never share your contact details without your permission, and all our tradespeople go through a verification process."
       }
     ],
@@ -135,12 +224,16 @@ const HelpFAQsPage = () => {
     ],
     tradespeople: [
       {
-        question: "How do I join serviceHub as a tradesperson?",
+        question: "How do I join ServiceHub as a tradesperson?",
         answer: "Registration is free! Click 'Join as Tradesperson', fill out your profile with your skills, experience, location, and portfolio. Complete the verification process by submitting your ID and relevant certifications. Once approved, you can start showing interest in jobs."
       },
       {
-        question: "How much does it cost to use serviceHub as a tradesperson?",
-        answer: "Registration is free! You pay a small access fee (typically 5-100 coins, equivalent to â‚¦500-â‚¦10,000) only when you want to access homeowner contact details for jobs you're interested in. This ensures you're serious about the job and helps maintain quality leads."
+        question: "How much does it cost to use ServiceHub as a tradesperson?",
+        answer: "Registration is free! You pay a small access fee (typically 5-100 coins, equivalent to ₦500-₦10,000) only when you want to access homeowner contact details for jobs you're interested in. This ensures you're serious about the job and helps maintain quality leads."
+      },
+      {
+        question: "How are jobs matched to tradespeople?",
+        answer: "Our smart matching system considers several factors: your trade specialties, location, availability, ratings, and job preferences. Jobs are sent to qualified tradespeople in the area, and you can choose which ones to respond to."
       },
       {
         question: "How do I show interest in a job?",
@@ -148,14 +241,18 @@ const HelpFAQsPage = () => {
       },
       {
         question: "How do I add funds to my wallet?",
-        answer: "Go to your Wallet section, click 'Fund Wallet', enter the amount (minimum â‚¦100), and upload proof of payment to our Kuda Bank account. Our team will verify and credit your wallet within 2-4 hours during business hours."
+        answer: "Go to your Wallet section, click 'Fund Wallet', enter the amount (minimum ₦100), and upload proof of payment to our Kuda Bank account. Our team will verify and credit your wallet within 2-4 hours during business hours."
       },
       {
-        question: "How can I improve my profile visibility?",
-        answer: "Complete your profile 100%, add high-quality photos of your previous work, get positive reviews from clients, maintain prompt response times, and keep your profile updated. Verified tradespeople with complete profiles get more visibility."
+        question: "Can I set my own prices?",
+        answer: "Yes, you have full control over your pricing. You can set hourly rates, fixed prices for specific services, or provide custom quotes for each job. Our platform provides pricing guidance based on market rates in your area."
       },
       {
-        question: "Can I refer other tradespeople to serviceHub?",
+        question: "How can I improve my profile visibility and get hired?",
+        answer: "Complete your profile 100%, add high-quality photos of your previous work, get verified quickly, respond to job requests promptly, maintain high ratings by delivering quality work, and collect positive reviews from satisfied customers."
+      },
+      {
+        question: "Can I refer other tradespeople to ServiceHub?",
         answer: "Yes! We have a referral program where you earn rewards for referring other qualified tradespeople. When your referrals complete verification and become active, you earn bonus coins that can be used on the platform."
       }
     ],
@@ -272,185 +369,364 @@ const HelpFAQsPage = () => {
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      {/* Page Header */}
-      <div className="bg-white border-b">
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">Help & FAQs</h1>
-            <p className="text-xl text-gray-600 mb-8">
-              Find answers to common questions and get the help you need
+      {/* Hero Section */}
+      <section className="relative py-16 lg:py-20 overflow-hidden">
+        <div className="absolute inset-0">
+          <img 
+            src="/stock/bg9.jpg" 
+            alt="" 
+            className="w-full h-full object-cover"
+            loading="eager"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#121E3C]/85 via-[#121E3C]/75 to-[#121E3C]/85" />
+        </div>
+        
+        <div className="container relative z-10 mx-auto px-6 md:px-8 lg:px-12">
+          <div className="max-w-3xl mx-auto text-center">
+            <span className="inline-block px-4 py-1.5 mb-5 text-xs font-semibold font-lato tracking-wider uppercase text-[#34D164] bg-white/5 backdrop-blur-sm border border-white/10 rounded-full">
+              Support Center
+            </span>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-montserrat text-white mb-4 leading-tight">
+              Help & FAQ
+            </h1>
+            <p className="text-white/70 font-lato mb-8 max-w-xl mx-auto">
+              Find answers to common questions and get the support you need
             </p>
             
             {/* Search Bar */}
-            <div className="relative max-w-md mx-auto">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Search for answers..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              />
+            <div className="max-w-lg mx-auto mb-6">
+              <div className="flex items-center bg-white/10 backdrop-blur-sm rounded-xl overflow-hidden border border-white/20">
+                <div className="pl-4">
+                  <Search className="w-5 h-5 text-white/50" strokeWidth={2} />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search for answers..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex-1 px-4 py-3 text-sm bg-transparent text-white placeholder:text-white/50 focus:outline-none"
+                />
+                <Button
+                  className="bg-[#34D164] hover:bg-[#2ab854] text-white px-5 py-3 rounded-none text-sm"
+                  onClick={() => {
+                    const el = document.getElementById('faq-section');
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }}
+                >
+                  Search
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap justify-center gap-2">
+              {['Getting started', 'Payments', 'Verification', 'Jobs'].map((term) => (
+                <button
+                  key={term}
+                  className="px-3 py-1.5 text-xs text-white/70 hover:text-white bg-white/5 hover:bg-white/10 rounded-full border border-white/10 transition-all duration-200"
+                  onClick={() => setSearchQuery(term)}
+                >
+                  {term}
+                </button>
+              ))}
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            {/* Category Sidebar */}
-            <div className="lg:col-span-1">
-              <div className="bg-white rounded-lg shadow-sm border p-6 sticky top-8">
-                <h3 className="font-semibold text-gray-900 mb-4">Categories</h3>
-                <nav className="space-y-2">
-                  {categories.map((category) => {
-                    const IconComponent = category.icon;
-                    return (
-                      <button
-                        key={category.id}
-                        onClick={() => setActiveCategory(category.id)}
-                        className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors ${
-                          activeCategory === category.id
-                            ? 'bg-green-50 text-green-700 border-green-200 border'
-                            : 'text-gray-600 hover:bg-gray-50'
-                        }`}
-                      >
-                        <IconComponent className="w-4 h-4 mr-3" />
-                        {category.name}
-                      </button>
-                    );
-                  })}
-                </nav>
-              </div>
-            </div>
-
-            {/* FAQ Content */}
-            <div className="lg:col-span-3">
-              <div className="bg-white rounded-lg shadow-sm border">
-                <div className="p-6 border-b">
-                  <h2 className="text-2xl font-semibold text-gray-900">
-                    {categories.find(cat => cat.id === activeCategory)?.name} Questions
-                  </h2>
-                  <p className="text-gray-600 mt-1">
-                    {filteredFAQs.length} question{filteredFAQs.length !== 1 ? 's' : ''} found
-                  </p>
-                </div>
-
-                <div className="divide-y divide-gray-200">
-                  {filteredFAQs.length > 0 ? (
-                    filteredFAQs.map((faq, index) => (
-                      <div key={index} className="p-6">
+      <section 
+        id="faq-section"
+        className="py-10 lg:py-12"
+        style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.97), rgba(255,255,255,0.97)), 
+            linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px),
+            linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px)`,
+          backgroundSize: '100% 100%, 20px 20px, 20px 20px'
+        }}
+      >
+        <div className="container mx-auto px-6 md:px-8 lg:px-12">
+          <div className="max-w-5xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              {/* Category Sidebar */}
+              <div className="lg:col-span-1">
+                <div className="bg-white rounded-2xl border border-gray-100 p-5 sticky top-8">
+                  <h3 className="text-sm font-semibold text-[#121E3C] mb-4">Categories</h3>
+                  <nav className="space-y-1">
+                    {categories.map((category) => {
+                      const IconComponent = category.icon;
+                      return (
                         <button
-                          onClick={() => toggleFAQ(index)}
-                          className="w-full flex justify-between items-center text-left"
+                          key={category.id}
+                          onClick={() => setActiveCategory(category.id)}
+                          className={`w-full flex items-center px-3 py-2 rounded-lg text-left text-sm transition-all duration-200 ${
+                            activeCategory === category.id
+                              ? 'bg-[#34D164]/10 text-[#34D164] font-medium'
+                              : 'text-gray-500 hover:bg-gray-50'
+                          }`}
                         >
-                          <h3 className="text-lg font-medium text-gray-900 pr-4">
-                            {faq.question}
-                          </h3>
-                          {expandedFAQ === index ? (
-                            <ChevronUp className="w-5 h-5 text-gray-500 flex-shrink-0" />
-                          ) : (
-                            <ChevronDown className="w-5 h-5 text-gray-500 flex-shrink-0" />
-                          )}
+                          <IconComponent className="w-4 h-4 mr-2.5" />
+                          {category.name}
                         </button>
-                        {expandedFAQ === index && (
-                          <div className="mt-4 pr-8">
-                            <p className="text-gray-600 leading-relaxed">
-                              {faq.answer}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="p-6 text-center">
-                      <p className="text-gray-500">
-                        No questions found matching your search. Try a different search term or browse other categories.
-                      </p>
-                    </div>
-                  )}
+                      );
+                    })}
+                  </nav>
                 </div>
               </div>
 
-              {/* Quick Actions */}
-              <div className="mt-8 bg-white rounded-lg shadow-sm border p-6">
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <button
-                    onClick={() => navigate('/post-job')}
-                    className="p-4 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-colors text-left"
-                  >
-                    <h4 className="font-medium text-gray-900">Post a Job</h4>
-                    <p className="text-sm text-gray-600 mt-1">Find trades for your project</p>
-                  </button>
-                  <button
-                    onClick={() => navigate('/browse-jobs')}
-                    className="p-4 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-colors text-left"
-                  >
-                    <h4 className="font-medium text-gray-900">Browse Jobs</h4>
-                    <p className="text-sm text-gray-600 mt-1">Find work opportunities</p>
-                  </button>
-                  
-                  {/* Only show Manage Wallet to authenticated tradespeople */}
-                  {isAuthenticated() && isTradesperson() && (
+              {/* FAQ Content */}
+              <div className="lg:col-span-3">
+                <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                  <div className="p-5 border-b border-gray-100">
+                    <h2 className="text-lg font-semibold font-montserrat text-[#121E3C]">
+                      {categories.find(cat => cat.id === activeCategory)?.name} Questions
+                    </h2>
+                    <p className="text-gray-400 text-xs mt-1">
+                      {filteredFAQs.length} question{filteredFAQs.length !== 1 ? 's' : ''} found
+                    </p>
+                  </div>
+
+                  <div className="divide-y divide-gray-100">
+                    {filteredFAQs.length > 0 ? (
+                      filteredFAQs.map((faq, index) => (
+                        <div key={index} className="p-5">
+                          <button
+                            onClick={() => toggleFAQ(index)}
+                            className="w-full flex justify-between items-center text-left"
+                          >
+                            <h3 className="text-sm font-medium text-[#121E3C] pr-4">
+                              {faq.question}
+                            </h3>
+                            <ChevronDown className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200 ${expandedFAQ === index ? 'rotate-180' : ''}`} />
+                          </button>
+                          {expandedFAQ === index && (
+                            <div className="mt-3 pr-8">
+                              <p className="text-gray-500 text-sm leading-relaxed">
+                                {faq.answer}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-8 text-center">
+                        <p className="text-gray-400 text-sm">
+                          No questions found. Try a different search term.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Quick Actions */}
+                <div className="mt-6 bg-white rounded-2xl border border-gray-100 p-5">
+                  <h3 className="text-sm font-semibold text-[#121E3C] mb-4">Quick Actions</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <button
-                      onClick={() => navigate('/wallet')}
-                      className="p-4 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-colors text-left"
+                      onClick={() => navigate('/post-job')}
+                      className="group p-4 border border-gray-100 rounded-xl hover:border-[#34D164]/30 hover:bg-[#34D164]/5 transition-all duration-200 text-left"
                     >
-                      <h4 className="font-medium text-gray-900">Manage Wallet</h4>
-                      <p className="text-sm text-gray-600 mt-1">Add funds or check balance</p>
+                      <h4 className="text-sm font-medium text-[#121E3C] group-hover:text-[#34D164]">Post a Job</h4>
+                      <p className="text-xs text-gray-400 mt-0.5">Find trades for your project</p>
                     </button>
-                  )}
-                  
-                  <button
-                    onClick={() => navigate('/profile')}
-                    className="p-4 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-colors text-left"
-                  >
-                    <h4 className="font-medium text-gray-900">Update Profile</h4>
-                    <p className="text-sm text-gray-600 mt-1">Manage your account settings</p>
-                  </button>
+                    <button
+                      onClick={() => navigate('/browse-jobs')}
+                      className="group p-4 border border-gray-100 rounded-xl hover:border-[#34D164]/30 hover:bg-[#34D164]/5 transition-all duration-200 text-left"
+                    >
+                      <h4 className="text-sm font-medium text-[#121E3C] group-hover:text-[#34D164]">Browse Jobs</h4>
+                      <p className="text-xs text-gray-400 mt-0.5">Find work opportunities</p>
+                    </button>
+                    
+                    {isAuthenticated() && isTradesperson() && (
+                      <button
+                        onClick={() => navigate('/wallet')}
+                        className="group p-4 border border-gray-100 rounded-xl hover:border-[#34D164]/30 hover:bg-[#34D164]/5 transition-all duration-200 text-left"
+                      >
+                        <h4 className="text-sm font-medium text-[#121E3C] group-hover:text-[#34D164]">Manage Wallet</h4>
+                        <p className="text-xs text-gray-400 mt-0.5">Add funds or check balance</p>
+                      </button>
+                    )}
+                    
+                    <button
+                      onClick={() => navigate('/profile')}
+                      className="group p-4 border border-gray-100 rounded-xl hover:border-[#34D164]/30 hover:bg-[#34D164]/5 transition-all duration-200 text-left"
+                    >
+                      <h4 className="text-sm font-medium text-[#121E3C] group-hover:text-[#34D164]">Update Profile</h4>
+                      <p className="text-xs text-gray-400 mt-0.5">Manage your account settings</p>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+        </div>
+      </section>
 
-          {/* Contact Support Section */}
-          <div className="mt-12 bg-white rounded-lg shadow-sm border p-8">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Still Need Help?</h2>
-              <p className="text-gray-600">
-                Can't find what you're looking for? Our support team is here to help you.
+      {/* Help Categories Section */}
+      <section 
+        className="py-16 lg:py-20"
+        style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.97), rgba(255,255,255,0.97)), 
+            linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px),
+            linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px)`,
+          backgroundSize: '100% 100%, 20px 20px, 20px 20px'
+        }}
+      >
+        <div className="container mx-auto px-6 md:px-8 lg:px-12">
+          <div className="text-center mb-12">
+            <h2 className="text-xl sm:text-2xl font-semibold font-montserrat text-[#121E3C] mb-2">
+              Browse Help Topics
+            </h2>
+            <p className="text-gray-500 font-lato">
+              Find answers organized by category
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 max-w-5xl mx-auto">
+            {helpCategories.map((category, index) => {
+              const IconComponent = category.icon;
+              return (
+                <div
+                  key={index}
+                  className="group bg-white rounded-2xl p-5 border border-gray-100 hover:shadow-lg hover:border-[#34D164]/20 transition-all duration-300 cursor-pointer"
+                  onClick={() => {
+                    setActiveCategory(category.categoryId);
+                    const el = document.getElementById('faq-section');
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      setActiveCategory(category.categoryId);
+                      const el = document.getElementById('faq-section');
+                      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                  }}
+                >
+                  <div className="w-11 h-11 rounded-xl bg-[#34D164]/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                    <IconComponent className="w-5 h-5 text-[#34D164]" />
+                  </div>
+                  <h3 className="text-base font-semibold font-montserrat text-[#121E3C] mb-1">
+                    {category.title}
+                  </h3>
+                  <p className="text-gray-500 text-xs font-lato mb-3 line-clamp-2">
+                    {category.description}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-[#34D164] font-medium">{category.articles} articles</span>
+                    <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#34D164] group-hover:translate-x-1 transition-all duration-300" />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Popular Articles Section */}
+      <section className="relative py-16 lg:py-20 overflow-hidden">
+        <div className="absolute inset-0">
+          <img 
+            src="/stock/bg4.jpg" 
+            alt="" 
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-[#121E3C]/90" />
+        </div>
+        
+        <div className="container relative z-10 mx-auto px-6 md:px-8 lg:px-12">
+          <div className="text-center mb-10">
+            <h2 className="text-xl sm:text-2xl font-semibold font-montserrat text-white mb-2">
+              Popular Articles
+            </h2>
+            <p className="text-white/60 font-lato">
+              Most helpful guides for our users
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 max-w-4xl mx-auto">
+            {popularArticles.map((article, index) => (
+              <div
+                key={index}
+                className="group bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4 hover:bg-white/10 transition-all duration-300 cursor-pointer"
+                onClick={() => navigate(`/blog/${article.slug}`)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-medium text-white mb-2 group-hover:text-[#34D164] transition-colors truncate">
+                      {article.title}
+                    </h3>
+                    <div className="flex items-center gap-3 text-xs text-white/50">
+                      <span className="bg-white/10 px-2 py-0.5 rounded">{article.category}</span>
+                      <span>{article.readTime}</span>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-white/30 group-hover:text-[#34D164] group-hover:translate-x-1 transition-all duration-300 shrink-0 ml-3" />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="text-center mt-10">
+            <Button
+              onClick={() => navigate('/blog')}
+              className="bg-[#34D164] hover:bg-[#2ab854] text-white px-6 py-2.5 text-sm font-medium rounded-full transition-all duration-300 hover:scale-105"
+            >
+              View All Articles
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Support Section */}
+      <section className="relative py-16 lg:py-20 overflow-hidden">
+        <div className="absolute inset-0">
+          <img 
+            src="/stock/bg15.jpg" 
+            alt="" 
+            className="w-full h-full object-cover object-top"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-[#121E3C]/90" />
+        </div>
+        
+        <div className="container relative z-10 mx-auto px-6 md:px-8 lg:px-12">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-10">
+              <h2 className="text-xl sm:text-2xl font-semibold font-montserrat text-white mb-2">
+                Still Need Help?
+              </h2>
+              <p className="text-white/60 font-lato text-sm">
+                Our support team is here to help you
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {contactOptions.map((option, index) => {
                 const IconComponent = option.icon;
                 return (
                   <a
                     key={index}
                     href={option.action}
-                    className="flex flex-col items-center text-center p-6 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-colors"
+                    className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-5 text-center hover:bg-white/10 transition-all duration-300"
                   >
-                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                      <IconComponent className="w-6 h-6 text-green-600" />
+                    <div className="w-10 h-10 bg-[#34D164]/20 rounded-xl flex items-center justify-center mx-auto mb-3">
+                      <IconComponent className="w-5 h-5 text-[#34D164]" />
                     </div>
-                    <h3 className="font-semibold text-gray-900 mb-2">{option.title}</h3>
-                    <p className="text-sm text-gray-600 mb-2">{option.description}</p>
-                    <p className="text-sm font-medium text-green-600">{option.contact}</p>
+                    <h3 className="text-sm font-semibold text-white mb-1">{option.title}</h3>
+                    <p className="text-xs text-white/60 mb-1">{option.description}</p>
+                    <p className="text-xs font-medium text-[#34D164]">{option.contact}</p>
                   </a>
                 );
               })}
             </div>
 
-            <div className="mt-8 p-6 bg-blue-50 border border-blue-200 rounded-lg">
-              <h3 className="font-semibold text-blue-900 mb-2">Support Hours</h3>
-              <p className="text-blue-800">{businessHours}</p>
+            <div className="mt-8 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4 text-center">
+              <p className="text-white/70 text-sm">Support Hours: <span className="text-white font-medium">{businessHours}</span></p>
             </div>
           </div>
         </div>
-      </div>
+      </section>
       
       <Footer />
     </div>

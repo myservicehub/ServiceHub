@@ -33,7 +33,7 @@ import { interestsAPI } from '../api/services';
 import { walletAPI } from '../api/wallet';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import ChatModal from '../components/ChatModal';
 
 const MyInterestsPage = () => {
@@ -51,6 +51,10 @@ const MyInterestsPage = () => {
   const { user, isAuthenticated, isTradesperson } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Check if we're inside the dashboard route
+  const isInDashboard = location.pathname.startsWith('/trades');
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -438,9 +442,8 @@ const MyInterestsPage = () => {
   };
 
   if (loading) {
-    return (
-      <TradespersonLayout>
-      <div className="min-h-screen bg-gray-50">
+    const loadingContent = (
+      <div className={isInDashboard ? "" : "min-h-screen bg-gray-50"}>
         <div className="flex items-center justify-center py-20">
           <div className="text-center">
             <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" style={{color: '#34D164'}} />
@@ -448,285 +451,230 @@ const MyInterestsPage = () => {
           </div>
         </div>
       </div>
-      </TradespersonLayout>
     );
+    
+    if (isInDashboard) return loadingContent;
+    return <TradespersonLayout>{loadingContent}</TradespersonLayout>;
   }
 
-  return (
-    <TradespersonLayout>
-    <div className="min-h-screen bg-gray-50">
+  const pageContent = (
+    <div className={isInDashboard ? "" : "min-h-screen bg-gray-50"}>
       
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header Section */}
-        <div className="mb-8">
-          <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center gap-4">
-            <div>
-              <h1 className="text-3xl font-bold font-montserrat mb-2" style={{color: '#121E3C'}}>
-                My Interests
-              </h1>
-              <p className="text-gray-600 font-lato">
-                Track and manage jobs you've shown interest in
-              </p>
+      <div className={isInDashboard ? "" : "max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8"}>
+        {/* Header Section - Simplified */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl font-bold font-montserrat text-[#121E3C]">
+              My Interests
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">
+              {interests.length} job{interests.length !== 1 ? 's' : ''} you've shown interest in
+            </p>
+          </div>
+          
+          {/* Wallet Quick Info */}
+          <div className="flex items-center gap-3 px-4 py-2 bg-[#121E3C]/5 rounded-xl">
+            <div className="text-right">
+              <p className="text-xs text-gray-500">Balance</p>
+              <p className="text-sm font-semibold text-[#121E3C]">{walletBalance} coins</p>
             </div>
-            
-            <div className="w-full md:w-auto max-w-full flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-              <Button
-                onClick={handleManualRefresh}
-                variant="outline"
-                disabled={loading}
-                className="flex items-center space-x-2"
-              >
-                <svg 
-                  className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                <span>{loading ? 'Refreshing...' : 'Refresh Data'}</span>
-              </Button>
-              
-              {/* Wallet Balance Card */}
-              <Card className="w-full sm:w-auto sm:min-w-[200px]">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600 font-lato">Wallet Balance</p>
-                      <p className="text-xl font-bold font-montserrat" style={{color: '#34D164'}}>
-                        {walletBalance} coins
-                      </p>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigate('/wallet')}
-                      className="text-sm"
-                    >
-                      Fund Wallet
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+            <Button
+              onClick={() => navigate('/trades/wallet')}
+              size="sm"
+              className="bg-[#34D164] hover:bg-[#2ab854] text-white text-xs px-3 py-1.5 h-auto rounded-lg"
+            >
+              Top Up
+            </Button>
+          </div>
+        </div>
+
+        {/* Stats Row */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white rounded-xl border border-gray-100 p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-xl bg-pink-50 flex items-center justify-center">
+                <Heart className="w-5 h-5 text-pink-500" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Total</p>
+                <p className="text-2xl font-bold text-[#121E3C]">{interests.length}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-100 p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center">
+                <Clock className="w-5 h-5 text-amber-500" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Pending</p>
+                <p className="text-2xl font-bold text-[#121E3C]">{getTabCount(interests, 'pending')}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-100 p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center">
+                <MessageCircle className="w-5 h-5 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Contact Shared</p>
+                <p className="text-2xl font-bold text-[#121E3C]">{getTabCount(interests, 'contact_shared')}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-100 p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-xl bg-green-50 flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 text-green-500" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Paid Access</p>
+                <p className="text-2xl font-bold text-[#121E3C]">{getTabCount(interests, 'paid')}</p>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <Heart className="w-8 h-8 text-blue-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Interests</p>
-                  <p className="text-2xl font-bold">{interests.length}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <Clock className="w-8 h-8 text-yellow-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Pending</p>
-                  <p className="text-2xl font-bold">{getTabCount(interests, 'pending')}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <MessageCircle className="w-8 h-8 text-blue-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Contact Shared</p>
-                  <p className="text-2xl font-bold">{getTabCount(interests, 'contact_shared')}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <CheckCircle className="w-8 h-8 text-green-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Paid Access</p>
-                  <p className="text-2xl font-bold">{getTabCount(interests, 'paid')}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Filter Tabs */}
+        <div className="bg-white rounded-xl border border-gray-100 p-1 mb-6 inline-flex">
+          {[
+            { key: 'all', label: 'All' },
+            { key: 'pending', label: 'Pending' },
+            { key: 'contact_shared', label: 'Contact Shared' },
+            { key: 'paid', label: 'Paid' },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`px-4 py-2 text-sm rounded-lg transition-all ${
+                activeTab === tab.key
+                  ? 'bg-[#121E3C] text-white'
+                  : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
-        {/* Interests Filter */}
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle className="font-montserrat">Your Job Interests</CardTitle>
-              <div className="w-full md:w-auto max-w-full flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                <label htmlFor="status-filter" className="text-sm font-medium text-gray-700">
-                  Filter by status:
-                </label>
-                <Select value={activeTab} onValueChange={setActiveTab}>
-                  <SelectTrigger className="w-[200px]" id="status-filter">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">
-                      All ({interests.length})
-                    </SelectItem>
-                    <SelectItem value="pending">
-                      Pending ({getTabCount(interests, 'pending')})
-                    </SelectItem>
-                    <SelectItem value="contact_shared">
-                      Contact Shared ({getTabCount(interests, 'contact_shared')})
-                    </SelectItem>
-                    <SelectItem value="paid">
-                      Paid Access ({getTabCount(interests, 'paid')})
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+        {/* Interests List */}
+        {filterInterests(interests, activeTab).length === 0 ? (
+          <div className="bg-white rounded-xl border border-gray-100 p-12 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
+              <Heart className="w-8 h-8 text-gray-300" />
             </div>
-          </CardHeader>
-          <CardContent>
-            {/* Content for each filter status */}
-            {filterInterests(interests, activeTab).length === 0 ? (
-              <div className="text-center py-12">
-                <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-600 mb-2">
-                  No interests found
-                </h3>
-                <p className="text-gray-500 mb-6">
-                  {activeTab === 'all' 
-                    ? "You haven't shown interest in any jobs yet."
-                    : `No interests with ${activeTab.replace('_', ' ')} status.`
-                  }
-                </p>
-                {activeTab === 'all' && (
-                  <Button 
-                    onClick={() => navigate('/browse-jobs')}
-                    className="text-white"
-                    style={{backgroundColor: '#34D164'}}
-                  >
-                    Browse Available Jobs
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {filterInterests(interests, activeTab).map((interest) => (
-                  <Card key={interest.id} className="hover:shadow-lg transition-shadow">
-                    <CardContent className="p-6">
-                      <div className="flex justify-between items-start mb-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="text-lg font-semibold font-montserrat">
-                              {interest.job_title}
-                            </h3>
-                            {getStatusBadge(interest)}
-                          </div>
-                          
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono text-gray-500">#{interest.job_id}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <MapPin size={16} />
-                              <span>{interest.job_location}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Calendar size={16} />
-                              <span>Interested: {formatDate(interest.created_at)}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <DollarSign size={16} />
-                              <span>
-                                {interest.job_budget_min && interest.job_budget_max
-                                  ? `${formatCurrency(interest.job_budget_min)} - ${formatCurrency(interest.job_budget_max)}`
-                                  : 'Budget negotiable'
-                                }
-                              </span>
-                            </div>
-                          </div>
-
-                          <p className="text-gray-700 mt-3 line-clamp-2">
-                            {interest.job_description}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="flex justify-between items-center pt-4 border-t">
-                        <div className="text-sm text-gray-500">
-                          Access Fee: {interest.access_fee_coins || 0} coins ({formatCurrency(interest.access_fee_naira || 0)})
-                        </div>
-                        
-                        <div className="flex gap-2">
-                          {(interest.status === 'pending' || interest.status === 'interested') && (
-                            <Badge variant="outline" className="text-yellow-600">
-                              Waiting for homeowner response
-                            </Badge>
-                          )}
-                          
-                          {interest.status === 'contact_shared' && (
-                            <Button
-                              onClick={() => handlePayForAccess(interest.id, interest.access_fee_coins || 0)}
-                              disabled={paymentLoading[interest.id]}
-                              className="text-white"
-                              style={{backgroundColor: '#34D164'}}
-                            >
-                              {paymentLoading[interest.id] ? (
-                                <>
-                                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                                  Processing...
-                                </>
-                              ) : (
-                                <>
-                                  <CreditCard className="w-4 h-4 mr-2" />
-                                  Pay {interest.access_fee_coins || 0} coins
-                                </>
-                              )}
-                            </Button>
-                          )}
-                          
-                          {interest.status === 'paid_access' && (
-                            isChatDisabled(interest) ? (
-                              <div className="space-y-1">
-                                <Button
-                                  disabled
-                                  className="text-gray-400 bg-gray-100 cursor-not-allowed w-full"
-                                >
-                                  <MessageCircle className="w-4 h-4 mr-2" />
-                                  Chat with Homeowner
-                                </Button>
-                                <p className="text-xs text-gray-500 text-center">{getChatDisabledMessage(interest)}</p>
-                              </div>
-                            ) : (
-                              <Button
-                                onClick={() => handleStartChatAfterPayment(interest)}
-                                className="text-white"
-                                style={{backgroundColor: '#34D164'}}
-                              >
-                                <MessageCircle className="w-4 h-4 mr-2" />
-                                Chat with Homeowner
-                              </Button>
-                            )
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+            <h3 className="text-lg font-semibold text-[#121E3C] mb-2">No interests found</h3>
+            <p className="text-gray-500 text-sm mb-4">
+              {activeTab === 'all' 
+                ? "You haven't shown interest in any jobs yet."
+                : `No interests with "${activeTab.replace('_', ' ')}" status.`
+              }
+            </p>
+            {activeTab === 'all' && (
+              <Button 
+                onClick={() => navigate('/trades/browsejobs')}
+                className="bg-[#34D164] hover:bg-[#2ab854] text-white rounded-xl"
+              >
+                Browse Available Jobs
+              </Button>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filterInterests(interests, activeTab).map((interest) => {
+              const statusColors = {
+                'pending': { bg: 'bg-amber-50', border: 'border-l-amber-400', icon: 'text-amber-500' },
+                'interested': { bg: 'bg-amber-50', border: 'border-l-amber-400', icon: 'text-amber-500' },
+                'contact_shared': { bg: 'bg-blue-50', border: 'border-l-blue-400', icon: 'text-blue-500' },
+                'paid_access': { bg: 'bg-green-50', border: 'border-l-green-400', icon: 'text-green-500' },
+              };
+              const colors = statusColors[interest.status] || { bg: 'bg-gray-50', border: 'border-l-gray-400', icon: 'text-gray-500' };
+              
+              return (
+                <div 
+                  key={interest.id} 
+                  className={`bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 border-l-4 ${colors.border}`}
+                >
+                  {/* Card Header */}
+                  <div className="p-5">
+                    <div className="flex items-start justify-between gap-3 mb-4">
+                      <div className="flex items-start gap-4 flex-1 min-w-0">
+                        <div className={`w-14 h-14 rounded-2xl ${colors.bg} flex items-center justify-center shrink-0`}>
+                          <Briefcase className={`w-6 h-6 ${colors.icon}`} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-lg font-semibold text-[#121E3C] mb-1 line-clamp-2">{interest.job_title}</h3>
+                          <div className="flex flex-wrap items-center gap-2">
+                            {getStatusBadge(interest)}
+                            {(interest.job_budget_min || interest.job_budget_max) && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-50 text-green-700 rounded-full text-xs font-medium">
+                                <DollarSign size={10} />
+                                {interest.job_budget_max ? `₦${(interest.job_budget_max/1000).toFixed(0)}k` : 'Flexible'}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Job Details Grid */}
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <div className="flex items-center gap-2 p-2.5 bg-gray-50 rounded-xl">
+                        <MapPin size={14} className="text-gray-400 shrink-0" />
+                        <span className="text-sm text-gray-700 truncate">{interest.job_location || 'Location TBD'}</span>
+                      </div>
+                      <div className="flex items-center gap-2 p-2.5 bg-gray-50 rounded-xl">
+                        <Calendar size={14} className="text-gray-400 shrink-0" />
+                        <span className="text-sm text-gray-700">{formatDate(interest.created_at)}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Card Footer */}
+                  <div className="px-5 py-3.5 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500">Access fee:</span>
+                      <span className="text-sm font-semibold text-[#121E3C]">{interest.access_fee_coins || 0} coins</span>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      {(interest.status === 'pending' || interest.status === 'interested') && (
+                        <span className="text-xs text-amber-600 font-medium">Awaiting response...</span>
+                      )}
+                      
+                      {interest.status === 'contact_shared' && (
+                        <Button
+                          onClick={(e) => { e.stopPropagation(); handlePayForAccess(interest.id, interest.access_fee_coins || 0); }}
+                          disabled={paymentLoading[interest.id]}
+                          className="bg-[#34D164] hover:bg-[#2ab854] text-white text-sm px-4 py-2 h-auto rounded-xl font-medium shadow-sm"
+                        >
+                          {paymentLoading[interest.id] ? 'Processing...' : `Pay ${interest.access_fee_coins || 0} coins`}
+                        </Button>
+                      )}
+                      
+                      {interest.status === 'paid_access' && !isChatDisabled(interest) && (
+                        <Button
+                          onClick={(e) => { e.stopPropagation(); handleStartChatAfterPayment(interest); }}
+                          className="bg-[#121E3C] hover:bg-[#1a2d54] text-white text-sm px-4 py-2 h-auto rounded-xl font-medium shadow-sm"
+                        >
+                          <MessageCircle className="w-4 h-4 mr-2" />
+                          Start Chat
+                        </Button>
+                      )}
+                      
+                      {interest.status === 'paid_access' && isChatDisabled(interest) && (
+                        <span className="text-xs text-gray-500 italic">
+                          {interest.job_status === 'completed' ? 'Job Completed' : 'Unavailable'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Contact Details Modal */}
@@ -833,6 +781,17 @@ const MyInterestsPage = () => {
       )}
 
     </div>
+  );
+
+  // If inside dashboard, return content directly without TradespersonLayout wrapper
+  if (isInDashboard) {
+    return pageContent;
+  }
+
+  // Otherwise wrap in TradespersonLayout for standalone page
+  return (
+    <TradespersonLayout>
+      {pageContent}
     </TradespersonLayout>
   );
 };

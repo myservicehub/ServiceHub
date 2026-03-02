@@ -217,7 +217,7 @@ const MyJobsPage = () => {
 
   const handleViewInterestedTradespeople = (job) => {
     // Navigate to the dedicated interested tradespeople page
-    navigate(`/job/${job.id}/interested-tradespeople`);
+    navigate(`/dashboard/jobs/${job.id}/interested`);
   };
 
   const handleCloseInterestedModal = () => {
@@ -352,7 +352,7 @@ const MyJobsPage = () => {
       });
 
       // Navigate to the interested tradespeople page where full chat functionality is available
-      navigate(`/job/${job.id}/interested-tradespeople`);
+      navigate(`/dashboard/jobs/${job.id}/interested`);
       
     } catch (error) {
       console.error('Error starting chat:', error);

@@ -224,299 +224,330 @@ const ContactUsPage = () => {
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
-          {/* Header Section */}
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">Contact Us</h1>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Have questions about serviceHub? We're here to help! Reach out to us through any of the channels below.
+      {/* Hero Section */}
+      <section className="relative py-14 lg:py-16 overflow-hidden">
+        <div className="absolute inset-0">
+          <img 
+            src="/stock/bg9.jpg" 
+            alt="" 
+            className="w-full h-full object-cover"
+            loading="eager"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#121E3C]/90 via-[#121E3C]/85 to-[#121E3C]/90" />
+        </div>
+        
+        <div className="container relative z-10 mx-auto px-6 md:px-8 lg:px-12">
+          <div className="max-w-3xl mx-auto text-center">
+            <div className="w-14 h-14 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl flex items-center justify-center mx-auto mb-5">
+              <Mail size={24} className="text-[#34D164]" />
+            </div>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-montserrat text-white mb-3">
+              Contact Us
+            </h1>
+            <p className="text-white/70 font-lato text-sm max-w-lg mx-auto">
+              Have questions about ServiceHub? We're here to help! Reach out through any channel below.
             </p>
           </div>
+        </div>
+      </section>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-            {/* Contact Form */}
-            <div className="lg:col-span-2">
-              <div className="bg-white rounded-lg shadow-sm border p-8">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-6">Send us a Message</h2>
-                
-                {/* Global validation banner */}
-                <ValidationBanner message={globalErrorMessage} onJump={() => scrollToFirstError(errors)} />
+      <section 
+        className="py-12 lg:py-14"
+        style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.97), rgba(255,255,255,0.97)), 
+            linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px),
+            linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px)`,
+          backgroundSize: '100% 100%, 20px 20px, 20px 20px'
+        }}
+      >
+        <div className="container mx-auto px-6 md:px-8 lg:px-12">
+          <div className="max-w-5xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Contact Form */}
+              <div className="lg:col-span-2">
+                <div className="bg-white rounded-2xl border border-gray-100 p-6">
+                  <h2 className="text-lg font-semibold font-montserrat text-[#121E3C] mb-5">Send us a Message</h2>
+                  
+                  {/* Global validation banner */}
+                  <ValidationBanner message={globalErrorMessage} onJump={() => scrollToFirstError(errors)} />
 
-                <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                        Full Name <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        id="name"
-                        {...register('name')}
-                        aria-invalid={errors.name ? 'true' : 'false'}
-                        className={`w-full px-4 py-3 rounded-lg focus:ring-2 focus:border-transparent ${errors.name ? 'border border-red-400 focus:ring-red-500' : 'border border-gray-300 focus:ring-green-500'}`}
-                        placeholder="Enter your full name"
-                      />
-                      {errors.name && (
-                        <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
-                      )}
+                  <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label htmlFor="name" className="block text-xs font-medium text-[#121E3C] mb-1.5">
+                          Full Name <span className="text-red-400">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          id="name"
+                          {...register('name')}
+                          aria-invalid={errors.name ? 'true' : 'false'}
+                          className={`w-full px-3 py-2.5 text-sm rounded-xl focus:ring-2 focus:border-transparent ${errors.name ? 'border border-red-300 focus:ring-red-200' : 'border border-gray-200 focus:ring-[#34D164]/20 focus:border-[#34D164]'}`}
+                          placeholder="Your full name"
+                        />
+                        {errors.name && (
+                          <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>
+                        )}
+                      </div>
+                      
+                      <div>
+                        <label htmlFor="email" className="block text-xs font-medium text-[#121E3C] mb-1.5">
+                          Email Address <span className="text-red-400">*</span>
+                        </label>
+                        <input
+                          type="email"
+                          id="email"
+                          {...register('email')}
+                          aria-invalid={errors.email ? 'true' : 'false'}
+                          className={`w-full px-3 py-2.5 text-sm rounded-xl focus:ring-2 focus:border-transparent ${errors.email ? 'border border-red-300 focus:ring-red-200' : 'border border-gray-200 focus:ring-[#34D164]/20 focus:border-[#34D164]'}`}
+                          placeholder="Your email"
+                        />
+                        {errors.email && (
+                          <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>
+                        )}
+                      </div>
                     </div>
-                    
-                    <div>
-                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                        Email Address <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="email"
-                        id="email"
-                        {...register('email')}
-                        aria-invalid={errors.email ? 'true' : 'false'}
-                        className={`w-full px-4 py-3 rounded-lg focus:ring-2 focus:border-transparent ${errors.email ? 'border border-red-400 focus:ring-red-500' : 'border border-gray-300 focus:ring-green-500'}`}
-                        placeholder="Enter your email address"
-                      />
-                      {errors.email && (
-                        <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
-                      )}
-                    </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                        Phone Number
-                      </label>
-                      <input
-                        type="tel"
-                        id="phone"
-                        {...register('phone')}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        placeholder="+234 xxx xxx xxxx"
-                      />
-                      {errors.phone && (
-                        <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
-                      )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label htmlFor="phone" className="block text-xs font-medium text-[#121E3C] mb-1.5">
+                          Phone Number
+                        </label>
+                        <input
+                          type="tel"
+                          id="phone"
+                          {...register('phone')}
+                          className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/20 focus:border-[#34D164]"
+                          placeholder="+234 xxx xxx xxxx"
+                        />
+                        {errors.phone && (
+                          <p className="mt-1 text-xs text-red-500">{errors.phone.message}</p>
+                        )}
+                      </div>
+                      
+                      <div>
+                        <label htmlFor="userType" className="block text-xs font-medium text-[#121E3C] mb-1.5">
+                          I am a...
+                        </label>
+                        <select
+                          id="userType"
+                          {...register('userType')}
+                          className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/20 focus:border-[#34D164]"
+                        >
+                          <option value="">Select user type</option>
+                          <option value="homeowner">Homeowner</option>
+                          <option value="tradesperson">Tradesperson</option>
+                          <option value="business">Business</option>
+                          <option value="other">Other</option>
+                        </select>
+                        {errors.userType && (
+                          <p className="mt-1 text-xs text-red-500">{errors.userType.message}</p>
+                        )}
+                      </div>
                     </div>
-                    
+
                     <div>
-                      <label htmlFor="userType" className="block text-sm font-medium text-gray-700 mb-2">
-                        I am a...
+                      <label htmlFor="subject" className="block text-xs font-medium text-[#121E3C] mb-1.5">
+                        Subject
                       </label>
                       <select
-                        id="userType"
-                        {...register('userType')}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        id="subject"
+                        {...register('subject')}
+                        className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/20 focus:border-[#34D164]"
                       >
-                        <option value="">Select user type</option>
-                        <option value="homeowner">Homeowner</option>
-                        <option value="tradesperson">Tradesperson</option>
-                        <option value="business">Business</option>
+                        <option value="">Select a subject</option>
+                        <option value="general">General Inquiry</option>
+                        <option value="account">Account Issues</option>
+                        <option value="payment">Payment & Billing</option>
+                        <option value="technical">Technical Support</option>
+                        <option value="partnership">Partnership Opportunities</option>
+                        <option value="feedback">Feedback & Suggestions</option>
+                        <option value="complaint">Complaint</option>
                         <option value="other">Other</option>
                       </select>
-                      {errors.userType && (
-                        <p className="mt-1 text-sm text-red-600">{errors.userType.message}</p>
+                    </div>
+
+                    <div>
+                      <label htmlFor="message" className="block text-xs font-medium text-[#121E3C] mb-1.5">
+                        Message <span className="text-red-400">*</span>
+                      </label>
+                      <textarea
+                        id="message"
+                        {...register('message')}
+                        aria-invalid={errors.message ? 'true' : 'false'}
+                        rows={4}
+                        className={`w-full px-3 py-2.5 text-sm rounded-xl focus:ring-2 focus:border-transparent resize-none ${errors.message ? 'border border-red-300 focus:ring-red-200' : 'border border-gray-200 focus:ring-[#34D164]/20 focus:border-[#34D164]'}`}
+                        placeholder="Tell us how we can help you..."
+                      />
+                      {errors.message && (
+                        <p className="mt-1 text-xs text-red-500">{errors.message.message}</p>
                       )}
                     </div>
-                  </div>
 
-                  <div>
-                    <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
-                      Subject
-                    </label>
-                    <select
-                      id="subject"
-                      {...register('subject')}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className={`w-full flex items-center justify-center px-6 py-2.5 rounded-full text-sm font-medium text-white transition-colors ${
+                        isSubmitting 
+                          ? 'bg-gray-300 cursor-not-allowed' 
+                          : 'bg-[#34D164] hover:bg-[#2ab854]'
+                      }`}
                     >
-                      <option value="">Select a subject</option>
-                      <option value="general">General Inquiry</option>
-                      <option value="account">Account Issues</option>
-                      <option value="payment">Payment & Billing</option>
-                      <option value="technical">Technical Support</option>
-                      <option value="partnership">Partnership Opportunities</option>
-                      <option value="feedback">Feedback & Suggestions</option>
-                      <option value="complaint">Complaint</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
-                      Message <span className="text-red-500">*</span>
-                    </label>
-                    <textarea
-                      id="message"
-                      {...register('message')}
-                      aria-invalid={errors.message ? 'true' : 'false'}
-                      rows={6}
-                      className={`w-full px-4 py-3 rounded-lg focus:ring-2 focus:border-transparent resize-vertical ${errors.message ? 'border border-red-400 focus:ring-red-500' : 'border border-gray-300 focus:ring-green-500'}`}
-                      placeholder="Tell us how we can help you..."
-                    />
-                    {errors.message && (
-                      <p className="mt-1 text-sm text-red-600">{errors.message.message}</p>
-                    )}
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className={`w-full flex items-center justify-center px-6 py-3 rounded-lg font-medium text-white transition-colors ${
-                      isSubmitting 
-                        ? 'bg-gray-400 cursor-not-allowed' 
-                        : 'bg-green-600 hover:bg-green-700'
-                    }`}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Sending...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="w-4 h-4 mr-2" />
-                        Send Message
-                      </>
-                    )}
-                  </button>
-                </form>
+                      {isSubmitting ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4 mr-2" />
+                          Send Message
+                        </>
+                      )}
+                    </button>
+                  </form>
+                </div>
               </div>
-            </div>
 
-            {/* Contact Information */}
-            <div className="space-y-6">
-              {/* Contact Methods */}
-              <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">Get in Touch</h3>
-                <div className="space-y-4">
-                  {contactMethods.map((method, index) => {
-                    const IconComponent = method.icon;
-                    return (
-                      <div 
-                        key={index}
-                        onClick={method.action}
-                        className="flex items-start p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
-                      >
-                        <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
-                          <IconComponent className="w-5 h-5 text-green-600" />
+              {/* Contact Information */}
+              <div className="space-y-5">
+                {/* Contact Methods */}
+                <div className="bg-white rounded-2xl border border-gray-100 p-5">
+                  <h3 className="text-sm font-semibold font-montserrat text-[#121E3C] mb-4">Get in Touch</h3>
+                  <div className="space-y-3">
+                    {contactMethods.map((method, index) => {
+                      const IconComponent = method.icon;
+                      return (
+                        <div 
+                          key={index}
+                          onClick={method.action}
+                          className="flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors"
+                        >
+                          <div className="w-9 h-9 bg-[#34D164]/10 rounded-xl flex items-center justify-center shrink-0">
+                            <IconComponent className="w-4 h-4 text-[#34D164]" />
+                          </div>
+                          <div>
+                            <h4 className="text-xs font-semibold text-[#121E3C]">{method.title}</h4>
+                            <p className="text-[#34D164] font-medium text-xs mb-0.5">{method.contact}</p>
+                            <p className="text-gray-400 text-[10px]">{method.description}</p>
+                          </div>
                         </div>
-                        <div>
-                          <h4 className="font-semibold text-gray-900">{method.title}</h4>
-                          <p className="text-green-600 font-medium text-sm mb-1">{method.contact}</p>
-                          <p className="text-gray-600 text-sm">{method.description}</p>
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
 
-              {/* Business Hours */}
-              <div className="bg-white rounded-lg shadow-sm border p-6">
-                <div className="flex items-center mb-4">
-                  <Clock className="w-5 h-5 text-green-600 mr-2" />
-                  <h3 className="text-xl font-semibold text-gray-900">Business Hours</h3>
+                {/* Business Hours */}
+                <div className="bg-white rounded-2xl border border-gray-100 p-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-8 h-8 bg-[#34D164]/10 rounded-lg flex items-center justify-center">
+                      <Clock className="w-4 h-4 text-[#34D164]" />
+                    </div>
+                    <h3 className="text-sm font-semibold font-montserrat text-[#121E3C]">Business Hours</h3>
+                  </div>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Monday - Friday</span>
+                      <span className="font-medium text-[#121E3C]">8:00 AM - 6:00 PM</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Saturday</span>
+                      <span className="font-medium text-[#121E3C]">9:00 AM - 2:00 PM</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Sunday</span>
+                      <span className="font-medium text-[#121E3C]">Closed</span>
+                    </div>
+                    <div className="pt-2 border-t border-gray-100">
+                      <p className="text-[10px] text-gray-400">All times are West Africa Time (WAT)</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Monday - Friday</span>
-                    <span className="font-medium">8:00 AM - 6:00 PM</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Saturday</span>
-                    <span className="font-medium">9:00 AM - 2:00 PM</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Sunday</span>
-                    <span className="font-medium">Closed</span>
-                  </div>
-                  <div className="pt-2 border-t border-gray-200">
-                    <p className="text-xs text-gray-500">All times are West Africa Time (WAT)</p>
-                  </div>
-                </div>
-              </div>
 
-              {/* Address */}
-              <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
-                <div className="flex items-center mb-4">
-                  <MapPin className="w-5 h-5 text-green-600 mr-2" />
-                  <h3 className="text-xl font-semibold text-gray-900">Our Location</h3>
-                </div>
-                <div className="text-sm text-gray-600 w-full leading-relaxed break-words">
-                  <p className="mb-2 text-justify">
+                {/* Address */}
+                <div className="bg-white rounded-2xl border border-gray-100 p-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-8 h-8 bg-[#34D164]/10 rounded-lg flex items-center justify-center">
+                      <MapPin className="w-4 h-4 text-[#34D164]" />
+                    </div>
+                    <h3 className="text-sm font-semibold font-montserrat text-[#121E3C]">Our Location</h3>
+                  </div>
+                  <p className="text-gray-500 font-lato text-xs leading-relaxed mb-2">
                     ServiceHub Nigeria, 6, D Place Guest House, Off Omimi Link Road, Ekpan, Delta State, Nigeria
                   </p>
-                  <p className="text-xs text-gray-500">
-                    We serve {platformStats?.total_states || '8'} states accross Nigeria including FCT.
+                  <p className="text-[10px] text-gray-400">
+                    We serve {platformStats?.total_states || '8'} states across Nigeria including FCT.
                   </p>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Quick Links */}
-          <div className="bg-white rounded-lg shadow-sm border p-8 mb-8">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">Quick Help</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {quickLinks.map((link, index) => {
-                const IconComponent = link.icon;
-                return (
-                  <div
-                    key={index}
-                    onClick={link.action}
-                    className="flex flex-col items-center text-center p-6 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 cursor-pointer transition-colors"
-                  >
-                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                      <IconComponent className="w-6 h-6 text-green-600" />
-                    </div>
-                    <h3 className="font-semibold text-gray-900 mb-2">{link.title}</h3>
-                    <p className="text-sm text-gray-600">{link.description}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Social Media & Additional Info */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Social Media */}
-            <div className="bg-white rounded-lg shadow-sm border p-6">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">Follow Us</h3>
-              <p className="text-gray-600 mb-4">Stay connected for updates, tips, and news</p>
-              <div className="flex space-x-4">
-                {socialLinks.map((social, index) => {
-                  const IconComponent = social.icon;
+            {/* Quick Links */}
+            <div className="mt-8 bg-white rounded-2xl border border-gray-100 p-6">
+              <h2 className="text-base font-semibold font-montserrat text-[#121E3C] mb-5 text-center">Quick Help</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {quickLinks.map((link, index) => {
+                  const IconComponent = link.icon;
                   return (
-                    <a
+                    <div
                       key={index}
-                      href={social.url}
-                      target={social.url !== '#' ? '_blank' : '_self'}
-                      rel={social.url !== '#' ? 'noopener noreferrer' : undefined}
-                      className={`w-10 h-10 rounded-full border-2 border-gray-200 flex items-center justify-center transition-colors ${social.color} hover:border-current`}
-                      title={`Follow us on ${social.name}`}
+                      onClick={link.action}
+                      className="flex flex-col items-center text-center p-5 border border-gray-100 rounded-xl hover:border-[#34D164]/30 hover:bg-[#34D164]/5 cursor-pointer transition-all duration-300"
                     >
-                      <IconComponent className="w-5 h-5" />
-                    </a>
+                      <div className="w-10 h-10 bg-[#34D164]/10 rounded-xl flex items-center justify-center mb-3">
+                        <IconComponent className="w-5 h-5 text-[#34D164]" />
+                      </div>
+                      <h3 className="text-sm font-semibold text-[#121E3C] mb-1">{link.title}</h3>
+                      <p className="text-xs text-gray-500">{link.description}</p>
+                    </div>
                   );
                 })}
               </div>
             </div>
 
-            {/* Emergency Contact */}
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-orange-900 mb-2">Need Urgent Help?</h3>
-              <p className="text-orange-800 mb-4">
-                For urgent platform issues or emergency support during business hours
-              </p>
-              <div className="flex items-center text-orange-700">
-                <Phone className="w-4 h-4 mr-2" />
-                  <span className="font-medium">{supportPhone}</span>
+            {/* Social Media & Emergency */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-6">
+              {/* Social Media */}
+              <div className="bg-white rounded-2xl border border-gray-100 p-5">
+                <h3 className="text-sm font-semibold font-montserrat text-[#121E3C] mb-3">Follow Us</h3>
+                <p className="text-gray-500 text-xs mb-4">Stay connected for updates, tips, and news</p>
+                <div className="flex gap-3">
+                  {socialLinks.map((social, index) => {
+                    const IconComponent = social.icon;
+                    return (
+                      <a
+                        key={index}
+                        href={social.url}
+                        target={social.url !== '#' ? '_blank' : '_self'}
+                        rel={social.url !== '#' ? 'noopener noreferrer' : undefined}
+                        className="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center transition-all hover:border-[#34D164] hover:bg-[#34D164]/10 group"
+                        title={`Follow us on ${social.name}`}
+                      >
+                        <IconComponent className="w-4 h-4 text-gray-400 group-hover:text-[#34D164]" />
+                      </a>
+                    );
+                  })}
+                </div>
               </div>
-              <p className="text-sm text-orange-600 mt-2">
-                {businessHours}
-              </p>
+
+              {/* Emergency Contact */}
+              <div className="bg-amber-50 border border-amber-100 rounded-2xl p-5">
+                <h3 className="text-sm font-semibold font-montserrat text-amber-800 mb-2">Need Urgent Help?</h3>
+                <p className="text-amber-700 text-xs mb-3">
+                  For urgent platform issues or emergency support
+                </p>
+                <div className="flex items-center text-amber-700">
+                  <Phone className="w-4 h-4 mr-2" />
+                  <span className="font-medium text-sm">{supportPhone}</span>
+                </div>
+                <p className="text-[10px] text-amber-600 mt-2">
+                  {businessHours}
+                </p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
       <Footer />
     </div>

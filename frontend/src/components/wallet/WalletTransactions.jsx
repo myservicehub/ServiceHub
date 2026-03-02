@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { walletAPI } from '../../api/wallet';
 import { useToast } from '../../hooks/use-toast';
 import PaymentProofImage from '../common/PaymentProofImage';
+import { ChevronDown, ChevronUp, Plus, Minus, RotateCcw, RefreshCw, Wallet, Receipt } from 'lucide-react';
 
 const WalletTransactions = ({ refreshToken = 0 }) => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState(null);
   const [pagination, setPagination] = useState({ skip: 0, limit: 10 });
   const { toast } = useToast();
 
@@ -33,38 +35,41 @@ const WalletTransactions = ({ refreshToken = 0 }) => {
   const getTransactionIcon = (type) => {
     switch (type) {
       case 'wallet_funding':
-        return <span className="text-green-600">+</span>;
+        return { icon: Plus, bg: 'bg-green-50', color: 'text-green-500' };
       case 'access_fee_deduction':
-        return <span className="text-red-600">-</span>;
+        return { icon: Minus, bg: 'bg-red-50', color: 'text-red-500' };
       case 'refund':
-        return <span className="text-blue-600">↺</span>;
+        return { icon: RotateCcw, bg: 'bg-blue-50', color: 'text-blue-500' };
       default:
-        return <span className="text-gray-600">?</span>;
+        return { icon: Receipt, bg: 'bg-gray-50', color: 'text-gray-500' };
     }
   };
 
-  const getStatusBadge = (status) => {
+  const getStatusStyles = (status) => {
     const styles = {
-      confirmed: 'bg-green-100 text-green-800',
-      pending: 'bg-yellow-100 text-yellow-800',
-      rejected: 'bg-red-100 text-red-800'
+      confirmed: 'text-green-600',
+      pending: 'text-amber-600',
+      rejected: 'text-red-600'
     };
-    
-    return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[status] || 'bg-gray-100 text-gray-800'}`}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </span>
-    );
+    return styles[status] || 'text-gray-600';
   };
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
       month: 'short',
-      day: 'numeric',
+      day: 'numeric'
+    });
+  };
+
+  const formatTime = (dateString) => {
+    return new Date(dateString).toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const toggleExpand = (id) => {
+    setExpandedId(expandedId === id ? null : id);
   };
 
   if (loading) {
@@ -86,95 +91,120 @@ const WalletTransactions = ({ refreshToken = 0 }) => {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold text-gray-800">Transaction History</h3>
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      {/* Header */}
+      <div className="flex justify-between items-center px-5 py-4 border-b border-gray-100">
+        <h3 className="text-base font-semibold text-[#121E3C]">Transaction History</h3>
         <button
           onClick={fetchTransactions}
-          className="text-blue-600 hover:text-blue-700 text-sm"
+          className="text-[#34D164] hover:text-[#2ab854] text-sm flex items-center gap-1"
         >
+          <RefreshCw size={14} />
           Refresh
         </button>
       </div>
 
       {transactions.length === 0 ? (
-        <div className="bg-white p-8 rounded-lg shadow-sm border text-center">
-          <div className="text-gray-400 mb-2">
-            <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
+        <div className="p-8 text-center">
+          <div className="w-12 h-12 mx-auto bg-gray-100 rounded-xl flex items-center justify-center mb-3">
+            <Wallet className="w-6 h-6 text-gray-400" />
           </div>
-          <p className="text-gray-600">No transactions yet</p>
-          <p className="text-sm text-gray-500 mt-1">Your wallet transactions will appear here</p>
+          <p className="text-sm font-medium text-[#121E3C]">No transactions yet</p>
+          <p className="text-xs text-gray-400 mt-1">Fund your wallet to get started</p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {transactions.map((transaction) => (
-            <div key={transaction.id} className="bg-white p-4 rounded-lg shadow-sm border hover:shadow-md transition-shadow">
-              <div className="flex justify-between items-start">
-                <div className="flex items-start space-x-3">
-                  <div className="text-2xl">
-                    {getTransactionIcon(transaction.transaction_type)}
+        <div className="divide-y divide-gray-50">
+          {transactions.map((transaction) => {
+            const iconData = getTransactionIcon(transaction.transaction_type);
+            const IconComponent = iconData.icon;
+            const isExpanded = expandedId === transaction.id;
+            const isFunding = transaction.transaction_type === 'wallet_funding';
+            
+            return (
+              <div key={transaction.id}>
+                {/* Main Row - Always Visible */}
+                <div 
+                  className="flex items-center justify-between px-5 py-3.5 cursor-pointer hover:bg-gray-50/50 transition-colors"
+                  onClick={() => toggleExpand(transaction.id)}
+                >
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className={`w-9 h-9 rounded-xl ${iconData.bg} flex items-center justify-center shrink-0`}>
+                      <IconComponent className={`w-4 h-4 ${iconData.color}`} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-[#121E3C] truncate">
+                        {isFunding ? 'Wallet Funding' : transaction.description || 'Transaction'}
+                      </p>
+                      <p className="text-xs text-gray-400">{formatDate(transaction.created_at)}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-medium text-gray-800">
-                      {transaction.description}
-                    </h4>
-                    <p className="text-sm text-gray-600">
-                      {formatDate(transaction.created_at)}
-                    </p>
-                    {transaction.reference && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        Ref: {transaction.reference}
+                  
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <p className={`text-sm font-semibold ${isFunding ? 'text-green-600' : 'text-red-600'}`}>
+                        {isFunding ? '+' : '-'}{transaction.amount_coins} coins
                       </p>
-                    )}
-                    {transaction.admin_notes && (
-                      <p className="text-xs text-blue-600 mt-1">
-                        Note: {transaction.admin_notes}
+                      <p className={`text-xs capitalize ${getStatusStyles(transaction.status)}`}>
+                        {transaction.status}
                       </p>
+                    </div>
+                    {isExpanded ? (
+                      <ChevronUp size={16} className="text-gray-400" />
+                    ) : (
+                      <ChevronDown size={16} className="text-gray-400" />
                     )}
                   </div>
                 </div>
                 
-                <div className="text-right">
-                  <div className="flex items-center space-x-2 mb-1">
-                    <span className={`font-semibold ${
-                      transaction.transaction_type === 'wallet_funding' 
-                        ? 'text-green-600' 
-                        : 'text-red-600'
-                    }`}>
-                      {transaction.transaction_type === 'wallet_funding' ? '+' : '-'}
-                      {transaction.amount_coins} coins
-                    </span>
+                {/* Expanded Details */}
+                {isExpanded && (
+                  <div className="px-5 pb-4 pt-0 bg-gray-50/50">
+                    <div className="pl-12 space-y-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-500">Amount (₦)</span>
+                        <span className="text-[#121E3C] font-medium">₦{transaction.amount_naira?.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-500">Time</span>
+                        <span className="text-[#121E3C]">{formatTime(transaction.created_at)}</span>
+                      </div>
+                      {transaction.reference && (
+                        <div className="flex justify-between text-xs">
+                          <span className="text-gray-500">Reference</span>
+                          <span className="text-[#121E3C] font-mono">{transaction.reference}</span>
+                        </div>
+                      )}
+                      {transaction.admin_notes && (
+                        <div className="flex justify-between text-xs">
+                          <span className="text-gray-500">Note</span>
+                          <span className="text-blue-600">{transaction.admin_notes}</span>
+                        </div>
+                      )}
+                      {transaction.proof_image && (
+                        <div className="pt-2">
+                          <p className="text-xs text-gray-500 mb-2">Payment Proof:</p>
+                          <PaymentProofImage
+                            filename={transaction.proof_image}
+                            className="h-16 w-auto rounded-lg border cursor-pointer hover:shadow-lg transition-shadow"
+                            alt="Payment proof"
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-600 mb-2">
-                    ₦{transaction.amount_naira.toLocaleString()}
-                  </div>
-                  {getStatusBadge(transaction.status)}
-                </div>
+                )}
               </div>
-              
-              {transaction.proof_image && (
-                <div className="mt-3 pt-3 border-t border-gray-100">
-                  <p className="text-xs text-gray-500 mb-2">Payment Proof:</p>
-                  <PaymentProofImage
-                    filename={transaction.proof_image}
-                    className="h-20 w-auto rounded border cursor-pointer hover:shadow-lg transition-shadow"
-                    alt="Payment proof"
-                  />
-                </div>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
-      {/* Pagination */}
+      {/* Load More */}
       {transactions.length === pagination.limit && (
-        <div className="flex justify-center">
+        <div className="px-5 py-3 border-t border-gray-100">
           <button
             onClick={() => setPagination(prev => ({ ...prev, skip: prev.skip + prev.limit }))}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            className="w-full py-2 text-sm text-[#34D164] hover:bg-[#34D164]/5 rounded-xl transition-colors font-medium"
           >
             Load More
           </button>

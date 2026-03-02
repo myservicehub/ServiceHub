@@ -232,30 +232,40 @@ const PartnershipPage = () => {
       <Header />
       
       {/* Hero Section */}
-      <section className="py-16 bg-gradient-to-r from-blue-50 to-green-50">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Handshake size={40} style={{color: '#34D164'}} />
+      <section className="relative py-16 lg:py-20 overflow-hidden">
+        <div className="absolute inset-0">
+          <img 
+            src="/stock/bg8.jpg" 
+            alt="" 
+            className="w-full h-full object-cover"
+            loading="eager"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#121E3C]/90 via-[#121E3C]/85 to-[#121E3C]/90" />
+        </div>
+        
+        <div className="container relative z-10 mx-auto px-6 md:px-8 lg:px-12">
+          <div className="max-w-3xl mx-auto text-center">
+            <div className="w-14 h-14 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl flex items-center justify-center mx-auto mb-5">
+              <Handshake size={24} className="text-[#34D164]" />
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold font-montserrat mb-6" style={{color: '#121E3C'}}>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-montserrat text-white mb-4">
               Partner with ServiceHub
             </h1>
-            <p className="text-xl text-gray-600 font-lato mb-8">
+            <p className="text-white/70 font-lato text-sm mb-8 max-w-lg mx-auto">
               Join Nigeria's leading digital marketplace for professional services and unlock new growth opportunities
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Button 
                 onClick={() => document.getElementById('contact-form').scrollIntoView({ behavior: 'smooth' })}
-                className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-lg font-lato font-semibold text-lg"
+                className="bg-[#34D164] hover:bg-[#2ab854] text-white px-6 py-2.5 text-sm font-medium rounded-full transition-all duration-300 hover:scale-105"
               >
                 Become a Partner
               </Button>
               <Button 
                 onClick={() => document.getElementById('partnership-types').scrollIntoView({ behavior: 'smooth' })}
                 variant="outline"
-                className="border-2 border-green-600 text-green-600 hover:bg-green-50 px-8 py-4 rounded-lg font-lato font-semibold text-lg"
+                className="bg-white/10 backdrop-blur-sm border border-white/20 text-white px-6 py-2.5 text-sm font-medium rounded-full hover:bg-white/20 transition-all duration-300"
               >
                 Explore Opportunities
               </Button>
@@ -265,20 +275,22 @@ const PartnershipPage = () => {
       </section>
 
       {/* Statistics */}
-      <section className="py-12 bg-white">
-        <div className="container mx-auto px-4">
+      <section className="relative py-10 overflow-hidden">
+        <div className="absolute inset-0 bg-[#121E3C]" />
+        
+        <div className="container relative z-10 mx-auto px-6 md:px-8 lg:px-12">
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-2xl font-bold font-montserrat text-center mb-8" style={{color: '#121E3C'}}>
+            <h2 className="text-base font-semibold font-montserrat text-white text-center mb-6">
               Growing Platform, Growing Opportunities
             </h2>
             
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {stats.map((stat, index) => (
-                <div key={index} className="text-center">
-                  <div className="text-4xl md:text-5xl font-bold font-montserrat mb-2" style={{color: '#34D164'}}>
+                <div key={index} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4 text-center">
+                  <div className="text-xl font-bold font-montserrat text-[#34D164] mb-1">
                     {stat.number}{stat.suffix}
                   </div>
-                  <div className="text-gray-600 font-lato">
+                  <div className="text-white/60 text-xs font-lato">
                     {stat.label}
                   </div>
                 </div>
@@ -289,33 +301,39 @@ const PartnershipPage = () => {
       </section>
 
       {/* Partnership Benefits */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold font-montserrat mb-4" style={{color: '#121E3C'}}>
+      <section 
+        className="py-14 lg:py-16"
+        style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.97), rgba(255,255,255,0.97)), 
+            linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px),
+            linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px)`,
+          backgroundSize: '100% 100%, 20px 20px, 20px 20px'
+        }}
+      >
+        <div className="container mx-auto px-6 md:px-8 lg:px-12">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-10">
+              <h2 className="text-xl sm:text-2xl font-semibold font-montserrat text-[#121E3C] mb-2">
                 Why Partner with ServiceHub?
               </h2>
-              <p className="text-lg text-gray-600 font-lato">
+              <p className="text-gray-500 font-lato text-sm">
                 Join a trusted platform that's transforming Nigeria's service industry
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
               {partnershipBenefits.map((benefit, index) => (
-                <Card key={index} className="border-0 shadow-md hover:shadow-lg transition-shadow duration-300 h-full">
-                  <CardContent className="p-6 text-center">
-                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <benefit.icon size={32} style={{color: '#34D164'}} />
-                    </div>
-                    <h3 className="text-xl font-bold font-montserrat mb-3" style={{color: '#121E3C'}}>
-                      {benefit.title}
-                    </h3>
-                    <p className="text-gray-600 font-lato leading-relaxed">
-                      {benefit.description}
-                    </p>
-                  </CardContent>
-                </Card>
+                <div key={index} className="bg-white rounded-2xl border border-gray-100 p-5 hover:shadow-lg hover:border-[#34D164]/20 transition-all duration-300">
+                  <div className="w-10 h-10 bg-[#34D164]/10 rounded-xl flex items-center justify-center mb-4">
+                    <benefit.icon size={18} className="text-[#34D164]" />
+                  </div>
+                  <h3 className="text-base font-semibold font-montserrat text-[#121E3C] mb-2">
+                    {benefit.title}
+                  </h3>
+                  <p className="text-gray-500 font-lato text-xs leading-relaxed">
+                    {benefit.description}
+                  </p>
+                </div>
               ))}
             </div>
           </div>
@@ -323,14 +341,24 @@ const PartnershipPage = () => {
       </section>
 
       {/* Partnership Types */}
-      <section id="partnership-types" className="py-16 bg-gray-100">
-        <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold font-montserrat mb-4" style={{color: '#121E3C'}}>
+      <section id="partnership-types" className="relative py-14 lg:py-16 overflow-hidden">
+        <div className="absolute inset-0">
+          <img 
+            src="/stock/bg15.jpg" 
+            alt="" 
+            className="w-full h-full object-cover object-top"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-[#121E3C]/90" />
+        </div>
+        
+        <div className="container relative z-10 mx-auto px-6 md:px-8 lg:px-12">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-8">
+              <h2 className="text-xl sm:text-2xl font-semibold font-montserrat text-white mb-2">
                 Partnership Opportunities
               </h2>
-              <p className="text-lg text-gray-600 font-lato">
+              <p className="text-white/60 font-lato text-sm">
                 Choose the partnership model that best fits your business goals
               </p>
             </div>
@@ -341,13 +369,13 @@ const PartnershipPage = () => {
                 <button
                   key={type.id}
                   onClick={() => setSelectedPartnership(type.id)}
-                  className={`px-4 py-2 rounded-lg font-lato font-medium transition-all text-sm ${
+                  className={`px-4 py-2 rounded-full font-lato font-medium transition-all text-xs ${
                     selectedPartnership === type.id
-                      ? 'bg-green-600 text-white shadow-md'
-                      : 'bg-white text-gray-600 hover:bg-green-50 hover:text-green-600'
+                      ? 'bg-[#34D164] text-white'
+                      : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20'
                   }`}
                 >
-                  {type.title}
+                  {type.title.split(' ').slice(0, 2).join(' ')}
                 </button>
               ))}
             </div>
@@ -355,53 +383,47 @@ const PartnershipPage = () => {
             {/* Selected Partnership Details */}
             {partnershipTypes.map((type) => (
               type.id === selectedPartnership && (
-                <Card key={type.id} className="border-0 shadow-lg">
-                  <CardContent className="p-8">
-                    <div className="grid md:grid-cols-12 gap-8">
-                      {/* Icon and Title */}
-                      <div className="md:col-span-12 lg:col-span-3 text-center lg:text-left">
-                        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto lg:mx-0 mb-4">
-                          <type.icon size={40} style={{color: '#34D164'}} />
-                        </div>
-                        <h3 className="text-2xl font-bold font-montserrat mb-4" style={{color: '#121E3C'}}>
-                          {type.title}
-                        </h3>
-                        <p className="text-gray-600 font-lato leading-relaxed">
-                          {type.description}
-                        </p>
+                <div key={type.id} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
+                  <div className="grid lg:grid-cols-3 gap-6">
+                    {/* Icon and Title */}
+                    <div className="text-center lg:text-left">
+                      <div className="w-12 h-12 bg-[#34D164]/20 rounded-xl flex items-center justify-center mx-auto lg:mx-0 mb-4">
+                        <type.icon size={20} className="text-[#34D164]" />
                       </div>
+                      <h3 className="text-base font-semibold font-montserrat text-white mb-2">
+                        {type.title}
+                      </h3>
+                      <p className="text-white/60 font-lato text-xs leading-relaxed">
+                        {type.description}
+                      </p>
+                    </div>
 
-                      {/* Benefits */}
-                      <div className="md:col-span-6 lg:col-span-5">
-                        <h4 className="text-xl font-semibold font-montserrat mb-4" style={{color: '#121E3C'}}>
-                          Partnership Benefits
-                        </h4>
-                        <div className="space-y-3">
-                          {type.benefits.map((benefit, index) => (
-                            <div key={index} className="flex items-start space-x-3">
-                              <CheckCircle size={16} className="text-green-500 mt-1 flex-shrink-0" />
-                              <span className="text-gray-700 font-lato text-sm">{benefit}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Examples */}
-                      <div className="md:col-span-6 lg:col-span-4">
-                        <h4 className="text-xl font-semibold font-montserrat mb-4" style={{color: '#121E3C'}}>
-                          Potential Partners
-                        </h4>
-                        <div className="space-y-2">
-                          {type.examples.map((example, index) => (
-                            <div key={index} className="bg-green-50 p-3 rounded-lg">
-                              <span className="text-green-800 font-lato text-sm font-medium">{example}</span>
-                            </div>
-                          ))}
-                        </div>
+                    {/* Benefits */}
+                    <div>
+                      <h4 className="text-sm font-semibold font-montserrat text-white mb-3">Benefits</h4>
+                      <div className="space-y-2">
+                        {type.benefits.map((benefit, index) => (
+                          <div key={index} className="flex items-start gap-2">
+                            <CheckCircle size={12} className="text-[#34D164] mt-0.5 shrink-0" />
+                            <span className="text-white/70 font-lato text-xs">{benefit}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+
+                    {/* Examples */}
+                    <div>
+                      <h4 className="text-sm font-semibold font-montserrat text-white mb-3">Potential Partners</h4>
+                      <div className="space-y-2">
+                        {type.examples.map((example, index) => (
+                          <div key={index} className="bg-white/5 border border-white/10 p-2 rounded-lg">
+                            <span className="text-white/80 font-lato text-xs">{example}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               )
             ))}
           </div>
@@ -409,41 +431,40 @@ const PartnershipPage = () => {
       </section>
 
       {/* Partnership Process */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold font-montserrat mb-4" style={{color: '#121E3C'}}>
+      <section 
+        className="py-14 lg:py-16"
+        style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.97), rgba(255,255,255,0.97)), 
+            linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px),
+            linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px)`,
+          backgroundSize: '100% 100%, 20px 20px, 20px 20px'
+        }}
+      >
+        <div className="container mx-auto px-6 md:px-8 lg:px-12">
+          <div className="max-w-3xl mx-auto">
+            <div className="text-center mb-10">
+              <h2 className="text-xl sm:text-2xl font-semibold font-montserrat text-[#121E3C] mb-2">
                 Partnership Process
               </h2>
-              <p className="text-lg text-gray-600 font-lato">
-                Simple steps to establish a successful partnership with ServiceHub
+              <p className="text-gray-500 font-lato text-sm">
+                Simple steps to establish a successful partnership
               </p>
             </div>
 
-            <div className="space-y-8">
+            <div className="grid md:grid-cols-4 gap-4">
               {partnershipProcess.map((step, index) => (
-                <div key={index} className="flex items-center space-x-6">
-                  <div className="flex-shrink-0">
-                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                      <span className="text-2xl font-bold font-montserrat" style={{color: '#34D164'}}>
-                        {step.step}
-                      </span>
-                    </div>
+                <div key={index} className="bg-white rounded-2xl border border-gray-100 p-5 text-center hover:shadow-lg hover:border-[#34D164]/20 transition-all duration-300">
+                  <div className="w-10 h-10 bg-[#34D164]/10 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <span className="text-lg font-bold font-montserrat text-[#34D164]">
+                      {step.step}
+                    </span>
                   </div>
-                  
-                  <div className="flex-1">
-                    <h3 className="text-xl font-semibold font-montserrat mb-2" style={{color: '#121E3C'}}>
-                      {step.title}
-                    </h3>
-                    <p className="text-gray-600 font-lato">
-                      {step.description}
-                    </p>
-                  </div>
-
-                  {index < partnershipProcess.length - 1 && (
-                    <ArrowRight size={24} className="text-green-500 hidden md:block" />
-                  )}
+                  <h3 className="text-sm font-semibold font-montserrat text-[#121E3C] mb-2">
+                    {step.title}
+                  </h3>
+                  <p className="text-gray-500 font-lato text-xs">
+                    {step.description}
+                  </p>
                 </div>
               ))}
             </div>
@@ -452,166 +473,134 @@ const PartnershipPage = () => {
       </section>
 
       {/* Success Stories / Testimonials */}
-      <section className="py-16 bg-gradient-to-r from-green-50 to-blue-50">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-3xl font-bold font-montserrat mb-12" style={{color: '#121E3C'}}>
+      <section className="relative py-14 lg:py-16 overflow-hidden">
+        <div className="absolute inset-0 bg-[#121E3C]" />
+        
+        <div className="container relative z-10 mx-auto px-6 md:px-8 lg:px-12">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-xl sm:text-2xl font-semibold font-montserrat text-white text-center mb-8">
               Partnership Success Stories
             </h2>
             
-            <div className="grid md:grid-cols-2 gap-8">
-              <Card className="border-0 shadow-lg">
-                <CardContent className="p-8">
-                  <div className="flex items-center mb-4">
+            <div className="grid md:grid-cols-2 gap-5">
+              {[
+                {
+                  quote: "ServiceHub has transformed how we connect with skilled professionals. The partnership has opened new revenue streams and strengthened our member services.",
+                  company: "Lagos State Artisan Association",
+                  type: "Trade Organization Partner"
+                },
+                {
+                  quote: "The integration with ServiceHub has increased our material sales by 40%. Direct access to active tradespeople has been game-changing for our business.",
+                  company: "Nigerian Building Materials Ltd",
+                  type: "Supplier Partner"
+                }
+              ].map((testimonial, idx) => (
+                <div key={idx} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
+                  <div className="flex items-center gap-1 mb-4">
                     {[...Array(5)].map((_, i) => (
-                      <Star key={i} size={20} className="text-yellow-400 fill-current" />
+                      <Star key={i} size={14} className="text-yellow-400 fill-current" />
                     ))}
                   </div>
-                  <blockquote className="text-lg text-gray-700 font-lato italic mb-4">
-                    "ServiceHub has transformed how we connect with skilled professionals. The partnership has opened new revenue streams and strengthened our member services."
+                  <blockquote className="text-white/80 font-lato text-sm italic mb-4 leading-relaxed">
+                    "{testimonial.quote}"
                   </blockquote>
-                  <div className="text-left">
-                    <p className="font-semibold font-montserrat" style={{color: '#121E3C'}}>
-                      Lagos State Artisan Association
+                  <div>
+                    <p className="font-semibold font-montserrat text-white text-sm">
+                      {testimonial.company}
                     </p>
-                    <p className="text-sm text-gray-600 font-lato">Trade Organization Partner</p>
+                    <p className="text-[10px] text-white/50 font-lato">{testimonial.type}</p>
                   </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-lg">
-                <CardContent className="p-8">
-                  <div className="flex items-center mb-4">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} size={20} className="text-yellow-400 fill-current" />
-                    ))}
-                  </div>
-                  <blockquote className="text-lg text-gray-700 font-lato italic mb-4">
-                    "The integration with ServiceHub has increased our material sales by 40%. Direct access to active tradespeople has been game-changing for our business."
-                  </blockquote>
-                  <div className="text-left">
-                    <p className="font-semibold font-montserrat" style={{color: '#121E3C'}}>
-                      Nigerian Building Materials Ltd
-                    </p>
-                    <p className="text-sm text-gray-600 font-lato">Supplier Partner</p>
-                  </div>
-                </CardContent>
-              </Card>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </section>
 
       {/* Contact Form */}
-      <section id="contact-form" className="py-16">
-        <div className="container mx-auto px-4">
+      <section 
+        id="contact-form" 
+        className="py-14 lg:py-16"
+        style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.97), rgba(255,255,255,0.97)), 
+            linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px),
+            linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px)`,
+          backgroundSize: '100% 100%, 20px 20px, 20px 20px'
+        }}
+      >
+        <div className="container mx-auto px-6 md:px-8 lg:px-12">
           <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold font-montserrat mb-4" style={{color: '#121E3C'}}>
+            <div className="text-center mb-10">
+              <h2 className="text-xl sm:text-2xl font-semibold font-montserrat text-[#121E3C] mb-2">
                 Start Your Partnership Journey
               </h2>
-              <p className="text-lg text-gray-600 font-lato">
+              <p className="text-gray-500 font-lato text-sm">
                 Ready to explore partnership opportunities? Get in touch with our team today
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-8">
+            <div className="grid md:grid-cols-2 gap-6">
               {/* Contact Information */}
-              <Card className="border-0 shadow-lg">
-                <CardHeader>
-                  <CardTitle className="text-2xl font-bold font-montserrat" style={{color: '#121E3C'}}>
-                    Get in Touch
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="flex items-start space-x-4">
-                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                      <Mail size={24} style={{color: '#34D164'}} />
+              <div className="bg-white rounded-2xl border border-gray-100 p-6">
+                <h3 className="text-base font-semibold font-montserrat text-[#121E3C] mb-5">Get in Touch</h3>
+                
+                <div className="space-y-4">
+                  {[
+                    { icon: Mail, title: 'Email Us', value: 'partnerships@myservicehub.co', sub: 'We respond within 24 hours' },
+                    { icon: Phone, title: 'Call Us', value: '+2348141831420', sub: 'Mon-Fri, 9AM-6PM WAT' },
+                    { icon: MapPin, title: 'Visit Us', value: 'Lagos, Nigeria', sub: 'Schedule an appointment' }
+                  ].map((contact, idx) => (
+                    <div key={idx} className="flex items-start gap-3">
+                      <div className="w-9 h-9 bg-[#34D164]/10 rounded-xl flex items-center justify-center shrink-0">
+                        <contact.icon size={16} className="text-[#34D164]" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-semibold font-montserrat text-[#121E3C] mb-0.5">{contact.title}</h4>
+                        <p className="text-gray-600 font-lato text-xs">{contact.value}</p>
+                        <p className="text-[10px] text-gray-400 font-lato">{contact.sub}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-semibold font-montserrat mb-1">Email Us</h4>
-                      <p className="text-gray-600 font-lato">partnerships@myservicehub.co</p>
-                      <p className="text-sm text-gray-500 font-lato">We respond within 24 hours</p>
-                    </div>
-                  </div>
+                  ))}
+                </div>
 
-                  <div className="flex items-start space-x-4">
-                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                      <Phone size={24} style={{color: '#34D164'}} />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold font-montserrat mb-1">Call Us</h4>
-                      <p className="text-gray-600 font-lato">+2348141831420</p>
-                      <p className="text-sm text-gray-500 font-lato">Mon-Fri, 9AM-6PM WAT</p>
-                    </div>
+                <div className="mt-6 pt-5 border-t border-gray-100">
+                  <h4 className="text-xs font-semibold font-montserrat text-[#121E3C] mb-2">Partnership Enquiry</h4>
+                  <p className="text-gray-500 font-lato text-xs mb-3">
+                    Send us your company information and partnership interests:
+                  </p>
+                  <div className="bg-[#34D164]/10 p-3 rounded-xl">
+                    <p className="text-[#34D164] font-lato text-xs font-semibold">partnerships@myservicehub.co</p>
                   </div>
-
-                  <div className="flex items-start space-x-4">
-                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                      <MapPin size={24} style={{color: '#34D164'}} />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold font-montserrat mb-1">Visit Us</h4>
-                      <p className="text-gray-600 font-lato">Lagos, Nigeria</p>
-                      <p className="text-sm text-gray-500 font-lato">Schedule an appointment</p>
-                    </div>
-                  </div>
-
-                  <div className="pt-6 border-t">
-                    <h4 className="font-semibold font-montserrat mb-3">Partnership Enquiry Form</h4>
-                    <p className="text-sm text-gray-600 font-lato mb-4">
-                      For detailed partnership discussions, please send us your company information and partnership interests to:
-                    </p>
-                    <div className="bg-green-50 p-4 rounded-lg">
-                      <p className="text-green-800 font-lato font-semibold">partnerships@myservicehub.co</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
 
               {/* Partnership Benefits Recap */}
-              <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100">
-                <CardHeader>
-                  <CardTitle className="text-2xl font-bold font-montserrat" style={{color: '#121E3C'}}>
-                    Partnership Benefits
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center space-x-3">
-                    <CheckCircle size={20} className="text-green-600" />
-                    <span className="text-gray-700 font-lato">Access to verified professional network</span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <CheckCircle size={20} className="text-green-600" />
-                    <span className="text-gray-700 font-lato">Revenue sharing and growth opportunities</span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <CheckCircle size={20} className="text-green-600" />
-                    <span className="text-gray-700 font-lato">Co-marketing and brand exposure</span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <CheckCircle size={20} className="text-green-600" />
-                    <span className="text-gray-700 font-lato">Technical integration support</span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <CheckCircle size={20} className="text-green-600" />
-                    <span className="text-gray-700 font-lato">Dedicated partnership management</span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <CheckCircle size={20} className="text-green-600" />
-                    <span className="text-gray-700 font-lato">Data insights and analytics sharing</span>
-                  </div>
-                  
-                  <div className="pt-6">
-                    <Button 
-                      onClick={() => window.location.href = 'mailto:partnerships@myservicehub.co?subject=Partnership Inquiry&body=Hi ServiceHub Team,%0A%0AI am interested in exploring partnership opportunities with ServiceHub.%0A%0ACompany Name:%0APartnership Type:%0AContact Person:%0APhone Number:%0A%0APlease contact me to discuss further.%0A%0AThank you!'} 
-                      className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-lato font-semibold"
-                    >
-                      Send Partnership Inquiry
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="bg-[#121E3C] rounded-2xl p-6">
+                <h3 className="text-base font-semibold font-montserrat text-white mb-5">Partnership Benefits</h3>
+                
+                <div className="space-y-3 mb-6">
+                  {[
+                    'Access to verified professional network',
+                    'Revenue sharing and growth opportunities',
+                    'Co-marketing and brand exposure',
+                    'Technical integration support',
+                    'Dedicated partnership management',
+                    'Data insights and analytics sharing'
+                  ].map((benefit, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <CheckCircle size={14} className="text-[#34D164] shrink-0" />
+                      <span className="text-white/80 font-lato text-xs">{benefit}</span>
+                    </div>
+                  ))}
+                </div>
+                
+                <Button 
+                  onClick={() => window.location.href = 'mailto:partnerships@myservicehub.co?subject=Partnership Inquiry&body=Hi ServiceHub Team,%0A%0AI am interested in exploring partnership opportunities with ServiceHub.%0A%0ACompany Name:%0APartnership Type:%0AContact Person:%0APhone Number:%0A%0APlease contact me to discuss further.%0A%0AThank you!'} 
+                  className="w-full bg-[#34D164] hover:bg-[#2ab854] text-white py-2.5 rounded-full text-sm font-medium transition-colors"
+                >
+                  Send Partnership Inquiry
+                </Button>
+              </div>
             </div>
           </div>
         </div>

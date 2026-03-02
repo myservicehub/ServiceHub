@@ -285,8 +285,8 @@ const DashboardSidebar = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
           </div>
         </nav>
 
-        {/* Logout */}
-        <div className="p-3 border-t border-white/10">
+        {/* Logout - extra bottom padding for mobile footer nav clearance */}
+        <div className="p-3 pb-20 border-t border-white/10">
           <button
             onClick={() => { logout(); window.location.href = '/'; }}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-white/50 hover:bg-red-500/20 hover:text-red-400 transition-all duration-200"

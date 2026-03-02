@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import FinalCTA from '../components/FinalCTA';
 import { useAuth } from '../contexts/AuthContext';
-import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { 
   Users, 
@@ -17,14 +17,9 @@ import {
   CheckCircle,
   Coins,
   MapPin,
-  Clock,
   Award,
-  Zap,
-  ArrowRight,
-  Play,
-  ChevronRight
+  Zap
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { statsAPI } from '../api/services';
 
 const HowItWorksPage = () => {
@@ -226,37 +221,47 @@ const HowItWorksPage = () => {
       <Header />
       
       {/* Hero Section */}
-      <section className="py-16 bg-gradient-to-r from-green-50 to-blue-50">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Play size={28} style={{color: '#34D164'}} />
-            </div>
-            <h1 className="text-4xl md:text-5xl font-bold font-montserrat mb-6" style={{color: '#121E3C'}}>
+      <section className="relative py-20 lg:py-28 overflow-hidden">
+        <div className="absolute inset-0">
+          <img 
+            src="/stock/bg9.jpg" 
+            alt="" 
+            className="w-full h-full object-cover"
+            loading="eager"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#121E3C]/80 via-[#121E3C]/70 to-[#121E3C]/80" />
+        </div>
+        
+        <div className="container relative z-10 mx-auto px-6 md:px-8 lg:px-12">
+          <div className="max-w-3xl mx-auto text-center">
+            <span className="inline-block px-4 py-1.5 mb-6 text-xs font-semibold font-lato tracking-wider uppercase text-[#34D164] bg-white/5 backdrop-blur-sm border border-white/10 rounded-full">
+              Simple Process
+            </span>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-montserrat text-white mb-5 leading-tight">
               How ServiceHub Works
             </h1>
-            <p className="text-xl text-gray-600 font-lato mb-8">
+            <p className="text-lg text-white/70 font-lato mb-10 max-w-2xl mx-auto">
               Connecting Nigerian homeowners with trusted professionals in 5 simple steps
             </p>
             
             {/* Tab Selector */}
-            <div className="inline-flex bg-white rounded-lg p-1 shadow-md">
+            <div className="inline-flex bg-white/10 backdrop-blur-sm rounded-full p-1 border border-white/10">
               <button
                 onClick={() => setActiveTab('homeowner')}
-                className={`px-6 py-3 rounded-lg font-lato font-semibold transition-all ${
+                className={`px-6 py-2.5 rounded-full font-lato font-medium text-sm transition-all ${
                   activeTab === 'homeowner'
-                    ? 'bg-green-600 text-white shadow-md'
-                    : 'text-gray-600 hover:text-green-600'
+                    ? 'bg-[#34D164] text-white shadow-lg'
+                    : 'text-white/70 hover:text-white'
                 }`}
               >
                 For Homeowners
               </button>
               <button
                 onClick={() => setActiveTab('tradesperson')}
-                className={`px-6 py-3 rounded-lg font-lato font-semibold transition-all ${
+                className={`px-6 py-2.5 rounded-full font-lato font-medium text-sm transition-all ${
                   activeTab === 'tradesperson'
-                    ? 'bg-green-600 text-white shadow-md'
-                    : 'text-gray-600 hover:text-green-600'
+                    ? 'bg-[#34D164] text-white shadow-lg'
+                    : 'text-white/70 hover:text-white'
                 }`}
               >
                 For Tradespeople
@@ -267,54 +272,55 @@ const HowItWorksPage = () => {
       </section>
 
       {/* Steps Section */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto">
-            {/* Steps */}
-            <div className="space-y-8">
+      <section 
+        className="relative py-20 lg:py-24 bg-white"
+        style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.97), rgba(255,255,255,0.97)), 
+            linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px),
+            linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px)`,
+          backgroundSize: '100% 100%, 20px 20px, 20px 20px'
+        }}
+      >
+        <div className="container mx-auto px-6 md:px-8 lg:px-12">
+          <div className="max-w-4xl mx-auto">
+            <div className="space-y-6">
               {(activeTab === 'homeowner' ? homeownerSteps : tradespersonSteps).map((stepData, index) => (
-                <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
-                  <CardContent className="p-8">
-                    <div className="grid md:grid-cols-12 gap-6 items-center">
-                      {/* Step Number & Icon */}
-                      <div className="md:col-span-2 text-center">
-                        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                          <stepData.icon size={24} style={{color: '#34D164'}} />
-                        </div>
-                        <div className="text-3xl font-bold font-montserrat" style={{color: '#34D164'}}>
+                <div 
+                  key={index} 
+                  className="bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl p-6 lg:p-8 shadow-sm hover:shadow-md transition-all duration-300"
+                >
+                  <div className="flex gap-5">
+                    {/* Step Number & Icon */}
+                    <div className="shrink-0">
+                      <div className="w-14 h-14 bg-[#34D164]/10 rounded-xl flex items-center justify-center relative">
+                        <stepData.icon size={24} className="text-[#34D164]" />
+                        <span className="absolute -top-2 -right-2 w-6 h-6 bg-[#121E3C] text-white text-xs font-bold rounded-full flex items-center justify-center">
                           {stepData.step}
-                        </div>
-                      </div>
-                      
-                      {/* Content */}
-                      <div className="md:col-span-10">
-                        <h3 className="text-2xl font-bold font-montserrat mb-3" style={{color: '#121E3C'}}>
-                          {stepData.title}
-                        </h3>
-                        <p className="text-lg text-gray-700 font-lato mb-4 leading-relaxed">
-                          {stepData.description}
-                        </p>
-                        
-                        {/* Details */}
-                        <div className="grid md:grid-cols-2 gap-3">
-                          {stepData.details.map((detail, detailIndex) => (
-                            <div key={detailIndex} className="flex items-start space-x-3">
-                              <CheckCircle size={16} className="text-green-500 mt-1 flex-shrink-0" />
-                              <span className="text-gray-600 font-lato text-sm">{detail}</span>
-                            </div>
-                          ))}
-                        </div>
+                        </span>
                       </div>
                     </div>
                     
-                    {/* Arrow to next step */}
-                    {index < (activeTab === 'homeowner' ? homeownerSteps : tradespersonSteps).length - 1 && (
-                      <div className="flex justify-center mt-6">
-                        <ArrowRight size={20} className="text-green-500" />
+                    {/* Content */}
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold font-montserrat text-[#121E3C] mb-2">
+                        {stepData.title}
+                      </h3>
+                      <p className="text-gray-600 font-lato text-sm mb-4 leading-relaxed">
+                        {stepData.description}
+                      </p>
+                      
+                      {/* Details */}
+                      <div className="grid sm:grid-cols-2 gap-2">
+                        {stepData.details.map((detail, detailIndex) => (
+                          <div key={detailIndex} className="flex items-start gap-2">
+                            <div className="w-1.5 h-1.5 bg-[#34D164] rounded-full mt-2 shrink-0" />
+                            <span className="text-gray-500 font-lato text-xs">{detail}</span>
+                          </div>
+                        ))}
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
@@ -322,33 +328,44 @@ const HowItWorksPage = () => {
       </section>
 
       {/* Platform Features */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
+      <section className="relative py-20 lg:py-24 overflow-hidden">
+        <div className="absolute inset-0">
+          <img 
+            src="/stock/bg4.jpg" 
+            alt="" 
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-[#121E3C]/90" />
+        </div>
+        
+        <div className="container relative z-10 mx-auto px-6 md:px-8 lg:px-12">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold font-montserrat mb-4" style={{color: '#121E3C'}}>
+              <h2 className="text-2xl sm:text-3xl font-semibold font-montserrat text-white mb-3">
                 Why Choose ServiceHub?
               </h2>
-              <p className="text-lg text-gray-600 font-lato">
-                Advanced features that make finding and hiring professionals easy and safe
+              <p className="text-white/60 font-lato">
+                Features that make finding professionals easy and safe
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {platformFeatures.map((feature, index) => (
-                <Card key={index} className="border-0 shadow-md hover:shadow-lg transition-shadow duration-300 h-full">
-                  <CardContent className="p-6 text-center">
-                    <div className="mx-auto mb-4 text-center">
-                      <feature.icon size={28} style={{color: '#34D164'}} />
-                    </div>
-                    <h3 className="text-xl font-bold font-montserrat mb-3" style={{color: '#121E3C'}}>
-                      {feature.title}
-                    </h3>
-                    <p className="text-gray-600 font-lato leading-relaxed">
-                      {feature.description}
-                    </p>
-                  </CardContent>
-                </Card>
+                <div 
+                  key={index} 
+                  className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all duration-300"
+                >
+                  <div className="w-12 h-12 bg-[#34D164]/20 rounded-xl flex items-center justify-center mb-4">
+                    <feature.icon size={24} className="text-[#34D164]" />
+                  </div>
+                  <h3 className="text-lg font-semibold font-montserrat text-white mb-2">
+                    {feature.title}
+                  </h3>
+                  <p className="text-white/60 font-lato text-sm leading-relaxed">
+                    {feature.description}
+                  </p>
+                </div>
               ))}
             </div>
           </div>
@@ -356,20 +373,28 @@ const HowItWorksPage = () => {
       </section>
 
       {/* Statistics */}
-      <section className="py-16 bg-gradient-to-r from-green-600 to-green-700 text-white">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-3xl font-bold font-montserrat mb-12">
+      <section 
+        className="relative py-16 lg:py-20 bg-white"
+        style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.97), rgba(255,255,255,0.97)), 
+            linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px),
+            linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px)`,
+          backgroundSize: '100% 100%, 20px 20px, 20px 20px'
+        }}
+      >
+        <div className="container mx-auto px-6 md:px-8 lg:px-12">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-xl sm:text-2xl font-semibold font-montserrat text-center text-[#121E3C] mb-10">
               ServiceHub by the Numbers
             </h2>
             
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 lg:gap-8">
               {stats.map((stat, index) => (
-                <div key={index} className="text-center">
-                  <div className="text-4xl md:text-5xl font-bold font-montserrat mb-2">
+                <div key={index} className="text-center p-4 bg-white/80 backdrop-blur-sm border border-gray-100 rounded-xl">
+                  <div className="text-2xl md:text-3xl font-bold font-montserrat text-[#34D164] mb-1">
                     {stat.number}
                   </div>
-                  <div className="text-green-100 font-lato">
+                  <div className="text-gray-500 font-lato text-sm">
                     {stat.label}
                   </div>
                 </div>
@@ -381,211 +406,134 @@ const HowItWorksPage = () => {
 
       {/* How The Coin System Works - Only visible to tradespeople */}
       {isTradesperson() && (
-        <section className="py-16">
-          <div className="container mx-auto px-4">
+        <section className="relative py-16 lg:py-20 overflow-hidden">
+          <div className="absolute inset-0">
+            <img 
+              src="/stock/bg15.jpg" 
+              alt="" 
+              className="w-full h-full object-cover object-top"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-black/70" />
+          </div>
+          
+          <div className="container relative z-10 mx-auto px-6 md:px-8 lg:px-12">
             <div className="max-w-4xl mx-auto">
-              <div className="text-center mb-12">
-                <h2 className="text-3xl font-bold font-montserrat mb-4" style={{color: '#121E3C'}}>
+              <div className="text-center mb-10">
+                <h2 className="text-xl sm:text-2xl font-semibold font-montserrat text-white mb-2">
                   Understanding Our Coin System
                 </h2>
-                <p className="text-lg text-gray-600 font-lato">
-                  Fair and transparent pricing that ensures quality connections
+                <p className="text-white/60 font-lato text-sm">
+                  Fair and transparent pricing for quality connections
                 </p>
               </div>
 
-            <div className="grid md:grid-cols-2 gap-8">
-              <Card className="border-0 shadow-lg">
-                <CardContent className="p-8">
-                  <div className="text-center mb-6">
-                    <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Coins size={24} className="text-yellow-600" />
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="w-10 h-10 bg-yellow-500/20 rounded-xl flex items-center justify-center">
+                      <Coins size={20} className="text-yellow-400" />
                     </div>
-                    <h3 className="text-2xl font-bold font-montserrat" style={{color: '#121E3C'}}>
+                    <h3 className="text-lg font-semibold font-montserrat text-white">
                       For Tradespeople
                     </h3>
                   </div>
                   
-                  <div className="space-y-4">
-                    <div className="flex items-start space-x-3">
-                      <CheckCircle size={20} className="text-green-500 mt-1" />
-                      <div>
-                        <h4 className="font-semibold font-montserrat">Fund Your Wallet</h4>
-                        <p className="text-sm text-gray-600 font-lato">Add coins via bank transfer to Kuda Bank</p>
+                  <div className="space-y-3">
+                    {[
+                      { title: 'Fund Your Wallet', desc: 'Add coins via bank transfer' },
+                      { title: 'Show Interest (15 coins)', desc: 'Pay for jobs you\'re serious about' },
+                      { title: 'Earn Through Referrals', desc: 'Get coins for verified referrals' }
+                    ].map((item, idx) => (
+                      <div key={idx} className="flex items-start gap-3">
+                        <div className="w-1.5 h-1.5 bg-[#34D164] rounded-full mt-2 shrink-0" />
+                        <div>
+                          <span className="text-white text-sm font-medium">{item.title}</span>
+                          <p className="text-white/50 text-xs">{item.desc}</p>
+                        </div>
                       </div>
-                    </div>
-                    
-                    <div className="flex items-start space-x-3">
-                      <CheckCircle size={20} className="text-green-500 mt-1" />
-                      <div>
-                        <h4 className="font-semibold font-montserrat">Show Interest (15 coins)</h4>
-                        <p className="text-sm text-gray-600 font-lato">Pay access fee only for jobs you're serious about</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-start space-x-3">
-                      <CheckCircle size={20} className="text-green-500 mt-1" />
-                      <div>
-                        <h4 className="font-semibold font-montserrat">Earn Through Referrals</h4>
-                        <p className="text-sm text-gray-600 font-lato">Get 5 coins for verified referrals, 15 for withdrawals</p>
-                      </div>
-                    </div>
+                    ))}
                   </div>
-                </CardContent>
-              </Card>
+                </div>
 
-              <Card className="border-0 shadow-lg">
-                <CardContent className="p-8">
-                  <div className="text-center mb-6">
-                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Users size={24} className="text-blue-600" />
+                <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center">
+                      <Users size={20} className="text-blue-400" />
                     </div>
-                    <h3 className="text-2xl font-bold font-montserrat" style={{color: '#121E3C'}}>
+                    <h3 className="text-lg font-semibold font-montserrat text-white">
                       For Homeowners
                     </h3>
                   </div>
                   
-                  <div className="space-y-4">
-                    <div className="flex items-start space-x-3">
-                      <CheckCircle size={20} className="text-green-500 mt-1" />
-                      <div>
-                        <h4 className="font-semibold font-montserrat">Free Job Posting</h4>
-                        <p className="text-sm text-gray-600 font-lato">Post unlimited jobs at no cost</p>
+                  <div className="space-y-3">
+                    {[
+                      { title: 'Free Job Posting', desc: 'Post unlimited jobs at no cost' },
+                      { title: 'Quality Applications', desc: 'Only serious professionals apply' },
+                      { title: 'You Choose', desc: 'Control who gets your details' }
+                    ].map((item, idx) => (
+                      <div key={idx} className="flex items-start gap-3">
+                        <div className="w-1.5 h-1.5 bg-[#34D164] rounded-full mt-2 shrink-0" />
+                        <div>
+                          <span className="text-white text-sm font-medium">{item.title}</span>
+                          <p className="text-white/50 text-xs">{item.desc}</p>
+                        </div>
                       </div>
-                    </div>
-                    
-                    <div className="flex items-start space-x-3">
-                      <CheckCircle size={20} className="text-green-500 mt-1" />
-                      <div>
-                        <h4 className="font-semibold font-montserrat">Quality Applications</h4>
-                        <p className="text-sm text-gray-600 font-lato">Only serious professionals who pay to apply</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-start space-x-3">
-                      <CheckCircle size={20} className="text-green-500 mt-1" />
-                      <div>
-                        <h4 className="font-semibold font-montserrat">You Choose</h4>
-                        <p className="text-sm text-gray-600 font-lato">Full control over who gets your contact details</p>
-                      </div>
-                    </div>
+                    ))}
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
       )}
 
       {/* Safety & Trust */}
-      <section className="py-16 bg-gray-100">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Shield size={28} style={{color: '#34D164'}} />
+      <section 
+        className="relative py-16 lg:py-20 bg-white"
+        style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.97), rgba(255,255,255,0.97)), 
+            linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px),
+            linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px)`,
+          backgroundSize: '100% 100%, 20px 20px, 20px 20px'
+        }}
+      >
+        <div className="container mx-auto px-6 md:px-8 lg:px-12">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-10">
+              <h2 className="text-xl sm:text-2xl font-semibold font-montserrat text-[#121E3C] mb-2">
+                Your Safety & Trust Matter
+              </h2>
             </div>
             
-            <h2 className="text-3xl font-bold font-montserrat mb-6" style={{color: '#121E3C'}}>
-              Your Safety & Trust Matter
-            </h2>
-            
-            <div className="grid md:grid-cols-3 gap-8 mb-12">
-              <div className="text-center">
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <UserCheck size={24} style={{color: '#34D164'}} />
+            <div className="grid md:grid-cols-3 gap-6">
+              {[
+                { icon: UserCheck, title: 'ID Verification', desc: 'All professionals verify with Nigerian ID' },
+                { icon: Star, title: 'Honest Reviews', desc: 'Only verified jobs can leave reviews' },
+                { icon: MessageCircle, title: '24/7 Support', desc: 'Our team helps resolve any issues' }
+              ].map((item, idx) => (
+                <div key={idx} className="text-center bg-white/80 backdrop-blur-sm border border-gray-100 rounded-xl p-6">
+                  <div className="w-12 h-12 bg-[#34D164]/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <item.icon size={24} className="text-[#34D164]" />
+                  </div>
+                  <h3 className="font-semibold font-montserrat text-[#121E3C] mb-2">{item.title}</h3>
+                  <p className="text-sm text-gray-500 font-lato">{item.desc}</p>
                 </div>
-                <h3 className="font-semibold font-montserrat mb-2">ID Verification</h3>
-                <p className="text-sm text-gray-600 font-lato">All professionals verify their identity with Nigerian ID documents</p>
-              </div>
-              
-              <div className="text-center">
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Star size={24} style={{color: '#34D164'}} />
-                </div>
-                <h3 className="font-semibold font-montserrat mb-2">Honest Reviews</h3>
-                <p className="text-sm text-gray-600 font-lato">Only verified job completions can leave reviews</p>
-              </div>
-              
-              <div className="text-center">
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <MessageCircle size={24} style={{color: '#34D164'}} />
-                </div>
-                <h3 className="font-semibold font-montserrat mb-2">24/7 Support</h3>
-                <p className="text-sm text-gray-600 font-lato">Our team is here to help resolve any issues</p>
-              </div>
+              ))}
             </div>
           </div>
         </div>
       </section>
 
       {/* Call to Action */}
-      <section className="py-20 bg-gradient-to-r from-green-600 to-green-700 text-white">
-        <div className="container mx-auto px-4 text-center">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold font-montserrat mb-6">
-              Ready to Get Started?
-            </h2>
-            
-            <p className="text-xl font-lato mb-12 opacity-90">
-              Join thousands of Nigerians who trust ServiceHub for their service needs
-            </p>
-            
-            <div className="grid md:grid-cols-2 gap-8 mb-12">
-              <div className="text-left bg-white bg-opacity-10 p-8 rounded-lg">
-                <h3 className="text-2xl font-bold font-montserrat mb-4">Homeowners</h3>
-                <ul className="space-y-3 font-lato">
-                  <li className="flex items-center">
-                    <CheckCircle size={20} className="mr-3 text-green-300" />
-                    Post jobs for free
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle size={20} className="mr-3 text-green-300" />
-                    Connect with verified professionals
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle size={20} className="mr-3 text-green-300" />
-                    Get quality work done
-                  </li>
-                </ul>
-              </div>
-              
-              <div className="text-left bg-white bg-opacity-10 p-8 rounded-lg">
-                <h3 className="text-2xl font-bold font-montserrat mb-4">Tradespeople</h3>
-                <ul className="space-y-3 font-lato">
-                  <li className="flex items-center">
-                    <CheckCircle size={20} className="mr-3 text-green-300" />
-                    Find local work opportunities
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle size={20} className="mr-3 text-green-300" />
-                    Build your reputation
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle size={20} className="mr-3 text-green-300" />
-                    Grow your business
-                  </li>
-                </ul>
-              </div>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row gap-6 justify-center">
-              <Button 
-                onClick={() => window.location.href = '/post-job'}
-                className="bg-white !text-green-600 hover:bg-gray-100 px-8 py-4 rounded-lg font-lato font-semibold text-lg shadow-lg"
-              >
-                Post Your First Job
-              </Button>
-              
-              <Button 
-                onClick={() => window.location.href = '/browse-jobs'}
-                className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-green-600 px-8 py-4 rounded-lg font-lato font-semibold text-lg transition-colors duration-300"
-              >
-                Join as Tradesperson
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
+      <FinalCTA 
+        badge="Start now"
+        title="Ready to get started?"
+        subtitle="Post a job to find professionals or join as a tradesperson to find work."
+        buttonText="Post a job"
+        buttonLink="/post-job"
+        showAuthModal={false}
+      />
 
       <Footer />
     </div>

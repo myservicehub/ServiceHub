@@ -20,8 +20,13 @@ const NotificationIndicator = () => {
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef(null);
   const pollRef = useRef(null);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isTradesperson } = useAuth();
   const navigate = useNavigate();
+  
+  // Determine correct notifications path based on user role
+  const getNotificationsPath = () => {
+    return isTradesperson() ? '/trades/notifications' : '/dashboard/notifications';
+  };
 
   useEffect(() => {
     if (isAuthenticated()) {
@@ -76,12 +81,12 @@ const NotificationIndicator = () => {
 
   const handleViewAllNotifications = () => {
     setShowDropdown(false);
-    navigate('/notifications');
+    navigate(getNotificationsPath());
   };
 
   const handleNotificationSettings = () => {
     setShowDropdown(false);
-    navigate('/notifications/preferences');
+    navigate(`${getNotificationsPath()}/preferences`);
   };
 
   const handleNotificationClick = async (notification) => {
@@ -110,7 +115,7 @@ const NotificationIndicator = () => {
     }
 
     // Navigate to notifications page focused on this item to read full content
-    navigate(`/notifications?focus=${encodeURIComponent(notification.id)}`);
+    navigate(`${getNotificationsPath()}?focus=${encodeURIComponent(notification.id)}`);
   };
 
   const stripHtml = (html) => {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { referralsAPI } from '../api/referrals';
 import { useToast } from '../hooks/use-toast';
@@ -6,6 +7,9 @@ import { Copy, Share2, Users, Gift, CheckCircle, Clock, XCircle } from 'lucide-r
 
 const ReferralsPage = () => {
   const { isAuthenticated, isHomeowner, user } = useAuth();
+  const location = useLocation();
+  const isInDashboard = location.pathname.startsWith('/trades') || location.pathname.startsWith('/dashboard');
+  
   const [stats, setStats] = useState(null);
   const [referrals, setReferrals] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -128,11 +132,11 @@ const ReferralsPage = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className={isInDashboard ? "space-y-6" : "space-y-6 container mx-auto px-4 py-8"}>
       {/* Page Header */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-[#121E3C]">Referrals</h1>
-        <p className="text-gray-500 mt-1 text-sm">
+        <h1 className="text-2xl font-bold text-[#121E3C]">Referrals</h1>
+        <p className="text-sm text-gray-500 mt-1">
           Earn rewards when you refer friends and family
         </p>
       </div>

@@ -14,23 +14,25 @@ import {
 import { portfolioAPI } from '../../api/services';
 import { useToast } from '../../hooks/use-toast';
 
-const PORTFOLIO_CATEGORIES = [
-  { value: 'plumbing', label: 'Plumbing' },
-  { value: 'electrical', label: 'Electrical' },
-  { value: 'carpentry', label: 'Carpentry' },
-  { value: 'painting', label: 'Painting' },
-  { value: 'tiling', label: 'Tiling' },
-  { value: 'roofing', label: 'Roofing' },
-  { value: 'heating_gas', label: 'Heating & Gas' },
-  { value: 'kitchen_fitting', label: 'Kitchen Fitting' },
-  { value: 'bathroom_fitting', label: 'Bathroom Fitting' },
-  { value: 'garden_landscaping', label: 'Garden & Landscaping' },
-  { value: 'flooring', label: 'Flooring' },
-  { value: 'plastering', label: 'Plastering' },
+// Default fallback categories if user has none
+const DEFAULT_CATEGORIES = [
   { value: 'other', label: 'Other' }
 ];
 
-const ImageUpload = ({ onUploadSuccess, onCancel }) => {
+// Helper to convert trade category name to value format
+const categoryToValue = (category) => {
+  return category.toLowerCase().replace(/[&\s]+/g, '_').replace(/[^a-z0-9_]/g, '');
+};
+
+const ImageUpload = ({ onUploadSuccess, onCancel, userCategories = [] }) => {
+  // Use user's registered trades or fallback to default
+  const portfolioCategories = userCategories.length > 0 
+    ? userCategories.map(cat => ({ value: categoryToValue(cat), label: cat }))
+    : DEFAULT_CATEGORIES;
+  
+  // Set default category to the first user trade or 'other'
+  const defaultCategory = portfolioCategories[0]?.value || 'other';
+  
   const [dragActive, setDragActive] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -38,7 +40,7 @@ const ImageUpload = ({ onUploadSuccess, onCancel }) => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    category: 'plumbing'
+    category: defaultCategory
   });
   
   const fileInputRef = useRef(null);
@@ -150,7 +152,7 @@ const ImageUpload = ({ onUploadSuccess, onCancel }) => {
       // Reset form
       setSelectedFile(null);
       setPreviewUrl(null);
-      setFormData({ title: '', description: '', category: 'plumbing' });
+      setFormData({ title: '', description: '', category: defaultCategory });
       
       if (onUploadSuccess) {
         onUploadSuccess(result);
@@ -276,7 +278,7 @@ const ImageUpload = ({ onUploadSuccess, onCancel }) => {
                 onChange={(e) => handleInputChange('category', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md font-lato focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
-                {PORTFOLIO_CATEGORIES.map((category) => (
+                {portfolioCategories.map((category) => (
                   <option key={category.value} value={category.value}>
                     {category.label}
                   </option>
