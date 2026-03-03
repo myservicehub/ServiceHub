@@ -585,14 +585,12 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       }
 
       // Redirect to My Jobs page instead of homepage to avoid full reload/anchoring
-      setTimeout(() => {
-        try {
-          navigate('/my-jobs', { replace: true });
-        } catch (e) {
-          // Fallback to hard redirect if navigate is unavailable
-          window.location.href = '/my-jobs';
-        }
-      }, 2000);
+      try {
+        navigate('/my-jobs', { replace: true });
+      } catch (e) {
+        // Fallback to hard redirect if navigate is unavailable
+        window.location.href = '/my-jobs';
+      }
 
     } catch (error) {
       console.error('Job posting failed:', error);
@@ -1577,6 +1575,13 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
     
+    // Prevent premature submission if not on the final step
+    // This handles cases where user presses Enter in a form field
+    if (currentStep < totalSteps) {
+      nextStep();
+      return;
+    }
+    
     // If user is authenticated, use the authenticated flow
     if (isUserAuthenticated()) {
       await handleJobSubmissionForAuthenticatedUser();
@@ -1765,14 +1770,12 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       }
 
       // Redirect to My Jobs page instead of homepage to avoid full reload/anchoring
-      setTimeout(() => {
-        try {
-          navigate('/my-jobs', { replace: true });
-        } catch (e) {
-          // Fallback to hard redirect if navigate is unavailable
-          window.location.href = '/my-jobs';
-        }
-      }, 2000);
+      try {
+        navigate('/my-jobs', { replace: true });
+      } catch (e) {
+        // Fallback to hard redirect if navigate is unavailable
+        window.location.href = '/my-jobs';
+      }
 
     } catch (error) {
       console.error('Job posting failed:', error);
