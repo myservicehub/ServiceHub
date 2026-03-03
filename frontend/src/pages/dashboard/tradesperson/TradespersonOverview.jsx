@@ -1,0 +1,334 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { cn } from '../../../lib/utils';
+import { useAuth } from '../../../contexts/AuthContext';
+import { jobsAPI } from '../../../api/jobs';
+import {
+  Search,
+  Heart,
+  CheckCircle,
+  Wallet,
+  TrendingUp,
+  ArrowRight,
+  Star,
+  MessageSquare,
+  MapPin,
+  Clock,
+  Briefcase,
+  ArrowUpRight,
+  Eye,
+} from 'lucide-react';
+import { Button } from '../../../components/ui/button';
+
+const TradespersonOverview = () => {
+  const [stats, setStats] = useState({
+    activeInterests: 0,
+    completedJobs: 0,
+    totalEarnings: 0,
+    averageRating: 0,
+    reviewCount: 0,
+  });
+  const [recentJobs, setRecentJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      // Fetch interests/jobs data
+      const response = await jobsAPI.getMyInterests({ limit: 50 });
+      const interests = response?.interests || [];
+
+      // Calculate stats
+      const activeInterests = interests.filter(i => i.status === 'pending' || i.status === 'accepted').length;
+      const completedJobs = interests.filter(i => i.status === 'completed').length;
+
+      setStats({
+        activeInterests,
+        completedJobs,
+        totalEarnings: user?.wallet_balance || 0,
+        averageRating: user?.average_rating || 0,
+        reviewCount: user?.review_count || 0,
+      });
+
+      // Get recent jobs
+      setRecentJobs(interests.slice(0, 5));
+    } catch (error) {
+      console.error('Failed to load dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
+
+  const quickActions = [
+    {
+      icon: Search,
+      label: 'Browse Jobs',
+      description: 'Find new opportunities',
+      href: '/trades/browsejobs',
+      primary: true,
+    },
+    {
+      icon: Heart,
+      label: 'My Interests',
+      description: 'View active interests',
+      href: '/trades/interests',
+    },
+    {
+      icon: MessageSquare,
+      label: 'Messages',
+      description: 'Check conversations',
+      href: '/trades/messages',
+    },
+    {
+      icon: Wallet,
+      label: 'Wallet',
+      description: 'Manage earnings',
+      href: '/trades/wallet',
+    },
+  ];
+
+  const statsCards = [
+    {
+      label: 'Active Interests',
+      value: stats.activeInterests,
+      icon: Heart,
+      color: 'text-pink-500',
+      bgColor: 'bg-pink-50',
+    },
+    {
+      label: 'Completed Jobs',
+      value: stats.completedJobs,
+      icon: CheckCircle,
+      color: 'text-green-500',
+      bgColor: 'bg-green-50',
+    },
+    {
+      label: 'Avg. Rating',
+      value: stats.averageRating ? stats.averageRating.toFixed(1) : '0.0',
+      suffix: stats.reviewCount > 0 ? ` (${stats.reviewCount})` : '',
+      icon: Star,
+      color: 'text-yellow-500',
+      bgColor: 'bg-yellow-50',
+    },
+    {
+      label: 'Wallet Balance',
+      value: `₦${stats.totalEarnings.toLocaleString()}`,
+      icon: Wallet,
+      color: 'text-blue-500',
+      bgColor: 'bg-blue-50',
+    },
+  ];
+
+  if (loading) {
+    return (
+      <div className="space-y-6 animate-pulse">
+        <div className="h-8 bg-gray-200 rounded-lg w-1/3" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-28 bg-gray-200 rounded-2xl" />
+          ))}
+        </div>
+        <div className="h-64 bg-gray-200 rounded-2xl" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Welcome Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-[#121E3C] font-montserrat">
+            {getGreeting()}, {user?.name?.split(' ')[0] || 'Pro'}!
+          </h1>
+          <p className="text-gray-500 text-sm mt-1">
+            Here's what's happening with your business today.
+          </p>
+        </div>
+        <Button
+          onClick={() => navigate('/trades/browsejobs')}
+          className="bg-[#34D164] hover:bg-[#2ab854] text-white px-5 py-2.5 rounded-xl text-sm font-medium shadow-sm transition-all duration-300 hover:shadow-md inline-flex items-center gap-2"
+        >
+          <Search className="w-4 h-4" />
+          Browse Jobs
+        </Button>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {statsCards.map((stat, index) => (
+          <div
+            key={index}
+            className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-300"
+          >
+            <div className="flex items-start justify-between mb-3">
+              <div className={cn("p-2.5 rounded-xl", stat.bgColor)}>
+                <stat.icon className={cn("w-5 h-5", stat.color)} />
+              </div>
+              <TrendingUp className="w-4 h-4 text-green-500" />
+            </div>
+            <p className="text-2xl font-bold text-[#121E3C] font-montserrat">
+              {stat.value}
+              {stat.suffix && <span className="text-sm font-normal text-gray-400">{stat.suffix}</span>}
+            </p>
+            <p className="text-sm text-gray-500 mt-1">{stat.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Quick Actions */}
+      <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+        <h2 className="text-lg font-semibold text-[#121E3C] font-montserrat mb-4">
+          Quick Actions
+        </h2>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {quickActions.map((action, index) => (
+            <button
+              key={index}
+              onClick={() => navigate(action.href)}
+              className={cn(
+                "group flex flex-col items-start p-4 rounded-xl border transition-all duration-300 text-left",
+                action.primary
+                  ? "bg-[#34D164]/10 border-[#34D164]/20 hover:bg-[#34D164]/20"
+                  : "bg-gray-50 border-gray-100 hover:bg-gray-100"
+              )}
+            >
+              <div className={cn(
+                "p-2.5 rounded-xl mb-3 transition-colors",
+                action.primary ? "bg-[#34D164]/20" : "bg-white"
+              )}>
+                <action.icon className={cn(
+                  "w-5 h-5",
+                  action.primary ? "text-[#34D164]" : "text-gray-500"
+                )} />
+              </div>
+              <span className="font-medium text-[#121E3C] text-sm">{action.label}</span>
+              <span className="text-xs text-gray-500 mt-0.5">{action.description}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Recent Activity */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        {/* Recent Interests */}
+        <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-[#121E3C] font-montserrat">
+              Recent Interests
+            </h2>
+            <button
+              onClick={() => navigate('/pro/interests')}
+              className="text-sm text-[#34D164] hover:text-[#2ab854] font-medium inline-flex items-center gap-1 transition-colors"
+            >
+              View all
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          {recentJobs.length > 0 ? (
+            <div className="space-y-3">
+              {recentJobs.slice(0, 4).map((job, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
+                  onClick={() => navigate(`/trades/interests`)}
+                >
+                  <div className="w-10 h-10 rounded-xl bg-[#121E3C]/5 flex items-center justify-center shrink-0">
+                    <Briefcase className="w-5 h-5 text-[#121E3C]" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-[#121E3C] truncate">
+                      {job.job?.title || 'Job Request'}
+                    </p>
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <MapPin className="w-3 h-3" />
+                      <span className="truncate">{job.job?.location || 'Unknown'}</span>
+                    </div>
+                  </div>
+                  <span className={cn(
+                    "px-2 py-1 rounded-full text-xs font-medium shrink-0",
+                    job.status === 'accepted' ? "bg-green-100 text-green-700" :
+                    job.status === 'pending' ? "bg-yellow-100 text-yellow-700" :
+                    "bg-gray-100 text-gray-600"
+                  )}>
+                    {job.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center mx-auto mb-3">
+                <Heart className="w-6 h-6 text-gray-400" />
+              </div>
+              <p className="text-gray-500 text-sm">No interests yet</p>
+              <Button
+                onClick={() => navigate('/trades/browsejobs')}
+                className="mt-3 text-[#34D164] hover:text-[#2ab854] text-sm font-medium"
+                variant="ghost"
+              >
+                Browse available jobs
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Profile Completion / Tips */}
+        <div className="bg-gradient-to-br from-[#121E3C] to-[#1a2d4f] rounded-2xl p-6 text-white">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold font-montserrat mb-1">
+                Boost Your Profile
+              </h2>
+              <p className="text-white/60 text-sm">
+                Complete your profile to get more job opportunities
+              </p>
+            </div>
+            <div className="p-2 bg-white/10 rounded-xl">
+              <Star className="w-5 h-5 text-yellow-400" />
+            </div>
+          </div>
+
+          <div className="space-y-3 mb-6">
+            {[
+              { label: 'Add portfolio photos', icon: Eye },
+              { label: 'Complete your bio', icon: Briefcase },
+              { label: 'Verify your identity', icon: CheckCircle },
+            ].map((tip, index) => (
+              <div key={index} className="flex items-center gap-3">
+                <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center">
+                  <tip.icon className="w-3.5 h-3.5 text-[#34D164]" />
+                </div>
+                <span className="text-sm text-white/80">{tip.label}</span>
+              </div>
+            ))}
+          </div>
+
+          <Button
+            onClick={() => navigate('/trades/profile')}
+            className="w-full bg-[#34D164] hover:bg-[#2ab854] text-white rounded-xl py-2.5 text-sm font-medium transition-all inline-flex items-center justify-center gap-2"
+          >
+            Complete Profile
+            <ArrowUpRight className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default TradespersonOverview;

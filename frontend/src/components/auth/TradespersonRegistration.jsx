@@ -24,7 +24,9 @@ import {
   BookOpen,
   Upload,
   X,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Car,
+  CreditCard
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../hooks/use-toast';
@@ -60,7 +62,7 @@ const FALLBACK_TRADE_CATEGORIES = [
 // If needed, we can also create a separate hook for trade categories
 // For now, keeping them as constants since they're less frequently changed
 
-const TradespersonRegistration = ({ onClose, onComplete, referralCode }) => {
+const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchToLogin }) => {
   const uploadSectionRef = useRef(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -110,6 +112,7 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode }) => {
   });
 
   const [errors, setErrors] = useState({});
+  const [showReferralField, setShowReferralField] = useState(!!referralCode);
   const [passwordStrength, setPasswordStrength] = useState({
     length: false,
     uppercase: false,
@@ -148,14 +151,14 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode }) => {
     const fullName = `${formData.firstName} ${formData.lastName}`;
     const walletSetupChoice = formData.walletSetup;
 
-    console.log('🚀 Redirecting to tradesperson dashboard (/browse-jobs)');
+    console.log('🚀 Redirecting to tradesperson dashboard (/trades/overview)');
     console.log('🔐 Final auth state before redirect:', {
       isAuthenticated: isAuthenticated(),
       isTradesperson: isTradesperson(),
       user: user
     });
 
-    navigate('/browse-jobs', {
+    navigate('/trades/overview', {
       state: {
         welcomeMessage: `Welcome to ServiceHub, ${fullName}! Your registration is complete.`,
         walletFunded: false,
@@ -718,489 +721,461 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode }) => {
 
   const getStepTitle = () => {
     switch (currentStep) {
-      case 1: return 'Create your account';
-      case 2: return 'Work details';
-      case 3: return 'ID Check';
-      case 4: return 'Safety & Quality';
-      case 5: return 'Profile Setup';
-      case 6: return 'Fund your wallet';
+      case 1: return 'Create Your Professional Profile';
+      case 2: return 'Tell Us About Your Expertise';
+      case 3: return 'Verify Your Identity';
+      case 4: return 'Showcase Your Skills';
+      case 5: return 'Complete Your Profile';
+      case 6: return 'Start Receiving Jobs';
       default: return 'Registration';
     }
   };
 
   const getStepDescription = () => {
     switch (currentStep) {
-      case 1: return 'Sign up to be a trade member on ServiceHub';
-      case 2: return 'Tell us about your work and business';
-      case 3: return 'Verify your identity';
-      case 4: return 'Take a skills test to prove your expertise';
-      case 5: return 'Set up your professional profile';
-      case 6: return 'Set up your wallet for job access fees';
+      case 1: return 'Takes less than 3 minutes to complete';
+      case 2: return 'Help customers find you for the right jobs';
+      case 3: return 'Quick verification to build trust with customers';
+      case 4: return 'A short assessment to highlight your expertise';
+      case 5: return 'Make a great first impression';
+      case 6: return 'Get ready to connect with customers';
       default: return '';
     }
   };
 
   const renderProgressBar = () => (
-    <div className="mb-8">
-      <div className="flex justify-between items-center mb-2">
-        <span className="text-sm font-medium text-gray-600">
-          Step {currentStep} of 6
-        </span>
-        <span className="text-sm font-medium text-gray-600">
-          {Math.round((currentStep / 6) * 100)}% Complete
-        </span>
-      </div>
-      <Progress value={(currentStep / 6) * 100} className="h-2" />
-      
-      {/* Step indicators */}
-      <div className="flex justify-between mt-4">
+    <div className="mb-8 flex justify-center">
+      {/* Minimal dot progress - no numbers, no percentages */}
+      <div className="flex items-center gap-2">
         {[1, 2, 3, 4, 5, 6].map((step) => (
-          <div key={step} className="flex flex-col items-center">
-            <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                step < currentStep
-                  ? 'bg-green-600 text-white'
-                  : step === currentStep
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-600'
-              }`}
-            >
-              {step < currentStep ? <CheckCircle size={16} /> : step}
-            </div>
-            <span className="text-xs mt-1 text-gray-600">
-              {step === 1 && 'Account'}
-              {step === 2 && 'Work'}
-              {step === 3 && 'ID'}
-              {step === 4 && 'Skills'}
-              {step === 5 && 'Profile'}
-              {step === 6 && 'Wallet'}
-            </span>
-          </div>
+          <div
+            key={step}
+            className={`transition-all duration-300 rounded-full ${
+              step < currentStep
+                ? 'w-2.5 h-2.5 bg-[#34D164]'
+                : step === currentStep
+                ? 'w-3 h-3 bg-[#121E3C]'
+                : 'w-2 h-2 bg-gray-200'
+            }`}
+          />
         ))}
       </div>
     </div>
   );
 
   const renderStep1 = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            First name *
-          </label>
-          <Input
-            placeholder="First name"
-            value={formData.firstName}
-            onChange={(e) => updateFormData('firstName', e.target.value)}
-            className={errors.firstName ? 'border-red-500' : ''}
-          />
-          {errors.firstName && <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>}
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Last name *
-          </label>
-          <Input
-            placeholder="Last name"
-            value={formData.lastName}
-            onChange={(e) => updateFormData('lastName', e.target.value)}
-            className={errors.lastName ? 'border-red-500' : ''}
-          />
-          {errors.lastName && <p className="text-red-500 text-sm mt-1">{errors.lastName}</p>}
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Email address *
-        </label>
-        <Input
-          type="email"
-          placeholder="your.email@example.com"
-          value={formData.email}
-          onChange={(e) => updateFormData('email', e.target.value)}
-          className={errors.email ? 'border-red-500' : ''}
-        />
-        {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
-
-        {/* Email verification info (codes handled after registration) */}
-        <div className="mt-3">
-          <p className="text-xs text-gray-500">
-            Verification happens after registration. Codes will be sent automatically.
-          </p>
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Referral code (optional)
-        </label>
-        <Input
-          placeholder="Enter a referral code if you have one"
-          value={formData.referralCode}
-          onChange={(e) => updateFormData('referralCode', e.target.value)}
-        />
-        <p className="text-xs text-gray-500 mt-1">
-          Using a friend’s code helps them earn rewards when your account is verified.
-        </p>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Phone number *
-        </label>
-        <div className="flex">
-          <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm">
-            +234
-          </span>
-          <Input
-            placeholder="8140120508 or 08140120508"
-            value={formData.phone}
-            onChange={(e) => updateFormData('phone', e.target.value)}
-            className={`rounded-l-none ${errors.phone ? 'border-red-500' : ''}`}
-          />
-        </div>
-        <p className="text-xs text-gray-500 mt-1">
-          Enter your number with or without the leading 0 (e.g., 8140120508 or 08140120508)
-        </p>
-        {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
-
-        {/* Phone verification info (codes handled after registration) */}
-        <div className="mt-3">
-          <p className="text-xs text-gray-500">
-            Verification happens after registration. Codes will be sent automatically.
-          </p>
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Password *
-        </label>
-        <Input
-          type="password"
-          placeholder="Create your password"
-          value={formData.password}
-          onChange={(e) => updateFormData('password', e.target.value)}
-          className={errors.password ? 'border-red-500' : ''}
-        />
-        
-        {/* Password strength indicator */}
-        <div className="mt-3 space-y-2">
-          <div className="text-xs font-medium text-gray-700">Password requirements:</div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-            <div className={`flex items-center space-x-2 ${passwordStrength.length ? 'text-green-600' : 'text-gray-400'}`}>
-              {passwordStrength.length ? <CheckCircle size={14} /> : <XCircle size={14} />}
-              <span>At least 8 characters</span>
-            </div>
-            <div className={`flex items-center space-x-2 ${passwordStrength.uppercase ? 'text-green-600' : 'text-gray-400'}`}>
-              {passwordStrength.uppercase ? <CheckCircle size={14} /> : <XCircle size={14} />}
-              <span>One uppercase letter</span>
-            </div>
-            <div className={`flex items-center space-x-2 ${passwordStrength.lowercase ? 'text-green-600' : 'text-gray-400'}`}>
-              {passwordStrength.lowercase ? <CheckCircle size={14} /> : <XCircle size={14} />}
-              <span>One lowercase letter</span>
-            </div>
-            <div className={`flex items-center space-x-2 ${passwordStrength.number ? 'text-green-600' : 'text-gray-400'}`}>
-              {passwordStrength.number ? <CheckCircle size={14} /> : <XCircle size={14} />}
-              <span>One number</span>
-            </div>
-            <div className={`flex items-center space-x-2 ${passwordStrength.special ? 'text-green-600' : 'text-gray-400'}`}>
-              {passwordStrength.special ? <CheckCircle size={14} /> : <XCircle size={14} />}
-              <span>One special character</span>
-            </div>
+    <div className="space-y-8 px-2">
+      {/* Section 1: Your Basic Details */}
+      <div className="space-y-4">
+        <h3 className="text-xs font-semibold font-lato text-gray-400 uppercase tracking-wider">Your Basic Details</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
+              First name
+            </label>
+            <Input
+              placeholder="First name"
+              value={formData.firstName}
+              onChange={(e) => updateFormData('firstName', e.target.value)}
+              className={`h-12 font-lato text-sm rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all ${errors.firstName ? 'border-red-400' : ''}`}
+            />
+            {errors.firstName && <p className="text-red-500 text-xs mt-1 font-lato">{errors.firstName}</p>}
           </div>
           
-          {/* Password strength bar */}
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className={`h-2 rounded-full transition-all duration-300 ${
-                passwordStrength.score === 5 ? 'bg-green-500' :
-                passwordStrength.score >= 3 ? 'bg-yellow-500' :
-                passwordStrength.score >= 1 ? 'bg-red-500' : 'bg-gray-300'
-              }`}
-              style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
+          <div>
+            <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
+              Last name
+            </label>
+            <Input
+              placeholder="Last name"
+              value={formData.lastName}
+              onChange={(e) => updateFormData('lastName', e.target.value)}
+              className={`h-12 font-lato text-sm rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all ${errors.lastName ? 'border-red-400' : ''}`}
             />
-          </div>
-          <div className="text-xs text-gray-500">
-            Password strength: {
-              passwordStrength.score === 5 ? 'Strong' :
-              passwordStrength.score >= 3 ? 'Medium' :
-              passwordStrength.score >= 1 ? 'Weak' : 'Very Weak'
-            }
+            {errors.lastName && <p className="text-red-500 text-xs mt-1 font-lato">{errors.lastName}</p>}
           </div>
         </div>
-        
-        {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
       </div>
 
-      <div className="flex items-start space-x-2">
+      {/* Section 2: Contact Information */}
+      <div className="space-y-4">
+        <h3 className="text-xs font-semibold font-lato text-gray-400 uppercase tracking-wider">Contact Information</h3>
+        
+        <div>
+          <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
+            Email address
+          </label>
+          <Input
+            type="email"
+            placeholder="hello@example.com"
+            value={formData.email}
+            onChange={(e) => updateFormData('email', e.target.value)}
+            className={`h-12 font-lato text-sm rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all ${errors.email ? 'border-red-400' : ''}`}
+          />
+          {errors.email && <p className="text-red-500 text-xs mt-1 font-lato">{errors.email}</p>}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
+            Phone number
+          </label>
+          <div className="flex">
+            <span className="inline-flex items-center px-4 rounded-l-xl border border-r-0 border-gray-200 bg-gray-50 text-gray-500 text-sm font-lato">
+              +234
+            </span>
+            <Input
+              type="tel"
+              autoComplete="tel"
+              placeholder=""
+              value={formData.phone}
+              onChange={(e) => updateFormData('phone', e.target.value)}
+              className={`h-12 font-lato text-sm rounded-l-none rounded-r-xl border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all ${errors.phone ? 'border-red-400' : ''}`}
+            />
+          </div>
+          <p className="text-xs text-gray-400 mt-1 font-lato">
+            Enter your number with or without the leading 0
+          </p>
+          {errors.phone && <p className="text-red-500 text-xs mt-1 font-lato">{errors.phone}</p>}
+        </div>
+      </div>
+
+      {/* Section 3: Referral */}
+      <div className="space-y-4">
+        <h3 className="text-xs font-semibold font-lato text-gray-400 uppercase tracking-wider">Referral (Optional)</h3>
+        
+        <div>
+          <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
+            Referral code
+          </label>
+          <Input
+            placeholder="Enter a referral code if you have one"
+            value={formData.referralCode}
+            onChange={(e) => updateFormData('referralCode', e.target.value)}
+            className="h-12 font-lato text-sm rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all"
+          />
+          <p className="text-xs text-gray-400 mt-1 font-lato">
+            Using a friend's code helps them earn rewards when your account is verified.
+          </p>
+        </div>
+      </div>
+
+      {/* Section 4: Security */}
+      <div className="space-y-4">
+        <h3 className="text-xs font-semibold font-lato text-gray-400 uppercase tracking-wider">Security</h3>
+        
+        <div>
+          <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
+            Create password
+          </label>
+          <Input
+            type="password"
+            placeholder="••••••••"
+            value={formData.password}
+            onChange={(e) => updateFormData('password', e.target.value)}
+            className={`h-12 font-lato text-sm rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all ${errors.password ? 'border-red-400' : ''}`}
+          />
+          
+          {/* Minimal password strength indicator */}
+          <div className="mt-3 flex items-center gap-1.5">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div
+                key={i}
+                className={`h-1 flex-1 rounded-full transition-all ${
+                  i <= passwordStrength.score
+                    ? passwordStrength.score >= 4 ? 'bg-green-500' : passwordStrength.score >= 2 ? 'bg-yellow-500' : 'bg-red-400'
+                    : 'bg-gray-200'
+                }`}
+              />
+            ))}
+            <span className="text-xs text-gray-400 font-lato ml-2">
+              {passwordStrength.score >= 4 ? 'Strong' : passwordStrength.score >= 2 ? 'Medium' : passwordStrength.score >= 1 ? 'Weak' : ''}
+            </span>
+          </div>
+          {errors.password && (
+            <div className="mt-2 p-3 bg-red-50 border border-red-100 rounded-lg">
+              <p className="text-red-600 text-xs font-medium font-lato mb-1.5">Password must meet all requirements:</p>
+              <ul className="text-xs text-red-500 font-lato space-y-0.5">
+                <li className={formData.password.length >= 8 ? 'text-green-600' : ''}>• At least 8 characters</li>
+                <li className={/[A-Z]/.test(formData.password) ? 'text-green-600' : ''}>• One uppercase letter</li>
+                <li className={/[a-z]/.test(formData.password) ? 'text-green-600' : ''}>• One lowercase letter</li>
+                <li className={/[0-9]/.test(formData.password) ? 'text-green-600' : ''}>• One number</li>
+                <li className={/[^A-Za-z0-9]/.test(formData.password) ? 'text-green-600' : ''}>• One special character</li>
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Marketing consent - smaller, less prominent */}
+      <div className="flex items-start gap-3 pt-2">
         <input
           type="checkbox"
           id="marketing"
           checked={formData.marketingConsent}
           onChange={(e) => updateFormData('marketingConsent', e.target.checked)}
-          className="mt-1"
+          className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#34D164] focus:ring-[#34D164]/20"
         />
-        <label htmlFor="marketing" className="text-sm text-gray-600">
-          I would like to receive marketing communications about ServiceHub services and offers by email, SMS and/or phone and understand that I can unsubscribe at any time
+        <label htmlFor="marketing" className="text-xs text-gray-400 font-lato leading-relaxed">
+          I'd like to receive updates about ServiceHub services and offers
         </label>
       </div>
     </div>
   );
 
   const renderStep2 = () => (
-    <div className="space-y-6">
-      <div className="text-center mb-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-2">
-          Welcome, {formData.firstName}! Let's get started.
-        </h3>
-        <p className="text-gray-600">
-          We want to know our tradespeople better so we can send you the right local leads, matched to your skills.
-        </p>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Select up to 5 professions *
-        </label>
-        <p className="text-sm text-gray-600 mb-3">
-          Tell us what you do so we can send you the most relevant jobs.
-        </p>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-60 overflow-y-auto border rounded-lg p-4">
-          {tradeCategories.map((trade) => (
-            <label key={trade} className="flex items-center space-x-2 cursor-pointer p-2 hover:bg-gray-50 rounded">
-              <input
-                type="checkbox"
-                checked={formData.selectedTrades.includes(trade)}
-                onChange={() => {
-                  const trades = formData.selectedTrades.includes(trade)
-                    ? formData.selectedTrades.filter(t => t !== trade)
-                    : [...formData.selectedTrades, trade];
-                  updateFormData('selectedTrades', trades);
-                }}
-                disabled={!formData.selectedTrades.includes(trade) && formData.selectedTrades.length >= 5}
-                className="rounded"
-              />
-              <span className="text-sm">{trade}</span>
-            </label>
-          ))}
-        </div>
-        <p className="text-sm text-gray-500 mt-2">
-          Selected: {formData.selectedTrades.length}/5
-        </p>
-        {errors.selectedTrades && <p className="text-red-500 text-sm mt-1">{errors.selectedTrades}</p>}
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          How far can you travel for work?
-        </label>
-        <p className="text-sm text-gray-600 mb-3">
-          Set the maximum distance you are willing to travel from {formData.state || 'your location'}.
-        </p>
-        <div className="space-y-3">
-          <input
-            type="range"
-            min="5"
-            max="200"
-            step="5"
-            value={parseInt(formData.travelDistance || 10)}
-            onChange={(e) => updateFormData('travelDistance', parseInt(e.target.value))}
-            className="w-full"
-          />
-          <div className="flex justify-between text-sm text-gray-600">
-            <span>5 km</span>
-            <span className="font-medium">{formData.travelDistance} km</span>
-            <span>200 km</span>
-          </div>
-          <div className="text-xs text-gray-600">
-            Selected: {formData.travelDistance} km (≈ {kmToMiles(formData.travelDistance)} mi)
-          </div>
-
-          {/* State-based suggestion helper */}
-          <div className="mt-2 bg-gray-50 border border-gray-200 rounded-lg p-3">
-            {(() => {
-              const s = getStateDistanceSuggestion(formData.state);
-              return (
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-gray-700">
-                    Suggestion{formData.state ? ` for ${formData.state}` : ''}: {s.min}–{s.max} km (≈ {kmToMiles(s.min)}–{kmToMiles(s.max)} mi)
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => updateFormData('travelDistance', s.value)}
-                    className="px-3 py-1 text-sm bg-green-600 hover:bg-green-700 text-white rounded"
-                  >
-                    Apply {s.value} km
-                  </button>
-                </div>
-              );
-            })()}
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Years of experience *
-        </label>
-        <select
-          value={formData.experienceYears}
-          onChange={(e) => updateFormData('experienceYears', e.target.value)}
-          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-            errors.experienceYears ? 'border-red-500' : 'border-gray-300'
-          }`}
-        >
-          <option value="">Select your experience level</option>
-          <option value="0-1">0-1 years (New to the trade)</option>
-          <option value="1-3">1-3 years (Some experience)</option>
-          <option value="3-5">3-5 years (Experienced)</option>
-          <option value="5-10">5-10 years (Very experienced)</option>
-          <option value="10+">10+ years (Expert level)</option>
-        </select>
-        {errors.experienceYears && <p className="text-red-500 text-sm mt-1">{errors.experienceYears}</p>}
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          What type of business do you have? *
-        </label>
-        <div className="space-y-2">
-          {businessTypes.map((type) => (
-            <label key={type} className="flex items-center space-x-2 cursor-pointer p-3 border rounded-lg hover:bg-gray-50">
-              <input
-                type="radio"
-                name="businessType"
-                value={type}
-                checked={formData.businessType === type}
-                onChange={(e) => updateFormData('businessType', e.target.value)}
-                className="text-green-600"
-              />
-              <span className="text-sm">{type}</span>
-            </label>
-          ))}
-        </div>
-        {errors.businessType && <p className="text-red-500 text-sm mt-1">{errors.businessType}</p>}
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="space-y-8 px-2">
+      {/* Section 1: Your Expertise */}
+      <div className="space-y-4">
+        <h3 className="text-xs font-semibold font-lato text-gray-400 uppercase tracking-wider">Your Expertise</h3>
+        
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Trading name *
+          <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
+            Select up to 5 professions
           </label>
-          <Input
-            placeholder="Enter your trading name"
-            value={formData.tradingName}
-            onChange={(e) => updateFormData('tradingName', e.target.value)}
-            className={errors.tradingName ? 'border-red-500' : ''}
-          />
-          {errors.tradingName && <p className="text-red-500 text-sm mt-1">{errors.tradingName}</p>}
+          <p className="text-xs text-gray-400 mb-3 font-lato">
+            Tell us what you do so we can send you the most relevant jobs.
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-64 overflow-y-auto border border-gray-200 rounded-xl p-4 bg-gray-50/30">
+            {tradeCategories.map((trade) => (
+              <label 
+                key={trade} 
+                className={`flex items-center gap-2.5 cursor-pointer px-3 py-2.5 rounded-xl transition-all text-sm ${
+                  formData.selectedTrades.includes(trade) 
+                    ? 'bg-[#34D164]/10 border-2 border-[#34D164]/40 shadow-sm' 
+                    : 'hover:bg-white hover:shadow-sm border-2 border-transparent bg-white/50'
+                } ${!formData.selectedTrades.includes(trade) && formData.selectedTrades.length >= 5 ? 'opacity-40 cursor-not-allowed' : ''}`}
+              >
+                <input
+                  type="checkbox"
+                  checked={formData.selectedTrades.includes(trade)}
+                  onChange={() => {
+                    const trades = formData.selectedTrades.includes(trade)
+                      ? formData.selectedTrades.filter(t => t !== trade)
+                      : [...formData.selectedTrades, trade];
+                    updateFormData('selectedTrades', trades);
+                  }}
+                  disabled={!formData.selectedTrades.includes(trade) && formData.selectedTrades.length >= 5}
+                  className="h-4 w-4 rounded border-gray-300 text-[#34D164] focus:ring-[#34D164]/20"
+                />
+                <span className="font-lato text-gray-700">{trade}</span>
+              </label>
+            ))}
+          </div>
+          <p className="text-xs text-gray-500 mt-2 font-lato">
+            Selected: <span className="font-medium text-[#34D164]">{formData.selectedTrades.length}</span>/5
+          </p>
+          {errors.selectedTrades && <p className="text-red-500 text-xs mt-1 font-lato">{errors.selectedTrades}</p>}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            State *
+          <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
+            Years of experience
           </label>
           <select
-            value={formData.state}
-            onChange={(e) => updateFormData('state', e.target.value)}
-            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-              errors.state ? 'border-red-500' : 'border-gray-300'
+            value={formData.experienceYears}
+            onChange={(e) => updateFormData('experienceYears', e.target.value)}
+            className={`w-full h-12 px-4 font-lato text-sm rounded-xl border bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all ${
+              errors.experienceYears ? 'border-red-400' : 'border-gray-200'
             }`}
           >
-            <option value="">Select your state</option>
-            {nigerianStates.map((state) => (
-              <option key={state} value={state}>{state}</option>
-            ))}
+            <option value="">Select your experience level</option>
+            <option value="0-1">0-1 years (New to the trade)</option>
+            <option value="1-3">1-3 years (Some experience)</option>
+            <option value="3-5">3-5 years (Experienced)</option>
+            <option value="5-10">5-10 years (Very experienced)</option>
+            <option value="10+">10+ years (Expert level)</option>
           </select>
-          {errors.state && <p className="text-red-500 text-sm mt-1">{errors.state}</p>}
+          {errors.experienceYears && <p className="text-red-500 text-xs mt-1 font-lato">{errors.experienceYears}</p>}
         </div>
       </div>
 
-      {/* LGA selection dependent on state */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Local Government Area (LGA) *
-        </label>
-        <select
-          value={formData.lga}
-          onChange={(e) => updateFormData('lga', e.target.value)}
-          disabled={!formData.state}
-          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-            errors.lga ? 'border-red-500' : 'border-gray-300'
-          }`}
-        >
-          <option value="">{formData.state ? 'Select your LGA' : 'Select state first'}</option>
-          {(stateLGAs || []).map((lga) => (
-            <option key={lga} value={lga}>{lga}</option>
-          ))}
-        </select>
-        {errors.lga && <p className="text-red-500 text-sm mt-1">{errors.lga}</p>}
+      {/* Section 2: Travel & Availability */}
+      <div className="space-y-4">
+        <h3 className="text-xs font-semibold font-lato text-gray-400 uppercase tracking-wider">Travel & Availability</h3>
+        
+        <div>
+          <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
+            How far can you travel for work?
+          </label>
+          <div className="space-y-3 p-4 bg-gray-50/50 rounded-xl border border-gray-200">
+            <input
+              type="range"
+              min="5"
+              max="200"
+              step="5"
+              value={parseInt(formData.travelDistance || 10)}
+              onChange={(e) => updateFormData('travelDistance', parseInt(e.target.value))}
+              className="w-full accent-[#34D164]"
+            />
+            <div className="flex justify-between text-xs text-gray-400 font-lato">
+              <span>5 km</span>
+              <span className="font-medium text-[#121E3C]">{formData.travelDistance} km</span>
+              <span>200 km</span>
+            </div>
+
+            {/* State-based suggestion helper */}
+            <div className="mt-2 flex items-center justify-between">
+              {(() => {
+                const s = getStateDistanceSuggestion(formData.state);
+                return (
+                  <>
+                    <span className="text-xs text-gray-400 font-lato">
+                      Suggestion: {s.min}–{s.max} km
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => updateFormData('travelDistance', s.value)}
+                      className="px-3 py-1.5 text-xs bg-[#34D164] hover:bg-[#2ab854] text-white rounded-lg font-lato transition-colors"
+                    >
+                      Apply {s.value} km
+                    </button>
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Work address
-        </label>
-        <textarea
-          placeholder="Street and house number, Town, LGA"
-          value={formData.businessAddress}
-          onChange={(e) => updateFormData('businessAddress', e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-          rows="3"
-        />
+      {/* Section 3: Business Information */}
+      <div className="space-y-4">
+        <h3 className="text-xs font-semibold font-lato text-gray-400 uppercase tracking-wider">Business Information</h3>
+        
+        <div>
+          <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
+            What type of business do you have?
+          </label>
+          <div className="space-y-2">
+            {businessTypes.map((type) => (
+              <label key={type} className={`flex items-center gap-3 cursor-pointer p-4 border rounded-xl transition-all ${
+                formData.businessType === type 
+                  ? 'border-[#34D164] bg-[#34D164]/5' 
+                  : 'border-gray-200 hover:bg-gray-50'
+              }`}>
+                <input
+                  type="radio"
+                  name="businessType"
+                  value={type}
+                  checked={formData.businessType === type}
+                  onChange={(e) => updateFormData('businessType', e.target.value)}
+                  className="text-[#34D164] focus:ring-[#34D164]/20"
+                />
+                <span className="text-sm font-lato text-gray-700">{type}</span>
+              </label>
+            ))}
+          </div>
+          {errors.businessType && <p className="text-red-500 text-xs mt-1 font-lato">{errors.businessType}</p>}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
+              Trading name
+            </label>
+            <Input
+              placeholder="Enter your trading name"
+              value={formData.tradingName}
+              onChange={(e) => updateFormData('tradingName', e.target.value)}
+              className={`h-12 font-lato text-sm rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all ${errors.tradingName ? 'border-red-400' : ''}`}
+            />
+            {errors.tradingName && <p className="text-red-500 text-xs mt-1 font-lato">{errors.tradingName}</p>}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
+              State
+            </label>
+            <select
+              value={formData.state}
+              onChange={(e) => updateFormData('state', e.target.value)}
+              className={`w-full h-12 px-4 font-lato text-sm rounded-xl border bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all ${
+                errors.state ? 'border-red-400' : 'border-gray-200'
+              }`}
+            >
+              <option value="">Select your state</option>
+              {nigerianStates.map((state) => (
+                <option key={state} value={state}>{state}</option>
+              ))}
+            </select>
+            {errors.state && <p className="text-red-500 text-xs mt-1 font-lato">{errors.state}</p>}
+          </div>
+        </div>
       </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Zipcode *
-        </label>
-        <Input
-          placeholder="e.g., 101001"
-          value={formData.postcode}
-          onChange={(e) => updateFormData('postcode', e.target.value)}
-          className={errors.postcode ? 'border-red-500' : ''}
-        />
-        {errors.postcode && (
-          <p className="text-red-500 text-sm mt-1">{errors.postcode}</p>
-        )}
-        <p className="text-xs text-gray-500 mt-1">Nigerian zip codes are 6 digits.</p>
+
+      {/* Section 4: Location Details */}
+      <div className="space-y-4">
+        <h3 className="text-xs font-semibold font-lato text-gray-400 uppercase tracking-wider">Location Details</h3>
+        
+        <div>
+          <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
+            Local Government Area (LGA)
+          </label>
+          <select
+            value={formData.lga}
+            onChange={(e) => updateFormData('lga', e.target.value)}
+            disabled={!formData.state}
+            className={`w-full h-12 px-4 font-lato text-sm rounded-xl border bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all disabled:opacity-50 ${
+              errors.lga ? 'border-red-400' : 'border-gray-200'
+            }`}
+          >
+            <option value="">{formData.state ? 'Select your LGA' : 'Select state first'}</option>
+            {(stateLGAs || []).map((lga) => (
+              <option key={lga} value={lga}>{lga}</option>
+            ))}
+          </select>
+          {errors.lga && <p className="text-red-500 text-xs mt-1 font-lato">{errors.lga}</p>}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
+            Work address
+          </label>
+          <textarea
+            placeholder="Street and house number, Town, LGA"
+            value={formData.businessAddress}
+            onChange={(e) => updateFormData('businessAddress', e.target.value)}
+            className="w-full px-4 py-3 font-lato text-sm rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all"
+            rows="3"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
+            Zipcode
+          </label>
+          <Input
+            placeholder="e.g., 101001"
+            value={formData.postcode}
+            onChange={(e) => updateFormData('postcode', e.target.value)}
+            className={`h-12 font-lato text-sm rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all ${errors.postcode ? 'border-red-400' : ''}`}
+          />
+          {errors.postcode && <p className="text-red-500 text-xs mt-1 font-lato">{errors.postcode}</p>}
+          <p className="text-xs text-gray-400 mt-1 font-lato">Nigerian zip codes are 6 digits.</p>
+        </div>
       </div>
     </div>
   );
 
   const renderStep3 = () => (
-    <div className="space-y-6">
-      <div className="text-center mb-6">
-        <Shield className="mx-auto h-16 w-16 text-blue-600 mb-4" />
-        <h3 className="text-lg font-semibold text-gray-800 mb-2">
-          Verify your identity
-        </h3>
-        <p className="text-gray-600">
-          This helps us check that you're really you and helps keep ServiceHub secure. We will handle your personal data securely and in accordance with our privacy policy.
-        </p>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-3">
-          Select your ID type
-        </label>
-        <p className="text-sm text-gray-600 mb-4">
+    <div className="space-y-8 px-2">
+      {/* Section 1: ID Type Selection */}
+      <div className="space-y-4">
+        <h3 className="text-xs font-semibold font-lato text-gray-400 uppercase tracking-wider">Select ID Type</h3>
+        <p className="text-xs text-gray-400 font-lato">
           Use a valid ID that is not expired
         </p>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {[
-            { value: 'passport', label: 'Passport', icon: '📘' },
-            { value: 'nin', label: 'NIN', icon: '🆔' },
-            { value: 'drivers_licence', label: "Driver's licence", icon: '🚗' }
+            { value: 'passport', label: 'Passport', Icon: BookOpen },
+            { value: 'nin', label: 'NIN', Icon: CreditCard },
+            { value: 'drivers_licence', label: "Driver's licence", Icon: Car }
           ].map((idOption) => (
             <label
               key={idOption.value}
-              className={`flex flex-col items-center p-6 border-2 rounded-lg cursor-pointer transition-colors ${
+              className={`flex flex-col items-center p-5 border rounded-xl cursor-pointer transition-all ${
                 formData.idType === idOption.value
-                  ? 'border-green-500 bg-green-50'
+                  ? 'border-[#34D164] bg-[#34D164]/5'
                   : 'border-gray-200 hover:bg-gray-50'
               }`}
             >
@@ -1219,30 +1194,38 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode }) => {
                 }}
                 className="sr-only"
               />
-              <div className="text-4xl mb-2">{idOption.icon}</div>
-              <span className="text-sm font-medium">{idOption.label}</span>
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-2 ${
+                formData.idType === idOption.value 
+                  ? 'bg-[#34D164]/10' 
+                  : 'bg-gray-100'
+              }`}>
+                <idOption.Icon className={`h-6 w-6 ${
+                  formData.idType === idOption.value 
+                    ? 'text-[#34D164]' 
+                    : 'text-gray-500'
+                }`} />
+              </div>
+              <span className="text-sm font-medium font-lato text-[#121E3C]">{idOption.label}</span>
             </label>
           ))}
         </div>
-        {errors.idType && <p className="text-red-500 text-sm mt-1">{errors.idType}</p>}
+        {errors.idType && <p className="text-red-500 text-xs mt-1 font-lato">{errors.idType}</p>}
       </div>
 
-      {/* File Upload Section */}
+      {/* Section 2: Document Upload */}
       {formData.idType && (
         <div className="space-y-4" ref={uploadSectionRef}>
-          <label className="block text-sm font-medium text-gray-700">
-            Upload your {formData.idType === 'nin' ? 'NIN' : formData.idType === 'drivers_licence' ? "Driver's License" : 'Passport'} document
-          </label>
-          <p className="text-sm text-gray-600">
-            Upload a clear photo or scan of your ID document. Accepted formats: JPEG, PNG, WebP, PDF (max 5MB)
+          <h3 className="text-xs font-semibold font-lato text-gray-400 uppercase tracking-wider">Upload Document</h3>
+          <p className="text-xs text-gray-400 font-lato">
+            Upload a clear photo or scan of your {formData.idType === 'nin' ? 'NIN' : formData.idType === 'drivers_licence' ? "Driver's License" : 'Passport'}
           </p>
 
           {!formData.idDocument ? (
             <div 
-              className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+              className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${
                 dragActive 
-                  ? 'border-green-500 bg-green-50' 
-                  : 'border-gray-300 hover:border-green-400'
+                  ? 'border-[#34D164] bg-[#34D164]/5' 
+                  : 'border-gray-200 hover:border-[#34D164]/50'
               } ${isUploading ? 'pointer-events-none opacity-50' : ''}`}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
@@ -1267,12 +1250,12 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode }) => {
                 className="cursor-pointer"
               >
                 <div className="space-y-3">
-                  <Upload className={`mx-auto h-12 w-12 ${dragActive ? 'text-green-500' : 'text-gray-400'}`} />
+                  <Upload className={`mx-auto h-10 w-10 ${dragActive ? 'text-[#34D164]' : 'text-gray-300'}`} />
                   <div>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium font-lato text-[#121E3C]">
                       {dragActive ? 'Drop your file here' : 'Click to upload or drag and drop'}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-400 font-lato mt-1">
                       JPEG, PNG, WebP or PDF up to 5MB
                     </p>
                   </div>
@@ -1280,39 +1263,39 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode }) => {
               </label>
             </div>
           ) : (
-            <div className="border border-gray-200 rounded-lg p-4">
-              <div className="flex items-center space-x-4">
+            <div className="border border-gray-200 rounded-xl p-4 bg-gray-50/50">
+              <div className="flex items-center gap-4">
                 <div className="flex-shrink-0">
                   {formData.idDocument.type.startsWith('image/') ? (
                     <img
                       src={formData.idDocument.url}
                       alt="ID Document"
-                      className="w-16 h-16 object-cover rounded-lg border"
+                      className="w-14 h-14 object-cover rounded-lg border border-gray-200"
                     />
                   ) : (
-                    <div className="w-16 h-16 bg-red-100 rounded-lg flex items-center justify-center">
-                      <FileText className="h-8 w-8 text-red-600" />
+                    <div className="w-14 h-14 bg-red-50 rounded-lg flex items-center justify-center">
+                      <FileText className="h-7 w-7 text-red-500" />
                     </div>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
+                  <p className="text-sm font-medium font-lato text-[#121E3C] truncate">
                     {formData.idDocument.name}
                   </p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-xs text-gray-400 font-lato">
                     {(formData.idDocument.size / (1024 * 1024)).toFixed(2)} MB
                   </p>
-                  <div className="flex items-center space-x-2 mt-1">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span className="text-xs text-green-600">Uploaded successfully</span>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <CheckCircle className="h-3.5 w-3.5 text-[#34D164]" />
+                    <span className="text-xs text-[#34D164] font-lato">Uploaded</span>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={removeUploadedFile}
-                  className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600"
+                  className="flex-shrink-0 p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
                 >
-                  <X className="h-5 w-5" />
+                  <X className="h-4 w-4" />
                 </button>
               </div>
             </div>
@@ -1321,36 +1304,34 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode }) => {
           {/* Upload Progress */}
           {isUploading && (
             <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Uploading...</span>
-                <span className="text-gray-600">{uploadProgress}%</span>
+              <div className="flex justify-between text-xs font-lato">
+                <span className="text-gray-400">Uploading...</span>
+                <span className="text-gray-400">{uploadProgress}%</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-gray-200 rounded-full h-1.5">
                 <div
-                  className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                  className="bg-[#34D164] h-1.5 rounded-full transition-all duration-300"
                   style={{ width: `${uploadProgress}%` }}
                 ></div>
               </div>
             </div>
           )}
 
-          {errors.idDocument && <p className="text-red-500 text-sm">{errors.idDocument}</p>}
+          {errors.idDocument && <p className="text-red-500 text-xs font-lato">{errors.idDocument}</p>}
         </div>
       )}
 
-      {/* Selfie Upload Section */}
+      {/* Section 3: Selfie Upload */}
       {formData.idType && (
         <div className="space-y-4">
-          <label className="block text-sm font-medium text-gray-700">
-            Upload a Selfie
-          </label>
-          <p className="text-sm text-gray-600">
-            Please upload a clear photo of yourself to verify against your ID document.
+          <h3 className="text-xs font-semibold font-lato text-gray-400 uppercase tracking-wider">Selfie Verification</h3>
+          <p className="text-xs text-gray-400 font-lato">
+            Upload a clear photo of yourself to verify against your ID
           </p>
 
           {!formData.selfieDocument ? (
             <div 
-              className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors border-gray-300 hover:border-green-400 ${isUploading ? 'pointer-events-none opacity-50' : ''}`}
+              className={`border-2 border-dashed rounded-xl p-6 text-center transition-all border-gray-200 hover:border-[#34D164]/50 ${isUploading ? 'pointer-events-none opacity-50' : ''}`}
             >
               <input
                 type="file"
@@ -1370,14 +1351,14 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode }) => {
                 className="cursor-pointer"
               >
                 <div className="space-y-3">
-                  <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-gray-100 text-gray-400">
-                    <ImageIcon className="h-6 w-6" />
+                  <div className="mx-auto h-10 w-10 flex items-center justify-center rounded-full bg-gray-100 text-gray-300">
+                    <ImageIcon className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium font-lato text-[#121E3C]">
                       Click to upload selfie
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-400 font-lato mt-1">
                       JPEG, PNG, or WebP up to 5MB
                     </p>
                   </div>
@@ -1385,62 +1366,64 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode }) => {
               </label>
             </div>
           ) : (
-            <div className="border border-gray-200 rounded-lg p-4">
-              <div className="flex items-center space-x-4">
+            <div className="border border-gray-200 rounded-xl p-4 bg-gray-50/50">
+              <div className="flex items-center gap-4">
                 <div className="flex-shrink-0">
                     <img
                       src={formData.selfieDocument.url}
                       alt="Selfie"
-                      className="w-16 h-16 object-cover rounded-lg border"
+                      className="w-14 h-14 object-cover rounded-lg border border-gray-200"
                     />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
+                  <p className="text-sm font-medium font-lato text-[#121E3C] truncate">
                     {formData.selfieDocument.name}
                   </p>
-                  <div className="flex items-center space-x-2 mt-1">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span className="text-xs text-green-600">Uploaded successfully</span>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <CheckCircle className="h-3.5 w-3.5 text-[#34D164]" />
+                    <span className="text-xs text-[#34D164] font-lato">Uploaded</span>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => removeUploadedFile('selfie')}
-                  className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600"
+                  className="flex-shrink-0 p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
                 >
-                  <X className="h-5 w-5" />
+                  <X className="h-4 w-4" />
                 </button>
               </div>
             </div>
           )}
 
-          {errors.selfieDocument && <p className="text-red-500 text-sm">{errors.selfieDocument}</p>}
+          {errors.selfieDocument && <p className="text-red-500 text-xs font-lato">{errors.selfieDocument}</p>}
         </div>
       )}
 
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex items-start space-x-3">
-          <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
-          <div>
-            <h4 className="font-medium text-blue-800">Security & Privacy</h4>
-            <ul className="text-sm text-blue-700 mt-2 space-y-1">
-              <li>• Your documents are encrypted and stored securely</li>
-              <li>• Only authorized personnel can access your ID for verification</li>
-              <li>• Documents are automatically deleted after verification</li>
-              <li>• We comply with Nigerian data protection regulations</li>
-            </ul>
+      {/* Info Cards */}
+      <div className="space-y-3">
+        <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
+            <div>
+              <h4 className="font-medium font-lato text-blue-800 text-sm">Security & Privacy</h4>
+              <ul className="text-xs text-blue-600 mt-1.5 space-y-0.5 font-lato">
+                <li>• Documents are encrypted and stored securely</li>
+                <li>• Only authorized personnel can access for verification</li>
+                <li>• We comply with Nigerian data protection regulations</li>
+              </ul>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <div className="flex items-start space-x-3">
-          <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
-          <div>
-            <h4 className="font-medium text-yellow-800">Next: Skills Assessment</h4>
-            <p className="text-sm text-yellow-700 mt-1">
-              After uploading your ID, you'll take a skills test to demonstrate your expertise in your selected trades. This helps us ensure quality for our customers.
-            </p>
+        <div className="bg-amber-50/50 border border-amber-100 rounded-xl p-4">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
+            <div>
+              <h4 className="font-medium font-lato text-amber-800 text-sm">Next: Skills Assessment</h4>
+              <p className="text-xs text-amber-600 mt-1 font-lato">
+                You'll take a quick skills test to demonstrate your expertise in your selected trades.
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -1641,18 +1624,40 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode }) => {
         </DialogContent>
       </Dialog>
 
-      <Card className="w-full max-w-4xl mx-auto">
-      <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-bold text-gray-800">
-          {getStepTitle()}
-        </CardTitle>
-        <p className="text-gray-600 mt-2">
-          {getStepDescription()}
-        </p>
-      </CardHeader>
+      <div className="flex h-[85vh] max-h-[750px]">
+        {/* Left side - Form */}
+        <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+          <Card className="w-full border-0 shadow-none">
+            <CardHeader className="text-center pt-6 pb-2 px-6 lg:px-10">
+              {/* Profile avatar icon */}
+              <div className="flex justify-center mb-4">
+                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
+                  <User className="w-8 h-8 text-gray-400" />
+                </div>
+              </div>
+              <CardTitle className="text-2xl font-bold font-montserrat text-[#121E3C]">
+                {getStepTitle()}
+              </CardTitle>
+              <p className="text-gray-400 font-lato text-sm mt-1">
+                {getStepDescription()}
+              </p>
+              {/* Already have an account link - only on step 1 */}
+              {currentStep === 1 && (
+                <p className="text-gray-500 font-lato text-sm mt-3">
+                  Already have an account?{' '}
+                  <button 
+                    type="button" 
+                    onClick={onSwitchToLogin || onClose}
+                    className="text-[#34D164] font-semibold hover:underline"
+                  >
+                    Login
+                  </button>
+                </p>
+              )}
+            </CardHeader>
 
-      <CardContent>
-        {renderProgressBar()}
+            <CardContent className="px-6 lg:px-10 pb-8">
+              {renderProgressBar()}
         {errors.submit && (
           <div className="mb-4 flex items-start rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
             <AlertCircle className="mr-2 h-4 w-4" />
@@ -1686,103 +1691,140 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode }) => {
           )}
           {currentStep === 5 && <ProfileSetup formData={formData} updateFormData={updateFormData} />}
           {currentStep === 6 && (
-            <div className="bg-gradient-to-br from-green-600 to-blue-600 rounded-lg p-8 text-white">
-              <div className="text-center mb-6">
-                <Wallet className="h-16 w-16 mx-auto mb-4 text-white" />
-                <h3 className="text-2xl font-bold mb-2">Fund your wallet to get set up for success</h3>
-                <p className="text-green-100">
-                  Your wallet allows you to access homeowner contact details when you're interested in jobs
-                </p>
-              </div>
-
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                <h4 className="font-medium text-blue-800 mb-2">How it works:</h4>
-                <ul className="text-sm text-blue-700 space-y-1 list-disc ml-4">
-                  <li>1 coin = ₦100</li>
-                  <li>Fund once, access multiple job contacts</li>
-                  <li>Unused coins remain in your wallet</li>
-                </ul>
-              </div>
-
-              <div className="space-y-3">
-                <button
-                  onClick={() => {
-                    console.log('🔵 FUND NOW BUTTON CLICKED (DIRECT)');
-                    // Hybrid gating: reopen verification modal if not verified
-                    if (!emailVerified || !phoneVerified) {
-                      setShowVerificationModal(true);
-                      toast({
-                        title: 'Verify your contact details',
-                        description: 'Please verify both email and phone to continue.',
-                      });
-                      return;
-                    }
-                    updateFormData('walletSetup', 'fund_now');
-                    setShowPaymentPage(true);
-                  }}
-                  disabled={isLoading}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium disabled:opacity-50"
-                  type="button"
-                >
-                  {isLoading ? 'Processing...' : 'Fund Now & Complete Registration'}
-                </button>
+            <div className="space-y-8 px-2">
+              {/* Section Header */}
+              <div className="space-y-4">
+                <h3 className="text-xs font-semibold font-lato text-gray-400 uppercase tracking-wider">Wallet Setup</h3>
                 
-                <button
-                  onClick={() => {
-                    console.log('🔘 SET UP WALLET LATER BUTTON CLICKED (DIRECT)');
-                    updateFormData('walletSetup', 'later');
-                    // Pass explicit override to avoid async state race
-                    handleFinalSubmit('later');
-                  }}
-                  disabled={isLoading}
-                  className="w-full border-2 border-gray-400 text-gray-600 hover:bg-gray-50 py-3 px-6 rounded-lg font-medium disabled:opacity-50"
-                  type="button"
-                >
-                  {isLoading ? 'Completing Registration...' : 'Set Up Wallet Later & Complete Registration'}
-                </button>
+                {/* Main Card */}
+                <div className="bg-gradient-to-br from-[#121E3C] to-[#1e3a5f] rounded-2xl p-6 text-white">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center">
+                      <Wallet className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold font-montserrat">Fund your wallet</h3>
+                      <p className="text-white/70 text-sm font-lato">
+                        Access homeowner contact details for jobs
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* How it works */}
+                  <div className="bg-white/10 rounded-xl p-4 mb-5">
+                    <h4 className="font-medium text-white/90 mb-2 text-sm font-lato">How it works:</h4>
+                    <ul className="text-sm text-white/70 space-y-1 font-lato">
+                      <li>• 1 coin = ₦100</li>
+                      <li>• Fund once, access multiple job contacts</li>
+                      <li>• Unused coins remain in your wallet</li>
+                    </ul>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="space-y-3">
+                    <button
+                      onClick={() => {
+                        console.log('🔵 FUND NOW BUTTON CLICKED (DIRECT)');
+                        // Hybrid gating: reopen verification modal if not verified
+                        if (!emailVerified || !phoneVerified) {
+                          setShowVerificationModal(true);
+                          toast({
+                            title: 'Verify your contact details',
+                            description: 'Please verify both email and phone to continue.',
+                          });
+                          return;
+                        }
+                        updateFormData('walletSetup', 'fund_now');
+                        setShowPaymentPage(true);
+                      }}
+                      disabled={isLoading}
+                      className="w-full bg-[#34D164] hover:bg-[#2ab854] text-white py-3.5 px-6 rounded-xl font-medium font-lato disabled:opacity-50 transition-all shadow-lg shadow-[#34D164]/20"
+                      type="button"
+                    >
+                      {isLoading ? 'Processing...' : 'Fund Now & Complete Registration'}
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        console.log('🔘 SET UP WALLET LATER BUTTON CLICKED (DIRECT)');
+                        updateFormData('walletSetup', 'later');
+                        // Pass explicit override to avoid async state race
+                        handleFinalSubmit('later');
+                      }}
+                      disabled={isLoading}
+                      className="w-full border border-white/30 text-white/80 hover:bg-white/10 py-3.5 px-6 rounded-xl font-medium font-lato disabled:opacity-50 transition-all"
+                      type="button"
+                    >
+                      {isLoading ? 'Completing Registration...' : 'Set Up Wallet Later'}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           )}
         </div>
 
-        <div className={`${currentStep === 4 && !formData.skillsTestPassed ? 'hidden md:flex' : 'flex'} justify-between pt-6 border-t mt-8`}>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={prevStep}
-            disabled={currentStep === 1}
-            className="flex items-center space-x-2"
-          >
-            <ArrowLeft size={16} />
-            <span>Back</span>
-          </Button>
+        <div className={`${currentStep === 4 && !formData.skillsTestPassed ? 'hidden md:block' : ''} pt-6 border-t border-gray-100 mt-8`}>
+          <div className="flex justify-between items-center">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={prevStep}
+              disabled={currentStep === 1}
+              className="flex items-center gap-2 text-gray-500 hover:text-gray-700 hover:bg-gray-50 font-lato disabled:opacity-30"
+            >
+              <ArrowLeft size={16} />
+              <span>Back</span>
+            </Button>
 
-          {currentStep < 6 && (
-            <>
+            {currentStep < 6 && (
               <Button
                 type="button"
                 onClick={nextStep}
                 disabled={isLoading || (currentStep === 4 && !formData.skillsTestPassed)}
                 aria-disabled={isLoading || (currentStep === 4 && !formData.skillsTestPassed)}
                 title={currentStep === 4 && !formData.skillsTestPassed ? 'Complete the skills test to continue' : undefined}
-                className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
+                className="flex items-center gap-2 bg-[#34D164] hover:bg-[#2ab854] text-white px-6 py-2.5 rounded-xl font-medium font-lato shadow-sm transition-all disabled:opacity-50"
               >
                 <span>Continue</span>
                 <ArrowRight size={16} />
               </Button>
-              {currentStep === 4 && !formData.skillsTestPassed && (
-                <p className="mt-2 text-sm text-gray-600">Complete the skills test to continue.</p>
-              )}
-            </>
-          )}
-          {currentStep === 6 && (
-            <div className="text-sm text-gray-600">
-              Choose your wallet setup option below
-            </div>
+            )}
+            {currentStep === 6 && (
+              <div className="text-sm text-gray-600">
+                Choose your wallet setup option below
+              </div>
+            )}
+          </div>
+          {currentStep === 4 && !formData.skillsTestPassed && (
+            <p className="mt-3 text-center text-xs text-gray-400 font-lato">Complete the skills test above to continue.</p>
           )}
         </div>
       </CardContent>
-      </Card>
+          </Card>
+        </div>
+
+        {/* Right side - Image with motivational overlay (hidden on medium and smaller screens) */}
+        <div className="hidden lg:block w-[40%] relative">
+          <img
+            src="/stock/bg2.jpeg"
+            alt="Professional tradesperson"
+            className="absolute inset-0 w-full h-full object-cover"
+            loading="lazy"
+            decoding="async"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+          {/* Motivational overlay text */}
+          <div className="absolute bottom-8 left-6 right-6 text-white">
+            <p className="text-lg font-semibold font-montserrat mb-2">
+              Join skilled professionals growing their business
+            </p>
+            <p className="text-sm text-white/80 font-lato">
+              Trusted by tradespeople building their reputation
+            </p>
+          </div>
+        </div>
+      </div>
     </>
   );
 };
@@ -1790,35 +1832,53 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode }) => {
 // Skills Test Component (Step 4) - Now using separate component
 // Profile Setup Component (Step 5)
 const ProfileSetup = ({ formData, updateFormData }) => (
-  <div className="space-y-6">
-    <div className="text-center mb-6">
-      <User className="mx-auto h-16 w-16 text-blue-600 mb-4" />
-      <h3 className="text-lg font-semibold text-gray-800 mb-2">
-        Get set up for success
-      </h3>
-      <p className="text-gray-600">
-        You're almost there! In this step, we'll set up your public profile. Customers look at your profile to decide if they want to start a conversation, so make it count.
+  <div className="space-y-8 px-2">
+    {/* Section 1: Profile Description */}
+    <div className="space-y-4">
+      <h3 className="text-xs font-semibold font-lato text-gray-400 uppercase tracking-wider">Your Professional Profile</h3>
+      <p className="text-xs text-gray-400 font-lato">
+        Make a great first impression - customers will see this on your profile
       </p>
+      
+      <div>
+        <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
+          Introduce yourself to future customers
+        </label>
+        <textarea
+          placeholder="Tell us about yourself, your experience, and what makes you stand out..."
+          value={formData.profileDescription}
+          onChange={(e) => updateFormData('profileDescription', e.target.value)}
+          className="w-full px-4 py-3 font-lato text-sm rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all resize-none"
+          rows="6"
+          maxLength="1250"
+        />
+        <div className="flex justify-between mt-2">
+          <p className="text-xs text-gray-400 font-lato">
+            A quality description increases your chances of getting hired
+          </p>
+          <p className="text-xs text-gray-400 font-lato">
+            {1250 - formData.profileDescription.length} characters remaining
+          </p>
+        </div>
+      </div>
     </div>
 
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        Introduce yourself to future customers
-      </label>
-      <p className="text-sm text-gray-600 mb-3">
-        This is your chance to make a great first impression. A quality description can increase your chances of getting hired.
-      </p>
-      <textarea
-        placeholder="Tell us about yourself in a few sentences..."
-        value={formData.profileDescription}
-        onChange={(e) => updateFormData('profileDescription', e.target.value)}
-        className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-        rows="6"
-        maxLength="1250"
-      />
-      <p className="text-sm text-gray-500 mt-1">
-        {1250 - formData.profileDescription.length} characters remaining
-      </p>
+    {/* Tips Card */}
+    <div className="bg-[#34D164]/5 border border-[#34D164]/20 rounded-xl p-4">
+      <div className="flex items-start gap-3">
+        <div className="w-8 h-8 rounded-full bg-[#34D164]/10 flex items-center justify-center flex-shrink-0">
+          <User className="h-4 w-4 text-[#34D164]" />
+        </div>
+        <div>
+          <h4 className="font-medium font-lato text-[#121E3C] text-sm">Tips for a great profile</h4>
+          <ul className="text-xs text-gray-500 mt-1.5 space-y-1 font-lato">
+            <li>• Mention your years of experience and specializations</li>
+            <li>• Highlight any certifications or qualifications</li>
+            <li>• Describe the types of projects you enjoy most</li>
+            <li>• Keep it professional but personable</li>
+          </ul>
+        </div>
+      </div>
     </div>
   </div>
 );

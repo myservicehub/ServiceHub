@@ -3,80 +3,83 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import Logo from '../Logo';
 import {
-  Home as OverviewIcon,
-  Briefcase,
-  PlusCircle,
+  Search,
+  Heart,
+  CheckCircle,
   MessageSquare,
+  Wallet,
   Star,
   Bell,
-  Wallet,
   Users,
+  User,
   Settings,
   HelpCircle,
   ChevronLeft,
   ChevronRight,
   X,
   LogOut,
+  Briefcase,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
-const DashboardSidebar = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) => {
+const TradespersonDashboardSidebar = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) => {
   const location = useLocation();
-  const { user, logout, isHomeowner } = useAuth();
+  const { user, logout } = useAuth();
 
   const navigation = [
     {
       name: 'Overview',
-      href: '/dashboard',
-      icon: OverviewIcon,
+      href: '/trades/overview',
+      icon: Briefcase,
       end: true,
     },
     {
-      name: 'My Jobs',
-      href: '/dashboard/jobs',
-      icon: Briefcase,
-      badge: null,
+      name: 'Browse Jobs',
+      href: '/trades/browsejobs',
+      icon: Search,
     },
     {
-      name: 'Post a Job',
-      href: '/dashboard/post-job',
-      icon: PlusCircle,
-      highlight: true,
+      name: 'My Interests',
+      href: '/trades/interests',
+      icon: Heart,
+    },
+    {
+      name: 'Completed Jobs',
+      href: '/trades/completed',
+      icon: CheckCircle,
     },
     {
       name: 'Messages',
-      href: '/dashboard/messages',
+      href: '/trades/messages',
       icon: MessageSquare,
-      badge: null,
     },
     {
-      name: 'My Reviews',
-      href: '/dashboard/reviews',
+      name: 'Wallet',
+      href: '/trades/wallet',
+      icon: Wallet,
+    },
+    {
+      name: 'Reviews',
+      href: '/trades/reviews',
       icon: Star,
     },
     {
       name: 'Notifications',
-      href: '/dashboard/notifications',
+      href: '/trades/notifications',
       icon: Bell,
-    },
-    // Wallet page is hidden for homeowners
-    !isHomeowner() && {
-      name: 'Wallet',
-      href: '/dashboard/wallet',
-      icon: Wallet,
     },
     {
       name: 'Referrals',
-      href: '/dashboard/referrals',
+      href: '/trades/referrals',
       icon: Users,
     },
-  ].filter(Boolean); // Filter out false/null values
+  ];
 
   const secondaryNavigation = [
     {
-      name: 'Settings',
-      href: '/dashboard/settings',
-      icon: Settings,
+      name: 'Profile',
+      href: '/trades/profile',
+      icon: User,
     },
     {
       name: 'Help & Support',
@@ -94,16 +97,15 @@ const DashboardSidebar = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
     return (
       <NavLink
         to={item.href}
+        onClick={onClose}
         className={cn(
           "group relative flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-all duration-200",
           collapsed ? "justify-center" : "",
           isActive
             ? "bg-white/15 text-white"
-            : "text-white/60 hover:bg-white/10 hover:text-white",
-          item.highlight && !isActive && "text-[#34D164] hover:text-[#34D164]"
+            : "text-white/60 hover:bg-white/10 hover:text-white"
         )}
       >
-        {/* Active indicator */}
         {isActive && (
           <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-[#34D164] rounded-r-full" />
         )}
@@ -112,23 +114,14 @@ const DashboardSidebar = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
           className={cn(
             "flex-shrink-0 transition-all duration-200",
             collapsed ? "w-6 h-6" : "w-5 h-5",
-            isActive ? "text-[#34D164]" : "text-white/50 group-hover:text-white/80",
-            item.highlight && !isActive && "text-[#34D164]"
+            isActive ? "text-[#34D164]" : "text-white/50 group-hover:text-white/80"
           )}
         />
 
         {!collapsed && (
-          <>
-            <span className="flex-1 truncate">{item.name}</span>
-            {item.badge && (
-              <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-semibold bg-[#34D164] text-white rounded-full">
-                {item.badge}
-              </span>
-            )}
-          </>
+          <span className="flex-1 truncate">{item.name}</span>
         )}
 
-        {/* Tooltip for collapsed state */}
         {collapsed && (
           <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-sm rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50">
             {item.name}
@@ -161,7 +154,6 @@ const DashboardSidebar = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
             <Logo size="small" variant="sidebar" />
           )}
           
-          {/* Collapse toggle */}
           <button
             onClick={onToggleCollapse}
             className={cn(
@@ -182,15 +174,15 @@ const DashboardSidebar = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
           <div className="px-4 py-4 border-b border-white/10">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-[#34D164] flex items-center justify-center text-white font-semibold shadow-sm">
-                {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                {user?.name?.charAt(0)?.toUpperCase() || 'T'}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-white truncate">
-                  {user?.name || 'User'}
+                  {user?.name || 'Tradesperson'}
                 </p>
-                <p className="text-xs text-white/50 truncate">
-                  Homeowner
-                </p>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#34D164]/20 text-[#34D164]">
+                  Tradesperson
+                </span>
               </div>
             </div>
           </div>
@@ -204,10 +196,8 @@ const DashboardSidebar = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
             ))}
           </div>
 
-          {/* Divider */}
           <div className="my-4 border-t border-white/10" />
 
-          {/* Secondary nav */}
           <div className="space-y-1">
             {secondaryNavigation.map((item) => (
               <NavItem key={item.name} item={item} collapsed={isCollapsed} />
@@ -252,17 +242,17 @@ const DashboardSidebar = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
         <div className="px-4 py-4 border-b border-white/10">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-[#34D164] flex items-center justify-center text-white font-semibold text-lg shadow-md">
-              {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+              {user?.name?.charAt(0)?.toUpperCase() || 'T'}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-white truncate">
-                {user?.name || 'User'}
+                {user?.name || 'Tradesperson'}
               </p>
               <p className="text-xs text-white/50 truncate">
-                {user?.email || 'homeowner'}
+                {user?.email || ''}
               </p>
               <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#34D164]/20 text-[#34D164]">
-                Homeowner
+                Tradesperson
               </span>
             </div>
           </div>
@@ -300,4 +290,4 @@ const DashboardSidebar = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
   );
 };
 
-export default DashboardSidebar;
+export default TradespersonDashboardSidebar;

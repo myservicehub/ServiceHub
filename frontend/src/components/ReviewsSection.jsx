@@ -1,326 +1,142 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { Card, CardContent } from './ui/card';
-import { Star, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
-import { reviewsAPI, tradespeopleAPI } from '../api/services';
-import { useAPI } from '../hooks/useAPI';
+import React, { useState } from 'react';
+import { ChevronLeft, ChevronRight, Quote, ExternalLink } from 'lucide-react';
 
 const ReviewsSection = () => {
-  const { data: reviews, loading, error } = useAPI(() => reviewsAPI.getFeaturedReviews(4));
-
-    const [companyByTpId, setCompanyByTpId] = useState({});
-  // Fallback data while loading or on error
-  const defaultReviews = [
-    {
-      homeowner_name: 'Sarah Johnson',
-      location: 'London',
-      rating: 5,
-      title: 'Kitchen renovation',
-      comment: 'Absolutely fantastic work! The tradesperson was professional, punctual, and delivered exactly what was promised. Highly recommend.',
-      created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      homeowner_name: 'Michael Brown',
-      location: 'Manchester',
-      rating: 5,
-      title: 'Bathroom installation',
-      comment: 'Excellent service from start to finish. Great communication throughout the project and finished to a very high standard.',
-      created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      homeowner_name: 'Emma Wilson',
-      location: 'Birmingham',
-      rating: 5,
-      title: 'Garden landscaping',
-      comment: 'Transformed our garden completely! The attention to detail was amazing and the final result exceeded our expectations.',
-      created_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      homeowner_name: 'David Smith',
-      location: 'Leeds',
-      rating: 5,
-      title: 'Roof repair',
-      comment: 'Quick response to our emergency roof leak. Professional work and fair pricing. Will definitely use again for future projects.',
-      created_at: new Date(Date.now() - 21 * 24 * 60 * 60 * 1000).toISOString(),
-    }
-  ];
-
-  // Transform API reviews to match expected format
-  const transformReview = (review) => {
-    // If it's already in the correct format (fallback data), return as-is
-    if (review.homeowner_name) {
-      return review;
-    }
-    
-    // Transform API review to expected format
-    // For homeowner reviews, use reviewer_name (the homeowner writing the review)
-    // For tradesperson reviews, use reviewee_name (the homeowner being reviewed)
-    const homeowner_name = review.review_type === 'homeowner_to_tradesperson' 
-      ? review.reviewer_name 
-      : review.reviewee_name;
-    
-    return {
-      ...review,
-      homeowner_name: homeowner_name || 'Unknown',
-      comment: review.content || review.comment, // Handle both content and comment fields
-      location: review.tradesperson_location || review.job_location || review.location || 'Unknown Location',
-      tradesperson_display_name: review.tradesperson_name
-    };
-  };
-
-  // Normalize API response: ensure we always have an array to map over
-  const rawReviews = Array.isArray(reviews)
-    ? reviews
-    : (reviews?.reviews || defaultReviews);
-
-  const displayReviews = loading ? defaultReviews : rawReviews.map(transformReview);
-
-  // Slider refs and helpers (snap to exact card)
-  const sliderRef = useRef(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const scrollToIndex = (idx) => {
-    const el = sliderRef.current;
-    if (!el) return;
-    const total = displayReviews.length;
-    const targetIndex = Math.max(0, Math.min(idx, total - 1));
-    const targetEl = el.children[targetIndex];
-    if (targetEl && typeof targetEl.scrollIntoView === 'function') {
-      targetEl.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
-      setCurrentIndex(targetIndex);
-    }
+  // Mock testimonial data
+  const testimonials = [
+    {
+      id: 1,
+      name: 'Sarah Johnson',
+      role: 'Homeowner',
+      location: 'Lagos',
+      avatar: '/stock/bg6.jpg',
+      quote: "Finding a reliable plumber used to be a nightmare. ServiceHub changed everything - within hours I had three qualified professionals to choose from. The quality of work was exceptional.",
+    },
+    {
+      id: 2,
+      name: 'Michael Adeyemi',
+      role: 'Property Manager',
+      location: 'Abuja',
+      avatar: '/stock/bg7.jpg',
+      quote: "As a property manager handling multiple buildings, I need tradespeople I can trust. ServiceHub has become my go-to platform for all maintenance needs. Highly professional service.",
+    },
+    {
+      id: 3,
+      name: 'Chioma Okonkwo',
+      role: 'Business Owner',
+      location: 'Port Harcourt',
+      avatar: '/stock/bg8.jpg',
+      quote: "The electrician I found through ServiceHub completed our office rewiring project ahead of schedule. Transparent pricing, excellent communication, and outstanding results.",
+    },
+  ];
+
+  const totalTestimonials = testimonials.length;
+
+  const goToPrevious = () => {
+    setCurrentIndex((prev) => (prev === 0 ? totalTestimonials - 1 : prev - 1));
   };
 
-  const handleScroll = () => {
-    const el = sliderRef.current;
-    if (!el) return;
-    // With full-width cards, index ≈ scrollLeft / containerWidth
-    const idx = Math.round(el.scrollLeft / el.clientWidth);
-    setCurrentIndex(idx);
+  const goToNext = () => {
+    setCurrentIndex((prev) => (prev === totalTestimonials - 1 ? 0 : prev + 1));
   };
 
-  // Enrich with tradesperson company/business name for display
-  useEffect(() => {
-    if (!(import.meta && import.meta.env && import.meta.env.DEV)) return;
-    const fetchCompanies = async () => {
-      // Prefer explicit tradesperson_id, but fallback to reviewee_id (tradesperson)
-      const idsToFetch = displayReviews
-        .map(r => r.tradesperson_id || r.reviewee_id)
-        .filter(Boolean)
-        .filter(id => !(id in companyByTpId));
-
-      if (idsToFetch.length === 0) return;
-
-      try {
-        const results = await Promise.all(
-          idsToFetch.map(async (id) => {
-            try {
-              const tp = await tradespeopleAPI.getTradesperson(id);
-              return { id, company: tp?.business_name || tp?.company_name, name: tp?.name };
-            } catch {
-              return { id, company: null, name: null };
-            }
-          })
-        );
-
-        const next = {};
-        results.forEach(r => { next[r.id] = { company: r.company, name: r.name }; });
-        setCompanyByTpId(prev => ({ ...prev, ...next }));
-      } catch {
-        // ignore errors; fallback below
-      }
-    };
-
-    if (!loading && displayReviews && displayReviews.length > 0) {
-      fetchCompanies();
-    }
-  }, [loading, displayReviews, companyByTpId]);
-
-  const getCompanyDisplayName = (review) => {
-    // Priority 1: Use the explicit tradesperson_display_name attached by backend
-    if (review.tradesperson_display_name && review.tradesperson_display_name.trim()) {
-      return review.tradesperson_display_name.trim();
-    }
-    
-    // Priority 2: Use existing company name fields from the review object
-    const fromReview = review.company_name || review.business_name || review.tradesperson_company;
-    if (fromReview && typeof fromReview === 'string' && fromReview.trim()) {
-      return fromReview.trim();
-    }
-    const id = review.tradesperson_id || review.reviewee_id;
-    const info = id ? companyByTpId[id] : undefined;
-    if (info?.company && info.company.trim()) return info.company.trim();
-    // If company missing, show a neutral label rather than a person's name
-    return 'Trusted Tradesperson';
-  };
-
-
-  if (error) {
-    console.warn('Failed to load reviews, using defaults:', error);
-  }
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now - date);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 1) return '1 day ago';
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 14) return '1 week ago';
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-    return `${Math.floor(diffDays / 30)} months ago`;
-  };
-
-  const getInitials = (name) => {
-    if (!name || typeof name !== 'string') return 'U'; // Unknown/undefined name
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
-  };
-
-  const renderStars = (rating) => {
-    return Array.from({ length: 5 }, (_, index) => (
-      <Star
-        key={index}
-        size={16}
-        className={index < rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}
-      />
-    ));
-  };
+  const currentTestimonial = testimonials[currentIndex];
 
   return (
-    <section className="py-16 bg-gray-50">
-      <div className="container mx-auto px-4">
+    <section className="relative py-24 lg:py-32 bg-white overflow-hidden">
+      {/* Subtle grid background */}
+      <div 
+        className="absolute inset-0 opacity-[0.03]"
+        style={{
+          backgroundImage: `linear-gradient(#121E3C 1px, transparent 1px), linear-gradient(90deg, #121E3C 1px, transparent 1px)`,
+          backgroundSize: '80px 80px'
+        }}
+      />
+
+      <div className="container relative z-10 mx-auto px-6 md:px-8 lg:px-12">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-              Verified reviews from real homeowners
-            </h2>
-            <p className="text-xl text-gray-600">
-              Reviews on serviceHub are written by customers like you.
-            </p>
+          {/* Header */}
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-8 mb-16">
+            {/* Left side - Label and heading */}
+            <div className="lg:max-w-md">
+              <div className="inline-flex items-center gap-2 mb-6">
+                <span className="text-sm font-medium font-lato text-gray-500">Testimonials</span>
+                <ExternalLink className="w-4 h-4 text-gray-400" />
+              </div>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-montserrat text-[#121E3C] leading-tight">
+                This is what our<br />
+                <span className="text-[#34D164]">clients</span> think about us
+              </h2>
+            </div>
           </div>
 
-          {/* Slider container */}
-          <div className="relative">
-            <div
-              ref={sliderRef}
-              className="flex overflow-x-auto gap-4 snap-x snap-mandatory px-1"
-              style={{ scrollBehavior: 'smooth' }}
-              onScroll={handleScroll}
-            >
-              {(loading ? Array.from({ length: 4 }) : displayReviews).map((item, index) => (
-                <Card
-                  key={item?.id || index}
-                  className="bg-white hover:shadow-lg transition-shadow duration-300 flex-shrink-0 snap-start min-w-full"
-                >
-                  <CardContent className="p-6">
-                    {loading ? (
-                      <>
-                        <div className="flex items-center mb-4">
-                          <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse mr-3"></div>
-                          <div>
-                            <div className="h-4 bg-gray-200 rounded animate-pulse mb-2 w-24"></div>
-                            <div className="h-3 bg-gray-200 rounded animate-pulse w-16"></div>
-                          </div>
-                        </div>
-                        <div className="flex items-center mb-2">
-                          <div className="flex mr-2">
-                            {Array.from({ length: 5 }).map((_, i) => (
-                              <div key={i} className="w-4 h-4 bg-gray-200 rounded animate-pulse mr-1"></div>
-                            ))}
-                          </div>
-                          <div className="h-3 bg-gray-200 rounded animate-pulse w-16"></div>
-                        </div>
-                        <div className="h-4 bg-gray-200 rounded animate-pulse mb-2 w-32"></div>
-                        <div className="space-y-1">
-                          <div className="h-3 bg-gray-200 rounded animate-pulse"></div>
-                          <div className="h-3 bg-gray-200 rounded animate-pulse"></div>
-                          <div className="h-3 bg-gray-200 rounded animate-pulse w-3/4"></div>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="flex items-center mb-4">
-                          <div className="w-10 h-10 bg-servicehub-navy rounded-full flex items-center justify-center text-white font-semibold mr-3">
-                            {getInitials(getCompanyDisplayName(item))}
-                          </div>
-                          <div>
-                            <h4 className="font-semibold text-gray-900">{getCompanyDisplayName(item)}</h4>
-                            <div className="flex items-center text-sm text-gray-500">
-                              <MapPin size={12} className="mr-1" />
-                              {item.location}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center mb-2">
-                          <div className="flex mr-2">{renderStars(item.rating)}</div>
-                          <span className="text-sm text-gray-500">{formatDate(item.created_at)}</span>
-                        </div>
-                        <p className="text-sm font-medium text-gray-700 mb-2">{item.title}</p>
-                        <p className="text-sm text-gray-600 line-clamp-4">"{item.comment}"</p>
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            {/* Navigation buttons and dots */}
-            <div className="flex flex-col items-center mt-8 gap-4">
-              <div className="flex justify-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => scrollToIndex(currentIndex - 1)}
-                  disabled={currentIndex === 0}
-                  className={`w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
-                    currentIndex === 0 
-                      ? 'border-gray-200 text-gray-300 cursor-not-allowed' 
-                      : 'border-gray-300 bg-white text-gray-700 hover:bg-green-50 hover:border-green-400 hover:text-green-600 shadow-sm hover:shadow-md'
-                  }`}
-                  aria-label="Previous reviews"
-                >
-                  <ChevronLeft size={22} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => scrollToIndex(currentIndex + 1)}
-                  disabled={currentIndex >= displayReviews.length - 1}
-                  className={`w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
-                    currentIndex >= displayReviews.length - 1
-                      ? 'border-gray-200 text-gray-300 cursor-not-allowed' 
-                      : 'border-gray-300 bg-white text-gray-700 hover:bg-green-50 hover:border-green-400 hover:text-green-600 shadow-sm hover:shadow-md'
-                  }`}
-                  aria-label="Next reviews"
-                >
-                  <ChevronRight size={22} />
-                </button>
+          {/* Testimonial Card */}
+          <div className="max-w-4xl">
+            <div className="relative bg-[#FAFAFA] rounded-2xl p-8 lg:p-12 shadow-sm border border-gray-100">
+              {/* Counter */}
+              <div className="flex items-center gap-1 mb-8">
+                <span className="text-lg font-semibold font-montserrat text-[#121E3C]">
+                  {String(currentIndex + 1).padStart(2, '0')}
+                </span>
+                <span className="text-lg text-gray-300 font-montserrat">/</span>
+                <span className="text-lg text-gray-400 font-montserrat">
+                  {String(totalTestimonials).padStart(2, '0')}
+                </span>
               </div>
 
-              {/* Pagination dots */}
-              {!loading && displayReviews.length > 1 && (
-                <div className="flex gap-2">
-                  {displayReviews.map((_, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => scrollToIndex(idx)}
-                      className={`w-2 h-2 rounded-full transition-all ${
-                        currentIndex === idx ? 'bg-green-600 w-4' : 'bg-gray-300'
-                      }`}
-                      aria-label={`Go to review ${idx + 1}`}
-                    />
-                  ))}
+              {/* Quote */}
+              <div className="flex gap-6 lg:gap-10">
+                {/* Quote mark */}
+                <div className="hidden sm:block flex-shrink-0">
+                  <Quote className="w-10 h-10 text-[#121E3C] fill-current rotate-180" />
                 </div>
-              )}
-            </div>
-          </div>
 
-          <div className="text-center mt-12">
-            <p className="text-gray-600 mb-6">
-              Find your perfect tradesperson and share your experience on serviceHub
-            </p>
-            <div className="flex flex-wrap justify-center gap-2 text-sm text-gray-500">
-              <span className="bg-white px-3 py-1 rounded-full">⭐ 4.8/5 average rating</span>
-              <span className="bg-white px-3 py-1 rounded-full">🔒 Verified reviews</span>
-              <span className="bg-white px-3 py-1 rounded-full">✅ Quality guaranteed</span>
+                {/* Content */}
+                <div className="flex-1">
+                  <p className="text-xl lg:text-2xl font-medium font-montserrat text-[#121E3C] leading-relaxed mb-8">
+                    "{currentTestimonial.quote}"
+                  </p>
+
+                  {/* Author */}
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden">
+                      <img 
+                        src={currentTestimonial.avatar} 
+                        alt={currentTestimonial.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold font-montserrat text-[#121E3C]">
+                        {currentTestimonial.name}
+                      </h4>
+                      <p className="text-sm text-gray-500 font-lato">
+                        {currentTestimonial.role} @ {currentTestimonial.location}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Navigation - Bottom left */}
+              <div className="flex items-center gap-2 mt-8">
+                <button
+                  onClick={goToPrevious}
+                  className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:border-[#34D164] hover:text-[#34D164] transition-colors duration-200"
+                  aria-label="Previous testimonial"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={goToNext}
+                  className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:border-[#34D164] hover:text-[#34D164] hover:bg-[#34D164]/5 transition-colors duration-200"
+                  aria-label="Next testimonial"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
