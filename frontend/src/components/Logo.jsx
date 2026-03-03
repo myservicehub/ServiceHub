@@ -15,7 +15,7 @@ const Logo = ({ size = 'medium', variant = 'light' }) => {
   return (
     <div
       className={`flex items-center rounded-lg ${currentSize.container}`}
-      style={{ backgroundColor: variant === 'dark' ? '#121E3C' : 'transparent', ...(variant === 'sidebar' ? { backgroundColor: 'transparent' } : {}) }}
+      style={{ backgroundColor: 'transparent' }}
     >
       {/* Brand mark image with graceful fallback */}
       <div className={`flex items-center justify-center ${currentSize.iconBox} mr-2`}>

@@ -132,7 +132,7 @@ const PaymentPage = ({ formData, onBack, onRegistrationComplete }) => {
     if (emailVerified && phoneVerified) {
       setShowVerificationModal(false);
       const fullName = registeredFullName || `${formData.firstName} ${formData.lastName}`;
-      navigate('/browse-jobs', {
+      navigate('/trades/overview', {
         state: {
           welcomeMessage: `Welcome to ServiceHub, ${fullName}! Your account has been created successfully.`,
           walletFunded: true,

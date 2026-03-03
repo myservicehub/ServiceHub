@@ -1,106 +1,98 @@
-import React from 'react';
-import { Button } from './ui/button';
-import { Camera, MessageCircle, Star } from 'lucide-react';
-
-// App coming soon image source: supports remote URL via VITE_COMING_SOON_IMAGE_URL
-// and falls back to the local public asset at /coming-soon.jpg
-const COMING_SOON_IMAGE_SRC =
-  (import.meta?.env?.VITE_COMING_SOON_IMAGE_URL) || '/coming-soon.jpg';
+import React, { useState } from 'react';
+import { Bell, Smartphone, Zap } from 'lucide-react';
 
 const AppSection = () => {
+  const [email, setEmail] = useState('');
+
   const features = [
-    {
-      icon: Camera,
-      title: 'Add photos instantly',
-      description: 'Capture and upload job photos directly from your phone'
-    },
-    {
-      icon: MessageCircle,
-      title: 'Stay connected',
-      description: 'Message tradespeople wherever you are with instant notifications'
-    },
-    {
-      icon: Star,
-      title: 'Rate and review',
-      description: 'Leave ratings and reviews straight from your phone once the job is done'
-    }
+    { icon: Smartphone, text: 'Manage jobs on the go' },
+    { icon: Bell, text: 'Instant notifications' },
+    { icon: Zap, text: 'Quick messaging' }
   ];
 
+  const handleNotify = (e) => {
+    e.preventDefault();
+    if (email) {
+      alert('Thanks! We\'ll notify you when the app launches.');
+      setEmail('');
+    }
+  };
+
   return (
-    <section className="py-16 bg-white">
-      <div className="container mx-auto px-4">
+    <section className="relative py-20 lg:py-24 bg-white overflow-hidden">
+      <div className="container relative z-10 mx-auto px-6 md:px-8 lg:px-12">
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">
-                Our App Coming Soon
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-stretch">
+            
+            {/* Left - Content */}
+            <div className="flex flex-col justify-center order-2 lg:order-1">
+              <span className="text-[#34D164] text-sm font-semibold font-lato tracking-wider uppercase mb-3">
+                Mobile App
+              </span>
+
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-montserrat text-[#121E3C] mb-4 leading-tight">
+                ServiceHub in your pocket
               </h2>
-              <p className="text-xl text-gray-600 mb-8">
-                Posting and managing your jobs is even easier with the serviceHub app. 
-                Add photos and information in an instant and keep things moving with 
-                notifications and chat.
+              
+              <p className="text-gray-500 font-lato mb-8 leading-relaxed">
+                Manage your jobs, chat with tradespeople, and get instant updates — all from your phone. Our mobile app is launching soon.
               </p>
 
-              <div className="space-y-6 mb-8">
+              {/* Feature pills */}
+              <div className="flex flex-wrap gap-3 mb-8">
                 {features.map((feature, index) => {
                   const IconComponent = feature.icon;
                   return (
-                    <div key={index} className="flex items-start space-x-4">
-                      <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <IconComponent size={24} className="text-green-600" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-lg text-gray-900 mb-1">
-                          {feature.title}
-                        </h3>
-                        <p className="text-gray-600">
-                          {feature.description}
-                        </p>
-                      </div>
+                    <div 
+                      key={index} 
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 text-gray-700 text-sm font-lato"
+                    >
+                      <IconComponent className="w-4 h-4 text-[#34D164]" />
+                      {feature.text}
                     </div>
                   );
                 })}
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button className="bg-black hover:bg-gray-800 text-white px-6 py-3">
-                  <div className="flex items-center space-x-2">
-                    <div className="text-left">
-                      <div className="text-xs">Download on the</div>
-                      <div className="text-sm font-semibold">App Store</div>
-                    </div>
-                  </div>
-                </Button>
-                <Button className="bg-black hover:bg-gray-800 text-white px-6 py-3">
-                  <div className="flex items-center space-x-2">
-                    <div className="text-left">
-                      <div className="text-xs">Get it on</div>
-                      <div className="text-sm font-semibold">Google Play</div>
-                    </div>
-                  </div>
-                </Button>
-              </div>
-
-              <p className="text-sm text-gray-500 mt-4">
-                Also available: <span className="text-green-600 hover:underline cursor-pointer">Tradesperson app</span>
+              {/* Email signup */}
+              <form onSubmit={handleNotify} className="flex flex-col sm:flex-row gap-3">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email"
+                  className="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:border-[#34D164] focus:ring-2 focus:ring-[#34D164]/20 outline-none text-sm font-lato transition-all"
+                />
+                <button
+                  type="submit"
+                  className="px-6 py-3 bg-[#121E3C] hover:bg-[#1a2d52] text-white text-sm font-medium font-lato rounded-xl transition-colors"
+                >
+                  Notify me
+                </button>
+              </form>
+              <p className="text-xs text-gray-400 font-lato mt-3">
+                We'll let you know when the app is ready. No spam.
               </p>
             </div>
 
-            <div className="relative">
-              {/* Curved container with minimal padding; image shows full height without cropping */}
-              <div className="bg-gradient-to-br from-green-50 to-blue-50 rounded-3xl overflow-hidden text-center shadow-xl p-1 sm:p-2">
-                <img
-                  src={COMING_SOON_IMAGE_SRC}
-                  alt="ServiceHub app coming soon teaser"
-                  loading="lazy"
-                  className="block w-full max-w-[520px] sm:max-w-[560px] md:max-w-[580px] mx-auto h-auto object-contain"
-                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                />
-                <p className="text-gray-600 mt-3 text-sm">
-                  Available for iOS and Android
-                </p>
+            {/* Right - Coming Soon Image */}
+            <div className="relative h-[400px] lg:h-auto lg:min-h-[480px] rounded-2xl overflow-hidden shadow-xl order-1 lg:order-2">
+              <img 
+                src="/coming-soon.jpg" 
+                alt="ServiceHub Mobile App Coming Soon" 
+                className="absolute inset-0 w-full h-full object-cover"
+                loading="lazy"
+              />
+              {/* Overlay with coming soon badge */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#121E3C]/60 via-transparent to-transparent" />
+              <div className="absolute bottom-6 left-6">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#34D164] text-white text-xs font-semibold font-lato">
+                  <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                  Coming Soon
+                </div>
               </div>
             </div>
+
           </div>
         </div>
       </div>

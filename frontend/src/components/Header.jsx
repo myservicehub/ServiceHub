@@ -19,7 +19,7 @@ const Header = () => {
 
   const getDashboardPath = () => {
     if (isHomeowner()) return '/dashboard';
-    if (isTradesperson()) return '/browse-jobs';
+    if (isTradesperson()) return '/trades/overview';
     return '/';
   };
 
@@ -44,57 +44,62 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-white shadow-sm border-b">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-black/20 backdrop-blur-md border-b border-white/10">
+      <div className="container mx-auto px-6 md:px-8 lg:px-12">
+        <div className="flex items-center justify-between h-14">
           {/* Logo */}
-          <div onClick={() => navigate('/')} className="cursor-pointer">
-            <Logo size="medium" variant="light" />
+          <div onClick={() => navigate('/')} className="cursor-pointer flex items-center">
+            <Logo size="medium" variant="sidebar" />
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
+          <nav className="hidden md:flex items-center gap-8">
             <a 
               onClick={() => navigate('/about')}
-              className="text-gray-700 font-lato transition-colors hover:text-[#34D164] cursor-pointer"
+              className="text-white/80 text-sm font-lato transition-colors hover:text-white cursor-pointer"
             >
               About us
             </a>
             <a 
               onClick={() => navigate('/how-it-works')}
-              className="text-gray-700 font-lato transition-colors hover:text-[#34D164] cursor-pointer"
+              className="text-white/80 text-sm font-lato transition-colors hover:text-white cursor-pointer"
             >
               How it works
             </a>
-            <a onClick={() => navigate("/trade-categories")} className="text-gray-700 font-lato transition-colors hover:text-[#34D164] cursor-pointer">Find trades</a>
+            <a 
+              onClick={() => navigate("/trade-categories")} 
+              className="text-white/80 text-sm font-lato transition-colors hover:text-white cursor-pointer"
+            >
+              Find trades
+            </a>
           </nav>
 
           {/* Desktop Auth Buttons */}
-          <div className="hidden md:flex items-center space-x-3">
+          <div className="hidden md:flex items-center gap-3">
             {isAuthenticated() ? (
               <Button 
                 onClick={() => navigate(getDashboardPath())}
-                className="font-lato text-white hover:opacity-90" 
+                className="font-lato text-sm text-white hover:opacity-90 h-9 px-4" 
                 style={{backgroundColor: '#34D164'}}
               >
-                <LayoutDashboard size={16} className="mr-1.5" />
-                My Dashboard
+                <LayoutDashboard size={14} className="mr-1.5" />
+                Dashboard
               </Button>
             ) : (
               <>
                 <Button 
                   variant="ghost" 
                   onClick={() => handleAuthClick('login')}
-                  className="text-gray-700 font-lato hover:text-[#34D164]"
+                  className="text-white/80 text-sm font-lato hover:text-white hover:bg-white/10 h-9"
                 >
                   Sign in
                 </Button>
                 <Button 
-                  onClick={() => handleAuthClick('signup')}
-                  className="font-lato text-white hover:opacity-90" 
+                  onClick={() => handleAuthClick('userTypeSelection')}
+                  className="font-lato text-sm text-white hover:opacity-90 h-9 px-4" 
                   style={{backgroundColor: '#34D164'}}
                 >
-                  Join serviceHub
+                  Get Started
                 </Button>
               </>
             )}
@@ -102,65 +107,62 @@ const Header = () => {
 
           {/* Mobile Menu Button */}
           <button
-            className="md:hidden"
+            className="md:hidden text-white/80 hover:text-white transition-colors"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            style={{color: '#121E3C'}}
           >
-            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            {isMenuOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="md:hidden border-t bg-white py-4">
-            <nav className="flex flex-col space-y-2">
+          <div className="md:hidden border-t border-white/10 bg-black/30 backdrop-blur-md py-4 -mx-6 px-6">
+            <nav className="flex flex-col space-y-1">
               <a 
                 onClick={() => { navigate('/about'); setIsMenuOpen(false); }}
-                className="px-4 py-2 text-gray-700 font-lato transition-colors hover:text-[#34D164] cursor-pointer"
+                className="py-2.5 text-white/80 text-sm font-lato transition-colors hover:text-white cursor-pointer"
               >
                 About us
               </a>
               <a 
                 onClick={() => { navigate('/how-it-works'); setIsMenuOpen(false); }}
-                className="px-4 py-2 text-gray-700 font-lato transition-colors hover:text-[#34D164] cursor-pointer"
+                className="py-2.5 text-white/80 text-sm font-lato transition-colors hover:text-white cursor-pointer"
               >
                 How it works
               </a>
               <a 
                 onClick={() => { navigate('/trade-categories'); setIsMenuOpen(false); }}
-                className="px-4 py-2 text-gray-700 font-lato transition-colors hover:text-[#34D164] cursor-pointer"
+                className="py-2.5 text-white/80 text-sm font-lato transition-colors hover:text-white cursor-pointer"
               >
                 Find trades
               </a>
 
-              <div className="border-t my-2"></div>
+              <div className="border-t border-white/10 my-3"></div>
 
               {isAuthenticated() ? (
-                <div className="px-4">
-                  <Button 
-                    onClick={() => { navigate(getDashboardPath()); setIsMenuOpen(false); }}
-                    className="w-full font-lato text-white justify-start" 
-                    style={{backgroundColor: '#34D164'}}
-                  >
-                    <LayoutDashboard size={16} className="mr-2" />
-                    My Dashboard
-                  </Button>
-                </div>
+                <Button 
+                  onClick={() => { navigate(getDashboardPath()); setIsMenuOpen(false); }}
+                  className="w-full font-lato text-sm text-white justify-center h-10" 
+                  style={{backgroundColor: '#34D164'}}
+                >
+                  <LayoutDashboard size={14} className="mr-2" />
+                  My Dashboard
+                </Button>
               ) : (
-                <div className="flex flex-col space-y-2 px-4">
+                <div className="flex flex-col gap-2">
                   <Button 
                     variant="ghost" 
                     onClick={() => { handleAuthClick('login'); setIsMenuOpen(false); }}
-                    className="text-gray-700 font-lato hover:text-[#34D164] justify-start"
+                    className="text-white/80 text-sm font-lato hover:text-white hover:bg-white/10 justify-center h-10"
                   >
                     Sign in
                   </Button>
                   <Button 
-                    onClick={() => { handleAuthClick('signup'); setIsMenuOpen(false); }}
-                    className="font-lato text-white justify-start" 
+                    onClick={() => { handleAuthClick('userTypeSelection'); setIsMenuOpen(false); }}
+                    className="font-lato text-sm text-white justify-center h-10" 
                     style={{backgroundColor: '#34D164'}}
                   >
-                    Join serviceHub
+                    Get Started
                   </Button>
                 </div>
               )}

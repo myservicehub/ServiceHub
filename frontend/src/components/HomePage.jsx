@@ -5,8 +5,10 @@ import StatsSection from './StatsSection';
 import HowItWorks from './HowItWorks';
 import PopularTrades from './PopularTrades';
 import ReviewsSection from './ReviewsSection';
+import LeadsSection from './LeadsSection';
 import TradespeopleCTA from './TradespeopleCTA';
 import AppSection from './AppSection';
+import FinalCTA from './FinalCTA';
 import Footer from './Footer';
 
 const HomePage = () => {
@@ -14,12 +16,14 @@ const HomePage = () => {
     <div className="min-h-screen bg-gray-50">
       <Header />
       <HeroSection />
-      <StatsSection />
       <HowItWorks />
       <PopularTrades />
       <ReviewsSection />
+      
+      <LeadsSection />
       <TradespeopleCTA />
       <AppSection />
+      <FinalCTA />
       <Footer />
     </div>
   );

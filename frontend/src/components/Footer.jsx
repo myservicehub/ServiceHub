@@ -13,22 +13,21 @@ const Footer = () => {
     'Find trades': '/trade-categories',
     'Trade Categories': '/trade-categories',
     'How it works': '/how-it-works',
-    'Cost guides': '/blog',
+    'Cost guides': '/coming-soon?feature=Cost guides',
     'Help & FAQs': '/help',
 
     // Tradespeople
     'Join for free': '/join-for-free',
-    'Tradesperson app': '/join-for-free', // Placeholder until app page exists
-    'Lead generation': '/join-for-free',  // Placeholder CTA
-    'Success stories': '/blog',
-    'Help centre': '/help-centre',
-    'Training courses': '/careers',
+    'Tradesperson app': '/coming-soon?feature=Tradesperson app',
+    'Lead generation': '/coming-soon?feature=Lead generation',
+    'Success stories': '/coming-soon?feature=Success stories',
+    'Help centre': '/help',
+    'Training courses': '/coming-soon?feature=Training courses',
 
     // Popular trades (category detail slugs)
     'Builders': '/trade-categories/building',
     'Electricians': '/trade-categories/electrical-repairs',
     'Plumbers': '/trade-categories/plumbing',
-
     'Painters & decorators': '/trade-categories/painting',
     'Carpenters': '/trade-categories/carpentry',
 
@@ -36,7 +35,7 @@ const Footer = () => {
     'About us': '/about',
     'Reviews Policy': '/reviews-policy',
     'Careers': '/careers',
-    'Press': '/blog', // Fallback until press page exists
+    'Press': '/coming-soon?feature=Press',
     'Blog': '/blog',
     'Contact us': '/contact',
     'Partnerships': '/partnerships',
@@ -146,20 +145,20 @@ const Footer = () => {
   };
 
   return (
-    <footer style={{background: '#121E3C'}} className="text-white">
-      <div className="container mx-auto px-4 py-12">
+    <footer className="relative bg-[#0d1628] text-white overflow-hidden">
+      <div className="container relative z-10 mx-auto px-6 md:px-8 lg:px-12 py-16 lg:py-20">
         <div className="max-w-6xl mx-auto">
           {/* Main Footer Content */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-8 mb-14">
             {/* Logo and Description */}
             <div className="lg:col-span-1">
-              <div className="mb-4">
+              <div className="mb-5">
                 <Logo size="medium" variant="dark" />
               </div>
-              <p className="text-gray-300 text-sm font-lato mb-6">
+              <p className="text-white/50 text-sm font-lato mb-6 leading-relaxed">
                 Nigeria's most trusted platform for connecting homeowners with reliable, local tradespeople.
               </p>
-              <div className="flex space-x-4">
+              <div className="flex space-x-3">
                 {socialLinks.map((social, index) => {
                   const IconComponent = social.icon;
                   return (
@@ -169,9 +168,9 @@ const Footer = () => {
                       target={social.href !== '#' ? '_blank' : '_self'}
                       rel={social.href !== '#' ? 'noopener noreferrer' : undefined}
                       title={social.label}
-                      className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center hover:bg-[#34D164] transition-colors"
+                      className="w-9 h-9 bg-white/5 border border-white/10 rounded-lg flex items-center justify-center hover:bg-[#34D164] hover:border-[#34D164] transition-all duration-300"
                     >
-                      <IconComponent size={16} />
+                      <IconComponent size={16} className="text-white/70 hover:text-white" />
                     </a>
                   );
                 })}
@@ -181,14 +180,14 @@ const Footer = () => {
             {/* Footer Links */}
             {footerSections.map((section, index) => (
               <div key={index}>
-                <h3 className="font-semibold font-montserrat text-lg mb-4">{section.title}</h3>
-                <ul className="space-y-2">
+                <h3 className="font-semibold font-montserrat text-sm uppercase tracking-wider text-white/90 mb-5">{section.title}</h3>
+                <ul className="space-y-3">
                   {section.links.map(({ label, to, href }, linkIndex) => (
                     <li key={linkIndex}>
                       {to ? (
                         <Link
                           to={to}
-                          className="text-gray-300 hover:text-white transition-colors text-sm font-lato cursor-pointer"
+                          className="text-white/50 hover:text-[#34D164] transition-colors text-sm font-lato cursor-pointer"
                         >
                           {label}
                         </Link>
@@ -197,7 +196,7 @@ const Footer = () => {
                           href={href || '#'}
                           target={href ? '_blank' : '_self'}
                           rel={href ? 'noopener noreferrer' : undefined}
-                          className="text-gray-300 hover:text-white transition-colors text-sm font-lato cursor-pointer"
+                          className="text-white/50 hover:text-[#34D164] transition-colors text-sm font-lato cursor-pointer"
                         >
                           {label}
                         </a>
@@ -210,24 +209,24 @@ const Footer = () => {
           </div>
 
           {/* Newsletter Signup */}
-          <div className="border-t border-gray-700 pt-8 mb-8">
-            <div className="max-w-md w-full">
-              <h3 className="font-semibold font-montserrat text-lg mb-2">Stay updated</h3>
-              <p className="text-gray-300 text-sm font-lato mb-4">
-                Get the latest home improvement tips and exclusive offers.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 w-full">
+          <div className="border-t border-white/10 pt-10 mb-10">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              <div className="lg:max-w-md">
+                <h3 className="font-semibold font-montserrat text-lg text-white mb-2">Stay updated</h3>
+                <p className="text-white/50 text-sm font-lato">
+                  Get the latest home improvement tips and exclusive offers.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 sm:max-w-md w-full lg:w-auto">
                 <input
                   type="email"
                   placeholder="Enter your email"
-                  className="flex-1 min-w-0 w-full sm:w-auto px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none font-lato"
-                  style={{borderColor: '#34D164'}}
+                  className="flex-1 min-w-0 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-[#34D164]/50 font-lato transition-colors"
                   value={newsletterEmail}
                   onChange={(e) => setNewsletterEmail(e.target.value)}
                 />
                 <Button
-                  className="text-white px-6 font-lato shrink-0 w-full sm:w-auto"
-                  style={{backgroundColor: '#34D164'}}
+                  className="bg-[#34D164] hover:bg-[#2ab854] text-white px-6 py-3 font-medium font-lato rounded-xl transition-all duration-300 shrink-0"
                   onClick={handleSubscribe}
                   disabled={isSubscribing}
                 >
@@ -238,35 +237,33 @@ const Footer = () => {
           </div>
 
           {/* Bottom Footer */}
-          <div className="border-t border-gray-700 pt-8">
-            <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-              {/* Copyright on its own line */}
-              <div className="text-sm text-gray-300 font-lato">
-                <span>© 2025 serviceHub Ltd. All rights reserved.</span>
+          <div className="border-t border-white/10 pt-8">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+              {/* Copyright */}
+              <div className="text-sm text-white/40 font-lato">
+                © 2025 ServiceHub Ltd. All rights reserved.
               </div>
 
-              {/* Only policy links kept on one line */}
-              <div className="flex items-center gap-6 text-sm text-gray-300 font-lato whitespace-nowrap">
-                <Link to="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>
-                <Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
-                <Link to="/cookie-policy" className="hover:text-white transition-colors">Cookie Policy</Link>
+              {/* Policy links */}
+              <div className="flex items-center gap-6 text-sm text-white/40 font-lato">
+                <Link to="/privacy-policy" className="hover:text-white/70 transition-colors">Privacy</Link>
+                <Link to="/terms" className="hover:text-white/70 transition-colors">Terms</Link>
+                <Link to="/cookie-policy" className="hover:text-white/70 transition-colors">Cookies</Link>
               </div>
 
-              {/* Made in Nigeria with flag (not forced onto policy links line) */}
-              <div className="flex items-center text-sm text-gray-300 font-lato">
-                <span className="flex items-center gap-2">
-                  <svg
-                    className="w-5 h-3 rounded-sm ring-1 ring-white/20"
-                    viewBox="0 0 60 40"
-                    role="img"
-                    aria-label="Nigeria flag"
-                  >
-                    <rect width="60" height="40" fill="#ffffff" />
-                    <rect width="20" height="40" fill="#008753" />
-                    <rect x="40" width="20" height="40" fill="#008753" />
-                  </svg>
-                  <span>Made in Nigeria</span>
-                </span>
+              {/* Made in Nigeria */}
+              <div className="flex items-center gap-2 text-sm text-white/40 font-lato">
+                <svg
+                  className="w-5 h-3 rounded-sm ring-1 ring-white/10"
+                  viewBox="0 0 60 40"
+                  role="img"
+                  aria-label="Nigeria flag"
+                >
+                  <rect width="60" height="40" fill="#ffffff" />
+                  <rect width="20" height="40" fill="#008753" />
+                  <rect x="40" width="20" height="40" fill="#008753" />
+                </svg>
+                <span>Made in Nigeria</span>
               </div>
             </div>
           </div>

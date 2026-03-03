@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { Eye, EyeOff, User, Mail, Lock, Phone, MapPin, AlertCircle, Home, Wrench, Hash } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
+import { Eye, EyeOff, User, Mail, Lock, Phone, MapPin, AlertCircle, Home, Wrench, Hash, UserPlus } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -143,7 +142,7 @@ const SignupForm = ({ onClose, onSwitchToLogin, defaultTab = 'tradesperson', sho
         if (onClose) onClose();
 
         if (currentTab === 'tradesperson') {
-          navigate('/browse-jobs');
+          navigate('/trades/overview');
         } else {
           navigate('/dashboard');
         }
@@ -163,257 +162,280 @@ const SignupForm = ({ onClose, onSwitchToLogin, defaultTab = 'tradesperson', sho
     return (
       <TradespersonRegistration 
         onClose={onClose}
+        onSwitchToLogin={onSwitchToLogin}
         // Post-registration verification and redirect are handled internally
       />
     );
   }
 
   return (
-    <Card className="w-full border-0 shadow-none">
-      <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-bold font-montserrat" style={{color: '#121E3C'}}>
-          Join serviceHub
-        </CardTitle>
-        <p className="text-gray-600 font-lato">
-          Create your account and start connecting with professionals
-        </p>
-      </CardHeader>
-      
-      <CardContent>
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-          {!showOnlyTradesperson ? (
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="homeowner" className="flex items-center space-x-2">
-                <Home size={16} />
+    <div className="flex min-h-[550px]">
+      {/* Left side - Form */}
+      <div className="flex-1 flex flex-col justify-center px-6 py-8 lg:px-10 overflow-y-auto max-h-[85vh]">
+        {/* User avatar icon */}
+        <div className="flex justify-center mb-4">
+          <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center">
+            <UserPlus className="w-7 h-7 text-gray-400" />
+          </div>
+        </div>
+
+        {/* Header */}
+        <div className="text-center mb-6">
+          <h2 className="text-2xl font-bold font-montserrat text-[#121E3C] mb-1">
+            Create your account
+          </h2>
+          <p className="text-gray-500 font-lato text-sm">
+            Join serviceHub and start connecting
+          </p>
+        </div>
+
+        {/* Tabs for user type */}
+        {!showOnlyTradesperson && (
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-5">
+            <TabsList className="grid w-full grid-cols-2 h-11 rounded-xl bg-gray-100 p-1">
+              <TabsTrigger 
+                value="homeowner" 
+                className="flex items-center justify-center gap-2 rounded-lg text-sm font-lato data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              >
+                <Home size={15} />
                 <span>Homeowner</span>
               </TabsTrigger>
-              <TabsTrigger value="tradesperson" className="flex items-center space-x-2">
-                <Wrench size={16} />
+              <TabsTrigger 
+                value="tradesperson" 
+                className="flex items-center justify-center gap-2 rounded-lg text-sm font-lato data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              >
+                <Wrench size={15} />
                 <span>Tradesperson</span>
               </TabsTrigger>
             </TabsList>
-          ) : (
-            <div className="text-center mb-6">
-              <div className="inline-flex items-center space-x-2 px-4 py-2 bg-green-50 rounded-lg border border-green-200">
-                <Wrench size={20} style={{color: '#34D164'}} />
-                <span className="font-semibold text-green-800 font-montserrat">Tradesperson Registration</span>
-              </div>
+          </Tabs>
+        )}
+
+        {showOnlyTradesperson && (
+          <div className="flex justify-center mb-5">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 rounded-xl">
+              <Wrench size={16} className="text-[#34D164]" />
+              <span className="text-sm font-medium text-green-800 font-lato">Tradesperson Registration</span>
             </div>
-          )}
+          </div>
+        )}
 
-          <form onSubmit={rhfHandleSubmit(onSubmit)} className="space-y-4 mt-6">
-            {/* Common Fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
-                  Full Name *
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-                  <Input
-                    placeholder="Your full name"
-                    {...register('name')}
-                    className={`pl-9 font-lato ${rhfErrors.name ? 'border-red-500' : ''}`}
-                  />
-                </div>
-                {rhfErrors.name && <p className="text-red-500 text-sm mt-1">{rhfErrors.name.message}</p>}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
-                  Email Address *
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-                  <Input
-                    type="email"
-                    placeholder="your.email@example.com"
-                    {...register('email')}
-                    className={`pl-9 font-lato ${rhfErrors.email ? 'border-red-500' : ''}`}
-                  />
-                </div>
-                {rhfErrors.email && <p className="text-red-500 text-sm mt-1">{rhfErrors.email.message}</p>}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
-                  Password *
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-                  <Input
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Create a strong password"
-                    {...register('password')}
-                    className={`pl-9 pr-9 font-lato ${rhfErrors.password ? 'border-red-500' : ''}`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                  >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-                {rhfErrors.password && <p className="text-red-500 text-sm mt-1">{rhfErrors.password.message}</p>}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
-                  Phone Number *
-                </label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-                  <Input
-                    placeholder="+234XXXXXXXXXX"
-                    {...register('phone')}
-                    className={`pl-9 font-lato ${rhfErrors.phone ? 'border-red-500' : ''}`}
-                  />
-                </div>
-                {rhfErrors.phone && <p className="text-red-500 text-sm mt-1">{rhfErrors.phone.message}</p>}
-              </div>
-            </div>
-
-            {/* Location and Zipcode */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
-                  State/Location *
-                </label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-                  <select
-                    {...register('location')}
-                    className={`w-full pl-9 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
-                      rhfErrors.location ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  >
-                    <option value="">Select your state</option>
-                    {nigerianStates.map((state) => (
-                      <option key={state} value={state}>
-                        {state}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                {rhfErrors.location && <p className="text-red-500 text-sm mt-1">{rhfErrors.location.message}</p>}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
-                  Zipcode *
-                </label>
-                <div className="relative">
-                  <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-                  <Input
-                    placeholder="Enter your zipcode"
-                    {...register('postcode')}
-                    className={`pl-9 font-lato ${rhfErrors.postcode ? 'border-red-500' : ''}`}
-                  />
-                </div>
-                {rhfErrors.postcode && <p className="text-red-500 text-sm mt-1">{rhfErrors.postcode.message}</p>}
-              </div>
-            </div>
-
-            {/* Referral Code Field */}
+        {/* Form */}
+        <form onSubmit={rhfHandleSubmit(onSubmit)} className="space-y-4">
+          {/* Name and Email */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
-                Referral Code (Optional)
-              </label>
+              <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">Name</label>
               <div className="relative">
+                <User className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
                 <Input
-                  placeholder="Enter referral code if you have one"
-                  {...register('referral_code')}
-                  className="font-lato"
+                  placeholder="Your full name"
+                  {...register('name')}
+                  className={`pl-10 h-11 font-lato text-sm rounded-xl border-gray-200 focus:border-[#34D164] focus:ring-[#34D164]/20 ${rhfErrors.name ? 'border-red-400' : ''}`}
                 />
               </div>
-              {(watch('referral_code') || '').length > 0 && (
-                <p className="text-green-600 text-sm mt-1">
-                  🎉 Great! You and your referrer will earn rewards when you verify your account
-                </p>
-              )}
+              {rhfErrors.name && <p className="text-red-500 text-xs mt-1">{rhfErrors.name.message}</p>}
             </div>
 
-            {/* Tradesperson Specific Fields */}
-            {(activeTab === 'tradesperson' || showOnlyTradesperson) && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
-                      Experience Years *
-                    </label>
-                    <Input
-                      type="number"
-                      placeholder="Years of experience"
-                      {...register('experience_years')}
-                      className={`font-lato ${rhfErrors.experience_years ? 'border-red-500' : ''}`}
-                    />
-                    {rhfErrors.experience_years && <p className="text-red-500 text-sm mt-1">{rhfErrors.experience_years.message}</p>}
-                  </div>
+            <div>
+              <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">Email</label>
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+                <Input
+                  type="email"
+                  placeholder="hello@example.com"
+                  {...register('email')}
+                  className={`pl-10 h-11 font-lato text-sm rounded-xl border-gray-200 focus:border-[#34D164] focus:ring-[#34D164]/20 ${rhfErrors.email ? 'border-red-400' : ''}`}
+                />
+              </div>
+              {rhfErrors.email && <p className="text-red-500 text-xs mt-1">{rhfErrors.email.message}</p>}
+            </div>
+          </div>
 
-                  <div>
-                    <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
-                      Company Name
-                    </label>
-                    <Input
-                      placeholder="Your company name (optional)"
-                      {...register('company_name')}
-                      className="font-lato"
-                    />
-                  </div>
+          {/* Password and Phone */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">Password</label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+                <Input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  {...register('password')}
+                  className={`pl-10 pr-10 h-11 font-lato text-sm rounded-xl border-gray-200 focus:border-[#34D164] focus:ring-[#34D164]/20 ${rhfErrors.password ? 'border-red-400' : ''}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+              {rhfErrors.password && <p className="text-red-500 text-xs mt-1">{rhfErrors.password.message}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">Phone</label>
+              <div className="relative">
+                <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+                <Input
+                  placeholder="+234..."
+                  {...register('phone')}
+                  className={`pl-10 h-11 font-lato text-sm rounded-xl border-gray-200 focus:border-[#34D164] focus:ring-[#34D164]/20 ${rhfErrors.phone ? 'border-red-400' : ''}`}
+                />
+              </div>
+              {rhfErrors.phone && <p className="text-red-500 text-xs mt-1">{rhfErrors.phone.message}</p>}
+            </div>
+          </div>
+
+          {/* Location and Zipcode */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">State</label>
+              <div className="relative">
+                <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 z-10" size={16} />
+                <select
+                  {...register('location')}
+                  className={`w-full pl-10 pr-4 h-11 border rounded-xl focus:ring-2 focus:ring-[#34D164]/20 focus:border-[#34D164] font-lato text-sm appearance-none bg-white ${
+                    rhfErrors.location ? 'border-red-400' : 'border-gray-200'
+                  }`}
+                >
+                  <option value="">Select state</option>
+                  {nigerianStates.map((state) => (
+                    <option key={state} value={state}>{state}</option>
+                  ))}
+                </select>
+              </div>
+              {rhfErrors.location && <p className="text-red-500 text-xs mt-1">{rhfErrors.location.message}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">Zipcode</label>
+              <div className="relative">
+                <Hash className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+                <Input
+                  placeholder="Enter zipcode"
+                  {...register('postcode')}
+                  className={`pl-10 h-11 font-lato text-sm rounded-xl border-gray-200 focus:border-[#34D164] focus:ring-[#34D164]/20 ${rhfErrors.postcode ? 'border-red-400' : ''}`}
+                />
+              </div>
+              {rhfErrors.postcode && <p className="text-red-500 text-xs mt-1">{rhfErrors.postcode.message}</p>}
+            </div>
+          </div>
+
+          {/* Tradesperson Specific Fields */}
+          {(activeTab === 'tradesperson' || showOnlyTradesperson) && (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">Experience (years)</label>
+                  <Input
+                    type="number"
+                    placeholder="Years"
+                    {...register('experience_years')}
+                    className={`h-11 font-lato text-sm rounded-xl border-gray-200 focus:border-[#34D164] focus:ring-[#34D164]/20 ${rhfErrors.experience_years ? 'border-red-400' : ''}`}
+                  />
+                  {rhfErrors.experience_years && <p className="text-red-500 text-xs mt-1">{rhfErrors.experience_years.message}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
-                    Trade Categories * ({selectedTrades.length} selected)
-                  </label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-40 overflow-y-auto border rounded-lg p-3">
-                    {tradeCategories.map((category) => (
-                      <label key={category} className="flex items-center space-x-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          value={category}
-                          {...register('trade_categories')}
-                          className="rounded"
-                          style={{accentColor: '#34D164'}}
-                        />
-                        <span className="text-sm font-lato">{category}</span>
-                      </label>
-                    ))}
-                  </div>
-                  {rhfErrors.trade_categories && <p className="text-red-500 text-sm mt-1">{rhfErrors.trade_categories.message}</p>}
+                  <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">Company (optional)</label>
+                  <Input
+                    placeholder="Company name"
+                    {...register('company_name')}
+                    className="h-11 font-lato text-sm rounded-xl border-gray-200 focus:border-[#34D164] focus:ring-[#34D164]/20"
+                  />
                 </div>
               </div>
-            )}
 
-            {/* Submit Error */}
-            {rhfErrors.root?.message && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                <p className="text-red-700 text-sm flex items-center">
-                  <AlertCircle size={16} className="mr-2" />
-                  {rhfErrors.root.message}
-                </p>
+              <div>
+                <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
+                  Trade Categories ({selectedTrades.length} selected)
+                </label>
+                <div className="grid grid-cols-2 gap-1.5 max-h-28 overflow-y-auto border border-gray-200 rounded-xl p-3">
+                  {tradeCategories.map((category) => (
+                    <label key={category} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        value={category}
+                        {...register('trade_categories')}
+                        className="w-3.5 h-3.5 rounded border-gray-300 text-[#34D164] focus:ring-[#34D164]/20"
+                      />
+                      <span className="text-xs font-lato text-gray-700 truncate">{category}</span>
+                    </label>
+                  ))}
+                </div>
+                {rhfErrors.trade_categories && <p className="text-red-500 text-xs mt-1">{rhfErrors.trade_categories.message}</p>}
               </div>
-            )}
+            </>
+          )}
 
-            {/* Submit Button */}
-            <Button
-              type="submit"
-              disabled={!isValid || isSubmitting}
-              className="w-full text-white font-lato py-3 disabled:opacity-50"
-              style={{backgroundColor: '#34D164'}}
+          {/* Referral Code */}
+          <div>
+            <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">Referral Code (optional)</label>
+            <Input
+              placeholder="Enter code if you have one"
+              {...register('referral_code')}
+              className="h-11 font-lato text-sm rounded-xl border-gray-200 focus:border-[#34D164] focus:ring-[#34D164]/20"
+            />
+            {(watch('referral_code') || '').length > 0 && (
+              <p className="text-green-600 text-xs mt-1">You'll both earn rewards on verification!</p>
+            )}
+          </div>
+
+          {/* Submit Error */}
+          {rhfErrors.root?.message && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-3">
+              <p className="text-red-700 text-sm flex items-center font-lato">
+                <AlertCircle size={14} className="mr-2 flex-shrink-0" />
+                {rhfErrors.root.message}
+              </p>
+            </div>
+          )}
+
+          {/* Terms text */}
+          <p className="text-xs text-gray-500 font-lato text-center">
+            By signing up, you agree to our{' '}
+            <a href="/terms" className="text-[#34D164] hover:underline">Terms</a> and{' '}
+            <a href="/privacy" className="text-[#34D164] hover:underline">Privacy Policy</a>.
+          </p>
+
+          {/* Submit Button */}
+          <Button
+            type="submit"
+            disabled={!isValid || isSubmitting}
+            className="w-full h-11 text-white font-lato font-semibold text-sm rounded-xl disabled:opacity-50 hover:opacity-90 transition-all"
+            style={{ backgroundColor: '#34D164' }}
+          >
+            {isSubmitting ? 'Creating...' : 'Create account'}
+          </Button>
+
+          {/* Switch to Login */}
+          <p className="text-center text-gray-500 font-lato text-sm">
+            Already have an account?{' '}
+            <button 
+              type="button" 
+              onClick={onSwitchToLogin} 
+              className="text-[#34D164] font-semibold hover:underline"
             >
-              {isSubmitting ? 'Creating Account...' : `Create ${showOnlyTradesperson ? 'Tradesperson' : (activeTab === 'homeowner' ? 'Homeowner' : 'Tradesperson')} Account`}
-            </Button>
-          </form>
-        </Tabs>
-      </CardContent>
-    </Card>
+              Login
+            </button>
+          </p>
+        </form>
+      </div>
+
+      {/* Right side - Image (hidden on medium and smaller screens) */}
+      <div className="hidden lg:block w-[42%] relative">
+        <img
+          src="/stock/bg2.jpeg"
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+      </div>
+    </div>
   );
 };
 
 export default SignupForm;
-// Legacy handlers removed after RHF migration
-// updateFormData, validateForm, legacy handleSubmit(e), and handleTradeToggle are no longer used.
