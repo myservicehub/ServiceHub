@@ -236,7 +236,7 @@ const MyReviewsPage = () => {
             When you complete jobs and work with tradespeople, you can leave reviews to help other homeowners.
           </p>
           <Button
-            onClick={() => window.location.href = '/my-jobs'}
+            onClick={() => window.location.href = '/dashboard/jobs'}
             className="bg-[#34D164] hover:bg-[#2FBD59] text-white"
           >
             <Briefcase size={16} className="mr-2" />

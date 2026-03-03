@@ -160,6 +160,12 @@ function App() {
                 {/* Post Job (public access - redirects to dashboard if authenticated) */}
                 <Route path="/post-job" element={<PostJobPage />} />
                 
+                {/* Redirect legacy routes */}
+                <Route path="/my-jobs" element={<Navigate to="/dashboard/jobs" replace />} />
+                <Route path="/my-interests" element={<Navigate to="/trades/interests" replace />} />
+                <Route path="/messages/:id" element={<Navigate to="/dashboard/messages" replace />} />
+                <Route path="/browse-jobs" element={<Navigate to="/trades/browsejobs" replace />} />
+
                 {/* Demo/Dev Routes */}
                 <Route path="/tradesperson-registration-demo" element={<TradespersonRegistrationDemo />} />
                 

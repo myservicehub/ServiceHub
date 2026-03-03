@@ -692,7 +692,7 @@ class NotificationTemplateService:
 
                 <p>Tradespeople in your area will be notified and can start showing interest immediately. You'll receive notifications as soon as they apply.</p>
                 
-                <a class="cta" href="https://my-servicehub.vercel.app/my-jobs" target="_blank">Manage Your Job & Applications</a>
+                <a class="cta" href="https://my-servicehub.vercel.app/dashboard/jobs" target="_blank">Manage Your Job & Applications</a>
             </div>
             <div class="footer">serviceHub Team • Nigeria's Trusted Service Marketplace</div>
         </div>
@@ -707,7 +707,7 @@ class NotificationTemplateService:
                 type=NotificationType.JOB_APPROVED,
                 channel=NotificationChannel.SMS,
                 subject_template="Job Approved - serviceHub",
-                content_template=f"✅ Your job '{{job_title}}' has been approved and is now live! Tradespeople can now see and apply. Check: https://my-servicehub.vercel.app/my-jobs",
+                content_template=f"✅ Your job '{{job_title}}' has been approved and is now live! Tradespeople can now see and apply. Check: https://my-servicehub.vercel.app/dashboard/jobs",
                 variables=["job_title"]
             )
         }
@@ -1011,7 +1011,7 @@ How to Fix:
 
 We're here to help! If you have questions about these requirements, please contact our support team.
 
-Visit your jobs: https://my-servicehub.vercel.app/my-jobs
+Visit your jobs: https://my-servicehub.vercel.app/dashboard/jobs
 
 If you have any questions, please contact our support team.
 
@@ -1025,7 +1025,7 @@ serviceHub Team
                 type=NotificationType.JOB_REJECTED,
                 channel=NotificationChannel.SMS,
                 subject_template="Job Update Required - serviceHub",
-                content_template="⚠️ Your job '{job_title}' needs updates before approval. Check your email for details or visit: https://my-servicehub.vercel.app/my-jobs",
+                content_template="⚠️ Your job '{job_title}' needs updates before approval. Check your email for details or visit: https://my-servicehub.vercel.app/dashboard/jobs",
                 variables=["job_title"]
             )
         }
@@ -1043,7 +1043,7 @@ Hello {homeowner_name},
 Your job posting has been approved by our admin team.
 
 To view your job posting, visit:
-https://my-servicehub.vercel.app/my-jobs
+https://my-servicehub.vercel.app/dashboard/jobs
 
 If you have any questions, please don't hesitate to contact our support team.
 
@@ -1057,7 +1057,7 @@ serviceHub Team
                 type=NotificationType.JOB_UPDATED,
                 channel=NotificationChannel.SMS,
                 subject_template="Job Updated - serviceHub",
-                content_template="Your job '{job_title}' has been approved by our admin team. View it here: https://my-servicehub.vercel.app/my-jobs",
+                content_template="Your job '{job_title}' has been approved by our admin team. View it here: https://my-servicehub.vercel.app/dashboard/jobs",
                 variables=["job_title"]
             )
         }

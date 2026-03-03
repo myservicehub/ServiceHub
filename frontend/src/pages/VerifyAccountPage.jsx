@@ -38,7 +38,7 @@ const VerifyAccountPage = () => {
     name: '', phone: '', email: '', relationship: ''
   });
   const [verified, setVerified] = useState(false);
-  const [nextPath, setNextPath] = useState('/my-jobs');
+  const [nextPath, setNextPath] = useState('/dashboard/jobs');
   const [businessType, setBusinessType] = useState(user?.business_type || '');
   const [idSelfie, setIdSelfie] = useState(null);
   const [idDocument, setIdDocument] = useState(null);
@@ -125,7 +125,7 @@ const VerifyAccountPage = () => {
           }
           setVerified(true);
           // Navigate to provided nextPath (if any) or default /my-jobs
-          try { navigate(nextPath || '/my-jobs', { replace: true }); } catch (e) { navigate('/my-jobs', { replace: true }); }
+          try { navigate(nextPath || '/dashboard/jobs', { replace: true }); } catch (e) { navigate('/dashboard/jobs', { replace: true }); }
         }
       } catch (e) {
         const msg = e?.response?.data?.detail || 'Invalid or expired verification link';

@@ -376,13 +376,17 @@ async def _notify_new_message(sender: User, recipient_id: str, conversation: dic
         # Get recipient preferences
         preferences = await database.get_user_notification_preferences(recipient_id)
         
+        # Determine correct URL based on role
+        base_url = os.environ.get('FRONTEND_URL', 'https://myservicehub.co')
+        target_path = "/dashboard/messages" if recipient.get("role") == "homeowner" else "/trades/messages"
+        
         # Prepare template data
         template_data = {
             "recipient_name": recipient.get("name") or recipient.get("business_name", "User"),
             "sender_name": sender.name or sender.business_name or "User",
             "job_title": conversation.get("job_title", "Job"),
             "message_preview": message_content[:100] + "..." if len(message_content) > 100 else message_content,
-            "conversation_url": f"{os.environ.get('FRONTEND_URL', 'https://myservicehub.co')}/messages/{conversation['id']}"
+            "conversation_url": f"{base_url}{target_path}"
         }
         
         # Send notification
@@ -704,7 +708,7 @@ async def _send_review_invitation(homeowner: User, tradesperson: dict, job: dict
             "tradesperson_name": tradesperson.get("business_name") or tradesperson.get("name", "Tradesperson"),
             "job_title": job.get("title", "Job"),
             "completion_date": datetime.utcnow().strftime("%B %d, %Y"),
-            "review_url": f"{os.environ.get('FRONTEND_URL', 'https://myservicehub.co')}/my-jobs?review={job['id']}"
+            "review_url": f"{os.environ.get('FRONTEND_URL', 'https://myservicehub.co')}/dashboard/jobs?review={job['id']}"
         }
         
         # Send notification

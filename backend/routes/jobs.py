@@ -879,7 +879,7 @@ async def _notify_job_posted_successfully(homeowner: dict, job: dict):
             "job_category": job.get("category", ""),
             "job_budget": job_budget,
             "post_date": "Today",
-            "manage_url": "https://myservicehub.co/my-jobs",
+            "manage_url": "https://myservicehub.co/dashboard/jobs",
             "job_id": job.get("id"),
         }
         
@@ -927,8 +927,8 @@ async def notify_job_cancellation(job_id: str, job: dict, homeowner: User, reaso
                     "cancellation_reason": reason,
                     "additional_feedback": feedback if feedback else "No additional feedback provided",
                     "cancellation_date": datetime.utcnow().strftime("%B %d, %Y"),
-                    "browse_jobs_url": f"{frontend_url}/browse-jobs",
-                    "interests_url": f"{frontend_url}/my-interests",
+                    "browse_jobs_url": f"{frontend_url}/trades/browsejobs",
+                    "interests_url": f"{frontend_url}/trades/interests",
                 }
                 notification = await notification_service.send_notification(
                     user_id=tradesperson_id,
@@ -1055,8 +1055,8 @@ async def notify_matching_tradespeople_new_job(job: dict):
                     "Location": job.get("location", ""),
                     "miles": f"{miles} miles" if miles is not None else "",
                     "logo_url": f"{frontend_url}/Logo-Icon-Green.png",
-                    "see_more_url": f"{frontend_url}/browse-jobs",
-                    "job_url": f"{frontend_url}/browse-jobs?job_id={job.get('id')}",
+                    "see_more_url": f"{frontend_url}/trades/browsejobs",
+                    "job_url": f"{frontend_url}/trades/browsejobs?job_id={job.get('id')}",
                     "support_url": f"{frontend_url}/help-faqs",
                     "preferences_url": f"{frontend_url}/notifications/preferences",
                     "privacy_url": f"{frontend_url}/policies/privacy",
@@ -1314,7 +1314,7 @@ async def _notify_job_posted_successfully_old(homeowner: dict, job: dict):
             "job_category": job.get("category", ""),
             "job_budget": job_budget,
             "post_date": "Today",
-            "manage_url": "https://myservicehub.co/my-jobs"
+            "manage_url": "https://myservicehub.co/dashboard/jobs"
         }
         
         # Send notification

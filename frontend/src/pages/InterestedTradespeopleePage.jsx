@@ -97,7 +97,7 @@ const InterestedTradespeopleePage = () => {
         description: "Job ID is required.",
         variant: "destructive",
       });
-      navigate('/my-jobs');
+      navigate('/dashboard/jobs');
       return;
     }
 
@@ -142,7 +142,7 @@ const InterestedTradespeopleePage = () => {
         description: "Failed to load interested tradespeople. Please try again.",
         variant: "destructive",
       });
-      navigate('/my-jobs');
+      navigate('/dashboard/jobs');
     } finally {
       setLoading(false);
     }
@@ -643,7 +643,7 @@ const InterestedTradespeopleePage = () => {
           <div className="flex items-center gap-4 mb-6">
             <Button
               variant="ghost"
-              onClick={() => navigate('/my-jobs')}
+              onClick={() => navigate('/dashboard/jobs')}
               className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
             >
               <ArrowLeft size={20} />
@@ -761,7 +761,7 @@ const InterestedTradespeopleePage = () => {
                   When tradespeople show interest in your job, they'll appear here.
                 </p>
                 <Button 
-                  onClick={() => navigate('/my-jobs')}
+                  onClick={() => navigate('/dashboard/jobs')}
                   className="text-white"
                   style={{backgroundColor: '#34D164'}}
                 >
