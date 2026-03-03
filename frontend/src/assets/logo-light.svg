@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="220" height="48" viewBox="0 0 220 48" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ServiceHub logo">
+  <title>ServiceHub Logo</title>
+  <desc>Light variant of the ServiceHub logo with green person icon and wordmark.</desc>
+  <g fill="none" fill-rule="evenodd">
+    <circle cx="24" cy="24" r="20" fill="#34D164"/>
+    <g transform="translate(16,16)" fill="#FFFFFF">
+      <circle cx="8" cy="6" r="4"/>
+      <path d="M16 18c0-4.418-3.582-8-8-8s-8 3.582-8 8v2h16v-2z"/>
+    </g>
+    <g font-family="Montserrat, Arial, sans-serif" font-weight="700" font-size="24">
+      <text x="54" y="30" fill="#121E3C">Service</text>
+      <text x="138" y="30" fill="#34D164">Hub</text>
+    </g>
+  </g>
+</svg>
