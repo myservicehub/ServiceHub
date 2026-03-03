@@ -400,6 +400,7 @@ class Wallet(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     user_id: str
     balance_coins: int = 0  # Balance in coins (1 coin = ₦100)
+    referral_points: int = 0  # Points earned from referrals and activities
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -545,9 +546,10 @@ class VerificationSubmission(BaseModel):
 class WalletResponseWithReferrals(BaseModel):
     balance_coins: int
     balance_naira: int
-    referral_coins: int           # Coins earned from referrals
+    referral_coins: int           # Legacy field: Coins earned from referrals (calculated)
+    referral_points: int = 0      # New field: Points balance
     referral_coins_naira: int     # Referral coins in naira
-    can_withdraw_referrals: bool  # True if total coins >= 15
+    can_withdraw_referrals: bool  # True if total coins >= 5
     transactions: List[WalletTransaction] = []
 
 class WithdrawalRequest(BaseModel):

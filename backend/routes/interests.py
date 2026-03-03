@@ -293,6 +293,9 @@ async def pay_for_access(
             access_fee=access_fee_naira
         )
         
+        # Award points for paying access fee (5 points)
+        await database.award_access_fee_points(current_user.id, job["id"])
+        
         return {
             "message": "Payment successful! Access granted to contact details.",
             "access_fee_naira": access_fee_naira,

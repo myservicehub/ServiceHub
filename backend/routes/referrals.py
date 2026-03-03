@@ -341,6 +341,7 @@ async def get_wallet_with_referral_info(current_user = Depends(get_current_user)
         balance_coins=wallet["balance_coins"],
         balance_naira=wallet["balance_coins"] * 100,
         referral_coins=eligibility["referral_coins"],
+        referral_points=eligibility.get("referral_points", 0),
         referral_coins_naira=eligibility["referral_coins"] * 100,
         can_withdraw_referrals=eligibility["can_withdraw_referrals"],
         transactions=transactions

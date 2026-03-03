@@ -4244,12 +4244,13 @@ class Database:
 
     async def _process_referral_rewards(self, verified_user_id: str):
         """Process referral rewards when user gets verified.
-        Awards coins based on verified user's role:
-        - Tradesperson (business verification approved): 10 coins
-        - Homeowner (identity verification approved): 5 coins
+        Awards points based on verified user's role:
+        - Tradesperson (business verification approved): 20 points
+        - Homeowner (identity verification approved): 20 points
         """
         if self.database is None:
             raise RuntimeError("Database unavailable: cannot process referral rewards")
+        
         # Find pending referral for this user
         referral = await self.referrals_collection.find_one({
             "referred_user_id": verified_user_id,
@@ -4259,7 +4260,9 @@ class Database:
         if not referral:
             return
         
-        # Determine award amount based on verified user's role/state
+        referrer_id = referral["referrer_id"]
+        
+        # Determine award amount
         try:
             verified_user = await self.get_user_by_id(verified_user_id)
             referrer = await self.get_user_by_id(referrer_id)
@@ -4271,25 +4274,22 @@ class Database:
         referrer_role = (referrer or {}).get("role")
         is_tradesperson_verified = bool((verified_user or {}).get("verified_tradesperson"))
 
-        # Homeowners earn 20 points on any referral
-        if referrer_role == UserRole.HOMEOWNER.value:
-            coins_to_award = 20
-        # Tradespeople: credit only when business verification is complete
-        elif user_role == UserRole.TRADESPERSON.value and is_tradesperson_verified:
-            coins_to_award = 10
-        else:
-            # Default reward
-            coins_to_award = 5
-        referrer_id = referral["referrer_id"]
+        # Policy: 20 points for any verified referral (Homeowner or Tradesperson)
+        # Tradespeople must be business verified to count as "verified referral"
+        if user_role == UserRole.TRADESPERSON.value and not is_tradesperson_verified:
+            # If tradesperson isn't fully verified yet, don't award (shouldn't happen if called correctly)
+            return
+
+        points_to_award = 20
         
         # Get or create referrer's wallet
         wallet = await self.get_wallet_by_user_id(referrer_id)
         
-        # Add referral coins to wallet
+        # Add referral points to wallet (NOT coins)
         await self.wallets_collection.update_one(
             {"user_id": referrer_id},
             {
-                "$inc": {"balance_coins": coins_to_award},
+                "$inc": {"referral_points": points_to_award},
                 "$set": {"updated_at": datetime.utcnow()}
             }
         )
@@ -4299,10 +4299,10 @@ class Database:
             "wallet_id": wallet["id"],
             "user_id": referrer_id,
             "transaction_type": "referral_reward",
-            "amount_coins": coins_to_award,
-            "amount_naira": coins_to_award * 100,
+            "amount_coins": points_to_award, # Keeping field name for compatibility, but represents points
+            "amount_naira": 0, # Points have no direct naira value until converted
             "status": "confirmed",
-            "description": "Referral reward for successful referral (full verification)",
+            "description": "Referral reward for successful referral",
             "reference": verified_user_id,
             "processed_at": datetime.utcnow()
         }
@@ -4315,7 +4315,7 @@ class Database:
             {
                 "$set": {
                     "status": "verified",
-                    "coins_earned": coins_to_award,
+                    "coins_earned": points_to_award,
                     "verified_at": datetime.utcnow(),
                     "updated_at": datetime.utcnow()
                 }
@@ -4328,10 +4328,55 @@ class Database:
             {
                 "$inc": {
                     "total_referrals": 1,
-                    "referral_coins_earned": coins_to_award
+                    "referral_coins_earned": points_to_award
                 }
             }
         )
+
+    async def award_access_fee_points(self, user_id: str, job_id: str):
+        """Award 5 points to tradesperson for paying access fee"""
+        if self.database is None:
+             return False
+        
+        # Check if reward already given for this job
+        existing_txn = await self.wallet_transactions_collection.find_one({
+            "user_id": user_id,
+            "transaction_type": "access_fee_reward",
+            "reference": job_id
+        })
+        if existing_txn:
+            return False
+
+        points = 5
+        
+        # Get or create wallet
+        wallet = await self.get_wallet_by_user_id(user_id)
+        if not wallet:
+            return False
+
+        # Update wallet (add to referral_points)
+        await self.wallets_collection.update_one(
+            {"user_id": user_id},
+            {
+                "$inc": {"referral_points": points},
+                "$set": {"updated_at": datetime.utcnow()}
+            }
+        )
+        
+        # Create transaction
+        transaction_data = {
+            "wallet_id": wallet["id"],
+            "user_id": user_id,
+            "transaction_type": "referral_reward", # Reusing type for points aggregation
+            "amount_coins": points,
+            "amount_naira": 0,
+            "status": "confirmed",
+            "description": "Reward for paying job access fee",
+            "reference": job_id,
+            "processed_at": datetime.utcnow()
+        }
+        await self.create_wallet_transaction(transaction_data)
+        return True
 
     async def award_job_posting_points(self, user_id: str, job_id: str):
         """Award 5 points to homeowner for posting a job (called on approval)"""
@@ -4403,7 +4448,7 @@ class Database:
         
         # Get user's wallet balance for total points
         wallet = await self.get_wallet_by_user_id(user_id)
-        total_coins_earned = wallet.get("balance_coins", 0) if wallet else 0
+        total_coins_earned = wallet.get("referral_points", 0) if wallet else 0
         
         return {
             "total_referrals": total_referrals,
@@ -4475,33 +4520,28 @@ class Database:
 
     async def check_withdrawal_eligibility(self, user_id: str) -> dict:
         wallet = await self.get_wallet_by_user_id(user_id)
-        referral_rewards = await self.wallet_transactions_collection.find({
-            "user_id": user_id,
-            "transaction_type": "referral_reward",
-            "status": "confirmed"
-        }).to_list(length=None)
-        referral_conversions = await self.wallet_transactions_collection.find({
-            "user_id": user_id,
-            "transaction_type": "referral_conversion",
-            "status": "confirmed"
-        }).to_list(length=None)
-        referral_rewards_total = sum(t.get("amount_coins", 0) for t in referral_rewards)
-        referral_converted_total = sum(t.get("amount_coins", 0) for t in referral_conversions)
-        referral_coins = max(0, referral_rewards_total - referral_converted_total)
+        
+        # Use new referral_points field
+        referral_points = wallet.get("referral_points", 0)
         total_coins = wallet.get("balance_coins", 0)
-        can_withdraw = total_coins >= 5
+        
+        # Determine if points can be converted (e.g. minimum 5 points)
+        can_withdraw = referral_points >= 5
+        
         return {
             "total_coins": total_coins,
-            "referral_coins": referral_coins,
-            "regular_coins": max(0, total_coins - referral_coins),
+            "referral_coins": referral_points, # Keeping key name for frontend compatibility
+            "referral_points": referral_points,
+            "regular_coins": total_coins,
             "can_withdraw_referrals": can_withdraw,
             "minimum_required": 5,
-            "shortfall": max(0, 5 - total_coins)
+            "shortfall": max(0, 5 - referral_points)
         }
 
     async def convert_referral_rewards_to_wallet(self, user_id: str) -> dict:
         wallet = await self.get_wallet_by_user_id(user_id)
         eligibility = await self.check_withdrawal_eligibility(user_id)
+        
         if not eligibility.get("can_withdraw_referrals"):
             return {
                 "success": False,
@@ -4509,9 +4549,23 @@ class Database:
                 "minimum_required": eligibility.get("minimum_required", 5),
                 "shortfall": eligibility.get("shortfall", 0)
             }
-        amount_to_convert = eligibility.get("referral_coins", 0)
+            
+        amount_to_convert = eligibility.get("referral_points", 0)
         if amount_to_convert <= 0:
             return {"success": False, "error": "none_available"}
+            
+        # Atomic update: decrement points, increment coins
+        await self.wallets_collection.update_one(
+            {"user_id": user_id},
+            {
+                "$inc": {
+                    "referral_points": -amount_to_convert,
+                    "balance_coins": amount_to_convert
+                },
+                "$set": {"updated_at": datetime.utcnow()}
+            }
+        )
+            
         transaction_data = {
             "wallet_id": wallet["id"],
             "user_id": user_id,
@@ -4519,10 +4573,11 @@ class Database:
             "amount_coins": amount_to_convert,
             "amount_naira": amount_to_convert * 100,
             "status": "confirmed",
-            "description": "Converted referral rewards to wallet",
+            "description": "Converted referral points to wallet coins",
             "processed_at": datetime.utcnow()
         }
         await self.create_wallet_transaction(transaction_data)
+        
         return {"success": True, "converted_coins": amount_to_convert}
 
     # ==========================================
