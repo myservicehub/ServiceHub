@@ -4399,20 +4399,20 @@ class Database:
         if not wallet:
             return False
 
-        # Update wallet
+        # Update wallet - ADD TO referral_points, NOT balance_coins
         await self.wallets_collection.update_one(
             {"user_id": user_id},
             {
-                "$inc": {"balance_coins": points},
+                "$inc": {"referral_points": points},
                 "$set": {"updated_at": datetime.utcnow()}
             }
         )
         
-        # Create transaction
+        # Create transaction - USE referral_reward type for consistency in history
         transaction_data = {
             "wallet_id": wallet["id"],
             "user_id": user_id,
-            "transaction_type": "job_posting_reward",
+            "transaction_type": "referral_reward", # Changed from job_posting_reward to show in history
             "amount_coins": points,
             "amount_naira": 0,
             "status": "confirmed",

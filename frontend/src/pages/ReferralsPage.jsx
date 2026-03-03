@@ -296,7 +296,7 @@ const ReferralsPage = () => {
                     { step: '1', title: 'Share Your Code', desc: 'Send your referral code to friends and family' },
                     { step: '2', title: 'They Sign Up', desc: 'Friends create account using your referral code' },
                     { step: '3', title: 'They Verify', desc: 'Friends upload ID for account verification' },
-                    { step: '4', title: 'You Earn Points', desc: '20 points per verified user + 5 points per job access fee' },
+                    { step: '4', title: 'You Earn Points', desc: isHomeowner() ? '20 points per verified user + 5 points per job posted' : '20 points per verified user + 5 points per job access fee' },
                   ].map((item) => (
                     <div key={item.step} className="flex items-start gap-3">
                       <div className="w-7 h-7 rounded-lg bg-[#34D164] flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5">
@@ -316,7 +316,11 @@ const ReferralsPage = () => {
                 <h3 className="text-sm font-semibold mb-3">Earn Rewards</h3>
                 <div className="space-y-2 text-xs text-white/70">
                   <p><span className="text-[#34D164] font-semibold">20 points</span> per verified user</p>
-                  <p><span className="text-[#34D164] font-semibold">5 points</span> per job access fee paid</p>
+                  {isHomeowner() ? (
+                    <p><span className="text-[#34D164] font-semibold">5 points</span> per job posted</p>
+                  ) : (
+                    <p><span className="text-[#34D164] font-semibold">5 points</span> per job access fee paid</p>
+                  )}
                   <p><span className="text-white font-semibold">No limit</span> on referrals</p>
                 </div>
                 {isTradesperson() && (
