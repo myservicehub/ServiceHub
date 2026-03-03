@@ -113,6 +113,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const [loginData, setLoginData] = useState({ email: '', password: '' });
   const [loginErrors, setLoginErrors] = useState({});
   const [loggingIn, setLoggingIn] = useState(false);
@@ -457,13 +458,18 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
     }
 
     if (validateStep(currentStep)) {
+      setIsTransitioning(true);
       const nextStepNumber = Math.min(currentStep + 1, totalSteps);
       setCurrentStep(nextStepNumber);
+      // Small delay to prevent accidental double-clicks from triggering the next step's action immediately
+      setTimeout(() => setIsTransitioning(false), 500);
     }
   };
 
   const prevStep = () => {
+    setIsTransitioning(true);
     setCurrentStep(prev => Math.max(prev - 1, 1));
+    setTimeout(() => setIsTransitioning(false), 500);
   };
 
   const continueToAccountCreation = () => {
@@ -586,10 +592,10 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
 
       // Redirect to My Jobs page instead of homepage to avoid full reload/anchoring
       try {
-        navigate('/my-jobs', { replace: true });
+        navigate('/dashboard/jobs', { replace: true });
       } catch (e) {
         // Fallback to hard redirect if navigate is unavailable
-        window.location.href = '/my-jobs';
+        window.location.href = '/dashboard/jobs';
       }
 
     } catch (error) {
@@ -1771,10 +1777,10 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
 
       // Redirect to My Jobs page instead of homepage to avoid full reload/anchoring
       try {
-        navigate('/my-jobs', { replace: true });
+        navigate('/dashboard/jobs', { replace: true });
       } catch (e) {
         // Fallback to hard redirect if navigate is unavailable
-        window.location.href = '/my-jobs';
+        window.location.href = '/dashboard/jobs';
       }
 
     } catch (error) {
@@ -2900,7 +2906,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                     <Button
                       type="button"
                       onClick={currentStep === 1 ? proceedToNextStepWithReview : nextStep}
-                      disabled={submitting}
+                      disabled={submitting || isTransitioning}
                       className="flex items-center text-white font-lato w-full sm:w-auto"
                       style={{backgroundColor: '#34D164'}}
                     >
@@ -2910,7 +2916,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                   ) : (
                     <Button
                       type="submit"
-                      disabled={submitting}
+                      disabled={submitting || isTransitioning}
                       className="flex items-center text-white font-lato w-full sm:w-auto"
                       style={{backgroundColor: '#34D164'}}
                     >
