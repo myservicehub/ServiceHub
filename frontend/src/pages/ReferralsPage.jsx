@@ -327,7 +327,7 @@ const ReferralsPage = () => {
                   <div className="mt-4 pt-4 border-t border-white/10">
                      <p className="text-xs text-white/70 mb-3">
                        1 Point = <span className="text-[#34D164]">0.5 Coin</span><br/>
-                       Min. conversion: 100 Points
+                       You can convert your points to coins once your points get to 100.
                      </p>
                      
                      {stats?.total_coins_earned >= 100 && (
