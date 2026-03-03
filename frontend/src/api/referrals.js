@@ -13,6 +13,11 @@ export const referralsAPI = {
     return response.data;
   },
 
+  async convertRewards(points) {
+    const response = await apiClient.post('/referrals/convert-rewards', { points });
+    return response.data;
+  },
+
   // Submit verification documents
   async submitVerificationDocuments(documentType, fullName, documentNumber, documentImageFile, selfieImageFile) {
     const formData = new FormData();

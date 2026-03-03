@@ -6,7 +6,7 @@ import { useToast } from '../hooks/use-toast';
 import { Copy, Share2, Users, Gift, CheckCircle, Clock, XCircle } from 'lucide-react';
 
 const ReferralsPage = () => {
-  const { isAuthenticated, isHomeowner, user } = useAuth();
+  const { isAuthenticated, isHomeowner, isTradesperson, user } = useAuth();
   const location = useLocation();
   const isInDashboard = location.pathname.startsWith('/trades') || location.pathname.startsWith('/dashboard');
   
@@ -14,6 +14,7 @@ const ReferralsPage = () => {
   const [referrals, setReferrals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [converting, setConverting] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -41,6 +42,37 @@ const ReferralsPage = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleConvertPoints = async () => {
+    try {
+      setConverting(true);
+      const result = await referralsAPI.convertRewards();
+      
+      if (result.success) {
+        toast({
+          title: "Points Converted!",
+          description: `Successfully converted ${result.converted_points} points to ${result.converted_coins} coins.`,
+        });
+        // Refresh stats
+        fetchReferralData();
+      } else {
+        toast({
+          title: "Conversion Failed",
+          description: result.error || "Could not convert points",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Conversion error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process conversion",
+        variant: "destructive"
+      });
+    } finally {
+      setConverting(false);
     }
   };
 
@@ -290,6 +322,24 @@ const ReferralsPage = () => {
                   <p><span className="text-[#34D164] font-semibold">5 points</span> per job access fee paid</p>
                   <p><span className="text-white font-semibold">No limit</span> on referrals</p>
                 </div>
+                {isTradesperson() && (
+                  <div className="mt-4 pt-4 border-t border-white/10">
+                     <p className="text-xs text-white/70 mb-3">
+                       1 Point = <span className="text-[#34D164]">0.5 Coin</span><br/>
+                       Min. conversion: 100 Points
+                     </p>
+                     
+                     {stats?.total_coins_earned >= 100 && (
+                       <button
+                         onClick={handleConvertPoints}
+                         disabled={converting}
+                         className="w-full bg-[#34D164] hover:bg-[#2FBD59] disabled:opacity-50 text-white px-3 py-2 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2"
+                       >
+                         {converting ? 'Converting...' : 'Convert Points to Coins'}
+                       </button>
+                     )}
+                  </div>
+                )}
               </div>
 
               {/* Verify Account CTA */}

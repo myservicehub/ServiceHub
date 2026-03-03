@@ -4520,13 +4520,24 @@ class Database:
 
     async def check_withdrawal_eligibility(self, user_id: str) -> dict:
         wallet = await self.get_wallet_by_user_id(user_id)
+        user = await self.get_user_by_id(user_id)
+        is_tradesperson = user.get("role") == UserRole.TRADESPERSON.value
         
         # Use new referral_points field
         referral_points = wallet.get("referral_points", 0)
         total_coins = wallet.get("balance_coins", 0)
         
-        # Determine if points can be converted (e.g. minimum 5 points)
-        can_withdraw = referral_points >= 5
+        # Determine if points can be converted
+        if is_tradesperson:
+            # Tradesperson: 100 points minimum, 1 point = 0.5 coin
+            minimum_required = 100
+            can_withdraw = referral_points >= minimum_required
+            conversion_rate = 0.5
+        else:
+            # Homeowner: 5 points minimum, 1 point = 1 coin (legacy/default)
+            minimum_required = 5
+            can_withdraw = referral_points >= minimum_required
+            conversion_rate = 1.0
         
         return {
             "total_coins": total_coins,
@@ -4534,8 +4545,9 @@ class Database:
             "referral_points": referral_points,
             "regular_coins": total_coins,
             "can_withdraw_referrals": can_withdraw,
-            "minimum_required": 5,
-            "shortfall": max(0, 5 - referral_points)
+            "minimum_required": minimum_required,
+            "conversion_rate": conversion_rate,
+            "shortfall": max(0, minimum_required - referral_points)
         }
 
     async def convert_referral_rewards_to_wallet(self, user_id: str) -> dict:
@@ -4550,17 +4562,22 @@ class Database:
                 "shortfall": eligibility.get("shortfall", 0)
             }
             
-        amount_to_convert = eligibility.get("referral_points", 0)
-        if amount_to_convert <= 0:
+        points_to_convert = eligibility.get("referral_points", 0)
+        conversion_rate = eligibility.get("conversion_rate", 1.0)
+        
+        if points_to_convert <= 0:
             return {"success": False, "error": "none_available"}
+            
+        # Calculate coins to add based on rate
+        coins_to_add = int(points_to_convert * conversion_rate)
             
         # Atomic update: decrement points, increment coins
         await self.wallets_collection.update_one(
             {"user_id": user_id},
             {
                 "$inc": {
-                    "referral_points": -amount_to_convert,
-                    "balance_coins": amount_to_convert
+                    "referral_points": -points_to_convert,
+                    "balance_coins": coins_to_add
                 },
                 "$set": {"updated_at": datetime.utcnow()}
             }
@@ -4570,15 +4587,15 @@ class Database:
             "wallet_id": wallet["id"],
             "user_id": user_id,
             "transaction_type": "referral_conversion",
-            "amount_coins": amount_to_convert,
-            "amount_naira": amount_to_convert * 100,
+            "amount_coins": coins_to_add,
+            "amount_naira": coins_to_add * 100,
             "status": "confirmed",
-            "description": "Converted referral points to wallet coins",
+            "description": f"Converted {points_to_convert} referral points to {coins_to_add} wallet coins",
             "processed_at": datetime.utcnow()
         }
         await self.create_wallet_transaction(transaction_data)
         
-        return {"success": True, "converted_coins": amount_to_convert}
+        return {"success": True, "converted_coins": coins_to_add, "converted_points": points_to_convert}
 
     # ==========================================
     # TRADESPEOPLE REFERENCES VERIFICATION METHODS
