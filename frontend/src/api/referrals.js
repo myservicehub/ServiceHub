@@ -13,6 +13,11 @@ export const referralsAPI = {
     return response.data;
   },
 
+  async getHistory(skip = 0, limit = 10) {
+    const response = await apiClient.get(`/referrals/history?skip=${skip}&limit=${limit}`);
+    return response.data;
+  },
+
   async convertRewards(points) {
     const response = await apiClient.post('/referrals/convert-rewards', { points });
     return response.data;

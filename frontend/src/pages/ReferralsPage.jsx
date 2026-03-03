@@ -11,7 +11,7 @@ const ReferralsPage = () => {
   const isInDashboard = location.pathname.startsWith('/trades') || location.pathname.startsWith('/dashboard');
   
   const [stats, setStats] = useState(null);
-  const [referrals, setReferrals] = useState([]);
+  const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showShareModal, setShowShareModal] = useState(false);
   const [converting, setConverting] = useState(false);
@@ -26,13 +26,13 @@ const ReferralsPage = () => {
   const fetchReferralData = async () => {
     try {
       setLoading(true);
-      const [statsData, referralsData] = await Promise.all([
+      const [statsData, historyData] = await Promise.all([
         referralsAPI.getMyStats(),
-        referralsAPI.getMyReferrals(0, 10)
+        referralsAPI.getHistory(0, 10)
       ]);
       
       setStats(statsData);
-      setReferrals(referralsData.referrals || []);
+      setHistory(historyData.history || []);
     } catch (error) {
       console.error('Failed to fetch referral data:', error);
       toast({
@@ -245,42 +245,39 @@ const ReferralsPage = () => {
                 </div>
               </div>
 
-              {/* Recent Referrals */}
+              {/* Points History */}
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <div className="px-5 py-4 border-b border-gray-100">
-                  <h3 className="text-base font-semibold text-[#121E3C]">Recent Referrals</h3>
+                  <h3 className="text-base font-semibold text-[#121E3C]">Points History</h3>
                 </div>
                 
-                {referrals.length === 0 ? (
+                {history.length === 0 ? (
                   <div className="p-8 text-center">
                     <div className="w-12 h-12 mx-auto bg-[#121E3C]/5 rounded-xl flex items-center justify-center mb-3">
-                      <Users className="h-6 w-6 text-[#121E3C]/40" />
+                      <Gift className="h-6 w-6 text-[#121E3C]/40" />
                     </div>
-                    <p className="text-sm text-[#121E3C] font-medium">No referrals yet</p>
-                    <p className="text-xs text-gray-400 mt-1">Share your referral code to start earning points!</p>
+                    <p className="text-sm text-[#121E3C] font-medium">No points earned yet</p>
+                    <p className="text-xs text-gray-400 mt-1">Start referring or paying access fees to earn!</p>
                   </div>
                 ) : (
                   <div className="divide-y divide-gray-50">
-                    {referrals.map((referral) => (
-                      <div key={referral.id} className="flex items-center justify-between px-5 py-4 hover:bg-gray-50/50 transition-colors">
+                    {history.map((txn) => (
+                      <div key={txn.id} className="flex items-center justify-between px-5 py-4 hover:bg-gray-50/50 transition-colors">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-[#121E3C]/5 rounded-xl flex items-center justify-center">
-                            <Users size={18} className="text-[#121E3C]/60" />
+                          <div className="w-10 h-10 bg-[#34D164]/10 rounded-xl flex items-center justify-center">
+                            <Gift size={18} className="text-[#34D164]" />
                           </div>
                           <div>
-                            <h4 className="text-sm font-medium text-[#121E3C]">{referral.referred_user_name}</h4>
+                            <h4 className="text-sm font-medium text-[#121E3C]">{txn.description}</h4>
                             <p className="text-xs text-gray-400">
-                              {referral.referred_user_role} • {formatDate(referral.created_at)}
+                              {formatDate(txn.processed_at || txn.created_at)}
                             </p>
                           </div>
                         </div>
                         <div className="text-right">
-                          {getStatusBadge(referral.status, referral.is_verified)}
-                          {referral.coins_earned > 0 && (
-                            <p className="text-xs text-[#34D164] font-medium mt-1">
-                              +{referral.coins_earned} points
-                            </p>
-                          )}
+                          <p className="text-sm text-[#34D164] font-bold">
+                            +{txn.amount_coins} points
+                          </p>
                         </div>
                       </div>
                     ))}

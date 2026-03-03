@@ -4518,6 +4518,19 @@ class Database:
             
         return referrals
 
+    async def get_referral_history(self, user_id: str, skip: int = 0, limit: int = 10) -> List[dict]:
+        """Get referral reward history (points earned)"""
+        cursor = self.wallet_transactions_collection.find({
+            "user_id": user_id,
+            "transaction_type": "referral_reward"
+        }).sort("created_at", -1).skip(skip).limit(limit)
+        
+        transactions = []
+        async for txn in cursor:
+            txn["_id"] = str(txn["_id"])
+            transactions.append(txn)
+        return transactions
+
     async def check_withdrawal_eligibility(self, user_id: str) -> dict:
         wallet = await self.get_wallet_by_user_id(user_id)
         user = await self.get_user_by_id(user_id)

@@ -50,6 +50,23 @@ async def get_my_referrals(
         }
     }
 
+@router.get("/history")
+async def get_referral_history(
+    skip: int = 0,
+    limit: int = 10,
+    current_user = Depends(get_current_user)
+):
+    """Get referral point earning history"""
+    history = await database.get_referral_history(current_user.id, skip=skip, limit=limit)
+    return {
+        "history": history,
+        "pagination": {
+            "skip": skip,
+            "limit": limit,
+            "total": len(history)
+        }
+    }
+
 @router.post("/verify-documents")
 async def submit_verification_documents(
     document_type: DocumentType = Form(...),
