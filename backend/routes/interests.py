@@ -130,11 +130,16 @@ async def get_job_interested_tradespeople(
         interested_tradespeople = []
         for person in interested:
             try:
+                # Ensure status is valid before creating model
+                if person.get("status") not in [s.value for s in InterestStatus]:
+                    logger.warning(f"Invalid status '{person.get('status')}' for interest {person.get('interest_id')}, defaulting to 'interested'")
+                    person["status"] = InterestStatus.INTERESTED.value
+                
                 it = InterestedTradesperson(**person)
                 interested_tradespeople.append(it)
             except Exception as e:
                 # Log conversion error but continue returning other valid tradespeople
-                logger.warning(f"Skipping invalid interested tradesperson record for job {job_id}: {e} -- record: {person}")
+                logger.error(f"Failed to convert interest record for job {job_id}: {str(e)} -- Record data: {person}")
 
         return InterestResponse(
             interested_tradespeople=interested_tradespeople,

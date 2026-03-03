@@ -2259,13 +2259,13 @@ class Database:
                     "as": "tradesperson"
                 }
             },
-            {"$unwind": "$tradesperson"},
+            {"$unwind": {"path": "$tradesperson", "preserveNullAndEmptyArrays": True}},
             {
                 "$project": {
                     "interest_id": "$id",
                     "tradesperson_id": "$tradesperson_id",
-                    "tradesperson_name": "$tradesperson.name",
-                    "tradesperson_email": "$tradesperson.email",
+                    "tradesperson_name": {"$ifNull": ["$tradesperson.name", "Unknown Tradesperson"]},
+                    "tradesperson_email": {"$ifNull": ["$tradesperson.email", "no-email@available.com"]},
                     "tradesperson_phone": {"$ifNull": ["$tradesperson.phone", None]},
                     "profile_image": {"$ifNull": ["$tradesperson.profile_image", None]},
                     "company_name": {"$ifNull": ["$tradesperson.company_name", None]},
@@ -2298,7 +2298,7 @@ class Database:
                     "location": {"$ifNull": ["$tradesperson.location", None]},
                     "description": {"$ifNull": ["$tradesperson.description", None]},
                     "certifications": {"$ifNull": ["$tradesperson.certifications", []]},
-                    "status": "$status",
+                    "status": {"$ifNull": ["$status", "interested"]},
                     "created_at": "$created_at",
                     "updated_at": "$updated_at",
                     "contact_shared_at": "$contact_shared_at",
