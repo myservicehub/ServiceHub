@@ -2952,7 +2952,7 @@ class Database:
             status_counts[doc["_id"]] = doc["count"]
         
         # Calculate delivery rate
-        total_sent = status_counts.get("sent", 0) + status_counts.get("delivered", 0)
+        total_sent = status_counts.get("sent", 0) + status_counts.get("delivered", 0) + status_counts.get("read", 0)
         total_attempts = sum(status_counts.values())
         delivery_rate = (total_sent / total_attempts * 100) if total_attempts > 0 else 0
         
@@ -7284,7 +7284,7 @@ We may update this Cookie Policy to reflect changes in technology or regulations
         async for doc in self.notifications_collection.aggregate(pipeline):
             status_counts[doc.get("_id")] = int(doc.get("count", 0))
         total = await self.notifications_collection.count_documents(query)
-        sent_total = status_counts.get("sent", 0) + status_counts.get("delivered", 0)
+        sent_total = status_counts.get("sent", 0) + status_counts.get("delivered", 0) + status_counts.get("read", 0)
         failed_total = status_counts.get("failed", 0)
         pending_total = status_counts.get("pending", 0)
         return {

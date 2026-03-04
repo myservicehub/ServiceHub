@@ -69,7 +69,7 @@ async def get_public_blog_posts(
         filters = {
             "content_type": ContentType.BLOG_POST.value,
             "status": ContentStatus.PUBLISHED.value,
-            "publish_date": {"$lte": datetime.utcnow()}
+            "publish_date": {"$lte": datetime.utcnow().isoformat()}
         }
         
         # Add optional filters
@@ -235,7 +235,7 @@ async def get_featured_blog_posts(limit: int = Query(3, ge=1, le=10)):
             "content_type": ContentType.BLOG_POST.value,
             "status": ContentStatus.PUBLISHED.value,
             "is_featured": True,
-            "publish_date": {"$lte": datetime.utcnow()}
+            "publish_date": {"$lte": datetime.utcnow().isoformat()}
         }
         
         featured_posts = await database.get_content_items(filters, 0, limit)
@@ -338,8 +338,8 @@ async def get_public_job_postings(
             "content_type": "job_posting",
             "status": ContentStatus.PUBLISHED.value,
             "$or": [
-                {"publish_date": {"$lte": datetime.utcnow()}},
-                {"published_at": {"$lte": datetime.utcnow()}},
+                {"publish_date": {"$lte": datetime.utcnow().isoformat()}},
+                {"published_at": {"$lte": datetime.utcnow().isoformat()}},
                 {"publish_date": {"$exists": False}, "published_at": {"$exists": False}}
             ]
         }
