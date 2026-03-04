@@ -404,7 +404,8 @@ const MyInterestsPage = () => {
           location: interest.job_location
         },
         contactDetails: contactDetails,
-        showContactDetails: true
+        showContactDetails: true,
+        jobStatus: interest.job_status
       });
       setShowChatModal(true);
       console.log('✅ Chat modal opened successfully');
@@ -777,6 +778,7 @@ const MyInterestsPage = () => {
           otherParty={selectedInterestForChat.homeowner}
           contactDetails={selectedInterestForChat.contactDetails}
           showContactDetails={selectedInterestForChat.showContactDetails}
+          jobStatus={selectedInterestForChat.jobStatus}
         />
       )}
 

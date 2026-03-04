@@ -20,7 +20,8 @@ const ChatModal = ({
   otherParty, // { id, name, type: 'homeowner'|'tradesperson', email, phone, location }
   conversationId: initialConversationId = null,
   contactDetails = null, // Optional contact details to display
-  showContactDetails = false // Flag to show contact details section
+  showContactDetails = false, // Flag to show contact details section
+  jobStatus // Pass job status to handle completed jobs
 }) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -73,7 +74,7 @@ const ChatModal = ({
         
         if (user?.role === 'tradesperson') {
           // Current user is tradesperson, so use current user's ID
-          tradespersonId = user.id;
+          tradespersonId = user?.id;
           console.log('✅ User is tradesperson, using user ID:', tradespersonId);
         } else if (user?.role === 'homeowner') {
           // Current user is homeowner, so otherParty should be the tradesperson

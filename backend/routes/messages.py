@@ -303,12 +303,23 @@ async def get_or_create_conversation_for_job(
         conversation = await database.get_conversation_by_job_and_users(job_id, homeowner_id, tradesperson_id)
         
         if conversation:
+            # Check if job is completed and user is homeowner - only if attempting to CREATE/START a chat
+            # If conversation exists, we generally allow reading, but sending might be restricted
+            # The send_message endpoint has its own check.
+            # But for "get_or_create", if it exists, we return it.
             return {"conversation_id": conversation["id"], "exists": True}
         
         # Verify user can create this conversation and has proper access
         if current_user.role == UserRole.HOMEOWNER:
-            if homeowner_id != current_user.id:
-                raise HTTPException(status_code=403, detail="You can only create conversations for your own jobs")
+            # Validate homeowner ownership (handle string vs object ID mismatch)
+            if str(homeowner_id) != str(current_user.id):
+                # Try fallback: check if homeowner_id is in current_user aliases
+                user_ids = {str(current_user.id)}
+                if getattr(current_user, 'user_id', None):
+                    user_ids.add(str(current_user.user_id))
+                
+                if str(homeowner_id) not in user_ids:
+                    raise HTTPException(status_code=403, detail="You can only create conversations for your own jobs")
             
             # Check if job is completed
             if job.get("status") == "completed":
