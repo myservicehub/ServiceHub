@@ -27,7 +27,7 @@ async def get_content_items(
     limit: int = Query(50, ge=1, le=100),
     content_type: Optional[ContentType] = None,
     status: Optional[ContentStatus] = None,
-    category: Optional[ContentCategory] = None,
+    category: Optional[str] = None,
     search: Optional[str] = None,
     admin: dict = Depends(require_permission(AdminPermission.MANAGE_POLICIES))
 ):
@@ -176,6 +176,12 @@ async def update_content_item(
         # Prepare update data
         update_dict = {k: v for k, v in update_data.dict().items() if v is not None}
         
+        # Auto-set publish_date if publishing
+        if update_data.status == ContentStatus.PUBLISHED and not update_data.publish_date:
+            # Check if it was already published or has a publish date
+            if existing_item.get("status") != ContentStatus.PUBLISHED.value or not existing_item.get("publish_date"):
+                update_dict["publish_date"] = datetime.utcnow()
+        
         # Handle slug update
         if update_data.slug and update_data.slug != existing_item.get("slug"):
             existing_slug = await database.get_content_item_by_slug(update_data.slug)
@@ -196,7 +202,15 @@ async def update_content_item(
             
             # Recalculate reading time
             update_dict["reading_time"] = _calculate_reading_time(update_data.content)
-        
+
+        # Ensure publish_date is set if status is published
+        if update_data.status == ContentStatus.PUBLISHED and not update_data.publish_date and not existing_item.get("publish_date"):
+            update_dict["publish_date"] = datetime.utcnow()
+        elif update_data.status == ContentStatus.PUBLISHED and not update_data.publish_date:
+            # If already published/has date, keep it? Or if explicitly switching to published?
+            # If just updating content of a published post, we might not want to change publish_date.
+            pass
+            
         # Add metadata
         update_dict["updated_at"] = datetime.utcnow()
         update_dict["updated_by"] = admin["id"]

@@ -48,7 +48,7 @@ class ContentItem(BaseModel):
     slug: str = Field(..., min_length=1, max_length=200)
     content_type: ContentType
     status: ContentStatus = ContentStatus.DRAFT
-    category: ContentCategory = ContentCategory.GENERAL
+    category: str = "general"
     visibility: ContentVisibility = ContentVisibility.PUBLIC
     
     # Content
@@ -104,7 +104,7 @@ class ContentCreate(BaseModel):
     slug: Optional[str] = None  # Auto-generated if not provided
     content_type: ContentType
     status: ContentStatus = ContentStatus.DRAFT
-    category: ContentCategory = ContentCategory.GENERAL
+    category: str = "general"
     visibility: ContentVisibility = ContentVisibility.PUBLIC
     content: str = Field(..., min_length=1)
     excerpt: Optional[str] = None
@@ -204,7 +204,7 @@ class ContentTemplate(BaseModel):
     template_content: str  # HTML/Markdown template
     variables: List[str] = []  # {{variable_name}} placeholders
     default_values: Dict[str, str] = {}  # Default values for variables
-    category: ContentCategory = ContentCategory.GENERAL
+    category: str = "general"
     is_active: bool = True
     created_by: str
     created_at: datetime = Field(default_factory=datetime.utcnow)

@@ -944,18 +944,13 @@ const ContentManagement = () => {
                     </select>
                   </div>
                   <div>
-                    <select
+                    <input
+                      type="text"
+                      placeholder="Filter by Category"
                       value={filters.category}
                       onChange={(e) => setFilters({...filters, category: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">All Categories</option>
-                      <option value="marketing">Marketing</option>
-                      <option value="support">Support</option>
-                      <option value="product">Product</option>
-                      <option value="tutorial">Tutorial</option>
-                      <option value="news">News</option>
-                    </select>
+                    />
                   </div>
                 </div>
               </div>
