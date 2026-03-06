@@ -1016,9 +1016,9 @@ const ContentManagement = () => {
                 <div className="grid gap-4">
                   {contentItems.map((item) => {
                     const typeConfig = contentTypeConfig[item.content_type] || contentTypeConfig.blog_post;
-                    const statusConfig = statusConfig[item.status] || statusConfig.draft;
+                    const itemStatusConfig = statusConfig[item.status] || statusConfig.draft;
                     const TypeIcon = typeConfig.icon;
-                    const StatusIcon = statusConfig.icon;
+                    const StatusIcon = itemStatusConfig.icon;
 
                     return (
                       <div key={item.id} className="bg-white border rounded-lg p-6 hover:shadow-md transition-shadow">
@@ -1035,9 +1035,9 @@ const ContentManagement = () => {
                               <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${typeConfig.color}`}>
                                 {typeConfig.label}
                               </span>
-                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${statusConfig.color}`}>
+                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${itemStatusConfig.color}`}>
                                 <StatusIcon className="w-3 h-3 mr-1" />
-                                {statusConfig.label}
+                                {itemStatusConfig.label}
                               </span>
                               <span className="text-sm text-gray-500">
                                 {item.category.replace('_', ' ')}
