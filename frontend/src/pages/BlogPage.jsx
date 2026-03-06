@@ -256,24 +256,16 @@ const BlogPage = () => {
 
       // Get regular posts
       const allPosts = await blogAPI.getPosts(filters);
-      let regular = allPosts.filter(post => !post.is_featured);
+      
+      // Filter out featured posts for the regular list
+      let regularPosts = (allPosts || []).filter(post => !post.is_featured);
 
-      // If backend returns no posts, use fallback content and apply filters
-      if (!regular || regular.length === 0) {
-        regular = FALLBACK_POSTS.filter(p => !p.is_featured);
-        if (filters.category) {
-          regular = regular.filter(p => p.category === filters.category);
-        }
-        if (filters.search) {
-          const q = filters.search.toLowerCase();
-          regular = regular.filter(p =>
-            p.title.toLowerCase().includes(q) ||
-            (p.excerpt || '').toLowerCase().includes(q) ||
-            (p.content || '').toLowerCase().includes(q)
-          );
-        }
+      // If no posts from backend and no filters, use fallback
+      if (regularPosts.length === 0 && !filters.category && !filters.search && (!allPosts || allPosts.length === 0)) {
+        regularPosts = FALLBACK_POSTS.filter(p => !p.is_featured);
       }
-      setPosts(regular);
+      
+      setPosts(regularPosts);
       
       // Get categories
       const categoryData = await blogAPI.getCategories();
