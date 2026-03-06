@@ -79,26 +79,38 @@ async def get_public_blog_posts(
     
     try:
         # Build filters for public blog posts
+        # We use $and to allow multiple $or conditions (one for date, one for search)
         filters = {
-            "content_type": ContentType.BLOG_POST.value,
-            "status": ContentStatus.PUBLISHED.value,
-            "publish_date": {"$lte": datetime.utcnow().isoformat()}
+            "$and": [
+                {"content_type": ContentType.BLOG_POST.value},
+                {"status": ContentStatus.PUBLISHED.value},
+                # Show posts that are published now OR have no date (legacy/immediate)
+                {
+                    "$or": [
+                        {"publish_date": {"$lte": datetime.utcnow().isoformat()}},
+                        {"publish_date": None},
+                        {"publish_date": {"$exists": False}}
+                    ]
+                }
+            ]
         }
         
         # Add optional filters
         if category:
-            filters["category"] = category
+            filters["$and"].append({"category": category})
         
         if featured_only:
-            filters["is_featured"] = True
+            filters["$and"].append({"is_featured": True})
         
         if search:
-            filters["$or"] = [
-                {"title": {"$regex": search, "$options": "i"}},
-                {"excerpt": {"$regex": search, "$options": "i"}},
-                {"content": {"$regex": search, "$options": "i"}},
-                {"tags": {"$in": [search]}}
-            ]
+            filters["$and"].append({
+                "$or": [
+                    {"title": {"$regex": search, "$options": "i"}},
+                    {"excerpt": {"$regex": search, "$options": "i"}},
+                    {"content": {"$regex": search, "$options": "i"}},
+                    {"tags": {"$in": [search]}}
+                ]
+            })
         
         # Get blog posts
         # Note: We EXCLUDE content and gallery_images from the query to improve performance
@@ -258,10 +270,18 @@ async def get_featured_blog_posts(limit: int = Query(3, ge=1, le=10)):
     
     try:
         filters = {
-            "content_type": ContentType.BLOG_POST.value,
-            "status": ContentStatus.PUBLISHED.value,
-            "is_featured": True,
-            "publish_date": {"$lte": datetime.utcnow().isoformat()}
+            "$and": [
+                {"content_type": ContentType.BLOG_POST.value},
+                {"status": ContentStatus.PUBLISHED.value},
+                {"is_featured": True},
+                {
+                    "$or": [
+                        {"publish_date": {"$lte": datetime.utcnow().isoformat()}},
+                        {"publish_date": None},
+                        {"publish_date": {"$exists": False}}
+                    ]
+                }
+            ]
         }
         
         # Get featured posts

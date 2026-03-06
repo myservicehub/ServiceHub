@@ -48,7 +48,11 @@ const ContentManagement = () => {
   // Content Management API
   const contentAPI = {
     getItems: async (params = {}) => {
-      const query = new URLSearchParams(params).toString();
+      // Filter out empty parameters
+      const cleanParams = Object.fromEntries(
+        Object.entries(params).filter(([_, v]) => v !== '' && v !== null && v !== undefined)
+      );
+      const query = new URLSearchParams(cleanParams).toString();
       const response = await fetch(`${BASE_URL}/api/admin/content/items?${query}`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
       });
