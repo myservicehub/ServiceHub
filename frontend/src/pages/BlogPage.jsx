@@ -319,7 +319,10 @@ const BlogPage = () => {
     });
   };
 
-  const getReadingTime = (content) => {
+  const getReadingTime = (content, precalculatedTime) => {
+    if (precalculatedTime !== undefined) return precalculatedTime;
+    if (!content) return 1;
+
     const wordsPerMinute = 200;
     const text = String(content).replace(/<[^>]*>/g, ' ');
     const wordCount = text.trim().split(/\s+/).length;
@@ -411,7 +414,7 @@ const BlogPage = () => {
           </span>
           <span className="flex items-center">
             <Clock className="w-3 h-3 mr-1" />
-            {getReadingTime(post.content)} min
+            {getReadingTime(post.content, post.reading_time)} min
           </span>
         </div>
         
@@ -487,7 +490,7 @@ const BlogPage = () => {
                 </span>
                 <span className="text-white/60 text-xs flex items-center">
                   <Clock className="w-3 h-3 mr-1" />
-                  {getReadingTime(selectedPost.content)} min read
+                  {getReadingTime(selectedPost.content, selectedPost.reading_time)} min read
                 </span>
               </div>
               
@@ -653,7 +656,7 @@ const BlogPage = () => {
                       <span className="bg-[#34D164]/20 text-[#34D164] px-2 py-0.5 rounded-full text-xs font-medium">
                         {post.category.replace('_', ' ')}
                       </span>
-                      <span className="text-white/50 text-xs">{getReadingTime(post.content)} min read</span>
+                      <span className="text-white/50 text-xs">{getReadingTime(post.content, post.reading_time)} min read</span>
                     </div>
                     <h3 className="text-base font-semibold font-montserrat text-white mb-2 group-hover:text-[#34D164] transition-colors">
                       {post.title}

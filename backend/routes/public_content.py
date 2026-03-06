@@ -4,6 +4,7 @@ from datetime import datetime
 import logging
 import os
 import uuid
+import re
 from pydantic import BaseModel, EmailStr
 
 from ..database import database
@@ -54,6 +55,18 @@ async def submit_contact_form(request: ContactFormRequest):
         # Alternatively, raise 500 if you want the frontend to show an error
         raise HTTPException(status_code=500, detail="Failed to send message. Please try again later.")
 
+def _calculate_reading_time(content: str) -> int:
+    """Calculate reading time in minutes based on 200 words per minute"""
+    if not content:
+        return 0
+    # Remove HTML tags
+    text = re.sub('<[^<]+?>', ' ', content)
+    # Count words
+    words = len(text.split())
+    # Calculate minutes
+    minutes = max(1, round(words / 200))
+    return minutes
+
 @router.get("/blog")
 async def get_public_blog_posts(
     skip: int = Query(0, ge=0),
@@ -88,18 +101,23 @@ async def get_public_blog_posts(
             ]
         
         # Get blog posts
+        # Note: We fetch full content to calculate reading time, but don't return it
         blog_posts = await database.get_content_items(filters, skip, limit)
         total_count = await database.get_content_items_count(filters)
         
         # Remove sensitive data and format for public consumption
         public_posts = []
         for post in blog_posts:
+            # Calculate reading time before removing content
+            reading_time = _calculate_reading_time(post.get("content", ""))
+            
             public_post = {
                 "id": post["id"],
                 "title": post["title"],
                 "slug": post["slug"],
-                "content": post["content"],
+                # "content": post["content"],  # Excluded for performance (too large)
                 "excerpt": post.get("excerpt"),
+                "reading_time": reading_time,
                 "featured_image": post.get("featured_image"),
                 "gallery_images": post.get("gallery_images", []),
                 "category": post["category"],
@@ -243,11 +261,15 @@ async def get_featured_blog_posts(limit: int = Query(3, ge=1, le=10)):
         # Format for public consumption
         public_posts = []
         for post in featured_posts:
+            # Calculate reading time
+            reading_time = _calculate_reading_time(post.get("content", ""))
+            
             public_post = {
                 "id": post["id"],
                 "title": post["title"],
                 "slug": post["slug"],
                 "excerpt": post.get("excerpt"),
+                "reading_time": reading_time,
                 "featured_image": post.get("featured_image"),
                 "category": post["category"],
                 "tags": post.get("tags", []),

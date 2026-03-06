@@ -8323,10 +8323,10 @@ We may update this Cookie Policy to reflect changes in technology or regulations
         result = await self.database.content_items.insert_one(content_data)
         return content_data["id"]
 
-    async def get_content_items(self, filters: dict = None, skip: int = 0, limit: int = 50) -> List[dict]:
+    async def get_content_items(self, filters: dict = None, skip: int = 0, limit: int = 50, projection: dict = None) -> List[dict]:
         """Get content items with filtering"""
         query = filters or {}
-        cursor = self.database.content_items.find(query).sort("created_at", -1).skip(skip).limit(limit)
+        cursor = self.database.content_items.find(query, projection).sort("created_at", -1).skip(skip).limit(limit)
         content_items = await cursor.to_list(length=limit)
         
         for item in content_items:
