@@ -128,7 +128,7 @@ class ContentUpdate(BaseModel):
     title: Optional[str] = None
     slug: Optional[str] = None
     status: Optional[ContentStatus] = None
-    category: Optional[ContentCategory] = None
+    category: Optional[str] = None
     visibility: Optional[ContentVisibility] = None
     content: Optional[str] = None
     excerpt: Optional[str] = None

@@ -40,7 +40,7 @@ async def get_content_items(
         if status:
             filters["status"] = status.value
         if category:
-            filters["category"] = category.value
+            filters["category"] = category
         if search:
             filters["$or"] = [
                 {"title": {"$regex": search, "$options": "i"}},
