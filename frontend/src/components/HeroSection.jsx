@@ -357,8 +357,8 @@ const HeroSection = () => {
             {/* Right side - Stats */}
             <div ref={statsRef} className="flex items-center gap-8 lg:gap-10 opacity-0 relative z-0">
               <div className="text-center lg:text-left">
-                <p className="text-2xl sm:text-3xl font-bold font-montserrat text-white">100+</p>
-                <p className="text-xs sm:text-sm text-white/50 font-lato">Verified Tradespeople</p>
+                <p className="text-2xl sm:text-3xl font-bold font-montserrat text-white">40+</p>
+                <p className="text-xs sm:text-sm text-white/50 font-lato">Completed Jobs</p>
               </div>
               <div className="text-center lg:text-left">
                 <p className="text-2xl sm:text-3xl font-bold font-montserrat text-white">100+</p>

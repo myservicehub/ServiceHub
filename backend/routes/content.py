@@ -126,6 +126,10 @@ async def create_content_item(
         # Calculate reading time
         reading_time = _calculate_reading_time(content_data.content)
         
+        # Auto-set publish_date if publishing immediately
+        if content_data.status == ContentStatus.PUBLISHED and not content_data.publish_date:
+            content_data.publish_date = datetime.utcnow()
+        
         # Create content item
         content_item_dict = content_data.dict()
         content_item_dict["reading_time"] = reading_time

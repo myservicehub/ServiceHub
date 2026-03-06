@@ -64,6 +64,10 @@ const ContentManagement = () => {
         },
         body: JSON.stringify(data)
       });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to create content item');
+      }
       return response.json();
     },
 
@@ -76,6 +80,10 @@ const ContentManagement = () => {
         },
         body: JSON.stringify(data)
       });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to update content item');
+      }
       return response.json();
     },
 
@@ -84,6 +92,10 @@ const ContentManagement = () => {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
       });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to delete content item');
+      }
       return response.json();
     },
 
@@ -96,6 +108,10 @@ const ContentManagement = () => {
         },
         body: JSON.stringify({ publish_date: publishDate })
       });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to publish content item');
+      }
       return response.json();
     },
 
@@ -204,6 +220,30 @@ const ContentManagement = () => {
   };
 
   // Job management handlers
+  const handlePublishContent = async (id) => {
+    try {
+      await contentAPI.publishItem(id);
+      loadData();
+      alert('Content published successfully!');
+    } catch (error) {
+      console.error('Error publishing content:', error);
+      alert(`Failed to publish content: ${error.message}`);
+    }
+  };
+
+  const handleDeleteContent = async (id) => {
+    if (window.confirm('Are you sure you want to delete this content item?')) {
+      try {
+        await contentAPI.deleteItem(id);
+        loadData();
+        alert('Content deleted successfully!');
+      } catch (error) {
+        console.error('Error deleting content:', error);
+        alert(`Failed to delete content: ${error.message}`);
+      }
+    }
+  };
+
   const handlePublishJob = async (jobId) => {
     try {
       await careersAPI.admin.publishJobPosting(jobId);
@@ -280,8 +320,10 @@ const ContentManagement = () => {
 
         if (isEdit) {
           await contentAPI.updateItem(content.id, submitData);
+          alert('Content updated successfully!');
         } else {
           await contentAPI.createItem(submitData);
+          alert('Content created successfully!');
         }
 
         onSave();
@@ -289,7 +331,7 @@ const ContentManagement = () => {
         loadData();
       } catch (error) {
         console.error('Error saving content:', error);
-        alert('Error saving content. Please try again.');
+        alert(`Error saving content: ${error.message}`);
       }
     };
 
@@ -1051,7 +1093,7 @@ const ContentManagement = () => {
                             </button>
                             {item.status === 'draft' && (
                               <button
-                                onClick={() => contentAPI.publishItem(item.id)}
+                                onClick={() => handlePublishContent(item.id)}
                                 className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded"
                                 title="Publish"
                               >
@@ -1059,7 +1101,7 @@ const ContentManagement = () => {
                               </button>
                             )}
                             <button
-                              onClick={() => contentAPI.deleteItem(item.id)}
+                              onClick={() => handleDeleteContent(item.id)}
                               className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded"
                               title="Delete"
                             >

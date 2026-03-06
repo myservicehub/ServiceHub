@@ -212,9 +212,9 @@ const PostJobPage = () => {
               <h2 className="text-base font-semibold font-montserrat text-white text-center mb-6">Why Choose ServiceHub?</h2>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center">
                 {[
-                  { value: '100+', label: 'Verified Tradespeople' },
+                  { value: '40+', label: 'Completed Jobs' },
                   { value: '15+', label: 'Trade Categories' },
-                  { value: '200+', label: 'Happy Customers' },
+                  { value: '100+', label: 'Happy Customers' },
                   { value: '4.8★', label: 'Average Rating' },
                 ].map((stat) => (
                   <div key={stat.label} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4">
