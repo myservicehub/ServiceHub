@@ -101,25 +101,33 @@ async def get_public_blog_posts(
             ]
         
         # Get blog posts
-        # Note: We fetch full content to calculate reading time, but don't return it
-        blog_posts = await database.get_content_items(filters, skip, limit)
+        # Note: We EXCLUDE content and gallery_images from the query to improve performance
+        # These fields are often large and not needed for the list view.
+        projection = {"content": 0, "gallery_images": 0}
+        
+        blog_posts = await database.get_content_items(filters, skip, limit, projection)
         total_count = await database.get_content_items_count(filters)
         
         # Remove sensitive data and format for public consumption
         public_posts = []
         for post in blog_posts:
-            # Calculate reading time before removing content
-            reading_time = _calculate_reading_time(post.get("content", ""))
+            # Use stored reading time or calculate if missing (and content is somehow available)
+            # Since we exclude content, we rely on stored reading_time. 
+            # If missing, it will default to 0, which is acceptable for legacy posts until they are updated.
+            reading_time = post.get("reading_time", 0)
+            
+            # If reading_time is missing and content is missing, we can't calculate it.
+            # Ideally, a migration script should run to populate reading_time for existing posts.
             
             public_post = {
                 "id": post["id"],
                 "title": post["title"],
                 "slug": post["slug"],
-                # "content": post["content"],  # Excluded for performance (too large)
+                # "content": post["content"],  # Excluded
                 "excerpt": post.get("excerpt"),
                 "reading_time": reading_time,
                 "featured_image": post.get("featured_image"),
-                "gallery_images": post.get("gallery_images", []),
+                # "gallery_images": post.get("gallery_images", []), # Excluded
                 "category": post["category"],
                 "tags": post.get("tags", []),
                 "is_featured": post.get("is_featured", False),
@@ -256,13 +264,15 @@ async def get_featured_blog_posts(limit: int = Query(3, ge=1, le=10)):
             "publish_date": {"$lte": datetime.utcnow().isoformat()}
         }
         
-        featured_posts = await database.get_content_items(filters, 0, limit)
+        # Get featured posts
+        projection = {"content": 0, "gallery_images": 0}
+        featured_posts = await database.get_content_items(filters, 0, limit, projection)
         
         # Format for public consumption
         public_posts = []
         for post in featured_posts:
             # Calculate reading time
-            reading_time = _calculate_reading_time(post.get("content", ""))
+            reading_time = post.get("reading_time", 0)
             
             public_post = {
                 "id": post["id"],

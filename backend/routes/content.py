@@ -77,6 +77,20 @@ async def get_content_item(
     
     return {"content_item": content_item}
 
+import re
+
+def _calculate_reading_time(content: str) -> int:
+    """Calculate reading time in minutes based on 200 words per minute"""
+    if not content:
+        return 0
+    # Remove HTML tags
+    text = re.sub('<[^<]+?>', ' ', content)
+    # Count words
+    words = len(text.split())
+    # Calculate minutes
+    minutes = max(1, round(words / 200))
+    return minutes
+
 @router.post("/items")
 async def create_content_item(
     content_data: ContentCreate,
@@ -109,13 +123,24 @@ async def create_content_item(
         if template_vars:
             content_data.template_variables = template_vars
         
+        # Calculate reading time
+        reading_time = _calculate_reading_time(content_data.content)
+        
         # Create content item
+        content_item_dict = content_data.dict()
+        content_item_dict["reading_time"] = reading_time
+        
         content_item = ContentItem(
-            **content_data.dict(),
+            **content_item_dict,
             created_by=admin["id"]
         )
         
-        content_id = await database.create_content_item(content_item.dict())
+        # Ensure reading_time is set in the model instance (if model doesn't have it, it might be dropped)
+        # Assuming ContentItem is flexible or we pass dict to database
+        final_item_dict = content_item.dict()
+        final_item_dict["reading_time"] = reading_time
+        
+        content_id = await database.create_content_item(final_item_dict)
         
         # Log activity
         await database.log_admin_activity(
@@ -168,6 +193,9 @@ async def update_content_item(
             template_vars = extract_template_variables(update_data.content)
             if template_vars:
                 update_dict["template_variables"] = template_vars
+            
+            # Recalculate reading time
+            update_dict["reading_time"] = _calculate_reading_time(update_data.content)
         
         # Add metadata
         update_dict["updated_at"] = datetime.utcnow()
