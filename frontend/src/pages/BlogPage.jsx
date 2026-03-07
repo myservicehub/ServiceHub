@@ -173,7 +173,7 @@ const BlogPage = () => {
 
     getPostBySlug: async (slug) => {
       try {
-        const response = await fetch(`${BASE_URL}/api/public/content/blog/${slug}`);
+        const response = await fetch(`${BASE_URL}/api/public/content/blog/post/${slug}`);
         if (!response.ok) return null;
         const data = await response.json();
         return data.blog_post || null;

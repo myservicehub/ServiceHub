@@ -86,8 +86,8 @@ async def get_public_blog_posts(
         # always be visible.
         filters = {
             "$and": [
-                {"content_type": {"$in": [ContentType.BLOG_POST.value, "blog_post"]}},
-                {"status": {"$in": [ContentStatus.PUBLISHED.value, "published"]}}
+                {"content_type": {"$regex": "^blog[_ ]?post$", "$options": "i"}},
+                {"status": {"$regex": "^published$", "$options": "i"}}
             ]
         }
         
@@ -165,7 +165,7 @@ async def get_public_blog_posts(
         logger.error(f"Error getting public blog posts: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to fetch blog posts")
 
-@router.get("/blog/{slug}")
+@router.get("/blog/post/{slug}")
 async def get_blog_post_by_slug(slug: str):
     """Get a specific published blog post by slug"""
     
@@ -177,8 +177,9 @@ async def get_blog_post_by_slug(slug: str):
             raise HTTPException(status_code=404, detail="Blog post not found")
         
         # Check if it's a published blog post
-        if (blog_post["content_type"] != ContentType.BLOG_POST.value or 
-            blog_post["status"] != ContentStatus.PUBLISHED.value):
+        content_type = str(blog_post.get("content_type", "")).strip().lower().replace(" ", "_")
+        status = str(blog_post.get("status", "")).strip().lower()
+        if content_type != ContentType.BLOG_POST.value or status != ContentStatus.PUBLISHED.value:
             raise HTTPException(status_code=404, detail="Blog post not found")
         
         # Older behaviour hid posts if their publish_date was in the
@@ -241,8 +242,8 @@ async def get_blog_categories():
         pipeline = [
             {
                 "$match": {
-                    "content_type": {"$in": [ContentType.BLOG_POST.value, "blog_post"]},
-                    "status": {"$in": [ContentStatus.PUBLISHED.value, "published"]}
+                    "content_type": {"$regex": "^blog[_ ]?post$", "$options": "i"},
+                    "status": {"$regex": "^published$", "$options": "i"}
                 }
             },
             {
@@ -277,8 +278,8 @@ async def get_featured_blog_posts(limit: int = Query(3, ge=1, le=10)):
         # featured posts only care about status, not the publish date
         filters = {
             "$and": [
-                {"content_type": {"$in": [ContentType.BLOG_POST.value, "blog_post"]}},
-                {"status": {"$in": [ContentStatus.PUBLISHED.value, "published"]}},
+                {"content_type": {"$regex": "^blog[_ ]?post$", "$options": "i"}},
+                {"status": {"$regex": "^published$", "$options": "i"}},
                 {"is_featured": True}
             ]
         }
@@ -328,8 +329,9 @@ async def like_blog_post(post_id: str):
             raise HTTPException(status_code=404, detail="Blog post not found")
         
         # Check if it's a published blog post
-        if (blog_post["content_type"] != ContentType.BLOG_POST.value or 
-            blog_post["status"] != ContentStatus.PUBLISHED.value):
+        content_type = str(blog_post.get("content_type", "")).strip().lower().replace(" ", "_")
+        status = str(blog_post.get("status", "")).strip().lower()
+        if content_type != ContentType.BLOG_POST.value or status != ContentStatus.PUBLISHED.value:
             raise HTTPException(status_code=404, detail="Blog post not found")
         
         # Increment like count
@@ -355,8 +357,9 @@ async def share_blog_post(post_id: str):
             raise HTTPException(status_code=404, detail="Blog post not found")
         
         # Check if it's a published blog post
-        if (blog_post["content_type"] != ContentType.BLOG_POST.value or 
-            blog_post["status"] != ContentStatus.PUBLISHED.value):
+        content_type = str(blog_post.get("content_type", "")).strip().lower().replace(" ", "_")
+        status = str(blog_post.get("status", "")).strip().lower()
+        if content_type != ContentType.BLOG_POST.value or status != ContentStatus.PUBLISHED.value:
             raise HTTPException(status_code=404, detail="Blog post not found")
         
         # Increment share count

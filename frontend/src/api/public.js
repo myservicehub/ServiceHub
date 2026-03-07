@@ -22,7 +22,7 @@ export const publicAPI = {
    * Get blog post by slug
    */
   async getBlogPost(slug) {
-    const response = await apiClient.get(`/public/content/blog/${slug}`);
+    const response = await apiClient.get(`/public/content/blog/post/${slug}`);
     return response.data;
   }
 };
