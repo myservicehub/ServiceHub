@@ -151,7 +151,7 @@ const BlogPage = () => {
   ];
 
   // Blog API
-  const BASE_URL = process.env.REACT_APP_BACKEND_URL || '';
+  const BASE_URL = '';
   const blogAPI = {
     getPosts: async (params = {}) => {
       try {

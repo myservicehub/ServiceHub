@@ -43,7 +43,7 @@ const ContentManagement = () => {
   const [showApplicationsModal, setShowApplicationsModal] = useState(false);
   const [jobsSubTab, setJobsSubTab] = useState('postings'); // postings, applications, statistics
 
-  const BASE_URL = process.env.REACT_APP_BACKEND_URL || '';
+  const BASE_URL = '';
 
   // Content Management API
   const contentAPI = {
@@ -1688,7 +1688,7 @@ const PreviewContent = ({ item }) => {
     (async () => {
       try {
         setLoading(true);
-        const res = await fetch(`${process.env.REACT_APP_BACKEND_URL || ''}/api/admin/content/preview/${item.id}`);
+        const res = await fetch(`/api/admin/content/preview/${item.id}`);
         const json = await res.json();
         const content = json.content || item;
         if (mounted) setData(content);
