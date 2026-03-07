@@ -82,7 +82,7 @@ async def get_public_blog_posts(
         # We use $and to allow multiple $or conditions (one for date, one for search)
         filters = {
             "$and": [
-                {"content_type": ContentType.BLOG_POST.value},
+                {"content_type": {"$in": [ContentType.BLOG_POST.value, "blog_post"]}},
                 {"status": {"$in": [ContentStatus.PUBLISHED.value, "published"]}},
                 # Show posts that are published now OR have no date (legacy/immediate)
                 {
@@ -237,8 +237,8 @@ async def get_blog_categories():
         pipeline = [
             {
                 "$match": {
-                    "content_type": ContentType.BLOG_POST.value,
-                    "status": ContentStatus.PUBLISHED.value
+                    "content_type": {"$in": [ContentType.BLOG_POST.value, "blog_post"]},
+                    "status": {"$in": [ContentStatus.PUBLISHED.value, "published"]}
                 }
             },
             {
@@ -272,7 +272,7 @@ async def get_featured_blog_posts(limit: int = Query(3, ge=1, le=10)):
     try:
         filters = {
             "$and": [
-                {"content_type": ContentType.BLOG_POST.value},
+                {"content_type": {"$in": [ContentType.BLOG_POST.value, "blog_post"]}},
                 {"status": {"$in": [ContentStatus.PUBLISHED.value, "published"]}},
                 {"is_featured": True},
                 {
