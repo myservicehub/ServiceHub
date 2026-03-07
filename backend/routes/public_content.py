@@ -85,14 +85,14 @@ async def get_public_blog_posts(
                 {"content_type": ContentType.BLOG_POST.value},
                 {"status": ContentStatus.PUBLISHED.value},
                 # Show posts that are published now OR have no date (legacy/immediate)
-                {
-                    "$or": [
-                        {"publish_date": {"$lte": datetime.utcnow().isoformat()}},
-                        {"publish_date": {"$lte": datetime.utcnow()}},
-                        {"publish_date": None},
-                        {"publish_date": {"$exists": False}}
-                    ]
-                }
+                # {
+                #     "$or": [
+                #         {"publish_date": {"$lte": datetime.utcnow().isoformat()}},
+                #         {"publish_date": {"$lte": datetime.utcnow()}},
+                #         {"publish_date": None},
+                #         {"publish_date": {"$exists": False}}
+                #     ]
+                # }
             ]
         }
         
@@ -275,14 +275,14 @@ async def get_featured_blog_posts(limit: int = Query(3, ge=1, le=10)):
                 {"content_type": ContentType.BLOG_POST.value},
                 {"status": ContentStatus.PUBLISHED.value},
                 {"is_featured": True},
-                {
-                    "$or": [
-                        {"publish_date": {"$lte": datetime.utcnow().isoformat()}},
-                        {"publish_date": {"$lte": datetime.utcnow()}},
-                        {"publish_date": None},
-                        {"publish_date": {"$exists": False}}
-                    ]
-                }
+                # {
+                #     "$or": [
+                #         {"publish_date": {"$lte": datetime.utcnow().isoformat()}},
+                #         {"publish_date": {"$lte": datetime.utcnow()}},
+                #         {"publish_date": None},
+                #         {"publish_date": {"$exists": False}}
+                #     ]
+                # }
             ]
         }
         
