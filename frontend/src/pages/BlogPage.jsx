@@ -158,12 +158,16 @@ const BlogPage = () => {
         // Get published blog posts from public API
         const query = new URLSearchParams(params).toString();
         const response = await fetch(`${BASE_URL}/api/public/content/blog?${query}`);
-        if (!response.ok) return [];
+        if (!response.ok) {
+          const errText = await response.text().catch(() => '');
+          throw new Error(`HTTP ${response.status} ${errText}`);
+        }
         const data = await response.json();
         return data.blog_posts || [];
       } catch (error) {
         console.error('Error fetching blog posts:', error);
-        return [];
+        // propagate so callers know something went wrong
+        throw error;
       }
     },
 
@@ -255,7 +259,14 @@ const BlogPage = () => {
       }
 
       // Get regular posts
-      const allPosts = await blogAPI.getPosts(filters);
+      let allPosts = [];
+      try {
+        allPosts = await blogAPI.getPosts(filters);
+      } catch (err) {
+        // network or server error - show a warning but continue with fallback
+        console.error('Blog API error, will show sample content', err);
+        toast({ title: 'Unable to load posts', description: 'Showing sample content instead', variant: 'destructive' });
+      }
       
       // Filter out featured posts for the regular list
       let regularPosts = (allPosts || []).filter(post => !post.is_featured);

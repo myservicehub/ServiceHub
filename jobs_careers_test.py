@@ -915,6 +915,67 @@ class JobsCareersAPITester:
             self.log_result("Admin job posting DELETE", False, 
                           f"Status: {response.status_code}, Response: {response.text}")
     
+    def test_blog_future_post_visibility(self):
+        """Ensure a blog post with a future publish_date but status=published is returned by public APIs"""
+        print("\n=== Testing blog future-post visibility ===")
+        # create a new blog post with a publish_date 30 days in the future
+        slug = f"future-blog-{uuid.uuid4().hex[:8]}"
+        create_data = {
+            "title": "Future Post",
+            "slug": slug,
+            "content_type": "blog_post",
+            "status": "published",
+            "category": "general",
+            "visibility": "public",
+            "content": "<p>This is a test post scheduled incorrectly.</p>",
+            "excerpt": "Test excerpt",
+            "publish_date": (datetime.utcnow() + timedelta(days=30)).isoformat(),
+            "created_by": self.admin_info['id']
+        }
+        response = self.make_request("POST", "/admin/content/items", json=create_data, auth_token=self.access_token)
+        if response.status_code == 200:
+            try:
+                data = response.json()
+                self.log_result("Create future blog post", True, f"ID: {data.get('content_id')}")
+                blog_id = data.get('content_id')
+                self.test_data['blog_id'] = blog_id
+                self.test_data['blog_slug'] = slug
+            except json.JSONDecodeError:
+                self.log_result("Create future blog post", False, "Invalid JSON response")
+                return
+        else:
+            self.log_result("Create future blog post", False, f"Status: {response.status_code}, {response.text}")
+            return
+
+        # fetch public list and ensure slug appears
+        list_resp = self.make_request("GET", "/public/content/blog")
+        if list_resp.status_code == 200:
+            try:
+                items = list_resp.json().get('blog_posts', [])
+                found = any(item.get('slug') == slug for item in items)
+                if found:
+                    self.log_result("Public blog list includes future post", True)
+                else:
+                    self.log_result("Public blog list includes future post", False, "Post not found in list")
+                # also test individual slug endpoint
+                slug_resp = self.make_request("GET", f"/public/content/blog/{slug}")
+                if slug_resp.status_code == 200:
+                    self.log_result("Public blog slug endpoint returns future post", True)
+                else:
+                    self.log_result("Public blog slug endpoint returns future post", False, f"Status {slug_resp.status_code}")
+            except json.JSONDecodeError:
+                self.log_result("Public blog list JSON parse", False, "Invalid JSON")
+        else:
+            self.log_result("Fetch public blog list", False, f"Status: {list_resp.status_code}")
+
+        # clean up: delete the blog post via admin API
+        if 'blog_id' in self.test_data:
+            del_resp = self.make_request("DELETE", f"/admin/content/items/{self.test_data['blog_id']}", auth_token=self.access_token)
+            if del_resp.status_code == 200:
+                self.log_result("Delete test blog post", True)
+            else:
+                self.log_result("Delete test blog post", False, f"Status {del_resp.status_code}")
+
     def run_all_tests(self):
         """Run all jobs and careers management API tests"""
         print("🚀 Starting Jobs and Careers Management System Testing")
@@ -952,6 +1013,9 @@ class JobsCareersAPITester:
             
             # Clean up - delete test job
             self.test_admin_job_posting_delete()
+
+            # Blog specific tests
+            self.test_blog_future_post_visibility()
             
         except Exception as e:
             print(f"❌ Critical error during testing: {str(e)}")

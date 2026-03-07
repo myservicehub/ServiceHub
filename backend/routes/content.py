@@ -180,11 +180,24 @@ async def update_content_item(
         # Prepare update data
         update_dict = {k: v for k, v in update_data.dict().items() if v is not None}
         
-        # Auto-set publish_date if publishing
-        if update_data.status == ContentStatus.PUBLISHED and not update_data.publish_date:
-            # Check if it was already published or has a publish date
-            if existing_item.get("status") != ContentStatus.PUBLISHED.value or not existing_item.get("publish_date"):
-                update_dict["publish_date"] = datetime.utcnow()
+        # Auto-set publish_date if publishing (and avoid leaving a future date)
+        if update_data.status == ContentStatus.PUBLISHED:
+            # if client didn't supply a date but the existing item has a future
+            # publish_date we overwrite it with `now` so the post isn't hidden.
+            if not update_data.publish_date:
+                if (existing_item.get("status") != ContentStatus.PUBLISHED.value
+                        or not existing_item.get("publish_date")
+                        or (existing_item.get("publish_date") and
+                            existing_item.get("publish_date") > datetime.utcnow())):
+                    update_dict["publish_date"] = datetime.utcnow()
+            else:
+                # if client explicitly set a publish_date in the past/future we
+                # respect scheduling logic by updating the status accordingly
+                if update_data.publish_date > datetime.utcnow():
+                    update_dict["status"] = ContentStatus.SCHEDULED.value
+                else:
+                    update_dict["status"] = ContentStatus.PUBLISHED.value
+                    update_dict["publish_date"] = update_data.publish_date
         
         # Handle slug update
         if update_data.slug and update_data.slug != existing_item.get("slug"):

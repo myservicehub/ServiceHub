@@ -79,20 +79,15 @@ async def get_public_blog_posts(
     
     try:
         # Build filters for public blog posts
-        # We use $and to allow multiple $or conditions (one for date, one for search)
+        # Only published items should be returned; ignore the publish_date
+        # field because clients expect to see anything marked published even if
+        # the date was accidentally set in the future.  Scheduling is handled
+        # by the `status` field, so a post with status "published" must
+        # always be visible.
         filters = {
             "$and": [
                 {"content_type": {"$in": [ContentType.BLOG_POST.value, "blog_post"]}},
-                {"status": {"$in": [ContentStatus.PUBLISHED.value, "published"]}},
-                # Show posts that are published now OR have no date (legacy/immediate)
-                {
-                    "$or": [
-                        {"publish_date": {"$lte": datetime.utcnow().isoformat()}},
-                        {"publish_date": {"$lte": datetime.utcnow()}},
-                        {"publish_date": None},
-                        {"publish_date": {"$exists": False}}
-                    ]
-                }
+                {"status": {"$in": [ContentStatus.PUBLISHED.value, "published"]}}
             ]
         }
         
@@ -186,13 +181,22 @@ async def get_blog_post_by_slug(slug: str):
             blog_post["status"] != ContentStatus.PUBLISHED.value):
             raise HTTPException(status_code=404, detail="Blog post not found")
         
-        # Check if publish date has passed
-        if blog_post.get("publish_date"):
-            publish_date = blog_post["publish_date"]
-            if isinstance(publish_date, str):
-                publish_date = datetime.fromisoformat(publish_date.replace('Z', '+00:00'))
-            if publish_date > datetime.utcnow():
-                raise HTTPException(status_code=404, detail="Blog post not found")
+        # Older behaviour hid posts if their publish_date was in the
+        # future.  That turned out to be surprising when an admin accidentally
+        # picked the wrong year or migrated items with dates far ahead.  We
+        # now simply ignore the publish_date altogether once the status is
+        # "published".  Scheduling should be driven by the status field.
+        # (Future-dated scheduled posts still use status="scheduled" and are
+        # filtered out earlier.)
+        #
+        # Keeping the code here for reference but not enforcing the check.
+        #
+        # if blog_post.get("publish_date"):
+        #     publish_date = blog_post["publish_date"]
+        #     if isinstance(publish_date, str):
+        #         publish_date = datetime.fromisoformat(publish_date.replace('Z', '+00:00'))
+        #     if publish_date > datetime.utcnow():
+        #         raise HTTPException(status_code=404, detail="Blog post not found")
         
         # Increment view count
         await database.increment_content_view_count(blog_post["id"])
@@ -270,19 +274,12 @@ async def get_featured_blog_posts(limit: int = Query(3, ge=1, le=10)):
     """Get featured blog posts"""
     
     try:
+        # featured posts only care about status, not the publish date
         filters = {
             "$and": [
                 {"content_type": {"$in": [ContentType.BLOG_POST.value, "blog_post"]}},
                 {"status": {"$in": [ContentStatus.PUBLISHED.value, "published"]}},
-                {"is_featured": True},
-                {
-                    "$or": [
-                        {"publish_date": {"$lte": datetime.utcnow().isoformat()}},
-                        {"publish_date": {"$lte": datetime.utcnow()}},
-                        {"publish_date": None},
-                        {"publish_date": {"$exists": False}}
-                    ]
-                }
+                {"is_featured": True}
             ]
         }
         

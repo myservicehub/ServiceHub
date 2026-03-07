@@ -1043,8 +1043,13 @@ const ContentManagement = () => {
                                 {item.category.replace('_', ' ')}
                               </span>
                               <span className="text-sm text-gray-500">
-                                {new Date(item.created_at).toLocaleDateString()}
+                                Created: {new Date(item.created_at).toLocaleDateString()}
                               </span>
+                              {item.publish_date && (
+                                <span className={`text-sm ml-3 ${new Date(item.publish_date) > new Date() ? 'text-red-500' : 'text-gray-500'}`}>
+                                  Pub: {new Date(item.publish_date).toLocaleDateString()}
+                                </span>
+                              )}
                             </div>
 
                             {item.excerpt && (
