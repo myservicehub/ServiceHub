@@ -23,7 +23,7 @@
     }
   ],
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "https://my-sevicehub.onrender.com/api/$1" },
+    { "source": "/api/(.*)", "destination": "https://servicehub-app-toziz.ondigitalocean.app/api/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
