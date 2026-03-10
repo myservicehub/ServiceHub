@@ -17,7 +17,7 @@ from ..auth.security import (
 from ..auth.dependencies import get_current_user, get_current_active_user, get_current_tradesperson, require_permission
 from ..models.admin import AdminPermission
 from ..database import database
-from ..models.trade_categories import NIGERIAN_TRADE_CATEGORIES, validate_trade_category
+from ..models.trade_categories import NIGERIAN_TRADE_CATEGORIES, validate_trade_category, normalize_trade_category
 from ..models.nigerian_states import NIGERIAN_STATES, validate_nigerian_state
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
@@ -371,8 +371,31 @@ async def register_tradesperson(request: Request, registration_data: Tradesperso
 
         formatted_phone = format_nigerian_phone(registration_data.phone)
 
-        # Validate trade categories
-        invalid_categories = [cat for cat in registration_data.trade_categories if not validate_trade_category(cat)]
+        # Validate trade categories against canonical + dynamic (admin-defined) set
+        # and normalize where possible for consistent storage.
+        try:
+            effective = await database.get_effective_trades()
+            effective_names = {str(n).strip().lower(): n for n in (effective.get("trades") or [])}
+        except Exception:
+            effective_names = {}
+        normalized_categories = []
+        invalid_categories = []
+        for cat in registration_data.trade_categories:
+            raw = (cat or "").strip()
+            # First try to map to canonical
+            canon = normalize_trade_category(raw)
+            if canon in NIGERIAN_TRADE_CATEGORIES:
+                if canon not in normalized_categories:
+                    normalized_categories.append(canon)
+                continue
+            # If not canonical, accept if present in dynamic effective list (case-insensitive)
+            lower = raw.lower()
+            if lower in effective_names:
+                name_to_store = effective_names[lower]
+                if name_to_store not in normalized_categories:
+                    normalized_categories.append(name_to_store)
+            else:
+                invalid_categories.append(cat)
         if invalid_categories:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -404,7 +427,7 @@ async def register_tradesperson(request: Request, registration_data: Tradesperso
             "avatar_url": None,
             "last_login": None,
             # Tradesperson specific fields
-            "trade_categories": registration_data.trade_categories,
+            "trade_categories": normalized_categories,
             "experience_years": registration_data.experience_years,
             "company_name": registration_data.company_name,
             "description": registration_data.description,
