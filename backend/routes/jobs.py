@@ -1689,7 +1689,49 @@ async def get_public_skills_questions(
     """Get skills test questions for a specific trade category (public endpoint for registration)"""
     try:
         import random
-        questions = await database.get_questions_for_trade(trade_category)
+        import re
+
+        # Normalize incoming category to handle UI/DB wording differences
+        raw = (trade_category or "").strip()
+        norm = re.sub(r"\s+&\s+|\s*&\s*", " and ", raw, flags=re.IGNORECASE)
+        norm = norm.replace("/", " ").strip()
+        norm_lower = norm.lower()
+
+        # Minimal synonym map focused on user-reported categories
+        synonyms = {
+            "cleaning services": "Cleaning",
+            "cleaning service": "Cleaning",
+            "cleaning": "Cleaning",
+            "handyman": "General Handyman Work",
+            "general handyman": "General Handyman Work",
+            "general handyman work": "General Handyman Work",
+        }
+        resolved = synonyms.get(norm_lower, raw)
+
+        # Try exact with resolved label first
+        questions = await database.get_questions_for_trade(resolved)
+
+        # If nothing, try a loose match in DB by slug-like comparison
+        if not questions and getattr(database, "database", None) is not None:
+            try:
+                def to_slug(s: str) -> str:
+                    s = (s or "").lower()
+                    s = s.replace("&", " and ").replace("/", " ")
+                    s = re.sub(r"\\s+", " ", s).strip()
+                    s = re.sub(r"[^a-z0-9 ]", "", s)
+                    return s.replace(" ", "-")
+
+                target_slug = to_slug(norm)
+                cursor = database.database.skills_questions.find({}, {"trade_category": 1})
+                categories = set()
+                async for doc in cursor:
+                    categories.add(doc.get("trade_category"))
+                # Find first category whose slug matches
+                fallback_cat = next((c for c in categories if to_slug(c) == target_slug), None)
+                if fallback_cat:
+                    questions = await database.get_questions_for_trade(fallback_cat)
+            except Exception as e:
+                logger.warning(f"Loose match for skills questions failed: {e}")
 
         active_questions = [q for q in questions if q.get('is_active', True)]
         if len(active_questions) > limit:
