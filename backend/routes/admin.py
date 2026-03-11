@@ -2320,8 +2320,15 @@ async def view_verification_document_base64(filename: str, admin: dict = Depends
     # Prefer DB base64
     try:
         doc = await database.get_verification_by_document_filename(filename)
-        if doc and doc.get("document_image_base64"):
-            return {"image_base64": doc["document_image_base64"]}
+        if doc:
+            if doc.get("document_url") == filename and doc.get("document_image_base64"):
+                return {"image_base64": doc["document_image_base64"]}
+            if doc.get("selfie_url") == filename and doc.get("selfie_image_base64"):
+                return {"image_base64": doc["selfie_image_base64"]}
+        if not doc:
+            doc = await database.user_verifications_collection.find_one({"selfie_url": filename})
+            if doc and doc.get("selfie_image_base64"):
+                return {"image_base64": doc["selfie_image_base64"]}
     except Exception:
         pass
     # Fallback to disk
