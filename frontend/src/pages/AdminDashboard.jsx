@@ -335,13 +335,23 @@ const AdminDashboard = () => {
         try {
           const items = data.verifications || [];
           for (const v of items) {
-            const fn = v?.document_url;
-            if (!fn) continue;
-            if (!verificationDocBase64[fn]) {
+            // Preload document image
+            const docFn = v?.document_url;
+            if (docFn && !verificationDocBase64[docFn]) {
               try {
-                const dataUrl = await adminReferralsAPI.getVerificationDocumentBase64(fn);
+                const dataUrl = await adminReferralsAPI.getVerificationDocumentBase64(docFn);
                 if (dataUrl) {
-                  setVerificationDocBase64(prev => ({ ...prev, [fn]: dataUrl }));
+                  setVerificationDocBase64(prev => ({ ...prev, [docFn]: dataUrl }));
+                }
+              } catch {}
+            }
+            // Preload selfie image
+            const selfieFn = v?.selfie_url;
+            if (selfieFn && !verificationDocBase64[selfieFn]) {
+              try {
+                const dataUrl = await adminReferralsAPI.getVerificationDocumentBase64(selfieFn);
+                if (dataUrl) {
+                  setVerificationDocBase64(prev => ({ ...prev, [selfieFn]: dataUrl }));
                 }
               } catch {}
             }
