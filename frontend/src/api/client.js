@@ -13,6 +13,10 @@ const getBackendUrl = () => {
     ? (window.BACKEND_URL_OVERRIDE || localStorage.getItem('BACKEND_URL_OVERRIDE') || '')
     : '';
   let url = runtimeOverride || buildEnvUrl;
+  // Guardrail: ignore deprecated onrender host to prevent saving data to wrong backend
+  if (url && typeof url === 'string' && url.includes('onrender.com')) {
+    url = '';
+  }
   if (!url && isLocalhost) {
     url = '';
   }

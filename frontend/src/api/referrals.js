@@ -61,7 +61,8 @@ export const referralsAPI = {
 
   // Get verification document image URL
   getDocumentUrl(filename) {
-    return `${(process.env.REACT_APP_BACKEND_URL ? process.env.REACT_APP_BACKEND_URL + '/api' : (apiClient?.defaults?.baseURL || '/api'))}/referrals/verification-document/${filename}`;
+    const base = (apiClient?.defaults?.baseURL || '/api');
+    return `${base}/referrals/verification-document/${filename}`;
   }
 };
 
@@ -117,7 +118,8 @@ export const adminReferralsAPI = {
 
   // Get verification document image URL (admin)
   getDocumentUrl(filename) {
-    return `${(process.env.REACT_APP_BACKEND_URL ? process.env.REACT_APP_BACKEND_URL + '/api' : (apiClient?.defaults?.baseURL || '/api'))}/admin/verifications/document/${filename}`;
+    const base = (apiClient?.defaults?.baseURL || '/api');
+    return `${base}/admin/verifications/document/${filename}`;
   }
 };
 
@@ -168,7 +170,7 @@ export const adminVerificationAPI = {
   },
   // Build URL to view tradespeople verification files (work photos, documents)
   getTradespeopleVerificationFileUrl(filename) {
-    const base = (process.env.REACT_APP_BACKEND_URL ? process.env.REACT_APP_BACKEND_URL + '/api' : (apiClient?.defaults?.baseURL || '/api'));
+    const base = (apiClient?.defaults?.baseURL || '/api');
     return `${base}/admin/tradespeople-verifications/document/${filename}`;
   }
 };

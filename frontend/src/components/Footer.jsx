@@ -126,7 +126,7 @@ const Footer = () => {
     }
     setIsSubscribing(true);
     try {
-      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/public/content/newsletter/subscribe`, {
+      const res = await fetch(`/api/public/content/newsletter/subscribe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: newsletterEmail, source: 'footer' })

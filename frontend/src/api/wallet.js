@@ -41,12 +41,14 @@ export const walletAPI = {
 
   // Get payment proof image
   getPaymentProofUrl(filename) {
-    return `${(process.env.REACT_APP_BACKEND_URL ? process.env.REACT_APP_BACKEND_URL + '/api' : (apiClient?.defaults?.baseURL || '/api'))}/wallet/payment-proof/${filename}`;
+    const base = (apiClient?.defaults?.baseURL || '/api');
+    return `${base}/wallet/payment-proof/${filename}`;
   }
 ,
   // Get payment proof as base64
   getPaymentProofBase64Url(filename) {
-    return `${(process.env.REACT_APP_BACKEND_URL ? process.env.REACT_APP_BACKEND_URL + '/api' : (apiClient?.defaults?.baseURL || '/api'))}/wallet/payment-proof-base64/${filename}`;
+    const base = (apiClient?.defaults?.baseURL || '/api');
+    return `${base}/wallet/payment-proof-base64/${filename}`;
   }
 };
 
@@ -242,11 +244,13 @@ export const adminAPI = {
 
   // Get payment proof image (admin)
   getPaymentProofUrl(filename) {
-    return `${(process.env.REACT_APP_BACKEND_URL ? process.env.REACT_APP_BACKEND_URL + '/api' : (apiClient?.defaults?.baseURL || '/api'))}/admin/wallet/payment-proof/${filename}`;
+    const base = (apiClient?.defaults?.baseURL || '/api');
+    return `${base}/admin/wallet/payment-proof/${filename}`;
   },
   // Get payment proof as base64 (admin)
   getPaymentProofBase64Url(filename) {
-    return `${(process.env.REACT_APP_BACKEND_URL ? process.env.REACT_APP_BACKEND_URL + '/api' : (apiClient?.defaults?.baseURL || '/api'))}/admin/wallet/payment-proof-base64/${filename}`;
+    const base = (apiClient?.defaults?.baseURL || '/api');
+    return `${base}/admin/wallet/payment-proof-base64/${filename}`;
   },
 
   // User Management Methods

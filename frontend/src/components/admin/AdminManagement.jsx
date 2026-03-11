@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Users, UserPlus, Shield, Activity, Settings, Eye, Trash2, Edit, Key, AlertTriangle } from 'lucide-react';
+import apiClient from '../../api/client';
 
 const AdminManagement = () => {
   const [activeTab, setActiveTab] = useState('admins');
@@ -21,76 +22,44 @@ const AdminManagement = () => {
   // API functions
   const adminManagementAPI = {
     getAdmins: async (status = 'active') => {
-      const url = `${process.env.REACT_APP_BACKEND_URL}/api/admin-management/admins${status ? `?status=${status}` : ''}`;
-      const response = await fetch(url, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
-      });
-      return response.json();
+      const url = `/admin-management/admins${status ? `?status=${status}` : ''}`;
+      const response = await apiClient.get(url);
+      return response.data;
     },
 
     createAdmin: async (adminData) => {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/admin-management/admins`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
-        },
-        body: JSON.stringify(adminData)
-      });
-      return response.json();
+      const response = await apiClient.post(`/admin-management/admins`, adminData);
+      return response.data;
     },
 
     updateAdmin: async (adminId, updateData) => {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/admin-management/admins/${adminId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
-        },
-        body: JSON.stringify(updateData)
-      });
-      return response.json();
+      const response = await apiClient.put(`/admin-management/admins/${adminId}`, updateData);
+      return response.data;
     },
 
     deleteAdmin: async (adminId) => {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/admin-management/admins/${adminId}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
-      });
-      return response.json();
+      const response = await apiClient.delete(`/admin-management/admins/${adminId}`);
+      return response.data;
     },
 
     resetPassword: async (adminId, newPassword) => {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/admin-management/admins/${adminId}/reset-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
-        },
-        body: JSON.stringify({ admin_id: adminId, new_password: newPassword })
-      });
-      return response.json();
+      const response = await apiClient.post(`/admin-management/admins/${adminId}/reset-password`, { admin_id: adminId, new_password: newPassword });
+      return response.data;
     },
 
     getRoles: async () => {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/admin-management/roles`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
-      });
-      return response.json();
+      const response = await apiClient.get(`/admin-management/roles`);
+      return response.data;
     },
 
     getActivities: async () => {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/admin-management/activity`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
-      });
-      return response.json();
+      const response = await apiClient.get(`/admin-management/activity`);
+      return response.data;
     },
 
     getStats: async () => {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/admin-management/stats`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
-      });
-      return response.json();
+      const response = await apiClient.get(`/admin-management/stats`);
+      return response.data;
     }
   };
 
