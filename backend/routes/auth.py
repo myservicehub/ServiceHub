@@ -82,6 +82,21 @@ async def register_homeowner(request: Request, registration_data: HomeownerRegis
 
         formatted_phone = format_nigerian_phone(registration_data.phone)
 
+        # Enforce unique phone for homeowners
+        try:
+            if getattr(database, "connected", False) and getattr(database, "database", None) is not None:
+                phone_user = await database.users_collection.find_one({"role": "homeowner", "phone": formatted_phone})
+            else:
+                phone_user = None
+        except Exception as e:
+            logger.warning(f"Skipping existing-user phone check due to DB error: {e}")
+            phone_user = None
+        if phone_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Phone number already registered"
+            )
+
         # Validate location/state
         if registration_data.location and not validate_nigerian_state(registration_data.location):
             raise HTTPException(

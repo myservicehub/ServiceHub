@@ -168,6 +168,16 @@ class Database:
                     )
                 except Exception as idx_err:
                     logger.warning(f"Failed to ensure users user_id index: {idx_err}")
+                # Users: homeowner phone must be unique (partial index)
+                try:
+                    await self.database.users.create_index(
+                        [("role", 1), ("phone", 1)],
+                        name="unique_homeowner_phone",
+                        unique=True,
+                        partialFilterExpression={"role": "homeowner", "phone": {"$type": "string"}}
+                    )
+                except Exception as idx_err:
+                    logger.warning(f"Failed to ensure unique_homeowner_phone index: {idx_err}")
 
                 # Jobs: compound indexes to optimize common queries and sorts
                 await self.database.jobs.create_index(
