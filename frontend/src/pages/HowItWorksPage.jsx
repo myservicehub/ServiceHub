@@ -210,9 +210,9 @@ const HowItWorksPage = () => {
   ];
 
   const stats = [
-    { number: `${platformStats?.total_categories || 28}+`, label: "Service Categories" },
-    { number: platformStats?.total_states || "8", label: "Nigerian States" },
-    { number: platformStats?.total_tradespeople ? Number(platformStats.total_tradespeople).toLocaleString() + "+" : "5,000+", label: "Active Tradespeople" },
+    { number: `${Number(platformStats?.total_categories ?? 0) || 0}+`, label: "Service Categories" },
+    { number: Number(platformStats?.total_states ?? 0) || 0, label: "Nigerian States" },
+    { number: platformStats?.total_tradespeople ? Number(platformStats.total_tradespeople).toLocaleString() + "+" : "0+", label: "Active Tradespeople" },
     { number: "5-200km", label: "Service Radius" }
   ];
 

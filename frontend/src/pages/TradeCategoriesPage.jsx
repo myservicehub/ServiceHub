@@ -6,7 +6,7 @@ import { Input } from '../components/ui/input';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import FinalCTA from '../components/FinalCTA';
-import { statsAPI } from '../api/services';
+import { statsAPI, authAPI } from '../api/services';
 
 const TradeCategoriesPage = () => {
   const navigate = useNavigate();
@@ -34,6 +34,11 @@ const TradeCategoriesPage = () => {
       }
 
       try {
+        // 1) Get effective categories (static + admin custom) for authoritative list
+        const effective = await authAPI.getTradeCategories();
+        const effectiveList = Array.isArray(effective?.categories) ? effective.categories : (Array.isArray(effective) ? effective : []);
+
+        // 2) Get counts per category (from tradespeople aggregation)
         const categoriesData = await statsAPI.getCategories();
         const rawCategories = Array.isArray(categoriesData) ? categoriesData : (categoriesData?.categories || []);
         
@@ -88,32 +93,17 @@ const TradeCategoriesPage = () => {
             "Landscaping": { description: "Garden design, lawn care, and outdoor landscaping services", icon: Leaf, popular: false }
           };
 
-          const curatedNames = Object.keys(metaData);
-          const curatedCategories = curatedNames.map((name) => ({
-            name,
-            description: metaData[name]?.description || `Professional ${name} services in Nigeria`,
-            icon: metaData[name]?.icon || Wrench,
-            popular: !!metaData[name]?.popular,
-            tradesperson_count: countsMap[toSlug(name)] || 0
-          }));
-          
-          const extras = rawCategories
-            .filter(cat => {
-              const n = cat.name || cat.title;
-              return n && !curatedNames.includes(n);
-            })
-            .map(cat => {
-              const name = cat.name || cat.title;
-              return {
-                name,
-                description: cat.description || `Professional ${name} services in Nigeria`,
-                icon: cat.icon || "🛠️",
-                popular: false,
-                tradesperson_count: countsMap[toSlug(name)] || 0
-              };
-            });
-
-          const finalCategories = [...curatedCategories, ...extras];
+          // Build final category list strictly from the effective categories in DB
+          const finalCategories = (effectiveList || []).map((name) => {
+            const meta = metaData[name] || {};
+            return {
+              name,
+              description: meta.description || `Professional ${name} services in Nigeria`,
+              icon: meta.icon || Wrench,
+              popular: !!meta.popular,
+              tradesperson_count: countsMap[toSlug(name)] || 0
+            };
+          });
           finalCategories.sort((a, b) => a.name.localeCompare(b.name));
           setTradeCategories(finalCategories);
         }
