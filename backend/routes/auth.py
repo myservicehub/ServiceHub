@@ -25,6 +25,7 @@ import uuid
 import logging
 import os
 from pathlib import Path
+import re
 from ..utils.limiter import limiter
 from fastapi import Request
 
@@ -53,11 +54,14 @@ async def register_homeowner(request: Request, registration_data: HomeownerRegis
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Homeowner signup is only available when posting a job"
             )
+        # Normalize email for uniqueness and lookup (case-insensitive)
+        email_lower = (registration_data.email or "").strip().lower()
+
         # Check if user already exists (skip in degraded mode)
         existing_user = None
         try:
             if getattr(database, "connected", False) and getattr(database, "database", None) is not None:
-                existing_user = await database.get_user_by_email(registration_data.email)
+                existing_user = await database.get_user_by_email(email_lower)
         except Exception as e:
             logger.warning(f"Skipping existing-user email check due to DB error: {e}")
         if existing_user:
@@ -109,7 +113,7 @@ async def register_homeowner(request: Request, registration_data: HomeownerRegis
         user_data = {
             "id": user_id,
             "name": registration_data.name,
-            "email": registration_data.email,
+            "email": email_lower,
             "phone": formatted_phone,
             "password_hash": get_password_hash(registration_data.password),
             "role": UserRole.HOMEOWNER,
@@ -357,11 +361,14 @@ async def register_tradesperson(request: Request, registration_data: Tradesperso
             getattr(database, "connected", None),
             getattr(database, "database", None) is None,
         )
+        # Normalize email for uniqueness and lookup (case-insensitive)
+        email_lower = (registration_data.email or "").strip().lower()
+
         # Check if user already exists (skip DB call in degraded mode)
         existing_user = None
         if getattr(database, "connected", False) and getattr(database, "database", None) is not None:
             try:
-                existing_user = await database.get_user_by_email(registration_data.email)
+                existing_user = await database.get_user_by_email(email_lower)
             except Exception as e:
                 logger.warning(f"Skipping existing-user email check due to DB error: {e}")
         if existing_user:
@@ -428,7 +435,7 @@ async def register_tradesperson(request: Request, registration_data: Tradesperso
         user_data = {
             "id": str(uuid.uuid4()),
             "name": registration_data.name,
-            "email": registration_data.email,
+            "email": email_lower,
             "phone": formatted_phone,
             "password_hash": get_password_hash(registration_data.password),
             "role": UserRole.TRADESPERSON,
@@ -649,8 +656,18 @@ async def register_tradesperson(request: Request, registration_data: Tradesperso
 async def login(request: Request, login_data: UserLogin):
     """Authenticate user and return access token"""
     try:
-        # Get user by email
-        user_data = await database.get_user_by_email(login_data.email)
+        # Get user by email (case-insensitive)
+        email_input = (login_data.email or "").strip()
+        email_lower = email_input.lower()
+        user_data = await database.get_user_by_email(email_lower)
+        # Fallback to case-insensitive search if exact match not found
+        if not user_data and getattr(database, "connected", False) and getattr(database, "database", None) is not None:
+            try:
+                user_data = await database.users_collection.find_one({
+                    "email": {"$regex": f"^{re.escape(email_input)}$", "$options": "i"}
+                })
+            except Exception:
+                user_data = None
         if not user_data:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,

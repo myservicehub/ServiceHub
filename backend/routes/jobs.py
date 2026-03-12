@@ -1814,7 +1814,8 @@ async def register_and_post(payload: PublicJobPostRequest, background_tasks: Bac
         existing_user = None
         try:
             if getattr(database, "connected", False) and getattr(database, "database", None) is not None:
-                existing_user = await database.get_user_by_email(job_data.homeowner_email)
+                # Normalize email to lowercase for lookup
+                existing_user = await database.get_user_by_email((job_data.homeowner_email or "").strip().lower())
         except Exception as e:
             logger.warning(f"Skipping existing-user email check due to DB error: {e}")
 
@@ -1842,10 +1843,12 @@ async def register_and_post(payload: PublicJobPostRequest, background_tasks: Bac
             created_user = existing_user
         else:
             user_id = str(uuid.uuid4())
+            # Normalize email
+            email_lower = (job_data.homeowner_email or "").strip().lower()
             user_data = {
                 "id": user_id,
                 "name": job_data.homeowner_name,
-                "email": job_data.homeowner_email,
+                "email": email_lower,
                 "phone": formatted_phone,
                 "password_hash": get_password_hash(payload.password),
                 "role": UserRole.HOMEOWNER,
