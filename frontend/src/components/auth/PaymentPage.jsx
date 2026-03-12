@@ -144,16 +144,6 @@ const PaymentPage = ({ formData, onBack, onRegistrationComplete }) => {
 
   // Handle registration completion with wallet funding
   const handleCompleteRegistration = async () => {
-    // If contact details are not verified yet, open the modal but continue.
-    // Verification will be enforced before redirecting after successful registration.
-    if (!emailVerified || !phoneVerified) {
-      setShowVerificationModal(true);
-      toast({
-        title: 'Verify your contact details',
-        description: 'Please verify both email and phone after registration.',
-      });
-    }
-
     if (!proofFile) {
       toast({
         title: "Payment Proof Required",
@@ -257,26 +247,7 @@ const PaymentPage = ({ formData, onBack, onRegistrationComplete }) => {
             variant: "warning",
           });
 
-          // Send OTPs and show verification modal even if wallet funding failed
-          try {
-            if (formData.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-              await authAPI.sendEmailOTP(formData.email);
-              toast({ title: 'Email verification code sent', description: 'Check your inbox to verify your email.' });
-            }
-          } catch (emailErr) {
-            console.warn('Failed to send email OTP:', emailErr?.response?.data || emailErr?.message || emailErr);
-          }
-          try {
-            if (formData.phone && validateNigerianPhone(formData.phone)) {
-              const formattedPhone = formatNigerianPhone(formData.phone);
-              await authAPI.sendPhoneOTP(formattedPhone);
-              toast({ title: 'SMS verification code sent', description: 'Check your phone to verify your number.' });
-            }
-          } catch (phoneErr) {
-            console.warn('Failed to send phone OTP:', phoneErr?.response?.data || phoneErr?.message || phoneErr);
-          }
-
-          setShowVerificationModal(true);
+          // Do not open verification modal until payment proof is successfully uploaded
 
           if (onRegistrationComplete) {
             onRegistrationComplete({

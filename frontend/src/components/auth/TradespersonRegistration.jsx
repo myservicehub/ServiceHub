@@ -1725,15 +1725,6 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
                     <button
                       onClick={() => {
                         console.log('🔵 FUND NOW BUTTON CLICKED (DIRECT)');
-                        // Hybrid gating: reopen verification modal if not verified
-                        if (!emailVerified || !phoneVerified) {
-                          setShowVerificationModal(true);
-                          toast({
-                            title: 'Verify your contact details',
-                            description: 'Please verify both email and phone to continue.',
-                          });
-                          return;
-                        }
                         updateFormData('walletSetup', 'fund_now');
                         setShowPaymentPage(true);
                       }}
