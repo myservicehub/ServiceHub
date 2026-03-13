@@ -829,9 +829,6 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
               className={`h-12 font-lato text-sm rounded-l-none rounded-r-xl border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all ${errors.phone ? 'border-red-400' : ''}`}
             />
           </div>
-          <p className="text-xs text-gray-400 mt-1 font-lato">
-            Enter your number with or without the leading 0
-          </p>
           {errors.phone && <p className="text-red-500 text-xs mt-1 font-lato">{errors.phone}</p>}
         </div>
       </div>
@@ -848,9 +845,6 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
             onChange={(e) => updateFormData('referralCode', e.target.value)}
             className="h-12 font-lato text-sm rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all"
           />
-          <p className="text-xs text-gray-400 mt-1 font-lato">
-            Using a friend's code helps them earn rewards when your account is verified.
-          </p>
         </div>
       </div>
 

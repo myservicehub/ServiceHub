@@ -276,7 +276,7 @@ const HeroSection = () => {
                             value={jobSearch}
                             onChange={handleJobInputChange}
                             placeholder="Search services..."
-                            className="w-full px-3 py-2 bg-gray-50 border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#34D164]/50 font-lato text-sm"
+                            className="w-full px-3 py-2 bg-gray-50 border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#34D164]/50 font-lato text-base"
                             autoFocus
                           />
                         </div>

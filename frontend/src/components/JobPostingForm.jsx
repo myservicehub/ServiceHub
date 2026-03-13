@@ -135,6 +135,8 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
   const [questionAnswersOtherText, setQuestionAnswersOtherText] = useState({});
   const [showQuestionsModal, setShowQuestionsModal] = useState(false);
   const [questionsCompleted, setQuestionsCompleted] = useState(false);
+  const [showQuizFeedbackModal, setShowQuizFeedbackModal] = useState(false);
+  const [quizFeedback, setQuizFeedback] = useState('');
   const lgaAbortRef = useRef(null);
 
   const { loginWithToken, isAuthenticated, user: currentUser, loading } = useAuth();
@@ -620,11 +622,12 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
     try {
       setLoadingQuestions(true);
       const response = await tradeCategoryQuestionsAPI.getJobPostingQuestions(category);
-      setTradeQuestions(response.questions || []);
+      const questions = response.questions || [];
+      setTradeQuestions(questions);
       
       // Initialize answers for required questions
       const initialAnswers = {};
-      (response.questions || []).forEach(question => {
+      questions.forEach(question => {
         if (question.question_type === 'yes_no') {
           initialAnswers[question.id] = null;
         } else if (question.question_type === 'multiple_choice_multiple') {
@@ -639,6 +642,11 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       
       // Reset to first question
       resetQuestionNavigation();
+      
+      // Auto-popup the quiz modal if there are questions
+      if (questions.length > 0) {
+        setShowQuestionsModal(true);
+      }
       
     } catch (error) {
       console.error('Failed to load trade questions:', error);
@@ -1224,19 +1232,37 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
     switch (question.question_type) {
       case 'multiple_choice_single':
         return (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {question.options?.map((option, optIndex) => (
-              <label key={optIndex} className="flex items-center space-x-2 cursor-pointer">
+              <label 
+                key={optIndex} 
+                className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                  questionAnswers[question.id] === option.value
+                    ? 'border-[#34D164] bg-[#34D164]/5'
+                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                }`}
+              >
                 <input
                   type="radio"
                   name={`question_${question.id}`}
                   value={option.value}
                   checked={questionAnswers[question.id] === option.value}
                   onChange={(e) => handleQuestionAnswer(question.id, e.target.value, question.question_type)}
-                  className="text-green-600 focus:ring-green-500"
+                  className="sr-only"
                   id={`field-question_${question.id}-${optIndex}`}
                 />
-                <span className="text-sm font-lato">{option.text}</span>
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                  questionAnswers[question.id] === option.value
+                    ? 'border-[#34D164] bg-[#34D164]'
+                    : 'border-gray-300'
+                }`}>
+                  {questionAnswers[question.id] === option.value && (
+                    <div className="w-2 h-2 bg-white rounded-full" />
+                  )}
+                </div>
+                <span className={`text-sm font-lato flex-1 ${
+                  questionAnswers[question.id] === option.value ? 'text-[#121E3C] font-medium' : 'text-gray-700'
+                }`}>{option.text}</span>
               </label>
             ))}
             {(() => {
@@ -1319,21 +1345,42 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       
       case 'multiple_choice_multiple':
         return (
-          <div className="space-y-2">
-            {question.options?.map((option, optIndex) => (
-              <label key={optIndex} className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  value={option.value}
-                  checked={(questionAnswers[question.id] || []).includes(option.value)}
-                onChange={(e) => handleQuestionAnswer(question.id, option.value, question.question_type)}
-                className="text-green-600 focus:ring-green-500 rounded"
-                name={`question_${question.id}`}
-                id={`field-question_${question.id}-${optIndex}`}
-              />
-              <span className="text-sm font-lato">{option.text}</span>
-            </label>
-            ))}
+          <div className="space-y-3">
+            {question.options?.map((option, optIndex) => {
+              const isSelected = (questionAnswers[question.id] || []).includes(option.value);
+              return (
+                <label 
+                  key={optIndex} 
+                  className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                    isSelected
+                      ? 'border-[#34D164] bg-[#34D164]/5'
+                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    value={option.value}
+                    checked={isSelected}
+                    onChange={(e) => handleQuestionAnswer(question.id, option.value, question.question_type)}
+                    className="sr-only"
+                    name={`question_${question.id}`}
+                    id={`field-question_${question.id}-${optIndex}`}
+                  />
+                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                    isSelected
+                      ? 'border-[#34D164] bg-[#34D164]'
+                      : 'border-gray-300'
+                  }`}>
+                    {isSelected && (
+                      <Check size={12} className="text-white" />
+                    )}
+                  </div>
+                  <span className={`text-sm font-lato flex-1 ${
+                    isSelected ? 'text-[#121E3C] font-medium' : 'text-gray-700'
+                  }`}>{option.text}</span>
+                </label>
+              );
+            })}
             {(() => {
               const selected = questionAnswers[question.id] || [];
               const hasOther = (question.options || []).some(opt => String(opt.value).toLowerCase() === 'other' || String(opt.text).toLowerCase() === 'other');
@@ -1901,7 +1948,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#34D164]"></div>
                     <span className="ml-3 text-gray-500 font-lato text-sm">Loading questions...</span>
                   </div>
-                ) : tradeQuestions.length > 0 ? (
+                ) : tradeQuestions.length > 0 && !showQuestionsModal ? (
                   <>
                     <div 
                       onClick={() => setShowQuestionsModal(true)}
@@ -1938,13 +1985,13 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                     </div>
                     {errors.questions && <p className="text-red-500 text-xs mt-1 font-lato">{errors.questions}</p>}
                   </>
-                ) : (
+                ) : tradeQuestions.length === 0 && !loadingQuestions ? (
                   <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
                     <p className="text-yellow-700 text-sm font-lato">
                       No questions configured for this category yet.
                     </p>
                   </div>
-                )}
+                ) : null}
               </div>
             )}
           </div>
@@ -2300,8 +2347,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                       }`}
                     />
                   </div>
-                  <p className="text-xs text-gray-400 mt-1 font-lato">Enter your number with or without the leading 0</p>
-                  {errors.homeowner_phone && <p className="text-red-500 text-xs mt-1 font-lato">{errors.homeowner_phone}</p>}
+                                    {errors.homeowner_phone && <p className="text-red-500 text-xs mt-1 font-lato">{errors.homeowner_phone}</p>}
                 </div>
 
                 {/* Privacy Notice */}
@@ -2677,7 +2723,12 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                 </div>
                 <button
                   type="button"
-                  onClick={() => setShowQuestionsModal(false)}
+                  onClick={() => {
+                    setShowQuestionsModal(false);
+                    if (!questionsCompleted) {
+                      setShowQuizFeedbackModal(true);
+                    }
+                  }}
                   className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
                 >
                   <span className="text-gray-500 text-lg">×</span>
@@ -2741,6 +2792,9 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                   onClick={() => {
                     if (currentQuestionIndex === 0) {
                       setShowQuestionsModal(false);
+                      if (!questionsCompleted) {
+                        setShowQuizFeedbackModal(true);
+                      }
                     } else {
                       goToPreviousQuestion();
                     }
@@ -2838,6 +2892,67 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
             <div className="flex gap-3">
               <Button variant="outline" className="w-full font-lato" onClick={() => setShowReviewModal(false)}>Edit Answers</Button>
               <Button className="w-full text-white font-lato" style={{backgroundColor: '#34D164'}} onClick={() => { setShowReviewModal(false); nextStep(); }}>Confirm and Continue</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quiz Feedback Modal */}
+      {showQuizFeedbackModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full overflow-hidden">
+            <div className="p-6">
+              <h3 className="text-xl font-bold font-montserrat text-[#121E3C] mb-2">
+                We'd love your feedback
+              </h3>
+              <p className="text-gray-500 text-sm font-lato mb-4">
+                Help us improve by telling us why you cancelled the quiz.
+              </p>
+              
+              <textarea
+                value={quizFeedback}
+                onChange={(e) => setQuizFeedback(e.target.value)}
+                placeholder="What made you cancel? Any suggestions for improvement?"
+                rows={4}
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl font-lato text-sm focus:border-[#34D164] focus:ring-[#34D164]/20 focus:outline-none resize-none"
+              />
+            </div>
+            
+            <div className="p-4 bg-gray-50 border-t border-gray-100 flex gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowQuizFeedbackModal(false);
+                  setQuizFeedback('');
+                  // Clear quiz progress and reset
+                  setQuestionAnswers({});
+                  resetQuestionNavigation();
+                  setQuestionsCompleted(false);
+                  updateFormData('category', '');
+                }}
+                className="flex-1 h-11 rounded-xl font-lato"
+              >
+                Skip
+              </Button>
+              <Button
+                type="button"
+                onClick={() => {
+                  // Could send feedback to an API here in the future
+                  console.log('Quiz feedback:', quizFeedback);
+                  setShowQuizFeedbackModal(false);
+                  setQuizFeedback('');
+                  // Clear quiz progress and reset
+                  setQuestionAnswers({});
+                  resetQuestionNavigation();
+                  setQuestionsCompleted(false);
+                  updateFormData('category', '');
+                }}
+                className="flex-1 h-11 rounded-xl text-white font-lato"
+                style={{ backgroundColor: '#34D164' }}
+              >
+                Submit Feedback
+              </Button>
             </div>
           </div>
         </div>
