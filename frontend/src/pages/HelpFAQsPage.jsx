@@ -173,11 +173,11 @@ const HelpFAQsPage = () => {
       },
       {
         question: "Is ServiceHub available across Nigeria?",
-        answer: "We currently operate in 8 Nigerian states, with a growing network of verified professionals and plans to expand to more states. You can still browse and post jobs from anywhere; we’ll match you where coverage is available."
+        answer: "We currently operate in 8 Nigerian states, with a growing network of verified professionals and plans to expand to more states."
       },
       {
         question: "What types of jobs are available on ServiceHub?",
-        answer: "ServiceHub covers 43+ trade categories including plumbing, electrical work, painting, construction, carpentry, cleaning services, landscaping, and much more. Jobs range from small repairs to large renovation projects."
+        answer: "ServiceHub covers 29+ trade categories including plumbing, electrical work, painting, construction, carpentry, cleaning services, landscaping, and much more. Jobs range from small repairs to large renovation projects."
       },
       {
         question: "What if I have a dispute with a tradesperson or customer?",
@@ -199,7 +199,7 @@ const HelpFAQsPage = () => {
       },
       {
         question: "Are there any hidden fees for homeowners?",
-        answer: "Absolutely not! serviceHub is 100% free for homeowners with no hidden charges. You can post unlimited jobs, receive interest from tradespeople, view their profiles and portfolios, communicate with them, and hire them - all completely free. Our revenue comes from tradespeople who pay to access job opportunities, not from homeowners."
+        answer: "Absolutely not! serviceHub is 100% free for homeowners with no hidden charges. You can post unlimited jobs, receive interest from tradespeople, view their profiles and portfolios, communicate with them, and hire them - all completely free."
       },
       {
         question: "How much does it cost to use serviceHub as a homeowner?",
@@ -245,7 +245,7 @@ const HelpFAQsPage = () => {
       },
       {
         question: "Can I set my own prices?",
-        answer: "Yes, you have full control over your pricing. You can set hourly rates, fixed prices for specific services, or provide custom quotes for each job. Our platform provides pricing guidance based on market rates in your area."
+        answer: "Yes, you have full control over your pricing. You can set your rate, fixed prices for specific services, or provide custom quotes for each job. Our platform provides pricing guidance based on market rates in your area."
       },
       {
         question: "How can I improve my profile visibility and get hired?",
@@ -253,7 +253,7 @@ const HelpFAQsPage = () => {
       },
       {
         question: "Can I refer other tradespeople to ServiceHub?",
-        answer: "Yes! We have a referral program where you earn rewards for referring other qualified tradespeople. When your referrals complete verification and become active, you earn bonus coins that can be used on the platform."
+        answer: "Yes! We have a referral program where you earn rewards for referring other qualified tradespeople. When your referrals complete verification and become active, you earn bonus points that can be used on the platform."
       }
     ],
     payments: [
@@ -301,7 +301,7 @@ const HelpFAQsPage = () => {
       },
       {
         question: "How do I change my email address?",
-        answer: "Go to Account Settings and update your email address. You'll need to verify the new email address before the change takes effect. This ensures account security."
+        answer: "You need to contact customer support, as you can not change your email adress."
       },
       {
         question: "What if my account gets suspended?",
