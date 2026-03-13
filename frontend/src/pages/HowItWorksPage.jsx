@@ -333,7 +333,7 @@ const HowItWorksPage = () => {
                         {stepData.details.slice(0, 3).map((detail, detailIndex) => (
                           <div key={detailIndex} className="flex items-start gap-2">
                             <div className="w-1 h-1 bg-[#34D164] rounded-full mt-1.5 shrink-0" />
-                            <span className="text-xs font-lato text-gray-400">{detail}</span>
+                            <span className="text-sm font-lato text-gray-500">{detail}</span>
                           </div>
                         ))}
                       </div>

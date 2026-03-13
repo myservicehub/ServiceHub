@@ -53,12 +53,12 @@ const TradespersonPromoModal = ({ isOpen, onClose, onGetStarted }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-3xl max-w-5xl w-full max-h-[90vh] overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-300">
-        <div className="flex flex-col lg:flex-row min-h-[500px] lg:min-h-[560px]">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+      <div className="bg-white rounded-t-3xl sm:rounded-3xl max-w-5xl w-full max-h-[85vh] sm:max-h-[90vh] overflow-y-auto shadow-2xl animate-in fade-in slide-in-from-bottom-4 sm:zoom-in duration-300">
+        <div className="flex flex-col lg:flex-row lg:min-h-[560px]">
           
           {/* Image Section with Social Links */}
-          <div className="relative lg:w-[46%] h-48 lg:h-auto overflow-hidden">
+          <div className="relative lg:w-[46%] h-32 sm:h-48 lg:h-auto overflow-hidden flex-shrink-0">
             <img 
               src="/stock/bg8.jpg" 
               alt="Professional tradesperson" 
@@ -85,7 +85,7 @@ const TradespersonPromoModal = ({ isOpen, onClose, onGetStarted }) => {
           </div>
 
           {/* Right Side - Content */}
-          <div className="flex-1 p-6 lg:p-10 flex flex-col justify-center relative bg-white">
+          <div className="flex-1 p-5 sm:p-6 lg:p-10 flex flex-col justify-center relative bg-white">
             {/* Close Button */}
             <button
               onClick={onClose}
@@ -102,23 +102,23 @@ const TradespersonPromoModal = ({ isOpen, onClose, onGetStarted }) => {
             </div>
 
             {/* Heading */}
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-montserrat text-[#121E3C] mb-4 leading-tight">
+            <h2 className="text-xl sm:text-2xl lg:text-4xl font-bold font-montserrat text-[#121E3C] mb-3 sm:mb-4 leading-tight">
               Join Nigeria's #1 Platform for Tradespeople
             </h2>
             
-            <p className="text-gray-500 font-lato mb-6 text-sm lg:text-base leading-relaxed max-w-lg">
+            <p className="text-gray-500 font-lato mb-4 sm:mb-6 text-xs sm:text-sm lg:text-base leading-relaxed max-w-lg">
               Connect with homeowners across Nigeria and grow your business. 
               Registration is <span className="text-[#34D164] font-semibold">completely free</span> and takes just 10 minutes.
             </p>
 
             {/* Benefits */}
-            <div className="space-y-3 mb-8">
+            <div className="space-y-2 sm:space-y-3 mb-5 sm:mb-8">
               {benefits.map((benefit, idx) => (
-                <div key={idx} className="flex items-center gap-3">
-                  <div className="w-9 h-9 bg-[#34D164]/10 rounded-xl flex items-center justify-center shrink-0">
-                    <benefit.icon size={18} className="text-[#34D164]" />
+                <div key={idx} className="flex items-center gap-2 sm:gap-3">
+                  <div className="w-8 h-8 sm:w-9 sm:h-9 bg-[#34D164]/10 rounded-xl flex items-center justify-center shrink-0">
+                    <benefit.icon size={16} className="text-[#34D164] sm:w-[18px] sm:h-[18px]" />
                   </div>
-                  <span className="text-gray-700 font-lato text-sm lg:text-base">{benefit.text}</span>
+                  <span className="text-gray-700 font-lato text-xs sm:text-sm lg:text-base">{benefit.text}</span>
                 </div>
               ))}
             </div>
@@ -126,15 +126,15 @@ const TradespersonPromoModal = ({ isOpen, onClose, onGetStarted }) => {
             {/* CTA Button */}
             <Button
               onClick={handleGetStarted}
-              className="w-full sm:w-auto bg-[#34D164] hover:bg-[#2ab854] text-white py-4 px-8 text-base font-semibold rounded-xl transition-all duration-300 hover:scale-[1.02] shadow-lg shadow-[#34D164]/25 flex items-center justify-center gap-2 font-montserrat"
+              className="w-full sm:w-auto bg-[#34D164] hover:bg-[#2ab854] text-white py-3 sm:py-4 px-6 sm:px-8 text-sm sm:text-base font-semibold rounded-xl transition-all duration-300 hover:scale-[1.02] shadow-lg shadow-[#34D164]/25 flex items-center justify-center gap-2 font-montserrat"
             >
               Start Free Registration
-              <ArrowRight size={18} />
+              <ArrowRight size={16} className="sm:w-[18px] sm:h-[18px]" />
             </Button>
 
             {/* Trust Indicators */}
-            <div className="mt-6 pt-6 border-t border-gray-100">
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-gray-400 font-lato">
+            <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-100">
+              <div className="flex flex-wrap items-center gap-x-4 sm:gap-x-5 gap-y-2 text-[10px] sm:text-xs text-gray-400 font-lato">
                 <div className="flex items-center gap-1.5">
                   <CheckCircle size={14} className="text-[#34D164]" />
                   <span>Free to join</span>
@@ -151,7 +151,7 @@ const TradespersonPromoModal = ({ isOpen, onClose, onGetStarted }) => {
             </div>
 
             {/* Mobile Social Links */}
-            <div className="flex lg:hidden items-center justify-center gap-4 mt-6 pt-5 border-t border-gray-100">
+            <div className="flex lg:hidden items-center justify-center gap-4 mt-4 sm:mt-6 pt-4 sm:pt-5 border-t border-gray-100">
               <span className="text-gray-400 text-xs font-lato">Follow us:</span>
               {socialLinks.map((social) => (
                 <a

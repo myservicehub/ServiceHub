@@ -8,59 +8,67 @@ import ForgotPasswordForm from './ForgotPasswordForm';
 
 // User Type Selection Component
 const UserTypeSelection = ({ onSelectTradesperson, onSelectHomeowner, onSignIn }) => (
-  <div className="p-8 md:p-10">
-    <div className="text-center mb-8">
-      <h2 className="text-2xl font-bold font-montserrat text-[#121E3C] mb-2">
+  <div className="p-5 sm:p-8 md:p-10 max-h-[80vh] overflow-y-auto">
+    <div className="text-center mb-5 sm:mb-8">
+      <h2 className="text-xl sm:text-2xl font-bold font-montserrat text-[#121E3C] mb-2">
         How would you like to use ServiceHub?
       </h2>
-      <p className="text-gray-500 font-lato text-sm">
+      <p className="text-gray-500 font-lato text-xs sm:text-sm">
         Choose how you'd like to get started
       </p>
     </div>
 
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 gap-3 sm:gap-4">
       {/* Tradesperson Option */}
       <button
         onClick={onSelectTradesperson}
-        className="group relative p-6 border-2 border-gray-200 rounded-2xl hover:border-[#34D164] hover:bg-[#34D164]/5 transition-all duration-200 text-left"
+        className="group relative p-4 sm:p-6 border-2 border-gray-200 rounded-2xl hover:border-[#34D164] hover:bg-[#34D164]/5 transition-all duration-200 text-left"
       >
-        <div className="w-14 h-14 rounded-xl bg-[#34D164]/10 flex items-center justify-center mb-4 group-hover:bg-[#34D164]/20 transition-colors">
-          <Wrench className="h-7 w-7 text-[#34D164]" />
-        </div>
-        <h3 className="text-lg font-semibold font-montserrat text-[#121E3C] mb-2">
-          I'm a Tradesperson
-        </h3>
-        <p className="text-sm text-gray-500 font-lato mb-4">
-          Join our network of skilled professionals and connect with customers looking for your services.
-        </p>
-        <div className="flex items-center text-[#34D164] text-sm font-medium font-lato group-hover:gap-2 transition-all">
-          <span>Create your profile</span>
-          <ArrowRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-[#34D164]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#34D164]/20 transition-colors">
+            <Wrench className="h-6 w-6 sm:h-7 sm:w-7 text-[#34D164]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-base sm:text-lg font-semibold font-montserrat text-[#121E3C] mb-1">
+              I'm a Tradesperson
+            </h3>
+            <p className="text-xs sm:text-sm text-gray-500 font-lato mb-2 sm:mb-3">
+              Join our network of skilled professionals and connect with customers looking for your services.
+            </p>
+            <div className="flex items-center text-[#34D164] text-xs sm:text-sm font-medium font-lato group-hover:gap-2 transition-all">
+              <span>Create your profile</span>
+              <ArrowRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
         </div>
       </button>
 
       {/* Homeowner Option */}
       <button
         onClick={onSelectHomeowner}
-        className="group relative p-6 border-2 border-gray-200 rounded-2xl hover:border-[#121E3C] hover:bg-[#121E3C]/5 transition-all duration-200 text-left"
+        className="group relative p-4 sm:p-6 border-2 border-gray-200 rounded-2xl hover:border-[#121E3C] hover:bg-[#121E3C]/5 transition-all duration-200 text-left"
       >
-        <div className="w-14 h-14 rounded-xl bg-[#121E3C]/10 flex items-center justify-center mb-4 group-hover:bg-[#121E3C]/20 transition-colors">
-          <Home className="h-7 w-7 text-[#121E3C]" />
-        </div>
-        <h3 className="text-lg font-semibold font-montserrat text-[#121E3C] mb-2">
-          I need a Service
-        </h3>
-        <p className="text-sm text-gray-500 font-lato mb-4">
-          Find trusted tradespeople in your area to help with your home projects.
-        </p>
-        <div className="flex items-center text-[#121E3C] text-sm font-medium font-lato group-hover:gap-2 transition-all">
-          <span>Find a tradesperson</span>
-          <ArrowRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-[#121E3C]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#121E3C]/20 transition-colors">
+            <Home className="h-6 w-6 sm:h-7 sm:w-7 text-[#121E3C]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-base sm:text-lg font-semibold font-montserrat text-[#121E3C] mb-1">
+              I need a Service
+            </h3>
+            <p className="text-xs sm:text-sm text-gray-500 font-lato mb-2 sm:mb-3">
+              Find trusted tradespeople in your area to help with your home projects.
+            </p>
+            <div className="flex items-center text-[#121E3C] text-xs sm:text-sm font-medium font-lato group-hover:gap-2 transition-all">
+              <span>Find a tradesperson</span>
+              <ArrowRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
         </div>
       </button>
     </div>
 
-    <p className="text-center text-xs text-gray-400 font-lato mt-6">
+    <p className="text-center text-xs text-gray-400 font-lato mt-5 sm:mt-6">
       Already have an account? <button onClick={onSignIn} className="text-[#34D164] font-medium hover:underline">Sign in</button>
     </p>
   </div>
