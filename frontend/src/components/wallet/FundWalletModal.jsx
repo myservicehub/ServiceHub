@@ -131,27 +131,29 @@ const FundWalletModal = ({ isOpen, onClose, onSuccess }) => {
   const calculateCoins = (naira) => Math.floor(naira / 100);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-gray-800">Fund Wallet</h2>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-xl">
+        <div className="p-5 sm:p-6">
+          <div className="flex justify-between items-center mb-5">
+            <h2 className="text-lg font-bold text-[#121E3C] font-montserrat">Fund Wallet</h2>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 text-2xl"
+              className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
             >
-              ×
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
           </div>
 
           {/* Bank Details */}
           {bankDetails && (
-            <div className="bg-blue-50 p-4 rounded-lg mb-6">
-              <h3 className="font-semibold text-blue-800 mb-2">Transfer to ServiceHub Account</h3>
-              <div className="space-y-1 text-sm text-blue-700">
-                <p><strong>Bank:</strong> {bankDetails.bank_name}</p>
-                <p><strong>Account Name:</strong> {bankDetails.account_name}</p>
-                <p><strong>Account Number:</strong> {bankDetails.account_number}</p>
+            <div className="bg-[#121E3C]/5 border border-[#121E3C]/10 p-4 rounded-xl mb-5">
+              <h3 className="font-semibold text-[#121E3C] mb-2 text-sm font-montserrat">Transfer to ServiceHub Account</h3>
+              <div className="space-y-1.5 text-xs sm:text-sm text-gray-600 font-lato">
+                <p><span className="text-gray-400">Bank:</span> {bankDetails.bank_name}</p>
+                <p><span className="text-gray-400">Account Name:</span> {bankDetails.account_name}</p>
+                <p><span className="text-gray-400">Account Number:</span> <span className="font-mono font-medium text-[#121E3C]">{bankDetails.account_number}</span></p>
               </div>
             </div>
           )}
@@ -159,7 +161,7 @@ const FundWalletModal = ({ isOpen, onClose, onSuccess }) => {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Amount Input */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 font-lato">
                 Amount to Fund (₦)
               </label>
               <input
@@ -170,11 +172,11 @@ const FundWalletModal = ({ isOpen, onClose, onSuccess }) => {
                 min="100"
                 step="100"
                 placeholder="Enter amount (min. ₦100)"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164] focus:border-[#34D164] text-sm font-lato"
                 required
               />
               {formData.amount_naira && (
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-xs text-[#34D164] mt-1.5 font-medium font-lato">
                   = {calculateCoins(parseInt(formData.amount_naira) || 0)} coins
                 </p>
               )}
@@ -182,15 +184,15 @@ const FundWalletModal = ({ isOpen, onClose, onSuccess }) => {
 
             {/* Payment Proof Upload */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 font-lato">
                 Payment Proof (Screenshot)
               </label>
               
               <div
-                className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                className={`border-2 border-dashed rounded-xl p-4 sm:p-6 text-center transition-colors ${
                   dragActive 
-                    ? 'border-green-500 bg-green-50' 
-                    : 'border-gray-300 hover:border-gray-400'
+                    ? 'border-[#34D164] bg-[#34D164]/5' 
+                    : 'border-gray-200 hover:border-gray-300'
                 }`}
                 onDragEnter={handleDrag}
                 onDragLeave={handleDrag}
@@ -235,7 +237,7 @@ const FundWalletModal = ({ isOpen, onClose, onSuccess }) => {
                     />
                     <label
                       htmlFor="proof-upload"
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded cursor-pointer inline-block"
+                      className="bg-[#34D164] hover:bg-[#2FBD59] text-white px-4 py-2 rounded-lg cursor-pointer inline-block text-sm font-medium font-lato"
                     >
                       Browse Files
                     </label>
@@ -245,9 +247,9 @@ const FundWalletModal = ({ isOpen, onClose, onSuccess }) => {
             </div>
 
             {/* Instructions */}
-            <div className="bg-yellow-50 p-3 rounded-lg">
-              <h4 className="text-sm font-medium text-yellow-800 mb-1">Instructions:</h4>
-              <ol className="text-xs text-yellow-700 space-y-1">
+            <div className="bg-amber-50 border border-amber-100 p-3 rounded-xl">
+              <h4 className="text-xs font-medium text-amber-700 mb-1.5 font-montserrat">Instructions:</h4>
+              <ol className="text-[10px] sm:text-xs text-amber-600 space-y-1 font-lato">
                 <li>1. Transfer the amount to the account above</li>
                 <li>2. Take a screenshot of the successful transfer</li>
                 <li>3. Upload the screenshot and submit</li>
@@ -260,14 +262,14 @@ const FundWalletModal = ({ isOpen, onClose, onSuccess }) => {
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                className="flex-1 px-4 py-2.5 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors text-sm font-medium font-lato"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading || !formData.amount_naira || !formData.proof_image}
-                className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white rounded-lg transition-colors"
+                className="flex-1 px-4 py-2.5 bg-[#34D164] hover:bg-[#2FBD59] disabled:bg-gray-300 text-white rounded-xl transition-colors text-sm font-medium shadow-md shadow-[#34D164]/20 font-lato"
               >
                 {loading ? 'Submitting...' : 'Submit Request'}
               </button>

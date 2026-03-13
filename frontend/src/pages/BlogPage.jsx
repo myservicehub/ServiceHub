@@ -467,7 +467,7 @@ const BlogPage = () => {
         <Header />
         
         {/* Hero for single post */}
-        <section className="relative py-12 lg:py-14 overflow-hidden">
+        <section className="relative pt-24 sm:pt-28 lg:pt-32 pb-12 lg:pb-14 overflow-hidden">
           <div className="absolute inset-0">
             {selectedPost.featured_image ? (
               <img src={selectedPost.featured_image} alt="" className="w-full h-full object-cover" />
@@ -481,7 +481,7 @@ const BlogPage = () => {
             <div className="max-w-3xl mx-auto">
               <button
                 onClick={() => { setSelectedPost(null); navigate('/blog'); }}
-                className="flex items-center text-white/70 hover:text-white mb-6 text-sm font-lato"
+                className="flex items-center text-white/70 hover:text-white mb-4 sm:mb-6 text-sm font-lato"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Blog
@@ -529,7 +529,7 @@ const BlogPage = () => {
               <article className="bg-white rounded-2xl border border-gray-100 p-6 md:p-8">
                 {/* Excerpt */}
                 {selectedPost.excerpt && (
-                  <div className="text-gray-600 font-lato mb-6 pb-6 border-b border-gray-100 text-sm leading-relaxed">
+                  <div className="text-gray-700 font-lato font-semibold mb-6 pb-6 border-b border-gray-100 text-base leading-relaxed">
                     {selectedPost.excerpt}
                   </div>
                 )}
@@ -596,7 +596,7 @@ const BlogPage = () => {
       <Header />
       
       {/* Hero Section */}
-      <section className="relative py-14 lg:py-16 overflow-hidden">
+      <section className="relative pt-24 sm:pt-28 lg:pt-32 pb-14 lg:pb-16 overflow-hidden">
         <div className="absolute inset-0">
           <img 
             src="/stock/bg9.jpg" 

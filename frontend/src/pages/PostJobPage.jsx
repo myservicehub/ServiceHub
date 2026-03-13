@@ -148,7 +148,7 @@ const PostJobPage = () => {
       <Header />
       <main className="min-h-screen">
         {/* Hero Section */}
-        <section className="relative py-12 lg:py-14 overflow-hidden">
+        <section className="relative pt-24 sm:pt-28 lg:pt-32 pb-12 lg:pb-14 overflow-hidden">
           <div className="absolute inset-0">
             <img 
               src="/stock/bg4.jpg" 
@@ -169,17 +169,17 @@ const PostJobPage = () => {
               </p>
               
               {/* Stats */}
-              <div className="flex justify-center gap-8 mt-8">
+              <div className="flex flex-wrap justify-center gap-4 sm:gap-8 mt-6 sm:mt-8">
                 {[
                   { icon: Users, label: 'Multiple Quotes' },
                   { icon: Shield, label: 'Verified Pros' },
                   { icon: Award, label: 'Quality Work' }
                 ].map((item, idx) => (
                   <div key={idx} className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-white/10 backdrop-blur-sm rounded-lg flex items-center justify-center">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 bg-white/10 backdrop-blur-sm rounded-lg flex items-center justify-center">
                       <item.icon size={14} className="text-[#34D164]" />
                     </div>
-                    <span className="text-white/80 text-xs font-lato">{item.label}</span>
+                    <span className="text-white/80 text-[10px] sm:text-xs font-lato">{item.label}</span>
                   </div>
                 ))}
               </div>
@@ -189,7 +189,7 @@ const PostJobPage = () => {
 
         {/* Form Section */}
         <section 
-          className="py-10 lg:py-12"
+          className="py-8 sm:py-10 lg:py-12"
           style={{
             backgroundImage: `linear-gradient(rgba(255,255,255,0.97), rgba(255,255,255,0.97)), 
               linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px),
@@ -197,7 +197,7 @@ const PostJobPage = () => {
             backgroundSize: '100% 100%, 20px 20px, 20px 20px'
           }}
         >
-          <div className="container mx-auto px-6 md:px-8 lg:px-12">
+          <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12">
             {/* Job Posting Form */}
             <JobPostingForm onJobPosted={handleJobComplete} initialCategory={initialCategory} initialState={initialState} />
           </div>

@@ -163,46 +163,44 @@ const JobEditModal = ({
   if (!isOpen || !job) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-xl">
         {/* Header */}
-        <div className="border-b p-6 flex justify-between items-center sticky top-0 bg-white">
+        <div className="border-b border-gray-100 px-6 py-5 flex justify-between items-center sticky top-0 bg-white z-10">
           <div>
-            <h2 className="text-xl font-semibold font-montserrat">Edit Job</h2>
-            <p className="text-gray-600 text-sm">Only budget can be modified</p>
+            <h2 className="text-lg font-semibold font-montserrat text-[#121E3C]">Edit Job</h2>
+            <p className="text-gray-500 text-sm font-lato">Only budget can be modified</p>
           </div>
           
-          <Button
-            variant="ghost"
-            size="sm"
+          <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
+            className="p-2 rounded-xl hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
           >
             <X className="w-5 h-5" />
-          </Button>
+          </button>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Edit Notice */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex items-center gap-2">
-              <div className="text-blue-600">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                </svg>
+          <div className="bg-[#121E3C]/5 border border-[#121E3C]/10 rounded-xl p-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-[#34D164]/10 rounded-lg flex-shrink-0">
+                <DollarSign className="w-4 h-4 text-[#34D164]" />
               </div>
               <div>
-                <p className="text-blue-800 font-medium">Budget Edit Only</p>
-                <p className="text-blue-700 text-sm">You can only modify the minimum and maximum budget. All other job details are read-only.</p>
+                <p className="text-[#121E3C] font-medium text-sm font-montserrat">Budget Edit Only</p>
+                <p className="text-gray-500 text-xs font-lato mt-0.5">You can only modify the minimum and maximum budget. All other job details are read-only.</p>
               </div>
             </div>
           </div>
 
           {/* Job Details Section */}
           <div className="space-y-4">
-            <h3 className="text-lg font-medium flex items-center gap-2">
-              <Tag className="w-5 h-5" />
+            <h3 className="text-sm font-semibold text-[#121E3C] flex items-center gap-2 font-montserrat">
+              <div className="p-1.5 bg-[#121E3C]/10 rounded-lg">
+                <Tag className="w-4 h-4 text-[#121E3C]" />
+              </div>
               Job Details
             </h3>
             
@@ -263,8 +261,10 @@ const JobEditModal = ({
 
           {/* Location Section */}
           <div className="space-y-4">
-            <h3 className="text-lg font-medium flex items-center gap-2">
-              <MapPin className="w-5 h-5" />
+            <h3 className="text-sm font-semibold text-[#121E3C] flex items-center gap-2 font-montserrat">
+              <div className="p-1.5 bg-[#121E3C]/10 rounded-lg">
+                <MapPin className="w-4 h-4 text-[#121E3C]" />
+              </div>
               Location Details
             </h3>
             
@@ -338,8 +338,10 @@ const JobEditModal = ({
 
           {/* Budget Section */}
           <div className="space-y-4">
-            <h3 className="text-lg font-medium flex items-center gap-2">
-              <DollarSign className="w-5 h-5" />
+            <h3 className="text-sm font-semibold text-[#121E3C] flex items-center gap-2 font-montserrat">
+              <div className="p-1.5 bg-[#34D164]/10 rounded-lg">
+                <DollarSign className="w-4 h-4 text-[#34D164]" />
+              </div>
               Budget (Editable)
             </h3>
             
@@ -354,7 +356,7 @@ const JobEditModal = ({
                   onChange={(e) => handleInputChange('budget_min', e.target.value)}
                   placeholder="e.g., 50000"
                   min="0"
-                  className="border-green-300 focus:border-green-500 focus:ring-green-500"
+                  className="border-[#34D164]/30 focus:border-[#34D164] focus:ring-[#34D164] rounded-xl"
                 />
               </div>
               
@@ -368,19 +370,20 @@ const JobEditModal = ({
                   onChange={(e) => handleInputChange('budget_max', e.target.value)}
                   placeholder="e.g., 100000"
                   min="0"
-                  className="border-green-300 focus:border-green-500 focus:ring-green-500"
+                  className="border-[#34D164]/30 focus:border-[#34D164] focus:ring-[#34D164] rounded-xl"
                 />
               </div>
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-end space-x-3 pt-6 border-t">
+          <div className="flex justify-end gap-3 pt-6 border-t border-gray-100">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
               disabled={saving}
+              className="rounded-xl font-lato"
             >
               Cancel
             </Button>
@@ -388,7 +391,7 @@ const JobEditModal = ({
             <Button
               type="submit"
               disabled={saving}
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-[#34D164] hover:bg-[#2FBD59] text-white rounded-xl font-lato shadow-md shadow-[#34D164]/20"
             >
               {saving ? (
                 <>

@@ -232,7 +232,7 @@ const PartnershipPage = () => {
       <Header />
       
       {/* Hero Section */}
-      <section className="relative py-16 lg:py-20 overflow-hidden">
+      <section className="relative pt-24 sm:pt-28 lg:pt-32 pb-16 lg:pb-20 overflow-hidden">
         <div className="absolute inset-0">
           <img 
             src="/stock/bg8.jpg" 

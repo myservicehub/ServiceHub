@@ -985,7 +985,7 @@ const TradeCategoryDetailPage = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <section className="relative py-20 overflow-hidden">
+        <section className="relative pt-28 sm:pt-32 lg:pt-36 pb-20 overflow-hidden">
           <div className="absolute inset-0 bg-[#121E3C]" />
           <div className="container relative z-10 mx-auto px-6 md:px-8 lg:px-12">
             <div className="max-w-xl mx-auto text-center">
@@ -1013,7 +1013,7 @@ const TradeCategoryDetailPage = () => {
       <Header />
       
       {/* Hero Section */}
-      <section className="relative py-16 lg:py-20 overflow-hidden">
+      <section className="relative pt-24 sm:pt-28 lg:pt-32 pb-16 lg:pb-20 overflow-hidden">
         <div className="absolute inset-0">
           <img 
             src="/stock/bg5.jpg" 
@@ -1067,21 +1067,21 @@ const TradeCategoryDetailPage = () => {
       <section className="relative py-8 overflow-hidden">
         <div className="absolute inset-0 bg-[#121E3C]" />
         <div className="container relative z-10 mx-auto px-6 md:px-8 lg:px-12">
-          <div className="max-w-4xl mx-auto grid grid-cols-3 gap-4">
-            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4 text-center">
+          <div className="max-w-4xl mx-auto grid grid-cols-3 gap-2 sm:gap-4">
+            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-3 sm:p-4 text-center">
               <Clock size={18} className="text-[#34D164] mx-auto mb-2" />
               <p className="text-white/50 text-[10px] uppercase tracking-wide mb-1">Duration</p>
-              <p className="text-white font-semibold text-sm">{category.timeframe}</p>
+              <p className="text-white font-semibold text-[11px] sm:text-sm">{category.timeframe}</p>
             </div>
-            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4 text-center">
+            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-3 sm:p-4 text-center">
               <Star size={18} className="text-[#34D164] mx-auto mb-2" />
               <p className="text-white/50 text-[10px] uppercase tracking-wide mb-1">Price Range</p>
-              <p className="text-white font-semibold text-sm">{category.averagePrice}</p>
+              <p className="text-white font-semibold text-[11px] sm:text-sm">{category.averagePrice}</p>
             </div>
-            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4 text-center">
+            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-3 sm:p-4 text-center">
               <Shield size={18} className="text-[#34D164] mx-auto mb-2" />
               <p className="text-white/50 text-[10px] uppercase tracking-wide mb-1">Verified</p>
-              <p className="text-white font-semibold text-sm">Professionals</p>
+              <p className="text-white font-semibold text-[11px] sm:text-sm">Professionals</p>
             </div>
           </div>
         </div>

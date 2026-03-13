@@ -20,7 +20,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../../api/services';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
-import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from '../ui/input-otp';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '../ui/input-otp';
 
 const PaymentPage = ({ formData, onBack, onRegistrationComplete }) => {
   const [bankDetails, setBankDetails] = useState(null);
@@ -370,16 +370,13 @@ const PaymentPage = ({ formData, onBack, onRegistrationComplete }) => {
                   {emailSending ? 'Sending…' : 'Resend code'}
                 </Button>
                 <InputOTP maxLength={6} value={emailOtpCode} onChange={(val) => setEmailOtpCode(val)}>
-                  <InputOTPGroup>
-                    <InputOTPSlot index={0} />
-                    <InputOTPSlot index={1} />
-                    <InputOTPSlot index={2} />
-                  </InputOTPGroup>
-                  <InputOTPSeparator />
-                  <InputOTPGroup>
-                    <InputOTPSlot index={3} />
-                    <InputOTPSlot index={4} />
-                    <InputOTPSlot index={5} />
+                  <InputOTPGroup className="gap-2">
+                    <InputOTPSlot index={0} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
+                    <InputOTPSlot index={1} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
+                    <InputOTPSlot index={2} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
+                    <InputOTPSlot index={3} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
+                    <InputOTPSlot index={4} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
+                    <InputOTPSlot index={5} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
                   </InputOTPGroup>
                 </InputOTP>
                 <Button
@@ -450,16 +447,13 @@ const PaymentPage = ({ formData, onBack, onRegistrationComplete }) => {
                   {phoneSending ? 'Sending…' : 'Resend code'}
                 </Button>
                 <InputOTP maxLength={6} value={phoneOtpCode} onChange={(val) => setPhoneOtpCode(val)}>
-                  <InputOTPGroup>
-                    <InputOTPSlot index={0} />
-                    <InputOTPSlot index={1} />
-                    <InputOTPSlot index={2} />
-                  </InputOTPGroup>
-                  <InputOTPSeparator />
-                  <InputOTPGroup>
-                    <InputOTPSlot index={3} />
-                    <InputOTPSlot index={4} />
-                    <InputOTPSlot index={5} />
+                  <InputOTPGroup className="gap-2">
+                    <InputOTPSlot index={0} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
+                    <InputOTPSlot index={1} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
+                    <InputOTPSlot index={2} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
+                    <InputOTPSlot index={3} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
+                    <InputOTPSlot index={4} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
+                    <InputOTPSlot index={5} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
                   </InputOTPGroup>
                 </InputOTP>
                 <Button

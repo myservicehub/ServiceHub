@@ -1,0 +1,41 @@
+EMAIL: Review Invitation
+SENT TO: Homeowner to review tradesperson after job completion
+FILE LOCATION: backend/services/notifications.py (lines 797-838)
+NOTIFICATION TYPE: REVIEW_INVITATION
+
+=== PLACEHOLDERS ===
+{homeowner_name} - Homeowner's name
+{tradesperson_name} - Tradesperson's name
+{job_title} - Title of the job
+{completion_date} - Date job was completed
+{review_url} - URL to leave a review
+
+=== TEXT TEMPLATE ===
+Subject: Share Your Experience - Review {tradesperson_name}
+
+Hello {homeowner_name},
+
+Your job has been completed! We hope you're satisfied with the work done by {tradesperson_name}.
+
+📋 Job: {job_title}
+👷 Tradesperson: {tradesperson_name}
+📅 Completed: {completion_date}
+⭐ Your review matters!
+
+Help other homeowners by sharing your experience:
+• Rate the quality of work (1-5 stars)
+• Comment on professionalism and timeliness  
+• Upload photos of the completed work
+• Recommend (or not) to other homeowners
+
+Your honest feedback helps build a trusted community and helps {tradesperson_name} grow their business.
+
+📝 Leave Your Review: {review_url}
+
+This invitation expires in 30 days. If you have any issues with the completed work, please contact us immediately.
+
+Best regards,
+serviceHub Team
+
+=== SMS VERSION ===
+🏠 Job completed by {tradesperson_name}! Share your experience and help other homeowners. Leave review: {review_url}

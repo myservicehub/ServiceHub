@@ -42,7 +42,7 @@ const ReviewsPolicyPage = () => {
       <Header />
       
       {/* Hero Section */}
-      <section className="relative py-14 lg:py-16 overflow-hidden">
+      <section className="relative pt-24 sm:pt-28 lg:pt-32 pb-14 lg:pb-16 overflow-hidden">
         <div className="absolute inset-0">
           <img 
             src="/stock/bg9.jpg" 
@@ -118,7 +118,7 @@ const ReviewsPolicyPage = () => {
                 </div>
                 <h2 className="text-lg font-semibold font-montserrat text-[#121E3C]">Introduction</h2>
               </div>
-              <p className="text-gray-600 font-lato text-sm leading-relaxed">
+              <p className="text-gray-600 font-lato text-sm sm:text-base leading-relaxed">
                 At ServiceHub, we believe that <strong className="text-[#121E3C]">trust and transparency</strong> are the foundation of a reliable service marketplace. Reviews and ratings allow homeowners to make informed choices and help skilled tradespeople showcase their professionalism.
               </p>
             </div>
@@ -132,23 +132,23 @@ const ReviewsPolicyPage = () => {
                 <h2 className="text-lg font-semibold font-montserrat text-[#121E3C]">Review Guidelines for Homeowners</h2>
               </div>
               
-              <p className="text-gray-600 font-lato text-sm leading-relaxed mb-5">
+              <p className="text-gray-600 font-lato text-sm sm:text-base leading-relaxed mb-5">
                 We encourage homeowners to submit reviews to build a reliable foundation for future users when looking to hire a tradesperson.
               </p>
 
               {/* When Can Homeowners Leave a Review */}
-              <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-5 mb-4">
+              <div className="bg-blue-50/50 border border-blue-100 rounded-xl px-4 py-5 mb-4">
                 <h3 className="text-sm font-semibold font-montserrat text-[#121E3C] mb-3">
                   When Can Homeowners Leave a Review?
                 </h3>
-                <p className="text-gray-600 font-lato text-xs mb-3">
+                <p className="text-gray-600 font-lato text-sm mb-3">
                   You may leave a review for any tradesperson you have hired via ServiceHub, provided that:
                 </p>
                 <div className="space-y-2">
                   {['The work has started', 'You have paid a deposit or part-payment'].map((item, idx) => (
                     <div key={idx} className="flex items-start gap-2">
                       <CheckCircle size={14} className="text-[#34D164] mt-0.5 shrink-0" />
-                      <span className="text-gray-600 font-lato text-xs">{item}</span>
+                      <span className="text-gray-600 font-lato text-sm sm:text-base">{item}</span>
                     </div>
                   ))}
                 </div>
@@ -160,7 +160,7 @@ const ReviewsPolicyPage = () => {
               </div>
 
               {/* What to Include */}
-              <div className="bg-[#34D164]/5 border border-[#34D164]/10 rounded-xl p-5 mb-4">
+              <div className="bg-[#34D164]/5 border border-[#34D164]/10 rounded-xl px-4 py-5 mb-4">
                 <h3 className="text-sm font-semibold font-montserrat text-[#121E3C] mb-3">
                   What to Include in a Review
                 </h3>
@@ -173,7 +173,7 @@ const ReviewsPolicyPage = () => {
                   ].map((item, idx) => (
                     <div key={idx} className="flex items-start gap-2">
                       <Star size={12} className="text-[#34D164] mt-0.5 shrink-0" />
-                      <span className="text-gray-600 font-lato text-xs">{item}</span>
+                      <span className="text-gray-600 font-lato text-sm sm:text-base">{item}</span>
                     </div>
                   ))}
                 </div>
@@ -189,7 +189,7 @@ const ReviewsPolicyPage = () => {
                     ].map((item, idx) => (
                       <li key={idx} className="flex items-start gap-2">
                         <span className="w-1.5 h-1.5 bg-[#34D164] rounded-full mt-1.5 shrink-0"></span>
-                        <span className="text-gray-600 font-lato text-xs">{item}</span>
+                        <span className="text-gray-600 font-lato text-sm sm:text-base">{item}</span>
                       </li>
                     ))}
                   </ul>
@@ -197,7 +197,7 @@ const ReviewsPolicyPage = () => {
               </div>
 
               {/* What Not to Include */}
-              <div className="bg-red-50/50 border border-red-100 rounded-xl p-5">
+              <div className="bg-red-50/50 border border-red-100 rounded-xl px-4 py-5">
                 <h3 className="text-sm font-semibold font-montserrat text-[#121E3C] mb-3">
                   What Not to Include in a Review
                 </h3>
@@ -210,7 +210,7 @@ const ReviewsPolicyPage = () => {
                   ].map((item, idx) => (
                     <div key={idx} className="flex items-start gap-2">
                       <AlertTriangle size={12} className="text-red-400 mt-0.5 shrink-0" />
-                      <span className="text-gray-600 font-lato text-xs">{item}</span>
+                      <span className="text-gray-600 font-lato text-sm sm:text-base">{item}</span>
                     </div>
                   ))}
                 </div>
@@ -226,7 +226,7 @@ const ReviewsPolicyPage = () => {
                 <h2 className="text-lg font-semibold font-montserrat text-[#121E3C]">When Will ServiceHub Remove a Review?</h2>
               </div>
               
-              <p className="text-gray-600 font-lato text-sm mb-4">
+              <p className="text-gray-600 font-lato text-sm sm:text-base mb-4">
                 We publish all genuine reviews that follow this policy. However, reviews may be removed if:
               </p>
               
@@ -245,7 +245,7 @@ const ReviewsPolicyPage = () => {
                     <span className="w-5 h-5 bg-red-50 rounded-full flex items-center justify-center mt-0.5 shrink-0">
                       <span className="w-1.5 h-1.5 bg-red-400 rounded-full"></span>
                     </span>
-                    <span className="text-gray-600 font-lato text-xs">{item}</span>
+                    <span className="text-gray-600 font-lato text-sm sm:text-base">{item}</span>
                   </div>
                 ))}
               </div>
@@ -260,7 +260,7 @@ const ReviewsPolicyPage = () => {
                 <h2 className="text-lg font-semibold font-montserrat text-[#121E3C]">Review Management</h2>
               </div>
               
-              <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-5 mb-4">
+              <div className="bg-blue-50/50 border border-blue-100 rounded-xl px-4 py-5 mb-4">
                 <h3 className="text-sm font-semibold font-montserrat text-[#121E3C] mb-3">
                   Can a Review Be Edited or Deleted?
                 </h3>
@@ -271,17 +271,17 @@ const ReviewsPolicyPage = () => {
                   ].map((item, idx) => (
                     <div key={idx} className="flex items-start gap-2">
                       <CheckCircle size={14} className="text-[#34D164] mt-0.5 shrink-0" />
-                      <span className="text-gray-600 font-lato text-xs">{item}</span>
+                      <span className="text-gray-600 font-lato text-sm sm:text-base">{item}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="bg-[#34D164]/5 border border-[#34D164]/10 rounded-xl p-5">
+              <div className="bg-[#34D164]/5 border border-[#34D164]/10 rounded-xl px-4 py-5">
                 <h3 className="text-sm font-semibold font-montserrat text-[#121E3C] mb-3">
                   How ServiceHub Processes Reviews
                 </h3>
-                <p className="text-gray-600 font-lato text-xs mb-3">Reviews can only be submitted if:</p>
+                <p className="text-gray-600 font-lato text-sm mb-3">Reviews can only be submitted if:</p>
                 <ol className="space-y-2 mb-4">
                   {[
                     'They are linked to a job posted and hired through ServiceHub',
@@ -290,7 +290,7 @@ const ReviewsPolicyPage = () => {
                   ].map((item, idx) => (
                     <li key={idx} className="flex items-start gap-2">
                       <span className="text-[#34D164] font-bold text-xs">{idx + 1}.</span>
-                      <span className="text-gray-600 font-lato text-xs">{item}</span>
+                      <span className="text-gray-600 font-lato text-sm sm:text-base">{item}</span>
                     </li>
                   ))}
                 </ol>
@@ -316,7 +316,7 @@ const ReviewsPolicyPage = () => {
                 Tradespeople are encouraged to respond to reviews. Responses help build trust with future customers.
               </p>
 
-              <div className="bg-purple-50/50 border border-purple-100 rounded-xl p-5">
+              <div className="bg-purple-50/50 border border-purple-100 rounded-xl px-4 py-5">
                 <h3 className="text-sm font-semibold font-montserrat text-[#121E3C] mb-3">
                   When responding, tradespeople must:
                 </h3>
@@ -330,7 +330,7 @@ const ReviewsPolicyPage = () => {
                   ].map((item, idx) => (
                     <div key={idx} className="flex items-start gap-2">
                       <CheckCircle size={12} className="text-purple-400 mt-0.5 shrink-0" />
-                      <span className="text-gray-600 font-lato text-xs">{item}</span>
+                      <span className="text-gray-600 font-lato text-sm sm:text-base">{item}</span>
                     </div>
                   ))}
                 </div>

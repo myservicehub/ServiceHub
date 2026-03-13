@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Mail, AlertCircle, CheckCircle, ArrowLeft } from 'lucide-react';
+import { Mail, AlertCircle, CheckCircle, ArrowLeft, KeyRound } from 'lucide-react';
 import { useToast } from '../../hooks/use-toast';
 import apiClient from '../../api/client';
 
@@ -99,34 +98,41 @@ const ForgotPasswordForm = ({ onClose, onBackToLogin }) => {
   };
 
   return (
-    <Card className="w-full border-0 shadow-none">
-      <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-bold font-montserrat" style={{color: '#121E3C'}}>
-          {showSuccess ? 'Check Your Email' : 'Forgot Password?'}
-        </CardTitle>
-        <p className="text-gray-600 font-lato">
-          {showSuccess 
-            ? 'We\'ve sent password reset instructions to your email address.' 
-            : 'Enter your email address and we\'ll send you a link to reset your password.'
-          }
-        </p>
-      </CardHeader>
-      
-      <CardContent>
+    <div className="flex min-h-[500px]">
+      {/* Left side - Form */}
+      <div className="flex-1 flex flex-col justify-center px-8 py-10 lg:px-12">
+        {/* Icon */}
+        <div className="flex justify-center mb-6">
+          <div className={`w-16 h-16 rounded-full flex items-center justify-center ${showSuccess ? 'bg-green-100' : 'bg-gray-100'}`}>
+            {showSuccess ? (
+              <CheckCircle className="w-8 h-8 text-green-600" />
+            ) : (
+              <KeyRound className="w-8 h-8 text-gray-400" />
+            )}
+          </div>
+        </div>
+
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-bold font-montserrat text-[#121E3C] mb-2">
+            {showSuccess ? 'Check Your Email' : 'Forgot Password?'}
+          </h2>
+          <p className="text-gray-500 font-lato text-sm">
+            {showSuccess 
+              ? 'We\'ve sent password reset instructions to your email address.' 
+              : 'Enter your email address and we\'ll send you a link to reset your password.'
+            }
+          </p>
+        </div>
+
         {showSuccess ? (
           // Success State
-          <div className="text-center space-y-6">
-            <div className="flex justify-center">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                <CheckCircle size={32} className="text-green-600" />
-              </div>
-            </div>
-            
-            <div className="space-y-3">
-              <p className="text-gray-700 font-lato">
-                If an account with <strong>{email}</strong> exists, you will receive a password reset link shortly.
+          <div className="space-y-6">
+            <div className="text-center space-y-3">
+              <p className="text-gray-700 font-lato text-sm">
+                If an account with <strong className="text-[#121E3C]">{email}</strong> exists, you will receive a password reset link shortly.
               </p>
-              <p className="text-gray-600 font-lato text-sm">
+              <p className="text-gray-500 font-lato text-sm">
                 Didn't receive the email? Check your spam folder or try again.
               </p>
             </div>
@@ -135,15 +141,15 @@ const ForgotPasswordForm = ({ onClose, onBackToLogin }) => {
               <Button
                 onClick={handleTryAgain}
                 variant="outline"
-                className="w-full font-lato"
+                className="w-full h-12 font-lato font-semibold text-sm rounded-xl border-gray-200 hover:bg-gray-50"
               >
                 Try Different Email
               </Button>
               
               <Button
                 onClick={handleBackToLogin}
-                className="w-full text-white font-lato"
-                style={{backgroundColor: '#34D164'}}
+                className="w-full h-12 text-white font-lato font-semibold text-sm rounded-xl hover:opacity-90 transition-all"
+                style={{ backgroundColor: '#34D164' }}
               >
                 Back to Sign In
               </Button>
@@ -151,26 +157,26 @@ const ForgotPasswordForm = ({ onClose, onBackToLogin }) => {
           </div>
         ) : (
           // Form State
-          <form onSubmit={handleSubmit} noValidate className="space-y-4">
+          <form onSubmit={handleSubmit} noValidate className="space-y-5">
             {/* Email Field */}
             <div>
-              <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+              <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
                 Email Address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                 <Input
                   type="email"
-                  placeholder="your.email@example.com"
+                  placeholder="hello@example.com"
                   value={email}
                   onChange={handleEmailChange}
-                  className={`pl-10 font-lato ${errors.email ? 'border-red-500' : ''}`}
+                  className={`pl-11 h-12 font-lato text-sm rounded-xl border-gray-200 focus:border-[#34D164] focus:ring-[#34D164]/20 ${errors.email ? 'border-red-500' : ''}`}
                   disabled={isLoading}
                 />
               </div>
               {errors.email && (
-                <p className="text-red-500 text-sm mt-1 flex items-center">
-                  <AlertCircle size={16} className="mr-1" />
+                <p className="text-red-500 text-sm mt-1.5 flex items-center font-lato">
+                  <AlertCircle size={14} className="mr-1" />
                   {errors.email}
                 </p>
               )}
@@ -178,8 +184,8 @@ const ForgotPasswordForm = ({ onClose, onBackToLogin }) => {
 
             {/* Submit Error */}
             {errors.submit && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                <p className="text-red-700 text-sm flex items-center">
+              <div className="bg-red-50 border border-red-200 rounded-xl p-3">
+                <p className="text-red-700 text-sm flex items-center font-lato">
                   <AlertCircle size={16} className="mr-2" />
                   {errors.submit}
                 </p>
@@ -190,27 +196,48 @@ const ForgotPasswordForm = ({ onClose, onBackToLogin }) => {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full text-white font-lato py-3 disabled:opacity-50"
-              style={{backgroundColor: '#34D164'}}
+              className="w-full h-12 text-white font-lato font-semibold text-sm rounded-xl disabled:opacity-50 hover:opacity-90 transition-all"
+              style={{ backgroundColor: '#34D164' }}
             >
               {isLoading ? 'Sending Reset Link...' : 'Send Reset Link'}
             </Button>
 
             {/* Back to Login */}
-            <div className="text-center pt-4 border-t">
+            <p className="text-center text-gray-500 font-lato text-sm pt-2">
+              Remember your password?{' '}
               <button
                 type="button"
                 onClick={handleBackToLogin}
-                className="text-gray-600 font-lato text-sm hover:text-gray-800 flex items-center justify-center space-x-1"
+                className="text-[#34D164] font-semibold hover:underline"
               >
-                <ArrowLeft size={16} />
-                <span>Back to Sign In</span>
+                Sign in
               </button>
-            </div>
+            </p>
           </form>
         )}
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* Right side - Image with motivational overlay (hidden on medium and smaller screens) */}
+      <div className="hidden lg:block w-[45%] relative">
+        <img
+          src="/stock/bg2.jpeg"
+          alt="Professional tradesperson"
+          className="absolute inset-0 w-full h-full object-cover"
+          loading="lazy"
+          decoding="async"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+        {/* Motivational overlay text */}
+        <div className="absolute bottom-8 left-6 right-6 text-white">
+          <p className="text-lg font-semibold font-montserrat mb-2">
+            Reset your password
+          </p>
+          <p className="text-sm text-white/80 font-lato">
+            We'll help you get back into your account
+          </p>
+        </div>
+      </div>
+    </div>
   );
 };
 

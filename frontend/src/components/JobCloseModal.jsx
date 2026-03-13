@@ -106,33 +106,35 @@ const JobCloseModal = ({
   if (!isOpen || !job) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg w-full max-w-md">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl w-full max-w-md shadow-xl overflow-hidden animate-in fade-in zoom-in duration-300">
         {/* Header */}
-        <div className="border-b p-6 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <AlertTriangle className="w-5 h-5 text-orange-500" />
-            <div>
-              <h2 className="text-lg font-semibold font-montserrat">Close Job</h2>
-              <p className="text-gray-600 text-sm">Help us understand why you're closing this job</p>
+        <div className="bg-amber-500 px-6 py-5">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-white/20 rounded-xl">
+                <AlertTriangle className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold font-montserrat text-white">Close Job</h2>
+                <p className="text-white/80 text-sm font-lato">Help us understand why</p>
+              </div>
             </div>
+            
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg hover:bg-white/20 text-white/70 hover:text-white transition-colors"
+              disabled={closing}
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
-            disabled={closing}
-          >
-            <X className="w-5 h-5" />
-          </Button>
         </div>
 
         {/* Job Info */}
-        <div className="px-6 py-3 bg-gray-50 border-b">
-          <h3 className="font-medium text-gray-900 truncate">{job.title}</h3>
-          <p className="text-sm text-gray-600">{job.category} • {job.location}</p>
+        <div className="px-6 py-3 bg-[#121E3C]/5 border-b border-gray-100">
+          <h3 className="font-medium text-[#121E3C] truncate text-sm font-montserrat">{job.title}</h3>
+          <p className="text-xs text-gray-500 font-lato">{job.category} • {job.location}</p>
         </div>
 
         {/* Form */}
@@ -187,10 +189,10 @@ const JobCloseModal = ({
               </div>
 
               {/* Warning Message */}
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+              <div className="bg-amber-50 border border-amber-100 rounded-xl p-3">
                 <div className="flex items-start gap-2">
-                  <AlertTriangle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
-                  <div className="text-sm text-orange-800">
+                  <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                  <div className="text-xs text-amber-700 font-lato">
                     <p className="font-medium">Please note:</p>
                     <p>Closing this job will make it no longer visible to tradespeople. You can reopen it later if needed.</p>
                   </div>
@@ -200,12 +202,13 @@ const JobCloseModal = ({
           )}
 
           {/* Action Buttons */}
-          <div className="flex justify-end space-x-3 pt-4 border-t">
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
               disabled={closing}
+              className="rounded-xl font-lato"
             >
               Cancel
             </Button>
@@ -213,16 +216,16 @@ const JobCloseModal = ({
             <Button
               type="submit"
               disabled={closing || loading || !selectedReason}
-              className="bg-red-600 hover:bg-red-700 text-white"
+              className="bg-red-500 hover:bg-red-600 text-white rounded-xl font-lato"
             >
               {closing ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Closing Job...
+                  Closing...
                 </>
               ) : (
                 <>
-                  <AlertTriangle className="w-4 h-4 mr-2" />
+                  <X className="w-4 h-4 mr-2" />
                   Close Job
                 </>
               )}

@@ -17,6 +17,9 @@ import {
   ChevronRight,
   X,
   LogOut,
+  FileText,
+  BookOpen,
+  Scale,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -82,6 +85,24 @@ const DashboardSidebar = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
       name: 'Help & Support',
       href: '/help',
       icon: HelpCircle,
+      external: true,
+    },
+    {
+      name: 'How It Works',
+      href: '/how-it-works',
+      icon: BookOpen,
+      external: true,
+    },
+    {
+      name: 'Reviews Policy',
+      href: '/reviews-policy',
+      icon: Scale,
+      external: true,
+    },
+    {
+      name: 'Blog',
+      href: '/blog',
+      icon: FileText,
       external: true,
     },
   ];

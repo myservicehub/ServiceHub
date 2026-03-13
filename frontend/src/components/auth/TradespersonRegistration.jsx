@@ -39,7 +39,7 @@ import SkillsTestComponent from './SkillsTestComponent';
 import { adminAPI } from '../../api/wallet';
 import PaymentPage from './PaymentPage';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
-import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from '../ui/input-otp';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '../ui/input-otp';
 
 // Fallback trade categories (used while loading or if API fails)
 const FALLBACK_TRADE_CATEGORIES = [
@@ -767,7 +767,6 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
     <div className="space-y-8 px-2">
       {/* Section 1: Your Basic Details */}
       <div className="space-y-4">
-        <h3 className="text-xs font-semibold font-lato text-gray-400 uppercase tracking-wider">Your Basic Details</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
@@ -799,8 +798,6 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
 
       {/* Section 2: Contact Information */}
       <div className="space-y-4">
-        <h3 className="text-xs font-semibold font-lato text-gray-400 uppercase tracking-wider">Contact Information</h3>
-        
         <div>
           <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
             Email address
@@ -841,8 +838,6 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
 
       {/* Section 3: Referral */}
       <div className="space-y-4">
-        <h3 className="text-xs font-semibold font-lato text-gray-400 uppercase tracking-wider">Referral (Optional)</h3>
-        
         <div>
           <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
             Referral code
@@ -861,8 +856,6 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
 
       {/* Section 4: Security */}
       <div className="space-y-4">
-        <h3 className="text-xs font-semibold font-lato text-gray-400 uppercase tracking-wider">Security</h3>
-        
         <div>
           <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
             Create password
@@ -1493,16 +1486,13 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
                   {emailSending ? 'Sending…' : 'Resend code'}
                 </Button>
                 <InputOTP maxLength={6} value={emailOtpCode} onChange={(val) => setEmailOtpCode(val)}>
-                  <InputOTPGroup>
-                    <InputOTPSlot index={0} />
-                    <InputOTPSlot index={1} />
-                    <InputOTPSlot index={2} />
-                  </InputOTPGroup>
-                  <InputOTPSeparator />
-                  <InputOTPGroup>
-                    <InputOTPSlot index={3} />
-                    <InputOTPSlot index={4} />
-                    <InputOTPSlot index={5} />
+                  <InputOTPGroup className="gap-2">
+                    <InputOTPSlot index={0} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
+                    <InputOTPSlot index={1} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
+                    <InputOTPSlot index={2} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
+                    <InputOTPSlot index={3} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
+                    <InputOTPSlot index={4} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
+                    <InputOTPSlot index={5} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
                   </InputOTPGroup>
                 </InputOTP>
                 <Button
@@ -1571,16 +1561,13 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
                   {phoneSending ? 'Sending…' : 'Resend code'}
                 </Button>
                 <InputOTP maxLength={6} value={phoneOtpCode} onChange={(val) => setPhoneOtpCode(val)}>
-                  <InputOTPGroup>
-                    <InputOTPSlot index={0} />
-                    <InputOTPSlot index={1} />
-                    <InputOTPSlot index={2} />
-                  </InputOTPGroup>
-                  <InputOTPSeparator />
-                  <InputOTPGroup>
-                    <InputOTPSlot index={3} />
-                    <InputOTPSlot index={4} />
-                    <InputOTPSlot index={5} />
+                  <InputOTPGroup className="gap-2">
+                    <InputOTPSlot index={0} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
+                    <InputOTPSlot index={1} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
+                    <InputOTPSlot index={2} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
+                    <InputOTPSlot index={3} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
+                    <InputOTPSlot index={4} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
+                    <InputOTPSlot index={5} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
                   </InputOTPGroup>
                 </InputOTP>
                 <Button

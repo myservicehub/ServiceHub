@@ -133,6 +133,8 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
   const [endAfterQuestionId, setEndAfterQuestionId] = useState(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [questionAnswersOtherText, setQuestionAnswersOtherText] = useState({});
+  const [showQuestionsModal, setShowQuestionsModal] = useState(false);
+  const [questionsCompleted, setQuestionsCompleted] = useState(false);
   const lgaAbortRef = useRef(null);
 
   const { loginWithToken, isAuthenticated, user: currentUser, loading } = useAuth();
@@ -294,62 +296,58 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       
 
       if (!formData.category) newErrors.category = 'Please select a category';
-      
 
-      // If category is selected, validate admin questions instead of description
-      if (formData.category) {
+      // If category is selected, validate that questions have been completed
+      if (formData.category && tradeQuestions.length > 0) {
+        if (!questionsCompleted) {
+          newErrors.questions = 'Please answer the job detail questions';
+        } else {
+          // Validate that all required questions have been answered
           const visibleQuestions = getVisibleQuestions();
           const cutoffIndex = endAfterQuestionId ? visibleQuestions.findIndex(q => q.id === endAfterQuestionId) : -1;
           const questionsToValidate = cutoffIndex !== -1 ? visibleQuestions.slice(0, cutoffIndex + 1) : visibleQuestions;
-          if (visibleQuestions.length > 0) {
-            // Validate only visible trade category questions (after conditional logic)
-            questionsToValidate.forEach(question => {
-              if (question.is_required) {
-                const answer = questionAnswers[question.id];
-                
-                if (question.question_type === 'multiple_choice_multiple') {
-                  if (!answer || answer.length === 0) {
-                    newErrors[`question_${question.id}`] = 'This question is required';
+          
+          questionsToValidate.forEach(question => {
+            if (question.is_required) {
+              const answer = questionAnswers[question.id];
+              
+              if (question.question_type === 'multiple_choice_multiple') {
+                if (!answer || answer.length === 0) {
+                  newErrors[`question_${question.id}`] = 'This question is required';
+                }
+              } else if (question.question_type === 'yes_no') {
+                if (answer === undefined || answer === null) {
+                  newErrors[`question_${question.id}`] = 'This question is required';
+                }
+              } else if (isFileUploadType(question.question_type)) {
+                const hasFile = Array.isArray(answer)
+                  ? answer.length > 0
+                  : (answer instanceof File) || (typeof answer === 'string' && !!String(answer).trim());
+                if (!hasFile) {
+                  newErrors[`question_${question.id}`] = 'This question is required';
+                }
+              } else {
+                if (question.question_type === 'multiple_choice_single' && answer === 'other') {
+                  if (!(questionAnswersOtherText[question.id] || '').trim()) {
+                    newErrors[`question_${question.id}_other`] = 'Please specify';
                   }
-                } else if (question.question_type === 'yes_no') {
-                  // For yes/no questions, any boolean value is valid (including false)
-                  if (answer === undefined || answer === null) {
-                    newErrors[`question_${question.id}`] = 'This question is required';
-                  }
-                } else if (isFileUploadType(question.question_type)) {
-                  const hasFile = Array.isArray(answer)
-                    ? answer.length > 0
-                    : (answer instanceof File) || (typeof answer === 'string' && !!String(answer).trim());
-                  if (!hasFile) {
-                    newErrors[`question_${question.id}`] = 'This question is required';
+                } else if (question.question_type === 'multiple_choice_multiple' && Array.isArray(answer) && answer.includes('other')) {
+                  if (!(questionAnswersOtherText[question.id] || '').trim()) {
+                    newErrors[`question_${question.id}_other`] = 'Please specify';
                   }
                 } else {
-                  if (question.question_type === 'multiple_choice_single' && answer === 'other') {
-                    if (!(questionAnswersOtherText[question.id] || '').trim()) {
-                      newErrors[`question_${question.id}_other`] = 'Please specify';
-                    }
-                  } else if (question.question_type === 'multiple_choice_multiple' && Array.isArray(answer) && answer.includes('other')) {
-                    if (!(questionAnswersOtherText[question.id] || '').trim()) {
-                      newErrors[`question_${question.id}_other`] = 'Please specify';
-                    }
-                  } else {
-                    if (!answer || (typeof answer === 'string' && !answer.trim())) {
-                      newErrors[`question_${question.id}`] = 'This question is required';
-                    }
+                  if (!answer || (typeof answer === 'string' && !answer.trim())) {
+                    newErrors[`question_${question.id}`] = 'This question is required';
                   }
                 }
               }
-            });
-          } else if (tradeQuestions.length > 0) {
-            // If there are questions configured but none are visible due to conditional logic,
-            // this might be valid (all questions might be conditional and hidden)
-            // Don't block progression in this case
-          } else {
-            // No questions available for this category - prevent proceeding
-            newErrors.category = 'Questions need to be configured for this category. Please contact support or choose a different category.';
-          }
+            }
+          });
         }
-        break;
+      } else if (formData.category && tradeQuestions.length === 0 && !loadingQuestions) {
+        // No questions available for this category - allow proceeding (questions may be optional)
+      }
+      break;
 
       case 2: // Location
         if (!formData.state.trim()) newErrors.state = 'State is required';
@@ -1850,18 +1848,10 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
     switch (currentStep) {
       case 1:
         return (
-          <div className="space-y-6">
-            <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold font-montserrat mb-2" style={{color: '#121E3C'}}>
-                Tell us about your job
-              </h2>
-              <p className="text-gray-600 font-lato">
-                Provide details about the work you need done
-              </p>
-            </div>
-
+          <div className="space-y-6 px-2">
+            {/* Job Title */}
             <div>
-              <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+              <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
                 Job Title *
               </label>
               <input
@@ -1870,23 +1860,27 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                 value={formData.title}
                 onChange={(e) => updateFormData('title', e.target.value)}
                 placeholder="e.g., Fix leaky bathroom tap, Install kitchen cabinets"
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
-                  errors.title ? 'border-red-500' : 'border-gray-300'
+                className={`w-full h-12 px-4 font-lato text-sm rounded-xl border bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all ${
+                  errors.title ? 'border-red-400' : 'border-gray-200'
                 }`}
               />
-              {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
+              {errors.title && <p className="text-red-500 text-xs mt-1 font-lato">{errors.title}</p>}
             </div>
 
+            {/* Category */}
             <div>
-              <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+              <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
                 Category *
               </label>
               <select
                 id="field-category"
                 value={formData.category}
-                onChange={(e) => updateFormData('category', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
-                  errors.category ? 'border-red-500' : 'border-gray-300'
+                onChange={(e) => {
+                  updateFormData('category', e.target.value);
+                  setQuestionsCompleted(false);
+                }}
+                className={`w-full h-12 px-4 font-lato text-sm rounded-xl border bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all ${
+                  errors.category ? 'border-red-400' : 'border-gray-200'
                 }`}
               >
                 <option value="">Select a category</option>
@@ -1896,332 +1890,155 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                   </option>
                 ))}
               </select>
-              {errors.category && <p className="text-red-500 text-sm mt-1">{errors.category}</p>}
+              {errors.category && <p className="text-red-500 text-xs mt-1 font-lato">{errors.category}</p>}
             </div>
 
-            
-
-            {/* Admin-Set Questions Section */}
+            {/* Questions Button - Opens Modal */}
             {formData.category && (
-              <div className="border-t pt-6">
-                <div className="mb-4">
-                  <h3 className="text-lg font-semibold font-montserrat mb-2" style={{color: '#121E3C'}}>
-                    Job Details for {formData.category}
-                  </h3>
-                  
-                </div>
-
+              <div className="pt-2">
                 {loadingQuestions ? (
-                  <div className="space-y-6">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="animate-pulse">
-                        <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
-                        <div className="h-10 bg-gray-100 rounded"></div>
-                      </div>
-                    ))}
+                  <div className="flex items-center justify-center py-6">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#34D164]"></div>
+                    <span className="ml-3 text-gray-500 font-lato text-sm">Loading questions...</span>
                   </div>
                 ) : tradeQuestions.length > 0 ? (
-                  <div className="space-y-6">
-                    {(() => {
-                      const visibleQuestions = getVisibleQuestions();
-                      
-                      if (visibleQuestions.length === 0) {
-                        return (
-                          <div className="text-center py-8 text-gray-600">
-                            <p>No questions to display based on your previous answers.</p>
-                            <p className="text-sm mt-2">Please review your answers if this seems incorrect.</p>
+                  <>
+                    <div 
+                      onClick={() => setShowQuestionsModal(true)}
+                      className={`p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                        errors.questions
+                          ? 'border-red-400 bg-red-50/50'
+                          : questionsCompleted 
+                            ? 'border-[#34D164] bg-[#34D164]/5' 
+                            : 'border-gray-200 hover:border-[#34D164]/50 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                            questionsCompleted ? 'bg-[#34D164]' : errors.questions ? 'bg-red-100' : 'bg-gray-100'
+                          }`}>
+                            {questionsCompleted ? (
+                              <Check size={20} className="text-white" />
+                            ) : (
+                              <span className={`font-bold ${errors.questions ? 'text-red-500' : 'text-gray-500'}`}>{tradeQuestions.length}</span>
+                            )}
                           </div>
-                        );
-                      }
-
-                      return showQuestionsOneByOne ? (
-                        // Show current question only
-                        <div className="space-y-4">
-                          {visibleQuestions.length > 0 && visibleQuestions[currentQuestionIndex] && (
-                            <div className="bg-white border-2 border-green-200 rounded-lg p-6 shadow-sm">
-                              <div className="space-y-4">
-                                <label className="block text-lg font-medium font-lato" style={{color: '#121E3C'}}>
-                                  {visibleQuestions[currentQuestionIndex].question_text}
-                                  {visibleQuestions[currentQuestionIndex].is_required && <span className="text-red-500 ml-1">*</span>}
-                                </label>
-                                
-                                {visibleQuestions[currentQuestionIndex].help_text && (
-                                  <p className="text-gray-500 text-sm font-lato">{visibleQuestions[currentQuestionIndex].help_text}</p>
-                                )}
-
-                                {/* Render the current question input */}
-                                {renderQuestionInput(visibleQuestions[currentQuestionIndex])}
-
-                                {/* Error message */}
-                                {errors[`question_${visibleQuestions[currentQuestionIndex].id}`] && (
-                                  <p className="text-red-500 text-sm font-lato mt-1">
-                                    {errors[`question_${visibleQuestions[currentQuestionIndex].id}`]}
-                                  </p>
-                                )}
-                              </div>
-                              
-                              {/* Navigation buttons */}
-                              <div className="flex flex-col sm:flex-row justify-between items-center mt-6 gap-3">
-                                <Button
-                                  type="button" 
-                                  variant="outline"
-                                  onClick={goToPreviousQuestion}
-                                  disabled={currentQuestionIndex === 0}
-                                  className="flex items-center space-x-2 w-full sm:w-auto"
-                                >
-                                  <ArrowLeft size={16} />
-                                  <span>Previous</span>
-                                </Button>
-                                
-                                {(() => {
-                                  const currentQuestion = visibleQuestions[currentQuestionIndex];
-                                  let finishHere = currentQuestion && isEndAfterThis(currentQuestion);
-                                  if (!finishHere && currentQuestion) {
-                                    const ans = questionAnswers[currentQuestion.id];
-                                    const inlineQ = getInlineUploadForAnswer(currentQuestion, ans);
-                                    if (inlineQ) {
-                                      const nav = currentQuestion.navigation_logic || {};
-                                      const key = normalize(ans);
-                                      const mapped = findMappedId(nav.next_question_map || {}, key);
-                                      if (String(mapped) === String(inlineQ.id)) {
-                                        const afterList = visibleQuestions.slice(currentQuestionIndex + 1);
-                                        if (afterList.length === 0) finishHere = true;
-                                      }
-                                    }
-                                  }
-                                  return finishHere;
-                                })() ? (
-                                  <Button
-                                    type="button"
-                                    onClick={() => {
-                                      // Validate the current question before proceeding to next step
-                                      const currentQuestion = visibleQuestions[currentQuestionIndex];
-                                      const answer = questionAnswers[currentQuestion.id];
-                                      
-                                      let isAnswered = false;
-                                      if (currentQuestion.question_type === 'multiple_choice_multiple') {
-                                        isAnswered = Array.isArray(answer) && answer.length > 0;
-                                      } else if (currentQuestion.question_type === 'yes_no') {
-                                        isAnswered = answer === true || answer === false;
-                                      } else {
-                                        isAnswered = answer !== undefined && answer !== null && answer !== '';
-                                      }
-                                      
-                                      if (!isAnswered && currentQuestion.is_required) {
-                                        setErrors(prev => ({
-                                          ...prev,
-                                          [`question_${currentQuestion.id}`]: 'This question is required'
-                                        }));
-                                        return;
-                                      }
-                                      
-                                      // Clear errors and proceed to next step
-                                      setErrors(prev => {
-                                        const newErrors = { ...prev };
-                                        delete newErrors[`question_${currentQuestion.id}`];
-                                        return newErrors;
-                                      });
-                                      setEndAfterQuestionId(currentQuestion.id);
-                                      setNavHistory(prev => [...prev, currentQuestion.id]);
-                                      setShowReviewModal(true);
-                                    }}
-                                    className="flex items-center space-x-2 text-white w-full sm:w-auto"
-                                    style={{backgroundColor: '#34D164'}}
-                                  >
-                                    <span>Continue to Next Step</span>
-                                    <ArrowRight size={16} />
-                                  </Button>
-                                ) : (
-                                  <Button
-                                    type="button"
-                                    onClick={goToNextQuestion}
-                                    className="flex items-center space-x-2 text-white w-full sm:w-auto"
-                                    style={{backgroundColor: '#34D164'}}
-                                  >
-                                    <span>Next Question</span>
-                                    <ArrowRight size={16} />
-                                  </Button>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                          
-                          
-
-                          {/* Conditional Logic Debug Info (remove in production) */}
-                          {process.env.NODE_ENV === 'development' && (
-                            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-xs">
-                              <p><strong>Debug Info:</strong></p>
-                              <p>Total Questions: {tradeQuestions.length}</p>
-                              <p>Visible Questions: {visibleQuestions.length}</p>
-                              <p>Current Index: {currentQuestionIndex + 1}</p>
-                              {visibleQuestions[currentQuestionIndex]?.conditional_logic?.enabled && (
-                                <p>Current Question has conditional logic: {visibleQuestions[currentQuestionIndex].conditional_logic.rules?.length || 0} rules</p>
-                              )}
-                            </div>
-                          )}
+                          <div>
+                            <p className={`font-medium font-lato ${errors.questions ? 'text-red-600' : 'text-[#121E3C]'}`}>
+                              {questionsCompleted ? 'Job details completed' : `Answer ${tradeQuestions.length} questions`}
+                            </p>
+                            <p className={`text-xs font-lato ${errors.questions ? 'text-red-500' : 'text-gray-500'}`}>
+                              {errors.questions ? 'Required - tap to complete' : questionsCompleted ? 'Tap to edit your answers' : 'Tell us more about your job requirements'}
+                            </p>
+                          </div>
                         </div>
-                      ) : (
-                        // Show all visible questions (original view)
-                        <div className="space-y-6">
-                          {visibleQuestions.map((question, index) => (
-                            <div key={question.id} className="space-y-2">
-                              <label className="block text-sm font-medium font-lato" style={{color: '#121E3C'}}>
-                                {question.question_text}
-                                {question.is_required && <span className="text-red-500 ml-1">*</span>}
-                              </label>
-                              
-                              {question.help_text && (
-                                <p className="text-gray-500 text-xs font-lato">{question.help_text}</p>
-                              )}
-
-                              {renderQuestionInput(question)}
-
-                              {errors[`question_${question.id}`] && (
-                                <p className="text-red-500 text-sm font-lato">
-                                  {errors[`question_${question.id}`]}
-                                </p>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    })()}
-                  </div>
-                ) : (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                    <div className="flex items-start">
-                      <div className="flex-shrink-0">
-                        <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                      <div className="ml-3">
-                        <h3 className="text-sm font-medium text-yellow-800 font-lato">
-                          No questions configured for {formData.category}
-                        </h3>
-                        <p className="mt-1 text-sm text-yellow-700 font-lato">
-                          An admin needs to set up specific questions for this trade category before jobs can be posted. 
-                          Please contact support or try a different category.
-                        </p>
+                        <ArrowRight size={20} className={errors.questions ? 'text-red-400' : 'text-gray-400'} />
                       </div>
                     </div>
+                    {errors.questions && <p className="text-red-500 text-xs mt-1 font-lato">{errors.questions}</p>}
+                  </>
+                ) : (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+                    <p className="text-yellow-700 text-sm font-lato">
+                      No questions configured for this category yet.
+                    </p>
                   </div>
                 )}
               </div>
             )}
-
-            {/* Job Description field removed as requested */}
           </div>
         );
 
       case 2:
         return (
-          <div className="space-y-6">
-            <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold font-montserrat mb-2" style={{color: '#121E3C'}}>
-                Location
-              </h2>
-              <p className="text-gray-600 font-lato">
-                Where is the job located?
-              </p>
-            </div>
-
+          <div className="space-y-6 px-2">
             {/* State and LGA */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
                   State *
                 </label>
-              <select
-                id="field-state"
-                value={formData.state}
-                onChange={(e) => updateFormData('state', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
-                  errors.state ? 'border-red-500' : 'border-gray-300'
-                }`}
-              >
+                <select
+                  id="field-state"
+                  value={formData.state}
+                  onChange={(e) => updateFormData('state', e.target.value)}
+                  className={`w-full h-12 px-4 font-lato text-sm rounded-xl border bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all ${
+                    errors.state ? 'border-red-400' : 'border-gray-200'
+                  }`}
+                >
                   <option value="">Select your state</option>
                   {nigerianStates.map((state) => (
-                    <option key={state} value={state}>
-                      {state}
-                    </option>
+                    <option key={state} value={state}>{state}</option>
                   ))}
                 </select>
-                {errors.state && <p className="text-red-500 text-sm mt-1">{errors.state}</p>}
+                {errors.state && <p className="text-red-500 text-xs mt-1 font-lato">{errors.state}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
                   Local Government Area (LGA) *
                 </label>
-              <select
-                id="field-lga"
-                value={formData.lga}
-                onChange={(e) => updateFormData('lga', e.target.value)}
-                disabled={!formData.state || loadingLGAs}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
-                  errors.lga ? 'border-red-500' : 'border-gray-300'
-                } ${(!formData.state || loadingLGAs) ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-              >
-                  <option value="">
-                    {loadingLGAs ? 'Loading LGAs...' : 'Select LGA'}
-                  </option>
+                <select
+                  id="field-lga"
+                  value={formData.lga}
+                  onChange={(e) => updateFormData('lga', e.target.value)}
+                  disabled={!formData.state || loadingLGAs}
+                  className={`w-full h-12 px-4 font-lato text-sm rounded-xl border bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all disabled:opacity-50 ${
+                    errors.lga ? 'border-red-400' : 'border-gray-200'
+                  }`}
+                >
+                  <option value="">{loadingLGAs ? 'Loading LGAs...' : 'Select LGA'}</option>
                   {availableLGAs.map((lga) => (
-                    <option key={lga} value={lga}>
-                      {lga}
-                    </option>
+                    <option key={lga} value={lga}>{lga}</option>
                   ))}
                 </select>
-                {errors.lga && <p className="text-red-500 text-sm mt-1">{errors.lga}</p>}
-                {!formData.state && (
-                  <p className="text-gray-500 text-sm mt-1">Please select a state first</p>
-                )}
+                {errors.lga && <p className="text-red-500 text-xs mt-1 font-lato">{errors.lga}</p>}
               </div>
             </div>
 
             {/* Town and Zip Code */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
                   Town/Area *
                 </label>
-              <input
-                type="text"
-                id="field-town"
-                placeholder="e.g., Victoria Island, Ikeja, Warri"
-                value={formData.town}
-                onChange={(e) => updateFormData('town', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
-                  errors.town ? 'border-red-500' : 'border-gray-300'
-                }`}
-              />
-                {errors.town && <p className="text-red-500 text-sm mt-1">{errors.town}</p>}
+                <input
+                  type="text"
+                  id="field-town"
+                  placeholder="e.g., Victoria Island, Ikeja, Warri"
+                  value={formData.town}
+                  onChange={(e) => updateFormData('town', e.target.value)}
+                  className={`w-full h-12 px-4 font-lato text-sm rounded-xl border bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all ${
+                    errors.town ? 'border-red-400' : 'border-gray-200'
+                  }`}
+                />
+                {errors.town && <p className="text-red-500 text-xs mt-1 font-lato">{errors.town}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
                   Zip Code *
                 </label>
-              <input
-                type="text"
-                id="field-zip_code"
-                placeholder="e.g., 100001"
-                value={formData.zip_code}
-                onChange={(e) => updateFormData('zip_code', e.target.value)}
-                maxLength={6}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
-                  errors.zip_code ? 'border-red-500' : 'border-gray-300'
-                }`}
-              />
-                {errors.zip_code && <p className="text-red-500 text-sm mt-1">{errors.zip_code}</p>}
-                <p className="text-gray-500 text-sm mt-1">Nigerian postal code (6 digits)</p>
+                <input
+                  type="text"
+                  id="field-zip_code"
+                  placeholder="e.g., 100001"
+                  value={formData.zip_code}
+                  onChange={(e) => updateFormData('zip_code', e.target.value)}
+                  maxLength={6}
+                  className={`w-full h-12 px-4 font-lato text-sm rounded-xl border bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all ${
+                    errors.zip_code ? 'border-red-400' : 'border-gray-200'
+                  }`}
+                />
+                {errors.zip_code && <p className="text-red-500 text-xs mt-1 font-lato">{errors.zip_code}</p>}
+                <p className="text-xs text-gray-400 mt-1 font-lato">Nigerian postal code (6 digits)</p>
               </div>
             </div>
 
             {/* Home Address */}
             <div>
-              <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+              <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
                 Home Address *
               </label>
               <textarea
@@ -2230,144 +2047,143 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                 placeholder="Enter your full home address (street, building number, landmarks, etc.)"
                 value={formData.home_address}
                 onChange={(e) => updateFormData('home_address', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato resize-none ${
-                  errors.home_address ? 'border-red-500' : 'border-gray-300'
+                className={`w-full px-4 py-3 font-lato text-sm rounded-xl border bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all resize-none ${
+                  errors.home_address ? 'border-red-400' : 'border-gray-200'
                 }`}
               />
-              {errors.home_address && <p className="text-red-500 text-sm mt-1">{errors.home_address}</p>}
+              {errors.home_address && <p className="text-red-500 text-xs mt-1 font-lato">{errors.home_address}</p>}
               <div className="flex justify-between items-center mt-1">
-                <p className="text-gray-500 text-sm">Minimum 10 characters</p>
-                <p className="text-gray-500 text-sm">{formData.home_address.length}/500</p>
+                <p className="text-xs text-gray-400 font-lato">Minimum 10 characters</p>
+                <p className="text-xs text-gray-400 font-lato">{formData.home_address.length}/500</p>
               </div>
             </div>
 
             {/* Map Location Picker */}
             <div>
-              <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+              <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
                 Precise Location (Optional)
               </label>
-              <p className="text-sm text-gray-600 mb-3">
+              <p className="text-xs text-gray-400 mb-3 font-lato">
                 Pin the exact location on the map to help tradespeople find you easily
               </p>
-              <LocationPicker
-                height="300px"
-                placeholder="Search for your exact address..."
-                onLocationSelect={(location) => updateFormData('jobLocation', location)}
-                initialLocation={formData.jobLocation}
-                showCurrentLocation={true}
-                showSearch={true}
-                centerAddress={mapCenterAddress}
-                centerZoom={mapCenterZoom}
-              />
+              <div className="rounded-xl overflow-hidden border border-gray-200">
+                <LocationPicker
+                  height="280px"
+                  placeholder="Search for your exact address..."
+                  onLocationSelect={(location) => updateFormData('jobLocation', location)}
+                  initialLocation={formData.jobLocation}
+                  showCurrentLocation={true}
+                  showSearch={true}
+                  centerAddress={mapCenterAddress}
+                  centerZoom={mapCenterZoom}
+                />
+              </div>
             </div>
-
-            {/* Timeline removed from UI as requested */}
           </div>
         );
 
       case 3:
         return (
-          <div className="space-y-6">
-            <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold font-montserrat mb-2" style={{color: '#121E3C'}}>
-                What's your budget?
-              </h2>
-              <p className="text-gray-600 font-lato">
-                This helps tradespeople understand your project scope
-              </p>
-            </div>
-
+          <div className="space-y-6 px-2">
             {/* Budget Type Selection */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div
+            <div className="space-y-3">
+              <label
                 onClick={() => updateFormData('budgetType', 'range')}
-                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                className={`flex items-center gap-3 cursor-pointer p-4 border-2 rounded-xl transition-all ${
                   formData.budgetType === 'range'
-                    ? 'border-green-500 bg-green-50'
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-[#34D164] bg-[#34D164]/5'
+                    : 'border-gray-200 hover:bg-gray-50'
                 }`}
               >
-                <div className="flex items-center mb-2">
-                  <DollarSign size={20} className="mr-2" style={{color: '#34D164'}} />
-                  <h3 className="font-semibold font-montserrat">Set Budget Range</h3>
+                <input
+                  type="radio"
+                  name="budgetType"
+                  value="range"
+                  checked={formData.budgetType === 'range'}
+                  onChange={() => updateFormData('budgetType', 'range')}
+                  className="text-[#34D164] focus:ring-[#34D164]/20"
+                />
+                <div>
+                  <span className="text-sm font-medium font-lato text-[#121E3C]">Set Budget Range</span>
+                  <p className="text-xs text-gray-500 font-lato mt-0.5">Specify your minimum and maximum budget</p>
                 </div>
-                <p className="text-sm text-gray-600 font-lato">
-                  Specify your minimum and maximum budget
-                </p>
-              </div>
+              </label>
 
-              <div
+              <label
                 onClick={() => updateFormData('budgetType', 'discussion')}
-                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                className={`flex items-center gap-3 cursor-pointer p-4 border-2 rounded-xl transition-all ${
                   formData.budgetType === 'discussion'
-                    ? 'border-green-500 bg-green-50'
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-[#34D164] bg-[#34D164]/5'
+                    : 'border-gray-200 hover:bg-gray-50'
                 }`}
               >
-                <div className="flex items-center mb-2">
-                  <User size={20} className="mr-2" style={{color: '#34D164'}} />
-                  <h3 className="font-semibold font-montserrat">Discuss with Pros</h3>
+                <input
+                  type="radio"
+                  name="budgetType"
+                  value="discussion"
+                  checked={formData.budgetType === 'discussion'}
+                  onChange={() => updateFormData('budgetType', 'discussion')}
+                  className="text-[#34D164] focus:ring-[#34D164]/20"
+                />
+                <div>
+                  <span className="text-sm font-medium font-lato text-[#121E3C]">Discuss with Pros</span>
+                  <p className="text-xs text-gray-500 font-lato mt-0.5">Get quotes and discuss pricing</p>
                 </div>
-                <p className="text-sm text-gray-600 font-lato">
-                  Get quotes and discuss pricing
-                </p>
-              </div>
+              </label>
             </div>
 
             {/* Budget Range Inputs */}
             {formData.budgetType === 'range' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                  <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
                     Minimum Budget (₦) *
                   </label>
                   <input
                     type="number"
                     id="field-budget_min"
-                    placeholder=""
+                    placeholder="e.g., 50000"
                     value={formData.budget_min}
                     onChange={(e) => updateFormData('budget_min', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
-                      errors.budget_min ? 'border-red-500' : 'border-gray-300'
+                    className={`w-full h-12 px-4 font-lato text-sm rounded-xl border bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all ${
+                      errors.budget_min ? 'border-red-400' : 'border-gray-200'
                     }`}
                   />
-                  {errors.budget_min && <p className="text-red-500 text-sm mt-1">{errors.budget_min}</p>}
+                  {errors.budget_min && <p className="text-red-500 text-xs mt-1 font-lato">{errors.budget_min}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                  <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
                     Maximum Budget (₦) *
                   </label>
                   <input
                     type="number"
                     id="field-budget_max"
-                    placeholder=""
+                    placeholder="e.g., 150000"
                     value={formData.budget_max}
                     onChange={(e) => updateFormData('budget_max', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
-                      errors.budget_max ? 'border-red-500' : 'border-gray-300'
+                    className={`w-full h-12 px-4 font-lato text-sm rounded-xl border bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all ${
+                      errors.budget_max ? 'border-red-400' : 'border-gray-200'
                     }`}
                   />
-                  {errors.budget_max && <p className="text-red-500 text-sm mt-1">{errors.budget_max}</p>}
+                  {errors.budget_max && <p className="text-red-500 text-xs mt-1 font-lato">{errors.budget_max}</p>}
                 </div>
               </div>
             )}
 
             {/* Budget Preview */}
             {formData.budgetType === 'range' && formData.budget_min && formData.budget_max && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <h4 className="font-semibold font-montserrat text-green-800 mb-2">Budget Summary</h4>
-                <p className="text-green-700 font-lato">
-                  You're willing to pay between {formatCurrency(formData.budget_min)} and {formatCurrency(formData.budget_max)} for this job.
+              <div className="bg-[#34D164]/5 border border-[#34D164]/20 rounded-xl p-4">
+                <p className="text-sm text-[#121E3C] font-lato">
+                  <span className="font-medium">Budget:</span> {formatCurrency(formData.budget_min)} – {formatCurrency(formData.budget_max)}
                 </p>
               </div>
             )}
 
             {formData.budgetType === 'discussion' && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="font-semibold font-montserrat text-blue-800 mb-2">Budget Discussion</h4>
-                <p className="text-blue-700 font-lato">
-                  Tradespeople will provide quotes based on your job requirements. You can then compare and choose the best option.
+              <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+                <p className="text-sm text-blue-700 font-lato">
+                  Tradespeople will provide quotes based on your job requirements.
                 </p>
               </div>
             )}
@@ -2376,192 +2192,125 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
 
       case 4:
         return (
-          <div className="space-y-6">
-            <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold font-montserrat mb-2" style={{color: '#121E3C'}}>
-                {isAuthenticated() ? 'Review & Post Your Job' : 'Your Contact Information'}
-              </h2>
-              <p className="text-gray-600 font-lato">
-                {isAuthenticated() 
-                  ? 'Review your job details and post it to connect with tradespeople'
-                  : 'How should tradespeople contact you about this job?'
-                }
-              </p>
-            </div>
-
+          <div className="space-y-6 px-2">
             {isAuthenticated() ? (
               // For authenticated users - show review summary
               <div className="space-y-4">
-                {/* Contact Information */}
-                <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold font-montserrat" style={{color: '#121E3C'}}>
-                      Your Contact Information
-                    </h3>
-                    {isUserAuthenticated() && currentUser && (
-                      <div className="flex items-center text-green-600 text-sm">
-                        <CheckCircle size={16} className="mr-1" />
-                        Auto-filled from your account
-                      </div>
-                    )}
+                <div className="bg-[#34D164]/5 border border-[#34D164]/20 rounded-xl p-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <CheckCircle size={18} className="text-[#34D164]" />
+                    <span className="text-sm font-medium font-lato text-[#121E3C]">Posting as {currentUser?.name}</span>
                   </div>
-                  
-                  <p className="text-gray-600 font-lato mb-6">
-                    {isUserAuthenticated() 
-                      ? "We've automatically filled in your details from your account. You can edit them if needed."
-                      : "Tradespeople will use this information to contact you about your job."
-                    }
-                  </p>
-                </div>
-                
-                <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-                  <h3 className="font-semibold font-montserrat text-green-800 mb-4">
-                    Ready to Post Your Job
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="font-medium">Your Name:</span> {currentUser?.name}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm font-lato">
+                    <div className="text-gray-600">
+                      <span className="text-gray-400">Email:</span> {currentUser?.email}
                     </div>
-                    <div>
-                      <span className="font-medium">Email:</span> {currentUser?.email}
-                    </div>
-                    <div>
-                      <span className="font-medium">Phone:</span> {currentUser?.phone}
-                    </div>
-                    <div>
-                      <span className="font-medium">Location:</span> {formData.town}, {formData.lga}, {formData.state}
+                    <div className="text-gray-600">
+                      <span className="text-gray-400">Phone:</span> {currentUser?.phone}
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-white border rounded-lg p-6">
-                  <h3 className="text-lg font-semibold font-montserrat mb-3" style={{color: '#121E3C'}}>
-                    Job Summary
-                  </h3>
-                  <div className="space-y-2 text-sm">
-                    <div>
-                      <span className="font-medium">Title:</span> {formData.title}
+                <div className="bg-gray-50/50 border border-gray-200 rounded-xl p-5">
+                  <h3 className="text-sm font-medium font-lato text-[#121E3C] mb-3">Job Summary</h3>
+                  <div className="space-y-2 text-sm font-lato">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Title</span>
+                      <span className="text-gray-700">{formData.title}</span>
                     </div>
-                    <div>
-                      <span className="font-medium">Category:</span> {formData.category}
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Category</span>
+                      <span className="text-gray-700">{formData.category}</span>
                     </div>
-                    {formData.description && (
-                      <div>
-                        <span className="font-medium">Description:</span>
-                        <p className="text-gray-700 mt-1">{formData.description}</p>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Location</span>
+                      <span className="text-gray-700">{formData.town}, {formData.state}</span>
+                    </div>
+                    {formData.budgetType === 'range' && formData.budget_min && formData.budget_max && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Budget</span>
+                        <span className="text-gray-700">{formatCurrency(formData.budget_min)} – {formatCurrency(formData.budget_max)}</span>
                       </div>
                     )}
                   </div>
                 </div>
                 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h4 className="font-semibold font-montserrat text-blue-800 mb-2">What happens next?</h4>
-                  <ul className="text-sm text-blue-700 space-y-1 font-lato">
-                    <li>• Your job will be visible to qualified tradespeople in your area</li>
-                    <li>• Interested tradespeople will show interest in your job</li>
-                    <li>• You'll receive notifications when someone shows interest</li>
-                    <li>• You can review their profiles and choose who to contact</li>
-                  </ul>
+                <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+                  <p className="text-xs text-blue-700 font-lato">
+                    Your job will be visible to qualified tradespeople in your area. You'll receive notifications when someone shows interest.
+                  </p>
                 </div>
               </div>
             ) : (
               // For non-authenticated users - show contact form
-              <>
-                {/* Contact Information */}
-                <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold font-montserrat" style={{color: '#121E3C'}}>
-                      Your Contact Information
-                    </h3>
-                    {isUserAuthenticated() && currentUser && (
-                      <div className="flex items-center text-green-600 text-sm">
-                        <CheckCircle size={16} className="mr-1" />
-                        Auto-filled from your account
-                      </div>
-                    )}
-                  </div>
-                  
-                  <p className="text-gray-600 font-lato mb-6">
-                    {isUserAuthenticated() 
-                      ? "We've automatically filled in your details from your account. You can edit them if needed."
-                      : "Tradespeople will use this information to contact you about your job."
-                    }
-                  </p>
-                </div>
-                
+              <div className="space-y-4">
                 {/* Name */}
                 <div>
-                  <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                  <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
                     Your Full Name *
                   </label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                    <input
-                      type="text"
-                      id="field-homeowner_name"
-                      placeholder="Enter your full name"
-                      value={formData.homeowner_name}
-                      onChange={(e) => updateFormData('homeowner_name', e.target.value)}
-                      className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
-                        errors.homeowner_name ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    />
-                  </div>
-                  {errors.homeowner_name && <p className="text-red-500 text-sm mt-1">{errors.homeowner_name}</p>}
+                  <input
+                    type="text"
+                    id="field-homeowner_name"
+                    placeholder="Enter your full name"
+                    value={formData.homeowner_name}
+                    onChange={(e) => updateFormData('homeowner_name', e.target.value)}
+                    className={`w-full h-12 px-4 font-lato text-sm rounded-xl border bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all ${
+                      errors.homeowner_name ? 'border-red-400' : 'border-gray-200'
+                    }`}
+                  />
+                  {errors.homeowner_name && <p className="text-red-500 text-xs mt-1 font-lato">{errors.homeowner_name}</p>}
                 </div>
 
                 {/* Email */}
                 <div>
-                  <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                  <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
                     Email Address *
                   </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                    <input
-                      type="email"
-                      id="field-homeowner_email"
-                      placeholder="your.email@example.com"
-                      value={formData.homeowner_email}
-                      onChange={(e) => updateFormData('homeowner_email', e.target.value)}
-                      className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
-                        errors.homeowner_email ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    />
-                  </div>
-                  {errors.homeowner_email && <p className="text-red-500 text-sm mt-1">{errors.homeowner_email}</p>}
+                  <input
+                    type="email"
+                    id="field-homeowner_email"
+                    placeholder="hello@example.com"
+                    value={formData.homeowner_email}
+                    onChange={(e) => updateFormData('homeowner_email', e.target.value)}
+                    className={`w-full h-12 px-4 font-lato text-sm rounded-xl border bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all ${
+                      errors.homeowner_email ? 'border-red-400' : 'border-gray-200'
+                    }`}
+                  />
+                  {errors.homeowner_email && <p className="text-red-500 text-xs mt-1 font-lato">{errors.homeowner_email}</p>}
                 </div>
 
                 {/* Phone */}
                 <div>
-                  <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                  <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
                     Phone Number *
                   </label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                  <div className="flex">
+                    <span className="inline-flex items-center px-4 rounded-l-xl border border-r-0 border-gray-200 bg-gray-50 text-gray-500 text-sm font-lato">
+                      +234
+                    </span>
                     <input
                       type="tel"
                       id="field-homeowner_phone"
-                      placeholder="08012345678"
+                      placeholder=""
                       value={formData.homeowner_phone}
                       onChange={(e) => updateFormData('homeowner_phone', e.target.value)}
-                      className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
-                        errors.homeowner_phone ? 'border-red-500' : 'border-gray-300'
+                      className={`w-full h-12 px-4 font-lato text-sm rounded-l-none rounded-r-xl border bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all ${
+                        errors.homeowner_phone ? 'border-red-400' : 'border-gray-200'
                       }`}
                     />
                   </div>
-                  {errors.homeowner_phone && <p className="text-red-500 text-sm mt-1">{errors.homeowner_phone}</p>}
+                  <p className="text-xs text-gray-400 mt-1 font-lato">Enter your number with or without the leading 0</p>
+                  {errors.homeowner_phone && <p className="text-red-500 text-xs mt-1 font-lato">{errors.homeowner_phone}</p>}
                 </div>
 
                 {/* Privacy Notice */}
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                  <h4 className="font-semibold font-montserrat text-gray-800 mb-2">Privacy & Communication</h4>
-                  <ul className="text-sm text-gray-600 space-y-1 font-lato">
-                    <li>• Your contact details will only be shared with tradespeople you choose</li>
-                    <li>• You'll receive updates about your job via email and SMS</li>
-                    <li>• You can manage your communication preferences anytime</li>
-                  </ul>
+                <div className="bg-gray-50/50 border border-gray-200 rounded-xl p-4 mt-2">
+                  <p className="text-xs text-gray-500 font-lato">
+                    Your contact details will only be shared with tradespeople you choose.
+                  </p>
                 </div>
-              </>
+              </div>
             )}
           </div>
         );
@@ -2573,50 +2322,29 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
         }
         
         return (
-          <div className="space-y-6">
-            <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold font-montserrat mb-2" style={{color: '#121E3C'}}>
-                Create Your Account
-              </h2>
-              <p className="text-gray-600 font-lato">
-                Almost done! Create your account to post the job and manage your projects.
-              </p>
-            </div>
-
+          <div className="space-y-6 px-2">
             {/* Account Benefits */}
-            <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-6">
-              <h3 className="font-semibold font-montserrat text-green-800 mb-4 flex items-center">
-                <Check className="mr-2" size={20} />
+            <div className="bg-[#34D164]/5 border border-[#34D164]/20 rounded-xl p-5">
+              <h3 className="text-sm font-medium font-lato text-[#121E3C] mb-3 flex items-center">
+                <Check className="mr-2 text-[#34D164]" size={18} />
                 Your ServiceHub Account Benefits
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-start space-x-3">
-                  <Users className="text-green-600 mt-1" size={16} />
-                  <div>
-                    <h4 className="text-sm font-semibold text-green-800">Track Interested Tradespeople</h4>
-                    <p className="text-xs text-green-700">See who's interested in your job</p>
-                  </div>
+              <div className="grid grid-cols-2 gap-3 text-xs font-lato">
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Users size={14} className="text-[#34D164]" />
+                  <span>Track interested trades</span>
                 </div>
-                <div className="flex items-start space-x-3">
-                  <Bell className="text-green-600 mt-1" size={16} />
-                  <div>
-                    <h4 className="text-sm font-semibold text-green-800">Get Notifications</h4>
-                    <p className="text-xs text-green-700">Email & SMS updates on your jobs</p>
-                  </div>
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Bell size={14} className="text-[#34D164]" />
+                  <span>Get notifications</span>
                 </div>
-                <div className="flex items-start space-x-3">
-                  <Star className="text-green-600 mt-1" size={16} />
-                  <div>
-                    <h4 className="text-sm font-semibold text-green-800">Rate & Review</h4>
-                    <p className="text-xs text-green-700">Share feedback on completed work</p>
-                  </div>
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Star size={14} className="text-[#34D164]" />
+                  <span>Rate & review</span>
                 </div>
-                <div className="flex items-start space-x-3">
-                  <Coins className="text-green-600 mt-1" size={16} />
-                  <div>
-                    <h4 className="text-sm font-semibold text-green-800">Manage Jobs</h4>
-                    <p className="text-xs text-green-700">Full dashboard for all your projects</p>
-                  </div>
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Coins size={14} className="text-[#34D164]" />
+                  <span>Manage jobs</span>
                 </div>
               </div>
             </div>
@@ -2624,60 +2352,60 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
             {/* Password Fields */}
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
                   Create Password *
                 </label>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
                     id="field-password"
-                    placeholder="Enter a secure password"
+                    placeholder="••••••••"
                     value={formData.password}
                     onChange={(e) => updateFormData('password', e.target.value)}
-                    className={`w-full px-3 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
-                      errors.password ? 'border-red-500' : 'border-gray-300'
+                    className={`w-full h-12 px-4 pr-12 font-lato text-sm rounded-xl border bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all ${
+                      errors.password ? 'border-red-400' : 'border-gray-200'
                     }`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
-                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
-                {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
+                {errors.password && <p className="text-red-500 text-xs mt-1 font-lato">{errors.password}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+                <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
                   Confirm Password *
                 </label>
                 <div className="relative">
                   <input
                     type={showConfirmPassword ? 'text' : 'password'}
                     id="field-confirmPassword"
-                    placeholder="Confirm your password"
+                    placeholder="••••••••"
                     value={formData.confirmPassword}
                     onChange={(e) => updateFormData('confirmPassword', e.target.value)}
-                    className={`w-full px-3 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-lato ${
-                      errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
+                    className={`w-full h-12 px-4 pr-12 font-lato text-sm rounded-xl border bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all ${
+                      errors.confirmPassword ? 'border-red-400' : 'border-gray-200'
                     }`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
-                    {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
-                {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>}
+                {errors.confirmPassword && <p className="text-red-500 text-xs mt-1 font-lato">{errors.confirmPassword}</p>}
               </div>
             </div>
 
             {/* Terms */}
-            <div className="text-xs text-gray-600 font-lato text-center">
+            <div className="text-xs text-gray-400 font-lato text-center">
               By creating an account, you agree to our Terms of Service and Privacy Policy
             </div>
           </div>
@@ -2867,7 +2595,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
 
   return (
     <>
-      <div className="max-w-2xl mx-auto px-0 sm:px-2" ref={formTopRef} tabIndex={-1}>
+      <div className="max-w-2xl mx-auto px-2 sm:px-4" ref={formTopRef} tabIndex={-1}>
         <Card>
           <CardHeader>
             <CardTitle className="text-xl font-bold font-montserrat text-center" style={{color: '#121E3C'}}>
@@ -2888,44 +2616,42 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
             <form onSubmit={handleSubmit}>
               {renderStep()}
               
-              {/* Navigation Buttons - Hide when in one-by-one questions mode */}
-              {!(currentStep === 1 && tradeQuestions.length > 0 && showQuestionsOneByOne && getVisibleQuestions().length > 0) && (
-                <div className="flex flex-col sm:flex-row justify-between pt-8 border-t gap-3 relative z-10 pb-4">
+              {/* Navigation Buttons */}
+              <div className="flex flex-col sm:flex-row justify-between pt-8 border-t border-gray-100 gap-3 relative z-10 pb-4 px-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={prevStep}
+                  disabled={currentStep === 1}
+                  className="flex items-center font-lato w-full sm:w-auto h-12 rounded-xl"
+                >
+                  <ArrowLeft size={16} className="mr-2" />
+                  Previous
+                </Button>
+
+                {currentStep < totalSteps ? (
                   <Button
                     type="button"
-                    variant="outline"
-                    onClick={prevStep}
-                    disabled={currentStep === 1}
-                    className="flex items-center font-lato w-full sm:w-auto"
+                    onClick={nextStep}
+                    disabled={submitting || isTransitioning}
+                    className="flex items-center text-white font-lato w-full sm:w-auto h-12 rounded-xl"
+                    style={{backgroundColor: '#34D164'}}
                   >
-                    <ArrowLeft size={16} className="mr-2" />
-                    Previous
+                    Next
+                    <ArrowRight size={16} className="ml-2" />
                   </Button>
-
-                  {currentStep < totalSteps ? (
-                    <Button
-                      type="button"
-                      onClick={currentStep === 1 ? proceedToNextStepWithReview : nextStep}
-                      disabled={submitting || isTransitioning}
-                      className="flex items-center text-white font-lato w-full sm:w-auto"
-                      style={{backgroundColor: '#34D164'}}
-                    >
-                      Next
-                      <ArrowRight size={16} className="ml-2" />
-                    </Button>
-                  ) : (
-                    <Button
-                      type="submit"
-                      disabled={submitting || isTransitioning}
-                      className="flex items-center text-white font-lato w-full sm:w-auto"
-                      style={{backgroundColor: '#34D164'}}
-                    >
-                      {submitting ? 'Submitting...' : (isUserAuthenticated() ? 'Post Job' : 'Create Account & Post Job')}
-                      <CheckCircle size={16} className="ml-2" />
-                    </Button>
-                  )}
-                </div>
-              )}
+                ) : (
+                  <Button
+                    type="submit"
+                    disabled={submitting || isTransitioning}
+                    className="flex items-center text-white font-lato w-full sm:w-auto h-12 rounded-xl"
+                    style={{backgroundColor: '#34D164'}}
+                  >
+                    {submitting ? 'Submitting...' : (isUserAuthenticated() ? 'Post Job' : 'Create Account & Post Job')}
+                    <CheckCircle size={16} className="ml-2" />
+                  </Button>
+                )}
+              </div>
             </form>
           </CardContent>
         </Card>
@@ -2933,6 +2659,167 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
 
       {accountCreationModal}
       {loginModal}
+      
+      {/* Questions Modal */}
+      {showQuestionsModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-bold font-montserrat text-[#121E3C]">
+                    Job Details
+                  </h3>
+                  <p className="text-gray-500 text-sm font-lato mt-1">
+                    Question {currentQuestionIndex + 1} of {getVisibleQuestions().length}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowQuestionsModal(false)}
+                  className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+                >
+                  <span className="text-gray-500 text-lg">×</span>
+                </button>
+              </div>
+              {/* Progress bar */}
+              <div className="mt-4 w-full bg-gray-200 rounded-full h-1.5">
+                <div
+                  className="h-1.5 rounded-full transition-all duration-300"
+                  style={{
+                    width: `${((currentQuestionIndex + 1) / Math.max(1, getVisibleQuestions().length)) * 100}%`,
+                    backgroundColor: '#34D164'
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {(() => {
+                const visibleQuestions = getVisibleQuestions();
+                const currentQuestion = visibleQuestions[currentQuestionIndex];
+                
+                if (!currentQuestion) {
+                  return (
+                    <div className="text-center py-8 text-gray-500">
+                      <p>No questions available.</p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="space-y-4">
+                    <label className="block text-lg font-medium font-lato text-[#121E3C]">
+                      {currentQuestion.question_text}
+                      {currentQuestion.is_required && <span className="text-red-500 ml-1">*</span>}
+                    </label>
+                    
+                    {currentQuestion.help_text && (
+                      <p className="text-gray-500 text-sm font-lato">{currentQuestion.help_text}</p>
+                    )}
+
+                    {renderQuestionInput(currentQuestion)}
+
+                    {errors[`question_${currentQuestion.id}`] && (
+                      <p className="text-red-500 text-sm font-lato mt-1">
+                        {errors[`question_${currentQuestion.id}`]}
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-6 border-t border-gray-100 bg-gray-50/50">
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    if (currentQuestionIndex === 0) {
+                      setShowQuestionsModal(false);
+                    } else {
+                      goToPreviousQuestion();
+                    }
+                  }}
+                  className="flex-1 h-12 rounded-xl font-lato"
+                >
+                  {currentQuestionIndex === 0 ? 'Cancel' : 'Previous'}
+                </Button>
+                
+                {(() => {
+                  const visibleQuestions = getVisibleQuestions();
+                  const currentQuestion = visibleQuestions[currentQuestionIndex];
+                  const isLastQuestion = currentQuestionIndex >= visibleQuestions.length - 1;
+                  const finishHere = currentQuestion && isEndAfterThis(currentQuestion);
+
+                  if (isLastQuestion || finishHere) {
+                    return (
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          const answer = questionAnswers[currentQuestion?.id];
+                          let isAnswered = false;
+                          
+                          if (currentQuestion?.question_type === 'multiple_choice_multiple') {
+                            isAnswered = Array.isArray(answer) && answer.length > 0;
+                          } else if (currentQuestion?.question_type === 'yes_no') {
+                            isAnswered = answer === true || answer === false;
+                          } else {
+                            isAnswered = answer !== undefined && answer !== null && answer !== '';
+                          }
+                          
+                          if (!isAnswered && currentQuestion?.is_required) {
+                            setErrors(prev => ({
+                              ...prev,
+                              [`question_${currentQuestion.id}`]: 'This question is required'
+                            }));
+                            return;
+                          }
+                          
+                          setErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors[`question_${currentQuestion?.id}`];
+                            return newErrors;
+                          });
+                          
+                          if (currentQuestion) {
+                            setEndAfterQuestionId(currentQuestion.id);
+                            setNavHistory(prev => [...prev, currentQuestion.id]);
+                          }
+                          setQuestionsCompleted(true);
+                          setShowQuestionsModal(false);
+                        }}
+                        className="flex-1 h-12 rounded-xl text-white font-lato"
+                        style={{ backgroundColor: '#34D164' }}
+                      >
+                        <Check size={18} className="mr-2" />
+                        Done
+                      </Button>
+                    );
+                  }
+
+                  return (
+                    <Button
+                      type="button"
+                      onClick={goToNextQuestion}
+                      className="flex-1 h-12 rounded-xl text-white font-lato"
+                      style={{ backgroundColor: '#34D164' }}
+                    >
+                      Next
+                      <ArrowRight size={18} className="ml-2" />
+                    </Button>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showReviewModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-2xl w-full p-6">

@@ -1,0 +1,43 @@
+EMAIL: Job Rejected / Requires Updates
+SENT TO: Homeowner when job needs updates
+FILE LOCATION: backend/services/notifications.py (lines 987-1031)
+NOTIFICATION TYPE: JOB_REJECTED
+
+=== PLACEHOLDERS ===
+{homeowner_name} - Homeowner's name
+{job_title} - Title of the job
+{reviewed_at} - Date/time of review
+{rejection_reason} - Reason for rejection / required updates
+
+=== TEXT TEMPLATE ===
+Subject: Job Submission Update: {job_title}
+
+Hello {homeowner_name},
+
+Thank you for submitting your job posting to serviceHub. After review, we need some updates before we can approve your job.
+
+📋 Job Title: {job_title}
+❌ Status: Requires Updates
+📅 Reviewed: {reviewed_at}
+👨‍💼 Reviewed by: Admin Team
+
+📝 Required Updates:
+{rejection_reason}
+
+How to Fix:
+1. Log into your serviceHub account
+2. Go to "My Jobs" section
+3. Edit your job posting with the required updates
+4. Resubmit for review
+
+We're here to help! If you have questions about these requirements, please contact our support team.
+
+Visit your jobs: https://my-servicehub.vercel.app/dashboard/jobs
+
+If you have any questions, please contact our support team.
+
+Best regards,
+serviceHub Team
+
+=== SMS VERSION ===
+⚠️ Your job '{job_title}' needs updates before approval. Check your email for details or visit: https://my-servicehub.vercel.app/dashboard/jobs

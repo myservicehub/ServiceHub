@@ -13,7 +13,7 @@ const Card = ({ className = '', children, ...props }) => {
 
 const CardHeader = ({ className = '', children, ...props }) => {
   return (
-    <div className={`flex flex-col space-y-1.5 p-6 ${className}`} {...props}>
+    <div className={`flex flex-col space-y-1.5 p-4 sm:p-6 ${className}`} {...props}>
       {children}
     </div>
   );
@@ -32,7 +32,7 @@ const CardTitle = ({ className = '', children, ...props }) => {
 
 const CardContent = ({ className = '', children, ...props }) => {
   return (
-    <div className={`p-6 pt-0 ${className}`} {...props}>
+    <div className={`p-4 sm:p-6 pt-0 ${className}`} {...props}>
       {children}
     </div>
   );

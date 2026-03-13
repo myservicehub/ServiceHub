@@ -14,7 +14,7 @@ const ComingSoonPage = () => {
       <Header />
       
       {/* Hero Section */}
-      <section className="relative bg-[#121E3C] py-20 md:py-32 overflow-hidden">
+      <section className="relative bg-[#121E3C] pt-28 sm:pt-32 md:pt-40 pb-20 md:pb-32 overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute inset-0" style={{
@@ -115,28 +115,22 @@ const ComingSoonPage = () => {
             {/* Quick Links */}
             <div className="mt-12 text-center">
               <p className="text-gray-500 mb-4">In the meantime, check out:</p>
-              <div className="flex flex-wrap items-center justify-center gap-3">
-                <Link 
-                  to="/trade-categories" 
-                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-[#121E3C] rounded-lg text-sm font-medium transition-colors"
-                >
-                  Trade Categories
-                </Link>
+              <div className="grid grid-cols-3 gap-3 max-w-md mx-auto">
                 <Link 
                   to="/blog" 
-                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-[#121E3C] rounded-lg text-sm font-medium transition-colors"
+                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-[#121E3C] rounded-lg text-sm font-medium transition-colors text-center"
                 >
                   Blog
                 </Link>
                 <Link 
                   to="/help" 
-                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-[#121E3C] rounded-lg text-sm font-medium transition-colors"
+                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-[#121E3C] rounded-lg text-sm font-medium transition-colors text-center"
                 >
                   Help & FAQs
                 </Link>
                 <Link 
                   to="/contact" 
-                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-[#121E3C] rounded-lg text-sm font-medium transition-colors"
+                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-[#121E3C] rounded-lg text-sm font-medium transition-colors text-center"
                 >
                   Contact Us
                 </Link>

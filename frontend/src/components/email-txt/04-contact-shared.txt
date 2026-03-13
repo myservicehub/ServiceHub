@@ -1,0 +1,61 @@
+EMAIL: Contact Details Shared
+SENT TO: Tradesperson when homeowner shares contact
+FILE LOCATION: backend/services/notifications.py (lines 371-435)
+NOTIFICATION TYPE: CONTACT_SHARED
+
+=== PLACEHOLDERS ===
+{tradesperson_name} - Tradesperson's name
+{job_title} - Title of the job
+{job_location} - Job location
+{payment_url} - URL to pay and get contact details
+
+=== HTML TEMPLATE ===
+<html>
+<head>
+    <style>
+        body { margin: 0; padding: 0; background: #f6f7fb; font-family: Arial, sans-serif; }
+        .container { max-width: 640px; margin: 0 auto; padding: 24px; }
+        .card { background: #ffffff; border: 1px solid #e6e8ef; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); overflow: hidden; }
+        .header { padding: 18px 20px; border-bottom: 1px solid #eef0f5; }
+        .logo { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .logo img { height: 28px; width: auto; }
+        .logo span { font-size: 22px; font-weight: bold; color: #0a1b3d; }
+        .title { margin: 0; font-size: 18px; color: #111827; }
+        .content { padding: 18px 20px; color: #374151; line-height: 1.6; }
+        .list { list-style: none; padding: 0; margin: 12px 0 0; }
+        .list li { margin: 8px 0; }
+        .label { color: #6b7280; display: inline-block; min-width: 140px; }
+        .value { color: #111827; font-weight: 600; }
+        .cta { display: inline-block; margin-top: 16px; padding: 12px 20px; background: #34D164; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; }
+        .footer { padding: 16px 20px; color: #6b7280; font-size: 12px; border-top: 1px solid #eef0f5; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <div class="logo">
+                    <img src="cid:logo" alt="ServiceHub Logo">
+                    <span>ServiceHub</span>
+                </div>
+                <h2 class="title">Contact Details Shared</h2>
+            </div>
+            <div class="content">
+                <p>Hello {tradesperson_name},</p>
+                <p>Excellent news! The homeowner has shared their contact details for the job you showed interest in:</p>
+                <ul class="list">
+                    <li><span class="label">Job</span> <span class="value">{job_title}</span></li>
+                    <li><span class="label">Location</span> <span class="value">{job_location}</span></li>
+                </ul>
+                <p>To access the homeowner's contact details and start the project, please pay the access fee of ₦1,000.</p>
+                <a class="cta" href="{payment_url}" target="_blank">Pay and Get Contact Details</a>
+                <p style="margin-top: 20px; font-size: 14px; color: #6b7280;">This is your opportunity to connect directly with the homeowner and discuss the job details.</p>
+            </div>
+            <div class="footer">serviceHub Team • Nigeria's Trusted Service Marketplace</div>
+        </div>
+    </div>
+</body>
+</html>
+
+=== SMS VERSION ===
+Hi {tradesperson_name}! Homeowner shared contact details for {job_title}. Pay ₦1,000 to access: {payment_url}

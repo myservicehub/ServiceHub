@@ -1,0 +1,40 @@
+EMAIL: Review Reminder
+SENT TO: Homeowner (follow-up after initial review invitation)
+FILE LOCATION: backend/services/notifications.py (lines 841-880)
+NOTIFICATION TYPE: REVIEW_REMINDER
+
+=== PLACEHOLDERS ===
+{homeowner_name} - Homeowner's name
+{tradesperson_name} - Tradesperson's name
+{job_title} - Title of the job
+{completion_date} - Date job was completed
+{review_url} - URL to leave a review
+{days_remaining} - Days until invitation expires
+
+=== TEXT TEMPLATE ===
+Subject: Don't Forget - Review {tradesperson_name}
+
+Hello {homeowner_name},
+
+We noticed you haven't left a review for your recently completed job yet. Your feedback is valuable!
+
+📋 Job: {job_title}
+👷 Tradesperson: {tradesperson_name}
+📅 Completed: {completion_date}
+
+Your review helps:
+✅ Other homeowners make informed decisions
+✅ Tradespeople improve their services
+✅ Build a trusted community on serviceHub
+
+It only takes 2 minutes to leave a review!
+
+📝 Leave Your Review Now: {review_url}
+
+This invitation expires in {days_remaining} days.
+
+Best regards,
+serviceHub Team
+
+=== SMS VERSION ===
+⏰ Reminder: Please review {tradesperson_name} for your completed job. Expires in {days_remaining} days: {review_url}

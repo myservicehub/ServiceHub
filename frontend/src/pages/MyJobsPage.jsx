@@ -605,149 +605,157 @@ const MyJobsPage = () => {
   // Show interested tradespeople modal
   if (showInterestedModal && selectedJob) {
     return (
-      <div>
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-4xl mx-auto">
-            {/* Back Button */}
-            <Button
-              variant="outline"
-              onClick={handleCloseInterestedModal}
-              className="mb-6 font-lato"
-            >
-              ← Back to My Jobs
-            </Button>
+      <div className="space-y-6 min-w-0">
+        {/* Back Button */}
+        <button
+          onClick={handleCloseInterestedModal}
+          className="flex items-center gap-2 text-sm text-gray-500 hover:text-[#121E3C] font-lato transition-colors"
+        >
+          <ChevronUp className="w-4 h-4 rotate-[-90deg]" />
+          Back to My Jobs
+        </button>
 
-            {/* Job Header */}
-            <Card className="mb-6">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <CardTitle className="text-2xl font-bold font-montserrat" style={{color: '#121E3C'}}>
-                        {selectedJob.title}
-                      </CardTitle>
-                      <Badge className={getStatusColor(selectedJob.status)}>
-                        {getJobStatusLabel(selectedJob.status)}
-                      </Badge>
-                    </div>
-                    
-                    <div className="flex items-center space-x-4 text-sm text-gray-600 font-lato mb-2">
-                      <span className="flex items-center">
-                        <MapPin size={14} className="mr-1" />
-                        {selectedJob.location}
-                      </span>
-                      <span className="flex items-center">
-                        <Calendar size={14} className="mr-1" />
-                        Posted {formatDate(selectedJob.created_at)}
-                      </span>
-                    </div>
-                  </div>
-                  {selectedJob.budget_min && selectedJob.budget_max && (
-                    <div className="text-right">
-                      <div className="text-xl font-bold font-montserrat" style={{color: '#34D164'}}>
-                        {formatCurrency(selectedJob.budget_min)} - {formatCurrency(selectedJob.budget_max)}
-                      </div>
-                      <div className="text-sm text-gray-500 font-lato">Your Budget</div>
-                    </div>
-                  )}
-                </div>
-              </CardHeader>
-            </Card>
-
-            {/* Interested Tradespeople */}
-            <div className="mb-6">
-              <h2 className="text-xl font-bold font-montserrat mb-4" style={{color: '#121E3C'}}>
-                Interested Tradespeople ({interestedTradespeople.length})
-              </h2>
+        {/* Job Header Card */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap mb-2">
+                <h1 className="text-lg sm:text-xl font-bold font-montserrat text-[#121E3C] truncate">
+                  {selectedJob.title}
+                </h1>
+                <span className={`px-2.5 py-1 rounded-lg text-xs font-medium ${getStatusColor(selectedJob.status)}`}>
+                  {getJobStatusLabel(selectedJob.status)}
+                </span>
+              </div>
               
-              {interestsLoading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{borderColor: '#34D164'}}></div>
-                  <p className="text-gray-600 font-lato">Loading interested tradespeople...</p>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500 font-lato">
+                <span className="flex items-center gap-1">
+                  <MapPin size={14} className="text-gray-400" />
+                  {selectedJob.location}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Calendar size={14} className="text-gray-400" />
+                  Posted {formatDate(selectedJob.created_at)}
+                </span>
+              </div>
+            </div>
+            {selectedJob.budget_min && selectedJob.budget_max && (
+              <div className="text-left sm:text-right">
+                <div className="text-lg font-bold font-montserrat text-[#34D164]">
+                  {formatCurrency(selectedJob.budget_min)} - {formatCurrency(selectedJob.budget_max)}
                 </div>
-              ) : interestedTradespeople.length === 0 ? (
-                <Card>
-                  <CardContent className="text-center py-12">
-                    <Users size={48} className="mx-auto text-gray-400 mb-4" />
-                    <h3 className="text-lg font-semibold font-montserrat text-gray-900 mb-2">
-                      No interested tradespeople yet
-                    </h3>
-                    <p className="text-gray-600 font-lato">
-                      When tradespeople show interest in your job, they'll appear here.
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-4">
-                  {interestedTradespeople.map((person) => (
-                    <Card key={person.interest_id} className="hover:shadow-lg transition-shadow duration-300">
-                      <CardContent className="p-6">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-3 mb-3">
-                              <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-                                <Users size={20} className="text-gray-600" />
-                              </div>
-                              <div>
-                                <h3 className="text-lg font-bold font-montserrat" style={{color: '#121E3C'}}>
-                                  {person.tradesperson_name}
-                                </h3>
-                                <p className="text-sm text-gray-600 font-lato">{person.tradesperson_email}</p>
-                              </div>
-                            </div>
-                            
-                            <div className="grid grid-cols-2 gap-4 mb-4">
-                              <div>
-                                <p className="text-sm font-medium text-gray-700 font-lato">Experience:</p>
-                                <p className="text-sm text-gray-600">{person.experience_years} years</p>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-gray-700 font-lato">Specialties:</p>
-                                <div className="flex flex-wrap gap-1 mt-1">
-                                  {person.trade_categories?.map((category, index) => (
-                                    <Badge key={index} variant="secondary" className="text-xs">
-                                      {category}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <div className="flex items-center space-x-4 text-sm text-gray-500">
-                              <span>Interested {formatDate(person.created_at)}</span>
-                              <Badge className={person.status === 'contact_shared' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}>
-                                {person.status === 'contact_shared' ? 'Contact Shared' : 'Interested'}
-                              </Badge>
-                            </div>
-                          </div>
-                          
-                          <div className="ml-6">
-                            {person.status === 'interested' ? (
-                              <Button
-                                onClick={() => handleShareContact(person.interest_id)}
-                                className="text-white font-lato"
-                                style={{backgroundColor: '#34D164'}}
-                              >
-                                Share Contact Details
-                              </Button>
-                            ) : (
-                              <Button
-                                disabled
-                                variant="outline"
-                                className="font-lato"
-                              >
-                                Contact Shared ✓
-                              </Button>
+                <div className="text-xs text-gray-400 font-lato">Your Budget</div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Interested Tradespeople Section */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <h2 className="text-base font-semibold text-[#121E3C] font-montserrat">
+              Interested Tradespeople
+            </h2>
+            <span className="px-2.5 py-1 bg-[#34D164]/10 text-[#34D164] rounded-lg text-xs font-medium">
+              {interestedTradespeople.length} total
+            </span>
+          </div>
+          
+          {interestsLoading ? (
+            <div className="p-8 text-center">
+              <div className="w-10 h-10 border-2 border-[#34D164] border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+              <p className="text-sm text-gray-500 font-lato">Loading interested tradespeople...</p>
+            </div>
+          ) : interestedTradespeople.length === 0 ? (
+            <div className="p-12 text-center">
+              <div className="w-14 h-14 mx-auto bg-[#121E3C]/5 rounded-2xl flex items-center justify-center mb-4">
+                <Users className="w-7 h-7 text-[#121E3C]/40" />
+              </div>
+              <h3 className="text-base font-semibold text-[#121E3C] mb-1 font-montserrat">
+                No interested tradespeople yet
+              </h3>
+              <p className="text-sm text-gray-400 font-lato max-w-xs mx-auto">
+                When tradespeople show interest in your job, they'll appear here.
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-50">
+              {interestedTradespeople.map((person) => (
+                <div key={person.interest_id} className="p-4 sm:p-5 hover:bg-gray-50/50 transition-colors">
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                      <div className="w-11 h-11 bg-[#121E3C]/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <User size={20} className="text-[#121E3C]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="text-sm font-semibold text-[#121E3C] font-montserrat truncate">
+                            {person.tradesperson_name}
+                          </h3>
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-medium ${
+                            person.status === 'contact_shared' 
+                              ? 'bg-[#34D164]/10 text-[#34D164]' 
+                              : 'bg-amber-50 text-amber-600'
+                          }`}>
+                            {person.status === 'contact_shared' ? 'Contact Shared' : 'Interested'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-400 font-lato mt-0.5">{person.tradesperson_email}</p>
+                        
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-gray-500 font-lato">
+                          <span className="flex items-center gap-1">
+                            <Briefcase size={12} className="text-gray-400" />
+                            {person.experience_years} years exp.
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Calendar size={12} className="text-gray-400" />
+                            {formatDate(person.created_at)}
+                          </span>
+                        </div>
+                        
+                        {person.trade_categories?.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {person.trade_categories.slice(0, 3).map((category, index) => (
+                              <span key={index} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-md text-[10px] font-medium">
+                                {category}
+                              </span>
+                            ))}
+                            {person.trade_categories.length > 3 && (
+                              <span className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded-md text-[10px]">
+                                +{person.trade_categories.length - 3}
+                              </span>
                             )}
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="flex-shrink-0 sm:ml-4">
+                      {person.status === 'interested' ? (
+                        <Button
+                          onClick={() => handleShareContact(person.interest_id)}
+                          size="sm"
+                          className="bg-[#34D164] hover:bg-[#2FBD59] text-white font-lato text-xs w-full sm:w-auto"
+                        >
+                          Share Contact
+                        </Button>
+                      ) : (
+                        <Button
+                          disabled
+                          variant="outline"
+                          size="sm"
+                          className="font-lato text-xs w-full sm:w-auto"
+                        >
+                          <CheckCircle size={14} className="mr-1.5 text-[#34D164]" />
+                          Shared
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              )}
+              ))}
             </div>
-          </div>
+          )}
         </div>
       </div>
     );
@@ -835,24 +843,24 @@ const MyJobsPage = () => {
                 </div>
 
                 {/* Job Status Filter Dropdown */}
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-lg font-semibold text-[#121E3C]">My Posted Jobs</h2>
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
+                  <h2 className="text-base font-semibold text-[#121E3C] font-montserrat">My Posted Jobs</h2>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="flex items-center space-x-2 px-4 py-2">
-                        <span>{getJobStatusDisplayText(activeJobStatus)}</span>
-                        <ChevronDown size={16} />
+                      <Button variant="outline" className="flex items-center gap-2 px-4 py-2 rounded-xl border-gray-200 hover:border-[#34D164]/30 hover:bg-gray-50 transition-all font-lato text-sm">
+                        <span className="text-[#121E3C]">{getJobStatusDisplayText(activeJobStatus)}</span>
+                        <ChevronDown size={14} className="text-gray-400" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuContent align="end" className="w-48 rounded-xl border-gray-100 shadow-lg p-1">
                       {getJobStatusOptions().map((option) => (
                         <DropdownMenuItem 
                           key={option.value}
                           onClick={() => setActiveJobStatus(option.value)}
-                          className={`cursor-pointer ${activeJobStatus === option.value ? 'bg-gray-100' : ''}`}
+                          className={`cursor-pointer rounded-lg text-sm font-lato ${activeJobStatus === option.value ? 'bg-[#34D164]/10 text-[#34D164]' : 'text-gray-600 hover:bg-gray-50'}`}
                         >
-                          <div className="flex items-center space-x-2">
-                            <option.icon size={16} />
+                          <div className="flex items-center gap-2">
+                            <option.icon size={14} />
                             <span>{option.label}</span>
                           </div>
                         </DropdownMenuItem>
@@ -1066,20 +1074,20 @@ const MyJobsPage = () => {
                                 {(job.status === 'active' || job.status === 'cancelled') && (
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                      <Button variant="outline" size="sm" className="px-2">
-                                        <MoreHorizontal size={16} />
+                                      <Button variant="outline" size="sm" className="px-2 rounded-lg border-gray-200 hover:border-gray-300 hover:bg-gray-50">
+                                        <MoreHorizontal size={16} className="text-gray-500" />
                                       </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="w-44">
+                                    <DropdownMenuContent align="end" className="w-44 rounded-xl border-gray-100 shadow-lg p-1">
                                       {job.status === 'active' && (
                                         <>
-                                          <DropdownMenuItem onClick={() => handleEditJob(job)} className="cursor-pointer">
+                                          <DropdownMenuItem onClick={() => handleEditJob(job)} className="cursor-pointer rounded-lg text-sm font-lato text-gray-600 hover:bg-gray-50">
                                             <Edit3 size={14} className="mr-2" /> Edit Job
                                           </DropdownMenuItem>
-                                          <DropdownMenuItem onClick={() => handleStartQuickChat(job)} className="cursor-pointer">
+                                          <DropdownMenuItem onClick={() => handleStartQuickChat(job)} className="cursor-pointer rounded-lg text-sm font-lato text-gray-600 hover:bg-gray-50">
                                             <MessageCircle size={14} className="mr-2" /> Chat
                                           </DropdownMenuItem>
-                                          <DropdownMenuItem onClick={() => handleCloseJob(job)} className="cursor-pointer text-red-600">
+                                          <DropdownMenuItem onClick={() => handleCloseJob(job)} className="cursor-pointer rounded-lg text-sm font-lato text-red-500 hover:bg-red-50">
                                             <X size={14} className="mr-2" /> Close Job
                                           </DropdownMenuItem>
                                         </>
@@ -1088,7 +1096,7 @@ const MyJobsPage = () => {
                                         <DropdownMenuItem
                                           onClick={() => handleReopenJob(job.id)}
                                           disabled={reopeningJobId === job.id}
-                                          className="cursor-pointer text-green-600"
+                                          className="cursor-pointer rounded-lg text-sm font-lato text-[#34D164] hover:bg-[#34D164]/10"
                                         >
                                           <RotateCcw size={14} className="mr-2" />
                                           {reopeningJobId === job.id ? 'Reopening...' : 'Reopen Job'}
@@ -1132,74 +1140,76 @@ const MyJobsPage = () => {
 
       {/* Review Prompt Modal */}
       {showReviewPrompt && completedJob && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-lg max-w-md w-full">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in duration-300">
+            {/* Success Header */}
+            <div className="bg-[#34D164] px-6 py-8 text-center">
+              <div className="relative inline-block">
+                <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto">
+                  <CheckCircle className="w-8 h-8 text-white" />
+                </div>
+              </div>
+              <h2 className="text-xl font-bold text-white mt-4 font-montserrat">Job Completed! 🎉</h2>
+              <p className="text-white/80 mt-2 text-sm font-lato">
+                "{completedJob.title}" has been marked as completed.
+              </p>
+            </div>
+
             <div className="p-6">
-              <div className="text-center">
-                <div className="relative">
-                  <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4 animate-pulse" />
-                  <div className="absolute inset-0 w-16 h-16 mx-auto animate-ping">
-                    <CheckCircle className="w-16 h-16 text-green-300 opacity-75" />
+              {/* Review Prompt Card */}
+              <div className="bg-[#121E3C]/5 border border-[#121E3C]/10 p-4 rounded-xl mb-6">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-[#34D164]/10 rounded-lg">
+                    <Star className="w-5 h-5 text-[#34D164]" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-[#121E3C] text-sm font-montserrat">Share Your Experience</h3>
+                    <p className="text-xs text-gray-500 mt-1 font-lato">
+                      Help other homeowners by leaving a review for the tradesperson.
+                    </p>
                   </div>
                 </div>
-                <h2 className="text-xl font-bold text-gray-900 mb-2">Job Completed! 🎉</h2>
-                <p className="text-gray-600 mb-6">
-                  Great! Your job "<strong>{completedJob.title}</strong>" has been marked as completed.
-                </p>
-                <div className="bg-blue-50 p-4 rounded-lg mb-6">
-                  <Star className="w-6 h-6 text-blue-600 mx-auto mb-2" />
-                  <h3 className="font-semibold text-blue-900 mb-2">Leave a Review</h3>
-                  <p className="text-sm text-blue-700">
-                    Help other homeowners by sharing your experience. Your review helps build trust in our community.
-                  </p>
-                </div>
-                <p className="text-gray-600 mb-6">
-                  Would you like to leave a review now, or save it for later?
-                </p>
               </div>
               
-              <div className="flex flex-col space-y-3">
+              <div className="space-y-3">
                 <Button
                   onClick={() => {
                     setShowReviewPrompt(false);
                     handleLeaveReview(completedJob);
                   }}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3"
+                  className="w-full bg-[#34D164] hover:bg-[#2FBD59] text-white font-medium py-3 rounded-xl shadow-md shadow-[#34D164]/20 font-lato"
                 >
-                  <Star className="w-5 h-5 mr-2" />
+                  <Star className="w-4 h-4 mr-2" />
                   Leave Review Now
                 </Button>
                 
                 <Button
                   onClick={() => {
                     setShowReviewPrompt(false);
-                    // Add to pending review jobs
                     setPendingReviewJobs(prev => new Set([...prev, completedJob.id]));
                     setCompletedJob(null);
                     toast({
                       title: "Review Reminder Set",
-                      description: "We'll remind you to leave a review later. You can also find completed jobs in the 'Completed' tab.",
+                      description: "We'll remind you to leave a review later.",
                     });
                   }}
                   variant="outline"
-                  className="w-full font-semibold py-3"
+                  className="w-full font-medium py-3 rounded-xl border-gray-200 hover:bg-gray-50 font-lato"
                 >
-                  <Clock className="w-5 h-5 mr-2" />
+                  <Clock className="w-4 h-4 mr-2" />
                   Maybe Later
                 </Button>
               </div>
               
-              <div className="mt-4 text-center">
-                <button
-                  onClick={() => {
-                    setShowReviewPrompt(false);
-                    setCompletedJob(null);
-                  }}
-                  className="text-sm text-gray-500 hover:text-gray-700"
-                >
-                  Skip for now
-                </button>
-              </div>
+              <button
+                onClick={() => {
+                  setShowReviewPrompt(false);
+                  setCompletedJob(null);
+                }}
+                className="w-full mt-4 text-sm text-gray-400 hover:text-gray-600 font-lato transition-colors"
+              >
+                Skip for now
+              </button>
             </div>
           </div>
         </div>
@@ -1207,8 +1217,8 @@ const MyJobsPage = () => {
 
       {/* Review Modal */}
       {showReviewModal && jobToReview && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <ReviewForm
               jobId={jobToReview.id}
               revieweeId={tradespersonToReview?.id || 'placeholder-tradesperson-id'}

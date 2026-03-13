@@ -1,0 +1,68 @@
+EMAIL: Payment Confirmation - Contact Details Available
+SENT TO: Tradesperson after payment is confirmed
+FILE LOCATION: backend/services/notifications.py (lines 506-575)
+NOTIFICATION TYPE: PAYMENT_CONFIRMATION
+
+=== PLACEHOLDERS ===
+{tradesperson_name} - Tradesperson's name
+{job_title} - Title of the job
+{job_location} - Job location
+{homeowner_name} - Homeowner's name
+{homeowner_email} - Homeowner's email
+{homeowner_phone} - Homeowner's phone number
+
+=== HTML TEMPLATE ===
+<html>
+<head>
+    <style>
+        body { margin: 0; padding: 0; background: #f6f7fb; font-family: Arial, sans-serif; }
+        .container { max-width: 640px; margin: 0 auto; padding: 24px; }
+        .card { background: #ffffff; border: 1px solid #e6e8ef; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); overflow: hidden; }
+        .header { padding: 18px 20px; border-bottom: 1px solid #eef0f5; background: #34D164; }
+        .logo { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .logo img { height: 28px; width: auto; filter: brightness(0) invert(1); }
+        .logo span { font-size: 22px; font-weight: bold; color: #ffffff; }
+        .title { margin: 0; font-size: 18px; color: #ffffff; }
+        .content { padding: 18px 20px; color: #374151; line-height: 1.6; }
+        .contact-box { background: #f9fafb; border: 1px dashed #d1d5db; border-radius: 8px; padding: 16px; margin: 16px 0; }
+        .list { list-style: none; padding: 0; margin: 0; }
+        .list li { margin: 8px 0; }
+        .label { color: #6b7280; display: inline-block; min-width: 120px; }
+        .value { color: #111827; font-weight: 600; }
+        .footer { padding: 16px 20px; color: #6b7280; font-size: 12px; border-top: 1px solid #eef0f5; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <div class="logo">
+                    <img src="cid:logo" alt="ServiceHub Logo">
+                    <span>ServiceHub</span>
+                </div>
+                <h2 class="title">Payment Confirmed!</h2>
+            </div>
+            <div class="content">
+                <p>Hello {tradesperson_name},</p>
+                <p>Your payment of ₦1,000 has been confirmed. You now have full access to the homeowner's contact details:</p>
+                
+                <div class="contact-box">
+                    <ul class="list">
+                        <li><span class="label">Job</span> <span class="value">{job_title}</span></li>
+                        <li><span class="label">Homeowner</span> <span class="value">{homeowner_name}</span></li>
+                        <li><span class="label">Email</span> <span class="value">{homeowner_email}</span></li>
+                        <li><span class="label">Phone</span> <span class="value">{homeowner_phone}</span></li>
+                    </ul>
+                </div>
+                
+                <p>You can now contact the homeowner directly to discuss the job details and arrange a meeting.</p>
+                <p>Best of luck with your project!</p>
+            </div>
+            <div class="footer">serviceHub Team • Nigeria's Trusted Service Marketplace</div>
+        </div>
+    </div>
+</body>
+</html>
+
+=== SMS VERSION ===
+Payment confirmed! {homeowner_name}: {homeowner_phone}, {homeowner_email} for {job_title}

@@ -124,68 +124,68 @@ const WalletTransactions = ({ refreshToken = 0 }) => {
               <div key={transaction.id}>
                 {/* Main Row - Always Visible */}
                 <div 
-                  className="flex items-center justify-between px-5 py-3.5 cursor-pointer hover:bg-gray-50/50 transition-colors"
+                  className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-3.5 cursor-pointer hover:bg-gray-50/50 transition-colors gap-2"
                   onClick={() => toggleExpand(transaction.id)}
                 >
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className={`w-9 h-9 rounded-xl ${iconData.bg} flex items-center justify-center shrink-0`}>
-                      <IconComponent className={`w-4 h-4 ${iconData.color}`} />
+                  <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                    <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl ${iconData.bg} flex items-center justify-center shrink-0`}>
+                      <IconComponent className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${iconData.color}`} />
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-[#121E3C] truncate">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm font-medium text-[#121E3C] truncate">
                         {isFunding ? 'Wallet Funding' : transaction.description || 'Transaction'}
                       </p>
-                      <p className="text-xs text-gray-400">{formatDate(transaction.created_at)}</p>
+                      <p className="text-[10px] sm:text-xs text-gray-400">{formatDate(transaction.created_at)}</p>
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
                     <div className="text-right">
-                      <p className={`text-sm font-semibold ${isFunding ? 'text-green-600' : 'text-red-600'}`}>
-                        {isFunding ? '+' : '-'}{transaction.amount_coins} coins
+                      <p className={`text-xs sm:text-sm font-semibold ${isFunding ? 'text-[#34D164]' : 'text-red-500'}`}>
+                        {isFunding ? '+' : '-'}{transaction.amount_coins}
                       </p>
-                      <p className={`text-xs capitalize ${getStatusStyles(transaction.status)}`}>
+                      <p className={`text-[10px] sm:text-xs capitalize ${getStatusStyles(transaction.status)}`}>
                         {transaction.status}
                       </p>
                     </div>
                     {isExpanded ? (
-                      <ChevronUp size={16} className="text-gray-400" />
+                      <ChevronUp size={14} className="text-gray-400 hidden sm:block" />
                     ) : (
-                      <ChevronDown size={16} className="text-gray-400" />
+                      <ChevronDown size={14} className="text-gray-400 hidden sm:block" />
                     )}
                   </div>
                 </div>
                 
                 {/* Expanded Details */}
                 {isExpanded && (
-                  <div className="px-5 pb-4 pt-0 bg-gray-50/50">
-                    <div className="pl-12 space-y-2">
-                      <div className="flex justify-between text-xs">
+                  <div className="px-4 sm:px-5 pb-4 pt-0 bg-gray-50/50">
+                    <div className="pl-10 sm:pl-12 space-y-2">
+                      <div className="flex justify-between text-[10px] sm:text-xs gap-2">
                         <span className="text-gray-500">Amount (₦)</span>
                         <span className="text-[#121E3C] font-medium">₦{transaction.amount_naira?.toLocaleString()}</span>
                       </div>
-                      <div className="flex justify-between text-xs">
+                      <div className="flex justify-between text-[10px] sm:text-xs gap-2">
                         <span className="text-gray-500">Time</span>
                         <span className="text-[#121E3C]">{formatTime(transaction.created_at)}</span>
                       </div>
                       {transaction.reference && (
-                        <div className="flex justify-between text-xs">
-                          <span className="text-gray-500">Reference</span>
-                          <span className="text-[#121E3C] font-mono">{transaction.reference}</span>
+                        <div className="flex justify-between text-[10px] sm:text-xs gap-2">
+                          <span className="text-gray-500 flex-shrink-0">Reference</span>
+                          <span className="text-[#121E3C] font-mono truncate text-right">{transaction.reference}</span>
                         </div>
                       )}
                       {transaction.admin_notes && (
-                        <div className="flex justify-between text-xs">
-                          <span className="text-gray-500">Note</span>
-                          <span className="text-blue-600">{transaction.admin_notes}</span>
+                        <div className="flex justify-between text-[10px] sm:text-xs gap-2">
+                          <span className="text-gray-500 flex-shrink-0">Note</span>
+                          <span className="text-blue-600 truncate text-right">{transaction.admin_notes}</span>
                         </div>
                       )}
                       {transaction.proof_image && (
                         <div className="pt-2">
-                          <p className="text-xs text-gray-500 mb-2">Payment Proof:</p>
+                          <p className="text-[10px] sm:text-xs text-gray-500 mb-2">Payment Proof:</p>
                           <PaymentProofImage
                             filename={transaction.proof_image}
-                            className="h-16 w-auto rounded-lg border cursor-pointer hover:shadow-lg transition-shadow"
+                            className="h-14 sm:h-16 w-auto rounded-lg border cursor-pointer hover:shadow-lg transition-shadow"
                             alt="Payment proof"
                           />
                         </div>

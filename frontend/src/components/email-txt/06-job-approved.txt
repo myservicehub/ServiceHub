@@ -1,0 +1,67 @@
+EMAIL: Job Approved
+SENT TO: Homeowner when job is approved
+FILE LOCATION: backend/services/notifications.py (lines 643-713)
+NOTIFICATION TYPE: JOB_APPROVED
+
+=== PLACEHOLDERS ===
+{homeowner_name} - Homeowner's name
+{job_title} - Title of the job
+{approved_at} - Date/time of approval
+{admin_notes_html} - Optional admin notes (HTML block)
+
+=== HTML TEMPLATE ===
+<html>
+<head>
+    <style>
+        body { margin: 0; padding: 0; background: #f6f7fb; font-family: Arial, sans-serif; }
+        .container { max-width: 640px; margin: 0 auto; padding: 24px; }
+        .card { background: #ffffff; border: 1px solid #e6e8ef; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); overflow: hidden; }
+        .header { padding: 18px 20px; border-bottom: 1px solid #eef0f5; background: #34D164; }
+        .logo { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .logo img { height: 28px; width: auto; filter: brightness(0) invert(1); }
+        .logo span { font-size: 22px; font-weight: bold; color: #ffffff; }
+        .title { margin: 0; font-size: 18px; color: #ffffff; }
+        .content { padding: 18px 20px; color: #374151; line-height: 1.6; }
+        .info-list { list-style: none; padding: 0; margin: 16px 0; }
+        .info-list li { margin: 8px 0; display: flex; }
+        .label { color: #6b7280; min-width: 120px; font-size: 14px; }
+        .value { color: #111827; font-weight: 600; font-size: 14px; }
+        .admin-note { background: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; padding: 12px; margin: 16px 0; color: #92400e; font-size: 14px; }
+        .cta { display: inline-block; margin-top: 16px; padding: 12px 20px; background: #165DFF; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; }
+        .footer { padding: 16px 20px; color: #6b7280; font-size: 12px; border-top: 1px solid #eef0f5; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <div class="logo">
+                    <img src="cid:logo" alt="ServiceHub Logo">
+                    <span>ServiceHub</span>
+                </div>
+                <h2 class="title">Great News! Your Job is Live</h2>
+            </div>
+            <div class="content">
+                <p>Hello {homeowner_name},</p>
+                <p>Your job posting has been approved and is now visible to qualified tradespeople on ServiceHub.</p>
+                
+                <ul class="info-list">
+                    <li><span class="label">Job Title:</span> <span class="value">{job_title}</span></li>
+                    <li><span class="label">Status:</span> <span class="value" style="color: #34D164;">✅ Approved & Active</span></li>
+                    <li><span class="label">Approved On:</span> <span class="value">{approved_at}</span></li>
+                </ul>
+
+                {admin_notes_html}
+
+                <p>Tradespeople in your area will be notified and can start showing interest immediately. You'll receive notifications as soon as they apply.</p>
+                
+                <a class="cta" href="https://my-servicehub.vercel.app/dashboard/jobs" target="_blank">Manage Your Job & Applications</a>
+            </div>
+            <div class="footer">serviceHub Team • Nigeria's Trusted Service Marketplace</div>
+        </div>
+    </div>
+</body>
+</html>
+
+=== SMS VERSION ===
+✅ Your job '{job_title}' has been approved and is now live! Tradespeople can now see and apply. Check: https://my-servicehub.vercel.app/dashboard/jobs

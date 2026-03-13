@@ -9,7 +9,7 @@ import ContactManagementTab from './ContactManagementTab';
 import TradeCategoryQuestionsManager from '../components/admin/TradeCategoryQuestionsManager';
 import AdminManagement from '../components/admin/AdminManagement';
 import ContentManagement from '../components/admin/ContentManagement';
-import Header from '../components/Header';
+import AdminHeader from '../components/AdminHeader';
 import { adminReviewsAPI } from '../api/wallet';
 import Footer from '../components/Footer';
 import AdminDataTable from '../components/admin/AdminDataTable';
@@ -1607,8 +1607,8 @@ const AdminDashboard = () => {
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Header />
-        <div className="container mx-auto px-4 py-8">
+        <AdminHeader isLoggedIn={false} />
+        <div className="container mx-auto px-4 py-8 pt-20">
           <div className="max-w-md mx-auto bg-white p-8 rounded-lg shadow-sm border">
             <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Admin Login</h2>
             <form onSubmit={handleLogin} className="space-y-4">
@@ -1652,9 +1652,9 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+      <AdminHeader onLogout={() => setIsLoggedIn(false)} />
       
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 pt-20">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="flex justify-between items-center mb-8">
@@ -1662,15 +1662,6 @@ const AdminDashboard = () => {
               <h1 className="text-3xl font-bold text-gray-800">Admin Dashboard</h1>
               <p className="text-gray-600">Manage wallet funding and job access fees</p>
             </div>
-            <button
-              onClick={async () => {
-                await adminAPI.logout();
-                setIsLoggedIn(false);
-              }}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg"
-            >
-              Logout
-            </button>
           </div>
 
           {/* Tabs */}
@@ -6794,8 +6785,8 @@ const AdminDashboard = () => {
         </DialogContent>
       </Dialog>
 
-  <Footer />
-  </div>
+      <Footer />
+    </div>
   );
 };
 

@@ -1,0 +1,35 @@
+EMAIL: New Review Received
+SENT TO: Tradesperson when they receive a new review
+FILE LOCATION: backend/services/notifications.py (lines 883-917)
+NOTIFICATION TYPE: NEW_REVIEW_RECEIVED
+
+=== PLACEHOLDERS ===
+{reviewee_name} - Tradesperson's name (person receiving the review)
+{reviewer_name} - Name of the reviewer
+{job_title} - Title of the job
+{rating} - Numeric rating (1-5)
+{star_display} - Star display (e.g., ⭐⭐⭐⭐⭐)
+{review_url} - URL to view the review
+
+=== TEXT TEMPLATE ===
+Subject: New Review Received: {job_title}
+
+Hello {reviewee_name},
+
+Congratulations! You've received a new review on serviceHub.
+
+👤 Reviewer: {reviewer_name}
+📋 Job: {job_title}
+⭐ Rating: {star_display} ({rating}/5)
+
+Your reputation is growing! Reviews help you win more jobs by building trust with potential clients.
+
+📝 View your review: {review_url}
+
+Keep up the great work!
+
+Best regards,
+serviceHub Team
+
+=== SMS VERSION ===
+⭐ You received a new {rating}-star review from {reviewer_name} for '{job_title}'! View it here: {review_url}

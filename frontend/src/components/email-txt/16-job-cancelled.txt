@@ -1,0 +1,41 @@
+EMAIL: Job Cancelled
+SENT TO: Tradesperson when a job they showed interest in is cancelled
+FILE LOCATION: backend/services/notifications.py (lines 1105-1143)
+NOTIFICATION TYPE: JOB_CANCELLED
+
+=== PLACEHOLDERS ===
+{tradesperson_name} - Tradesperson's name
+{job_title} - Title of the job
+{job_location} - Job location
+{homeowner_name} - Homeowner's name
+{cancellation_date} - Date job was cancelled
+{cancellation_reason} - Reason for cancellation
+{browse_jobs_url} - URL to browse new jobs
+{interests_url} - URL to view interests
+
+=== TEXT TEMPLATE ===
+Subject: Job Cancelled: {job_title}
+
+Hello {tradesperson_name},
+
+Unfortunately, the job you showed interest in has been cancelled by the homeowner.
+
+📋 Job: {job_title}
+📍 Location: {job_location}
+👤 Homeowner: {homeowner_name}
+❌ Status: Cancelled
+📅 Cancelled: {cancellation_date}
+📝 Reason: {cancellation_reason}
+
+We understand this is disappointing. The homeowner has decided to cancel this project at this time.
+
+Don't worry - there are many other opportunities available! Keep browsing for new jobs that match your skills.
+
+🔍 Browse Jobs: {browse_jobs_url}
+📋 View Your Interests: {interests_url}
+
+Best regards,
+serviceHub Team
+
+=== SMS VERSION ===
+❌ Job '{job_title}' cancelled by {homeowner_name}. Reason: {cancellation_reason}. Browse new jobs: {browse_jobs_url}

@@ -225,7 +225,7 @@ const ContactUsPage = () => {
       <Header />
       
       {/* Hero Section */}
-      <section className="relative py-14 lg:py-16 overflow-hidden">
+      <section className="relative pt-24 sm:pt-28 lg:pt-32 pb-14 lg:pb-16 overflow-hidden">
         <div className="absolute inset-0">
           <img 
             src="/stock/bg9.jpg" 

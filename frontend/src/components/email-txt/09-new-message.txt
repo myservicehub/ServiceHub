@@ -1,0 +1,60 @@
+EMAIL: New Message Received
+SENT TO: User when they receive a message
+FILE LOCATION: backend/services/notifications.py (lines 578-640)
+NOTIFICATION TYPE: NEW_MESSAGE
+
+=== PLACEHOLDERS ===
+{recipient_name} - Name of the message recipient
+{sender_name} - Name of the message sender
+{job_title} - Title of the related job
+{message_preview} - Preview of the message content
+{conversation_url} - URL to view the conversation
+
+=== HTML TEMPLATE ===
+<html>
+<head>
+    <style>
+        body { margin: 0; padding: 0; background: #f6f7fb; font-family: Arial, sans-serif; }
+        .container { max-width: 640px; margin: 0 auto; padding: 24px; }
+        .card { background: #ffffff; border: 1px solid #e6e8ef; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); overflow: hidden; }
+        .header { padding: 18px 20px; border-bottom: 1px solid #eef0f5; }
+        .logo { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .logo img { height: 28px; width: auto; }
+        .logo span { font-size: 22px; font-weight: bold; color: #0a1b3d; }
+        .title { margin: 0; font-size: 18px; color: #111827; }
+        .content { padding: 18px 20px; color: #374151; line-height: 1.6; }
+        .msg-box { background: #f3f4f6; border-left: 4px solid #165DFF; padding: 12px 16px; margin: 16px 0; font-style: italic; }
+        .cta { display: inline-block; margin-top: 16px; padding: 12px 20px; background: #165DFF; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; }
+        .footer { padding: 16px 20px; color: #6b7280; font-size: 12px; border-top: 1px solid #eef0f5; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <div class="logo">
+                    <img src="cid:logo" alt="ServiceHub Logo">
+                    <span>ServiceHub</span>
+                </div>
+                <h2 class="title">New Message Received</h2>
+            </div>
+            <div class="content">
+                <p>Hello {recipient_name},</p>
+                <p>You have received a new message regarding your job: <strong>{job_title}</strong></p>
+                
+                <div class="msg-box">
+                    <p style="margin: 0; color: #6b7280; font-size: 12px; font-style: normal; font-weight: 600;">FROM: {sender_name}</p>
+                    <p style="margin-top: 8px;">"{message_preview}..."</p>
+                </div>
+                
+                <p>To view the full conversation and reply, please visit your messages.</p>
+                <a class="cta" href="{conversation_url}" target="_blank">View Conversation & Reply</a>
+            </div>
+            <div class="footer">serviceHub Team • Nigeria's Trusted Service Marketplace</div>
+        </div>
+    </div>
+</body>
+</html>
+
+=== SMS VERSION ===
+💬 New message from {sender_name} about {job_title}: {message_preview} Reply at: {conversation_url}

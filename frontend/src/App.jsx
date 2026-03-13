@@ -72,7 +72,7 @@ const ProtectedRoute = ({ children }) => {
   if (loading) {
     return <div style={{ padding: 24 }}>Loading...</div>;
   }
-  return isAuthenticated() ? children : <Navigate to="/join-for-free" replace />;
+  return isAuthenticated() ? children : <Navigate to="/?promo=tradesperson" replace />;
 };
 
 const RoleGuard = ({ allowedRoles, children }) => {
@@ -88,7 +88,7 @@ const RoleGuard = ({ allowedRoles, children }) => {
   }
 
   if (!isAuthenticated()) {
-    return <Navigate to="/join-for-free" replace />;
+    return <Navigate to="/?promo=tradesperson" replace />;
   }
   if (!allowedRoles.includes(user?.role)) {
     return <Navigate to="/" replace />;
@@ -139,7 +139,7 @@ function App() {
                 
                 {/* Authentication & Account */}
                 <Route path="/join-for-free" element={<JoinForFreePage />} />
-                <Route path="/signup" element={<JoinForFreePage />} />
+                <Route path="/signup" element={<Navigate to="/?promo=tradesperson" replace />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/verify-account" element={<VerifyAccountPage />} />
                 

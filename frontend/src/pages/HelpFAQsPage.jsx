@@ -229,7 +229,7 @@ const HelpFAQsPage = () => {
       },
       {
         question: "How much does it cost to use ServiceHub as a tradesperson?",
-        answer: "Registration is free! You pay a small access fee (typically 5-100 coins, equivalent to ₦500-₦10,000) only when you want to access homeowner contact details for jobs you're interested in. This ensures you're serious about the job and helps maintain quality leads."
+        answer: "Registration is free! You pay a small access fee only when you want to access homeowner contact details for jobs you're interested in. This ensures you're serious about the job and helps maintain quality leads."
       },
       {
         question: "How are jobs matched to tradespeople?",
@@ -370,7 +370,7 @@ const HelpFAQsPage = () => {
       <Header />
       
       {/* Hero Section */}
-      <section className="relative py-16 lg:py-20 overflow-hidden">
+      <section className="relative pt-24 sm:pt-28 lg:pt-32 pb-16 lg:pb-20 overflow-hidden">
         <div className="absolute inset-0">
           <img 
             src="/stock/bg9.jpg" 

@@ -1,0 +1,64 @@
+EMAIL: Job Submitted / Pending Approval
+SENT TO: Homeowner after submitting a job
+FILE LOCATION: backend/services/notifications.py (lines 438-503)
+NOTIFICATION TYPE: JOB_POSTED
+
+=== PLACEHOLDERS ===
+{homeowner_name} - Homeowner's name
+{job_title} - Title of the job
+{job_location} - Job location
+{job_budget} - Budget for the job
+{post_date} - Date job was submitted
+{manage_url} - URL to manage the job
+
+=== HTML TEMPLATE ===
+<html>
+<head>
+    <style>
+        body { margin: 0; padding: 0; background: #f6f7fb; font-family: Arial, sans-serif; }
+        .container { max-width: 640px; margin: 0 auto; padding: 24px; }
+        .card { background: #ffffff; border: 1px solid #e6e8ef; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); overflow: hidden; }
+        .header { padding: 18px 20px; border-bottom: 1px solid #eef0f5; }
+        .logo { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .logo img { height: 28px; width: auto; }
+        .logo span { font-size: 22px; font-weight: bold; color: #0a1b3d; }
+        .title { margin: 0; font-size: 18px; color: #111827; }
+        .content { padding: 18px 20px; color: #374151; line-height: 1.6; }
+        .list { list-style: none; padding: 0; margin: 12px 0 0; }
+        .list li { margin: 8px 0; }
+        .label { color: #6b7280; display: inline-block; min-width: 140px; }
+        .value { color: #111827; font-weight: 600; }
+        .cta { display: inline-block; margin-top: 16px; padding: 12px 20px; background: #165DFF; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; }
+        .footer { padding: 16px 20px; color: #6b7280; font-size: 12px; border-top: 1px solid #eef0f5; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <div class="logo">
+                    <img src="cid:logo" alt="ServiceHub Logo">
+                    <span>ServiceHub</span>
+                </div>
+                <h2 class="title">Job Received & Pending Approval</h2>
+            </div>
+            <div class="content">
+                <p>Hello {homeowner_name},</p>
+                <p>Your job has been received and is now being reviewed by our admin team.</p>
+                <ul class="list">
+                    <li><span class="label">Job Title</span> <span class="value">{job_title}</span></li>
+                    <li><span class="label">Location</span> <span class="value">{job_location}</span></li>
+                    <li><span class="label">Budget</span> <span class="value">{job_budget}</span></li>
+                    <li><span class="label">Submitted</span> <span class="value">{post_date}</span></li>
+                </ul>
+                <p>We will notify you once your job is approved. After approval, qualified tradespeople in your area will be notified and can show interest.</p>
+                <a class="cta" href="{manage_url}" target="_blank">Manage Your Job</a>
+            </div>
+            <div class="footer">serviceHub Team • Nigeria's Trusted Service Marketplace</div>
+        </div>
+    </div>
+</body>
+</html>
+
+=== SMS VERSION ===
+Hi {homeowner_name}! Your {job_title} job has been submitted and is pending approval. We'll notify you when it's live. Manage: {manage_url}

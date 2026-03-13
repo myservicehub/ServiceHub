@@ -1,0 +1,21 @@
+EMAIL: Email OTP Verification
+SENT TO: Users requesting email OTP verification
+FILE LOCATION: backend/routes/auth.py (lines 1249-1255)
+
+=== PLACEHOLDERS ===
+{name} - User's name
+{otp_code} - 6-digit OTP code
+
+=== TEXT TEMPLATE ===
+Subject: Your serviceHub Verification Code
+
+Hello {name},
+
+Your verification code is {otp_code}. It expires in 10 minutes.
+
+If you didn't request this, you can ignore this email.
+
+serviceHub Team
+
+=== SMS VERSION ===
+Your serviceHub verification code is {otp_code}. It expires in 10 minutes.

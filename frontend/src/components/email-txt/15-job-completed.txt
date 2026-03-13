@@ -1,0 +1,37 @@
+EMAIL: Job Completed
+SENT TO: Tradesperson when job is marked as completed
+FILE LOCATION: backend/services/notifications.py (lines 1066-1102)
+NOTIFICATION TYPE: JOB_COMPLETED
+
+=== PLACEHOLDERS ===
+{tradesperson_name} - Tradesperson's name
+{job_title} - Title of the job
+{job_location} - Job location
+{homeowner_name} - Homeowner's name
+{completion_date} - Date job was completed
+{interests_url} - URL to view interests
+
+=== TEXT TEMPLATE ===
+Subject: Job Completed: {job_title}
+
+Hello {tradesperson_name},
+
+The job you showed interest in has been marked as completed by the homeowner.
+
+📋 Job: {job_title}
+📍 Location: {job_location}
+👤 Homeowner: {homeowner_name}
+✅ Status: Completed
+📅 Completed: {completion_date}
+
+The homeowner has indicated that the work for this project has been finished. If you were selected for this job and have completed the work, congratulations on a successful project!
+
+If you have any questions about this job completion status, please contact our support team.
+
+View your interests: {interests_url}
+
+Best regards,
+serviceHub Team
+
+=== SMS VERSION ===
+✅ Job '{job_title}' has been completed by homeowner {homeowner_name}. Check your interests: {interests_url}

@@ -68,59 +68,59 @@ const UserTypeSelection = ({ onSelectTradesperson, onSelectHomeowner, onSignIn }
 
 // Homeowner Guidance Component
 const HomeownerGuidance = ({ onPostJob, onBack }) => (
-  <div className="flex min-h-[400px]">
+  <div className="flex max-h-[85vh]">
     {/* Left side - Content */}
-    <div className="flex-1 p-8 md:p-10 flex flex-col justify-center">
+    <div className="flex-1 p-5 sm:p-6 md:p-8 flex flex-col overflow-y-auto">
       <button 
         onClick={onBack}
-        className="text-gray-400 hover:text-gray-600 text-sm font-lato mb-6 flex items-center gap-1 self-start"
+        className="text-gray-400 hover:text-gray-600 text-sm font-lato mb-4 flex items-center gap-1 self-start"
       >
         ← Back
       </button>
       
-      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#34D164] to-[#2ab854] flex items-center justify-center mb-6">
-        <Sparkles className="h-8 w-8 text-white" />
+      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-[#34D164] to-[#2ab854] flex items-center justify-center mb-4">
+        <Sparkles className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
       </div>
       
-      <h2 className="text-2xl font-bold font-montserrat text-[#121E3C] mb-3">
+      <h2 className="text-xl sm:text-2xl font-bold font-montserrat text-[#121E3C] mb-2">
         Let's find you the perfect tradesperson
       </h2>
-      <p className="text-gray-500 font-lato text-sm mb-6 leading-relaxed">
+      <p className="text-gray-500 font-lato text-xs sm:text-sm mb-4 leading-relaxed">
         Getting started is simple! Tell us what you need done, and we'll connect you with qualified professionals in your area. Your account will be created automatically when you post your first job.
       </p>
 
-      <div className="space-y-3 mb-8">
-        <div className="flex items-start gap-3">
-          <div className="w-6 h-6 rounded-full bg-[#34D164]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-            <span className="text-[#34D164] text-xs font-bold">1</span>
+      <div className="space-y-2 sm:space-y-2.5 mb-5">
+        <div className="flex items-start gap-2.5">
+          <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-[#34D164]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <span className="text-[#34D164] text-[10px] sm:text-xs font-bold">1</span>
           </div>
-          <p className="text-sm text-gray-600 font-lato">Describe your project and what you need help with</p>
+          <p className="text-xs sm:text-sm text-gray-600 font-lato">Describe your project and what you need help with</p>
         </div>
-        <div className="flex items-start gap-3">
-          <div className="w-6 h-6 rounded-full bg-[#34D164]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-            <span className="text-[#34D164] text-xs font-bold">2</span>
+        <div className="flex items-start gap-2.5">
+          <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-[#34D164]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <span className="text-[#34D164] text-[10px] sm:text-xs font-bold">2</span>
           </div>
-          <p className="text-sm text-gray-600 font-lato">Receive quotes from interested tradespeople</p>
+          <p className="text-xs sm:text-sm text-gray-600 font-lato">Receive quotes from interested tradespeople</p>
         </div>
-        <div className="flex items-start gap-3">
-          <div className="w-6 h-6 rounded-full bg-[#34D164]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-            <span className="text-[#34D164] text-xs font-bold">3</span>
+        <div className="flex items-start gap-2.5">
+          <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-[#34D164]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <span className="text-[#34D164] text-[10px] sm:text-xs font-bold">3</span>
           </div>
-          <p className="text-sm text-gray-600 font-lato">Compare, chat, and hire the right professional for you</p>
+          <p className="text-xs sm:text-sm text-gray-600 font-lato">Compare, chat, and hire the right professional for you</p>
         </div>
       </div>
 
       <button
         onClick={onPostJob}
-        className="w-full bg-[#34D164] hover:bg-[#2ab854] text-white py-3.5 px-6 rounded-xl font-medium font-lato transition-all shadow-lg shadow-[#34D164]/20 flex items-center justify-center gap-2"
+        className="w-full bg-[#34D164] hover:bg-[#2ab854] text-white py-3 px-5 rounded-xl font-medium font-lato text-sm sm:text-base transition-all shadow-lg shadow-[#34D164]/20 flex items-center justify-center gap-2 mt-auto"
       >
         Post Your First Job
         <ArrowRight className="h-4 w-4" />
       </button>
     </div>
 
-    {/* Right side - Image (hidden on mobile) */}
-    <div className="hidden md:block w-[40%] relative">
+    {/* Right side - Image (hidden on mobile and smaller screens) */}
+    <div className="hidden lg:block w-[40%] relative">
       <img
         src="/stock/bg13.jpg"
         alt="Professional tradesperson"
@@ -129,11 +129,11 @@ const HomeownerGuidance = ({ onPostJob, onBack }) => (
         decoding="async"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-      <div className="absolute bottom-8 left-6 right-6 text-white">
-        <p className="text-lg font-semibold font-montserrat mb-2">
+      <div className="absolute bottom-6 left-5 right-5 text-white">
+        <p className="text-base font-semibold font-montserrat mb-1">
           Thousands of verified professionals
         </p>
-        <p className="text-sm text-white/80 font-lato">
+        <p className="text-xs text-white/80 font-lato">
           Ready to help with your next project
         </p>
       </div>

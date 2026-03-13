@@ -164,7 +164,7 @@ const TermsPage = () => {
       <Header />
       
       {/* Hero Section */}
-      <section className="relative bg-[#121E3C] py-16 overflow-hidden">
+      <section className="relative bg-[#121E3C] pt-28 sm:pt-32 lg:pt-36 pb-16 overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute inset-0" style={{
             backgroundImage: `linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px),

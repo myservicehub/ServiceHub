@@ -10,20 +10,8 @@ const TradespeopleCTA = () => {
       answer: 'Simply click "Join as Tradesperson" and complete your profile with your skills, experience, and service areas. Verification takes 24-48 hours.'
     },
     {
-      question: 'Is it free to join ServiceHub?',
-      answer: 'Yes! Signing up is completely free. You only pay a small commission when you successfully complete a job through our platform.'
-    },
-    {
       question: 'How do I receive job leads?',
       answer: 'Once verified, you\'ll receive notifications for jobs matching your skills and location. You can accept or decline based on your availability.'
-    },
-    {
-      question: 'How do payments work?',
-      answer: 'Customers pay through our secure platform. Funds are released to your account within 24 hours of job completion and customer approval.'
-    },
-    {
-      question: 'Can I set my own rates?',
-      answer: 'Absolutely! You have full control over your pricing. Set hourly rates or project-based quotes that reflect your expertise.'
     }
   ];
 

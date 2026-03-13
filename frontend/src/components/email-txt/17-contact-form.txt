@@ -1,0 +1,57 @@
+EMAIL: Contact Form Submission
+SENT TO: Admin team when someone submits a contact form
+FILE LOCATION: backend/services/notifications.py (lines 1219-1270)
+NOTIFICATION TYPE: CONTACT_FORM
+
+=== PLACEHOLDERS ===
+{name} - Submitter's name
+{email} - Submitter's email
+{subject} - Message subject
+{message} - Message content
+{date} - Submission date
+
+=== HTML TEMPLATE ===
+<html>
+<head>
+    <style>
+        body { margin: 0; padding: 0; background: #f6f7fb; font-family: Arial, sans-serif; }
+        .container { max-width: 640px; margin: 0 auto; padding: 24px; }
+        .card { background: #ffffff; border: 1px solid #e6e8ef; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); overflow: hidden; }
+        .header { padding: 18px 20px; border-bottom: 1px solid #eef0f5; background: #0a1b3d; color: #ffffff; }
+        .title { margin: 0; font-size: 18px; color: #ffffff; }
+        .content { padding: 18px 20px; color: #374151; line-height: 1.6; }
+        .list { list-style: none; padding: 0; margin: 12px 0; }
+        .list li { margin: 8px 0; border-bottom: 1px solid #f3f4f6; padding-bottom: 8px; }
+        .label { color: #6b7280; display: inline-block; min-width: 120px; font-weight: bold; }
+        .value { color: #111827; }
+        .message-box { background: #f9fafb; padding: 16px; border-radius: 8px; border-left: 4px solid #34D164; margin-top: 12px; }
+        .footer { padding: 16px 20px; color: #6b7280; font-size: 12px; border-top: 1px solid #eef0f5; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <h2 class="title">New Contact Message</h2>
+            </div>
+            <div class="content">
+                <p>You have received a new message from the contact form on the website.</p>
+                <ul class="list">
+                    <li><span class="label">Name:</span> <span class="value">{name}</span></li>
+                    <li><span class="label">Email:</span> <span class="value">{email}</span></li>
+                    <li><span class="label">Subject:</span> <span class="value">{subject}</span></li>
+                    <li><span class="label">Date:</span> <span class="value">{date}</span></li>
+                </ul>
+                <div class="message-box">
+                    <strong>Message:</strong><br/>
+                    {message}
+                </div>
+            </div>
+            <div class="footer">serviceHub Support Notification</div>
+        </div>
+    </div>
+</body>
+</html>
+
+=== SMS VERSION ===
+N/A (Email only)

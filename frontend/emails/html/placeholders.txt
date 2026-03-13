@@ -1,0 +1,18 @@
+Email Template	Placeholders
+job-approved.html	{{homeownerName}}, {{jobId}}, {{jobTitle}}, {{approvedAt}}, {{adminNotes}}
+job-posted.html	{{homeownerName}}, {{jobId}}, {{jobTitle}}, {{jobLocation}}, {{jobBudget}}, {{postDate}}, {{manageUrl}}
+job-rejected.html	{{homeownerName}}, {{jobId}}, {{jobTitle}}, {{reviewedAt}}, {{rejectionReason}}
+job-completed.html	{{tradespersonName}}, {{jobId}}, {{jobTitle}}, {{jobLocation}}, {{homeownerName}}, {{completionDate}}, {{interestsUrl}}
+job-cancelled.html	{{tradespersonName}}, {{jobId}}, {{jobTitle}}, {{jobLocation}}, {{homeownerName}}, {{cancellationDate}}, {{cancellationReason}}, {{browseJobsUrl}}
+contact-shared.html	{{tradespersonName}}, {{jobId}}, {{jobTitle}}, {{jobLocation}}, {{paymentUrl}}
+new-interest.html	{{homeownerName}}, {{jobId}}, {{jobTitle}}, {{jobLocation}}, {{tradespersonName}}, {{tradespersonExperience}}, {{viewUrl}}
+review-invitation.html	{{homeownerName}}, {{tradespersonName}}, {{jobId}}, {{jobTitle}}, {{completionDate}}, {{reviewUrl}}
+review-reminder.html	{{homeownerName}}, {{tradespersonName}}, {{jobId}}, {{jobTitle}}, {{completionDate}}, {{reviewUrl}}, {{daysRemaining}}
+payment-confirmation.html	{{tradespersonName}}, {{jobId}}, {{jobTitle}}, {{jobLocation}}, {{homeownerName}}
+external-review-invitation.html	{{clientName}}, {{tradespersonName}}, {{jobId}}, {{jobTitle}}, {{reviewUrl}}
+new-review-received.html	{{revieweeName}}, {{reviewerName}}, {{jobId}}, {{jobTitle}}, {{reviewUrl}}
+new-matching-job.html	{{name}}, {{jobId}}, {{tradeTitle}}, {{tradeCategory}}, {{location}}, {{distance}}, {{jobUrl}}
+new-message.html	{{recipientName}}, {{senderName}}, {{jobTitle}}, {{messagePreview}}, {{conversationUrl}}
+email-otp.html	{{name}}, {{otpCode}}
+email-verification.html	{{name}}, {{verifyLink}}
+contact-form.html	{{name}}, {{email}}, {{subject}}, {{message}}, {{date}}

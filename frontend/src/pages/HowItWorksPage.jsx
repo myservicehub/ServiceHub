@@ -221,7 +221,7 @@ const HowItWorksPage = () => {
       <Header />
       
       {/* Hero Section */}
-      <section className="relative py-20 lg:py-28 overflow-hidden">
+      <section className="relative pt-28 sm:pt-32 lg:pt-40 pb-20 lg:pb-28 overflow-hidden">
         <div className="absolute inset-0">
           <img 
             src="/stock/bg9.jpg" 
@@ -276,45 +276,64 @@ const HowItWorksPage = () => {
         className="relative py-20 lg:py-24 bg-white"
         style={{
           backgroundImage: `linear-gradient(rgba(255,255,255,0.97), rgba(255,255,255,0.97)), 
-            linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px),
-            linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px)`,
+            linear-gradient(90deg, rgba(52,209,100,0.08) 1px, transparent 1px),
+            linear-gradient(rgba(52,209,100,0.08) 1px, transparent 1px)`,
           backgroundSize: '100% 100%, 20px 20px, 20px 20px'
         }}
       >
-        <div className="container mx-auto px-6 md:px-8 lg:px-12">
-          <div className="max-w-4xl mx-auto">
-            <div className="space-y-6">
+        <div className="container relative z-10 mx-auto px-6 md:px-8 lg:px-12">
+          <div className="max-w-6xl mx-auto">
+            {/* Section Header */}
+            <div className="text-center mb-14">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-montserrat text-[#121E3C] mb-4">
+                {activeTab === 'homeowner' ? 'How It Works for Homeowners' : 'How It Works for Tradespeople'}
+              </h2>
+              <p className="text-lg text-gray-500 font-lato max-w-xl mx-auto">
+                {activeTab === 'homeowner' 
+                  ? 'Find trusted professionals in 5 simple steps'
+                  : 'Grow your business with ServiceHub'}
+              </p>
+            </div>
+
+            {/* Step Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {(activeTab === 'homeowner' ? homeownerSteps : tradespersonSteps).map((stepData, index) => (
-                <div 
-                  key={index} 
-                  className="bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl p-6 lg:p-8 shadow-sm hover:shadow-md transition-all duration-300"
+                <div
+                  key={index}
+                  className="group"
                 >
-                  <div className="flex gap-5">
-                    {/* Step Number & Icon */}
-                    <div className="shrink-0">
-                      <div className="w-14 h-14 bg-[#34D164]/10 rounded-xl flex items-center justify-center relative">
-                        <stepData.icon size={24} className="text-[#34D164]" />
-                        <span className="absolute -top-2 -right-2 w-6 h-6 bg-[#121E3C] text-white text-xs font-bold rounded-full flex items-center justify-center">
-                          {stepData.step}
-                        </span>
+                  {/* Card with subtle shadow */}
+                  <div className="relative h-full p-6 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md hover:border-[#34D164]/20 transition-all duration-300">
+                    {/* Top row: Icon + Step Number */}
+                    <div className="flex items-start justify-between mb-5">
+                      {/* Icon */}
+                      <div className="w-12 h-12 rounded-xl bg-[#34D164]/10 border border-[#34D164]/20 flex items-center justify-center group-hover:bg-[#34D164]/15 transition-all duration-300">
+                        <stepData.icon className="w-6 h-6 text-[#34D164]" />
+                      </div>
+                      
+                      {/* Step Number Badge */}
+                      <div className="w-9 h-9 rounded-full bg-[#121E3C] flex items-center justify-center">
+                        <span className="text-sm font-bold font-montserrat text-white">{stepData.step}</span>
                       </div>
                     </div>
-                    
-                    {/* Content */}
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold font-montserrat text-[#121E3C] mb-2">
-                        {stepData.title}
-                      </h3>
-                      <p className="text-gray-600 font-lato text-sm mb-4 leading-relaxed">
-                        {stepData.description}
-                      </p>
-                      
-                      {/* Details */}
-                      <div className="grid sm:grid-cols-2 gap-2">
-                        {stepData.details.map((detail, detailIndex) => (
+
+                    {/* Title */}
+                    <h3 className="text-lg font-semibold font-montserrat text-[#121E3C] mb-2 group-hover:text-[#34D164] transition-colors duration-300">
+                      {stepData.title}
+                    </h3>
+
+                    {/* Description */}
+                    <p className="text-gray-500 font-lato text-sm leading-relaxed mb-4">
+                      {stepData.description}
+                    </p>
+
+                    {/* Bottom: Details after horizontal line */}
+                    <div className="pt-4 border-t border-gray-100">
+                      <div className="space-y-2">
+                        {stepData.details.slice(0, 3).map((detail, detailIndex) => (
                           <div key={detailIndex} className="flex items-start gap-2">
-                            <div className="w-1.5 h-1.5 bg-[#34D164] rounded-full mt-2 shrink-0" />
-                            <span className="text-gray-500 font-lato text-xs">{detail}</span>
+                            <div className="w-1 h-1 bg-[#34D164] rounded-full mt-1.5 shrink-0" />
+                            <span className="text-xs font-lato text-gray-400">{detail}</span>
                           </div>
                         ))}
                       </div>

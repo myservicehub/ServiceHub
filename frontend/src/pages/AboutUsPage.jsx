@@ -74,7 +74,7 @@ const AboutUsPage = () => {
       <Header />
       
       {/* Hero Section */}
-      <section className="relative py-24 lg:py-32 overflow-hidden">
+      <section className="relative pt-28 sm:pt-32 lg:pt-40 pb-24 lg:pb-32 overflow-hidden">
         <div className="absolute inset-0">
           <img 
             src="/stock/bg9.jpg" 
@@ -226,8 +226,8 @@ const AboutUsPage = () => {
               {/* Vision */}
               <div className="bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl p-8 shadow-sm hover:shadow-md transition-shadow duration-300">
                 <div className="flex items-center gap-4 mb-6">
-                  <div className="w-12 h-12 bg-[#121E3C]/10 rounded-xl flex items-center justify-center">
-                    <Eye size={24} className="text-[#121E3C]" />
+                  <div className="w-12 h-12 bg-[#34D164]/10 rounded-xl flex items-center justify-center">
+                    <Eye size={24} className="text-[#34D164]" />
                   </div>
                   <h3 className="text-xl font-semibold font-montserrat text-[#121E3C]">
                     Our Vision
@@ -245,8 +245,8 @@ const AboutUsPage = () => {
                     { title: 'Convenience', desc: 'Easy booking & support' }
                   ].map((item, idx) => (
                     <div key={idx} className="bg-gray-50 p-3 rounded-lg">
-                      <span className="text-[#121E3C] font-medium font-montserrat text-sm">{item.title}</span>
-                      <span className="text-gray-500 font-lato text-sm ml-2">— {item.desc}</span>
+                      <div className="text-[#121E3C] font-medium font-montserrat text-sm">{item.title}</div>
+                      <div className="text-gray-500 font-lato text-xs mt-0.5">{item.desc}</div>
                     </div>
                   ))}
                 </div>

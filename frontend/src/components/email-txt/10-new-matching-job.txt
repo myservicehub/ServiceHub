@@ -1,0 +1,76 @@
+EMAIL: New Job in Your Area
+SENT TO: Tradespeople when a new job matches their trade/location
+FILE LOCATION: backend/services/notifications.py (lines 1145-1216)
+NOTIFICATION TYPE: NEW_MATCHING_JOB
+
+=== PLACEHOLDERS ===
+{Name} - Tradesperson's name
+{trade_title} - Job title
+{trade_category} - Trade category
+{Location} - Job location
+{miles} - Distance from tradesperson
+{see_more_url} - URL to see job details
+{job_url} - Direct URL to the job
+{support_url} - Support center URL
+{preferences_url} - Email preferences URL
+{privacy_url} - Privacy policy URL
+{terms_url} - Terms and conditions URL
+{logo_url} - Logo URL for email
+
+=== HTML TEMPLATE ===
+<html>
+<head>
+    <style>
+        body { margin: 0; padding: 0; }
+        .container { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 8px 20px 20px; }
+        .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+        .logo img { height: 40px; }
+        .logo span { font-size: 24px; font-weight: bold; color: #000; }
+        .button { display: inline-block; padding: 12px 20px; background-color: #165DFF; color: #fff; text-decoration: none; border-radius: 6px; margin: 16px 0; }
+        .steps { margin: 16px 0; padding-left: 20px; }
+        .steps li { font-weight: 700; margin: 10px 0; }
+        .footer { margin-top: 24px; padding-top: 16px; border-top: 1px solid #eee; font-size: 12px; color: #666; }
+        .footer a { color: #666; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo" style="display:flex; align-items:center; gap:8px; margin-bottom:16px;">
+            <img src="cid:logo" alt="ServiceHub Logo" style="height:28px; width:auto; display:inline-block; vertical-align:middle;">
+            <span style="font-size:22px; font-weight:bold; color:#0a1b3d; display:inline-block; vertical-align:middle;">ServiceHub</span>
+        </div>
+        <h2>Hello {Name}</h2>
+        <p>There's a new job in your area!</p>
+        <p><a href="{job_url}" style="color:#0a1b3d; text-decoration:none; font-weight:bold;">{trade_title}</a></p>
+        <p>{trade_category}</p>
+        <p>{Location} & {miles}</p>
+        <a href="{see_more_url}" class="button">See more details</a>
+        <h3 style="font-weight:700; color:#0a1b3d;">Next steps</h3>
+        <ol class="steps" style="list-style:none; padding-left:0; margin-left:0;">
+            <li>
+                <span style="font-weight:800; font-size:22px; color:#000; display:inline-block; width:24px; margin-right:8px;">1</span>
+                <span style="font-weight:700;">Send a message for free to the customer to express interest in this job.</span>
+            </li>
+            <li>
+                <span style="font-weight:800; font-size:22px; color:#000; display:inline-block; width:24px; margin-right:8px;">2</span>
+                <span style="font-weight:700;">You'll only pay if a customer shares their contact details with you.</span>
+            </li>
+            <li>
+                <span style="font-weight:800; font-size:22px; color:#000; display:inline-block; width:24px; margin-right:8px;">3</span>
+                <span style="font-weight:700;">Contact the customer as soon as you get the contact details for the best chance of getting hired.</span>
+            </li>
+        </ol>
+        <p>Do not share this email with others to prevent Unauthorised access to your account</p>
+        <p>Please don't reply to this email — we won't get your response. Need help? Visit our <a href="{support_url}">Support centre</a></p>
+        <p><a href="{preferences_url}">Manage preferences</a></p>
+        <div class="footer">
+            <p>2025 ServiceHub limited. Registered in Nigeria.</p>
+            <p>6, D Place Guest House, Off Omimi Link Road, Ekpan, Delta State, Nigeria</p>
+            <p><a href="{privacy_url}">Privacy policy</a> | <a href="{terms_url}">Terms and conditions</a></p>
+        </div>
+    </div>
+</body>
+</html>
+
+=== SMS VERSION ===
+🛠️ New job near you: {trade_title} — {trade_category} at {Location} {miles}. View details: {see_more_url}
