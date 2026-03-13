@@ -173,7 +173,7 @@ const HelpFAQsPage = () => {
       },
       {
         question: "Is ServiceHub available across Nigeria?",
-        answer: "Yes! ServiceHub operates across all 36 states and the Federal Capital Territory (FCT) in Nigeria. We have a growing network of verified professionals in major cities and towns nationwide."
+        answer: "We currently operate in 8 Nigerian states, with a growing network of verified professionals and plans to expand to more states. You can still browse and post jobs from anywhere; we’ll match you where coverage is available."
       },
       {
         question: "What types of jobs are available on ServiceHub?",
