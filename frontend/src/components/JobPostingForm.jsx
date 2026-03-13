@@ -2717,9 +2717,6 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                   <h3 className="text-xl font-bold font-montserrat text-[#121E3C]">
                     Job Details
                   </h3>
-                  <p className="text-gray-500 text-sm font-lato mt-1">
-                    Question {currentQuestionIndex + 1} of {getVisibleQuestions().length}
-                  </p>
                 </div>
                 <button
                   type="button"
