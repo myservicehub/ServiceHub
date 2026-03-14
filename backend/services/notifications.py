@@ -167,6 +167,41 @@ class SendGridEmailService:
             # Avoid raising; allow caller to fallback to mock
             return False
 
+class ResendEmailService:
+    """Resend email service (preferred)"""
+    def __init__(self):
+        self.service_name = "ResendEmailService"
+        self.api_key = os.environ.get("RESEND_API_KEY")
+        self.from_email = os.environ.get("RESEND_FROM_EMAIL") or os.environ.get("SENDER_EMAIL")
+        if not self.api_key or not self.from_email:
+            logger.error("❌ Resend configuration missing: RESEND_API_KEY or RESEND_FROM_EMAIL/SENDER_EMAIL")
+            raise ValueError("Missing Resend configuration")
+        self.endpoint = "https://api.resend.com/emails"
+        logger.info(f"🔧 {self.service_name} initialized - Production Mode")
+
+    async def send_email(self, to: str, subject: str, content: str, metadata: Dict[str, Any] = None) -> bool:
+        """Send real email using Resend REST API"""
+        try:
+            payload = {
+                "from": self.from_email,
+                "to": [to],
+                "subject": subject,
+                "html": content
+            }
+            headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json"
+            }
+            resp = requests.post(self.endpoint, json=payload, headers=headers, timeout=20)
+            if 200 <= resp.status_code < 300:
+                logger.info(f"📧 EMAIL SENT via Resend: to={to}, subject={subject[:50]}...")
+                return True
+            logger.error(f"❌ Resend failed: HTTP {resp.status_code} - {resp.text}")
+            return False
+        except Exception as e:
+            logger.error(f"❌ Resend send failed: {e}")
+            return False
+
 class TermiiSMSService:
     """Real Termii SMS service for Nigerian market"""
     
@@ -1335,10 +1370,15 @@ class NotificationService:
         """Initialize email and SMS services if not already done"""
         if self.email_service is None:
             try:
-                self.email_service = SendGridEmailService()
-                logger.info("📧 SendGrid email service initialized")
+                # Prefer Resend if configured
+                if os.environ.get("RESEND_API_KEY"):
+                    self.email_service = ResendEmailService()
+                    logger.info("📧 Resend email service initialized")
+                else:
+                    self.email_service = SendGridEmailService()
+                    logger.info("📧 SendGrid email service initialized")
             except Exception as e:
-                logger.error(f"❌ Failed to initialize SendGrid: {e}")
+                logger.error(f"❌ Failed to initialize email provider: {e}")
                 # Fall back to mock for development
                 self.email_service = MockEmailService()
         
@@ -1498,6 +1538,73 @@ class NotificationService:
         subject, content, plain_text = self.template_service.render_template(template, template_data)
         notification.subject = subject
         notification.content = plain_text  # Store plain text in DB for dashboard/history
+        
+        # Attempt to override with frontend-rendered HTML if available
+        try:
+            from pathlib import Path
+            # Map notification type to filename in backend/email_templates/html
+            filename_map = {
+                "new_interest": "new-interest.html",
+                "contact_shared": "contact-shared.html",
+                "job_posted": "job-posted.html",
+                "payment_confirmation": "payment-confirmation.html",
+                "new_message": "new-message.html",
+                "job_approved": "job-approved.html",
+                "job_rejected": "job-rejected.html",
+                "job_updated": "job-updated.html",
+                "review_invitation": "review-invitation.html",
+                "review_reminder": "review-reminder.html",
+                "job_completed": "job-completed.html",
+                "job_cancelled": "job-cancelled.html",
+                "external_review_invitation": "external-review-invitation.html",
+                "new_review_received": "new-review-received.html",
+                "new_matching_job": "new-matching-job.html",
+                "contact_form": "contact-form.html",
+            }
+            html_dir = os.environ.get("BACKEND_EMAILS_HTML_DIR") or os.environ.get("FRONTEND_EMAILS_HTML_DIR")
+            if not html_dir:
+                project_root = Path(__file__).resolve().parents[1].parent
+                default_dir = project_root / "backend" / "email_templates" / "html"
+                if default_dir.exists():
+                    html_dir = str(default_dir)
+            filename = filename_map.get(notification.type.value)
+            if html_dir and filename:
+                path = os.path.join(html_dir, filename)
+                if os.path.exists(path):
+                    with open(path, "r", encoding="utf-8") as f:
+                        override_html = f.read()
+                    # Augment template data with camelCase keys and basic aliases
+                    def to_camel(s: str) -> str:
+                        parts = s.split('_')
+                        return parts[0] + ''.join(p.capitalize() for p in parts[1:])
+                    values = dict(template_data or {})
+                    for k, v in list(values.items()):
+                        if isinstance(k, str) and "_" in k:
+                            camel = to_camel(k)
+                            values[camel] = v
+                            if camel:
+                                values[camel[0].upper() + camel[1:]] = v
+                    # Common aliases
+                    if "admin_notes" in values:
+                        values["adminNotes"] = values["admin_notes"]
+                    if "admin_notes_html" in values:
+                        values["adminNotesHTML"] = values["admin_notes_html"]
+                    if "job_url" in values:
+                        values["jobUrl"] = values["job_url"]
+                    if "see_more_url" in values:
+                        values["seeMoreUrl"] = values["see_more_url"]
+                    if "review_url" in values:
+                        values["reviewUrl"] = values["review_url"]
+                    if "conversation_url" in values:
+                        values["conversationUrl"] = values["conversation_url"]
+                    if "distance_km" in values and "distance" not in values:
+                        values["distance"] = values["distance_km"]
+                    # Replace placeholders {{key}}
+                    override_html = re.sub(r"\{\{\s*([a-zA-Z0-9_]+)\s*\}\}", lambda m: str(values.get(m.group(1), "")), override_html)
+                    if override_html:
+                        content = override_html
+        except Exception as e:
+            logger.warning(f"Frontend email HTML override failed for {notification.type.value}: {e}")
         
         success = await self.email_service.send_email(
             to=notification.recipient_email,

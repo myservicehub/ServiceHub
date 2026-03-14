@@ -6,7 +6,9 @@
     "dev": "email dev",
     "build": "email build",
     "export": "email export",
-    "render-html": "npx tsx render-to-html.tsx"
+    "render-html": "npx tsx render-to-html.tsx",
+    "sync-backend": "node sync-to-backend.js",
+    "export-and-sync": "npm run render-html && npm run sync-backend"
   },
   "dependencies": {
     "@react-email/components": "latest",

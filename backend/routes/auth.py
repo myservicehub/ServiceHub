@@ -31,11 +31,13 @@ from fastapi import Request
 
 logger = logging.getLogger(__name__)
 
-# Import email service for password reset emails
+# Import email services for notifications and auth emails
 try:
-    from ..services.notifications import SendGridEmailService, MockEmailService, notification_service
-except ImportError:
-    from services.notifications import SendGridEmailService, MockEmailService, notification_service
+    # Prefer absolute import for IDE analyzers
+    from backend.services.notifications import SendGridEmailService, MockEmailService, ResendEmailService, notification_service
+except Exception:
+    # Fallback relative import for package execution contexts
+    from ..services.notifications import SendGridEmailService, MockEmailService, ResendEmailService, notification_service
 
 router = APIRouter(prefix="/api/auth", tags=["authentication"])
 
@@ -174,47 +176,73 @@ async def register_homeowner(request: Request, registration_data: HomeownerRegis
                     await database.create_email_verification_token(
                         user_id=created_user["id"], token=verification_token, expires_at=expires_at
                     )
+                    # Prefer Resend if available, fall back to SendGrid then Mock
                     email_service = None
                     try:
-                        email_service = SendGridEmailService()
+                        email_service = ResendEmailService()
                     except Exception:
                         try:
-                            email_service = MockEmailService()
+                            email_service = SendGridEmailService()
                         except Exception:
-                            email_service = None
+                            try:
+                                email_service = MockEmailService()
+                            except Exception:
+                                email_service = None
                     dev_flag = os.environ.get('OTP_DEV_MODE', '0')
                     frontend_url = os.environ.get('FRONTEND_URL') or (
                         'http://localhost:3000' if dev_flag in ('1', 'true', 'True') else 'https://myservicehub.co'
                     )
                     verify_link = f"{frontend_url.rstrip('/')}/verify-account?token={verification_token}"
                     if email_service:
-                        html = f"""
-                        <!DOCTYPE html>
-                        <html>
-                        <head>
-                          <meta charset=\"utf-8\">
-                          <style>
-                            body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
-                            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-                            .btn {{ display: inline-block; background-color: #34D164; color: #fff; padding: 12px 18px; border-radius: 8px; text-decoration: none; font-weight: bold; }}
-                            .link {{ word-break: break-all; color: #2563eb; }}
-                          </style>
-                        </head>
-                        <body>
-                          <div class=\"container\">
-                            <h2>Verify your email</h2>
-                            <p>Hello {created_user.get('name','')},</p>
-                            <p>Please verify your email to complete registration.</p>
-                            <p>
-                              <a class=\"btn\" href=\"{verify_link}\">Verify Email</a>
-                            </p>
-                            <p>If the button doesn’t work, copy and paste this link:</p>
-                            <p class=\"link\">{verify_link}</p>
-                            <p>This link expires in 24 hours.</p>
-                          </div>
-                        </body>
-                        </html>
-                        """
+                        # Try to load redesigned HTML from frontend/emails/html
+                        html = None
+                        try:
+                            from pathlib import Path
+                            emails_dir = os.environ.get("BACKEND_EMAILS_HTML_DIR") or os.environ.get("FRONTEND_EMAILS_HTML_DIR")
+                            if not emails_dir:
+                                project_root = Path(__file__).resolve().parents[1].parent
+                                default_dir = project_root / "backend" / "email_templates" / "html"
+                                emails_dir = str(default_dir)
+                            template_path = os.path.join(emails_dir, "email-verification.html")
+                            if os.path.exists(template_path):
+                                with open(template_path, "r", encoding="utf-8") as f:
+                                    raw = f.read()
+                                # Replace placeholders
+                                name_val = created_user.get('name','')
+                                html = raw
+                                html = re.sub(r"\{\{\s*name\s*\}\}", name_val, html)
+                                html = re.sub(r"\{\{\s*verifyLink\s*\}\}", verify_link, html)
+                        except Exception as _e:
+                            html = None
+                        if not html:
+                            # Fallback minimal template
+                            html = f"""
+                            <!DOCTYPE html>
+                            <html>
+                            <head>
+                              <meta charset=\"utf-8\">
+                              <style>
+                                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                                .btn {{ display: inline-block; background-color: #34D164; color: #fff; padding: 12px 18px; border-radius: 8px; text-decoration: none; font-weight: bold; }}
+                                .link {{ word-break: break-all; color: #2563eb; }}
+                              </style>
+                            </head>
+                            <body>
+                              <div class=\"container\">
+                                <h2>Verify your email</h2>
+                                <p>Hello {created_user.get('name','')},</p>
+                                <p>Please verify your email to complete registration.</p>
+                                <p>
+                                  <a class=\"btn\" href=\"{verify_link}\">Verify Email</a>
+                                </p>
+                                <p>If the button doesn’t work, copy and paste this link:</p>
+                                <p class=\"link\">{verify_link}</p>
+                                <p>This link expires in 24 hours.</p>
+                              </div>
+                            </body>
+                            </html>
+                            """
                         await email_service.send_email(
                             to=created_user["email"],
                             subject="Verify your email - serviceHub",
@@ -1277,18 +1305,42 @@ async def send_email_otp(payload: SendEmailOTPRequest, current_user: User = Depe
         if not stored:
             logger.warning("Email OTP storage failed, proceeding with send in degraded mode")
 
-        # Send Email via SendGrid or Mock
-        subject = "Your serviceHub Verification Code"
-        content = (
-            f"Hello {current_user.name},\n\n"
-            f"Your verification code is {otp_code}. It expires in 10 minutes.\n\n"
-            f"If you didn't request this, you can ignore this email.\n\n"
-            f"serviceHub Team"
-        )
+        # Send Email via Resend (preferred) or SendGrid / Mock
+        subject = "Your ServiceHub Verification Code"
+        # Try to use redesigned HTML template
+        content = None
+        try:
+            from pathlib import Path
+            emails_dir = os.environ.get("BACKEND_EMAILS_HTML_DIR") or os.environ.get("FRONTEND_EMAILS_HTML_DIR")
+            if not emails_dir:
+                project_root = Path(__file__).resolve().parents[1].parent
+                default_dir = project_root / "backend" / "email_templates" / "html"
+                emails_dir = str(default_dir)
+            template_path = os.path.join(emails_dir, "email-otp.html")
+            if os.path.exists(template_path):
+                with open(template_path, "r", encoding="utf-8") as f:
+                    raw = f.read()
+                content = raw
+                content = re.sub(r"\{\{\s*name\s*\}\}", current_user.name or "", content)
+                content = re.sub(r"\{\{\s*otpCode\s*\}\}", otp_code, content)
+        except Exception:
+            content = None
+        if not content:
+            # Fallback plain text
+            content = (
+                f"Hello {current_user.name},\n\n"
+                f"Your verification code is {otp_code}. It expires in 10 minutes.\n\n"
+                f"If you didn't request this, you can ignore this email.\n\n"
+                f"serviceHub Team"
+            )
 
         email_ok = False
         try:
-            email_service = SendGridEmailService()
+            try:
+                email_service = ResendEmailService()
+            except Exception as e:
+                logger.warning(f"Resend unavailable, falling back to SendGrid/Mock: {e}")
+                email_service = SendGridEmailService()
             email_ok = await email_service.send_email(
                 to=registered_email,
                 subject=subject,
@@ -1296,7 +1348,7 @@ async def send_email_otp(payload: SendEmailOTPRequest, current_user: User = Depe
                 metadata={"purpose": "email_verification", "user_id": current_user.id}
             )
         except Exception as e:
-            logger.warning(f"SendGrid unavailable, using mock email: {e}")
+            logger.warning(f"Primary email provider unavailable, using mock email: {e}")
             try:
                 mock_service = MockEmailService()
                 email_ok = await mock_service.send_email(
