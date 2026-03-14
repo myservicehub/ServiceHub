@@ -27,9 +27,9 @@ from ..models.auth import User, UserRole, UserStatus
 from ..database import database
 from ..services.notifications import notification_service
 try:
-    from ..services.notifications import SendGridEmailService, MockEmailService
+    from ..services.notifications import SendGridEmailService, MockEmailService, ResendEmailService
 except Exception:
-    from services.notifications import SendGridEmailService, MockEmailService
+    from services.notifications import SendGridEmailService, MockEmailService, ResendEmailService
 from datetime import datetime, timedelta
 import uuid
 import logging
@@ -1902,12 +1902,15 @@ async def register_and_post(payload: PublicJobPostRequest, background_tasks: Bac
 
                 email_service = None
                 try:
-                    email_service = SendGridEmailService()
+                    email_service = ResendEmailService()
                 except Exception:
                     try:
-                        email_service = MockEmailService()
+                        email_service = SendGridEmailService()
                     except Exception:
-                        email_service = None
+                        try:
+                            email_service = MockEmailService()
+                        except Exception:
+                            email_service = None
                 
                 dev_flag = os.environ.get('OTP_DEV_MODE', '0')
                 frontend_url = os.environ.get('FRONTEND_URL') or (
@@ -1916,38 +1919,54 @@ async def register_and_post(payload: PublicJobPostRequest, background_tasks: Bac
                 verify_link = f"{frontend_url.rstrip('/')}/verify-account?token={verification_token}&next=/"
                 
                 if email_service:
-                    html = f"""
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                      <meta charset="utf-8">
-                      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                      <style>
-                        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #e0e0e0; background-color: #121212; margin: 0; padding: 0; }}
-                        .container {{ max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #1e1e1e; border-radius: 12px; margin-top: 20px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); }}
-                        h2 {{ color: #ffffff; margin-top: 0; font-size: 24px; font-weight: 600; }}
-                        p {{ color: #cccccc; font-size: 16px; margin-bottom: 20px; }}
-                        .btn {{ display: inline-block; background-color: #34D164; color: #ffffff !important; padding: 14px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px; margin-top: 10px; margin-bottom: 10px; transition: background-color 0.3s; }}
-                        .btn:hover {{ background-color: #2cb555; }}
-                        .link {{ word-break: break-all; color: #34D164; font-size: 14px; }}
-                        .footer {{ margin-top: 30px; font-size: 12px; color: #888888; text-align: center; border-top: 1px solid #333; padding-top: 20px; }}
-                      </style>
-                    </head>
-                    <body>
-                      <div class="container">
-                        <h2>Verify your email</h2>
-                        <p>Hello {user_obj.name},</p>
-                        <p>Please verify your email to post your job and activate your account.</p>
-                        <p style="text-align: center;">
-                          <a class="btn" href="{verify_link}">Verify Email</a>
-                        </p>
-                        <p>If the button doesn’t work, copy and paste this link:</p>
-                        <p><a href="{verify_link}" class="link">{verify_link}</a></p>
-                        <p class="footer">This link expires in 24 hours.</p>
-                      </div>
-                    </body>
-                    </html>
-                    """
+                    html = None
+                    try:
+                        emails_dir = os.environ.get("BACKEND_EMAILS_HTML_DIR") or os.environ.get("FRONTEND_EMAILS_HTML_DIR")
+                        if not emails_dir:
+                            project_root = Path(__file__).resolve().parents[1].parent
+                            default_dir = project_root / "backend" / "email_templates" / "html"
+                            emails_dir = str(default_dir)
+                        template_path = os.path.join(emails_dir, "email-verification.html")
+                        if os.path.exists(template_path):
+                            with open(template_path, "r", encoding="utf-8") as f:
+                                raw = f.read()
+                            html = re.sub(r"\{\{\s*name\s*\}\}", user_obj.name or "", raw)
+                            html = re.sub(r"\{\{\s*verifyLink\s*\}\}", verify_link, html)
+                    except Exception:
+                        html = None
+                    if not html:
+                        html = f"""
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                          <meta charset="utf-8">
+                          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                          <style>
+                            body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #e0e0e0; background-color: #121212; margin: 0; padding: 0; }}
+                            .container {{ max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #1e1e1e; border-radius: 12px; margin-top: 20px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); }}
+                            h2 {{ color: #ffffff; margin-top: 0; font-size: 24px; font-weight: 600; }}
+                            p {{ color: #cccccc; font-size: 16px; margin-bottom: 20px; }}
+                            .btn {{ display: inline-block; background-color: #34D164; color: #ffffff !important; padding: 14px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px; margin-top: 10px; margin-bottom: 10px; transition: background-color 0.3s; }}
+                            .btn:hover {{ background-color: #2cb555; }}
+                            .link {{ word-break: break-all; color: #34D164; font-size: 14px; }}
+                            .footer {{ margin-top: 30px; font-size: 12px; color: #888888; text-align: center; border-top: 1px solid #333; padding-top: 20px; }}
+                          </style>
+                        </head>
+                        <body>
+                          <div class="container">
+                            <h2>Verify your email</h2>
+                            <p>Hello {user_obj.name},</p>
+                            <p>Please verify your email to post your job and activate your account.</p>
+                            <p style="text-align: center;">
+                              <a class="btn" href="{verify_link}">Verify Email</a>
+                            </p>
+                            <p>If the button doesn’t work, copy and paste this link:</p>
+                            <p><a href="{verify_link}" class="link">{verify_link}</a></p>
+                            <p class="footer">This link expires in 24 hours.</p>
+                          </div>
+                        </body>
+                        </html>
+                        """
                     
                     background_tasks.add_task(
                         email_service.send_email,
