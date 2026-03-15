@@ -1458,64 +1458,85 @@ async def request_password_reset(request_data: PasswordResetRequest):
             # Normalize to avoid double slashes when env has trailing '/'
             reset_link = f"{frontend_url.rstrip('/')}/reset-password?token={reset_token}"
             
-            # Initialize email service
+            # Initialize email service (prefer Resend)
             email_service = None
             try:
-                email_service = SendGridEmailService()
-                logger.info("SendGrid email service initialized successfully")
-            except ValueError as e:
-                # Configuration missing - fall back to mock
-                logger.warning(f"SendGrid not configured: {e}. Using mock email service (emails will not be sent)")
-                email_service = MockEmailService()
+                email_service = ResendEmailService()
+                logger.info("Resend email service initialized for password reset")
             except Exception as e:
-                # Other initialization errors - fall back to mock
-                logger.error(f"Failed to initialize SendGrid: {e}. Using mock email service (emails will not be sent)")
-                email_service = MockEmailService()
+                logger.warning(f"Resend unavailable for password reset: {e}")
+                try:
+                    email_service = SendGridEmailService()
+                    logger.info("SendGrid email service initialized successfully")
+                except Exception as e2:
+                    logger.warning(f"SendGrid not configured or failed: {e2}. Using mock email service (emails will not be sent)")
+                    email_service = MockEmailService()
             
             # Create email content
             email_subject = "Reset Your serviceHub Password"
-            email_content = f"""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="utf-8">
-                <style>
-                    body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
-                    .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-                    .header {{ background-color: #34D164; color: white; padding: 20px; text-align: center; }}
-                    .content {{ background-color: #f9f9f9; padding: 30px; }}
-                    .button {{ display: inline-block; background-color: #34D164; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }}
-                    .footer {{ text-align: center; padding: 20px; color: #666; font-size: 12px; }}
-                    .warning {{ color: #d32f2f; font-weight: bold; margin-top: 20px; }}
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <h1>serviceHub</h1>
-                        <h2>Password Reset Request</h2>
+            # Try to use redesigned HTML template if available
+            email_content = None
+            try:
+                emails_dir = os.environ.get("BACKEND_EMAILS_HTML_DIR") or os.environ.get("FRONTEND_EMAILS_HTML_DIR")
+                if not emails_dir:
+                    project_root = Path(__file__).resolve().parents[1].parent
+                    default_dir = project_root / "backend" / "email_templates" / "html"
+                    emails_dir = str(default_dir)
+                template_path = os.path.join(emails_dir, "password-reset.html")
+                if os.path.exists(template_path):
+                    with open(template_path, "r", encoding="utf-8") as f:
+                        raw = f.read()
+                    # Replace placeholders
+                    nm = user_data.get('name', 'User') or 'User'
+                    html = raw
+                    html = re.sub(r"\{\{\s*name\s*\}\}", nm, html)
+                    html = re.sub(r"\{\{\s*resetLink\s*\}\}", reset_link, html)
+                    email_content = html
+            except Exception:
+                email_content = None
+            if not email_content:
+                email_content = f"""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="utf-8">
+                    <style>
+                        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                        .header {{ background-color: #34D164; color: white; padding: 20px; text-align: center; }}
+                        .content {{ background-color: #f9f9f9; padding: 30px; }}
+                        .button {{ display: inline-block; background-color: #34D164; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }}
+                        .footer {{ text-align: center; padding: 20px; color: #666; font-size: 12px; }}
+                        .warning {{ color: #d32f2f; font-weight: bold; margin-top: 20px; }}
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="header">
+                            <h1>serviceHub</h1>
+                            <h2>Password Reset Request</h2>
+                        </div>
+                        <div class="content">
+                            <p>Hello {user_data.get('name', 'User')},</p>
+                            <p>We received a request to reset your password for your serviceHub account.</p>
+                            <p>Click the button below to reset your password:</p>
+                            <p style="text-align: center;">
+                                <a href="{reset_link}" class="button">Reset Password</a>
+                            </p>
+                            <p>Or copy and paste this link into your browser:</p>
+                            <p style="word-break: break-all; color: #666; font-size: 12px;">{reset_link}</p>
+                            <p class="warning">⚠️ This link will expire in 1 hour for security reasons.</p>
+                            <p>If you didn't request a password reset, please ignore this email. Your password will remain unchanged.</p>
+                            <p>For security reasons, never share this link with anyone.</p>
+                        </div>
+                        <div class="footer">
+                            <p>© {datetime.utcnow().year} serviceHub. All rights reserved.</p>
+                            <p>This is an automated message, please do not reply to this email.</p>
+                        </div>
                     </div>
-                    <div class="content">
-                        <p>Hello {user_data.get('name', 'User')},</p>
-                        <p>We received a request to reset your password for your serviceHub account.</p>
-                        <p>Click the button below to reset your password:</p>
-                        <p style="text-align: center;">
-                            <a href="{reset_link}" class="button">Reset Password</a>
-                        </p>
-                        <p>Or copy and paste this link into your browser:</p>
-                        <p style="word-break: break-all; color: #666; font-size: 12px;">{reset_link}</p>
-                        <p class="warning">⚠️ This link will expire in 1 hour for security reasons.</p>
-                        <p>If you didn't request a password reset, please ignore this email. Your password will remain unchanged.</p>
-                        <p>For security reasons, never share this link with anyone.</p>
-                    </div>
-                    <div class="footer">
-                        <p>© {datetime.utcnow().year} serviceHub. All rights reserved.</p>
-                        <p>This is an automated message, please do not reply to this email.</p>
-                    </div>
-                </div>
-            </body>
-            </html>
-            """
+                </body>
+                </html>
+                """
             
             # Send email
             if email_service:

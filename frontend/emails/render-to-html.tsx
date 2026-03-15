@@ -22,6 +22,7 @@ import { NewMessage } from './emails/new-message';
 import { EmailOtp } from './emails/email-otp';
 import { EmailVerification } from './emails/email-verification';
 import { ContactForm } from './emails/contact-form';
+import { PasswordReset } from './emails/password-reset';
 
 // Define placeholder props for each email template
 const emailTemplates = [
@@ -210,6 +211,14 @@ const emailTemplates = [
     props: {
       name: '{{name}}',
       verifyLink: '{{verifyLink}}',
+    }
+  },
+  {
+    name: 'password-reset',
+    component: PasswordReset,
+    props: {
+      name: '{{name}}',
+      resetLink: '{{resetLink}}',
     }
   },
   {
