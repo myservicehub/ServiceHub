@@ -73,7 +73,8 @@ async def get_public_blog_posts(
     limit: int = Query(20, ge=1, le=50),
     category: Optional[str] = None,
     search: Optional[str] = None,
-    featured_only: bool = False
+    featured_only: bool = False,
+    content_type: Optional[str] = None
 ):
     """Get published blog posts for public consumption"""
     
@@ -86,10 +87,14 @@ async def get_public_blog_posts(
         # always be visible.
         filters = {
             "$and": [
-                {"content_type": {"$regex": "^blog[_ ]?post$", "$options": "i"}},
                 {"status": {"$regex": "^published$", "$options": "i"}}
             ]
         }
+
+        normalized_content_type = (content_type or "").strip().lower().replace(" ", "_")
+        if normalized_content_type and normalized_content_type != "all":
+            type_pattern = "^" + re.escape(normalized_content_type).replace("\\_", "[_ ]?") + "$"
+            filters["$and"].append({"content_type": {"$regex": type_pattern, "$options": "i"}})
         
         # Add optional filters
         if category:
@@ -131,6 +136,7 @@ async def get_public_blog_posts(
                 "id": post["id"],
                 "title": post["title"],
                 "slug": post["slug"],
+                "content_type": post.get("content_type", "blog_post"),
                 # "content": post["content"],  # Excluded
                 "excerpt": post.get("excerpt"),
                 "reading_time": reading_time,
@@ -176,11 +182,10 @@ async def get_blog_post_by_slug(slug: str):
         if not blog_post:
             raise HTTPException(status_code=404, detail="Blog post not found")
         
-        # Check if it's a published blog post
-        content_type = str(blog_post.get("content_type", "")).strip().lower().replace(" ", "_")
+        # Check if it's a published post
         status = str(blog_post.get("status", "")).strip().lower()
-        if content_type != ContentType.BLOG_POST.value or status != ContentStatus.PUBLISHED.value:
-            raise HTTPException(status_code=404, detail="Blog post not found")
+        if status != ContentStatus.PUBLISHED.value:
+            raise HTTPException(status_code=404, detail="Post not found")
         
         # Older behaviour hid posts if their publish_date was in the
         # future.  That turned out to be surprising when an admin accidentally
@@ -207,6 +212,7 @@ async def get_blog_post_by_slug(slug: str):
             "id": blog_post["id"],
             "title": blog_post["title"],
             "slug": blog_post["slug"],
+            "content_type": blog_post.get("content_type", "blog_post"),
             "content": blog_post["content"],
             "excerpt": blog_post.get("excerpt"),
             "featured_image": blog_post.get("featured_image"),
@@ -234,17 +240,21 @@ async def get_blog_post_by_slug(slug: str):
         raise HTTPException(status_code=500, detail="Failed to fetch blog post")
 
 @router.get("/blog/categories")
-async def get_blog_categories():
+async def get_blog_categories(content_type: Optional[str] = None):
     """Get all available blog post categories"""
     
     try:
-        # Get unique categories from published blog posts
+        normalized_content_type = (content_type or "").strip().lower().replace(" ", "_")
+        match_stage = {
+            "status": {"$regex": "^published$", "$options": "i"}
+        }
+        if normalized_content_type and normalized_content_type != "all":
+            type_pattern = "^" + re.escape(normalized_content_type).replace("\\_", "[_ ]?") + "$"
+            match_stage["content_type"] = {"$regex": type_pattern, "$options": "i"}
+
         pipeline = [
             {
-                "$match": {
-                    "content_type": {"$regex": "^blog[_ ]?post$", "$options": "i"},
-                    "status": {"$regex": "^published$", "$options": "i"}
-                }
+                "$match": match_stage
             },
             {
                 "$group": {
@@ -269,6 +279,23 @@ async def get_blog_categories():
     except Exception as e:
         logger.error(f"Error getting blog categories: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to fetch blog categories")
+
+@router.get("/blog/filter-options")
+async def get_blog_filter_options():
+    try:
+        content_types = []
+        for ct in ContentType:
+            value = ct.value
+            if value == ContentType.JOB_POSTING.value:
+                continue
+            content_types.append({
+                "value": value,
+                "label": value.replace("_", " ").title()
+            })
+        return {"content_types": content_types}
+    except Exception as e:
+        logger.error(f"Error getting blog filter options: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch blog filter options")
 
 @router.get("/blog/featured")
 async def get_featured_blog_posts(limit: int = Query(3, ge=1, le=10)):

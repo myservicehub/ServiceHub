@@ -15,9 +15,11 @@ const BlogPage = () => {
   const [posts, setPosts] = useState([]);
   const [featuredPosts, setFeaturedPosts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [contentTypes, setContentTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedPost, setSelectedPost] = useState(null);
   const [filters, setFilters] = useState({
+    contentType: 'all',
     category: '',
     search: '',
     tag: ''
@@ -156,7 +158,13 @@ const BlogPage = () => {
     getPosts: async (params = {}) => {
       try {
         // Get published blog posts from public API
-        const query = new URLSearchParams(params).toString();
+        const queryParams = {};
+        Object.entries(params || {}).forEach(([key, value]) => {
+          if (value !== undefined && value !== null && String(value).trim() !== '') {
+            queryParams[key === 'contentType' ? 'content_type' : key] = value;
+          }
+        });
+        const query = new URLSearchParams(queryParams).toString();
         const response = await fetch(`${BASE_URL}/api/public/content/blog?${query}`);
         if (!response.ok) {
           const errText = await response.text().catch(() => '');
@@ -195,15 +203,29 @@ const BlogPage = () => {
       }
     },
 
-    getCategories: async () => {
+    getCategories: async (contentType = 'all') => {
       try {
-        const response = await fetch(`${BASE_URL}/api/public/content/blog/categories`);
+        const query = new URLSearchParams({
+          content_type: contentType || 'all'
+        }).toString();
+        const response = await fetch(`${BASE_URL}/api/public/content/blog/categories?${query}`);
         if (!response.ok) return [];
         const data = await response.json();
         return data.categories || [];
       } catch (error) {
         console.error('Error fetching categories:', error);
         return [];
+      }
+    },
+
+    getFilterOptions: async () => {
+      try {
+        const response = await fetch(`${BASE_URL}/api/public/content/blog/filter-options`);
+        if (!response.ok) return { content_types: [] };
+        return await response.json();
+      } catch (error) {
+        console.error('Error fetching filter options:', error);
+        return { content_types: [] };
       }
     },
 
@@ -272,14 +294,18 @@ const BlogPage = () => {
       let regularPosts = (allPosts || []).filter(post => !post.is_featured);
 
       // If no posts from backend and no filters, use fallback
-      if (regularPosts.length === 0 && !filters.category && !filters.search && (!allPosts || allPosts.length === 0)) {
+      if (regularPosts.length === 0 && filters.contentType === 'all' && !filters.category && !filters.search && (!allPosts || allPosts.length === 0)) {
         regularPosts = FALLBACK_POSTS.filter(p => !p.is_featured);
       }
       
       setPosts(regularPosts);
       
+      const filterOptions = await blogAPI.getFilterOptions();
+      const availableContentTypes = (filterOptions?.content_types || []).map((item) => item.value);
+      setContentTypes(availableContentTypes);
+
       // Get categories
-      const categoryData = await blogAPI.getCategories();
+      const categoryData = await blogAPI.getCategories(filters.contentType || 'all');
       let uniqueCategories = (categoryData || []).map(cat => cat.category);
       if (!uniqueCategories || uniqueCategories.length === 0) {
         uniqueCategories = Array.from(new Set(FALLBACK_POSTS.map(p => p.category)));
@@ -696,6 +722,19 @@ const BlogPage = () => {
                     </div>
                     
                     <select
+                      value={filters.contentType}
+                      onChange={(e) => setFilters({...filters, contentType: e.target.value, category: ''})}
+                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-[#34D164]/20 focus:border-[#34D164]"
+                    >
+                      <option value="all">All Types</option>
+                      {contentTypes.map((type) => (
+                        <option key={type} value={type}>
+                          {type.replace('_', ' ')}
+                        </option>
+                      ))}
+                    </select>
+
+                    <select
                       value={filters.category}
                       onChange={(e) => setFilters({...filters, category: e.target.value})}
                       className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-[#34D164]/20 focus:border-[#34D164]"
@@ -708,9 +747,9 @@ const BlogPage = () => {
                       ))}
                     </select>
                     
-                    {(filters.category || filters.search) && (
+                    {(filters.contentType !== 'all' || filters.category || filters.search) && (
                       <button
-                        onClick={() => setFilters({ category: '', search: '', tag: '' })}
+                        onClick={() => setFilters({ contentType: 'all', category: '', search: '', tag: '' })}
                         className="text-xs text-[#34D164] hover:text-[#2ab854]"
                       >
                         Clear
@@ -746,7 +785,7 @@ const BlogPage = () => {
                     </div>
                     <h3 className="text-lg font-semibold text-[#121E3C] mb-2">No posts found</h3>
                     <p className="text-gray-400 text-sm">
-                      {filters.search || filters.category 
+                      {filters.contentType !== 'all' || filters.search || filters.category 
                         ? 'Try adjusting your search or filter.'
                         : 'Check back soon for new content!'
                       }
