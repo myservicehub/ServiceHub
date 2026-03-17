@@ -291,7 +291,7 @@ const BlogPage = () => {
       }
       
       // Filter out featured posts for the regular list
-      let regularPosts = (allPosts || []).filter(post => !post.is_featured);
+      let regularPosts = (allPosts || []).filter(post => !post.is_featured && post?.slug);
 
       // If no posts from backend and no filters, use fallback
       if (regularPosts.length === 0 && filters.contentType === 'all' && !filters.category && !filters.search && (!allPosts || allPosts.length === 0)) {
@@ -448,8 +448,8 @@ const BlogPage = () => {
         </div>
         
         <h3 className={`font-semibold font-montserrat text-[#121E3C] mb-2 group-hover:text-[#34D164] transition-colors ${featured ? 'text-lg' : 'text-base'}`}>
-          <button 
-            onClick={() => navigate(`/blog/${post.slug}`)}
+                      <button 
+            onClick={() => post?.slug ? navigate(`/blog/${post.slug}`) : toast({ title: 'Post unavailable', description: 'This post cannot be opened right now.', variant: 'destructive' })}
             className="text-left"
           >
             {post.title}
@@ -475,7 +475,7 @@ const BlogPage = () => {
           </div>
           
           <button
-            onClick={() => navigate(`/blog/${post.slug}`)}
+            onClick={() => post?.slug ? navigate(`/blog/${post.slug}`) : toast({ title: 'Post unavailable', description: 'This post cannot be opened right now.', variant: 'destructive' })}
             className="text-[#34D164] hover:text-[#2ab854] font-medium text-xs flex items-center"
           >
             Read More
@@ -734,19 +734,6 @@ const BlogPage = () => {
                       ))}
                     </select>
 
-                    <select
-                      value={filters.category}
-                      onChange={(e) => setFilters({...filters, category: e.target.value})}
-                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-[#34D164]/20 focus:border-[#34D164]"
-                    >
-                      <option value="">All Categories</option>
-                      {categories.map((category) => (
-                        <option key={category} value={category}>
-                          {category.replace('_', ' ')}
-                        </option>
-                      ))}
-                    </select>
-                    
                     {(filters.contentType !== 'all' || filters.category || filters.search) && (
                       <button
                         onClick={() => setFilters({ contentType: 'all', category: '', search: '', tag: '' })}

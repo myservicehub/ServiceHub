@@ -87,7 +87,8 @@ async def get_public_blog_posts(
         # always be visible.
         filters = {
             "$and": [
-                {"status": {"$regex": "^published$", "$options": "i"}}
+                {"status": {"$regex": "^published$", "$options": "i"}},
+                {"slug": {"$exists": True, "$ne": ""}}
             ]
         }
 
