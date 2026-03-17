@@ -1321,8 +1321,14 @@ async def send_email_otp(payload: SendEmailOTPRequest, current_user: User = Depe
                 with open(template_path, "r", encoding="utf-8") as f:
                     raw = f.read()
                 content = raw
+                assets_base = (
+                    os.environ.get("EMAIL_ASSETS_BASE_URL")
+                    or os.environ.get("PUBLIC_ASSETS_BASE_URL")
+                    or "https://my-servicehub.vercel.app"
+                )
                 content = re.sub(r"\{\{\s*name\s*\}\}", current_user.name or "", content)
                 content = re.sub(r"\{\{\s*otpCode\s*\}\}", otp_code, content)
+                content = re.sub(r"\{\{\s*assetsBaseUrl\s*\}\}", assets_base.rstrip("/"), content)
         except Exception:
             content = None
         if not content:
@@ -1488,9 +1494,15 @@ async def request_password_reset(request_data: PasswordResetRequest):
                         raw = f.read()
                     # Replace placeholders
                     nm = user_data.get('name', 'User') or 'User'
+                    assets_base = (
+                        os.environ.get("EMAIL_ASSETS_BASE_URL")
+                        or os.environ.get("PUBLIC_ASSETS_BASE_URL")
+                        or "https://my-servicehub.vercel.app"
+                    )
                     html = raw
                     html = re.sub(r"\{\{\s*name\s*\}\}", nm, html)
                     html = re.sub(r"\{\{\s*resetLink\s*\}\}", reset_link, html)
+                    html = re.sub(r"\{\{\s*assetsBaseUrl\s*\}\}", assets_base.rstrip("/"), html)
                     email_content = html
             except Exception:
                 email_content = None

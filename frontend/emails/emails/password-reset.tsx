@@ -16,11 +16,13 @@ import * as React from 'react';
 interface PasswordResetProps {
   name?: string;
   resetLink?: string;
+  assetsBaseUrl?: string;
 }
 
 export const PasswordReset = ({
   name = 'John',
   resetLink = 'https://myservicehub.co/reset-password?token=example',
+  assetsBaseUrl = '{{assetsBaseUrl}}',
 }: PasswordResetProps) => (
   <Html>
     <Head>
@@ -42,14 +44,14 @@ export const PasswordReset = ({
     <Body style={main}>
       <Container style={container}>
         <Section style={heroSection}>
-          <table cellPadding="0" cellSpacing="0" width="100%" style={heroTable}>
+          <table cellPadding="0" cellSpacing="0" width="100%" style={{ ...heroTable, backgroundImage: `url(${assetsBaseUrl}/stock/bg2.jpeg)` }}>
             <tr>
               <td align="center" valign="middle" style={heroTd}>
                 <table cellPadding="0" cellSpacing="0" style={logoContainer}>
                   <tr>
                     <td style={{ verticalAlign: 'middle', paddingRight: '10px' }}>
                       <Img
-                        src="https://my-servicehub.vercel.app/Logo-Icon-Green.png"
+                        src={`${assetsBaseUrl}/Logo-Icon-Green.png`}
                         width="40"
                         height="40"
                         alt="ServiceHub"
@@ -113,7 +115,7 @@ export const PasswordReset = ({
                   <tr>
                     <td style={{ verticalAlign: 'middle', paddingRight: '8px' }}>
                       <Img
-                        src="https://my-servicehub.vercel.app/Logo-Icon-Green.png"
+                        src={`${assetsBaseUrl}/Logo-Icon-Green.png`}
                         width="28"
                         height="28"
                         alt="ServiceHub"
@@ -371,4 +373,3 @@ const footerLegalDivider = {
   color: '#9ca3af',
   margin: '0 4px',
 };
-

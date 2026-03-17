@@ -16,11 +16,13 @@ import * as React from 'react';
 interface EmailOtpProps {
   name?: string;
   otpCode?: string;
+  assetsBaseUrl?: string;
 }
 
 export const EmailOtp = ({
   name = 'John',
   otpCode = '847291',
+  assetsBaseUrl = '{{assetsBaseUrl}}',
 }: EmailOtpProps) => (
   <Html>
     <Head>
@@ -44,7 +46,7 @@ export const EmailOtp = ({
         
         {/* Hero Section with Logo Centered on Image */}
         <Section style={heroSection}>
-          <table cellPadding="0" cellSpacing="0" width="100%" style={heroTable}>
+          <table cellPadding="0" cellSpacing="0" width="100%" style={{ ...heroTable, backgroundImage: `url(${assetsBaseUrl}/stock/bg2.jpeg)` }}>
             <tr>
               <td align="center" valign="middle" style={heroTd}>
                 {/* Logo Container */}
@@ -52,7 +54,7 @@ export const EmailOtp = ({
                   <tr>
                     <td style={{ verticalAlign: 'middle', paddingRight: '10px' }}>
                       <Img
-                        src="https://my-servicehub.vercel.app/Logo-Icon-Green.png"
+                        src={`${assetsBaseUrl}/Logo-Icon-Green.png`}
                         width="40"
                         height="40"
                         alt="ServiceHub"
@@ -119,7 +121,7 @@ export const EmailOtp = ({
                   <tr>
                     <td style={{ verticalAlign: 'middle', paddingRight: '8px' }}>
                       <Img
-                        src="https://my-servicehub.vercel.app/Logo-Icon-Green.png"
+                        src={`${assetsBaseUrl}/Logo-Icon-Green.png`}
                         width="28"
                         height="28"
                         alt="ServiceHub"
