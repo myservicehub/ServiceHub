@@ -290,8 +290,12 @@ const BlogPage = () => {
         toast({ title: 'Unable to load posts', description: 'Showing sample content instead', variant: 'destructive' });
       }
       
-      // Filter out featured posts for the regular list
-      let regularPosts = (allPosts || []).filter(post => !post.is_featured && post?.slug);
+      const hasActiveFilter = filters.contentType !== 'all' || !!filters.category || !!filters.search || !!filters.tag;
+
+      // When filtering, include featured posts too so valid matches are never hidden
+      let regularPosts = hasActiveFilter
+        ? (allPosts || []).filter(post => post?.slug)
+        : (allPosts || []).filter(post => !post.is_featured && post?.slug);
 
       // If no posts from backend and no filters, use fallback
       if (regularPosts.length === 0 && filters.contentType === 'all' && !filters.category && !filters.search && (!allPosts || allPosts.length === 0)) {
