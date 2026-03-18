@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   FileText, Plus, Search, Filter, Eye, Edit, Trash2, Upload, 
   Calendar, BarChart3, Tag, Globe, Users, Image, Video, 
@@ -295,6 +295,7 @@ const ContentManagement = () => {
 
   // Content Creation/Edit Modal
   const ContentModal = ({ isEdit = false, content = null, onClose, onSave }) => {
+    const editorRef = useRef(null);
     const [formData, setFormData] = useState({
       title: content?.title || '',
       slug: content?.slug || '',
@@ -313,8 +314,26 @@ const ContentManagement = () => {
       is_sticky: content?.is_sticky || false
     });
 
+    useEffect(() => {
+      if (editorRef.current && editorRef.current.innerHTML !== formData.content) {
+        editorRef.current.innerHTML = formData.content || '';
+      }
+    }, [formData.content]);
+
+    const applyEditorCommand = (command, value = null) => {
+      if (!editorRef.current) return;
+      editorRef.current.focus();
+      document.execCommand(command, false, value);
+      setFormData({ ...formData, content: editorRef.current.innerHTML });
+    };
+
     const handleSubmit = async (e) => {
       e.preventDefault();
+      const plain = (formData.content || '').replace(/<[^>]*>/g, '').trim();
+      if (!plain) {
+        alert('Content is required');
+        return;
+      }
       try {
         const submitData = {
           ...formData,
@@ -474,14 +493,48 @@ const ContentManagement = () => {
             {/* Content */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
-              <textarea
-                value={formData.content}
-                onChange={(e) => setFormData({...formData, content: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                rows="10"
-                placeholder="Enter your content here (HTML/Markdown supported)"
-                required
-              />
+              <div className="border border-gray-300 rounded-lg">
+                <div className="flex flex-wrap items-center gap-2 p-2 border-b bg-gray-50">
+                  <select
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v) applyEditorCommand('formatBlock', v);
+                      e.target.value = '';
+                    }}
+                    className="px-2 py-1 text-sm border border-gray-300 rounded"
+                    defaultValue=""
+                  >
+                    <option value="" disabled>Size</option>
+                    <option value="P">Normal</option>
+                    <option value="H1">Heading 1</option>
+                    <option value="H2">Heading 2</option>
+                    <option value="H3">Heading 3</option>
+                  </select>
+                  <button type="button" onClick={() => applyEditorCommand('bold')} className="px-2 py-1 border border-gray-300 rounded text-sm font-bold">B</button>
+                  <button type="button" onClick={() => applyEditorCommand('italic')} className="px-2 py-1 border border-gray-300 rounded text-sm italic">I</button>
+                  <button type="button" onClick={() => applyEditorCommand('underline')} className="px-2 py-1 border border-gray-300 rounded text-sm underline">U</button>
+                  <button type="button" onClick={() => applyEditorCommand('insertUnorderedList')} className="px-2 py-1 border border-gray-300 rounded text-sm">• List</button>
+                  <button type="button" onClick={() => applyEditorCommand('insertOrderedList')} className="px-2 py-1 border border-gray-300 rounded text-sm">1. List</button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const url = window.prompt('Enter link URL');
+                      if (url) applyEditorCommand('createLink', url);
+                    }}
+                    className="px-2 py-1 border border-gray-300 rounded text-sm"
+                  >
+                    Link
+                  </button>
+                  <button type="button" onClick={() => applyEditorCommand('removeFormat')} className="px-2 py-1 border border-gray-300 rounded text-sm">Clear</button>
+                </div>
+                <div
+                  ref={editorRef}
+                  contentEditable
+                  onInput={() => setFormData({ ...formData, content: editorRef.current?.innerHTML || '' })}
+                  className="w-full px-3 py-2 min-h-[260px] focus:outline-none"
+                  style={{ whiteSpace: 'pre-wrap' }}
+                />
+              </div>
             </div>
 
             {/* Excerpt */}
