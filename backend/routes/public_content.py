@@ -87,14 +87,13 @@ async def get_public_blog_posts(
         # always be visible.
         filters = {
             "$and": [
-                {"status": {"$regex": "^published$", "$options": "i"}},
-                {"slug": {"$exists": True, "$ne": ""}}
+                {"status": {"$regex": "^published$", "$options": "i"}}
             ]
         }
 
         normalized_content_type = (content_type or "").strip().lower().replace(" ", "_")
         if normalized_content_type and normalized_content_type != "all":
-            type_pattern = "^" + re.escape(normalized_content_type).replace("\\_", "[_ ]?") + "$"
+            type_pattern = "^" + re.escape(normalized_content_type).replace("_", "[_ ]?") + "$"
             filters["$and"].append({"content_type": {"$regex": type_pattern, "$options": "i"}})
         
         # Add optional filters
@@ -250,7 +249,7 @@ async def get_blog_categories(content_type: Optional[str] = None):
             "status": {"$regex": "^published$", "$options": "i"}
         }
         if normalized_content_type and normalized_content_type != "all":
-            type_pattern = "^" + re.escape(normalized_content_type).replace("\\_", "[_ ]?") + "$"
+            type_pattern = "^" + re.escape(normalized_content_type).replace("_", "[_ ]?") + "$"
             match_stage["content_type"] = {"$regex": type_pattern, "$options": "i"}
 
         pipeline = [
