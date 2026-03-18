@@ -114,7 +114,7 @@ const PostJobPage = () => {
                 <h1 className="text-2xl font-bold font-montserrat text-[#121E3C] mb-3">Verification Required</h1>
                 <p className="text-gray-500 font-lato text-sm mb-6">Please verify your email to post a job.</p>
                 <Button 
-                  onClick={() => navigate('/verify-account')} 
+                  onClick={() => navigate('/verify-account?next=%2Fpost-job')} 
                   className="bg-[#34D164] hover:bg-[#2ab854] text-white px-8 py-2.5 text-sm font-medium rounded-full"
                 >
                   Go to Verification

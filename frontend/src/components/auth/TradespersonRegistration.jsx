@@ -32,14 +32,10 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../hooks/use-toast';
 import useStates from '../../hooks/useStates';
 import { jobsAPI } from '../../api/services';
-import { authAPI } from '../../api/services';
 import { resolveCoordinatesFromLocationText, resolveCoordinatesFromStructuredLocation, DEFAULT_TRAVEL_DISTANCE_KM } from '../../utils/locationCoordinates';
-import { useNavigate } from 'react-router-dom';
 import SkillsTestComponent from './SkillsTestComponent';
 import { adminAPI } from '../../api/wallet';
 import PaymentPage from './PaymentPage';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '../ui/input-otp';
 
 // Fallback trade categories (used while loading or if API fails)
 const FALLBACK_TRADE_CATEGORIES = [
@@ -128,63 +124,15 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [showPaymentPage, setShowPaymentPage] = useState(false);
-  const [showVerificationModal, setShowVerificationModal] = useState(false);
-
-  // Contact verification states
-  const [emailOtpCode, setEmailOtpCode] = useState('');
-  const [emailSending, setEmailSending] = useState(false);
-  const [emailVerifying, setEmailVerifying] = useState(false);
-  const [emailVerified, setEmailVerified] = useState(false);
-
-  const [phoneOtpCode, setPhoneOtpCode] = useState('');
-  const [phoneSending, setPhoneSending] = useState(false);
-  const [phoneVerifying, setPhoneVerifying] = useState(false);
-  const [phoneVerified, setPhoneVerified] = useState(false);
-
-  const { registerTradesperson, user, isAuthenticated, isTradesperson, updateUser, getCurrentUser } = useAuth();
+  const { registerTradesperson, user, isAuthenticated } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
   const { states: nigerianStates, lgas: stateLGAs, loading: statesLoading, loadLGAs } = useStates();
-
-  // Top-level redirect helper so effects and handlers can reuse it
-  const redirectToTradespersonDashboard = () => {
-    const fullName = `${formData.firstName} ${formData.lastName}`;
-    const walletSetupChoice = formData.walletSetup;
-
-    console.log('🚀 Redirecting to tradesperson dashboard (/trades/overview)');
-    console.log('🔐 Final auth state before redirect:', {
-      isAuthenticated: isAuthenticated(),
-      isTradesperson: isTradesperson(),
-      user: user
-    });
-
-    navigate('/trades/overview', {
-      state: {
-        welcomeMessage: `Welcome to ServiceHub, ${fullName}! Your registration is complete.`,
-        walletFunded: false,
-        walletSetupLater: walletSetupChoice === 'later',
-        showWalletReminder: walletSetupChoice === 'later',
-        newRegistration: true
-      },
-      replace: true
-    });
-
-    console.log('✅ Redirect to tradesperson dashboard completed');
-  };
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch { window.scrollTo(0, 0); }
     }
   }, [currentStep]);
-
-  // Enforce verification: auto close modal and redirect only after both are verified
-  useEffect(() => {
-    if (emailVerified && phoneVerified) {
-      setShowVerificationModal(false);
-      redirectToTradespersonDashboard();
-    }
-  }, [emailVerified, phoneVerified]);
 
   // Helpers for distance display and simple state-based suggestions
   const kmToMiles = (km) => Math.round(km * 0.621371);
@@ -452,7 +400,7 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
     setCurrentStep(prev => Math.max(prev - 1, 1));
   };
 
-  const handleFinalSubmit = async (walletSetupOverride) => {
+  const handleFinalSubmit = async () => {
     console.log('🚀 handleFinalSubmit called, current step:', currentStep);
     console.log('🔍 Form data:', formData);
     
@@ -525,9 +473,6 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
           }
         } catch (e) {
         }
-        const walletSetupChoice = walletSetupOverride ?? formData.walletSetup;
-        const fullName = `${formData.firstName} ${formData.lastName}`;
-        
         console.log('✅ Registration successful, result:', result);
         console.log('🔐 Current auth state:', { 
           isAuthenticated: isAuthenticated(), 
@@ -536,34 +481,14 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
         });
 
         toast({
-          title: "Registration Successful! 🎉",
-          description: `Welcome to ServiceHub, ${fullName}! Your account has been created successfully.`,
-          duration: 3000,
+          title: "Congratulations! 🎉",
+          description: "Your account has been successfully created, please login to complete your account verification.",
+          duration: 5000,
         });
 
         // Close the modal first
         if (onComplete) {
           onComplete(result);
-        }
-
-        // Trigger email and phone OTP after successful account creation
-        try {
-          if (formData.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-            await authAPI.sendEmailOTP(formData.email);
-            toast({ title: 'Email verification code sent', description: 'Check your inbox to verify your email.' });
-          }
-        } catch (emailErr) {
-          console.warn('⚠️ Failed to send email OTP:', emailErr?.response?.data || emailErr?.message || emailErr);
-        }
-
-        try {
-          if (formData.phone && validateNigerianPhone(formData.phone)) {
-            const formattedPhoneAfter = formatNigerianPhone(formData.phone);
-            await authAPI.sendPhoneOTP(formattedPhoneAfter);
-            toast({ title: 'SMS verification code sent', description: 'Check your phone to verify your number.' });
-          }
-        } catch (phoneErr) {
-          console.warn('⚠️ Failed to send phone OTP:', phoneErr?.response?.data || phoneErr?.message || phoneErr);
         }
 
         // Update profile location and travel distance post-registration
@@ -599,8 +524,11 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
           console.warn('⚠️ Failed to update profile location:', locErr?.response?.data || locErr?.message || locErr);
         }
 
-        // Post-registration flow: always show verification modal; redirect happens after both verifications
-        setShowVerificationModal(true);
+        if (typeof onSwitchToLogin === 'function') {
+          onSwitchToLogin();
+        } else if (typeof onClose === 'function') {
+          onClose();
+        }
       } else {
         // Ensure error is a string, not an object
         const errorMessage = typeof result.error === 'string' 
@@ -1436,175 +1364,6 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
 
   return (
     <>
-      {/* Post-registration verification modal */}
-      <Dialog
-        open={showVerificationModal}
-        onOpenChange={(open) => setShowVerificationModal(open)}
-      >
-        <DialogContent className="sm:max-w-xl">
-          <DialogHeader>
-            <DialogTitle>Verify your contact details</DialogTitle>
-            <DialogDescription>
-              We sent codes to your email and phone. Please verify both to continue.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm text-gray-700">
-                <Mail className="h-4 w-4" />
-                <span>{formData.email || 'No email provided'}</span>
-                {emailVerified && (
-                  <span className="flex items-center text-green-600">
-                    <CheckCircle className="h-4 w-4 mr-1" /> Verified
-                  </span>
-                )}
-              </div>
-              <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
-                <Button
-                  type="button"
-                  size="sm"
-                  disabled={emailSending || !formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)}
-                  onClick={async () => {
-                    try {
-                      setEmailSending(true);
-                      await authAPI.sendEmailOTP(formData.email);
-                      toast({ title: 'Email code sent', description: 'Check your inbox for the OTP code.' });
-                    } catch (err) {
-                      toast({ title: 'Failed to send email code', description: err?.response?.data?.detail || err?.message || 'Please try again.', variant: 'destructive' });
-                    } finally {
-                      setEmailSending(false);
-                    }
-                  }}
-                >
-                  {emailSending ? 'Sending…' : 'Resend code'}
-                </Button>
-                <InputOTP maxLength={6} value={emailOtpCode} onChange={(val) => setEmailOtpCode(val)}>
-                  <InputOTPGroup className="gap-2">
-                    <InputOTPSlot index={0} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
-                    <InputOTPSlot index={1} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
-                    <InputOTPSlot index={2} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
-                    <InputOTPSlot index={3} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
-                    <InputOTPSlot index={4} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
-                    <InputOTPSlot index={5} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
-                  </InputOTPGroup>
-                </InputOTP>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  disabled={emailVerifying || !emailOtpCode || !formData.email}
-                  onClick={async () => {
-                    try {
-                      setEmailVerifying(true);
-                      await authAPI.verifyEmailOTP(emailOtpCode, formData.email);
-                      setEmailVerified(true);
-                      // Immediately reflect verification in auth context
-                      try {
-                        if (updateUser) {
-                          updateUser({ ...(user || {}), email_verified: true });
-                        }
-                        if (typeof getCurrentUser === 'function') {
-                          await getCurrentUser();
-                        }
-                      } catch (ctxErr) {
-                        console.warn('⚠️ Failed to refresh user after email verification:', ctxErr);
-                      }
-                      toast({ title: 'Email verified', description: 'Your email was verified successfully.' });
-                    } catch (err) {
-                      setEmailVerified(false);
-                      toast({ title: 'Verification failed', description: err?.response?.data?.detail || err?.message || 'Invalid code. Please try again.', variant: 'destructive' });
-                    } finally {
-                      setEmailVerifying(false);
-                    }
-                  }}
-                >
-                  {emailVerifying ? 'Verifying…' : 'Verify'}
-                </Button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm text-gray-700">
-                <Phone className="h-4 w-4" />
-                <span>{formData.phone ? formatNigerianPhone(formData.phone) : 'No phone provided'}</span>
-                {phoneVerified && (
-                  <span className="flex items-center text-green-600">
-                    <CheckCircle className="h-4 w-4 mr-1" /> Verified
-                  </span>
-                )}
-              </div>
-              <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
-                <Button
-                  type="button"
-                  size="sm"
-                  disabled={phoneSending || !formData.phone || !validateNigerianPhone(formData.phone)}
-                  onClick={async () => {
-                    try {
-                      setPhoneSending(true);
-                      const formatted = formatNigerianPhone(formData.phone);
-                      await authAPI.sendPhoneOTP(formatted);
-                      toast({ title: 'SMS code sent', description: 'Check your phone for the OTP code.' });
-                    } catch (err) {
-                      toast({ title: 'Failed to send SMS code', description: err?.response?.data?.detail || err?.message || 'Please try again.', variant: 'destructive' });
-                    } finally {
-                      setPhoneSending(false);
-                    }
-                  }}
-                >
-                  {phoneSending ? 'Sending…' : 'Resend code'}
-                </Button>
-                <InputOTP maxLength={6} value={phoneOtpCode} onChange={(val) => setPhoneOtpCode(val)}>
-                  <InputOTPGroup className="gap-2">
-                    <InputOTPSlot index={0} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
-                    <InputOTPSlot index={1} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
-                    <InputOTPSlot index={2} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
-                    <InputOTPSlot index={3} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
-                    <InputOTPSlot index={4} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
-                    <InputOTPSlot index={5} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
-                  </InputOTPGroup>
-                </InputOTP>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  disabled={phoneVerifying || !phoneOtpCode || !formData.phone}
-                  onClick={async () => {
-                    try {
-                      setPhoneVerifying(true);
-                      const formatted = formatNigerianPhone(formData.phone);
-                      await authAPI.verifyPhoneOTP(phoneOtpCode, formatted);
-                      setPhoneVerified(true);
-                      // Immediately reflect verification in auth context
-                      try {
-                        if (updateUser) {
-                          updateUser({ ...(user || {}), phone_verified: true });
-                        }
-                        if (typeof getCurrentUser === 'function') {
-                          await getCurrentUser();
-                        }
-                      } catch (ctxErr) {
-                        console.warn('⚠️ Failed to refresh user after phone verification:', ctxErr);
-                      }
-                      toast({ title: 'Phone verified', description: 'Your phone number was verified successfully.' });
-                    } catch (err) {
-                      setPhoneVerified(false);
-                      toast({ title: 'Verification failed', description: err?.response?.data?.detail || err?.message || 'Invalid code. Please try again.', variant: 'destructive' });
-                    } finally {
-                      setPhoneVerifying(false);
-                    }
-                  }}
-                >
-                  {phoneVerifying ? 'Verifying…' : 'Verify'}
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Footer intentionally removed to enforce verification-only flow */}
-        </DialogContent>
-      </Dialog>
-
       <div className="flex h-[85vh] max-h-[750px]">
         {/* Left side - Form */}
         <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">

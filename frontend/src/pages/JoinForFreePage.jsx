@@ -42,6 +42,13 @@ const JoinForFreePage = () => {
     };
   }, []);
 
+  const openLoginModalFromRegistration = () => {
+    setShowRegistration(false);
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('open-auth-modal', { detail: { mode: 'login' } }));
+    }, 0);
+  };
+
   const benefits = [
     {
       icon: DollarSign,
@@ -398,7 +405,11 @@ const JoinForFreePage = () => {
                   ×
                 </button>
               </div>
-              <TradespersonRegistration referralCode={referralCode} />
+              <TradespersonRegistration
+                referralCode={referralCode}
+                onClose={() => setShowRegistration(false)}
+                onSwitchToLogin={openLoginModalFromRegistration}
+              />
             </div>
           </div>
         </div>

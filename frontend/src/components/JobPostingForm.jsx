@@ -70,6 +70,7 @@ const FALLBACK_TRADE_CATEGORIES = [
 ];
 
 function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState }) {
+  const JOB_POST_DRAFT_KEY = 'job_posting_draft_v2';
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [tradeCategories, setTradeCategories] = useState(FALLBACK_TRADE_CATEGORIES);
@@ -110,6 +111,8 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
   const [loadingLGAs, setLoadingLGAs] = useState(false);
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showVerificationGateModal, setShowVerificationGateModal] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -138,10 +141,45 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
   const [showQuizFeedbackModal, setShowQuizFeedbackModal] = useState(false);
   const [quizFeedback, setQuizFeedback] = useState('');
   const lgaAbortRef = useRef(null);
+  const hasRestoredDraft = useRef(false);
 
   const { loginWithToken, isAuthenticated, user: currentUser, loading } = useAuth();
   const { toast } = useToast();
   const { states: nigerianStates, loading: statesLoading, error: statesError } = useStates();
+
+  const sanitizeQuestionAnswersForStorage = (answers = {}) => {
+    const sanitized = {};
+    Object.entries(answers).forEach(([key, value]) => {
+      if (value instanceof File) return;
+      if (Array.isArray(value)) {
+        sanitized[key] = value.filter(v => !(v instanceof File));
+        return;
+      }
+      sanitized[key] = value;
+    });
+    return sanitized;
+  };
+
+  const persistDraft = (stepOverride = null) => {
+    try {
+      const payload = {
+        formData,
+        currentStep: stepOverride ?? currentStep,
+        questionAnswers: sanitizeQuestionAnswersForStorage(questionAnswers),
+        questionAnswersOtherText,
+        currentQuestionIndex,
+        questionsCompleted,
+        savedAt: Date.now()
+      };
+      localStorage.setItem(JOB_POST_DRAFT_KEY, JSON.stringify(payload));
+    } catch {}
+  };
+
+  const clearDraft = () => {
+    try {
+      localStorage.removeItem(JOB_POST_DRAFT_KEY);
+    } catch {}
+  };
   
   // Enhanced authentication check - avoiding immediate currentUser access
   const isUserAuthenticated = () => {
@@ -176,6 +214,62 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       setMapCenterZoom(10);
     }
   }, [initialState]);
+
+  useEffect(() => {
+    if (loading || hasRestoredDraft.current) return;
+    try {
+      const raw = localStorage.getItem(JOB_POST_DRAFT_KEY);
+      if (!raw) {
+        hasRestoredDraft.current = true;
+        return;
+      }
+      const draft = JSON.parse(raw);
+      if (!draft || typeof draft !== 'object') {
+        hasRestoredDraft.current = true;
+        return;
+      }
+      if (draft.formData && typeof draft.formData === 'object') {
+        setFormData(prev => ({ ...prev, ...draft.formData }));
+      }
+      if (draft.questionAnswers && typeof draft.questionAnswers === 'object') {
+        setQuestionAnswers(draft.questionAnswers);
+      }
+      if (draft.questionAnswersOtherText && typeof draft.questionAnswersOtherText === 'object') {
+        setQuestionAnswersOtherText(draft.questionAnswersOtherText);
+      }
+      const maxStep = isUserAuthenticated() ? 4 : 5;
+      const restoredStep = Number.isFinite(Number(draft.currentStep))
+        ? Math.max(1, Math.min(Number(draft.currentStep), maxStep))
+        : 1;
+      setCurrentStep(restoredStep);
+      if (Number.isFinite(Number(draft.currentQuestionIndex))) {
+        setCurrentQuestionIndex(Math.max(0, Number(draft.currentQuestionIndex)));
+      }
+      setQuestionsCompleted(!!draft.questionsCompleted);
+      hasRestoredDraft.current = true;
+      toast({
+        title: 'Progress restored',
+        description: 'We restored your job posting draft so you can continue where you stopped.'
+      });
+    } catch {
+      hasRestoredDraft.current = true;
+    }
+  }, [loading]);
+
+  useEffect(() => {
+    if (!hasRestoredDraft.current) return;
+    const timer = setTimeout(() => {
+      persistDraft();
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [
+    formData,
+    currentStep,
+    questionAnswers,
+    questionAnswersOtherText,
+    currentQuestionIndex,
+    questionsCompleted
+  ]);
 
   // Fetch trade categories from API
   useEffect(() => {
@@ -473,11 +567,13 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
   };
 
   const continueToAccountCreation = () => {
+    persistDraft(5);
     setShowAccountModal(false);
     setCurrentStep(5);
   };
 
   const continueToLogin = () => {
+    persistDraft(currentStep);
     setShowAccountModal(false);
     setShowLoginModal(true);
   };
@@ -585,6 +681,8 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
         title: "Job Submitted for Review!",
         description: `Your job has been submitted and is pending admin approval. Job ID: ${jobId}`,
       });
+      clearDraft();
+      localStorage.removeItem('pending_job_id');
 
       if (onJobPosted) {
         onJobPosted(jobResponse);
@@ -1757,21 +1855,13 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
         // Backwards-compatible handling: some deployments may still return 403 with detail
         const detail = err?.response?.data?.detail;
         if (err?.response?.status === 403 && detail?.verification_required) {
-          // Notify user immediately that a verification email was sent
-          toast({
-            title: "Verify your email",
-            description: "We sent a verification link to your email. Please verify to post your job.",
-          });
-
-          // Even if 403, we might need to upload files to the pending job
           if (detail.pending_job_id) {
-            // Persist pending id so we can retry uploads later
             localStorage.setItem('pending_job_id', detail.pending_job_id);
-            // Save answers/uploads in background (don't block the notification)
             try { await saveAnswers(detail.pending_job_id); } catch (e) { console.error('Failed to save answers for pending job', e); }
           }
-
-          // Keep user on step 5 and show guidance
+          persistDraft(5);
+          setVerificationEmail(formData.homeowner_email);
+          setShowVerificationGateModal(true);
           setCurrentStep(5);
           setSubmitting(false);
           return;
@@ -1783,18 +1873,11 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       if (jobResponse && (jobResponse.verification_required || jobResponse.pending_job_id)) {
         const pendingId = jobResponse.pending_job_id;
         if (pendingId) {
-          // Persist pending id so we can retry uploads later
           localStorage.setItem('pending_job_id', pendingId);
-
-          // Notify user immediately that a verification email was sent and their answers were saved
-          toast({
-            title: "Verify your email",
-            description: "We sent a verification link to your email. Your answers and uploads will be saved and posted after verification.",
-          });
-
-          // Save answers/uploads in background but don't block the UX
           try { await saveAnswers(pendingId); } catch (e) { console.error('Failed to save answers for pending job', e); }
-
+          persistDraft(5);
+          setVerificationEmail(formData.homeowner_email);
+          setShowVerificationGateModal(true);
           setCurrentStep(5);
           setSubmitting(false);
           return;
@@ -1815,6 +1898,8 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
         title: "Job Submitted!",
         description: `Your job has been submitted for admin review. Job ID: ${jobId}`,
       });
+      clearDraft();
+      localStorage.removeItem('pending_job_id');
 
       if (onJobPosted) {
         onJobPosted(jobResponse);
@@ -2639,6 +2724,65 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
     )
   );
 
+  const verificationGateModal = (
+    showVerificationGateModal && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg max-w-lg w-full p-6">
+          <div className="text-center mb-5">
+            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+              <CheckCircle size={32} style={{color: '#34D164'}} />
+            </div>
+            <h3 className="text-xl font-bold font-montserrat mb-2" style={{color: '#121E3C'}}>
+              Account created successfully
+            </h3>
+            <p className="text-gray-600 font-lato text-sm">
+              We sent a verification link to {verificationEmail || formData.homeowner_email}. Verify your email to continue posting this job.
+            </p>
+          </div>
+
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-5">
+            <p className="text-amber-700 text-sm font-lato">
+              Your job progress is saved. After verification or login, you can continue where you stopped.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <Button
+              type="button"
+              onClick={() => {
+                setShowVerificationGateModal(false);
+                navigate('/verify-account?next=%2Fpost-job');
+              }}
+              className="w-full text-white font-lato"
+              style={{backgroundColor: '#34D164'}}
+            >
+              Go to Verification
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowVerificationGateModal(false);
+                setShowLoginModal(true);
+              }}
+              className="w-full font-lato"
+            >
+              Login Instead
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setShowVerificationGateModal(false)}
+              className="w-full font-lato"
+            >
+              Close
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  );
+
   return (
     <>
       <div className="max-w-2xl mx-auto px-2 sm:px-4" ref={formTopRef} tabIndex={-1}>
@@ -2705,6 +2849,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
 
       {accountCreationModal}
       {loginModal}
+      {verificationGateModal}
       
       {/* Questions Modal */}
       {showQuestionsModal && (
