@@ -294,8 +294,8 @@ const BlogPage = () => {
 
       // When filtering, include featured posts too so valid matches are never hidden
       let regularPosts = hasActiveFilter
-        ? (allPosts || []).filter(post => post?.slug)
-        : (allPosts || []).filter(post => !post.is_featured && post?.slug);
+        ? (allPosts || [])
+        : (allPosts || []).filter(post => !post.is_featured);
 
       // If no posts from backend and no filters, use fallback
       if (regularPosts.length === 0 && filters.contentType === 'all' && !filters.category && !filters.search && (!allPosts || allPosts.length === 0)) {
@@ -453,7 +453,7 @@ const BlogPage = () => {
         
         <h3 className={`font-semibold font-montserrat text-[#121E3C] mb-2 group-hover:text-[#34D164] transition-colors ${featured ? 'text-lg' : 'text-base'}`}>
                       <button 
-            onClick={() => post?.slug ? navigate(`/blog/${post.slug}`) : toast({ title: 'Post unavailable', description: 'This post cannot be opened right now.', variant: 'destructive' })}
+            onClick={() => navigate(`/blog/${post.slug || post.id}`)}
             className="text-left"
           >
             {post.title}
@@ -479,7 +479,7 @@ const BlogPage = () => {
           </div>
           
           <button
-            onClick={() => post?.slug ? navigate(`/blog/${post.slug}`) : toast({ title: 'Post unavailable', description: 'This post cannot be opened right now.', variant: 'destructive' })}
+            onClick={() => navigate(`/blog/${post.slug || post.id}`)}
             className="text-[#34D164] hover:text-[#2ab854] font-medium text-xs flex items-center"
           >
             Read More

@@ -135,7 +135,7 @@ async def get_public_blog_posts(
             public_post = {
                 "id": post["id"],
                 "title": post["title"],
-                "slug": post["slug"],
+                "slug": post.get("slug") or post["id"],
                 "content_type": post.get("content_type", "blog_post"),
                 # "content": post["content"],  # Excluded
                 "excerpt": post.get("excerpt"),
@@ -178,6 +178,8 @@ async def get_blog_post_by_slug(slug: str):
     try:
         # Get the blog post
         blog_post = await database.get_content_item_by_slug(slug)
+        if not blog_post:
+            blog_post = await database.get_content_item_by_id(slug)
         
         if not blog_post:
             raise HTTPException(status_code=404, detail="Blog post not found")
