@@ -7,22 +7,19 @@ export const walletAPI = {
     return response.data;
   },
 
-  // Get bank details for funding
-  async getBankDetails() {
-    const response = await apiClient.get('/wallet/bank-details');
+  // Initialize Paystack transaction for wallet funding
+  async initializePaystackFunding(amountNaira, redirectPath = '/trades/wallet') {
+    const response = await apiClient.post('/wallet/paystack/initialize', {
+      amount_naira: amountNaira,
+      redirect_path: redirectPath,
+    });
     return response.data;
   },
 
-  // Fund wallet with payment proof
-  async fundWallet(amountNaira, proofImageFile) {
-    const formData = new FormData();
-    formData.append('amount_naira', amountNaira);
-    formData.append('proof_image', proofImageFile);
-    
-    const response = await apiClient.post('/wallet/fund', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+  // Verify Paystack transaction after redirect callback
+  async verifyPaystackFunding(reference) {
+    const response = await apiClient.post('/wallet/paystack/verify', {
+      reference,
     });
     return response.data;
   },

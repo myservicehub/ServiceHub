@@ -1,15 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import WalletBalance from '../components/wallet/WalletBalance';
 import FundWalletModal from '../components/wallet/FundWalletModal';
 import WalletTransactions from '../components/wallet/WalletTransactions';
+import { walletAPI } from '../api/wallet';
+import { useToast } from '../hooks/use-toast';
 
 const WalletPage = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { toast } = useToast();
   const [showFundModal, setShowFundModal] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const hasVerifiedCallbackRef = useRef(false);
 
   if (!isAuthenticated()) {
     return (
@@ -31,6 +36,33 @@ const WalletPage = () => {
   const handleFundSuccess = () => {
     setRefreshTrigger(Date.now());
   };
+
+  useEffect(() => {
+    if (!isAuthenticated() || hasVerifiedCallbackRef.current) return;
+    const params = new URLSearchParams(location.search);
+    const reference = params.get('reference') || params.get('trxref');
+    if (!reference) return;
+
+    hasVerifiedCallbackRef.current = true;
+    (async () => {
+      try {
+        const response = await walletAPI.verifyPaystackFunding(reference);
+        toast({
+          title: 'Wallet Funded',
+          description: `Your wallet was credited with ${response.amount_coins} coins.`,
+        });
+        setRefreshTrigger(Date.now());
+      } catch (error) {
+        toast({
+          title: 'Payment Verification Failed',
+          description: error?.response?.data?.detail || 'We could not verify this Paystack payment.',
+          variant: 'destructive',
+        });
+      } finally {
+        navigate(location.pathname, { replace: true });
+      }
+    })();
+  }, [location.search, isAuthenticated]);
 
   return (
     <div className="space-y-6">
@@ -56,8 +88,8 @@ const WalletPage = () => {
             <h3 className="text-base font-semibold text-[#121E3C] mb-4">How It Works</h3>
             <div className="space-y-4">
               {[
-                { step: '1', title: 'Fund Your Wallet', desc: 'Transfer money to ServiceHub account and upload payment proof' },
-                { step: '2', title: 'Admin Confirmation', desc: 'Admin verifies your payment and adds coins to your wallet (1 coin = ₦100)' },
+                { step: '1', title: 'Fund Your Wallet', desc: 'Enter amount and continue to secure Paystack checkout' },
+                { step: '2', title: 'Instant Verification', desc: 'Successful payments are verified and credited automatically (1 coin = ₦100)' },
                 { step: '3', title: 'Access Contact Details', desc: 'Use coins to pay access fees when homeowners share contact details' },
               ].map((item) => (
                 <div key={item.step} className="flex items-start gap-3">
@@ -86,7 +118,7 @@ const WalletPage = () => {
               {[
                 { label: 'Coin Value', value: '1 coin = ₦100' },
                 { label: 'Min. Funding', value: '₦100' },
-                { label: 'Processing Time', value: 'Within 24hrs' },
+                { label: 'Processing Time', value: 'Instant after payment' },
               ].map((item) => (
                 <div key={item.label} className="flex justify-between text-sm">
                   <span className="text-gray-400">{item.label}</span>
