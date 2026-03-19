@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { walletAPI } from '../../api/wallet';
 import { useToast } from '../../hooks/use-toast';
-import PaymentProofImage from '../common/PaymentProofImage';
 import { ChevronDown, ChevronUp, Plus, Minus, RotateCcw, RefreshCw, Wallet, Receipt } from 'lucide-react';
 
 const WalletTransactions = ({ refreshToken = 0 }) => {
@@ -178,16 +177,6 @@ const WalletTransactions = ({ refreshToken = 0 }) => {
                         <div className="flex justify-between text-[10px] sm:text-xs gap-2">
                           <span className="text-gray-500 flex-shrink-0">Note</span>
                           <span className="text-blue-600 truncate text-right">{transaction.admin_notes}</span>
-                        </div>
-                      )}
-                      {transaction.proof_image && (
-                        <div className="pt-2">
-                          <p className="text-[10px] sm:text-xs text-gray-500 mb-2">Payment Proof:</p>
-                          <PaymentProofImage
-                            filename={transaction.proof_image}
-                            className="h-14 sm:h-16 w-auto rounded-lg border cursor-pointer hover:shadow-lg transition-shadow"
-                            alt="Payment proof"
-                          />
                         </div>
                       )}
                     </div>

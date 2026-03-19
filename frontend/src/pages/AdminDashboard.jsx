@@ -16,21 +16,18 @@ import AdminDataTable from '../components/admin/AdminDataTable';
 import BulkActionsBar from '../components/admin/BulkActionsBar';
 import ConfirmDeleteModal from '../components/admin/ConfirmDeleteModal';
 import InlineEditForm from '../components/admin/InlineEditForm';
-import PaymentProofImage from '../components/common/PaymentProofImage';
 import AuthenticatedImage from '../components/common/AuthenticatedImage';
 import { Dialog, DialogContent } from '../components/ui/dialog';
 
 const AdminDashboard = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(adminAPI.isLoggedIn());
-  const [activeTab, setActiveTab] = useState('funding');
-  const fundingTabRef = useRef(null);
+  const [activeTab, setActiveTab] = useState('fees');
   const usersTabRef = useRef(null);
   const feesTabRef = useRef(null);
   const reviewsTabRef = useRef(null);
   const notificationsTabRef = useRef(null);
   const questionsTabRef = useRef(null);
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
-  const [fundingRequests, setFundingRequests] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [verifications, setVerifications] = useState([]);
   const [tradespeopleVerifications, setTradespeopleVerifications] = useState([]);
@@ -46,7 +43,6 @@ const AdminDashboard = () => {
   const [userStats, setUserStats] = useState(null);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [editingJob, setEditingJob] = useState(null);
   const [selectedVerification, setSelectedVerification] = useState(null);
   const [verificationFileBase64, setVerificationFileBase64] = useState({});
@@ -322,9 +318,9 @@ const AdminDashboard = () => {
     try {
       setLoading(true);
       
-      if (activeTab === 'funding') {
-        const data = await adminAPI.getFundingRequests();
-        setFundingRequests(data.funding_requests || []);
+      if (activeTab === 'wallet-transactions') {
+        const data = await adminAPI.getDashboardStats();
+        setStats(data);
       } else if (activeTab === 'jobs') {
         const data = await adminAPI.getAllJobsAdmin(0, 100, jobsFilter || null);
         setJobs(data.jobs || []);
@@ -583,57 +579,6 @@ const AdminDashboard = () => {
         title: "Login Failed",
         description: message,
         variant: "destructive",
-      });
-    }
-  };
-
-  const handleConfirmFunding = async (transactionId, notes = '') => {
-    try {
-      await adminAPI.confirmFunding(transactionId, notes);
-      toast({
-        title: "Funding Confirmed",
-        description: "Coins have been added to user's wallet"
-      });
-      setActiveTab('funding');
-      try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch { window.scrollTo(0, 0); }
-      fundingTabRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      await fetchData();
-      fundingTabRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to confirm funding",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleRejectFunding = async (transactionId, notes) => {
-    if (!notes.trim()) {
-      toast({
-        title: "Notes Required",
-        description: "Please provide a reason for rejection",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    try {
-      await adminAPI.rejectFunding(transactionId, notes);
-      toast({
-        title: "Funding Rejected",
-        description: "User will be notified of the rejection"
-      });
-      setActiveTab('funding');
-      try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch { window.scrollTo(0, 0); }
-      fundingTabRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      await fetchData();
-      fundingTabRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to reject funding",
-        variant: "destructive"
       });
     }
   };
@@ -1660,7 +1605,7 @@ const AdminDashboard = () => {
           <div className="flex justify-between items-center mb-8">
             <div>
               <h1 className="text-3xl font-bold text-gray-800">Admin Dashboard</h1>
-              <p className="text-gray-600">Manage wallet funding and job access fees</p>
+              <p className="text-gray-600">Manage wallet transactions, verifications, and job access fees</p>
             </div>
           </div>
 
@@ -1670,7 +1615,7 @@ const AdminDashboard = () => {
               <div className="overflow-x-auto">
                 <nav className="-mb-px flex sm:space-x-4 md:space-x-8 whitespace-nowrap px-2">
                 {[
-                  { id: 'funding', label: 'Funding Requests', icon: '💰' },
+                  { id: 'wallet-transactions', label: 'Wallet Transactions', icon: '💰' },
                   { id: 'fees', label: 'Job Access Fees', icon: '💳' },
                   { id: 'approvals', label: 'Job Approvals', icon: '✅' },
                   { id: 'verifications', label: 'ID Verifications', icon: '🆔' },
@@ -1705,11 +1650,11 @@ const AdminDashboard = () => {
             </div>
 
             <div className="p-6">
-              {/* Funding Requests Tab */}
-              {activeTab === 'funding' && (
-                <div className="space-y-6" ref={fundingTabRef} tabIndex={-1}>
+              {/* Wallet Transactions Tab */}
+              {activeTab === 'wallet-transactions' && (
+                <div className="space-y-6">
                   <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-semibold">Pending Funding Requests</h2>
+                    <h2 className="text-xl font-semibold">Recent Wallet Transactions</h2>
                     <button
                       onClick={fetchData}
                       className="text-blue-600 hover:text-blue-700"
@@ -1727,56 +1672,24 @@ const AdminDashboard = () => {
                         </div>
                       ))}
                     </div>
-                  ) : fundingRequests.length === 0 ? (
+                  ) : !stats?.wallet_stats ? (
                     <div className="text-center py-8 text-gray-500">
-                      No pending funding requests
+                      No wallet transaction stats available
                     </div>
                   ) : (
-                    <div className="space-y-4">
-                      {fundingRequests.map((request) => (
-                        <div key={request.id} className="bg-gray-50 p-6 rounded-lg">
-                          <div className="flex justify-between items-start mb-4">
-                            <div>
-                              <h3 className="font-semibold text-gray-800">
-                                {request.user_name} ({request.user_email})
-                              </h3>
-                              <p className="text-sm text-gray-600">
-                                Requested: ₦{request.amount_naira.toLocaleString()} ({request.amount_coins} coins)
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                {formatDate(request.created_at)}
-                              </p>
-                            </div>
-                            
-                            <div className="flex space-x-2">
-                              <button
-                                onClick={() => handleConfirmFunding(request.id)}
-                                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
-                              >
-                                Confirm
-                              </button>
-                              <button
-                                onClick={() => setSelectedTransaction(request)}
-                                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm"
-                              >
-                                Reject
-                              </button>
-                            </div>
-                          </div>
-                          
-                          {request.proof_image && (
-                            <div>
-                              <p className="text-sm text-gray-600 mb-2">Payment Proof:</p>
-                              <PaymentProofImage
-                                filename={request.proof_image}
-                                isAdmin={true}
-                                className="h-32 w-auto rounded border cursor-pointer hover:shadow-lg transition-shadow"
-                                alt="Payment proof"
-                              />
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <p className="text-sm text-blue-700">Confirmed Top-ups</p>
+                        <p className="text-2xl font-semibold text-blue-900">{stats.wallet_stats.confirmed_funding_requests || 0}</p>
+                      </div>
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <p className="text-sm text-green-700">Total Confirmed Amount</p>
+                        <p className="text-2xl font-semibold text-green-900">₦{(stats.wallet_stats.total_confirmed_amount_naira || 0).toLocaleString()}</p>
+                      </div>
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <p className="text-sm text-yellow-700">Pending Legacy Requests</p>
+                        <p className="text-2xl font-semibold text-yellow-900">{stats.wallet_stats.pending_funding_requests || 0}</p>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -4993,44 +4906,6 @@ const AdminDashboard = () => {
           </div>
         </div>
       </div>
-
-      {/* Reject Funding Modal */}
-      {selectedTransaction && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4">Reject Funding Request</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              User: {selectedTransaction.user_name} ({selectedTransaction.user_email})
-              <br />
-              Amount: ₦{selectedTransaction.amount_naira.toLocaleString()}
-            </p>
-            <textarea
-              placeholder="Reason for rejection (required)"
-              className="w-full p-3 border rounded-lg mb-4"
-              rows="3"
-              id="rejection-notes"
-            />
-            <div className="flex space-x-3">
-              <button
-                onClick={() => setSelectedTransaction(null)}
-                className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  const notes = document.getElementById('rejection-notes').value;
-                  handleRejectFunding(selectedTransaction.id, notes);
-                  setSelectedTransaction(null);
-                }}
-                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
-              >
-                Reject
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Reject Verification Modal */}
       {selectedVerification && (

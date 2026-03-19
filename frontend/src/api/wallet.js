@@ -34,18 +34,6 @@ export const walletAPI = {
   async checkBalance(accessFeeCoins) {
     const response = await apiClient.post(`/wallet/check-balance/${accessFeeCoins}`);
     return response.data;
-  },
-
-  // Get payment proof image
-  getPaymentProofUrl(filename) {
-    const base = (apiClient?.defaults?.baseURL || '/api');
-    return `${base}/wallet/payment-proof/${filename}`;
-  }
-,
-  // Get payment proof as base64
-  getPaymentProofBase64Url(filename) {
-    const base = (apiClient?.defaults?.baseURL || '/api');
-    return `${base}/wallet/payment-proof-base64/${filename}`;
   }
 };
 
@@ -137,38 +125,6 @@ export const adminAPI = {
     return Array.isArray(perms) && perms.includes(permission);
   },
 
-  // Get pending funding requests
-  async getFundingRequests(skip = 0, limit = 20) {
-    const response = await apiClient.get(`/admin/wallet/funding-requests?skip=${skip}&limit=${limit}`);
-    return response.data;
-  },
-
-  // Confirm funding request
-  async confirmFunding(transactionId, adminNotes = '') {
-    const formData = new FormData();
-    formData.append('admin_notes', adminNotes);
-    
-    const response = await apiClient.post(`/admin/wallet/confirm-funding/${transactionId}`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    return response.data;
-  },
-
-  // Reject funding request
-  async rejectFunding(transactionId, adminNotes) {
-    const formData = new FormData();
-    formData.append('admin_notes', adminNotes);
-    
-    const response = await apiClient.post(`/admin/wallet/reject-funding/${transactionId}`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    return response.data;
-  },
-
   // Get all jobs with access fees
   async getJobsWithAccessFees(skip = 0, limit = 20, search = null) {
     const params = new URLSearchParams({
@@ -237,17 +193,6 @@ export const adminAPI = {
   async getTransactionDetails(transactionId) {
     const response = await apiClient.get(`/admin/wallet/transaction/${transactionId}`);
     return response.data;
-  },
-
-  // Get payment proof image (admin)
-  getPaymentProofUrl(filename) {
-    const base = (apiClient?.defaults?.baseURL || '/api');
-    return `${base}/admin/wallet/payment-proof/${filename}`;
-  },
-  // Get payment proof as base64 (admin)
-  getPaymentProofBase64Url(filename) {
-    const base = (apiClient?.defaults?.baseURL || '/api');
-    return `${base}/admin/wallet/payment-proof-base64/${filename}`;
   },
 
   // User Management Methods

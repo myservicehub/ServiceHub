@@ -241,7 +241,7 @@ const HelpFAQsPage = () => {
       },
       {
         question: "How do I add funds to my wallet?",
-        answer: "Go to your Wallet section, click 'Fund Wallet', enter the amount (minimum ₦100), and upload proof of payment to our Kuda Bank account. Our team will verify and credit your wallet within 2-4 hours during business hours."
+        answer: "Go to your Wallet section, click 'Fund Wallet', enter the amount (minimum ₦100), and continue to Paystack checkout. Once payment is successful, your wallet is credited automatically."
       },
       {
         question: "Can I set my own prices?",
@@ -259,7 +259,7 @@ const HelpFAQsPage = () => {
     payments: [
       {
         question: "What payment methods do you accept?",
-        answer: "Payment methods are only for tradespeople - homeowners use serviceHub completely free! Tradespeople can fund their wallets via bank transfer to our Kuda Bank account. Simply transfer the amount you want to add to your wallet, upload proof of payment, and we'll credit your account within 2-4 hours during business hours."
+        answer: "Payment methods are only for tradespeople - homeowners use serviceHub completely free! Tradespeople fund wallets through Paystack using supported payment methods such as cards, bank transfer, and other channels available in checkout."
       },
       {
         question: "What is the coin system?",
@@ -274,8 +274,8 @@ const HelpFAQsPage = () => {
         answer: "Access fees are generally non-refundable once contact details are revealed. However, if there's a technical error or duplicate charge, contact our support team immediately. We review such cases individually."
       },
       {
-        question: "What are the bank details for funding my wallet?",
-        answer: "Bank: Kuda Bank | Account Name: ServiceHub Limited | Account Number: 3002912005. Always upload your payment proof after transferring to ensure quick processing."
+        question: "How does wallet funding checkout work?",
+        answer: "Enter your amount in Wallet, continue to Paystack, complete payment, and return to ServiceHub. Your wallet balance is updated automatically after successful verification."
       },
       {
         question: "Is there a minimum amount I can add to my wallet?",

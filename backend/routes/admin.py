@@ -33,72 +33,6 @@ async def admin_login(credentials: dict = Depends(verify_admin_credentials)):
     }
 
 # ==========================================
-# WALLET FUNDING MANAGEMENT
-# ==========================================
-
-@router.get("/wallet/funding-requests")
-async def get_pending_funding_requests(skip: int = 0, limit: int = 20, admin: dict = Depends(require_permission(AdminPermission.MANAGE_WALLET_FUNDING))):
-    """Get pending wallet funding requests for admin review"""
-    
-    requests = await database.get_pending_funding_requests(skip=skip, limit=limit)
-    
-    return {
-        "funding_requests": requests,
-        "pagination": {
-            "skip": skip,
-            "limit": limit,
-            "total": len(requests)
-        }
-    }
-
-@router.post("/wallet/confirm-funding/{transaction_id}")
-async def confirm_wallet_funding(
-    transaction_id: str,
-    admin_notes: str = Form(""),
-    admin: dict = Depends(require_permission(AdminPermission.MANAGE_WALLET_FUNDING))
-):
-    """Confirm wallet funding request"""
-    
-    success = await database.confirm_wallet_funding(
-        transaction_id=transaction_id,
-        admin_id=admin["id"],
-        admin_notes=admin_notes
-    )
-    
-    if not success:
-        raise HTTPException(status_code=404, detail="Transaction not found or already processed")
-    
-    return {
-        "message": "Funding request confirmed successfully",
-        "transaction_id": transaction_id,
-        "status": "confirmed"
-    }
-
-@router.post("/wallet/reject-funding/{transaction_id}")
-async def reject_wallet_funding(
-    transaction_id: str,
-    admin_notes: str = Form(...),
-    admin: dict = Depends(require_permission(AdminPermission.MANAGE_WALLET_FUNDING))
-):
-    """Reject wallet funding request"""
-    
-    success = await database.reject_wallet_funding(
-        transaction_id=transaction_id,
-        admin_id=admin["id"],
-        admin_notes=admin_notes
-    )
-    
-    if not success:
-        raise HTTPException(status_code=404, detail="Transaction not found or already processed")
-    
-    return {
-        "message": "Funding request rejected",
-        "transaction_id": transaction_id,
-        "status": "rejected",
-        "notes": admin_notes
-    }
-
-# ==========================================
 # JOB ACCESS FEE MANAGEMENT
 # ==========================================
 
@@ -837,54 +771,6 @@ async def get_job_details_admin(job_id: str):
 async def get_admin_dashboard_stats():
     """Get admin dashboard statistics (optimized)"""
     return await database.get_admin_dashboard_stats()
-
-# ==========================================
-# PAYMENT PROOF VIEWING
-# ==========================================
-
-@router.get("/wallet/payment-proof/{filename}")
-async def view_payment_proof(filename: str, admin: dict = Depends(require_permission(AdminPermission.VIEW_PAYMENT_PROOFS))):
-    """View payment proof image (admin only)"""
-    from fastapi.responses import FileResponse
-    import os
-    
-    base_dir = os.environ.get("UPLOADS_DIR", os.path.join(os.getcwd(), "uploads"))
-    project_root_uploads = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
-    candidates = [
-        os.path.join(base_dir, "payment_proofs", filename),
-        os.path.join(project_root_uploads, "payment_proofs", filename),
-        os.path.join(os.getcwd(), "uploads", "payment_proofs", filename),
-        os.path.join("/app", "uploads", "payment_proofs", filename),
-    ]
-    for fp in candidates:
-        if os.path.exists(fp):
-            return FileResponse(fp, media_type="image/jpeg")
-    raise HTTPException(status_code=404, detail="Payment proof not found")
-
-@router.get("/wallet/payment-proof-base64/{filename}")
-async def view_payment_proof_base64(filename: str, admin: dict = Depends(require_permission(AdminPermission.VIEW_PAYMENT_PROOFS))):
-    import os, base64
-    # Prefer DB-stored base64 if available
-    try:
-        txn = await database.get_wallet_transaction_by_proof_image(filename)
-        if txn and txn.get("proof_image_base64"):
-            return {"image_base64": txn["proof_image_base64"]}
-    except Exception:
-        pass
-    base_dir = os.environ.get("UPLOADS_DIR", os.path.join(os.getcwd(), "uploads"))
-    project_root_uploads = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
-    candidates = [
-        os.path.join(base_dir, "payment_proofs", filename),
-        os.path.join(project_root_uploads, "payment_proofs", filename),
-        os.path.join(os.getcwd(), "uploads", "payment_proofs", filename),
-        os.path.join("/app", "uploads", "payment_proofs", filename),
-    ]
-    for fp in candidates:
-        if os.path.exists(fp):
-            with open(fp, "rb") as f:
-                data = f.read()
-            return {"image_base64": base64.b64encode(data).decode("utf-8")}
-    raise HTTPException(status_code=404, detail="Payment proof not found")
 
 # ==========================================
 # USER MANAGEMENT

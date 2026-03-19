@@ -460,7 +460,7 @@ const HowItWorksPage = () => {
                   
                   <div className="space-y-3">
                     {[
-                      { title: 'Fund Your Wallet', desc: 'Add coins via bank transfer' },
+                      { title: 'Fund Your Wallet', desc: 'Add coins securely with Paystack' },
                       { title: 'Show Interest (15 coins)', desc: 'Pay for jobs you\'re serious about' },
                       { title: 'Earn Through Referrals', desc: 'Get coins for verified referrals' }
                     ].map((item, idx) => (
