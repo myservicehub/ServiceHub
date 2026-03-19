@@ -112,6 +112,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showVerificationGateModal, setShowVerificationGateModal] = useState(false);
+  const [hasPendingJob, setHasPendingJob] = useState(false);
   const [verificationEmail, setVerificationEmail] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -178,6 +179,8 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
   const clearDraft = () => {
     try {
       localStorage.removeItem(JOB_POST_DRAFT_KEY);
+      localStorage.removeItem('pending_job_id');
+      setHasPendingJob(false);
     } catch {}
   };
   
@@ -218,6 +221,8 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
   useEffect(() => {
     if (loading || hasRestoredDraft.current) return;
     try {
+      const pendingJobId = localStorage.getItem('pending_job_id');
+      setHasPendingJob(!!pendingJobId);
       const raw = localStorage.getItem(JOB_POST_DRAFT_KEY);
       if (!raw) {
         hasRestoredDraft.current = true;
@@ -246,6 +251,9 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
         setCurrentQuestionIndex(Math.max(0, Number(draft.currentQuestionIndex)));
       }
       setQuestionsCompleted(!!draft.questionsCompleted);
+      if (isUserAuthenticated() && pendingJobId) {
+        setCurrentStep(4);
+      }
       hasRestoredDraft.current = true;
       toast({
         title: 'Progress restored',
@@ -682,7 +690,6 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
         description: `Your job has been submitted and is pending admin approval. Job ID: ${jobId}`,
       });
       clearDraft();
-      localStorage.removeItem('pending_job_id');
 
       if (onJobPosted) {
         onJobPosted(jobResponse);
@@ -1857,6 +1864,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
         if (err?.response?.status === 403 && detail?.verification_required) {
           if (detail.pending_job_id) {
             localStorage.setItem('pending_job_id', detail.pending_job_id);
+            setHasPendingJob(true);
             try { await saveAnswers(detail.pending_job_id); } catch (e) { console.error('Failed to save answers for pending job', e); }
           }
           persistDraft(5);
@@ -1874,6 +1882,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
         const pendingId = jobResponse.pending_job_id;
         if (pendingId) {
           localStorage.setItem('pending_job_id', pendingId);
+          setHasPendingJob(true);
           try { await saveAnswers(pendingId); } catch (e) { console.error('Failed to save answers for pending job', e); }
           persistDraft(5);
           setVerificationEmail(formData.homeowner_email);
@@ -1899,7 +1908,6 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
         description: `Your job has been submitted for admin review. Job ID: ${jobId}`,
       });
       clearDraft();
-      localStorage.removeItem('pending_job_id');
 
       if (onJobPosted) {
         onJobPosted(jobResponse);
@@ -2639,6 +2647,10 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
           title: "Welcome back!",
           description: "You're now logged in. Let's post your job!",
         });
+        try {
+          const pendingJobId = localStorage.getItem('pending_job_id');
+          setHasPendingJob(!!pendingJobId);
+        } catch {}
         
         // After login, return to the preview step instead of auto-posting
         setCurrentStep(4);
@@ -2715,7 +2727,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                 className="flex-1 text-white"
                 style={{backgroundColor: '#121E3C'}}
               >
-                {loggingIn ? 'Signing In...' : 'Sign In & Post Job'}
+                {loggingIn ? 'Signing In...' : (hasPendingJob ? 'Sign In & Complete Job Posting' : 'Sign In & Post Job')}
               </Button>
             </div>
           </form>
@@ -2837,7 +2849,11 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                     className="flex items-center text-white font-lato w-full sm:w-auto h-12 rounded-xl"
                     style={{backgroundColor: '#34D164'}}
                   >
-                    {submitting ? 'Submitting...' : (isUserAuthenticated() ? 'Post Job' : 'Create Account & Post Job')}
+                    {submitting
+                      ? 'Submitting...'
+                      : (hasPendingJob
+                        ? 'Complete Job Posting'
+                        : (isUserAuthenticated() ? 'Post Job' : 'Create Account & Post Job'))}
                     <CheckCircle size={16} className="ml-2" />
                   </Button>
                 )}

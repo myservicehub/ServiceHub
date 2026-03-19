@@ -38,7 +38,6 @@ const VerifyAccountPage = () => {
     name: '', phone: '', email: '', relationship: ''
   });
   const [verified, setVerified] = useState(false);
-  const [nextPath, setNextPath] = useState('/dashboard/jobs');
   const [businessType, setBusinessType] = useState(user?.business_type || '');
   const [idSelfie, setIdSelfie] = useState(null);
   const [idDocument, setIdDocument] = useState(null);
@@ -102,7 +101,7 @@ const VerifyAccountPage = () => {
     const params = new URLSearchParams(location.search);
     const token = params.get('token');
     const nextParam = params.get('next');
-    if (nextParam) setNextPath(nextParam);
+    const redirectPath = nextParam || '/dashboard/jobs';
     if (!token) return;
     let isMounted = true;
     (async () => {
@@ -120,12 +119,17 @@ const VerifyAccountPage = () => {
               title: 'Email Verified — Job Submitted',
               description: `Your job has been submitted for admin review. Job ID: ${resp.job.id}`,
             });
+            try {
+              localStorage.removeItem('pending_job_id');
+              localStorage.removeItem('job_posting_draft_v2');
+            } catch {}
           } else {
             toast({ title: 'Email Verified', description: resp?.message || 'Your email has been verified.' });
           }
           setVerified(true);
-          // Navigate to provided nextPath (if any) or default /my-jobs
-          try { navigate(nextPath || '/dashboard/jobs', { replace: true }); } catch (e) { navigate('/dashboard/jobs', { replace: true }); }
+          // Navigate to provided next path when no auto-post happened.
+          const destination = resp?.auto_posted ? '/dashboard/jobs' : redirectPath;
+          try { navigate(destination, { replace: true }); } catch (e) { navigate('/dashboard/jobs', { replace: true }); }
         }
       } catch (e) {
         const msg = e?.response?.data?.detail || 'Invalid or expired verification link';
@@ -154,7 +158,7 @@ const VerifyAccountPage = () => {
             <CheckCircle size={64} className="mx-auto mb-6 text-green-600" />
             <h2 className="text-2xl font-bold text-gray-800 mb-2">Email Verified</h2>
             <p className="text-gray-600 mb-6">You’re all set. Continue where you left off.</p>
-            <Button onClick={() => navigate(nextPath, { replace: true })} className="w-full text-white" style={{backgroundColor: '#34D164'}}>
+            <Button onClick={() => navigate('/dashboard/jobs', { replace: true })} className="w-full text-white" style={{backgroundColor: '#34D164'}}>
               Continue
             </Button>
             <p className="text-xs text-gray-500 mt-3">Redirecting in a few seconds…</p>
