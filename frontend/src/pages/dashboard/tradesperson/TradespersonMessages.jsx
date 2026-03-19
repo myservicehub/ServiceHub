@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
+import { messagesAPI } from '../../../api/messages';
 import {
   MessageSquare,
   Search,
@@ -19,9 +20,11 @@ import { Button } from '../../../components/ui/button';
 const TradespersonMessages = () => {
   const [conversations, setConversations] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState(null);
+  const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -32,36 +35,8 @@ const TradespersonMessages = () => {
   const loadConversations = async () => {
     try {
       setLoading(true);
-      // Mock data - replace with actual API call
-      setConversations([
-        {
-          id: 1,
-          name: 'Sarah Johnson',
-          avatar: null,
-          lastMessage: 'Thank you for your interest in the job!',
-          timestamp: '2 min ago',
-          unread: 2,
-          online: true,
-        },
-        {
-          id: 2,
-          name: 'Michael Adeyemi',
-          avatar: null,
-          lastMessage: 'Can you provide a quote for the project?',
-          timestamp: '1 hour ago',
-          unread: 0,
-          online: false,
-        },
-        {
-          id: 3,
-          name: 'Chioma Okonkwo',
-          avatar: null,
-          lastMessage: 'The work looks great, thank you!',
-          timestamp: 'Yesterday',
-          unread: 0,
-          online: true,
-        },
-      ]);
+      const response = await messagesAPI.getConversations();
+      setConversations(response?.conversations || []);
     } catch (error) {
       console.error('Failed to load conversations:', error);
     } finally {
@@ -69,15 +44,55 @@ const TradespersonMessages = () => {
     }
   };
 
-  const handleSendMessage = () => {
+  const loadMessages = async (conversationId) => {
+    try {
+      const response = await messagesAPI.getConversationMessages(conversationId);
+      setMessages(response?.messages || []);
+    } catch (error) {
+      console.error('Failed to load messages:', error);
+    }
+  };
+
+  const handleSelectConversation = (conversation) => {
+    setSelectedConversation(conversation);
+    loadMessages(conversation.id);
+  };
+
+  const handleSendMessage = async () => {
     if (!message.trim() || !selectedConversation) return;
-    // Handle send message logic
-    setMessage('');
+    try {
+      setSending(true);
+      await messagesAPI.sendMessage(selectedConversation.id, {
+        conversation_id: selectedConversation.id,
+        content: message.trim(),
+      });
+      setMessage('');
+      await loadMessages(selectedConversation.id);
+      await loadConversations();
+    } catch (error) {
+      console.error('Failed to send message:', error);
+    } finally {
+      setSending(false);
+    }
   };
 
   const filteredConversations = conversations.filter(conv =>
-    conv.name.toLowerCase().includes(searchQuery.toLowerCase())
+    conv.homeowner_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    conv.job_title?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const formatConversationTime = (value) => {
+    if (!value) return '';
+    const date = new Date(value);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(minutes / 60);
+    if (minutes < 1) return 'now';
+    if (minutes < 60) return `${minutes}m`;
+    if (hours < 24) return `${hours}h`;
+    return date.toLocaleDateString();
+  };
 
   if (loading) {
     return (
@@ -128,7 +143,7 @@ const TradespersonMessages = () => {
               filteredConversations.map((conv) => (
                 <button
                   key={conv.id}
-                  onClick={() => setSelectedConversation(conv)}
+                  onClick={() => handleSelectConversation(conv)}
                   className={cn(
                     "w-full flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors text-left border-b border-gray-50",
                     selectedConversation?.id === conv.id && "bg-[#34D164]/5"
@@ -136,28 +151,25 @@ const TradespersonMessages = () => {
                 >
                   <div className="relative">
                     <div className="w-12 h-12 rounded-full bg-[#121E3C] flex items-center justify-center text-white font-semibold">
-                      {conv.name.charAt(0)}
+                      {conv.homeowner_name?.charAt(0)?.toUpperCase() || 'H'}
                     </div>
-                    {conv.online && (
-                      <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
-                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
                       <span className="font-medium text-[#121E3C] text-sm truncate">
-                        {conv.name}
+                        {conv.homeowner_name || 'Homeowner'}
                       </span>
                       <span className="text-xs text-gray-400 shrink-0">
-                        {conv.timestamp}
+                        {formatConversationTime(conv.last_message_at || conv.updated_at)}
                       </span>
                     </div>
                     <p className="text-sm text-gray-500 truncate">
-                      {conv.lastMessage}
+                      {conv.last_message || 'No messages yet'}
                     </p>
                   </div>
-                  {conv.unread > 0 && (
+                  {(conv.unread_count_tradesperson || 0) > 0 && (
                     <span className="w-5 h-5 bg-[#34D164] text-white text-xs font-semibold rounded-full flex items-center justify-center shrink-0">
-                      {conv.unread}
+                      {conv.unread_count_tradesperson}
                     </span>
                   )}
                 </button>
@@ -194,18 +206,15 @@ const TradespersonMessages = () => {
                   </button>
                   <div className="relative">
                     <div className="w-10 h-10 rounded-full bg-[#121E3C] flex items-center justify-center text-white font-semibold">
-                      {selectedConversation.name.charAt(0)}
+                      {selectedConversation.homeowner_name?.charAt(0)?.toUpperCase() || 'H'}
                     </div>
-                    {selectedConversation.online && (
-                      <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full" />
-                    )}
                   </div>
                   <div>
                     <p className="font-semibold text-[#121E3C] text-sm">
-                      {selectedConversation.name}
+                      {selectedConversation.homeowner_name || 'Homeowner'}
                     </p>
                     <p className="text-xs text-gray-500">
-                      {selectedConversation.online ? 'Online' : 'Offline'}
+                      {selectedConversation.job_title || 'Job conversation'}
                     </p>
                   </div>
                 </div>
@@ -222,28 +231,39 @@ const TradespersonMessages = () => {
                 </div>
               </div>
 
-              {/* Messages */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
-                {/* Sample messages */}
-                <div className="flex justify-start">
-                  <div className="max-w-[75%] bg-white rounded-2xl rounded-tl-sm p-4 shadow-sm">
-                    <p className="text-sm text-gray-800">
-                      Hi! I saw your interest in my plumbing job. Can you tell me more about your experience?
-                    </p>
-                    <span className="text-xs text-gray-400 mt-2 block">10:30 AM</span>
+                {messages.length > 0 ? (
+                  messages.map((msg, index) => {
+                    const isOwn = msg.sender_id === user?.id;
+                    return (
+                      <div key={msg.id || index} className={cn("flex", isOwn ? "justify-end" : "justify-start")}>
+                        <div className={cn(
+                          "max-w-[75%] rounded-2xl p-4 shadow-sm",
+                          isOwn
+                            ? "bg-[#34D164] rounded-tr-sm"
+                            : "bg-white rounded-tl-sm"
+                        )}>
+                          <p className={cn("text-sm", isOwn ? "text-white" : "text-gray-800")}>
+                            {msg.content}
+                          </p>
+                          <span className={cn("text-xs mt-2 block", isOwn ? "text-white/70" : "text-gray-400")}>
+                            {msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="h-full flex items-center justify-center text-center text-gray-500">
+                    <div>
+                      <MessageSquare className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+                      <p>No messages yet</p>
+                      <p className="text-sm mt-1">Send a message to start the conversation</p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex justify-end">
-                  <div className="max-w-[75%] bg-[#34D164] rounded-2xl rounded-tr-sm p-4">
-                    <p className="text-sm text-white">
-                      Hello! I have over 5 years of experience in plumbing. I specialize in pipe repairs and installations.
-                    </p>
-                    <span className="text-xs text-white/70 mt-2 block">10:32 AM</span>
-                  </div>
-                </div>
+                )}
               </div>
 
-              {/* Message Input */}
               <div className="p-4 border-t border-gray-100 bg-white">
                 <div className="flex items-center gap-3">
                   <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
@@ -264,7 +284,7 @@ const TradespersonMessages = () => {
                   </div>
                   <Button
                     onClick={handleSendMessage}
-                    disabled={!message.trim()}
+                    disabled={!message.trim() || sending}
                     className="bg-[#34D164] hover:bg-[#2ab854] text-white p-2.5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Send className="w-5 h-5" />
