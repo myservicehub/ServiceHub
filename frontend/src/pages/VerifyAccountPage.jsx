@@ -39,8 +39,6 @@ const VerifyAccountPage = () => {
   });
   const [verified, setVerified] = useState(false);
   const [businessType, setBusinessType] = useState(user?.business_type || '');
-  const [idSelfie, setIdSelfie] = useState(null);
-  const [idDocument, setIdDocument] = useState(null);
   const [proofOfAddress, setProofOfAddress] = useState(null);
   const [residentialAddress, setResidentialAddress] = useState('');
   const [workPhotos, setWorkPhotos] = useState([]);
@@ -204,8 +202,6 @@ const VerifyAccountPage = () => {
   // Validation helpers for Self-Employed submission
   const validateSelfEmployed = () => {
     const errs = {};
-    if (!idDocument) errs.id_document = 'Valid ID is required';
-    if (!idSelfie) errs.id_selfie = 'Selfie holding ID is required';
     if (!residentialAddress || !residentialAddress.trim()) errs.residential_address = 'Residential address is required';
     if (!Array.isArray(workPhotos) || workPhotos.length < 2) errs.work_photos = 'At least 2 recent work photos are required';
     return errs;
@@ -264,8 +260,6 @@ const VerifyAccountPage = () => {
           setSelfErrors(seErrs);
           setRefErrors(rfErrs);
           const missingLabels = [
-            seErrs.id_document && 'Valid ID',
-            seErrs.id_selfie && 'Selfie holding ID',
             seErrs.residential_address && 'Residential address',
             seErrs.work_photos && 'Recent work photos (min 2)',
             rfErrs.work_referrer_name && 'Work referee name',
@@ -284,8 +278,6 @@ const VerifyAccountPage = () => {
       }
       const payload = {
         business_type: businessType,
-        id_document: idDocument,
-        id_selfie: idSelfie,
         proof_of_address: proofOfAddress,
         residential_address: residentialAddress,
         work_photos: workPhotos,
@@ -340,8 +332,6 @@ const VerifyAccountPage = () => {
             setSelfErrors(seErrs);
             setRefErrors(rfErrs);
             const missingLabels = [
-              seErrs.id_document && 'Valid ID',
-              seErrs.id_selfie && 'Selfie holding ID',
               seErrs.residential_address && 'Residential address',
               seErrs.work_photos && 'Recent work photos (min 2)',
             ].filter(Boolean);
@@ -418,7 +408,7 @@ const VerifyAccountPage = () => {
                   <li>• Our verification team will review your documents</li>
                   <li>• You'll receive an email notification with the result</li>
                   <li>• Once verified, you'll unlock all platform features</li>
-                  <li>• Referees will receive their 5 coin reward</li>
+                  <li>• Referees will receive their 20 points reward</li>
                 </ul>
               </div>
 
@@ -655,16 +645,6 @@ const VerifyAccountPage = () => {
                     </div>
                     {(businessType === 'Self-Employed / Sole Trader') && (
                       <div className="space-y-3">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Valid ID (NIN, Voter’s Card, Driver’s Licence, Passport)</label>
-                          <input type="file" accept="image/*,application/pdf" onChange={(e)=>setIdDocument(e.target.files[0])} />
-                          {selfErrors.id_document && (<p className="text-xs text-red-600 mt-1">{selfErrors.id_document}</p>)}
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Selfie holding ID</label>
-                          <input type="file" accept="image/*" onChange={(e)=>setIdSelfie(e.target.files[0])} />
-                          {selfErrors.id_selfie && (<p className="text-xs text-red-600 mt-1">{selfErrors.id_selfie}</p>)}
-                        </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Residential address</label>
                           <input className="w-full px-3 py-2 border rounded-lg" value={residentialAddress} onChange={(e)=>setResidentialAddress(e.target.value)} />

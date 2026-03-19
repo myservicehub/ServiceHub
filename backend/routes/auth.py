@@ -2105,7 +2105,7 @@ async def submit_tradesperson_verification(
     }
     bt = payload["business_type"].lower()
     if bt.startswith("self") or bt.startswith("sole"):
-        if not docs.get("id_document") or not docs.get("id_selfie") or not residential_address or len(work_files) < 2:
+        if not residential_address or len(work_files) < 2:
             raise HTTPException(status_code=400, detail="Required fields missing for self-employed")
         has_refs = await database.has_tradesperson_references(current_user.id)
         if not has_refs:
