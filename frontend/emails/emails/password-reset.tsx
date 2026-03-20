@@ -16,13 +16,13 @@ import * as React from 'react';
 interface PasswordResetProps {
   name?: string;
   resetLink?: string;
-  assetsBaseUrl?: string;
 }
+
+const assetsBaseUrl = 'https://my-servicehub.vercel.app';
 
 export const PasswordReset = ({
   name = 'John',
   resetLink = 'https://myservicehub.co/reset-password?token=example',
-  assetsBaseUrl = '{{assetsBaseUrl}}',
 }: PasswordResetProps) => (
   <Html>
     <Head>
@@ -44,7 +44,7 @@ export const PasswordReset = ({
     <Body style={main}>
       <Container style={container}>
         <Section style={heroSection}>
-          <table cellPadding="0" cellSpacing="0" width="100%" style={{ ...heroTable, backgroundImage: `url(${assetsBaseUrl}/stock/bg2.jpeg)` }}>
+          <table cellPadding="0" cellSpacing="0" width="100%" style={heroTable}>
             <tr>
               <td align="center" valign="middle" style={heroTd}>
                 <table cellPadding="0" cellSpacing="0" style={logoContainer}>

@@ -108,15 +108,33 @@ export const NewMatchingJob = ({
           
           <table cellPadding="0" cellSpacing="0" style={stepsTable}>
             <tr>
-              <td style={stepNumber}>1</td>
+              <td style={stepNumberCell}>
+                <table cellPadding="0" cellSpacing="0" style={stepCircle}>
+                  <tr>
+                    <td style={stepCircleInner}>1</td>
+                  </tr>
+                </table>
+              </td>
               <td style={stepText}>Send a message for free to the customer to express interest in this job.</td>
             </tr>
             <tr>
-              <td style={stepNumber}>2</td>
+              <td style={stepNumberCell}>
+                <table cellPadding="0" cellSpacing="0" style={stepCircle}>
+                  <tr>
+                    <td style={stepCircleInner}>2</td>
+                  </tr>
+                </table>
+              </td>
               <td style={stepText}>You'll only pay if a customer shares their contact details with you.</td>
             </tr>
             <tr>
-              <td style={stepNumber}>3</td>
+              <td style={stepNumberCell}>
+                <table cellPadding="0" cellSpacing="0" style={stepCircle}>
+                  <tr>
+                    <td style={stepCircleInner}>3</td>
+                  </tr>
+                </table>
+              </td>
               <td style={stepText}>Contact the customer as soon as you get the contact details for the best chance of getting hired.</td>
             </tr>
           </table>
@@ -220,8 +238,10 @@ const buttonContainer = { textAlign: 'center' as const, margin: '28px 0' };
 const primaryButton = { backgroundColor: '#34D164', borderRadius: '8px', color: '#ffffff', fontSize: '15px', fontWeight: '600', textDecoration: 'none', textAlign: 'center' as const, display: 'inline-block', padding: '14px 32px' };
 const sectionTitle = { color: '#0a1b3d', fontSize: '16px', fontWeight: '700', margin: '0 0 16px' };
 const stepsTable = { width: '100%', marginBottom: '24px' };
-const stepNumber = { width: '32px', height: '32px', backgroundColor: '#0a1b3d', color: '#ffffff', fontSize: '16px', fontWeight: '700', textAlign: 'center' as const, verticalAlign: 'top' as const, borderRadius: '50%', padding: '4px 0' };
-const stepText = { color: '#4b5563', fontSize: '14px', lineHeight: '1.5', paddingLeft: '12px', paddingBottom: '16px', verticalAlign: 'top' as const };
+const stepNumberCell = { width: '44px', verticalAlign: 'top' as const, paddingTop: '2px' };
+const stepCircle = { width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#0a1b3d' };
+const stepCircleInner = { width: '32px', height: '32px', color: '#ffffff', fontSize: '14px', fontWeight: '700' as const, textAlign: 'center' as const, verticalAlign: 'middle' as const, lineHeight: '32px' };
+const stepText = { color: '#4b5563', fontSize: '14px', lineHeight: '1.6', paddingLeft: '12px', paddingBottom: '20px', verticalAlign: 'top' as const };
 const divider = { borderColor: '#e5e7eb', margin: '24px 0' };
 const securityNote = { color: '#9ca3af', fontSize: '13px', textAlign: 'center' as const, margin: '0' };
 const footer = { backgroundColor: '#0a1b3d', padding: '32px', textAlign: 'center' as const };

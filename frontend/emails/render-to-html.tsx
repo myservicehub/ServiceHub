@@ -203,7 +203,6 @@ const emailTemplates = [
     props: {
       name: '{{name}}',
       otpCode: '{{otpCode}}',
-      assetsBaseUrl: '{{assetsBaseUrl}}',
     }
   },
   {
@@ -220,7 +219,6 @@ const emailTemplates = [
     props: {
       name: '{{name}}',
       resetLink: '{{resetLink}}',
-      assetsBaseUrl: '{{assetsBaseUrl}}',
     }
   },
   {

@@ -16,13 +16,13 @@ import * as React from 'react';
 interface EmailOtpProps {
   name?: string;
   otpCode?: string;
-  assetsBaseUrl?: string;
 }
+
+const assetsBaseUrl = 'https://my-servicehub.vercel.app';
 
 export const EmailOtp = ({
   name = 'John',
   otpCode = '847291',
-  assetsBaseUrl = '{{assetsBaseUrl}}',
 }: EmailOtpProps) => (
   <Html>
     <Head>
@@ -46,7 +46,7 @@ export const EmailOtp = ({
         
         {/* Hero Section with Logo Centered on Image */}
         <Section style={heroSection}>
-          <table cellPadding="0" cellSpacing="0" width="100%" style={{ ...heroTable, backgroundImage: `url(${assetsBaseUrl}/stock/bg2.jpeg)` }}>
+          <table cellPadding="0" cellSpacing="0" width="100%" style={heroTable}>
             <tr>
               <td align="center" valign="middle" style={heroTd}>
                 {/* Logo Container */}
