@@ -152,6 +152,14 @@ const BlogPage = () => {
     }
   ];
 
+  const STANDARD_BLOG_CATEGORIES = [
+    'getting_started',
+    'payments_earnings',
+    'account_management',
+    'job_management',
+    'safety_policies'
+  ];
+
   // Blog API
   const BASE_URL = '';
   const blogAPI = {
@@ -310,10 +318,10 @@ const BlogPage = () => {
 
       // Get categories
       const categoryData = await blogAPI.getCategories(filters.contentType || 'all');
-      let uniqueCategories = (categoryData || []).map(cat => cat.category);
-      if (!uniqueCategories || uniqueCategories.length === 0) {
-        uniqueCategories = Array.from(new Set(FALLBACK_POSTS.map(p => p.category)));
-      }
+      const apiCategories = (categoryData || []).map(cat => cat.category).filter(Boolean);
+      const fallbackCategories = Array.from(new Set(FALLBACK_POSTS.map(p => p.category)));
+      const mergedCategories = [...STANDARD_BLOG_CATEGORIES, ...apiCategories, ...fallbackCategories];
+      const uniqueCategories = Array.from(new Set(mergedCategories));
       setCategories(uniqueCategories);
       
     } catch (error) {
