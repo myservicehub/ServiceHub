@@ -296,12 +296,22 @@ const ContentManagement = () => {
   // Content Creation/Edit Modal
   const ContentModal = ({ isEdit = false, content = null, onClose, onSave }) => {
     const editorRef = useRef(null);
+    const BLOG_CATEGORIES = ['getting_started', 'payments_earnings', 'account_management', 'job_management', 'safety_policies'];
+    const DEFAULT_CATEGORIES = ['marketing', 'support', 'product', 'tutorial', 'news', 'general'];
+    const normalizeCategoryForSubmit = (contentType, value) => {
+      const normalized = String(value || '').trim();
+      if (contentType === 'blog_post') {
+        if (!normalized || normalized.toLowerCase() === 'general') return 'getting_started';
+        return normalized;
+      }
+      return normalized || 'general';
+    };
     const [formData, setFormData] = useState({
       title: content?.title || '',
       slug: content?.slug || '',
       content_type: content?.content_type || 'blog_post',
       status: content?.status || 'draft',
-      category: content?.category || 'general',
+      category: content?.category || 'getting_started',
       visibility: content?.visibility || 'public',
       content: content?.content || '',
       excerpt: content?.excerpt || '',
@@ -344,6 +354,7 @@ const ContentManagement = () => {
       try {
         const submitData = {
           ...formData,
+          category: normalizeCategoryForSubmit(formData.content_type, formData.category),
           keywords: formData.keywords.split(',').map(k => k.trim()).filter(k => k),
           tags: formData.tags.split(',').map(t => t.trim()).filter(t => t)
         };
@@ -409,7 +420,14 @@ const ContentManagement = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Content Type</label>
                   <select
                     value={formData.content_type}
-                    onChange={(e) => setFormData({...formData, content_type: e.target.value})}
+                    onChange={(e) => {
+                      const nextType = e.target.value;
+                      const currentCategory = String(formData.category || '').trim().toLowerCase();
+                      const nextCategory = nextType === 'blog_post' && (!currentCategory || currentCategory === 'general')
+                        ? 'getting_started'
+                        : formData.category;
+                      setFormData({ ...formData, content_type: nextType, category: nextCategory });
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
                     {Object.entries(contentTypeConfig).map(([key, config]) => (
@@ -439,22 +457,37 @@ const ContentManagement = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                   <div className="relative">
-                    <input
-                      type="text"
-                      list="category-options"
-                      value={formData.category}
-                      onChange={(e) => setFormData({...formData, category: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="Select or type a category"
-                    />
-                    <datalist id="category-options">
-                      <option value="general">General</option>
-                      <option value="marketing">Marketing</option>
-                      <option value="support">Support</option>
-                      <option value="product">Product</option>
-                      <option value="tutorial">Tutorial</option>
-                      <option value="news">News</option>
-                    </datalist>
+                    {formData.content_type === 'blog_post' ? (
+                      <select
+                        value={formData.category}
+                        onChange={(e) => setFormData({...formData, category: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      >
+                        {BLOG_CATEGORIES.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <>
+                        <input
+                          type="text"
+                          list="category-options"
+                          value={formData.category}
+                          onChange={(e) => setFormData({...formData, category: e.target.value})}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                          placeholder="Select or type a category"
+                        />
+                        <datalist id="category-options">
+                          {DEFAULT_CATEGORIES.map((option) => (
+                            <option key={option} value={option}>
+                              {option.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+                            </option>
+                          ))}
+                        </datalist>
+                      </>
+                    )}
                   </div>
                 </div>
 

@@ -67,6 +67,12 @@ def _calculate_reading_time(content: str) -> int:
     minutes = max(1, round(words / 200))
     return minutes
 
+def _normalize_public_blog_category(category: Optional[str]) -> str:
+    value = str(category or "").strip().lower()
+    if not value or value == "general":
+        return "getting_started"
+    return value
+
 @router.get("/blog")
 async def get_public_blog_posts(
     skip: int = Query(0, ge=0),
@@ -98,7 +104,11 @@ async def get_public_blog_posts(
         
         # Add optional filters
         if category:
-            filters["$and"].append({"category": category})
+            normalized_category = _normalize_public_blog_category(category)
+            if normalized_category == "getting_started":
+                filters["$and"].append({"category": {"$in": ["getting_started", "general"]}})
+            else:
+                filters["$and"].append({"category": normalized_category})
         
         if featured_only:
             filters["$and"].append({"is_featured": True})
@@ -142,7 +152,7 @@ async def get_public_blog_posts(
                 "reading_time": reading_time,
                 "featured_image": post.get("featured_image"),
                 # "gallery_images": post.get("gallery_images", []), # Excluded
-                "category": post["category"],
+                "category": _normalize_public_blog_category(post.get("category")),
                 "tags": post.get("tags", []),
                 "is_featured": post.get("is_featured", False),
                 "is_sticky": post.get("is_sticky", False),
@@ -219,7 +229,7 @@ async def get_blog_post_by_slug(slug: str):
             "excerpt": blog_post.get("excerpt"),
             "featured_image": blog_post.get("featured_image"),
             "gallery_images": blog_post.get("gallery_images", []),
-            "category": blog_post["category"],
+            "category": _normalize_public_blog_category(blog_post.get("category")),
             "tags": blog_post.get("tags", []),
             "is_featured": blog_post.get("is_featured", False),
             "is_sticky": blog_post.get("is_sticky", False),
@@ -269,13 +279,16 @@ async def get_blog_categories(content_type: Optional[str] = None):
             }
         ]
         
-        categories = []
+        categories_map = {}
         async for doc in database.database.content_items.aggregate(pipeline):
-            categories.append({
-                "category": doc["_id"],
-                "post_count": doc["count"]
-            })
-        
+            normalized = _normalize_public_blog_category(doc.get("_id"))
+            categories_map[normalized] = categories_map.get(normalized, 0) + doc.get("count", 0)
+
+        categories = [
+            {"category": cat, "post_count": count}
+            for cat, count in sorted(categories_map.items(), key=lambda x: x[1], reverse=True)
+        ]
+
         return {"categories": categories}
         
     except Exception as e:
