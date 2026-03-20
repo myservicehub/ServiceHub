@@ -566,7 +566,7 @@ const BlogPage = () => {
                 
                 {/* Content */}
                 <div 
-                  className="prose prose-sm max-w-none mb-8 font-lato"
+                  className="prose prose-sm max-w-none mb-8 font-lato whitespace-pre-wrap"
                   dangerouslySetInnerHTML={{ __html: selectedPost.content }}
                 />
                 

@@ -3,7 +3,7 @@ import {
   FileText, Plus, Search, Filter, Eye, Edit, Trash2, Upload, 
   Calendar, BarChart3, Tag, Globe, Users, Image, Video, 
   Megaphone, BookOpen, HelpCircle, Mail, Zap, Star, Archive,
-  Clock, CheckCircle, XCircle, TrendingUp, Activity, Briefcase,
+  Clock, CheckCircle, XCircle, TrendingUp, Activity, Briefcase, AlignLeft, AlignCenter, AlignRight, AlignJustify, Pilcrow,
   MapPin, Building, User, Send
 } from 'lucide-react';
 import careersAPI from '../../api/careers';
@@ -327,6 +327,13 @@ const ContentManagement = () => {
       setFormData({ ...formData, content: editorRef.current.innerHTML });
     };
 
+    const handleEditorKeyDown = (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        applyEditorCommand('insertParagraph');
+      }
+    };
+
     const handleSubmit = async (e) => {
       e.preventDefault();
       const plain = (formData.content || '').replace(/<[^>]*>/g, '').trim();
@@ -515,6 +522,21 @@ const ContentManagement = () => {
                   <button type="button" onClick={() => applyEditorCommand('underline')} className="px-2 py-1 border border-gray-300 rounded text-sm underline">U</button>
                   <button type="button" onClick={() => applyEditorCommand('insertUnorderedList')} className="px-2 py-1 border border-gray-300 rounded text-sm">• List</button>
                   <button type="button" onClick={() => applyEditorCommand('insertOrderedList')} className="px-2 py-1 border border-gray-300 rounded text-sm">1. List</button>
+                  <button type="button" onClick={() => applyEditorCommand('formatBlock', 'P')} className="px-2 py-1 border border-gray-300 rounded text-sm flex items-center justify-center" title="Paragraph">
+                    <Pilcrow size={14} />
+                  </button>
+                  <button type="button" onClick={() => applyEditorCommand('justifyLeft')} className="px-2 py-1 border border-gray-300 rounded text-sm flex items-center justify-center" title="Align left">
+                    <AlignLeft size={14} />
+                  </button>
+                  <button type="button" onClick={() => applyEditorCommand('justifyCenter')} className="px-2 py-1 border border-gray-300 rounded text-sm flex items-center justify-center" title="Align center">
+                    <AlignCenter size={14} />
+                  </button>
+                  <button type="button" onClick={() => applyEditorCommand('justifyRight')} className="px-2 py-1 border border-gray-300 rounded text-sm flex items-center justify-center" title="Align right">
+                    <AlignRight size={14} />
+                  </button>
+                  <button type="button" onClick={() => applyEditorCommand('justifyFull')} className="px-2 py-1 border border-gray-300 rounded text-sm flex items-center justify-center" title="Justify">
+                    <AlignJustify size={14} />
+                  </button>
                   <button
                     type="button"
                     onClick={() => {
@@ -531,6 +553,7 @@ const ContentManagement = () => {
                   ref={editorRef}
                   contentEditable
                   onInput={() => setFormData({ ...formData, content: editorRef.current?.innerHTML || '' })}
+                  onKeyDown={handleEditorKeyDown}
                   className="w-full px-3 py-2 min-h-[260px] focus:outline-none"
                   style={{ whiteSpace: 'pre-wrap' }}
                 />
