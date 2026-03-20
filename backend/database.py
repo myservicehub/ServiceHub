@@ -3114,8 +3114,18 @@ class Database:
         import asyncio
         
         # 1. Wallet stats: Pending requests count and total amounts
-        wallet_pipeline = [
+        wallet_pending_pipeline = [
             {"$match": {"transaction_type": "wallet_funding", "status": "pending"}},
+            {"$group": {
+                "_id": None,
+                "count": {"$sum": 1},
+                "total_naira": {"$sum": "$amount_naira"},
+                "total_coins": {"$sum": "$amount_coins"}
+            }}
+        ]
+
+        wallet_confirmed_pipeline = [
+            {"$match": {"transaction_type": "wallet_funding", "status": "confirmed"}},
             {"$group": {
                 "_id": None,
                 "count": {"$sum": 1},
@@ -3136,7 +3146,8 @@ class Database:
         
         # 3. Verification stats: Pending counts from both collections
         tasks = [
-            self.wallet_transactions_collection.aggregate(wallet_pipeline).to_list(length=1),
+            self.wallet_transactions_collection.aggregate(wallet_pending_pipeline).to_list(length=1),
+            self.wallet_transactions_collection.aggregate(wallet_confirmed_pipeline).to_list(length=1),
             self.database.jobs.aggregate(job_pipeline).to_list(length=1),
             self.user_verifications_collection.count_documents({"status": "pending"}),
             self.tradespeople_verifications_collection.count_documents({"status": "pending"})
@@ -3144,18 +3155,22 @@ class Database:
         
         results = await asyncio.gather(*tasks)
         
-        wallet_res = results[0][0] if results[0] else {"count": 0, "total_naira": 0, "total_coins": 0}
-        job_res = results[1][0] if results[1] else {"total_jobs": 0, "total_interests": 0, "total_access_fee_naira": 0}
-        pending_verifications_count = results[2]
-        pending_trades_verifications_count = results[3]
+        wallet_pending_res = results[0][0] if results[0] else {"count": 0, "total_naira": 0, "total_coins": 0}
+        wallet_confirmed_res = results[1][0] if results[1] else {"count": 0, "total_naira": 0, "total_coins": 0}
+        job_res = results[2][0] if results[2] else {"total_jobs": 0, "total_interests": 0, "total_access_fee_naira": 0}
+        pending_verifications_count = results[3]
+        pending_trades_verifications_count = results[4]
         
         avg_access_fee = job_res["total_access_fee_naira"] / job_res["total_jobs"] if job_res["total_jobs"] > 0 else 1500
         
         return {
             "wallet_stats": {
-                "pending_funding_requests": wallet_res["count"],
-                "total_pending_amount_naira": wallet_res["total_naira"],
-                "total_pending_amount_coins": wallet_res["total_coins"]
+                "pending_funding_requests": wallet_pending_res["count"],
+                "total_pending_amount_naira": wallet_pending_res["total_naira"],
+                "total_pending_amount_coins": wallet_pending_res["total_coins"],
+                "confirmed_funding_requests": wallet_confirmed_res["count"],
+                "total_confirmed_amount_naira": wallet_confirmed_res["total_naira"],
+                "total_confirmed_amount_coins": wallet_confirmed_res["total_coins"]
             },
             "job_stats": {
                 "total_jobs": job_res["total_jobs"],
