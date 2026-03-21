@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { 
   Calendar, Clock, User, Tag, Share2, Heart, MessageCircle, 
   ChevronRight, Search, Filter, TrendingUp, BookOpen, Eye,
@@ -11,6 +11,7 @@ import { useToast } from '../hooks/use-toast';
 
 const BlogPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { slug } = useParams(); // For individual blog post
   const [posts, setPosts] = useState([]);
   const [featuredPosts, setFeaturedPosts] = useState([]);
@@ -270,6 +271,26 @@ const BlogPage = () => {
       loadBlogData();
     }
   }, [slug]);
+
+  useEffect(() => {
+    if (slug) return;
+    const params = new URLSearchParams(location.search);
+    const category = params.get('category') || '';
+    const contentType = params.get('contentType') || 'all';
+    const search = params.get('search') || '';
+    const tag = params.get('tag') || '';
+    setFilters((prev) => {
+      if (
+        prev.category === category &&
+        prev.contentType === contentType &&
+        prev.search === search &&
+        prev.tag === tag
+      ) {
+        return prev;
+      }
+      return { ...prev, category, contentType, search, tag };
+    });
+  }, [location.search, slug]);
 
   const loadBlogData = async () => {
     try {

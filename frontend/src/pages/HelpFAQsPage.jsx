@@ -15,6 +15,40 @@ const HelpFAQsPage = () => {
   const [activeCategory, setActiveCategory] = useState('general');
   const [expandedFAQ, setExpandedFAQ] = useState(null);
   const [contactByType, setContactByType] = useState({});
+  const [blogCategoryCounts, setBlogCategoryCounts] = useState({});
+
+  const BLOG_HELP_CATEGORIES = [
+    {
+      icon: Users,
+      title: "Getting Started",
+      description: "Learn how to set up your profile and get your first job",
+      blogCategory: "getting_started"
+    },
+    {
+      icon: CreditCard,
+      title: "Payments & Earnings",
+      description: "Understanding how payments work and managing your earnings",
+      blogCategory: "payments_earnings"
+    },
+    {
+      icon: Settings,
+      title: "Account Management",
+      description: "Managing your profile, settings, and verification status",
+      blogCategory: "account_management"
+    },
+    {
+      icon: FileText,
+      title: "Job Management",
+      description: "How to find, apply for, and manage your jobs effectively",
+      blogCategory: "job_management"
+    },
+    {
+      icon: Shield,
+      title: "Safety & Policies",
+      description: "Platform policies, safety guidelines, and best practices",
+      blogCategory: "safety_policies"
+    }
+  ];
 
   useEffect(() => {
     const fetchContacts = async () => {
@@ -34,6 +68,34 @@ const HelpFAQsPage = () => {
       } catch (e) {}
     };
     fetchContacts();
+  }, []);
+
+  useEffect(() => {
+    const fetchBlogCategoryCounts = async () => {
+      try {
+        const response = await fetch('/api/public/content/blog/categories?content_type=blog_post');
+        const data = response.ok ? await response.json() : { categories: [] };
+        const seed = BLOG_HELP_CATEGORIES.reduce((acc, item) => {
+          acc[item.blogCategory] = 0;
+          return acc;
+        }, {});
+        const merged = (data?.categories || []).reduce((acc, item) => {
+          const key = item?.category;
+          if (key && Object.prototype.hasOwnProperty.call(acc, key)) {
+            acc[key] = Number(item.post_count || 0);
+          }
+          return acc;
+        }, seed);
+        setBlogCategoryCounts(merged);
+      } catch {
+        const fallback = BLOG_HELP_CATEGORIES.reduce((acc, item) => {
+          acc[item.blogCategory] = 0;
+          return acc;
+        }, {});
+        setBlogCategoryCounts(fallback);
+      }
+    };
+    fetchBlogCategoryCounts();
   }, []);
 
   // Filter categories based on user role
@@ -82,50 +144,10 @@ const HelpFAQsPage = () => {
   }, [activeCategory, isAuthenticated, isTradesperson]);
 
   // Help categories for Browse Help Topics section
-  const helpCategories = [
-    {
-      icon: Users,
-      title: "Getting Started",
-      description: "Learn how to set up your profile and get your first job",
-      articles: 8,
-      categoryId: "general"
-    },
-    {
-      icon: CreditCard,
-      title: "Payments & Earnings",
-      description: "Understanding how payments work and managing your earnings",
-      articles: 12,
-      categoryId: "payments"
-    },
-    {
-      icon: Settings,
-      title: "Account Management",
-      description: "Managing your profile, settings, and verification status",
-      articles: 15,
-      categoryId: "account"
-    },
-    {
-      icon: FileText,
-      title: "Job Management",
-      description: "How to find, apply for, and manage your jobs effectively",
-      articles: 10,
-      categoryId: "tradespeople"
-    },
-    {
-      icon: Star,
-      title: "Reviews & Ratings",
-      description: "Building your reputation and handling customer feedback",
-      articles: 6,
-      categoryId: "general"
-    },
-    {
-      icon: Shield,
-      title: "Safety & Policies",
-      description: "Platform policies, safety guidelines, and best practices",
-      articles: 9,
-      categoryId: "account"
-    }
-  ];
+  const helpCategories = BLOG_HELP_CATEGORIES.map((item) => ({
+    ...item,
+    articles: blogCategoryCounts[item.blogCategory] ?? 0
+  }));
 
   // Popular articles for the Popular Articles section
   const popularArticles = [
@@ -588,17 +610,13 @@ const HelpFAQsPage = () => {
                   key={index}
                   className="group bg-white rounded-2xl p-5 border border-gray-100 hover:shadow-lg hover:border-[#34D164]/20 transition-all duration-300 cursor-pointer"
                   onClick={() => {
-                    setActiveCategory(category.categoryId);
-                    const el = document.getElementById('faq-section');
-                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    navigate(`/blog?contentType=blog_post&category=${category.blogCategory}`);
                   }}
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
-                      setActiveCategory(category.categoryId);
-                      const el = document.getElementById('faq-section');
-                      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      navigate(`/blog?contentType=blog_post&category=${category.blogCategory}`);
                     }
                   }}
                 >

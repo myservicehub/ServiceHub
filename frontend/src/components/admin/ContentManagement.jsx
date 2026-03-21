@@ -534,7 +534,7 @@ const ContentManagement = () => {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
               <div className="border border-gray-300 rounded-lg">
-                <div className="flex flex-wrap items-center gap-2 p-2 border-b bg-gray-50">
+                <div className="sticky top-0 z-20 flex flex-wrap items-center gap-2 p-2 border-b bg-gray-50">
                   <select
                     onChange={(e) => {
                       const v = e.target.value;
