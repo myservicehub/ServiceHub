@@ -102,7 +102,7 @@ const PaymentPage = ({ formData, onBack, onRegistrationComplete }) => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 min-h-[75vh] sm:h-[85vh] overflow-y-auto">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-6 h-full overflow-y-auto overscroll-contain">
       {submitError && (
         <div className="mb-4 flex items-start rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
           <AlertCircle className="mr-2 h-4 w-4" />

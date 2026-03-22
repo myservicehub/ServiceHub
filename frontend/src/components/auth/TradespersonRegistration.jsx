@@ -850,16 +850,26 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
           <p className="text-xs text-gray-400 mb-3 font-lato">
             Tell us what you do so we can send you the most relevant jobs.
           </p>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-64 overflow-y-auto border border-gray-200 rounded-xl p-4 bg-gray-50/30">
+          <div className="max-h-80 overflow-y-auto border border-gray-200 rounded-xl p-3 bg-gray-50/30 space-y-2">
             {tradeCategories.map((trade) => (
               <label 
                 key={trade} 
-                className={`flex items-center gap-2.5 cursor-pointer px-3 py-2.5 rounded-xl transition-all text-sm ${
+                className={`flex items-center justify-between cursor-pointer px-4 py-3.5 rounded-xl transition-all ${
                   formData.selectedTrades.includes(trade) 
-                    ? 'bg-[#34D164]/10 border-2 border-[#34D164]/40 shadow-sm' 
-                    : 'hover:bg-white hover:shadow-sm border-2 border-transparent bg-white/50'
+                    ? 'bg-[#34D164]/10 border-2 border-[#34D164] shadow-sm' 
+                    : 'hover:bg-white hover:shadow-sm border-2 border-gray-100 bg-white'
                 } ${!formData.selectedTrades.includes(trade) && formData.selectedTrades.length >= 5 ? 'opacity-40 cursor-not-allowed' : ''}`}
               >
+                <span className="font-lato text-gray-700 text-sm">{trade}</span>
+                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all flex-shrink-0 ${
+                  formData.selectedTrades.includes(trade)
+                    ? 'bg-[#34D164] border-[#34D164]'
+                    : 'border-gray-300 bg-white'
+                }`}>
+                  {formData.selectedTrades.includes(trade) && (
+                    <CheckCircle className="w-3.5 h-3.5 text-white" />
+                  )}
+                </div>
                 <input
                   type="checkbox"
                   checked={formData.selectedTrades.includes(trade)}
@@ -870,9 +880,8 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
                     updateFormData('selectedTrades', trades);
                   }}
                   disabled={!formData.selectedTrades.includes(trade) && formData.selectedTrades.length >= 5}
-                  className="h-4 w-4 rounded border-gray-300 text-[#34D164] focus:ring-[#34D164]/20"
+                  className="sr-only"
                 />
-                <span className="font-lato text-gray-700">{trade}</span>
               </label>
             ))}
           </div>
@@ -1348,17 +1357,19 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
   // Render PaymentPage if it's active
   if (showPaymentPage) {
     return (
-      <PaymentPage
-        formData={formData}
-        onBack={() => setShowPaymentPage(false)}
-        onRegistrationComplete={(result) => {
-          console.log('Payment & Registration completed:', result);
-          // Handle successful registration with payment
-          if (result.success && onComplete) {
-            onComplete(result);
-          }
-        }}
-      />
+      <div className="h-[85vh] max-h-[750px] overflow-y-auto">
+        <PaymentPage
+          formData={formData}
+          onBack={() => setShowPaymentPage(false)}
+          onRegistrationComplete={(result) => {
+            console.log('Payment & Registration completed:', result);
+            // Handle successful registration with payment
+            if (result.success && onComplete) {
+              onComplete(result);
+            }
+          }}
+        />
+      </div>
     );
   }
 
@@ -1563,52 +1574,34 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
 // Skills Test Component (Step 4) - Now using separate component
 // Profile Setup Component (Step 5)
 const ProfileSetup = ({ formData, updateFormData }) => (
-  <div className="space-y-8 px-2">
-    {/* Section 1: Profile Description */}
-    <div className="space-y-4">
-      <h3 className="text-xs font-semibold font-lato text-gray-400 uppercase tracking-wider">Your Professional Profile</h3>
-      <p className="text-xs text-gray-400 font-lato">
-        Make a great first impression - customers will see this on your profile
+  <div className="space-y-6 px-2">
+    {/* Simplified Profile Description */}
+    <div>
+      <label className="block text-sm font-medium font-lato mb-2 text-[#121E3C]">
+        About You
+      </label>
+      <textarea
+        placeholder="Share your experience, skills, and what makes you the right choice for the job..."
+        value={formData.profileDescription}
+        onChange={(e) => updateFormData('profileDescription', e.target.value)}
+        className="w-full px-4 py-3 font-lato text-sm rounded-xl border border-gray-200 bg-white focus:border-[#34D164] focus:ring-2 focus:ring-[#34D164]/20 transition-all resize-none"
+        rows="5"
+        maxLength="1250"
+      />
+      <p className="text-xs text-gray-400 mt-1.5 text-right font-lato">
+        {1250 - formData.profileDescription.length} characters left
       </p>
-      
-      <div>
-        <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
-          Introduce yourself to future customers
-        </label>
-        <textarea
-          placeholder="Tell us about yourself, your experience, and what makes you stand out..."
-          value={formData.profileDescription}
-          onChange={(e) => updateFormData('profileDescription', e.target.value)}
-          className="w-full px-4 py-3 font-lato text-sm rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all resize-none"
-          rows="6"
-          maxLength="1250"
-        />
-        <div className="flex justify-between mt-2">
-          <p className="text-xs text-gray-400 font-lato">
-            A quality description increases your chances of getting hired
-          </p>
-          <p className="text-xs text-gray-400 font-lato">
-            {1250 - formData.profileDescription.length} characters remaining
-          </p>
-        </div>
-      </div>
     </div>
 
-    {/* Tips Card */}
-    <div className="bg-[#34D164]/5 border border-[#34D164]/20 rounded-xl p-4">
-      <div className="flex items-start gap-3">
-        <div className="w-8 h-8 rounded-full bg-[#34D164]/10 flex items-center justify-center flex-shrink-0">
-          <User className="h-4 w-4 text-[#34D164]" />
-        </div>
-        <div>
-          <h4 className="font-medium font-lato text-[#121E3C] text-sm">Tips for a great profile</h4>
-          <ul className="text-xs text-gray-500 mt-1.5 space-y-1 font-lato">
-            <li>• Mention your years of experience and specializations</li>
-            <li>• Highlight any certifications or qualifications</li>
-            <li>• Describe the types of projects you enjoy most</li>
-            <li>• Keep it professional but personable</li>
-          </ul>
-        </div>
+    {/* Compact Tips */}
+    <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+      <p className="text-xs font-medium text-gray-600 font-lato mb-2">Quick tips:</p>
+      <div className="flex flex-wrap gap-2">
+        {['Experience', 'Certifications', 'Specializations'].map((tip) => (
+          <span key={tip} className="text-xs bg-white px-2.5 py-1 rounded-full text-gray-500 border border-gray-200 font-lato">
+            {tip}
+          </span>
+        ))}
       </div>
     </div>
   </div>

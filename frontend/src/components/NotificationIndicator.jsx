@@ -121,12 +121,25 @@ const NotificationIndicator = () => {
   const stripHtml = (html) => {
     if (!html) return '';
     if (typeof html !== 'string') return html;
-    if (!html.includes('<') || !html.includes('>')) return html;
     
-    return html
-      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-      .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '')
-      .replace(/<[^>]+>/g, ' ')
+    let result = html;
+    
+    // Remove HTML tags if present
+    if (html.includes('<') && html.includes('>')) {
+      result = result
+        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+        .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '')
+        .replace(/<[^>]+>/g, ' ');
+    }
+    
+    // Remove URLs (http, https, and www links)
+    result = result
+      .replace(/https?:\/\/[^\s<>"']+/gi, '')
+      .replace(/www\.[^\s<>"']+/gi, '')
+      .replace(/myservicehub\.co[^\s<>"']*/gi, '');
+    
+    // Clean up whitespace and HTML entities
+    return result
       .replace(/\s+/g, ' ')
       .replace(/&nbsp;/g, ' ')
       .replace(/&amp;/g, '&')

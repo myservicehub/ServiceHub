@@ -70,8 +70,8 @@ const FundWalletModal = ({ isOpen, onClose, onSuccess }) => {
   const calculateCoins = (naira) => Math.floor(naira / 100);
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-xl">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl max-w-md w-full my-auto shadow-xl">
         <div className="p-5 sm:p-6">
           <div className="flex justify-between items-center mb-5">
             <h2 className="text-lg font-bold text-[#121E3C] font-montserrat">Fund Wallet</h2>

@@ -93,6 +93,33 @@ const ProfilePage = () => {
   const [emailOtpSending, setEmailOtpSending] = useState(false);
   const [emailOtpVerifying, setEmailOtpVerifying] = useState(false);
   
+  // Countdown timer states for resend (10 minutes = 600 seconds)
+  const [phoneResendCountdown, setPhoneResendCountdown] = useState(0);
+  const [emailResendCountdown, setEmailResendCountdown] = useState(0);
+  
+  // Countdown timer effects
+  useEffect(() => {
+    if (phoneResendCountdown <= 0) return;
+    const timer = setInterval(() => {
+      setPhoneResendCountdown(prev => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [phoneResendCountdown]);
+
+  useEffect(() => {
+    if (emailResendCountdown <= 0) return;
+    const timer = setInterval(() => {
+      setEmailResendCountdown(prev => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [emailResendCountdown]);
+
+  const formatCountdown = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+  
   // Portfolio states
   const [portfolioItems, setPortfolioItems] = useState([]);
   const [portfolioLoading, setPortfolioLoading] = useState(false);
@@ -303,6 +330,8 @@ const ProfilePage = () => {
       } else {
         toast({ title: 'OTP sent', description: 'Check your phone for the verification code.' });
       }
+      // Start 10-minute countdown
+      setPhoneResendCountdown(600);
     } catch (error) {
       const msg = error?.response?.data?.detail || error.message || 'Failed to send code';
       toast({ title: 'Failed to send code', description: msg, variant: 'destructive' });
@@ -339,6 +368,8 @@ const ProfilePage = () => {
       } else {
         toast({ title: 'OTP sent', description: 'Check your email for the verification code.' });
       }
+      // Start 10-minute countdown
+      setEmailResendCountdown(600);
     } catch (error) {
       const msg = error?.response?.data?.detail || error.message || 'Failed to send code';
       toast({ title: 'Failed to send code', description: msg, variant: 'destructive' });
@@ -769,7 +800,7 @@ const ProfilePage = () => {
                           )}
                         </div>
                         {!profileData.email_verified && emailOtpMode && (
-                          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 mt-2">
+                          <div className="space-y-3 mt-2">
                             <div className="w-full sm:w-auto">
                               <InputOTP
                                 maxLength={6}
@@ -786,12 +817,25 @@ const ProfilePage = () => {
                                 </InputOTPGroup>
                               </InputOTP>
                             </div>
-                            <Button size="sm" className="w-full sm:w-auto" onClick={handleVerifyEmailOTP} disabled={emailOtpVerifying || emailOtpCode.length !== 6}>
+                            <Button size="sm" className="w-full" onClick={handleVerifyEmailOTP} disabled={emailOtpVerifying || emailOtpCode.length !== 6}>
                               {emailOtpVerifying ? 'Verifying…' : 'Verify'}
                             </Button>
-                            <Button size="sm" variant="ghost" className="w-full sm:w-auto" onClick={handleSendEmailOTP} disabled={emailOtpSending}>
-                              {emailOtpSending ? 'Sending…' : 'Resend'}
-                            </Button>
+                            <div className="text-center">
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="text-[#34D164]" 
+                                onClick={handleSendEmailOTP} 
+                                disabled={emailOtpSending || emailResendCountdown > 0}
+                              >
+                                {emailOtpSending ? 'Sending…' : 'Resend code'}
+                              </Button>
+                              {emailResendCountdown > 0 && (
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Resend available in {formatCountdown(emailResendCountdown)}
+                                </p>
+                              )}
+                            </div>
                           </div>
                         )}
                       </div>
@@ -824,7 +868,7 @@ const ProfilePage = () => {
                               )}
                             </div>
                             {!profileData.phone_verified && otpMode && (
-                              <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
+                              <div className="space-y-3">
                                 <div className="w-full sm:w-auto">
                                   <InputOTP
                                     maxLength={6}
@@ -841,12 +885,25 @@ const ProfilePage = () => {
                                     </InputOTPGroup>
                                   </InputOTP>
                                 </div>
-                                <Button size="sm" className="w-full sm:w-auto" onClick={handleVerifyPhoneOTP} disabled={otpVerifying || otpCode.length !== 6}>
+                                <Button size="sm" className="w-full" onClick={handleVerifyPhoneOTP} disabled={otpVerifying || otpCode.length !== 6}>
                                   {otpVerifying ? 'Verifying…' : 'Verify'}
                                 </Button>
-                                <Button size="sm" variant="ghost" className="w-full sm:w-auto" onClick={handleSendPhoneOTP} disabled={otpSending}>
-                                  {otpSending ? 'Sending…' : 'Resend'}
-                                </Button>
+                                <div className="text-center">
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost" 
+                                    className="text-[#34D164]" 
+                                    onClick={handleSendPhoneOTP} 
+                                    disabled={otpSending || phoneResendCountdown > 0}
+                                  >
+                                    {otpSending ? 'Sending…' : 'Resend code'}
+                                  </Button>
+                                  {phoneResendCountdown > 0 && (
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      Resend available in {formatCountdown(phoneResendCountdown)}
+                                    </p>
+                                  )}
+                                </div>
                               </div>
                             )}
                           </div>

@@ -141,6 +141,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
   const [questionsCompleted, setQuestionsCompleted] = useState(false);
   const [showQuizFeedbackModal, setShowQuizFeedbackModal] = useState(false);
   const [quizFeedback, setQuizFeedback] = useState('');
+  const [quizFeedbackOption, setQuizFeedbackOption] = useState('');
   const lgaAbortRef = useRef(null);
   const hasRestoredDraft = useRef(false);
 
@@ -3060,57 +3061,125 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl max-w-md w-full overflow-hidden">
             <div className="p-6">
-              <h3 className="text-xl font-bold font-montserrat text-[#121E3C] mb-2">
-                We'd love your feedback
-              </h3>
-              <p className="text-gray-500 text-sm font-lato mb-4">
-                Help us improve by telling us why you cancelled the quiz.
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xl font-bold font-montserrat text-[#121E3C]">
+                  Can you tell us why you're going?
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowQuizFeedbackModal(false);
+                    setQuizFeedback('');
+                    setQuizFeedbackOption('');
+                    setQuestionAnswers({});
+                    resetQuestionNavigation();
+                    setQuestionsCompleted(false);
+                    updateFormData('category', '');
+                  }}
+                  className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors"
+                >
+                  <span className="text-gray-400 text-xl">×</span>
+                </button>
+              </div>
+              <p className="text-gray-500 text-sm font-lato mb-5">
+                Your feedback will help us serve you better
               </p>
               
-              <textarea
-                value={quizFeedback}
-                onChange={(e) => setQuizFeedback(e.target.value)}
-                placeholder="What made you cancel? Any suggestions for improvement?"
-                rows={4}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl font-lato text-sm focus:border-[#34D164] focus:ring-[#34D164]/20 focus:outline-none resize-none"
-              />
+              {/* Radio options */}
+              <div className="space-y-3">
+                {[
+                  "I don't want to share my personal information",
+                  "I'm not sure what this job will cost",
+                  "My job doesn't fit in this category",
+                  "I have technical issues with the website",
+                  "I'm not ready to post my job yet",
+                  "Something else"
+                ].map((option) => (
+                  <label
+                    key={option}
+                    className={`flex items-center justify-between p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                      quizFeedbackOption === option
+                        ? 'border-[#121E3C] bg-gray-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <span className="font-lato text-sm text-gray-700">{option}</span>
+                    <div className={`w-5 h-5 border-2 rounded-full flex items-center justify-center transition-all ${
+                      quizFeedbackOption === option
+                        ? 'border-[#121E3C] bg-[#121E3C]'
+                        : 'border-gray-300'
+                    }`}>
+                      {quizFeedbackOption === option && (
+                        <div className="w-2 h-2 bg-white rounded-full"></div>
+                      )}
+                    </div>
+                    <input
+                      type="radio"
+                      name="quizFeedbackOption"
+                      value={option}
+                      checked={quizFeedbackOption === option}
+                      onChange={(e) => setQuizFeedbackOption(e.target.value)}
+                      className="sr-only"
+                    />
+                  </label>
+                ))}
+              </div>
+
+              {/* Conditional textarea for "Something else" */}
+              {quizFeedbackOption === "Something else" && (
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">
+                    Tell us more:
+                  </label>
+                  <textarea
+                    value={quizFeedback}
+                    onChange={(e) => setQuizFeedback(e.target.value)}
+                    placeholder="Please share your feedback..."
+                    rows={3}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl font-lato text-sm focus:border-[#34D164] focus:ring-[#34D164]/20 focus:outline-none resize-none"
+                  />
+                </div>
+              )}
             </div>
             
-            <div className="p-4 bg-gray-50 border-t border-gray-100 flex gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setShowQuizFeedbackModal(false);
-                  setQuizFeedback('');
-                  // Clear quiz progress and reset
-                  setQuestionAnswers({});
-                  resetQuestionNavigation();
-                  setQuestionsCompleted(false);
-                  updateFormData('category', '');
-                }}
-                className="flex-1 h-11 rounded-xl font-lato"
-              >
-                Skip
-              </Button>
+            <div className="p-4 bg-gray-50 border-t border-gray-100 flex flex-col gap-3">
               <Button
                 type="button"
                 onClick={() => {
                   // Could send feedback to an API here in the future
-                  console.log('Quiz feedback:', quizFeedback);
+                  console.log('Quiz feedback option:', quizFeedbackOption);
+                  console.log('Quiz feedback text:', quizFeedback);
                   setShowQuizFeedbackModal(false);
                   setQuizFeedback('');
+                  setQuizFeedbackOption('');
                   // Clear quiz progress and reset
                   setQuestionAnswers({});
                   resetQuestionNavigation();
                   setQuestionsCompleted(false);
                   updateFormData('category', '');
                 }}
-                className="flex-1 h-11 rounded-xl text-white font-lato"
-                style={{ backgroundColor: '#34D164' }}
+                disabled={!quizFeedbackOption}
+                className="w-full h-12 rounded-xl text-white font-lato disabled:opacity-50"
+                style={{ backgroundColor: '#121E3C' }}
               >
-                Submit Feedback
+                Submit
               </Button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowQuizFeedbackModal(false);
+                  setQuizFeedback('');
+                  setQuizFeedbackOption('');
+                  // Clear quiz progress and reset
+                  setQuestionAnswers({});
+                  resetQuestionNavigation();
+                  setQuestionsCompleted(false);
+                  updateFormData('category', '');
+                }}
+                className="w-full text-center text-[#34D164] font-medium font-lato py-2"
+              >
+                Skip
+              </button>
             </div>
           </div>
         </div>

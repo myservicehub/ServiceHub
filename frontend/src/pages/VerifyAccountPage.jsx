@@ -6,7 +6,8 @@ import { authAPI } from '../api/services';
 import { useToast } from '../hooks/use-toast';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { CheckCircle, Clock } from 'lucide-react';
+import TradespersonLayout from '../layouts/TradespersonLayout';
+import { CheckCircle, Clock, Upload, FileText, Image, Shield, Award, Users, XCircle, AlertCircle, Lock } from 'lucide-react';
 import { Button } from '../components/ui/button';
 
 const VerifyAccountPage = () => {
@@ -435,6 +436,333 @@ const VerifyAccountPage = () => {
     );
   }
 
+  // For tradespeople, use the dashboard layout
+  if (user?.role === 'tradesperson') {
+    return (
+      <TradespersonLayout>
+        <div className="p-4 sm:p-6 lg:p-8">
+          {/* Page Header */}
+          <div className="mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold font-montserrat text-[#121E3C]">Verify Your Profile</h1>
+            <p className="text-gray-500 mt-1 text-sm font-lato">Complete your business verification to unlock all platform features</p>
+          </div>
+
+          {/* Verification Status Card */}
+          <div className={`rounded-2xl p-5 mb-6 border ${
+            isTradespersonVerified 
+              ? 'bg-green-50 border-green-200' 
+              : verificationStatus === 'rejected' 
+                ? 'bg-red-50 border-red-200' 
+                : verificationStatus === 'not_submitted'
+                  ? 'bg-gray-50 border-gray-200'
+                  : 'bg-amber-50 border-amber-200'
+          }`}>
+            <div className="flex items-center gap-4">
+              <div className={`p-3 rounded-xl ${
+                isTradespersonVerified 
+                  ? 'bg-green-100' 
+                  : verificationStatus === 'rejected' 
+                    ? 'bg-red-100' 
+                    : verificationStatus === 'not_submitted'
+                      ? 'bg-gray-100'
+                      : 'bg-amber-100'
+              }`}>
+                {isTradespersonVerified ? (
+                  <CheckCircle className="w-6 h-6 text-green-600" />
+                ) : verificationStatus === 'rejected' ? (
+                  <XCircle className="w-6 h-6 text-red-600" />
+                ) : verificationStatus === 'not_submitted' ? (
+                  <AlertCircle className="w-6 h-6 text-gray-500" />
+                ) : (
+                  <Clock className="w-6 h-6 text-amber-600" />
+                )}
+              </div>
+              <div>
+                <h3 className={`font-semibold font-montserrat ${
+                  isTradespersonVerified 
+                    ? 'text-green-800' 
+                    : verificationStatus === 'rejected' 
+                      ? 'text-red-800' 
+                      : verificationStatus === 'not_submitted'
+                        ? 'text-gray-700'
+                        : 'text-amber-800'
+                }`}>
+                  {isTradespersonVerified 
+                    ? 'Account Verified' 
+                    : verificationStatus === 'rejected' 
+                      ? 'Verification Rejected' 
+                      : verificationStatus === 'not_submitted'
+                        ? 'Not Submitted'
+                        : 'Verification Pending'}
+                </h3>
+                <p className={`text-sm font-lato ${
+                  isTradespersonVerified 
+                    ? 'text-green-700' 
+                    : verificationStatus === 'rejected' 
+                      ? 'text-red-700' 
+                      : verificationStatus === 'not_submitted'
+                        ? 'text-gray-500'
+                        : 'text-amber-700'
+                }`}>
+                  {isTradespersonVerified 
+                    ? 'Full access to all platform features'
+                    : verificationStatus === 'rejected'
+                      ? 'Please review and resubmit'
+                      : verificationStatus === 'not_submitted'
+                        ? 'Submit your documents to get verified'
+                        : 'Under review (2-3 business days)'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Main Form Area */}
+            <div className="lg:col-span-2">
+              {!isTradespersonVerified && (
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2.5 rounded-xl bg-[#121E3C]/5">
+                      <FileText className="w-5 h-5 text-[#121E3C]" />
+                    </div>
+                    <h3 className="text-lg font-semibold font-montserrat text-[#121E3C]">Business Verification</h3>
+                  </div>
+                  
+                  {verificationStatus === 'rejected' && (
+                    <div className="mb-6 p-4 rounded-xl border border-red-200 bg-red-50 text-red-700 text-sm flex items-start gap-3">
+                      <XCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                      <p className="font-lato">Your previous submission was rejected. Please correct issues and upload clear documents.</p>
+                    </div>
+                  )}
+
+                  <div className="space-y-5">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Business Type</label>
+                      <select 
+                        value={businessType} 
+                        onChange={(e) => setBusinessType(e.target.value)} 
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato text-sm"
+                      >
+                        <option value="">Select business type</option>
+                        <option>Self-Employed / Sole Trader</option>
+                        <option>Limited Company (LTD)</option>
+                        <option>Ordinary Partnership</option>
+                        <option>Limited Liability Partnership (LLP)</option>
+                      </select>
+                      {user?.business_type && (
+                        <p className="text-xs text-gray-400 mt-2 font-lato">Pre-selected from registration. Update only if incorrect.</p>
+                      )}
+                    </div>
+
+                    {businessType === 'Self-Employed / Sole Trader' && (
+                      <div className="space-y-5">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">
+                            Residential address <span className="text-red-500">*</span>
+                          </label>
+                          <input 
+                            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato text-sm" 
+                            placeholder="Enter your residential address" 
+                            value={residentialAddress} 
+                            onChange={(e) => setResidentialAddress(e.target.value)} 
+                          />
+                          {selfErrors.residential_address && (
+                            <p className="text-xs text-red-600 mt-2 font-lato">{selfErrors.residential_address}</p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">
+                            Proof of address (utility bill, bank statement)
+                          </label>
+                          <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                            <div className="flex flex-col items-center justify-center py-4">
+                              <Upload className="w-5 h-5 text-gray-400 mb-1" />
+                              <p className="text-xs text-gray-500 font-lato">
+                                {proofOfAddress ? proofOfAddress.name : 'Click to upload'}
+                              </p>
+                            </div>
+                            <input type="file" className="hidden" accept="image/*,.pdf" onChange={(e) => setProofOfAddress(e.target.files?.[0] || null)} />
+                          </label>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">
+                            Recent work photos (min 2) <span className="text-red-500">*</span>
+                          </label>
+                          <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                            <div className="flex flex-col items-center justify-center py-4">
+                              <Image className="w-5 h-5 text-gray-400 mb-1" />
+                              <p className="text-xs text-gray-500 font-lato">
+                                {workPhotos.length > 0 ? `${workPhotos.length} photos selected` : 'Click to upload (max 6)'}
+                              </p>
+                            </div>
+                            <input type="file" className="hidden" accept="image/*" multiple onChange={(e) => handleWorkPhotosSelect(e.target.files)} />
+                          </label>
+                          {selfErrors.work_photos && (
+                            <p className="text-xs text-red-600 mt-2 font-lato">{selfErrors.work_photos}</p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">
+                            Trade certificate (optional)
+                          </label>
+                          <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                            <div className="flex flex-col items-center justify-center py-4">
+                              <Award className="w-5 h-5 text-gray-400 mb-1" />
+                              <p className="text-xs text-gray-500 font-lato">
+                                {tradeCertificate ? tradeCertificate.name : 'Click to upload'}
+                              </p>
+                            </div>
+                            <input type="file" className="hidden" accept="image/*,.pdf" onChange={(e) => setTradeCertificate(e.target.files?.[0] || null)} />
+                          </label>
+                        </div>
+
+                        {/* References Section */}
+                        <div className="pt-4 border-t border-gray-100">
+                          <h4 className="text-sm font-semibold text-[#121E3C] mb-4 font-montserrat flex items-center gap-2">
+                            <Users className="w-4 h-4 text-[#34D164]" />
+                            References
+                          </h4>
+                          
+                          {/* Work Reference */}
+                          <div className="bg-gray-50 rounded-xl p-4 mb-4">
+                            <p className="text-xs font-medium text-gray-600 mb-3 font-lato">Work Reference</p>
+                            <div className="grid gap-3">
+                              <input 
+                                placeholder="Name *" 
+                                value={workRef.name} 
+                                onChange={(e) => setWorkRef({...workRef, name: e.target.value})}
+                                className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-lato focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164]"
+                              />
+                              <input 
+                                placeholder="Phone *" 
+                                value={workRef.phone} 
+                                onChange={(e) => setWorkRef({...workRef, phone: e.target.value})}
+                                className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-lato focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164]"
+                              />
+                              <input 
+                                placeholder="Company Email *" 
+                                value={workRef.company_email} 
+                                onChange={(e) => setWorkRef({...workRef, company_email: e.target.value})}
+                                className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-lato focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164]"
+                              />
+                              <input 
+                                placeholder="Company Name *" 
+                                value={workRef.company_name} 
+                                onChange={(e) => setWorkRef({...workRef, company_name: e.target.value})}
+                                className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-lato focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164]"
+                              />
+                              <input 
+                                placeholder="Relationship *" 
+                                value={workRef.relationship} 
+                                onChange={(e) => setWorkRef({...workRef, relationship: e.target.value})}
+                                className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-lato focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164]"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Character Reference */}
+                          <div className="bg-gray-50 rounded-xl p-4">
+                            <p className="text-xs font-medium text-gray-600 mb-3 font-lato">Character Reference</p>
+                            <div className="grid gap-3">
+                              <input 
+                                placeholder="Name *" 
+                                value={charRef.name} 
+                                onChange={(e) => setCharRef({...charRef, name: e.target.value})}
+                                className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-lato focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164]"
+                              />
+                              <input 
+                                placeholder="Phone *" 
+                                value={charRef.phone} 
+                                onChange={(e) => setCharRef({...charRef, phone: e.target.value})}
+                                className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-lato focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164]"
+                              />
+                              <input 
+                                placeholder="Email *" 
+                                value={charRef.email} 
+                                onChange={(e) => setCharRef({...charRef, email: e.target.value})}
+                                className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-lato focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164]"
+                              />
+                              <input 
+                                placeholder="Relationship *" 
+                                value={charRef.relationship} 
+                                onChange={(e) => setCharRef({...charRef, relationship: e.target.value})}
+                                className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-lato focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164]"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {businessType && (
+                      <Button
+                        onClick={handleBusinessVerificationSubmit}
+                        disabled={loading}
+                        className="w-full h-12 rounded-xl text-white font-lato font-medium mt-4"
+                        style={{ backgroundColor: '#34D164' }}
+                      >
+                        {loading ? 'Submitting...' : 'Submit Verification'}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-4">
+              {/* Why Verify Card */}
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                <h3 className="text-sm font-semibold text-[#121E3C] mb-4 font-montserrat">Why Verify?</h3>
+                <div className="space-y-3">
+                  {[
+                    { icon: CheckCircle, title: 'Build Trust', desc: 'Verified accounts get more responses' },
+                    { icon: Shield, title: 'Unlock Features', desc: 'Access all platform capabilities' },
+                    { icon: Award, title: 'Earn Rewards', desc: 'Referral bonuses for verified users' },
+                  ].map((item, idx) => (
+                    <div key={idx} className="flex items-start gap-3">
+                      <item.icon className="w-4 h-4 text-[#34D164] mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-[#121E3C]">{item.title}</p>
+                        <p className="text-xs text-gray-500">{item.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Privacy Card */}
+              <div className="bg-[#34D164]/5 rounded-2xl border border-[#34D164]/20 p-5">
+                <div className="flex items-center gap-2 mb-2">
+                  <Lock className="w-4 h-4 text-[#34D164]" />
+                  <h3 className="text-sm font-semibold text-[#121E3C] font-montserrat">Your Privacy</h3>
+                </div>
+                <p className="text-xs text-gray-600 font-lato">
+                  Documents are encrypted and used only for verification. We never share with third parties.
+                </p>
+              </div>
+
+              {/* Processing Time Card */}
+              <div className="bg-amber-50 rounded-2xl border border-amber-100 p-5">
+                <div className="flex items-center gap-2 mb-2">
+                  <Clock className="w-4 h-4 text-amber-600" />
+                  <h3 className="text-sm font-semibold text-amber-800 font-montserrat">Processing Time</h3>
+                </div>
+                <p className="text-xs text-amber-700 font-lato">
+                  Verification takes 2-3 business days. You'll receive an email once reviewed.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </TradespersonLayout>
+    );
+  }
+
+  // For homeowners and non-authenticated users, use the original layout
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
@@ -443,46 +771,81 @@ const VerifyAccountPage = () => {
         <div className="max-w-3xl mx-auto">
           {/* Page Header */}
           <div className="mb-8 text-center">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">Verify Your Account</h1>
-            <p className="text-gray-600">Verify your email and phone. Tradespeople complete business verification and references.</p>
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#34D164]/10 mb-4">
+              <Shield className="w-8 h-8 text-[#34D164]" />
+            </div>
+            <h1 className="text-3xl font-bold font-montserrat mb-2" style={{color: '#121E3C'}}>Verify Your Account</h1>
+            <p className="text-gray-600 font-lato">Verify your email and phone. Tradespeople complete business verification and references.</p>
           </div>
 
           {/* Current Verification Status for Tradespeople */}
           {user?.role === 'tradesperson' && (
-            <div className="bg-white p-6 rounded-lg shadow-sm border mb-8">
-              <h3 className="text-lg font-semibold text-gray-800 mb-3">Current Verification Status</h3>
-              {isTradespersonVerified ? (
-                <div className="flex items-center space-x-3 text-green-700">
-                  <CheckCircle size={20} className="text-green-600" />
-                  <span className="font-medium">Account Verified</span>
-                </div>
-              ) : (
-                <>
-                  {verificationStatus === 'rejected' ? (
-                    <div className="flex items-center space-x-3 text-red-700">
-                      <Clock size={20} className="text-red-600" />
-                      <span className="font-medium">Verification Rejected</span>
-                    </div>
-                  ) : verificationStatus === 'not_submitted' ? (
-                    <div className="flex items-center space-x-3 text-gray-700">
-                      <Clock size={20} className="text-gray-600" />
-                      <span className="font-medium">Not Submitted</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center space-x-3 text-yellow-700">
-                      <Clock size={20} className="text-yellow-600" />
-                      <span className="font-medium">Verification Pending</span>
-                    </div>
-                  )}
-                  <p className="text-sm text-gray-600 mt-2">
-                    {verificationStatus === 'rejected'
-                      ? 'Your submission was not approved. Please review notes and resubmit.'
+            <div className={`rounded-2xl p-6 mb-8 border-2 ${
+              isTradespersonVerified 
+                ? 'bg-green-50 border-green-200' 
+                : verificationStatus === 'rejected' 
+                  ? 'bg-red-50 border-red-200' 
+                  : verificationStatus === 'not_submitted'
+                    ? 'bg-gray-50 border-gray-200'
+                    : 'bg-amber-50 border-amber-200'
+            }`}>
+              <div className="flex items-start gap-4">
+                <div className={`p-3 rounded-xl ${
+                  isTradespersonVerified 
+                    ? 'bg-green-100' 
+                    : verificationStatus === 'rejected' 
+                      ? 'bg-red-100' 
                       : verificationStatus === 'not_submitted'
-                        ? 'You have not submitted your business verification yet.'
-                        : 'Your documents are under review. You\'ll be notified once approved.'}
+                        ? 'bg-gray-100'
+                        : 'bg-amber-100'
+                }`}>
+                  {isTradespersonVerified ? (
+                    <CheckCircle className="w-6 h-6 text-green-600" />
+                  ) : verificationStatus === 'rejected' ? (
+                    <XCircle className="w-6 h-6 text-red-600" />
+                  ) : verificationStatus === 'not_submitted' ? (
+                    <AlertCircle className="w-6 h-6 text-gray-600" />
+                  ) : (
+                    <Clock className="w-6 h-6 text-amber-600" />
+                  )}
+                </div>
+                <div className="flex-1">
+                  <h3 className={`text-lg font-semibold font-montserrat mb-1 ${
+                    isTradespersonVerified 
+                      ? 'text-green-800' 
+                      : verificationStatus === 'rejected' 
+                        ? 'text-red-800' 
+                        : verificationStatus === 'not_submitted'
+                          ? 'text-gray-800'
+                          : 'text-amber-800'
+                  }`}>
+                    {isTradespersonVerified 
+                      ? 'Account Verified' 
+                      : verificationStatus === 'rejected' 
+                        ? 'Verification Rejected' 
+                        : verificationStatus === 'not_submitted'
+                          ? 'Not Submitted'
+                          : 'Verification Pending'}
+                  </h3>
+                  <p className={`text-sm font-lato ${
+                    isTradespersonVerified 
+                      ? 'text-green-700' 
+                      : verificationStatus === 'rejected' 
+                        ? 'text-red-700' 
+                        : verificationStatus === 'not_submitted'
+                          ? 'text-gray-600'
+                          : 'text-amber-700'
+                  }`}>
+                    {isTradespersonVerified 
+                      ? 'Your account is fully verified. You have access to all platform features.'
+                      : verificationStatus === 'rejected'
+                        ? 'Your submission was not approved. Please review notes and resubmit.'
+                        : verificationStatus === 'not_submitted'
+                          ? 'You have not submitted your business verification yet.'
+                          : 'Your documents are under review. You\'ll be notified once approved.'}
                   </p>
-                </>
-              )}
+                </div>
+              </div>
             </div>
           )}
 
@@ -622,17 +985,23 @@ const VerifyAccountPage = () => {
               
 
               {user?.role === 'tradesperson' && !isTradespersonVerified && (
-                <div className="bg-white p-6 rounded-lg shadow-sm border mt-6">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Business Verification</h3>
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mt-6">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2.5 rounded-xl bg-[#121E3C]/5">
+                      <FileText className="w-5 h-5 text-[#121E3C]" />
+                    </div>
+                    <h3 className="text-lg font-semibold font-montserrat" style={{color: '#121E3C'}}>Business Verification</h3>
+                  </div>
                   {verificationStatus === 'rejected' && (
-                    <div className="mb-4 p-3 rounded border border-red-200 bg-red-50 text-red-700 text-sm">
-                      Your previous submission was rejected. Please correct issues and upload clear documents.
+                    <div className="mb-6 p-4 rounded-xl border border-red-200 bg-red-50 text-red-700 text-sm flex items-start gap-3">
+                      <XCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                      <p>Your previous submission was rejected. Please correct issues and upload clear documents.</p>
                     </div>
                   )}
-                  <div className="space-y-4">
+                  <div className="space-y-5">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Business Type</label>
-                      <select value={businessType} onChange={(e)=>setBusinessType(e.target.value)} className="w-full px-3 py-2 border rounded-lg">
+                      <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Business Type</label>
+                      <select value={businessType} onChange={(e)=>setBusinessType(e.target.value)} className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato">
                         <option value="">Select business type</option>
                         <option>Self-Employed / Sole Trader</option>
                         <option>Limited Company (LTD)</option>
@@ -640,161 +1009,261 @@ const VerifyAccountPage = () => {
                         <option>Limited Liability Partnership (LLP)</option>
                       </select>
                       {user?.business_type && (
-                        <p className="text-xs text-gray-500 mt-1">Pre-selected from your registration. Update only if incorrect.</p>
+                        <p className="text-xs text-gray-500 mt-2 font-lato">Pre-selected from your registration. Update only if incorrect.</p>
                       )}
                     </div>
                     {(businessType === 'Self-Employed / Sole Trader') && (
-                      <div className="space-y-3">
+                      <div className="space-y-5">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Residential address</label>
-                          <input className="w-full px-3 py-2 border rounded-lg" value={residentialAddress} onChange={(e)=>setResidentialAddress(e.target.value)} />
-                          {selfErrors.residential_address && (<p className="text-xs text-red-600 mt-1">{selfErrors.residential_address}</p>)}
+                          <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Residential address <span className="text-red-500">*</span></label>
+                          <input className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato" placeholder="Enter your residential address" value={residentialAddress} onChange={(e)=>setResidentialAddress(e.target.value)} />
+                          {selfErrors.residential_address && (<p className="text-xs text-red-600 mt-2 font-lato">{selfErrors.residential_address}</p>)}
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Proof of address (utility bill, bank statement)</label>
-                          <input type="file" accept="image/*,application/pdf" onChange={(e)=>setProofOfAddress(e.target.files[0])} />
+                          <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Proof of address (utility bill, bank statement)</label>
+                          <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                              <Upload className="w-6 h-6 text-gray-400 mb-2" />
+                              <p className="text-sm text-gray-500 font-lato">{proofOfAddress ? proofOfAddress.name : 'Click to upload or drag and drop'}</p>
+                            </div>
+                            <input type="file" className="hidden" accept="image/*,application/pdf" onChange={(e)=>setProofOfAddress(e.target.files[0])} />
+                          </label>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Recent work photos (min 2)</label>
-                          <input type="file" accept="image/*" multiple onChange={(e)=>handleWorkPhotosSelect(e.target.files)} />
+                          <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Recent work photos (min 2) <span className="text-red-500">*</span></label>
+                          <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                              <Image className="w-6 h-6 text-gray-400 mb-2" />
+                              <p className="text-sm text-gray-500 font-lato">Click to upload work photos</p>
+                            </div>
+                            <input type="file" className="hidden" accept="image/*" multiple onChange={(e)=>handleWorkPhotosSelect(e.target.files)} />
+                          </label>
                           {Array.isArray(workPhotos) && workPhotos.length > 0 && (
-                            <p className="text-xs text-gray-500 mt-1">Selected {workPhotos.length} of 6</p>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {workPhotos.map((photo, idx) => (
+                                <span key={idx} className="inline-flex items-center px-3 py-1 rounded-full bg-[#34D164]/10 text-[#34D164] text-xs font-medium">
+                                  <Image className="w-3 h-3 mr-1" />
+                                  {photo.name?.substring(0, 15)}...
+                                </span>
+                              ))}
+                            </div>
                           )}
-                          {selfErrors.work_photos && (<p className="text-xs text-red-600 mt-1">{selfErrors.work_photos}</p>)}
+                          {selfErrors.work_photos && (<p className="text-xs text-red-600 mt-2 font-lato">{selfErrors.work_photos}</p>)}
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Trade or apprenticeship certificate (optional)</label>
-                          <input type="file" accept="image/*,application/pdf" onChange={(e)=>setTradeCertificate(e.target.files[0])} />
+                          <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Trade or apprenticeship certificate (optional)</label>
+                          <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                              <FileText className="w-6 h-6 text-gray-400 mb-2" />
+                              <p className="text-sm text-gray-500 font-lato">{tradeCertificate ? tradeCertificate.name : 'Click to upload certificate'}</p>
+                            </div>
+                            <input type="file" className="hidden" accept="image/*,application/pdf" onChange={(e)=>setTradeCertificate(e.target.files[0])} />
+                          </label>
                         </div>
-                        <div>
-                          <h4 className="font-semibold mb-2">References</h4>
-                          <p className="text-sm text-gray-600 mb-4">As part of your verification on ServiceHub, we require two types of references to help confirm your professionalism and integrity:</p>
-                          {/* Stack Character Referrer below Work Referrer on all screen sizes */}
+                        <div className="border-t border-gray-100 pt-6 mt-6">
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="p-2 rounded-lg bg-[#121E3C]/5">
+                              <Users className="w-4 h-4 text-[#121E3C]" />
+                            </div>
+                            <h4 className="font-semibold font-montserrat" style={{color: '#121E3C'}}>References</h4>
+                          </div>
+                          <p className="text-sm text-gray-600 mb-6 font-lato">As part of your verification on ServiceHub, we require two types of references to help confirm your professionalism and integrity:</p>
                           <div className="space-y-6">
-                            <div>
-                              <h5 className="font-medium mb-2">Work Referee</h5>
-                              <p className="text-xs text-gray-600 mb-2">This should be someone you’ve worked for or with — a previous client, supervisor, or colleague (not a family member).</p>
+                            <div className="bg-gray-50 rounded-xl p-5">
+                              <h5 className="font-medium mb-2 font-montserrat text-[#121E3C]">Work Referee</h5>
+                              <p className="text-xs text-gray-600 mb-4 font-lato">This should be someone you've worked for or with — a previous client, supervisor, or colleague (not a family member).</p>
                               <div className="space-y-3">
-                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Referee name" value={workRef.name} onChange={(e)=>setWorkRef({...workRef, name: e.target.value})} />
-                                {refErrors.work_referrer_name && (<p className="text-xs text-red-600 mt-1">{refErrors.work_referrer_name}</p>)}
-                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Referee phone" value={workRef.phone} onChange={(e)=>setWorkRef({...workRef, phone: e.target.value})} />
-                                {refErrors.work_referrer_phone && (<p className="text-xs text-red-600 mt-1">{refErrors.work_referrer_phone}</p>)}
-                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Company email (referee)" value={workRef.company_email} onChange={(e)=>setWorkRef({...workRef, company_email: e.target.value})} />
-                                {refErrors.work_referrer_company_email && (<p className="text-xs text-red-600 mt-1">{refErrors.work_referrer_company_email}</p>)}
-                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Company name (referee)" value={workRef.company_name} onChange={(e)=>setWorkRef({...workRef, company_name: e.target.value})} />
-                                {refErrors.work_referrer_company_name && (<p className="text-xs text-red-600 mt-1">{refErrors.work_referrer_company_name}</p>)}
-                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Relationship to referee" value={workRef.relationship} onChange={(e)=>setWorkRef({...workRef, relationship: e.target.value})} />
-                                {refErrors.work_referrer_relationship && (<p className="text-xs text-red-600 mt-1">{refErrors.work_referrer_relationship}</p>)}
+                                <input className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato bg-white" placeholder="Referee name *" value={workRef.name} onChange={(e)=>setWorkRef({...workRef, name: e.target.value})} />
+                                {refErrors.work_referrer_name && (<p className="text-xs text-red-600 mt-1 font-lato">{refErrors.work_referrer_name}</p>)}
+                                <input className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato bg-white" placeholder="Referee phone *" value={workRef.phone} onChange={(e)=>setWorkRef({...workRef, phone: e.target.value})} />
+                                {refErrors.work_referrer_phone && (<p className="text-xs text-red-600 mt-1 font-lato">{refErrors.work_referrer_phone}</p>)}
+                                <input className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato bg-white" placeholder="Company email *" value={workRef.company_email} onChange={(e)=>setWorkRef({...workRef, company_email: e.target.value})} />
+                                {refErrors.work_referrer_company_email && (<p className="text-xs text-red-600 mt-1 font-lato">{refErrors.work_referrer_company_email}</p>)}
+                                <input className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato bg-white" placeholder="Company name *" value={workRef.company_name} onChange={(e)=>setWorkRef({...workRef, company_name: e.target.value})} />
+                                {refErrors.work_referrer_company_name && (<p className="text-xs text-red-600 mt-1 font-lato">{refErrors.work_referrer_company_name}</p>)}
+                                <input className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato bg-white" placeholder="Relationship *" value={workRef.relationship} onChange={(e)=>setWorkRef({...workRef, relationship: e.target.value})} />
+                                {refErrors.work_referrer_relationship && (<p className="text-xs text-red-600 mt-1 font-lato">{refErrors.work_referrer_relationship}</p>)}
                               </div>
                             </div>
-                            <div>
-                              <h5 className="font-medium mb-2">Character Referee</h5>
-                              <p className="text-xs text-gray-600 mb-2">This should be someone who can vouch for your behaviour, reliability, and trustworthiness. This can be a community leader, neighbour, mentor, or someone you’ve known personally (but not an immediate family member).</p>
+                            <div className="bg-gray-50 rounded-xl p-5">
+                              <h5 className="font-medium mb-2 font-montserrat text-[#121E3C]">Character Referee</h5>
+                              <p className="text-xs text-gray-600 mb-4 font-lato">This should be someone who can vouch for your behaviour, reliability, and trustworthiness. This can be a community leader, neighbour, mentor, or someone you've known personally (but not an immediate family member).</p>
                               <div className="space-y-3">
-                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Referee name" value={charRef.name} onChange={(e)=>setCharRef({...charRef, name: e.target.value})} />
-                                {refErrors.character_referrer_name && (<p className="text-xs text-red-600 mt-1">{refErrors.character_referrer_name}</p>)}
-                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Referee phone" value={charRef.phone} onChange={(e)=>setCharRef({...charRef, phone: e.target.value})} />
-                                {refErrors.character_referrer_phone && (<p className="text-xs text-red-600 mt-1">{refErrors.character_referrer_phone}</p>)}
-                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Referee email" value={charRef.email} onChange={(e)=>setCharRef({...charRef, email: e.target.value})} />
-                                {refErrors.character_referrer_email && (<p className="text-xs text-red-600 mt-1">{refErrors.character_referrer_email}</p>)}
-                                <input className="w-full px-3 py-2 border rounded-lg" placeholder="Relationship to referee" value={charRef.relationship} onChange={(e)=>setCharRef({...charRef, relationship: e.target.value})} />
-                                {refErrors.character_referrer_relationship && (<p className="text-xs text-red-600 mt-1">{refErrors.character_referrer_relationship}</p>)}
+                                <input className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato bg-white" placeholder="Referee name *" value={charRef.name} onChange={(e)=>setCharRef({...charRef, name: e.target.value})} />
+                                {refErrors.character_referrer_name && (<p className="text-xs text-red-600 mt-1 font-lato">{refErrors.character_referrer_name}</p>)}
+                                <input className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato bg-white" placeholder="Referee phone *" value={charRef.phone} onChange={(e)=>setCharRef({...charRef, phone: e.target.value})} />
+                                {refErrors.character_referrer_phone && (<p className="text-xs text-red-600 mt-1 font-lato">{refErrors.character_referrer_phone}</p>)}
+                                <input className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato bg-white" placeholder="Referee email *" value={charRef.email} onChange={(e)=>setCharRef({...charRef, email: e.target.value})} />
+                                {refErrors.character_referrer_email && (<p className="text-xs text-red-600 mt-1 font-lato">{refErrors.character_referrer_email}</p>)}
+                                <input className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato bg-white" placeholder="Relationship *" value={charRef.relationship} onChange={(e)=>setCharRef({...charRef, relationship: e.target.value})} />
+                                {refErrors.character_referrer_relationship && (<p className="text-xs text-red-600 mt-1 font-lato">{refErrors.character_referrer_relationship}</p>)}
                               </div>
                             </div>
                           </div>
-                          {/* References are now submitted together with Business Verification for Self-Employed */}
                         </div>
                       </div>
                     )}
                     {(businessType === 'Limited Company (LTD)') && (
-                      <div className="space-y-3">
+                      <div className="space-y-5">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">CAC Certificate</label>
-                          <input type="file" accept="image/*,application/pdf" onChange={(e)=>setCacCertificate(e.target.files[0])} />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">CAC Status Report/Extract</label>
-                          <input type="file" accept="image/*,application/pdf" onChange={(e)=>setCacStatusReport(e.target.files[0])} />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Company address</label>
-                          <input className="w-full px-3 py-2 border rounded-lg" value={companyAddress} onChange={(e)=>setCompanyAddress(e.target.value)} />
+                          <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">CAC Certificate <span className="text-red-500">*</span></label>
+                          <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                              <Upload className="w-6 h-6 text-gray-400 mb-2" />
+                              <p className="text-sm text-gray-500 font-lato">{cacCertificate ? cacCertificate.name : 'Click to upload CAC Certificate'}</p>
+                            </div>
+                            <input type="file" className="hidden" accept="image/*,application/pdf" onChange={(e)=>setCacCertificate(e.target.files[0])} />
+                          </label>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Director name</label>
-                          <input className="w-full px-3 py-2 border rounded-lg" value={directorName} onChange={(e)=>setDirectorName(e.target.value)} />
+                          <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">CAC Status Report/Extract <span className="text-red-500">*</span></label>
+                          <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                              <FileText className="w-6 h-6 text-gray-400 mb-2" />
+                              <p className="text-sm text-gray-500 font-lato">{cacStatusReport ? cacStatusReport.name : 'Click to upload Status Report'}</p>
+                            </div>
+                            <input type="file" className="hidden" accept="image/*,application/pdf" onChange={(e)=>setCacStatusReport(e.target.files[0])} />
+                          </label>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Director ID document</label>
-                          <input type="file" accept="image/*,application/pdf" onChange={(e)=>setDirectorIdDocument(e.target.files[0])} />
+                          <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Company address <span className="text-red-500">*</span></label>
+                          <input className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato" placeholder="Enter company address" value={companyAddress} onChange={(e)=>setCompanyAddress(e.target.value)} />
                         </div>
-                        <div className="grid md:grid-cols-3 gap-3">
-                          <input className="w-full px-3 py-2 border rounded-lg" placeholder="Bank name" value={companyBankName} onChange={(e)=>setCompanyBankName(e.target.value)} />
-                          <input className="w-full px-3 py-2 border rounded-lg" placeholder="Account number" value={companyAccountNumber} onChange={(e)=>setCompanyAccountNumber(e.target.value)} />
-                          <input className="w-full px-3 py-2 border rounded-lg" placeholder="Account name" value={companyAccountName} onChange={(e)=>setCompanyAccountName(e.target.value)} />
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Director name <span className="text-red-500">*</span></label>
+                          <input className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato" placeholder="Enter director name" value={directorName} onChange={(e)=>setDirectorName(e.target.value)} />
                         </div>
-                        <div className="grid md:grid-cols-2 gap-3">
-                          <input className="w-full px-3 py-2 border rounded-lg" placeholder="TIN (optional)" value={tin} onChange={(e)=>setTin(e.target.value)} />
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Director ID document <span className="text-red-500">*</span></label>
+                          <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                              <Upload className="w-6 h-6 text-gray-400 mb-2" />
+                              <p className="text-sm text-gray-500 font-lato">{directorIdDocument ? directorIdDocument.name : 'Click to upload ID document'}</p>
+                            </div>
+                            <input type="file" className="hidden" accept="image/*,application/pdf" onChange={(e)=>setDirectorIdDocument(e.target.files[0])} />
+                          </label>
+                        </div>
+                        <div className="grid md:grid-cols-3 gap-4">
+                          <input className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato" placeholder="Bank name" value={companyBankName} onChange={(e)=>setCompanyBankName(e.target.value)} />
+                          <input className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato" placeholder="Account number" value={companyAccountNumber} onChange={(e)=>setCompanyAccountNumber(e.target.value)} />
+                          <input className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato" placeholder="Account name" value={companyAccountName} onChange={(e)=>setCompanyAccountName(e.target.value)} />
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <input className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato" placeholder="TIN (optional)" value={tin} onChange={(e)=>setTin(e.target.value)} />
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Business logo or office/team photo (optional)</label>
-                            <input type="file" accept="image/*" onChange={(e)=>setBusinessLogo(e.target.files[0])} />
+                            <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Business logo (optional)</label>
+                            <label className="flex items-center justify-center w-full h-12 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                              <p className="text-sm text-gray-500 font-lato">{businessLogo ? businessLogo.name : 'Upload logo'}</p>
+                              <input type="file" className="hidden" accept="image/*" onChange={(e)=>setBusinessLogo(e.target.files[0])} />
+                            </label>
                           </div>
                         </div>
                       </div>
                     )}
                     {(businessType === 'Ordinary Partnership') && (
-                      <div className="space-y-3">
+                      <div className="space-y-5">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">CAC Business Name Certificate (BN)</label>
-                          <input type="file" accept="image/*,application/pdf" onChange={(e)=>setBnCertificate(e.target.files[0])} />
+                          <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">CAC Business Name Certificate (BN) <span className="text-red-500">*</span></label>
+                          <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                              <Upload className="w-6 h-6 text-gray-400 mb-2" />
+                              <p className="text-sm text-gray-500 font-lato">{bnCertificate ? bnCertificate.name : 'Click to upload BN Certificate'}</p>
+                            </div>
+                            <input type="file" className="hidden" accept="image/*,application/pdf" onChange={(e)=>setBnCertificate(e.target.files[0])} />
+                          </label>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Partnership agreement</label>
-                          <input type="file" accept="image/*,application/pdf" onChange={(e)=>setPartnershipAgreement(e.target.files[0])} />
+                          <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Partnership agreement <span className="text-red-500">*</span></label>
+                          <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                              <FileText className="w-6 h-6 text-gray-400 mb-2" />
+                              <p className="text-sm text-gray-500 font-lato">{partnershipAgreement ? partnershipAgreement.name : 'Click to upload agreement'}</p>
+                            </div>
+                            <input type="file" className="hidden" accept="image/*,application/pdf" onChange={(e)=>setPartnershipAgreement(e.target.files[0])} />
+                          </label>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Partner ID documents</label>
-                          <input type="file" accept="image/*,application/pdf" multiple onChange={(e)=>handlePartnerIdsSelect(e.target.files)} />
+                          <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Partner ID documents <span className="text-red-500">*</span></label>
+                          <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                              <Users className="w-6 h-6 text-gray-400 mb-2" />
+                              <p className="text-sm text-gray-500 font-lato">Click to upload partner IDs</p>
+                            </div>
+                            <input type="file" className="hidden" accept="image/*,application/pdf" multiple onChange={(e)=>handlePartnerIdsSelect(e.target.files)} />
+                          </label>
+                          {partnerIdDocuments.length > 0 && (
+                            <p className="text-xs text-[#34D164] mt-2 font-lato">{partnerIdDocuments.length} file(s) selected</p>
+                          )}
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Business address</label>
-                          <input className="w-full px-3 py-2 border rounded-lg" value={companyAddress} onChange={(e)=>setCompanyAddress(e.target.value)} />
+                          <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Business address <span className="text-red-500">*</span></label>
+                          <input className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato" placeholder="Enter business address" value={companyAddress} onChange={(e)=>setCompanyAddress(e.target.value)} />
                         </div>
                       </div>
                     )}
                     {(businessType === 'Limited Liability Partnership (LLP)') && (
-                      <div className="space-y-3">
+                      <div className="space-y-5">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">CAC LLP Certificate/Registration</label>
-                          <input type="file" accept="image/*,application/pdf" onChange={(e)=>setLlpCertificate(e.target.files[0])} />
+                          <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">CAC LLP Certificate/Registration <span className="text-red-500">*</span></label>
+                          <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                              <Upload className="w-6 h-6 text-gray-400 mb-2" />
+                              <p className="text-sm text-gray-500 font-lato">{llpCertificate ? llpCertificate.name : 'Click to upload LLP Certificate'}</p>
+                            </div>
+                            <input type="file" className="hidden" accept="image/*,application/pdf" onChange={(e)=>setLlpCertificate(e.target.files[0])} />
+                          </label>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">LLP agreement</label>
-                          <input type="file" accept="image/*,application/pdf" onChange={(e)=>setLlpAgreement(e.target.files[0])} />
+                          <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">LLP agreement <span className="text-red-500">*</span></label>
+                          <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                              <FileText className="w-6 h-6 text-gray-400 mb-2" />
+                              <p className="text-sm text-gray-500 font-lato">{llpAgreement ? llpAgreement.name : 'Click to upload LLP agreement'}</p>
+                            </div>
+                            <input type="file" className="hidden" accept="image/*,application/pdf" onChange={(e)=>setLlpAgreement(e.target.files[0])} />
+                          </label>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Designated partners (names, roles)</label>
-                          <textarea className="w-full px-3 py-2 border rounded-lg" value={designatedPartners} onChange={(e)=>setDesignatedPartners(e.target.value)} />
+                          <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Designated partners (names, roles) <span className="text-red-500">*</span></label>
+                          <textarea className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato min-h-[100px]" placeholder="Enter partner names and their roles" value={designatedPartners} onChange={(e)=>setDesignatedPartners(e.target.value)} />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Partner ID documents</label>
-                          <input type="file" accept="image/*,application/pdf" multiple onChange={(e)=>handlePartnerIdsSelect(e.target.files)} />
+                          <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Partner ID documents <span className="text-red-500">*</span></label>
+                          <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                              <Users className="w-6 h-6 text-gray-400 mb-2" />
+                              <p className="text-sm text-gray-500 font-lato">Click to upload partner IDs</p>
+                            </div>
+                            <input type="file" className="hidden" accept="image/*,application/pdf" multiple onChange={(e)=>handlePartnerIdsSelect(e.target.files)} />
+                          </label>
+                          {partnerIdDocuments.length > 0 && (
+                            <p className="text-xs text-[#34D164] mt-2 font-lato">{partnerIdDocuments.length} file(s) selected</p>
+                          )}
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Business address</label>
-                          <input className="w-full px-3 py-2 border rounded-lg" value={companyAddress} onChange={(e)=>setCompanyAddress(e.target.value)} />
+                          <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Business address <span className="text-red-500">*</span></label>
+                          <input className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato" placeholder="Enter business address" value={companyAddress} onChange={(e)=>setCompanyAddress(e.target.value)} />
                         </div>
                       </div>
                     )}
                   </div>
-                  <div className="mt-4">
+                  <div className="mt-8 pt-6 border-t border-gray-100">
                     <Button
                       type="button"
                       disabled={loading || !businessType}
                       onClick={handleBusinessVerificationSubmit}
-                      className=""
+                      className="w-full py-3 text-white font-medium font-lato rounded-xl transition-all"
+                      style={{backgroundColor: loading ? '#9CA3AF' : '#34D164'}}
                     >
-                      {loading ? 'Submitting...' : 'Submit'}
+                      {loading ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                          </svg>
+                          Submitting...
+                        </span>
+                      ) : 'Submit Verification'}
                     </Button>
                   </div>
                 </div>
@@ -807,47 +1276,64 @@ const VerifyAccountPage = () => {
             {/* Sidebar */}
             <div className="space-y-6">
               {/* Why Verify */}
-              <div className="bg-white p-6 rounded-lg shadow-sm border">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Why Verify?</h3>
-                <div className="space-y-3">
-                  <div className="flex items-start space-x-3">
-                    <CheckCircle size={16} className="text-green-600 mt-1 flex-shrink-0" />
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="p-2 rounded-xl bg-[#34D164]/10">
+                    <Award className="w-5 h-5 text-[#34D164]" />
+                  </div>
+                  <h3 className="text-lg font-semibold font-montserrat" style={{color: '#121E3C'}}>Why Verify?</h3>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="p-1.5 rounded-lg bg-green-100 mt-0.5">
+                      <CheckCircle size={14} className="text-green-600" />
+                    </div>
                     <div>
-                      <h4 className="font-medium text-gray-800">Build Trust</h4>
-                      <p className="text-sm text-gray-600">Verified accounts are more trusted by users</p>
+                      <h4 className="font-medium text-gray-800 font-montserrat">Build Trust</h4>
+                      <p className="text-sm text-gray-500 font-lato">Verified accounts are more trusted by users</p>
                     </div>
                   </div>
                   
-                  <div className="flex items-start space-x-3">
-                    <CheckCircle size={16} className="text-green-600 mt-1 flex-shrink-0" />
+                  <div className="flex items-start gap-3">
+                    <div className="p-1.5 rounded-lg bg-green-100 mt-0.5">
+                      <CheckCircle size={14} className="text-green-600" />
+                    </div>
                     <div>
-                      <h4 className="font-medium text-gray-800">Unlock Features</h4>
-                      <p className="text-sm text-gray-600">Access all platform features</p>
+                      <h4 className="font-medium text-gray-800 font-montserrat">Unlock Features</h4>
+                      <p className="text-sm text-gray-500 font-lato">Access all platform features</p>
                     </div>
                   </div>
                   
-                  <div className="flex items-start space-x-3">
-                    <CheckCircle size={16} className="text-green-600 mt-1 flex-shrink-0" />
+                  <div className="flex items-start gap-3">
+                    <div className="p-1.5 rounded-lg bg-green-100 mt-0.5">
+                      <CheckCircle size={14} className="text-green-600" />
+                    </div>
                     <div>
-                      <h4 className="font-medium text-gray-800">Earn Rewards</h4>
-                      <p className="text-sm text-gray-600">Help friends earn referral coins</p>
+                      <h4 className="font-medium text-gray-800 font-montserrat">Earn Rewards</h4>
+                      <p className="text-sm text-gray-500 font-lato">Help friends earn referral coins</p>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Security */}
-              <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
-                <h3 className="text-lg font-semibold text-blue-800 mb-2">🔒 Your Privacy</h3>
-                <p className="text-sm text-blue-700">
+              <div className="bg-[#121E3C]/5 p-6 rounded-2xl border border-[#121E3C]/10">
+                <div className="flex items-center gap-3 mb-3">
+                  <Shield className="w-5 h-5 text-[#121E3C]" />
+                  <h3 className="text-base font-semibold font-montserrat" style={{color: '#121E3C'}}>Your Privacy</h3>
+                </div>
+                <p className="text-sm text-gray-600 font-lato">
                   Your documents are encrypted and securely stored. We use them only for identity verification and never share them with third parties.
                 </p>
               </div>
 
               {/* Processing Time */}
-              <div className="bg-gray-50 p-6 rounded-lg border">
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">⏱️ Processing Time</h3>
-                <p className="text-sm text-gray-600">
+              <div className="bg-amber-50 p-6 rounded-2xl border border-amber-100">
+                <div className="flex items-center gap-3 mb-3">
+                  <Clock className="w-5 h-5 text-amber-600" />
+                  <h3 className="text-base font-semibold font-montserrat text-amber-800">Processing Time</h3>
+                </div>
+                <p className="text-sm text-amber-700 font-lato">
                   Verification typically takes 2-3 business days. You'll receive an email notification once reviewed.
                 </p>
               </div>

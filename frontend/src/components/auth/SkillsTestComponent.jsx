@@ -448,9 +448,11 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
             <h3 className="font-semibold text-blue-800">
               {activeTrade} Skills Test
             </h3>
+            {/* Commented out per dev lead review - can be restored later
             <p className="text-sm text-blue-600">
               Question {getCurrentQuestionNumber()} of {getTotalQuestions()}
             </p>
+            */}
           </div>
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2 text-blue-700">
@@ -476,14 +478,15 @@ const SkillsTestComponent = ({ formData, updateFormData, onTestComplete }) => {
       {currentQuestionData && (
         <Card className="border-2">
           <CardHeader>
-            <div className="flex justify-between items-start mb-2">
-              <CardTitle className="text-lg">
-                {currentQuestionData.question}
-              </CardTitle>
-              <span className="text-xs bg-gray-100 px-2 py-1 rounded">
+            {/* Category badge above the question */}
+            <div className="mb-3">
+              <span className="inline-block text-xs font-medium bg-[#34D164]/10 text-[#34D164] px-3 py-1.5 rounded-full border border-[#34D164]/20">
                 {currentQuestionData.category}
               </span>
             </div>
+            <CardTitle className="text-lg leading-relaxed">
+              {currentQuestionData.question}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
