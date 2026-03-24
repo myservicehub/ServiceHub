@@ -746,6 +746,17 @@ async def get_job_details_admin(job_id: str):
         h_phone = (homeowner.get("phone") if (homeowner and not isinstance(homeowner, Exception)) else None) or job_homeowner_obj.get("phone") or job.get("homeowner_phone") or "Unknown"
         h_ver_status = homeowner.get("verification_status") if (homeowner and not isinstance(homeowner, Exception)) else "unknown"
 
+        access_fee_naira = job.get("access_fee_naira")
+        access_fee_coins = job.get("access_fee_coins")
+        if access_fee_naira is None and access_fee_coins is not None:
+            access_fee_naira = int(access_fee_coins) * 100
+        if access_fee_coins is None and access_fee_naira is not None:
+            access_fee_coins = int(access_fee_naira) // 100
+        if access_fee_naira is None:
+            access_fee_naira = 1000
+        if access_fee_coins is None:
+            access_fee_coins = 10
+
         job_details = {
             **job,
             "homeowner_details": {
@@ -757,8 +768,8 @@ async def get_job_details_admin(job_id: str):
             },
             "interests_count": interests_count,
             "access_fees": {
-                "naira": job.get("access_fee_naira", 1000),
-                "coins": job.get("access_fee_coins", 10)
+                "naira": access_fee_naira,
+                "coins": access_fee_coins
             }
         }
         

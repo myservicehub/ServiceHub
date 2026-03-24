@@ -447,7 +447,7 @@ class NotificationTemplateService:
                     <li><span class="label">Job</span> <span class="value">{job_title}</span></li>
                     <li><span class="label">Location</span> <span class="value">{job_location}</span></li>
                 </ul>
-                <p>To access the homeowner's contact details and start the project, please pay the access fee of ₦1,000.</p>
+                <p>To access the homeowner's contact details and start the project, please pay the access fee of {access_fee}.</p>
                 <a class="cta" href="{payment_url}" target="_blank">Pay and Get Contact Details</a>
                 <p style="margin-top: 20px; font-size: 14px; color: #6b7280;">This is your opportunity to connect directly with the homeowner and discuss the job details.</p>
             </div>
@@ -457,15 +457,15 @@ class NotificationTemplateService:
 </body>
 </html>
                 """,
-                variables=["tradesperson_name", "job_title", "job_location", "payment_url"]
+                variables=["tradesperson_name", "job_title", "job_location", "payment_url", "access_fee"]
             ),
             NotificationChannel.SMS: NotificationTemplate(
                 id=str(uuid.uuid4()),
                 type=NotificationType.CONTACT_SHARED,
                 channel=NotificationChannel.SMS,
                 subject_template="Contact Shared - serviceHub",
-                content_template="Hi {tradesperson_name}! Homeowner shared contact details for {job_title}. Pay ₦1,000 to access: {payment_url}",
-                variables=["tradesperson_name", "job_title", "payment_url"]
+                content_template="Hi {tradesperson_name}! Homeowner shared contact details for {job_title}. Pay {access_fee} to access: {payment_url}",
+                variables=["tradesperson_name", "job_title", "payment_url", "access_fee"]
             )
         }
         
@@ -577,7 +577,7 @@ class NotificationTemplateService:
             </div>
             <div class="content">
                 <p>Hello {tradesperson_name},</p>
-                <p>Your payment of ₦1,000 has been confirmed. You now have full access to the homeowner's contact details:</p>
+                <p>Your payment of {access_fee} has been confirmed. You now have full access to the homeowner's contact details:</p>
                 
                 <div class="contact-box">
                     <ul class="list">
@@ -597,7 +597,7 @@ class NotificationTemplateService:
 </body>
 </html>
                 """,
-                variables=["tradesperson_name", "job_title", "job_location", "homeowner_name", "homeowner_email", "homeowner_phone"]
+                variables=["tradesperson_name", "job_title", "job_location", "homeowner_name", "homeowner_email", "homeowner_phone", "access_fee"]
             ),
             NotificationChannel.SMS: NotificationTemplate(
                 id=str(uuid.uuid4()),

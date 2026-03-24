@@ -401,11 +401,18 @@ async def _notify_tradesperson_contact_shared(job: dict, tradesperson_id: str, i
         preferences = await database.get_user_notification_preferences(tradesperson_id)
         
         # Prepare template data
+        access_fee_naira = job.get("access_fee_naira")
+        access_fee_coins = job.get("access_fee_coins")
+        if access_fee_naira is None and access_fee_coins is not None:
+            access_fee_naira = int(access_fee_coins) * 100
+        if access_fee_naira is None:
+            access_fee_naira = 1000
         template_data = {
             "tradesperson_name": tradesperson.get("business_name") or tradesperson.get("name", "Tradesperson"),
             "job_title": job.get("title", "Untitled Job"),
             "job_location": job.get("location", ""),
             "homeowner_name": job.get("homeowner", {}).get("name", "Homeowner"),
+            "access_fee": f"₦{float(access_fee_naira):,.2f}",
             "payment_url": f"{os.environ.get('FRONTEND_URL', 'https://myservicehub.co')}/trades/interests?pay={interest_id}",
             "view_url": f"{os.environ.get('FRONTEND_URL', 'https://myservicehub.co')}/trades/interests"
         }

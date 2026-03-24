@@ -749,6 +749,17 @@ const BrowseJobsPage = () => {
     const totalCoins = Math.ceil(total / 100); // 1 coin = ₦100
     return { vat, total, totalCoins };
   };
+  const resolveAccessFeeNaira = (job) => {
+    const directNaira = Number(job?.access_fee_naira);
+    if (Number.isFinite(directNaira) && directNaira > 0) return directNaira;
+    const directCoins = Number(job?.access_fee_coins);
+    if (Number.isFinite(directCoins) && directCoins > 0) return directCoins * 100;
+    const nestedNaira = Number(job?.access_fees?.naira);
+    if (Number.isFinite(nestedNaira) && nestedNaira > 0) return nestedNaira;
+    const nestedCoins = Number(job?.access_fees?.coins);
+    if (Number.isFinite(nestedCoins) && nestedCoins > 0) return nestedCoins * 100;
+    return 1000;
+  };
 
   const handleViewJobDetails = async (job) => {
     let freshJob = job;
@@ -1274,7 +1285,7 @@ const BrowseJobsPage = () => {
                   {/* Access Fee - Only visible to tradespeople */}
                   {isTradesperson() && (
                     (() => {
-                      const { vat, total, totalCoins } = computeVatInclusive(selectedJobDetails.access_fee_naira || 1000);
+                      const { vat, total, totalCoins } = computeVatInclusive(resolveAccessFeeNaira(selectedJobDetails));
                       return (
                         <div className="flex-1 min-w-[200px] bg-amber-50 border border-amber-200 rounded-xl p-4">
                           <div className="text-lg font-bold text-amber-700">

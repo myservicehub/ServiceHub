@@ -980,8 +980,8 @@ const AdminDashboard = () => {
         budget_min: jobDetails.budget_min || '',
         budget_max: jobDetails.budget_max || '',
         timeline: jobDetails.timeline || '',
-        access_fee_naira: jobDetails.access_fees?.naira || 1000,
-        access_fee_coins: jobDetails.access_fees?.coins || 10,
+        access_fee_naira: jobDetails.access_fees?.naira ?? jobDetails.access_fee_naira ?? ((jobDetails.access_fees?.coins ?? jobDetails.access_fee_coins ?? 10) * 100),
+        access_fee_coins: jobDetails.access_fees?.coins ?? jobDetails.access_fee_coins ?? 10,
         admin_notes: ''
       });
       setEditJobModal(jobDetails);
@@ -1971,7 +1971,7 @@ const AdminDashboard = () => {
                                             type="number"
                                             min="500"
                                             max="10000"
-                                            defaultValue={job.access_fee_naira || 1000}
+                                            defaultValue={job.access_fee_naira ?? ((job.access_fee_coins ?? 10) * 100)}
                                             className="w-24 px-2 py-1 border border-gray-300 rounded text-sm"
                                             id={`fee-input-${job.id}`}
                                             disabled={feeUpdateInProgress}
@@ -6128,13 +6128,13 @@ const AdminDashboard = () => {
                     <div className="bg-green-50 p-3 rounded-lg">
                       <div className="text-sm text-gray-600">Naira Fee</div>
                       <div className="text-lg font-semibold text-green-600">
-                        ₦{(selectedJob.access_fees?.naira || selectedJob.access_fee_naira || 1000).toLocaleString()}
+                        ₦{(selectedJob.access_fees?.naira ?? selectedJob.access_fee_naira ?? ((selectedJob.access_fees?.coins ?? selectedJob.access_fee_coins ?? 10) * 100)).toLocaleString()}
                       </div>
                     </div>
                     <div className="bg-blue-50 p-3 rounded-lg">
                       <div className="text-sm text-gray-600">Coins Fee</div>
                       <div className="text-lg font-semibold text-blue-600">
-                        {selectedJob.access_fees?.coins || selectedJob.access_fee_coins || 10} coins
+                        {selectedJob.access_fees?.coins ?? selectedJob.access_fee_coins ?? 10} coins
                       </div>
                     </div>
                   </div>

@@ -2386,11 +2386,25 @@ class Database:
             if '_id' in interest:
                 interest['_id'] = str(interest['_id'])
             
-            # Set default access fees if not present or null
-            if not interest.get("access_fee_naira") or interest.get("access_fee_naira") is None:
-                interest["access_fee_naira"] = 1000
-            if not interest.get("access_fee_coins") or interest.get("access_fee_coins") is None:
-                interest["access_fee_coins"] = 10
+            # Normalize access fees
+            naira = interest.get("access_fee_naira")
+            coins = interest.get("access_fee_coins")
+            if naira is None and coins is not None:
+                try:
+                    naira = int(coins) * 100
+                except Exception:
+                    naira = None
+            if coins is None and naira is not None:
+                try:
+                    coins = int(naira) // 100
+                except Exception:
+                    coins = None
+            if naira is None:
+                naira = 1000
+            if coins is None:
+                coins = 10
+            interest["access_fee_naira"] = naira
+            interest["access_fee_coins"] = coins
         
         return interests
 
