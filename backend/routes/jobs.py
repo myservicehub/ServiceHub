@@ -46,6 +46,16 @@ class PublicJobPostRequest(BaseModel):
     password: str = Field(..., min_length=8)
     question_answers: Optional[dict] = None
 
+class JobPostingExitFeedbackRequest(BaseModel):
+    feedback_option: str = Field(..., min_length=1, max_length=200)
+    feedback_text: Optional[str] = Field(None, max_length=1000)
+    job_title: Optional[str] = Field(None, max_length=200)
+    job_category: Optional[str] = Field(None, max_length=120)
+    current_step: Optional[int] = None
+    homeowner_name: Optional[str] = Field(None, max_length=120)
+    homeowner_email: Optional[str] = Field(None, max_length=120)
+    homeowner_phone: Optional[str] = Field(None, max_length=40)
+
 # Public endpoints for location data
 @router.get("/locations/states")
 async def get_states_public():
@@ -754,6 +764,42 @@ async def get_job_close_reasons():
             "Other"
         ]
     }
+
+@router.post("/posting-exit-feedback")
+async def submit_job_posting_exit_feedback(
+    payload: JobPostingExitFeedbackRequest,
+    current_user: Optional[User] = Depends(get_optional_current_active_user)
+):
+    """Capture feedback when user exits job posting flow before submission"""
+    try:
+        feedback_option = (payload.feedback_option or "").strip()
+        if not feedback_option:
+            raise HTTPException(status_code=400, detail="Feedback option is required")
+        feedback_text = (payload.feedback_text or "").strip()
+        if feedback_option.lower() == "something else" and not feedback_text:
+            raise HTTPException(status_code=400, detail="Please provide feedback details")
+        record = {
+            "id": str(uuid.uuid4()),
+            "feedback_option": feedback_option,
+            "feedback_text": feedback_text if feedback_text else None,
+            "job_title": (payload.job_title or "").strip() or None,
+            "job_category": (payload.job_category or "").strip() or None,
+            "current_step": payload.current_step,
+            "source": "job_posting_flow_exit",
+            "is_authenticated": bool(current_user),
+            "user_id": current_user.id if current_user else None,
+            "user_name": (current_user.name if current_user else (payload.homeowner_name or "")).strip() or None,
+            "user_email": (current_user.email if current_user else (payload.homeowner_email or "")).strip() or None,
+            "user_phone": (current_user.phone if current_user else (payload.homeowner_phone or "")).strip() or None,
+            "created_at": datetime.utcnow()
+        }
+        await database.create_job_posting_exit_feedback(record)
+        return {"message": "Feedback submitted successfully", "feedback_id": record["id"]}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error submitting job posting exit feedback: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to submit feedback")
 
 @router.get("/{job_id}", response_model=Job)
 async def get_job(job_id: str):

@@ -189,6 +189,16 @@ export const adminAPI = {
     return response.data;
   },
 
+  async getJobPostingExitFeedback(skip = 0, limit = 50, search = '') {
+    const params = new URLSearchParams({
+      skip: String(skip),
+      limit: String(limit)
+    });
+    if (search) params.append('search', search);
+    const response = await apiClient.get(`/admin/job-posting-exit-feedback?${params.toString()}`);
+    return response.data;
+  },
+
   // Get transaction details
   async getTransactionDetails(transactionId) {
     const response = await apiClient.get(`/admin/wallet/transaction/${transactionId}`);

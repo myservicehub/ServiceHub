@@ -296,6 +296,11 @@ export const jobsAPI = {
     return response.data;
   },
 
+  submitPostingExitFeedback: async (payload) => {
+    const response = await apiClient.post('/jobs/posting-exit-feedback', payload);
+    return response.data;
+  },
+
 
 };
 

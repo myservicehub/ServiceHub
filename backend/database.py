@@ -8866,6 +8866,47 @@ We may update this Cookie Policy to reflect changes in technology or regulations
             logger.error(f"Error creating hiring feedback: {str(e)}")
             raise
 
+    async def create_job_posting_exit_feedback(self, feedback_data: dict) -> dict:
+        """Create a job posting exit feedback record"""
+        try:
+            result = await self.database.job_posting_exit_feedback.insert_one(feedback_data)
+            feedback_data['_id'] = str(result.inserted_id)
+            return feedback_data
+        except Exception as e:
+            logger.error(f"Error creating job posting exit feedback: {str(e)}")
+            raise
+
+    async def get_job_posting_exit_feedback(self, skip: int = 0, limit: int = 50, search: Optional[str] = None):
+        """Get job posting exit feedback records for admin"""
+        try:
+            query = {}
+            if search:
+                query["$or"] = [
+                    {"feedback_option": {"$regex": search, "$options": "i"}},
+                    {"feedback_text": {"$regex": search, "$options": "i"}},
+                    {"user_name": {"$regex": search, "$options": "i"}},
+                    {"user_email": {"$regex": search, "$options": "i"}},
+                    {"user_phone": {"$regex": search, "$options": "i"}},
+                    {"job_title": {"$regex": search, "$options": "i"}},
+                    {"job_category": {"$regex": search, "$options": "i"}}
+                ]
+            total = await self.database.job_posting_exit_feedback.count_documents(query)
+            cursor = (
+                self.database.job_posting_exit_feedback
+                .find(query)
+                .sort("created_at", -1)
+                .skip(skip)
+                .limit(limit)
+            )
+            items = []
+            async for item in cursor:
+                item["_id"] = str(item["_id"])
+                items.append(item)
+            return items, total
+        except Exception as e:
+            logger.error(f"Error getting job posting exit feedback: {str(e)}")
+            return [], 0
+
     async def get_hiring_feedback_by_job_and_tradesperson(self, job_id: str, tradesperson_id: str) -> Optional[dict]:
         """Get hiring feedback for specific job and tradesperson"""
         try:

@@ -3145,10 +3145,19 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
             <div className="p-4 bg-gray-50 border-t border-gray-100 flex flex-col gap-3">
               <Button
                 type="button"
-                onClick={() => {
-                  // Could send feedback to an API here in the future
-                  console.log('Quiz feedback option:', quizFeedbackOption);
-                  console.log('Quiz feedback text:', quizFeedback);
+                onClick={async () => {
+                  try {
+                    await jobsAPI.submitPostingExitFeedback({
+                      feedback_option: quizFeedbackOption,
+                      feedback_text: quizFeedbackOption === 'Something else' ? quizFeedback : '',
+                      job_title: formData.title,
+                      job_category: formData.category,
+                      current_step: currentStep,
+                      homeowner_name: formData.homeowner_name,
+                      homeowner_email: formData.homeowner_email,
+                      homeowner_phone: formData.homeowner_phone
+                    });
+                  } catch {}
                   setShowQuizFeedbackModal(false);
                   setQuizFeedback('');
                   setQuizFeedbackOption('');

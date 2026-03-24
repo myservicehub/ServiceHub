@@ -273,6 +273,23 @@ async def delete_review(review_id: str, admin: dict = Depends(require_permission
         raise HTTPException(status_code=404, detail="Review not found")
     return {"deleted": True, "id": review_id}
 
+@router.get("/job-posting-exit-feedback")
+async def get_job_posting_exit_feedback(
+    skip: int = 0,
+    limit: int = 50,
+    search: Optional[str] = None,
+    admin: dict = Depends(require_permission(AdminPermission.MANAGE_JOBS))
+):
+    feedback_items, total = await database.get_job_posting_exit_feedback(skip=skip, limit=limit, search=search)
+    return {
+        "feedback": feedback_items,
+        "pagination": {
+            "skip": skip,
+            "limit": limit,
+            "total": total
+        }
+    }
+
 @router.put("/jobs/{job_id}")
 async def update_job_admin(
     job_id: str,
