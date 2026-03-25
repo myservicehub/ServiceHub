@@ -451,13 +451,26 @@ async def register_tradesperson(request: Request, registration_data: Tradesperso
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Invalid trade categories: {', '.join(invalid_categories)}"
             )
+        if len(normalized_categories) == 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="At least one trade category is required"
+            )
 
-        # Validate location/state
-        if not validate_nigerian_state(registration_data.location):
+        location_input = (registration_data.location or "").strip()
+        if location_input and not validate_nigerian_state(location_input):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Invalid location. Must be one of: {', '.join(NIGERIAN_STATES)}"
             )
+        normalized_location = location_input if location_input else "Not specified"
+        normalized_postcode = (registration_data.postcode or "").strip() or "000000"
+        description_input = (registration_data.description or "").strip()
+        normalized_description = description_input if len(description_input) >= 50 else (
+            f"Professional {normalized_categories[0]} services. "
+            "Skilled tradesperson ready to complete quality jobs on ServiceHub."
+        )
+        normalized_company_name = (registration_data.company_name or "").strip() or None
 
         # Create user data
         user_data = {
@@ -468,8 +481,8 @@ async def register_tradesperson(request: Request, registration_data: Tradesperso
             "password_hash": get_password_hash(registration_data.password),
             "role": UserRole.TRADESPERSON,
             "status": UserStatus.ACTIVE,  # Active immediately
-            "location": registration_data.location,
-            "postcode": registration_data.postcode,
+            "location": normalized_location,
+            "postcode": normalized_postcode,
             "email_verified": False,
             "phone_verified": False,
             "created_at": datetime.utcnow(),
@@ -479,8 +492,8 @@ async def register_tradesperson(request: Request, registration_data: Tradesperso
             # Tradesperson specific fields
             "trade_categories": normalized_categories,
             "experience_years": registration_data.experience_years,
-            "company_name": registration_data.company_name,
-            "description": registration_data.description,
+            "company_name": normalized_company_name,
+            "description": normalized_description,
             "certifications": registration_data.certifications,
             "average_rating": 0.0,
             "total_reviews": 0,
@@ -617,6 +630,14 @@ async def register_tradesperson(request: Request, registration_data: Tradesperso
                     formatted_phone = format_nigerian_phone(registration_data.phone)
 
                 synthetic_id = str(uuid.uuid4())
+                fallback_categories = registration_data.trade_categories or []
+                fallback_location = (registration_data.location or "").strip() or "Not specified"
+                fallback_postcode = (registration_data.postcode or "").strip() or "000000"
+                fallback_description_input = (registration_data.description or "").strip()
+                fallback_description = fallback_description_input if len(fallback_description_input) >= 50 else (
+                    f"Professional {fallback_categories[0] if fallback_categories else 'Trades'} services. "
+                    "Skilled tradesperson ready to complete quality jobs on ServiceHub."
+                )
                 synthetic_user = {
                     "id": synthetic_id,
                     "name": registration_data.name,
@@ -624,18 +645,18 @@ async def register_tradesperson(request: Request, registration_data: Tradesperso
                     "phone": formatted_phone,
                     "role": UserRole.TRADESPERSON,
                     "status": UserStatus.ACTIVE,
-                    "location": registration_data.location,
-                    "postcode": registration_data.postcode,
+                    "location": fallback_location,
+                    "postcode": fallback_postcode,
                     "email_verified": False,
                     "phone_verified": False,
                     "created_at": datetime.utcnow(),
                     "updated_at": datetime.utcnow(),
                     "avatar_url": None,
                     "last_login": None,
-                    "trade_categories": registration_data.trade_categories,
+                    "trade_categories": fallback_categories,
                     "experience_years": registration_data.experience_years,
                     "company_name": registration_data.company_name,
-                    "description": registration_data.description,
+                    "description": fallback_description,
                     "certifications": registration_data.certifications,
                     "average_rating": 0.0,
                     "total_reviews": 0,

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
@@ -60,6 +61,7 @@ const FALLBACK_TRADE_CATEGORIES = [
 
 const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchToLogin }) => {
   const uploadSectionRef = useRef(null);
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [tradeCategories, setTradeCategories] = useState(FALLBACK_TRADE_CATEGORIES);
@@ -478,7 +480,7 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
 
         toast({
           title: "Congratulations! 🎉",
-          description: "Your account has been successfully created, please login to complete your account verification.",
+          description: "Your account has been created. Continue to complete your profile.",
           duration: 5000,
         });
 
@@ -520,11 +522,8 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
           console.warn('⚠️ Failed to update profile location:', locErr?.response?.data || locErr?.message || locErr);
         }
 
-        if (typeof onSwitchToLogin === 'function') {
-          onSwitchToLogin();
-        } else if (typeof onClose === 'function') {
-          onClose();
-        }
+        if (typeof onClose === 'function') onClose();
+        navigate('/trades/profile');
       } else {
         // Ensure error is a string, not an object
         const errorMessage = typeof result.error === 'string' 
@@ -1450,35 +1449,7 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
         <div className="pt-6 border-t border-gray-100 mt-8">
           <Button
             type="button"
-            onClick={() => {
-              // TODO: Backend integration - validate and submit form
-              if (validateCurrentStep()) {
-                console.log('📤 Simplified signup form data:', {
-                  name: `${formData.firstName} ${formData.lastName}`,
-                  email: formData.email,
-                  phone: formData.phone,
-                  referralCode: formData.referralCode,
-                  selectedTrade: formData.selectedTrades[0],
-                  password: formData.password,
-                  marketingConsent: formData.marketingConsent
-                });
-                toast({
-                  title: "Account Created! 🎉",
-                  description: "Welcome to ServiceHub! Complete your profile in the dashboard.",
-                  duration: 5000,
-                });
-                if (onComplete) {
-                  onComplete({ 
-                    success: true, 
-                    user: {
-                      name: `${formData.firstName} ${formData.lastName}`,
-                      email: formData.email,
-                      role: 'tradesperson'
-                    }
-                  });
-                }
-              }
-            }}
+            onClick={handleFinalSubmit}
             disabled={isLoading}
             className="w-full bg-[#34D164] hover:bg-[#2ab854] text-white py-3 rounded-xl font-medium font-lato shadow-sm transition-all disabled:opacity-50"
           >

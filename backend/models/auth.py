@@ -91,13 +91,13 @@ class TradespersonRegistration(BaseModel):
     email: EmailStr
     phone: str
     password: str = Field(..., min_length=8)
-    location: str
-    postcode: str
-    trade_categories: List[str]
-    experience_years: int = Field(..., ge=0, le=50)
+    location: Optional[str] = None
+    postcode: Optional[str] = None
+    trade_categories: List[str] = Field(default_factory=list)
+    experience_years: int = Field(0, ge=0, le=50)
     company_name: Optional[str] = None
-    description: str = Field(..., min_length=50, max_length=1000)
-    certifications: List[Union[str, Certification]] = []
+    description: Optional[str] = Field(None, max_length=1000)
+    certifications: List[Union[str, Certification]] = Field(default_factory=list)
     referral_code: Optional[str] = None  # Optional referral code
     business_type: Optional[str] = None
 
