@@ -21,6 +21,8 @@ import {
 import { Button } from '../../../components/ui/button';
 import ProfileCompletionBanner from '../../../components/dashboard/ProfileCompletionBanner';
 import CompleteProfileModal from '../../../components/dashboard/CompleteProfileModal';
+import VerifyContactModal from '../../../components/dashboard/VerifyContactModal';
+import SkillsAssessmentModal from '../../../components/dashboard/SkillsAssessmentModal';
 
 const TradespersonOverview = () => {
   const [stats, setStats] = useState({
@@ -33,6 +35,8 @@ const TradespersonOverview = () => {
   const [recentJobs, setRecentJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCompleteProfileModal, setShowCompleteProfileModal] = useState(false);
+  const [showVerifyContactModal, setShowVerifyContactModal] = useState(false);
+  const [showSkillsModal, setShowSkillsModal] = useState(false);
   const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
 
@@ -45,6 +49,7 @@ const TradespersonOverview = () => {
   
   const isContactVerified = user?.email_verified && user?.phone_verified;
   const isSkillsTestPassed = user?.skills_test_passed || false;
+  const isBusinessVerified = user?.business_verified || false;
 
   useEffect(() => {
     loadDashboardData();
@@ -76,6 +81,21 @@ const TradespersonOverview = () => {
     if (refreshUser) await refreshUser();
     setShowCompleteProfileModal(false);
     localStorage.removeItem('profileModalDismissed');
+  };
+
+  const handleVerifyContactComplete = async () => {
+    if (refreshUser) await refreshUser();
+    setShowVerifyContactModal(false);
+  };
+
+  const handleSkillsComplete = async () => {
+    if (refreshUser) await refreshUser();
+    setShowSkillsModal(false);
+  };
+
+  const handleBusinessVerification = () => {
+    // Navigate to business verification page or open modal
+    navigate('/trades/profile?tab=verification');
   };
 
   const loadDashboardData = async () => {
@@ -209,14 +229,16 @@ const TradespersonOverview = () => {
       </div>
 
       {/* Profile Completion Banner - Shows only for incomplete profiles */}
-      {(isProfileIncomplete || !isContactVerified || !isSkillsTestPassed) && (
+      {(isProfileIncomplete || !isContactVerified || !isSkillsTestPassed || !isBusinessVerified) && (
         <ProfileCompletionBanner
           onCompleteProfile={() => setShowCompleteProfileModal(true)}
-          onVerifyContact={() => navigate('/trades/profile?tab=verification')}
-          onTakeSkillsTest={() => navigate('/trades/skills-test')}
+          onVerifyContact={() => setShowVerifyContactModal(true)}
+          onTakeSkillsTest={() => setShowSkillsModal(true)}
+          onBusinessVerification={handleBusinessVerification}
           profileCompleted={!isProfileIncomplete}
           contactVerified={isContactVerified}
           skillsTestPassed={isSkillsTestPassed}
+          businessVerified={isBusinessVerified}
         />
       )}
 
@@ -386,6 +408,20 @@ const TradespersonOverview = () => {
         isOpen={showCompleteProfileModal}
         onClose={handleCloseProfileModal}
         onComplete={handleProfileComplete}
+      />
+
+      {/* Verify Contact Modal */}
+      <VerifyContactModal
+        isOpen={showVerifyContactModal}
+        onClose={() => setShowVerifyContactModal(false)}
+        onComplete={handleVerifyContactComplete}
+      />
+
+      {/* Skills Assessment Modal */}
+      <SkillsAssessmentModal
+        isOpen={showSkillsModal}
+        onClose={() => setShowSkillsModal(false)}
+        onComplete={handleSkillsComplete}
       />
     </div>
   );

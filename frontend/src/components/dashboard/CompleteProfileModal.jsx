@@ -278,7 +278,7 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-20 sm:pb-4">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -286,16 +286,16 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-5xl max-h-[90vh] mx-4 flex bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-5xl max-h-[85vh] sm:max-h-[90vh] flex bg-white rounded-2xl shadow-2xl overflow-hidden">
         {/* Left side - Form */}
-        <div className="flex-1 flex flex-col max-h-[90vh] overflow-hidden">
+        <div className="flex-1 flex flex-col max-h-[85vh] sm:max-h-[90vh] overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-100">
+          <div className="flex items-center justify-between p-4 sm:p-6 md:p-8 border-b border-gray-100">
             <div>
-              <p className="text-xs text-[#34D164] font-medium font-lato mb-1">
+              <p className="text-xs text-orange-500 font-medium font-lato mb-1">
                 Step {currentStep} of 4
               </p>
-              <h2 className="text-xl font-bold text-[#121E3C] font-montserrat">
+              <h2 className="text-lg sm:text-xl font-bold text-[#121E3C] font-montserrat">
                 {getStepTitle()}
               </h2>
             </div>
@@ -308,13 +308,13 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
           </div>
 
           {/* Progress bar */}
-          <div className="px-6 pt-4">
-            <div className="flex gap-2">
+          <div className="px-4 sm:px-6 md:px-8 pt-3 sm:pt-4">
+            <div className="flex gap-1.5 sm:gap-2">
               {[1, 2, 3, 4].map((step) => (
                 <div
                   key={step}
                   className={`h-1.5 flex-1 rounded-full transition-all ${
-                    step <= currentStep ? 'bg-[#34D164]' : 'bg-gray-200'
+                    step <= currentStep ? 'bg-orange-500' : 'bg-gray-200'
                   }`}
                 />
               ))}
@@ -322,7 +322,7 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
             {currentStep === 1 && renderStep1()}
             {currentStep === 2 && renderStep2()}
             {currentStep === 3 && renderStep3()}
@@ -330,8 +330,8 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
           </div>
 
           {/* Footer */}
-          <div className="p-6 border-t border-gray-100 bg-gray-50/50">
-            <div className="flex items-center justify-between">
+          <div className="p-4 sm:p-6 md:p-8 border-t border-gray-100 bg-gray-50/50">
+            <div className="flex items-center justify-between gap-3">
               {currentStep > 1 ? (
                 <Button
                   variant="ghost"
@@ -348,7 +348,7 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
               {currentStep < 4 ? (
                 <Button
                   onClick={nextStep}
-                  className="bg-[#34D164] hover:bg-[#2ab854] text-white px-6"
+                  className="bg-orange-500 hover:bg-orange-600 text-white px-5 sm:px-6"
                 >
                   Continue
                   <ArrowRight className="w-4 h-4 ml-2" />
@@ -357,7 +357,7 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
                 <Button
                   onClick={handleSubmit}
                   disabled={isLoading}
-                  className="bg-[#34D164] hover:bg-[#2ab854] text-white px-8"
+                  className="bg-orange-500 hover:bg-orange-600 text-white px-6 sm:px-8"
                 >
                   {isLoading ? 'Saving...' : 'Complete Profile'}
                 </Button>
@@ -605,10 +605,22 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
   function renderStep3() {
     return (
       <div className="space-y-6">
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-          <p className="text-sm text-amber-800 font-lato">
-            <strong>Optional:</strong> Upload your ID to get a verified badge and build trust with customers.
-          </p>
+        {/* Hero Banner */}
+        <div className="relative rounded-xl overflow-hidden mb-6">
+          <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-amber-500" />
+          <div className="relative p-4 sm:p-5 text-white">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-white/20 rounded-lg">
+                <CheckCircle className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="font-medium font-montserrat text-sm sm:text-base">Get Verified & Build Trust</p>
+                <p className="text-xs sm:text-sm text-white/80 font-lato mt-1">
+                  Upload your ID to get a verified badge. Verified profiles receive 40% more job inquiries.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* ID Type Selection */}
@@ -616,18 +628,18 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
           <label className="block text-sm font-medium font-lato mb-3 text-[#121E3C]">
             Select ID Type
           </label>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
-              { value: 'passport', label: 'Passport', Icon: BookOpen },
-              { value: 'nin', label: 'NIN', Icon: CreditCard },
-              { value: 'drivers_licence', label: "Driver's licence", Icon: Car }
+              { value: 'passport', label: 'Passport', Icon: BookOpen, desc: 'International passport' },
+              { value: 'nin', label: 'NIN', Icon: CreditCard, desc: 'National ID Number' },
+              { value: 'drivers_licence', label: "Driver's Licence", Icon: Car, desc: 'Valid driving licence' }
             ].map((idOption) => (
               <label
                 key={idOption.value}
-                className={`flex flex-col items-center p-4 border rounded-xl cursor-pointer transition-all ${
+                className={`flex sm:flex-col items-center sm:items-center gap-3 sm:gap-0 p-4 border-2 rounded-xl cursor-pointer transition-all ${
                   formData.idType === idOption.value
-                    ? 'border-[#34D164] bg-[#34D164]/5'
-                    : 'border-gray-200 hover:bg-gray-50'
+                    ? 'border-orange-500 bg-orange-50'
+                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                 }`}
               >
                 <input
@@ -638,14 +650,17 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
                   onChange={(e) => updateFormData('idType', e.target.value)}
                   className="sr-only"
                 />
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-2 ${
-                  formData.idType === idOption.value ? 'bg-[#34D164]/10' : 'bg-gray-100'
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center sm:mb-2 ${
+                  formData.idType === idOption.value ? 'bg-orange-100' : 'bg-gray-100'
                 }`}>
-                  <idOption.Icon className={`h-5 w-5 ${
-                    formData.idType === idOption.value ? 'text-[#34D164]' : 'text-gray-500'
+                  <idOption.Icon className={`h-6 w-6 ${
+                    formData.idType === idOption.value ? 'text-orange-500' : 'text-gray-500'
                   }`} />
                 </div>
-                <span className="text-xs font-medium font-lato text-[#121E3C]">{idOption.label}</span>
+                <div className="sm:text-center">
+                  <span className="text-sm font-medium font-lato text-[#121E3C] block">{idOption.label}</span>
+                  <span className="text-xs text-gray-400 font-lato hidden sm:block">{idOption.desc}</span>
+                </div>
               </label>
             ))}
           </div>
@@ -653,7 +668,7 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
 
         {/* Upload Section */}
         {formData.idType && (
-          <div ref={uploadSectionRef} className="space-y-4">
+          <div ref={uploadSectionRef} className="space-y-4 mt-6">
             <div>
               <label className="block text-sm font-medium font-lato mb-2 text-[#121E3C]">
                 Upload ID Document
@@ -663,28 +678,33 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
                 onDragLeave={handleDrag}
                 onDragOver={handleDrag}
                 onDrop={(e) => handleDrop(e, 'idDocument')}
-                className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${
-                  dragActive ? 'border-[#34D164] bg-[#34D164]/5' : 'border-gray-200 hover:border-gray-300'
+                className={`border-2 border-dashed rounded-xl p-6 sm:p-8 text-center transition-all ${
+                  dragActive ? 'border-orange-500 bg-orange-50' : 'border-gray-300 hover:border-orange-300 bg-gray-50'
                 }`}
               >
                 {formData.idDocument ? (
-                  <div className="relative">
-                    <img src={formData.idDocument} alt="ID" className="max-h-40 mx-auto rounded-lg" />
+                  <div className="relative inline-block">
+                    <img src={formData.idDocument} alt="ID" className="max-h-32 sm:max-h-40 mx-auto rounded-lg shadow-md" />
                     <button
                       onClick={() => {
                         updateFormData('idDocument', null);
                         updateFormData('idDocumentFile', null);
                       }}
-                      className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full"
+                      className="absolute -top-2 -right-2 p-1.5 bg-red-500 text-white rounded-full shadow-md hover:bg-red-600 transition-colors"
                     >
                       <X className="w-4 h-4" />
                     </button>
                   </div>
                 ) : (
-                  <label className="cursor-pointer">
-                    <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                    <p className="text-sm text-gray-500 font-lato">
-                      Drag & drop or <span className="text-[#34D164]">browse</span>
+                  <label className="cursor-pointer block">
+                    <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-orange-100 flex items-center justify-center">
+                      <Upload className="w-6 h-6 text-orange-500" />
+                    </div>
+                    <p className="text-sm font-medium text-gray-700 font-lato mb-1">
+                      Drag & drop your ID here
+                    </p>
+                    <p className="text-xs text-gray-400 font-lato">
+                      or <span className="text-orange-500 font-medium">click to browse</span>
                     </p>
                     <input
                       type="file"
@@ -701,29 +721,32 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
             {/* Selfie Upload */}
             <div>
               <label className="block text-sm font-medium font-lato mb-2 text-[#121E3C]">
-                Upload Selfie <span className="text-gray-400 font-normal">(optional)</span>
+                Upload Selfie <span className="text-gray-400 font-normal">(optional but recommended)</span>
               </label>
-              <div
-                className="border-2 border-dashed rounded-xl p-6 text-center border-gray-200 hover:border-gray-300 transition-all"
-              >
+              <div className="border-2 border-dashed rounded-xl p-6 text-center border-gray-300 hover:border-orange-300 bg-gray-50 transition-all">
                 {formData.selfieDocument ? (
-                  <div className="relative">
-                    <img src={formData.selfieDocument} alt="Selfie" className="max-h-40 mx-auto rounded-lg" />
+                  <div className="relative inline-block">
+                    <img src={formData.selfieDocument} alt="Selfie" className="max-h-32 sm:max-h-40 mx-auto rounded-lg shadow-md" />
                     <button
                       onClick={() => {
                         updateFormData('selfieDocument', null);
                         updateFormData('selfieDocumentFile', null);
                       }}
-                      className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full"
+                      className="absolute -top-2 -right-2 p-1.5 bg-red-500 text-white rounded-full shadow-md hover:bg-red-600 transition-colors"
                     >
                       <X className="w-4 h-4" />
                     </button>
                   </div>
                 ) : (
-                  <label className="cursor-pointer">
-                    <ImageIcon className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                    <p className="text-sm text-gray-500 font-lato">
-                      Take a selfie or <span className="text-[#34D164]">upload</span>
+                  <label className="cursor-pointer block">
+                    <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-gray-200 flex items-center justify-center">
+                      <ImageIcon className="w-6 h-6 text-gray-500" />
+                    </div>
+                    <p className="text-sm font-medium text-gray-700 font-lato mb-1">
+                      Take a selfie holding your ID
+                    </p>
+                    <p className="text-xs text-gray-400 font-lato">
+                      or <span className="text-orange-500 font-medium">upload a photo</span>
                     </p>
                     <input
                       type="file"
@@ -740,9 +763,12 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
         )}
 
         {!formData.idType && (
-          <div className="text-center py-8 text-gray-400">
-            <ImageIcon className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p className="text-sm font-lato">Select an ID type above to upload</p>
+          <div className="text-center py-6 sm:py-8 mt-4">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+              <ImageIcon className="w-8 h-8 text-gray-400" />
+            </div>
+            <p className="text-sm text-gray-500 font-lato">Select an ID type above to continue</p>
+            <p className="text-xs text-gray-400 font-lato mt-1">You can skip this step if you prefer</p>
           </div>
         )}
       </div>
