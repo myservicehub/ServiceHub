@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, status, Query, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, Depends, status, Query, UploadFile, File, Form, Body
 from datetime import timedelta
 from ..models.auth import (
     UserLogin, LoginResponse, HomeownerRegistration, TradespersonRegistration,
@@ -770,6 +770,14 @@ async def get_current_user_profile(current_user: User = Depends(get_current_user
     """Get current user's profile with updated statistics"""
     user_data = current_user.dict()
     
+    user_data["skills_test_passed"] = bool(user_data.get("skills_test_passed"))
+    user_data["business_verified"] = bool(
+        user_data.get("business_verified")
+        or user_data.get("verified_tradesperson")
+        or user_data.get("is_verified")
+        or user_data.get("identity_verified")
+    )
+
     # For tradespeople, calculate actual completed jobs count
     if current_user.role == UserRole.TRADESPERSON:
         try:
@@ -846,6 +854,53 @@ async def update_profile(
         
         if profile_data.postcode is not None:
             update_data["postcode"] = profile_data.postcode
+
+        tradesperson_fields_present = any([
+            profile_data.trade_categories is not None,
+            profile_data.experience_years is not None,
+            profile_data.company_name is not None,
+            profile_data.description is not None,
+            profile_data.business_type is not None,
+            profile_data.travel_distance_km is not None,
+        ])
+
+        if tradesperson_fields_present:
+            if current_user.role != UserRole.TRADESPERSON:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Only tradespeople can update tradesperson profile fields"
+                )
+
+            if profile_data.trade_categories is not None:
+                cleaned_categories = [str(t).strip() for t in profile_data.trade_categories if str(t).strip()]
+                if len(cleaned_categories) == 0:
+                    raise HTTPException(status_code=400, detail="At least one trade category is required")
+                normalized_categories = []
+                for raw in cleaned_categories:
+                    canon = normalize_trade_category(raw)
+                    to_store = canon or raw
+                    if to_store not in normalized_categories:
+                        normalized_categories.append(to_store)
+                update_data["trade_categories"] = normalized_categories
+
+            if profile_data.experience_years is not None:
+                if profile_data.experience_years < 0 or profile_data.experience_years > 50:
+                    raise HTTPException(status_code=400, detail="experience_years must be between 0 and 50")
+                update_data["experience_years"] = profile_data.experience_years
+
+            if profile_data.company_name is not None:
+                update_data["company_name"] = (profile_data.company_name or "").strip() or None
+
+            if profile_data.description is not None:
+                update_data["description"] = (profile_data.description or "").strip()
+
+            if profile_data.business_type is not None:
+                update_data["business_type"] = (profile_data.business_type or "").strip() or None
+
+            if profile_data.travel_distance_km is not None:
+                if profile_data.travel_distance_km < 1 or profile_data.travel_distance_km > 200:
+                    raise HTTPException(status_code=400, detail="travel_distance_km must be between 1 and 200")
+                update_data["travel_distance_km"] = profile_data.travel_distance_km
 
         if update_data:
             await database.update_user(current_user.id, update_data)
@@ -966,6 +1021,40 @@ async def update_tradesperson_profile(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to update tradesperson profile: {str(e)}"
+        )
+
+@router.post("/profile/skills-test")
+async def submit_skills_test_result(
+    score: int = Body(..., ge=0, le=100),
+    correct_answers: int = Body(..., ge=0),
+    total_questions: int = Body(..., gt=0),
+    passed: bool = Body(...),
+    current_user: User = Depends(get_current_tradesperson)
+):
+    try:
+        effective_passed = bool(passed or score >= 80)
+        update_data = {
+            "skills_test_passed": effective_passed,
+            "skills_test_score": score,
+            "skills_test_correct_answers": correct_answers,
+            "skills_test_total_questions": total_questions,
+            "skills_test_completed_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow(),
+        }
+        await database.update_user(current_user.id, update_data)
+        return {
+            "message": "Skills test result saved",
+            "skills_test_passed": effective_passed,
+            "score": score,
+            "correct_answers": correct_answers,
+            "total_questions": total_questions,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to save skills test result: {str(e)}"
         )
 
 @router.post("/profile/certification-image")
@@ -1707,6 +1796,7 @@ async def get_trade_categories():
     
     return {
         "categories": all_categories,
+        "trades": all_categories,
         "total": len(all_categories)
     }
 
