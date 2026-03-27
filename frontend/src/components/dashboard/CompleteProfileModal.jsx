@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, ArrowLeft, ArrowRight, CheckCircle, Upload, Image as ImageIcon, BookOpen, CreditCard, Car } from 'lucide-react';
+import { X, ArrowLeft, ArrowRight, CheckCircle, Upload, Image as ImageIcon, BookOpen, CreditCard, Car, Edit3, Briefcase } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { useAuth } from '../../contexts/AuthContext';
@@ -33,6 +33,7 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [tradeCategories, setTradeCategories] = useState(FALLBACK_TRADE_CATEGORIES);
   const [dragActive, setDragActive] = useState(false);
+  const [showTradeSelector, setShowTradeSelector] = useState(false);
   const { user, refreshUser } = useAuth();
   const { toast } = useToast();
   const { states: nigerianStates, lgas: stateLGAs, loading: statesLoading, loadLGAs } = useStates();
@@ -108,16 +109,11 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
     switch (step) {
       case 1:
         if (formData.selectedTrades.length === 0) {
-          newErrors.selectedTrades = 'Please select at least one profession';
-        }
-        if (formData.selectedTrades.length > 5) {
-          newErrors.selectedTrades = 'Please select maximum 5 professions';
+          newErrors.selectedTrades = 'Please select your primary expertise';
         }
         if (!formData.experienceYears) newErrors.experienceYears = 'Experience level is required';
         break;
       case 2:
-        if (!formData.businessType) newErrors.businessType = 'Business type is required';
-        if (!formData.tradingName.trim()) newErrors.tradingName = 'Trading name is required';
         if (!formData.lga) newErrors.lga = 'LGA is required';
         break;
       case 3:
@@ -191,8 +187,6 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
       const profileData = {
         trade_categories: formData.selectedTrades,
         experience_years: experienceMapping[formData.experienceYears] || 1,
-        business_type: formData.businessType,
-        company_name: formData.tradingName,
         description: formData.profileDescription,
         postcode: formData.postcode || '000000',
         travel_distance_km: formData.travelDistance,
@@ -268,7 +262,7 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
   const getStepTitle = () => {
     switch (currentStep) {
       case 1: return 'Your Expertise';
-      case 2: return 'Business Details';
+      case 2: return 'Your Location';
       case 3: return 'ID Verification';
       case 4: return 'About You';
       default: return 'Complete Profile';
@@ -286,9 +280,9 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-5xl max-h-[85vh] sm:max-h-[90vh] flex bg-white rounded-2xl shadow-2xl overflow-hidden">
-        {/* Left side - Form */}
-        <div className="flex-1 flex flex-col max-h-[85vh] sm:max-h-[90vh] overflow-hidden">
+      <div className="relative w-full max-w-lg max-h-[85vh] sm:max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden">
+        {/* Form Container */}
+        <div className="flex flex-col max-h-[85vh] sm:max-h-[90vh] overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between p-4 sm:p-6 md:p-8 border-b border-gray-100">
             <div>
@@ -365,77 +359,75 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
             </div>
           </div>
         </div>
-
-        {/* Right side - Image (hidden on small screens) */}
-        <div className="hidden lg:block w-[40%] relative">
-          <img
-            src="/stock/bg5.jpg"
-            alt="Professional at work"
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-          <div className="absolute bottom-8 left-6 right-6 text-white">
-            <p className="text-lg font-semibold font-montserrat mb-2">
-              Complete your profile to get more jobs
-            </p>
-            <p className="text-sm text-white/80 font-lato">
-              Profiles with full details get 3x more job inquiries
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   );
 
   function renderStep1() {
+    const currentTrade = formData.selectedTrades[0] || user?.trade_categories?.[0];
+    
     return (
       <div className="space-y-6">
-        {/* Expertise Selection */}
+        {/* Current Trade Display */}
         <div>
-          <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
-            Select up to 5 professions
+          <label className="block text-sm font-medium font-lato mb-2 text-[#121E3C]">
+            Primary Expertise
           </label>
-          <p className="text-xs text-gray-400 mb-3 font-lato">
-            Tell us what you do so we can send you the most relevant jobs.
-          </p>
-          <div className="max-h-64 overflow-y-auto border border-gray-200 rounded-xl p-3 bg-gray-50/30 space-y-2">
-            {tradeCategories.map((trade) => (
-              <label 
-                key={trade} 
-                className={`flex items-center justify-between cursor-pointer px-4 py-3 rounded-xl transition-all ${
-                  formData.selectedTrades.includes(trade) 
-                    ? 'bg-[#34D164]/10 border-2 border-[#34D164] shadow-sm' 
-                    : 'hover:bg-white hover:shadow-sm border-2 border-gray-100 bg-white'
-                } ${!formData.selectedTrades.includes(trade) && formData.selectedTrades.length >= 5 ? 'opacity-40 cursor-not-allowed' : ''}`}
-              >
-                <span className="font-lato text-gray-700 text-sm">{trade}</span>
-                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all flex-shrink-0 ${
-                  formData.selectedTrades.includes(trade)
-                    ? 'bg-[#34D164] border-[#34D164]'
-                    : 'border-gray-300 bg-white'
-                }`}>
-                  {formData.selectedTrades.includes(trade) && (
-                    <CheckCircle className="w-3.5 h-3.5 text-white" />
-                  )}
+          
+          {!showTradeSelector ? (
+            <div className="flex items-center justify-between p-4 bg-orange-50 border-2 border-orange-200 rounded-xl">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-orange-100 rounded-lg">
+                  <Briefcase className="w-5 h-5 text-orange-600" />
                 </div>
-                <input
-                  type="checkbox"
-                  checked={formData.selectedTrades.includes(trade)}
-                  onChange={() => {
-                    const trades = formData.selectedTrades.includes(trade)
-                      ? formData.selectedTrades.filter(t => t !== trade)
-                      : [...formData.selectedTrades, trade];
-                    updateFormData('selectedTrades', trades);
-                  }}
-                  disabled={!formData.selectedTrades.includes(trade) && formData.selectedTrades.length >= 5}
-                  className="sr-only"
-                />
-              </label>
-            ))}
-          </div>
-          <p className="text-xs text-gray-500 mt-2 font-lato">
-            Selected: <span className="font-medium text-[#34D164]">{formData.selectedTrades.length}</span>/5
-          </p>
+                <span className="font-medium text-[#121E3C] font-lato">
+                  {currentTrade || 'No trade selected'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowTradeSelector(true)}
+                className="flex items-center gap-1.5 text-sm text-orange-600 hover:text-orange-700 font-medium"
+              >
+                <Edit3 className="w-4 h-4" />
+                Change
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-gray-500 font-lato">
+                  Select your primary trade
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowTradeSelector(false)}
+                  className="text-xs text-gray-400 hover:text-gray-600"
+                >
+                  Cancel
+                </button>
+              </div>
+              <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-xl p-2 bg-gray-50/30 space-y-1.5">
+                {tradeCategories.map((trade) => (
+                  <button
+                    key={trade}
+                    type="button"
+                    onClick={() => {
+                      updateFormData('selectedTrades', [trade]);
+                      setShowTradeSelector(false);
+                    }}
+                    className={`w-full text-left px-4 py-2.5 rounded-lg transition-all text-sm font-lato ${
+                      formData.selectedTrades.includes(trade)
+                        ? 'bg-orange-100 border border-orange-300 text-orange-700 font-medium'
+                        : 'text-gray-700 hover:bg-white border border-transparent hover:border-gray-200'
+                    }`}
+                  >
+                    {trade}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           {errors.selectedTrades && <p className="text-red-500 text-xs mt-1 font-lato">{errors.selectedTrades}</p>}
         </div>
 
@@ -447,7 +439,7 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
           <select
             value={formData.experienceYears}
             onChange={(e) => updateFormData('experienceYears', e.target.value)}
-            className={`w-full h-12 px-4 font-lato text-sm rounded-xl border bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all ${
+            className={`w-full h-12 px-4 font-lato text-sm rounded-xl border bg-gray-50/50 focus:bg-white focus:border-orange-400 focus:ring-orange-400/20 transition-all ${
               errors.experienceYears ? 'border-red-400' : 'border-gray-200'
             }`}
           >
@@ -474,31 +466,12 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
               step="5"
               value={formData.travelDistance}
               onChange={(e) => updateFormData('travelDistance', parseInt(e.target.value))}
-              className="w-full accent-[#34D164]"
+              className="w-full accent-orange-500"
             />
             <div className="flex justify-between text-xs text-gray-400 font-lato">
               <span>5 km</span>
               <span className="font-medium text-[#121E3C]">{formData.travelDistance} km</span>
               <span>200 km</span>
-            </div>
-            <div className="flex items-center justify-between mt-2">
-              {(() => {
-                const s = getStateDistanceSuggestion(formData.state || user?.location);
-                return (
-                  <>
-                    <span className="text-xs text-gray-400 font-lato">
-                      Suggestion: {s.min}–{s.max} km
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => updateFormData('travelDistance', s.value)}
-                      className="px-3 py-1.5 text-xs bg-[#34D164] hover:bg-[#2ab854] text-white rounded-lg font-lato transition-colors"
-                    >
-                      Apply {s.value} km
-                    </button>
-                  </>
-                );
-              })()}
             </div>
           </div>
         </div>
@@ -509,47 +482,6 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
   function renderStep2() {
     return (
       <div className="space-y-6">
-        {/* Business Type */}
-        <div>
-          <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
-            What type of business do you have?
-          </label>
-          <div className="space-y-2">
-            {businessTypes.map((type) => (
-              <label key={type} className={`flex items-center gap-3 cursor-pointer p-4 border rounded-xl transition-all ${
-                formData.businessType === type 
-                  ? 'border-[#34D164] bg-[#34D164]/5' 
-                  : 'border-gray-200 hover:bg-gray-50'
-              }`}>
-                <input
-                  type="radio"
-                  name="businessType"
-                  value={type}
-                  checked={formData.businessType === type}
-                  onChange={(e) => updateFormData('businessType', e.target.value)}
-                  className="text-[#34D164] focus:ring-[#34D164]/20"
-                />
-                <span className="text-sm font-lato text-gray-700">{type}</span>
-              </label>
-            ))}
-          </div>
-          {errors.businessType && <p className="text-red-500 text-xs mt-1 font-lato">{errors.businessType}</p>}
-        </div>
-
-        {/* Trading Name */}
-        <div>
-          <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
-            Trading name
-          </label>
-          <Input
-            placeholder="Enter your trading name"
-            value={formData.tradingName}
-            onChange={(e) => updateFormData('tradingName', e.target.value)}
-            className={`h-12 font-lato text-sm rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all ${errors.tradingName ? 'border-red-400' : ''}`}
-          />
-          {errors.tradingName && <p className="text-red-500 text-xs mt-1 font-lato">{errors.tradingName}</p>}
-        </div>
-
         {/* LGA */}
         <div>
           <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
@@ -559,7 +491,7 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
             value={formData.lga}
             onChange={(e) => updateFormData('lga', e.target.value)}
             disabled={!formData.state && !user?.location}
-            className={`w-full h-12 px-4 font-lato text-sm rounded-xl border bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all disabled:opacity-50 ${
+            className={`w-full h-12 px-4 font-lato text-sm rounded-xl border bg-gray-50/50 focus:bg-white focus:border-orange-400 focus:ring-orange-400/20 transition-all disabled:opacity-50 ${
               errors.lga ? 'border-red-400' : 'border-gray-200'
             }`}
           >
@@ -577,11 +509,11 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
             Work address <span className="text-gray-400 font-normal">(optional)</span>
           </label>
           <textarea
-            placeholder="Street and house number, Town, LGA"
+            placeholder="Street and house number, Town"
             value={formData.businessAddress}
             onChange={(e) => updateFormData('businessAddress', e.target.value)}
-            className="w-full px-4 py-3 font-lato text-sm rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all"
-            rows="3"
+            className="w-full px-4 py-3 font-lato text-sm rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:border-orange-400 focus:ring-orange-400/20 transition-all"
+            rows="2"
           />
         </div>
 
@@ -594,7 +526,7 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
             placeholder="e.g., 101001"
             value={formData.postcode}
             onChange={(e) => updateFormData('postcode', e.target.value)}
-            className="h-12 font-lato text-sm rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all"
+            className="h-12 font-lato text-sm rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white focus:border-orange-400 focus:ring-orange-400/20 transition-all"
           />
           <p className="text-xs text-gray-400 mt-1 font-lato">Nigerian zip codes are 6 digits.</p>
         </div>
