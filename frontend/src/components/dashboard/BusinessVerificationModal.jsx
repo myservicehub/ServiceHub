@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Building2, Upload, FileText, CheckCircle, ArrowRight, Image } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -13,17 +13,32 @@ const BUSINESS_TYPES = [
   'Limited Liability Partnership (LLP)'
 ];
 
+const normalizeBusinessType = (value) => {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  const normalized = raw.toLowerCase();
+  if (normalized.includes('self') && normalized.includes('sole')) return 'Self-Employed / Sole Trader';
+  if (normalized.includes('limited') && normalized.includes('company')) return 'Limited Company (LTD)';
+  if (normalized.includes('ordinary') && normalized.includes('partnership')) return 'Ordinary Partnership';
+  if (normalized.includes('limited liability') || normalized.includes('(llp)')) return 'Limited Liability Partnership (LLP)';
+  return raw;
+};
+
 const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
   const { user, refreshUser } = useAuth();
   const { toast } = useToast();
   
   const [isLoading, setIsLoading] = useState(false);
-  const [businessType, setBusinessType] = useState(user?.business_type || '');
+  const [businessType, setBusinessType] = useState(normalizeBusinessType(user?.business_type || ''));
   const [tradingName, setTradingName] = useState(user?.trading_name || '');
   const [residentialAddress, setResidentialAddress] = useState('');
   const [cacCertificate, setCacCertificate] = useState(null);
   const [tradeCertificate, setTradeCertificate] = useState(null);
   const [proofOfAddress, setProofOfAddress] = useState(null);
+
+  useEffect(() => {
+    setBusinessType(normalizeBusinessType(user?.business_type || ''));
+  }, [user?.business_type]);
 
   const handleFileChange = (setter) => (e) => {
     if (e.target.files?.[0]) {
@@ -156,7 +171,7 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Business Type <span className="text-red-500">*</span></label>
               <select
                 value={businessType}
-                onChange={(e) => setBusinessType(e.target.value)}
+                onChange={(e) => setBusinessType(normalizeBusinessType(e.target.value))}
                 className="w-full h-11 px-3 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#121E3C]/20 focus:border-[#121E3C]"
               >
                 <option value="">Select business type</option>

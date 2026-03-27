@@ -1865,18 +1865,18 @@ async def register_and_post(payload: PublicJobPostRequest, background_tasks: Bac
         except Exception as e:
             logger.warning(f"Skipping existing-user email check due to DB error: {e}")
 
-        # Enforce unique phone for homeowners when creating new accounts via job posting
+        # Enforce unique phone across all accounts when creating new accounts via job posting
         try:
             phone_user = None
             if getattr(database, "connected", False) and getattr(database, "database", None) is not None:
-                phone_user = await database.users_collection.find_one({"role": "homeowner", "phone": formatted_phone})
+                phone_user = await database.get_user_by_phone(formatted_phone)
         except Exception as e:
             logger.warning(f"Skipping existing-user phone check due to DB error: {e}")
             phone_user = None
         if phone_user and (not existing_user or phone_user.get("email", "").lower() != job_data.homeowner_email.lower()):
             raise HTTPException(
                 status_code=400,
-                detail="Phone number already registered to another homeowner account"
+                detail="Phone number already registered to another account"
             )
 
         created_user = None

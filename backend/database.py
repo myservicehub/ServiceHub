@@ -178,6 +178,15 @@ class Database:
                     )
                 except Exception as idx_err:
                     logger.warning(f"Failed to ensure unique_homeowner_phone index: {idx_err}")
+                try:
+                    await self.database.users.create_index(
+                        [("phone", 1)],
+                        name="unique_user_phone",
+                        unique=True,
+                        partialFilterExpression={"phone": {"$type": "string"}}
+                    )
+                except Exception as idx_err:
+                    logger.warning(f"Failed to ensure unique_user_phone index: {idx_err}")
 
                 # Jobs: compound indexes to optimize common queries and sorts
                 await self.database.jobs.create_index(
@@ -483,6 +492,15 @@ class Database:
         if self.database is None:
             return None
         user = await self.database.users.find_one({"email": email})
+        if user:
+            user['_id'] = str(user['_id'])
+        return user
+
+    async def get_user_by_phone(self, phone: str) -> Optional[dict]:
+        """Get user by phone"""
+        if self.database is None:
+            return None
+        user = await self.database.users.find_one({"phone": phone})
         if user:
             user['_id'] = str(user['_id'])
         return user

@@ -10,6 +10,24 @@ import TradespersonLayout from '../layouts/TradespersonLayout';
 import { CheckCircle, Clock, Upload, FileText, Image, Shield, Award, Users, XCircle, AlertCircle, Lock } from 'lucide-react';
 import { Button } from '../components/ui/button';
 
+const BUSINESS_TYPE_OPTIONS = [
+  'Self-Employed / Sole Trader',
+  'Limited Company (LTD)',
+  'Ordinary Partnership',
+  'Limited Liability Partnership (LLP)',
+];
+
+const normalizeBusinessType = (value) => {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  const normalized = raw.toLowerCase();
+  if (normalized.includes('self') && normalized.includes('sole')) return 'Self-Employed / Sole Trader';
+  if (normalized.includes('limited') && normalized.includes('company')) return 'Limited Company (LTD)';
+  if (normalized.includes('ordinary') && normalized.includes('partnership')) return 'Ordinary Partnership';
+  if (normalized.includes('limited liability') || normalized.includes('(llp)')) return 'Limited Liability Partnership (LLP)';
+  return raw;
+};
+
 const VerifyAccountPage = () => {
   const { isAuthenticated, user, getCurrentUser, updateUser, loginWithToken } = useAuth();
   const location = useLocation();
@@ -39,7 +57,7 @@ const VerifyAccountPage = () => {
     name: '', phone: '', email: '', relationship: ''
   });
   const [verified, setVerified] = useState(false);
-  const [businessType, setBusinessType] = useState(user?.business_type || '');
+  const [businessType, setBusinessType] = useState(normalizeBusinessType(user?.business_type || ''));
   const [proofOfAddress, setProofOfAddress] = useState(null);
   const [residentialAddress, setResidentialAddress] = useState('');
   const [workPhotos, setWorkPhotos] = useState([]);
@@ -147,6 +165,10 @@ const VerifyAccountPage = () => {
       navigate('/profile', { replace: true });
     }
   }, [isAuthenticated, user, location.search]);
+
+  useEffect(() => {
+    setBusinessType(normalizeBusinessType(user?.business_type || ''));
+  }, [user?.business_type]);
 
   if (verified) {
     return (
@@ -540,14 +562,13 @@ const VerifyAccountPage = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Business Type</label>
                       <select 
                         value={businessType} 
-                        onChange={(e) => setBusinessType(e.target.value)} 
+                        onChange={(e) => setBusinessType(normalizeBusinessType(e.target.value))} 
                         className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato text-sm"
                       >
                         <option value="">Select business type</option>
-                        <option>Self-Employed / Sole Trader</option>
-                        <option>Limited Company (LTD)</option>
-                        <option>Ordinary Partnership</option>
-                        <option>Limited Liability Partnership (LLP)</option>
+                        {BUSINESS_TYPE_OPTIONS.map((option) => (
+                          <option key={option} value={option}>{option}</option>
+                        ))}
                       </select>
                       {user?.business_type && (
                         <p className="text-xs text-gray-400 mt-2 font-lato">Pre-selected from registration. Update only if incorrect.</p>
@@ -693,6 +714,90 @@ const VerifyAccountPage = () => {
                               />
                             </div>
                           </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {businessType === 'Limited Company (LTD)' && (
+                      <div className="space-y-5">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">CAC Certificate <span className="text-red-500">*</span></label>
+                          <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                            <div className="flex flex-col items-center justify-center py-4">
+                              <Upload className="w-5 h-5 text-gray-400 mb-1" />
+                              <p className="text-xs text-gray-500 font-lato">{cacCertificate ? cacCertificate.name : 'Click to upload'}</p>
+                            </div>
+                            <input type="file" className="hidden" accept="image/*,.pdf" onChange={(e) => setCacCertificate(e.target.files?.[0] || null)} />
+                          </label>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">CAC Status Report/Extract <span className="text-red-500">*</span></label>
+                          <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                            <div className="flex flex-col items-center justify-center py-4">
+                              <FileText className="w-5 h-5 text-gray-400 mb-1" />
+                              <p className="text-xs text-gray-500 font-lato">{cacStatusReport ? cacStatusReport.name : 'Click to upload'}</p>
+                            </div>
+                            <input type="file" className="hidden" accept="image/*,.pdf" onChange={(e) => setCacStatusReport(e.target.files?.[0] || null)} />
+                          </label>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Company Address <span className="text-red-500">*</span></label>
+                          <input
+                            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato text-sm"
+                            placeholder="Enter company address"
+                            value={companyAddress}
+                            onChange={(e) => setCompanyAddress(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {businessType === 'Ordinary Partnership' && (
+                      <div className="space-y-5">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">BN Certificate <span className="text-red-500">*</span></label>
+                          <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                            <div className="flex flex-col items-center justify-center py-4">
+                              <Upload className="w-5 h-5 text-gray-400 mb-1" />
+                              <p className="text-xs text-gray-500 font-lato">{bnCertificate ? bnCertificate.name : 'Click to upload'}</p>
+                            </div>
+                            <input type="file" className="hidden" accept="image/*,.pdf" onChange={(e) => setBnCertificate(e.target.files?.[0] || null)} />
+                          </label>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Partnership Agreement <span className="text-red-500">*</span></label>
+                          <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                            <div className="flex flex-col items-center justify-center py-4">
+                              <FileText className="w-5 h-5 text-gray-400 mb-1" />
+                              <p className="text-xs text-gray-500 font-lato">{partnershipAgreement ? partnershipAgreement.name : 'Click to upload'}</p>
+                            </div>
+                            <input type="file" className="hidden" accept="image/*,.pdf" onChange={(e) => setPartnershipAgreement(e.target.files?.[0] || null)} />
+                          </label>
+                        </div>
+                      </div>
+                    )}
+
+                    {businessType === 'Limited Liability Partnership (LLP)' && (
+                      <div className="space-y-5">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">LLP Certificate <span className="text-red-500">*</span></label>
+                          <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                            <div className="flex flex-col items-center justify-center py-4">
+                              <Upload className="w-5 h-5 text-gray-400 mb-1" />
+                              <p className="text-xs text-gray-500 font-lato">{llpCertificate ? llpCertificate.name : 'Click to upload'}</p>
+                            </div>
+                            <input type="file" className="hidden" accept="image/*,.pdf" onChange={(e) => setLlpCertificate(e.target.files?.[0] || null)} />
+                          </label>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">LLP Agreement <span className="text-red-500">*</span></label>
+                          <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                            <div className="flex flex-col items-center justify-center py-4">
+                              <FileText className="w-5 h-5 text-gray-400 mb-1" />
+                              <p className="text-xs text-gray-500 font-lato">{llpAgreement ? llpAgreement.name : 'Click to upload'}</p>
+                            </div>
+                            <input type="file" className="hidden" accept="image/*,.pdf" onChange={(e) => setLlpAgreement(e.target.files?.[0] || null)} />
+                          </label>
                         </div>
                       </div>
                     )}
@@ -1001,12 +1106,11 @@ const VerifyAccountPage = () => {
                   <div className="space-y-5">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Business Type</label>
-                      <select value={businessType} onChange={(e)=>setBusinessType(e.target.value)} className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato">
+                      <select value={businessType} onChange={(e)=>setBusinessType(normalizeBusinessType(e.target.value))} className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato">
                         <option value="">Select business type</option>
-                        <option>Self-Employed / Sole Trader</option>
-                        <option>Limited Company (LTD)</option>
-                        <option>Ordinary Partnership</option>
-                        <option>Limited Liability Partnership (LLP)</option>
+                        {BUSINESS_TYPE_OPTIONS.map((option) => (
+                          <option key={option} value={option}>{option}</option>
+                        ))}
                       </select>
                       {user?.business_type && (
                         <p className="text-xs text-gray-500 mt-2 font-lato">Pre-selected from your registration. Update only if incorrect.</p>

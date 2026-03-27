@@ -26,6 +26,7 @@ import logging
 import os
 from pathlib import Path
 import re
+from pymongo.errors import DuplicateKeyError
 from ..utils.limiter import limiter
 from fastapi import Request
 
@@ -52,6 +53,11 @@ def _normalize_user_profile_payload(user_data: Dict[str, Any]) -> Dict[str, Any]
     if payload.get("postcode") in (None, ""):
         payload["postcode"] = "000000"
     return payload
+
+async def _find_existing_user_by_phone(phone: str) -> Optional[dict]:
+    if not (getattr(database, "connected", False) and getattr(database, "database", None) is not None):
+        return None
+    return await database.get_user_by_phone(phone)
 
 @router.post("/register/homeowner")
 @limiter.limit("5/minute")
@@ -96,19 +102,16 @@ async def register_homeowner(request: Request, registration_data: HomeownerRegis
 
         formatted_phone = format_nigerian_phone(registration_data.phone)
 
-        # Enforce unique phone for homeowners
+        # Enforce unique phone across all accounts
         try:
-            if getattr(database, "connected", False) and getattr(database, "database", None) is not None:
-                phone_user = await database.users_collection.find_one({"role": "homeowner", "phone": formatted_phone})
-            else:
-                phone_user = None
+            phone_user = await _find_existing_user_by_phone(formatted_phone)
         except Exception as e:
             logger.warning(f"Skipping existing-user phone check due to DB error: {e}")
             phone_user = None
         if phone_user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Phone number already registered"
+                detail="Phone number already registered to another account"
             )
 
         # Validate location/state
@@ -268,6 +271,11 @@ async def register_homeowner(request: Request, registration_data: HomeownerRegis
                     "expires_in": 60 * 60 * 24,
                     "email_verification": {"sent": True}
                 }
+            except DuplicateKeyError:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Phone number already registered to another account"
+                )
             except Exception as e:
                 logger.error(f"DB error during homeowner registration: {e}. Falling back to synthetic user.")
                 synthetic_user = {k: v for k, v in user_data.items() if k != "password_hash"}
@@ -429,6 +437,18 @@ async def register_tradesperson(request: Request, registration_data: Tradesperso
 
         formatted_phone = format_nigerian_phone(registration_data.phone)
 
+        # Enforce unique phone across all accounts
+        try:
+            phone_user = await _find_existing_user_by_phone(formatted_phone)
+        except Exception as e:
+            logger.warning(f"Skipping existing-user phone check due to DB error: {e}")
+            phone_user = None
+        if phone_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Phone number already registered to another account"
+            )
+
         # Validate trade categories against canonical + dynamic (admin-defined) set
         # and normalize where possible for consistent storage.
         try:
@@ -558,6 +578,11 @@ async def register_tradesperson(request: Request, registration_data: Tradesperso
                     token_type="bearer",
                     user=user_response,
                     expires_in=60 * 60 * 24  # 24 hours in seconds
+                )
+            except DuplicateKeyError:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Phone number already registered to another account"
                 )
             except Exception as e:
                 logger.error(f"DB error during tradesperson registration: {e}. Falling back to synthetic user.")
@@ -854,7 +879,14 @@ async def update_profile(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Please enter a valid Nigerian phone number"
                 )
-            update_data["phone"] = format_nigerian_phone(profile_data.phone)
+            formatted_phone = format_nigerian_phone(profile_data.phone)
+            existing_phone_user = await _find_existing_user_by_phone(formatted_phone)
+            if existing_phone_user and existing_phone_user.get("id") != current_user.id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Phone number already registered to another account"
+                )
+            update_data["phone"] = formatted_phone
             update_data["phone_verified"] = False  # Re-verify phone if changed
         
         if profile_data.location is not None:
@@ -984,7 +1016,14 @@ async def update_tradesperson_profile(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Please enter a valid Nigerian phone number"
                 )
-            update_data["phone"] = format_nigerian_phone(profile_data.phone)
+            formatted_phone = format_nigerian_phone(profile_data.phone)
+            existing_phone_user = await _find_existing_user_by_phone(formatted_phone)
+            if existing_phone_user and existing_phone_user.get("id") != current_user.id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Phone number already registered to another account"
+                )
+            update_data["phone"] = formatted_phone
             update_data["phone_verified"] = False
         
         if profile_data.location is not None:
