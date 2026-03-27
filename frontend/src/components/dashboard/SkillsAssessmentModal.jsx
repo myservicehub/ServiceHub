@@ -227,8 +227,8 @@ const SkillsAssessmentModal = ({ isOpen, onClose, onComplete }) => {
                   key={idx}
                   className={`h-1 flex-1 rounded-full ${
                     selectedAnswers[questions[idx]?.id] !== undefined
-                      ? 'bg-purple-500'
-                      : idx === currentQuestion ? 'bg-purple-300' : 'bg-gray-200'
+                      ? 'bg-[#121E3C]'
+                      : idx === currentQuestion ? 'bg-[#121E3C]/50' : 'bg-gray-200'
                   }`}
                 />
               ))}
@@ -239,8 +239,8 @@ const SkillsAssessmentModal = ({ isOpen, onClose, onComplete }) => {
         <div className="p-4 sm:p-5 overflow-y-auto flex-1">
           {showIntro ? (
             <div className="text-center py-2">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-purple-100 flex items-center justify-center">
-                <Award className="w-8 h-8 text-purple-500" />
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#121E3C]/10 flex items-center justify-center">
+                <Award className="w-8 h-8 text-[#121E3C]" />
               </div>
 
               <h3 className="text-xl font-bold text-[#121E3C] font-montserrat mb-3">
@@ -249,22 +249,22 @@ const SkillsAssessmentModal = ({ isOpen, onClose, onComplete }) => {
 
               <p className="text-gray-600 font-lato mb-6 max-w-md mx-auto">
                 Take this quick assessment to earn a <strong>Skills Verified</strong> badge on your profile. 
-                Verified tradespersons get <span className="text-purple-600 font-medium">2x more job inquiries</span> from homeowners.
+                Verified tradespersons get <span className="text-[#121E3C] font-medium">2x more job inquiries</span> from homeowners.
               </p>
 
-              <div className="bg-purple-50 rounded-xl p-4 mb-6 text-left">
+              <div className="bg-[#121E3C]/5 rounded-xl p-4 mb-6 text-left">
                 <h4 className="font-semibold text-[#121E3C] font-montserrat mb-3">What to expect:</h4>
                 <ul className="space-y-2 text-sm text-gray-600 font-lato">
                   <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-purple-500 flex-shrink-0" />
+                    <CheckCircle className="w-4 h-4 text-[#121E3C] flex-shrink-0" />
                     <span><strong>5 questions</strong> about professional practices</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-purple-500 flex-shrink-0" />
+                    <Clock className="w-4 h-4 text-[#121E3C] flex-shrink-0" />
                     <span><strong>5 minutes</strong> time limit</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <Award className="w-4 h-4 text-purple-500 flex-shrink-0" />
+                    <Award className="w-4 h-4 text-[#121E3C] flex-shrink-0" />
                     <span><strong>60% score</strong> needed to pass</span>
                   </li>
                 </ul>
@@ -272,7 +272,7 @@ const SkillsAssessmentModal = ({ isOpen, onClose, onComplete }) => {
 
               <Button
                 onClick={() => setShowIntro(false)}
-                className="w-full bg-purple-500 hover:bg-purple-600 text-white py-3"
+                className="w-full bg-[#121E3C] hover:bg-[#0d1629] text-white py-3"
               >
                 Start Assessment
                 <ArrowRight className="w-4 h-4 ml-2" />
@@ -288,8 +288,8 @@ const SkillsAssessmentModal = ({ isOpen, onClose, onComplete }) => {
                     onClick={() => handleSelectAnswer(currentQ.id, idx)}
                     className={`w-full text-left p-3 rounded-lg border transition-all text-sm ${
                       selectedAnswers[currentQ.id] === idx
-                        ? 'border-purple-500 bg-purple-50 text-purple-700'
-                        : 'border-gray-200 hover:border-purple-300'
+                        ? 'border-[#121E3C] bg-[#121E3C]/5 text-[#121E3C]'
+                        : 'border-gray-200 hover:border-[#121E3C]/50'
                     }`}
                   >
                     {option}
@@ -339,7 +339,7 @@ const SkillsAssessmentModal = ({ isOpen, onClose, onComplete }) => {
                         </div>
                         <div className="w-px h-10 bg-gray-200" />
                         <div className="text-center">
-                          <p className="text-2xl font-bold text-purple-500">{score.percentage}%</p>
+                          <p className="text-2xl font-bold text-[#121E3C]">{score.percentage}%</p>
                           <p className="text-xs text-gray-500 font-lato">Score</p>
                         </div>
                       </div>
@@ -384,7 +384,7 @@ const SkillsAssessmentModal = ({ isOpen, onClose, onComplete }) => {
                   <Button
                     onClick={handleSubmitQuiz}
                     disabled={!allAnswered || isLoading}
-                    className="bg-purple-500 hover:bg-purple-600 text-white px-6"
+                    className="bg-[#121E3C] hover:bg-[#0d1629] text-white px-6"
                   >
                     {isLoading ? 'Submitting...' : 'Submit Quiz'}
                     <CheckCircle className="w-4 h-4 ml-2" />
@@ -393,7 +393,7 @@ const SkillsAssessmentModal = ({ isOpen, onClose, onComplete }) => {
                   <Button
                     onClick={handleNextQuestion}
                     disabled={selectedAnswers[currentQ.id] === undefined}
-                    className="bg-purple-500 hover:bg-purple-600 text-white px-6"
+                    className="bg-[#121E3C] hover:bg-[#0d1629] text-white px-6"
                   >
                     Next
                     <ArrowRight className="w-4 h-4 ml-2" />
@@ -403,7 +403,7 @@ const SkillsAssessmentModal = ({ isOpen, onClose, onComplete }) => {
             ) : (
               <Button
                 onClick={handleRetakeOrClose}
-                className="w-full bg-purple-500 hover:bg-purple-600 text-white py-3"
+                className="w-full bg-[#121E3C] hover:bg-[#0d1629] text-white py-3"
               >
                 {calculateScore().percentage >= 60 ? 'Continue' : 'Close'}
                 <ArrowRight className="w-4 h-4 ml-2" />

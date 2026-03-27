@@ -189,7 +189,7 @@ const VerifyContactModal = ({ isOpen, onClose, onComplete }) => {
                   {!localEmailVerified && (
                     <button
                       onClick={() => setActiveTab('email')}
-                      className={`flex-1 pb-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'email' ? 'border-purple-500 text-purple-600' : 'border-transparent text-gray-500'}`}
+                      className={`flex-1 pb-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'email' ? 'border-[#121E3C] text-[#121E3C]' : 'border-transparent text-gray-500'}`}
                     >
                       Email
                     </button>
@@ -197,7 +197,7 @@ const VerifyContactModal = ({ isOpen, onClose, onComplete }) => {
                   {!localPhoneVerified && (
                     <button
                       onClick={() => setActiveTab('phone')}
-                      className={`flex-1 pb-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'phone' ? 'border-purple-500 text-purple-600' : 'border-transparent text-gray-500'}`}
+                      className={`flex-1 pb-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'phone' ? 'border-[#121E3C] text-[#121E3C]' : 'border-transparent text-gray-500'}`}
                     >
                       Phone
                     </button>
@@ -209,7 +209,7 @@ const VerifyContactModal = ({ isOpen, onClose, onComplete }) => {
                 <div className="space-y-4">
                   <p className="text-sm text-gray-600">Send code to <strong>{user?.email}</strong></p>
                   {!emailSent ? (
-                    <Button onClick={handleSendEmailCode} disabled={isLoading} className="w-full bg-purple-500 hover:bg-purple-600">
+                    <Button onClick={handleSendEmailCode} disabled={isLoading} className="w-full bg-[#121E3C] hover:bg-[#0d1629]">
                       {isLoading ? 'Sending...' : 'Send Code'} <Send className="w-4 h-4 ml-1" />
                     </Button>
                   ) : (
@@ -222,10 +222,10 @@ const VerifyContactModal = ({ isOpen, onClose, onComplete }) => {
                         onChange={(e) => setEmailCode(e.target.value.replace(/\D/g, ''))}
                         className="h-11 text-center text-lg tracking-widest font-mono"
                       />
-                      <Button onClick={handleVerifyEmail} disabled={isLoading || emailCode.length !== 6} className="w-full bg-purple-500 hover:bg-purple-600">
+                      <Button onClick={handleVerifyEmail} disabled={isLoading || emailCode.length !== 6} className="w-full bg-[#121E3C] hover:bg-[#0d1629]">
                         {isLoading ? 'Verifying...' : 'Verify'} <CheckCircle className="w-4 h-4 ml-1" />
                       </Button>
-                      <button onClick={handleSendEmailCode} disabled={emailCountdown > 0 || isLoading} className="w-full text-sm text-gray-500 hover:text-purple-500 disabled:opacity-50">
+                      <button onClick={handleSendEmailCode} disabled={emailCountdown > 0 || isLoading} className="w-full text-sm text-gray-500 hover:text-[#121E3C] disabled:opacity-50">
                         {emailCountdown > 0 ? `Resend in ${formatCountdown(emailCountdown)}` : 'Resend code'}
                       </button>
                     </>
@@ -237,7 +237,7 @@ const VerifyContactModal = ({ isOpen, onClose, onComplete }) => {
                 <div className="space-y-4">
                   <p className="text-sm text-gray-600">Send code to <strong>{user?.phone}</strong></p>
                   {!phoneSent ? (
-                    <Button onClick={handleSendPhoneCode} disabled={isLoading} className="w-full bg-purple-500 hover:bg-purple-600">
+                    <Button onClick={handleSendPhoneCode} disabled={isLoading} className="w-full bg-[#121E3C] hover:bg-[#0d1629]">
                       {isLoading ? 'Sending...' : 'Send SMS'} <Send className="w-4 h-4 ml-1" />
                     </Button>
                   ) : (
@@ -250,10 +250,10 @@ const VerifyContactModal = ({ isOpen, onClose, onComplete }) => {
                         onChange={(e) => setPhoneCode(e.target.value.replace(/\D/g, ''))}
                         className="h-11 text-center text-lg tracking-widest font-mono"
                       />
-                      <Button onClick={handleVerifyPhone} disabled={isLoading || phoneCode.length !== 6} className="w-full bg-purple-500 hover:bg-purple-600">
+                      <Button onClick={handleVerifyPhone} disabled={isLoading || phoneCode.length !== 6} className="w-full bg-[#121E3C] hover:bg-[#0d1629]">
                         {isLoading ? 'Verifying...' : 'Verify'} <CheckCircle className="w-4 h-4 ml-1" />
                       </Button>
-                      <button onClick={handleSendPhoneCode} disabled={phoneCountdown > 0 || isLoading} className="w-full text-sm text-gray-500 hover:text-purple-500 disabled:opacity-50">
+                      <button onClick={handleSendPhoneCode} disabled={phoneCountdown > 0 || isLoading} className="w-full text-sm text-gray-500 hover:text-[#121E3C] disabled:opacity-50">
                         {phoneCountdown > 0 ? `Resend in ${formatCountdown(phoneCountdown)}` : 'Resend code'}
                       </button>
                     </>

@@ -136,8 +136,8 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
       <div className="relative w-full max-w-md max-h-[85vh] bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
         <div className="flex items-center justify-between p-5 border-b flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-purple-100">
-              <Building2 className="w-5 h-5 text-purple-600" />
+            <div className="p-2 rounded-lg bg-[#121E3C]/10">
+              <Building2 className="w-5 h-5 text-[#121E3C]" />
             </div>
             <h2 className="text-lg font-semibold text-gray-900">Business Verification</h2>
           </div>
@@ -157,7 +157,7 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
               <select
                 value={businessType}
                 onChange={(e) => setBusinessType(e.target.value)}
-                className="w-full h-11 px-3 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                className="w-full h-11 px-3 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#121E3C]/20 focus:border-[#121E3C]"
               >
                 <option value="">Select business type</option>
                 {BUSINESS_TYPES.map(type => (
@@ -186,7 +186,7 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
           <Button
             onClick={handleSubmit}
             disabled={isLoading || !businessType || !tradingName.trim()}
-            className="w-full bg-purple-500 hover:bg-purple-600 text-white"
+            className="w-full bg-[#121E3C] hover:bg-[#0d1629] text-white"
           >
             {isLoading ? 'Submitting...' : 'Submit for Review'}
             <ArrowRight className="w-4 h-4 ml-1" />

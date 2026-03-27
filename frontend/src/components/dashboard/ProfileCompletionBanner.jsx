@@ -23,8 +23,8 @@ const ProfileCompletionBanner = ({
       icon: User,
       completed: profileCompleted,
       onClick: onCompleteProfile,
-      bgColor: 'bg-gradient-to-br from-orange-500 to-red-500',
-      borderColor: 'border-orange-500',
+      bgColor: 'bg-gradient-to-br from-[#121E3C] to-[#1e3a5f]',
+      borderColor: 'border-[#121E3C]',
       priority: !profileCompleted,
     },
     {
@@ -34,8 +34,8 @@ const ProfileCompletionBanner = ({
       icon: Mail,
       completed: contactVerified,
       onClick: onVerifyContact,
-      bgColor: 'bg-gradient-to-br from-amber-500 to-orange-500',
-      borderColor: 'border-amber-500',
+      bgColor: 'bg-gradient-to-br from-[#121E3C] to-[#1e3a5f]',
+      borderColor: 'border-[#121E3C]',
       priority: profileCompleted && !contactVerified,
     },
     {
@@ -45,8 +45,8 @@ const ProfileCompletionBanner = ({
       icon: BookOpen,
       completed: skillsTestPassed,
       onClick: onTakeSkillsTest,
-      bgColor: 'bg-gradient-to-br from-purple-500 to-indigo-500',
-      borderColor: 'border-purple-500',
+      bgColor: 'bg-gradient-to-br from-[#121E3C] to-[#1e3a5f]',
+      borderColor: 'border-[#121E3C]',
       priority: profileCompleted && contactVerified && !skillsTestPassed,
     },
     {
@@ -56,8 +56,8 @@ const ProfileCompletionBanner = ({
       icon: Building2,
       completed: businessVerified,
       onClick: onBusinessVerification,
-      bgColor: 'bg-gradient-to-br from-emerald-500 to-teal-500',
-      borderColor: 'border-emerald-500',
+      bgColor: 'bg-gradient-to-br from-[#121E3C] to-[#1e3a5f]',
+      borderColor: 'border-[#121E3C]',
       priority: profileCompleted && contactVerified && skillsTestPassed && !businessVerified,
     },
   ];
@@ -81,11 +81,11 @@ const ProfileCompletionBanner = ({
         <div className="flex items-center gap-2">
           <div className="w-24 sm:w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
             <div 
-              className="h-full bg-orange-500 rounded-full transition-all duration-500"
+              className="h-full bg-[#121E3C] rounded-full transition-all duration-500"
               style={{ width: `${completionPercent}%` }}
             />
           </div>
-          <span className="text-sm font-medium text-orange-500">{completionPercent}%</span>
+          <span className="text-sm font-medium text-[#121E3C]">{completionPercent}%</span>
         </div>
       </div>
 
@@ -97,18 +97,18 @@ const ProfileCompletionBanner = ({
             disabled={step.completed}
             className={`relative group text-left p-4 sm:p-5 rounded-2xl border-2 transition-all duration-300 ${
               step.completed
-                ? 'bg-gray-50 border-gray-200 cursor-default'
+                ? 'bg-green-50/50 border-green-200 cursor-default'
                 : step.priority
                   ? `bg-white ${step.borderColor} shadow-lg hover:shadow-xl hover:-translate-y-1`
-                  : 'bg-white border-gray-200 hover:border-orange-300 hover:shadow-md hover:-translate-y-0.5'
+                  : 'bg-white border-gray-200 hover:border-[#121E3C]/50 hover:shadow-md hover:-translate-y-0.5'
             }`}
           >
             {/* Priority indicator */}
             {step.priority && !step.completed && (
               <div className="absolute -top-2 -right-2">
                 <span className="relative flex h-4 w-4">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-500 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-4 w-4 bg-orange-500"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#121E3C] opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-4 w-4 bg-[#121E3C]"></span>
                 </span>
               </div>
             )}
@@ -131,7 +131,7 @@ const ProfileCompletionBanner = ({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <h3 className={`text-sm sm:text-base font-semibold font-montserrat ${
-                    step.completed ? 'text-gray-400' : 'text-[#121E3C]'
+                    step.completed ? 'text-green-700' : 'text-[#121E3C]'
                   }`}>
                     {step.title}
                   </h3>
@@ -140,9 +140,9 @@ const ProfileCompletionBanner = ({
                   )}
                 </div>
                 <p className={`text-xs sm:text-sm mt-0.5 sm:mt-1 font-lato ${
-                  step.completed ? 'text-gray-400' : 'text-gray-500'
+                  step.completed ? 'text-green-600' : 'text-gray-500'
                 }`}>
-                  {step.completed ? 'Completed' : step.description}
+                  {step.completed ? '✓ Completed' : step.description}
                 </p>
               </div>
 
@@ -150,8 +150,8 @@ const ProfileCompletionBanner = ({
               {!step.completed && (
                 <ArrowRight className={`w-5 h-5 flex-shrink-0 transition-transform hidden sm:block ${
                   step.priority 
-                    ? 'text-orange-500 group-hover:translate-x-1' 
-                    : 'text-gray-300 group-hover:text-orange-400 group-hover:translate-x-1'
+                    ? 'text-[#121E3C] group-hover:translate-x-1' 
+                    : 'text-gray-300 group-hover:text-[#121E3C] group-hover:translate-x-1'
                 }`} />
               )}
             </div>
@@ -161,7 +161,7 @@ const ProfileCompletionBanner = ({
 
       {/* Motivational text */}
       <p className="text-center text-xs text-gray-400 mt-4 font-lato">
-        Complete profiles get <span className="text-orange-500 font-medium">3x more job inquiries</span> from homeowners
+        Complete profiles get <span className="text-[#121E3C] font-medium">3x more job inquiries</span> from homeowners
       </p>
     </div>
   );
