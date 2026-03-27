@@ -57,12 +57,21 @@ const TradespersonOverview = () => {
     loadDashboardData();
   }, []);
 
-  // Auto-show profile completion modal immediately for incomplete profiles
+  // Auto-show the next incomplete step modal on load
   useEffect(() => {
-    if (!loading && isProfileIncomplete) {
+    if (loading) return;
+    
+    // Show first incomplete step in priority order
+    if (isProfileIncomplete) {
       setShowCompleteProfileModal(true);
+    } else if (!isContactVerified) {
+      setShowVerifyContactModal(true);
+    } else if (!isSkillsTestPassed) {
+      setShowSkillsModal(true);
+    } else if (!isBusinessVerified) {
+      setShowBusinessModal(true);
     }
-  }, [loading, isProfileIncomplete]);
+  }, [loading, isProfileIncomplete, isContactVerified, isSkillsTestPassed, isBusinessVerified]);
 
   const handleCloseProfileModal = () => {
     setShowCompleteProfileModal(false);
