@@ -276,7 +276,7 @@ const heroSection = { width: '100%' };
 const heroTable = {
   width: '100%',
   height: '200px',
-  backgroundImage: 'url(https://my-servicehub.vercel.app/stock/bg7.jpeg)',
+  backgroundImage: 'url(https://my-servicehub.vercel.app/stock/bg15.jpg)',
   backgroundSize: 'cover',
   backgroundPosition: 'center',
   backgroundRepeat: 'no-repeat',
