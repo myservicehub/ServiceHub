@@ -45,6 +45,14 @@ BASE_UPLOADS = Path(os.environ.get("UPLOADS_DIR", os.path.join(os.getcwd(), "upl
 CERT_UPLOAD_DIR = BASE_UPLOADS / "certifications"
 CERT_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
+def _normalize_user_profile_payload(user_data: Dict[str, Any]) -> Dict[str, Any]:
+    payload = dict(user_data or {})
+    if payload.get("location") in (None, ""):
+        payload["location"] = "Not specified"
+    if payload.get("postcode") in (None, ""):
+        payload["postcode"] = "000000"
+    return payload
+
 @router.post("/register/homeowner")
 @limiter.limit("5/minute")
 async def register_homeowner(request: Request, registration_data: HomeownerRegistration):
@@ -825,7 +833,7 @@ async def get_current_user_profile(current_user: User = Depends(get_current_user
             # Keep original values if calculation fails
             pass
     
-    return UserProfile(**user_data)
+    return UserProfile(**_normalize_user_profile_payload(user_data))
 
 @router.put("/profile", response_model=UserProfile)
 async def update_profile(
@@ -907,10 +915,9 @@ async def update_profile(
             
             # Get updated user data
             updated_user_data = await database.get_user_by_id(current_user.id)
-            updated_user = User(**updated_user_data)
-            return UserProfile(**updated_user.dict())
+            return UserProfile(**_normalize_user_profile_payload(updated_user_data))
         
-        return UserProfile(**current_user.dict())
+        return UserProfile(**_normalize_user_profile_payload(current_user.dict()))
 
     except HTTPException:
         raise
@@ -1010,10 +1017,9 @@ async def update_tradesperson_profile(
             
             # Get updated user data
             updated_user_data = await database.get_user_by_id(current_user.id)
-            updated_user = User(**updated_user_data)
-            return UserProfile(**updated_user.dict())
+            return UserProfile(**_normalize_user_profile_payload(updated_user_data))
         
-        return UserProfile(**current_user.dict())
+        return UserProfile(**_normalize_user_profile_payload(current_user.dict()))
 
     except HTTPException:
         raise
