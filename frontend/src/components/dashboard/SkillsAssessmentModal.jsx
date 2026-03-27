@@ -14,7 +14,7 @@ const SkillsAssessmentModal = ({ isOpen, onClose, onComplete }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingQuestions, setIsFetchingQuestions] = useState(false);
   const [questions, setQuestions] = useState([]);
-  const [timeLeft, setTimeLeft] = useState(300); // 5 minutes
+  const [timeLeft, setTimeLeft] = useState(900); // 15 minutes
   const { user, refreshUser } = useAuth();
   const { toast } = useToast();
 
@@ -43,7 +43,7 @@ const SkillsAssessmentModal = ({ isOpen, onClose, onComplete }) => {
       setCurrentQuestion(0);
       setSelectedAnswers({});
       setShowResults(false);
-      setTimeLeft(300);
+      setTimeLeft(900);
       fetchQuestions();
     }
   }, [isOpen]);
@@ -121,13 +121,13 @@ const SkillsAssessmentModal = ({ isOpen, onClose, onComplete }) => {
         score: score.percentage,
         correct_answers: score.correct,
         total_questions: score.total,
-        passed: score.percentage >= 60
+        passed: score.percentage >= 80
       });
 
       if (refreshUser) await refreshUser();
       setShowResults(true);
 
-      if (score.percentage >= 60) {
+      if (score.percentage >= 80) {
         toast({
           title: "Congratulations! 🎉",
           description: "You passed the skills assessment!",
@@ -150,7 +150,7 @@ const SkillsAssessmentModal = ({ isOpen, onClose, onComplete }) => {
 
   const handleRetakeOrClose = () => {
     const score = calculateScore();
-    if (score.percentage >= 60) {
+    if (score.percentage >= 80) {
       if (onComplete) onComplete();
     }
     onClose();
@@ -229,11 +229,11 @@ const SkillsAssessmentModal = ({ isOpen, onClose, onComplete }) => {
                   </li>
                   <li className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-[#121E3C] flex-shrink-0" />
-                    <span><strong>5 minutes</strong> time limit</span>
+                    <span><strong>15 minutes</strong> time limit</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Award className="w-4 h-4 text-[#121E3C] flex-shrink-0" />
-                    <span><strong>60% score</strong> needed to pass</span>
+                    <span><strong>80% score</strong> needed to pass</span>
                   </li>
                 </ul>
               </div>
@@ -271,7 +271,7 @@ const SkillsAssessmentModal = ({ isOpen, onClose, onComplete }) => {
             <div className="text-center py-6">
               {(() => {
                 const score = calculateScore();
-                const passed = score.percentage >= 60;
+                const passed = score.percentage >= 80;
                 
                 return (
                   <>
