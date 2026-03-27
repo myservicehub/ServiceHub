@@ -4,7 +4,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../hooks/use-toast';
-import { jobsAPI } from '../../api/jobs';
+import { authAPI } from '../../api/services';
 
 const VerifyContactModal = ({ isOpen, onClose, onComplete }) => {
   const [activeTab, setActiveTab] = useState('email');
@@ -13,37 +13,58 @@ const VerifyContactModal = ({ isOpen, onClose, onComplete }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [phoneSent, setPhoneSent] = useState(false);
-  const [countdown, setCountdown] = useState(0);
+  const [emailCountdown, setEmailCountdown] = useState(0);
+  const [phoneCountdown, setPhoneCountdown] = useState(0);
   const { user, refreshUser } = useAuth();
   const { toast } = useToast();
 
   const emailVerified = user?.email_verified || false;
   const phoneVerified = user?.phone_verified || false;
 
-  // Countdown timer for resend
+  // Countdown timers
   useEffect(() => {
-    if (countdown > 0) {
-      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [countdown]);
+    if (emailCountdown <= 0) return;
+    const timer = setInterval(() => setEmailCountdown(prev => prev - 1), 1000);
+    return () => clearInterval(timer);
+  }, [emailCountdown]);
+
+  useEffect(() => {
+    if (phoneCountdown <= 0) return;
+    const timer = setInterval(() => setPhoneCountdown(prev => prev - 1), 1000);
+    return () => clearInterval(timer);
+  }, [phoneCountdown]);
+
+  const formatCountdown = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return mins > 0 ? `${mins}:${secs.toString().padStart(2, '0')}` : `${secs}s`;
+  };
 
   const handleSendEmailCode = async () => {
     setIsLoading(true);
     try {
-      await jobsAPI.apiClient.post('/auth/verify/email/send');
+      const resp = await authAPI.sendEmailOTP(user?.email);
       setEmailSent(true);
-      setCountdown(60);
-      toast({
-        title: "Verification code sent!",
-        description: `Check your inbox at ${user?.email}`,
-      });
+      setEmailCountdown(600); // 10 minutes
+      if (resp?.debug_code) {
+        setEmailCode(resp.debug_code);
+        toast({
+          title: "OTP sent!",
+          description: `Dev code: ${resp.debug_code}`,
+        });
+      } else {
+        toast({
+          title: "Verification code sent!",
+          description: `Check your inbox at ${user?.email}`,
+        });
+      }
     } catch (error) {
       toast({
         title: "Failed to send code",
         description: error.response?.data?.detail || "Please try again",
         variant: "destructive",
       });
+      setEmailSent(true); // Still show input so they can retry
     } finally {
       setIsLoading(false);
     }
@@ -52,19 +73,28 @@ const VerifyContactModal = ({ isOpen, onClose, onComplete }) => {
   const handleSendPhoneCode = async () => {
     setIsLoading(true);
     try {
-      await jobsAPI.apiClient.post('/auth/verify/phone/send');
+      const resp = await authAPI.sendPhoneOTP(user?.phone);
       setPhoneSent(true);
-      setCountdown(60);
-      toast({
-        title: "Verification code sent!",
-        description: `Check your SMS at ${user?.phone}`,
-      });
+      setPhoneCountdown(600); // 10 minutes
+      if (resp?.debug_code) {
+        setPhoneCode(resp.debug_code);
+        toast({
+          title: "OTP sent!",
+          description: `Dev code: ${resp.debug_code}`,
+        });
+      } else {
+        toast({
+          title: "Verification code sent!",
+          description: `Check your SMS at ${user?.phone}`,
+        });
+      }
     } catch (error) {
       toast({
         title: "Failed to send code",
         description: error.response?.data?.detail || "Please try again",
         variant: "destructive",
       });
+      setPhoneSent(true); // Still show input so they can retry
     } finally {
       setIsLoading(false);
     }
@@ -82,19 +112,14 @@ const VerifyContactModal = ({ isOpen, onClose, onComplete }) => {
 
     setIsLoading(true);
     try {
-      await jobsAPI.apiClient.post('/auth/verify/email', { code: emailCode });
+      await authAPI.verifyEmailOTP(emailCode, user?.email);
       if (refreshUser) await refreshUser();
       toast({
         title: "Email verified! ✓",
         description: "Your email has been verified successfully",
       });
       setEmailCode('');
-      
-      // If both verified, complete
-      if (phoneVerified) {
-        if (onComplete) onComplete();
-        onClose();
-      }
+      setEmailSent(false);
     } catch (error) {
       toast({
         title: "Verification failed",
@@ -118,19 +143,14 @@ const VerifyContactModal = ({ isOpen, onClose, onComplete }) => {
 
     setIsLoading(true);
     try {
-      await jobsAPI.apiClient.post('/auth/verify/phone', { code: phoneCode });
+      await authAPI.verifyPhoneOTP(phoneCode, user?.phone);
       if (refreshUser) await refreshUser();
       toast({
         title: "Phone verified! ✓",
         description: "Your phone number has been verified successfully",
       });
       setPhoneCode('');
-      
-      // If both verified, complete
-      if (emailVerified) {
-        if (onComplete) onComplete();
-        onClose();
-      }
+      setPhoneSent(false);
     } catch (error) {
       toast({
         title: "Verification failed",
@@ -158,7 +178,7 @@ const VerifyContactModal = ({ isOpen, onClose, onComplete }) => {
         <div className="relative p-4 sm:p-6 border-b border-gray-100">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500">
+              <div className="p-2.5 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-500">
                 <Shield className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -186,26 +206,26 @@ const VerifyContactModal = ({ isOpen, onClose, onComplete }) => {
             <div className={`p-4 rounded-xl border-2 ${
               emailVerified 
                 ? 'bg-green-50 border-green-200' 
-                : 'bg-orange-50 border-orange-200'
+                : 'bg-purple-50 border-purple-200'
             }`}>
               <div className="flex items-center gap-2 mb-1">
-                <Mail className={`w-4 h-4 ${emailVerified ? 'text-green-500' : 'text-orange-500'}`} />
+                <Mail className={`w-4 h-4 ${emailVerified ? 'text-green-500' : 'text-purple-500'}`} />
                 <span className="text-sm font-medium text-gray-700">Email</span>
               </div>
-              <p className={`text-xs font-lato ${emailVerified ? 'text-green-600' : 'text-orange-600'}`}>
+              <p className={`text-xs font-lato ${emailVerified ? 'text-green-600' : 'text-purple-600'}`}>
                 {emailVerified ? 'Verified ✓' : 'Not verified'}
               </p>
             </div>
             <div className={`p-4 rounded-xl border-2 ${
               phoneVerified 
                 ? 'bg-green-50 border-green-200' 
-                : 'bg-orange-50 border-orange-200'
+                : 'bg-purple-50 border-purple-200'
             }`}>
               <div className="flex items-center gap-2 mb-1">
-                <Phone className={`w-4 h-4 ${phoneVerified ? 'text-green-500' : 'text-orange-500'}`} />
+                <Phone className={`w-4 h-4 ${phoneVerified ? 'text-green-500' : 'text-purple-500'}`} />
                 <span className="text-sm font-medium text-gray-700">Phone</span>
               </div>
-              <p className={`text-xs font-lato ${phoneVerified ? 'text-green-600' : 'text-orange-600'}`}>
+              <p className={`text-xs font-lato ${phoneVerified ? 'text-green-600' : 'text-purple-600'}`}>
                 {phoneVerified ? 'Verified ✓' : 'Not verified'}
               </p>
             </div>
@@ -220,7 +240,7 @@ const VerifyContactModal = ({ isOpen, onClose, onComplete }) => {
                     onClick={() => setActiveTab('email')}
                     className={`flex-1 py-3 text-sm font-medium font-lato transition-colors relative ${
                       activeTab === 'email' 
-                        ? 'text-orange-500' 
+                        ? 'text-purple-500' 
                         : 'text-gray-500 hover:text-gray-700'
                     }`}
                   >
@@ -229,7 +249,7 @@ const VerifyContactModal = ({ isOpen, onClose, onComplete }) => {
                       Email
                     </span>
                     {activeTab === 'email' && (
-                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-500" />
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-500" />
                     )}
                   </button>
                 )}
@@ -238,7 +258,7 @@ const VerifyContactModal = ({ isOpen, onClose, onComplete }) => {
                     onClick={() => setActiveTab('phone')}
                     className={`flex-1 py-3 text-sm font-medium font-lato transition-colors relative ${
                       activeTab === 'phone' 
-                        ? 'text-orange-500' 
+                        ? 'text-purple-500' 
                         : 'text-gray-500 hover:text-gray-700'
                     }`}
                   >
@@ -247,7 +267,7 @@ const VerifyContactModal = ({ isOpen, onClose, onComplete }) => {
                       Phone
                     </span>
                     {activeTab === 'phone' && (
-                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-500" />
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-500" />
                     )}
                   </button>
                 )}
@@ -267,7 +287,7 @@ const VerifyContactModal = ({ isOpen, onClose, onComplete }) => {
                     <Button
                       onClick={handleSendEmailCode}
                       disabled={isLoading}
-                      className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3"
+                      className="w-full bg-purple-500 hover:bg-purple-600 text-white py-3"
                     >
                       {isLoading ? 'Sending...' : 'Send Verification Code'}
                       <Send className="w-4 h-4 ml-2" />
@@ -290,17 +310,17 @@ const VerifyContactModal = ({ isOpen, onClose, onComplete }) => {
                       <Button
                         onClick={handleVerifyEmail}
                         disabled={isLoading || emailCode.length !== 6}
-                        className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3"
+                        className="w-full bg-purple-500 hover:bg-purple-600 text-white py-3"
                       >
                         {isLoading ? 'Verifying...' : 'Verify Email'}
                         <CheckCircle className="w-4 h-4 ml-2" />
                       </Button>
                       <button
                         onClick={handleSendEmailCode}
-                        disabled={countdown > 0 || isLoading}
-                        className="w-full text-sm text-gray-500 hover:text-orange-500 disabled:opacity-50"
+                        disabled={emailCountdown > 0 || isLoading}
+                        className="w-full text-sm text-gray-500 hover:text-purple-500 disabled:opacity-50"
                       >
-                        {countdown > 0 ? `Resend in ${countdown}s` : 'Resend code'}
+                        {emailCountdown > 0 ? `Resend in ${formatCountdown(emailCountdown)}` : 'Resend code'}
                       </button>
                     </div>
                   )}
@@ -321,7 +341,7 @@ const VerifyContactModal = ({ isOpen, onClose, onComplete }) => {
                     <Button
                       onClick={handleSendPhoneCode}
                       disabled={isLoading}
-                      className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3"
+                      className="w-full bg-purple-500 hover:bg-purple-600 text-white py-3"
                     >
                       {isLoading ? 'Sending...' : 'Send SMS Code'}
                       <Send className="w-4 h-4 ml-2" />
@@ -344,17 +364,17 @@ const VerifyContactModal = ({ isOpen, onClose, onComplete }) => {
                       <Button
                         onClick={handleVerifyPhone}
                         disabled={isLoading || phoneCode.length !== 6}
-                        className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3"
+                        className="w-full bg-purple-500 hover:bg-purple-600 text-white py-3"
                       >
                         {isLoading ? 'Verifying...' : 'Verify Phone'}
                         <CheckCircle className="w-4 h-4 ml-2" />
                       </Button>
                       <button
                         onClick={handleSendPhoneCode}
-                        disabled={countdown > 0 || isLoading}
-                        className="w-full text-sm text-gray-500 hover:text-orange-500 disabled:opacity-50"
+                        disabled={phoneCountdown > 0 || isLoading}
+                        className="w-full text-sm text-gray-500 hover:text-purple-500 disabled:opacity-50"
                       >
-                        {countdown > 0 ? `Resend in ${countdown}s` : 'Resend code'}
+                        {phoneCountdown > 0 ? `Resend in ${formatCountdown(phoneCountdown)}` : 'Resend code'}
                       </button>
                     </div>
                   )}

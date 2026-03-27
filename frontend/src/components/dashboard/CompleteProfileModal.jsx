@@ -286,7 +286,7 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
           {/* Header */}
           <div className="flex items-center justify-between p-4 sm:p-6 md:p-8 border-b border-gray-100">
             <div>
-              <p className="text-xs text-orange-500 font-medium font-lato mb-1">
+              <p className="text-xs text-purple-500 font-medium font-lato mb-1">
                 Step {currentStep} of 4
               </p>
               <h2 className="text-lg sm:text-xl font-bold text-[#121E3C] font-montserrat">
@@ -308,7 +308,7 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
                 <div
                   key={step}
                   className={`h-1.5 flex-1 rounded-full transition-all ${
-                    step <= currentStep ? 'bg-orange-500' : 'bg-gray-200'
+                    step <= currentStep ? 'bg-purple-500' : 'bg-gray-200'
                   }`}
                 />
               ))}
@@ -342,7 +342,7 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
               {currentStep < 4 ? (
                 <Button
                   onClick={nextStep}
-                  className="bg-orange-500 hover:bg-orange-600 text-white px-5 sm:px-6"
+                  className="bg-purple-500 hover:bg-purple-600 text-white px-5 sm:px-6"
                 >
                   Continue
                   <ArrowRight className="w-4 h-4 ml-2" />
@@ -351,7 +351,7 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
                 <Button
                   onClick={handleSubmit}
                   disabled={isLoading}
-                  className="bg-orange-500 hover:bg-orange-600 text-white px-6 sm:px-8"
+                  className="bg-purple-500 hover:bg-purple-600 text-white px-6 sm:px-8"
                 >
                   {isLoading ? 'Saving...' : 'Complete Profile'}
                 </Button>
@@ -375,10 +375,10 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
           </label>
           
           {!showTradeSelector ? (
-            <div className="flex items-center justify-between p-4 bg-orange-50 border-2 border-orange-200 rounded-xl">
+            <div className="flex items-center justify-between p-4 bg-purple-50 border-2 border-purple-200 rounded-xl">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <Briefcase className="w-5 h-5 text-orange-600" />
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <Briefcase className="w-5 h-5 text-purple-600" />
                 </div>
                 <span className="font-medium text-[#121E3C] font-lato">
                   {currentTrade || 'No trade selected'}
@@ -387,7 +387,7 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
               <button
                 type="button"
                 onClick={() => setShowTradeSelector(true)}
-                className="flex items-center gap-1.5 text-sm text-orange-600 hover:text-orange-700 font-medium"
+                className="flex items-center gap-1.5 text-sm text-purple-600 hover:text-purple-700 font-medium"
               >
                 <Edit3 className="w-4 h-4" />
                 Change
@@ -418,7 +418,7 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
                     }}
                     className={`w-full text-left px-4 py-2.5 rounded-lg transition-all text-sm font-lato ${
                       formData.selectedTrades.includes(trade)
-                        ? 'bg-orange-100 border border-orange-300 text-orange-700 font-medium'
+                        ? 'bg-purple-100 border border-purple-300 text-purple-700 font-medium'
                         : 'text-gray-700 hover:bg-white border border-transparent hover:border-gray-200'
                     }`}
                   >
@@ -439,7 +439,7 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
           <select
             value={formData.experienceYears}
             onChange={(e) => updateFormData('experienceYears', e.target.value)}
-            className={`w-full h-12 px-4 font-lato text-sm rounded-xl border bg-gray-50/50 focus:bg-white focus:border-orange-400 focus:ring-orange-400/20 transition-all ${
+            className={`w-full h-12 px-4 font-lato text-sm rounded-xl border bg-gray-50/50 focus:bg-white focus:border-purple-400 focus:ring-purple-400/20 transition-all ${
               errors.experienceYears ? 'border-red-400' : 'border-gray-200'
             }`}
           >
@@ -466,7 +466,7 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
               step="5"
               value={formData.travelDistance}
               onChange={(e) => updateFormData('travelDistance', parseInt(e.target.value))}
-              className="w-full accent-orange-500"
+              className="w-full accent-purple-500"
             />
             <div className="flex justify-between text-xs text-gray-400 font-lato">
               <span>5 km</span>
@@ -491,7 +491,7 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
             value={formData.lga}
             onChange={(e) => updateFormData('lga', e.target.value)}
             disabled={!formData.state && !user?.location}
-            className={`w-full h-12 px-4 font-lato text-sm rounded-xl border bg-gray-50/50 focus:bg-white focus:border-orange-400 focus:ring-orange-400/20 transition-all disabled:opacity-50 ${
+            className={`w-full h-12 px-4 font-lato text-sm rounded-xl border bg-gray-50/50 focus:bg-white focus:border-purple-400 focus:ring-purple-400/20 transition-all disabled:opacity-50 ${
               errors.lga ? 'border-red-400' : 'border-gray-200'
             }`}
           >
@@ -512,7 +512,7 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
             placeholder="Street and house number, Town"
             value={formData.businessAddress}
             onChange={(e) => updateFormData('businessAddress', e.target.value)}
-            className="w-full px-4 py-3 font-lato text-sm rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:border-orange-400 focus:ring-orange-400/20 transition-all"
+            className="w-full px-4 py-3 font-lato text-sm rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:border-purple-400 focus:ring-purple-400/20 transition-all"
             rows="2"
           />
         </div>
@@ -526,7 +526,7 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
             placeholder="e.g., 101001"
             value={formData.postcode}
             onChange={(e) => updateFormData('postcode', e.target.value)}
-            className="h-12 font-lato text-sm rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white focus:border-orange-400 focus:ring-orange-400/20 transition-all"
+            className="h-12 font-lato text-sm rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white focus:border-purple-400 focus:ring-purple-400/20 transition-all"
           />
           <p className="text-xs text-gray-400 mt-1 font-lato">Nigerian zip codes are 6 digits.</p>
         </div>

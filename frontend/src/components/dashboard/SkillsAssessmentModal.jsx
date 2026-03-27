@@ -69,6 +69,7 @@ const getQuizQuestions = (tradeCategories = []) => {
 };
 
 const SkillsAssessmentModal = ({ isOpen, onClose, onComplete }) => {
+  const [showIntro, setShowIntro] = useState(true);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState({});
   const [showResults, setShowResults] = useState(false);
@@ -80,9 +81,9 @@ const SkillsAssessmentModal = ({ isOpen, onClose, onComplete }) => {
   const questions = getQuizQuestions(user?.trade_categories);
   const totalQuestions = questions.length;
 
-  // Timer
+  // Timer - only starts when quiz begins (not in intro)
   useEffect(() => {
-    if (!isOpen || showResults) return;
+    if (!isOpen || showResults || showIntro) return;
     
     if (timeLeft <= 0) {
       handleSubmitQuiz();
@@ -94,7 +95,18 @@ const SkillsAssessmentModal = ({ isOpen, onClose, onComplete }) => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isOpen, timeLeft, showResults]);
+  }, [isOpen, timeLeft, showResults, showIntro]);
+
+  // Reset state when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setShowIntro(true);
+      setCurrentQuestion(0);
+      setSelectedAnswers({});
+      setShowResults(false);
+      setTimeLeft(300);
+    }
+  }, [isOpen]);
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -208,12 +220,12 @@ const SkillsAssessmentModal = ({ isOpen, onClose, onComplete }) => {
                   Skills Assessment
                 </h2>
                 <p className="text-xs text-gray-500 font-lato mt-0.5">
-                  {showResults ? 'Your Results' : `Question ${currentQuestion + 1} of ${totalQuestions}`}
+                  {showIntro ? 'Prove your expertise' : showResults ? 'Your Results' : `Question ${currentQuestion + 1} of ${totalQuestions}`}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              {!showResults && (
+              {!showResults && !showIntro && (
                 <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${
                   timeLeft <= 60 ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600'
                 }`}>
@@ -231,7 +243,7 @@ const SkillsAssessmentModal = ({ isOpen, onClose, onComplete }) => {
           </div>
 
           {/* Progress bar */}
-          {!showResults && (
+          {!showResults && !showIntro && (
             <div className="mt-4">
               <div className="flex gap-1">
                 {questions.map((_, idx) => (
@@ -253,7 +265,49 @@ const SkillsAssessmentModal = ({ isOpen, onClose, onComplete }) => {
 
         {/* Content */}
         <div className="p-4 sm:p-6 overflow-y-auto max-h-[55vh]">
-          {!showResults ? (
+          {showIntro ? (
+            /* Intro Screen */
+            <div className="text-center py-4">
+              <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-purple-100 to-indigo-100 flex items-center justify-center">
+                <Award className="w-10 h-10 text-purple-500" />
+              </div>
+
+              <h3 className="text-xl font-bold text-[#121E3C] font-montserrat mb-3">
+                Showcase Your Expertise
+              </h3>
+
+              <p className="text-gray-600 font-lato mb-6 max-w-md mx-auto">
+                Take this quick assessment to earn a <strong>Skills Verified</strong> badge on your profile. 
+                Verified tradespersons get <span className="text-purple-600 font-medium">2x more job inquiries</span> from homeowners.
+              </p>
+
+              <div className="bg-purple-50 rounded-xl p-4 mb-6 text-left">
+                <h4 className="font-semibold text-[#121E3C] font-montserrat mb-3">What to expect:</h4>
+                <ul className="space-y-2 text-sm text-gray-600 font-lato">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-purple-500 flex-shrink-0" />
+                    <span><strong>5 questions</strong> about professional practices</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-purple-500 flex-shrink-0" />
+                    <span><strong>5 minutes</strong> time limit</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Award className="w-4 h-4 text-purple-500 flex-shrink-0" />
+                    <span><strong>60% score</strong> needed to pass</span>
+                  </li>
+                </ul>
+              </div>
+
+              <Button
+                onClick={() => setShowIntro(false)}
+                className="w-full bg-purple-500 hover:bg-purple-600 text-white py-3"
+              >
+                Start Assessment
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          ) : !showResults ? (
             <div className="space-y-6">
               {/* Question */}
               <div>
@@ -358,50 +412,52 @@ const SkillsAssessmentModal = ({ isOpen, onClose, onComplete }) => {
           )}
         </div>
 
-        {/* Footer */}
-        <div className="p-4 sm:p-6 border-t border-gray-100 bg-gray-50/50">
-          {!showResults ? (
-            <div className="flex items-center justify-between gap-3">
-              <Button
-                variant="ghost"
-                onClick={handlePrevQuestion}
-                disabled={currentQuestion === 0}
-                className="text-gray-600"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Previous
-              </Button>
+        {/* Footer - only show for quiz and results, not intro */}
+        {!showIntro && (
+          <div className="p-4 sm:p-6 border-t border-gray-100 bg-gray-50/50">
+            {!showResults ? (
+              <div className="flex items-center justify-between gap-3">
+                <Button
+                  variant="ghost"
+                  onClick={handlePrevQuestion}
+                  disabled={currentQuestion === 0}
+                  className="text-gray-600"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Previous
+                </Button>
 
-              {currentQuestion === totalQuestions - 1 ? (
-                <Button
-                  onClick={handleSubmitQuiz}
-                  disabled={!allAnswered || isLoading}
-                  className="bg-purple-500 hover:bg-purple-600 text-white px-6"
-                >
-                  {isLoading ? 'Submitting...' : 'Submit Quiz'}
-                  <CheckCircle className="w-4 h-4 ml-2" />
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleNextQuestion}
-                  disabled={selectedAnswers[currentQ.id] === undefined}
-                  className="bg-purple-500 hover:bg-purple-600 text-white px-6"
-                >
-                  Next
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              )}
-            </div>
-          ) : (
-            <Button
-              onClick={handleRetakeOrClose}
-              className="w-full bg-purple-500 hover:bg-purple-600 text-white py-3"
-            >
-              {calculateScore().percentage >= 60 ? 'Continue' : 'Close'}
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
-          )}
-        </div>
+                {currentQuestion === totalQuestions - 1 ? (
+                  <Button
+                    onClick={handleSubmitQuiz}
+                    disabled={!allAnswered || isLoading}
+                    className="bg-purple-500 hover:bg-purple-600 text-white px-6"
+                  >
+                    {isLoading ? 'Submitting...' : 'Submit Quiz'}
+                    <CheckCircle className="w-4 h-4 ml-2" />
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleNextQuestion}
+                    disabled={selectedAnswers[currentQ.id] === undefined}
+                    className="bg-purple-500 hover:bg-purple-600 text-white px-6"
+                  >
+                    Next
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <Button
+                onClick={handleRetakeOrClose}
+                className="w-full bg-purple-500 hover:bg-purple-600 text-white py-3"
+              >
+                {calculateScore().percentage >= 60 ? 'Continue' : 'Close'}
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

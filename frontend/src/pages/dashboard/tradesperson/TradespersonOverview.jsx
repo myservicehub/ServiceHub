@@ -55,20 +55,10 @@ const TradespersonOverview = () => {
     loadDashboardData();
   }, []);
 
-  // Auto-show profile completion modal for incomplete profiles
+  // Auto-show profile completion modal immediately for incomplete profiles
   useEffect(() => {
     if (!loading && isProfileIncomplete) {
-      // Check if user has dismissed the modal recently (within 24 hours)
-      const dismissedAt = localStorage.getItem('profileModalDismissed');
-      const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
-      
-      if (!dismissedAt || parseInt(dismissedAt) < oneDayAgo) {
-        // Small delay to let the page render first
-        const timer = setTimeout(() => {
-          setShowCompleteProfileModal(true);
-        }, 1000);
-        return () => clearTimeout(timer);
-      }
+      setShowCompleteProfileModal(true);
     }
   }, [loading, isProfileIncomplete]);
 
