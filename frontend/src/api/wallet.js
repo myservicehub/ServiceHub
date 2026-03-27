@@ -275,6 +275,17 @@ export const adminAPI = {
     return response.data;
   },
 
+  async setStateActivation(stateName, active) {
+    const formData = new FormData();
+    formData.append('active', String(Boolean(active)));
+    const response = await apiClient.put(`/admin/locations/states/${stateName}/activation`, formData, {
+      headers: {
+        'Content-Type': undefined,
+      },
+    });
+    return response.data;
+  },
+
   async getAllLGAs() {
     const response = await apiClient.get('/admin/locations/lgas');
     return response.data;

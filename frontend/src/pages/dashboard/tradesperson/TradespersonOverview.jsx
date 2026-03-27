@@ -19,6 +19,11 @@ import {
   Eye,
 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
+import ProfileCompletionBanner from '../../../components/dashboard/ProfileCompletionBanner';
+import CompleteProfileModal from '../../../components/dashboard/CompleteProfileModal';
+import VerifyContactModal from '../../../components/dashboard/VerifyContactModal';
+import SkillsAssessmentModal from '../../../components/dashboard/SkillsAssessmentModal';
+import BusinessVerificationModal from '../../../components/dashboard/BusinessVerificationModal';
 
 const TradespersonOverview = () => {
   const [stats, setStats] = useState({
@@ -30,12 +35,73 @@ const TradespersonOverview = () => {
   });
   const [recentJobs, setRecentJobs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const [showCompleteProfileModal, setShowCompleteProfileModal] = useState(false);
+  const [showVerifyContactModal, setShowVerifyContactModal] = useState(false);
+  const [showSkillsModal, setShowSkillsModal] = useState(false);
+  const [showBusinessModal, setShowBusinessModal] = useState(false);
+  const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
+
+  // Check if profile is incomplete (missing key fields)
+  const isProfileIncomplete = !user?.experience_years || 
+    !user?.business_type || 
+    !user?.company_name || 
+    !user?.description || 
+    (user?.description?.length || 0) < 50;
+  
+  const isContactVerified = user?.email_verified && user?.phone_verified;
+  const isSkillsTestPassed = user?.skills_test_passed || false;
+  const isBusinessVerified = user?.business_verified || false;
 
   useEffect(() => {
     loadDashboardData();
   }, []);
+
+  // Auto-show the next incomplete step modal on load
+  useEffect(() => {
+    if (loading) return;
+    
+    // Show first incomplete step in priority order
+    if (isProfileIncomplete) {
+      setShowCompleteProfileModal(true);
+    } else if (!isContactVerified) {
+      setShowVerifyContactModal(true);
+    } else if (!isSkillsTestPassed) {
+      setShowSkillsModal(true);
+    } else if (!isBusinessVerified) {
+      setShowBusinessModal(true);
+    }
+  }, [loading, isProfileIncomplete, isContactVerified, isSkillsTestPassed, isBusinessVerified]);
+
+  const handleCloseProfileModal = () => {
+    setShowCompleteProfileModal(false);
+    localStorage.setItem('profileModalDismissed', Date.now().toString());
+  };
+
+  const handleProfileComplete = async () => {
+    if (refreshUser) await refreshUser();
+    setShowCompleteProfileModal(false);
+    localStorage.removeItem('profileModalDismissed');
+  };
+
+  const handleVerifyContactComplete = async () => {
+    if (refreshUser) await refreshUser();
+    setShowVerifyContactModal(false);
+  };
+
+  const handleSkillsComplete = async () => {
+    if (refreshUser) await refreshUser();
+    setShowSkillsModal(false);
+  };
+
+  const handleBusinessVerification = () => {
+    setShowBusinessModal(true);
+  };
+
+  const handleBusinessComplete = async () => {
+    if (refreshUser) await refreshUser();
+    setShowBusinessModal(false);
+  };
 
   const loadDashboardData = async () => {
     try {
@@ -166,6 +232,20 @@ const TradespersonOverview = () => {
           Browse Jobs
         </Button>
       </div>
+
+      {/* Profile Completion Banner - Shows only for incomplete profiles */}
+      {(isProfileIncomplete || !isContactVerified || !isSkillsTestPassed || !isBusinessVerified) && (
+        <ProfileCompletionBanner
+          onCompleteProfile={() => setShowCompleteProfileModal(true)}
+          onVerifyContact={() => setShowVerifyContactModal(true)}
+          onTakeSkillsTest={() => setShowSkillsModal(true)}
+          onBusinessVerification={handleBusinessVerification}
+          profileCompleted={!isProfileIncomplete}
+          contactVerified={isContactVerified}
+          skillsTestPassed={isSkillsTestPassed}
+          businessVerified={isBusinessVerified}
+        />
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -327,6 +407,34 @@ const TradespersonOverview = () => {
           </Button>
         </div>
       </div>
+
+      {/* Complete Profile Modal */}
+      <CompleteProfileModal
+        isOpen={showCompleteProfileModal}
+        onClose={handleCloseProfileModal}
+        onComplete={handleProfileComplete}
+      />
+
+      {/* Verify Contact Modal */}
+      <VerifyContactModal
+        isOpen={showVerifyContactModal}
+        onClose={() => setShowVerifyContactModal(false)}
+        onComplete={handleVerifyContactComplete}
+      />
+
+      {/* Skills Assessment Modal */}
+      <SkillsAssessmentModal
+        isOpen={showSkillsModal}
+        onClose={() => setShowSkillsModal(false)}
+        onComplete={handleSkillsComplete}
+      />
+
+      {/* Business Verification Modal */}
+      <BusinessVerificationModal
+        isOpen={showBusinessModal}
+        onClose={() => setShowBusinessModal(false)}
+        onComplete={handleBusinessComplete}
+      />
     </div>
   );
 };

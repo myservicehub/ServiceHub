@@ -279,6 +279,7 @@ class ReviewsResponse(BaseModel):
 
 class StatsResponse(BaseModel):
     total_tradespeople: int
+    total_homeowners: int
     total_categories: int
     total_states: int
     total_reviews: int

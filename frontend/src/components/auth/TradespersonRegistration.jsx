@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
@@ -60,6 +61,7 @@ const FALLBACK_TRADE_CATEGORIES = [
 
 const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchToLogin }) => {
   const uploadSectionRef = useRef(null);
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [tradeCategories, setTradeCategories] = useState(FALLBACK_TRADE_CATEGORIES);
@@ -128,11 +130,7 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
   const { toast } = useToast();
   const { states: nigerianStates, lgas: stateLGAs, loading: statesLoading, loadLGAs } = useStates();
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch { window.scrollTo(0, 0); }
-    }
-  }, [currentStep]);
+  // Removed: scroll effect no longer needed for single-page form
 
   // Helpers for distance display and simple state-based suggestions
   const kmToMiles = (km) => Math.round(km * 0.621371);
@@ -482,7 +480,7 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
 
         toast({
           title: "Congratulations! 🎉",
-          description: "Your account has been successfully created, please login to complete your account verification.",
+          description: "Your account has been created. Continue to complete your profile.",
           duration: 5000,
         });
 
@@ -524,11 +522,8 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
           console.warn('⚠️ Failed to update profile location:', locErr?.response?.data || locErr?.message || locErr);
         }
 
-        if (typeof onSwitchToLogin === 'function') {
-          onSwitchToLogin();
-        } else if (typeof onClose === 'function') {
-          onClose();
-        }
+        if (typeof onClose === 'function') onClose();
+        navigate('/trades/overview');
       } else {
         // Ensure error is a string, not an object
         const errorMessage = typeof result.error === 'string' 
@@ -584,6 +579,16 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
           newErrors.phone = 'Phone number is required';
         } else if (!validateNigerianPhone(formData.phone)) {
           newErrors.phone = 'Please enter a valid Nigerian phone number (e.g., 08140120508 or 8140120508)';
+        }
+        
+        // State validation
+        if (!formData.state) {
+          newErrors.state = 'Please select your state';
+        }
+        
+        // Primary expertise validation
+        if (formData.selectedTrades.length === 0) {
+          newErrors.selectedTrades = 'Please select your primary expertise';
         }
         
         // Enhanced password validation
@@ -648,27 +653,11 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
   };
 
   const getStepTitle = () => {
-    switch (currentStep) {
-      case 1: return 'Create Your Professional Profile';
-      case 2: return 'Tell Us About Your Expertise';
-      case 3: return 'Verify Your Identity';
-      case 4: return 'Showcase Your Skills';
-      case 5: return 'Complete Your Profile';
-      case 6: return 'Start Receiving Jobs';
-      default: return 'Registration';
-    }
+    return 'Create Your Professional Profile';
   };
 
   const getStepDescription = () => {
-    switch (currentStep) {
-      case 1: return 'Takes less than 3 minutes to complete';
-      case 2: return 'Help customers find you for the right jobs';
-      case 3: return 'Quick verification to build trust with customers';
-      case 4: return 'A short assessment to highlight your expertise';
-      case 5: return 'Make a great first impression';
-      case 6: return 'Get ready to connect with customers';
-      default: return '';
-    }
+    return null;
   };
 
   const renderProgressBar = () => (
@@ -759,13 +748,32 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
           </div>
           {errors.phone && <p className="text-red-500 text-xs mt-1 font-lato">{errors.phone}</p>}
         </div>
+
+        <div>
+          <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
+            State
+          </label>
+          <select
+            value={formData.state}
+            onChange={(e) => updateFormData('state', e.target.value)}
+            className={`w-full h-12 px-4 font-lato text-sm rounded-xl border bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all ${
+              errors.state ? 'border-red-400' : 'border-gray-200'
+            }`}
+          >
+            <option value="">Select your state</option>
+            {nigerianStates.map((state) => (
+              <option key={state} value={state}>{state}</option>
+            ))}
+          </select>
+          {errors.state && <p className="text-red-500 text-xs mt-1 font-lato">{errors.state}</p>}
+        </div>
       </div>
 
       {/* Section 3: Referral */}
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
-            Referral code
+            Referral code <span className="text-gray-400 font-normal">(optional)</span>
           </label>
           <Input
             placeholder="Enter a referral code if you have one"
@@ -776,7 +784,54 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
         </div>
       </div>
 
-      {/* Section 4: Security */}
+      {/* Section 4: Primary Expertise - Single Selection */}
+      <div className="space-y-4">
+        <div>
+          <p className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
+            Primary expertise
+          </p>
+          <p className="text-xs text-gray-400 mb-3 font-lato">
+            Select your main trade. You can add more later in your dashboard.
+          </p>
+          <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-xl p-3 bg-gray-50/30 space-y-2">
+            {tradeCategories.map((trade) => (
+              <div 
+                key={trade} 
+                role="button"
+                tabIndex={0}
+                className={`flex items-center justify-between cursor-pointer px-4 py-3 rounded-xl transition-all ${
+                  formData.selectedTrades.includes(trade) 
+                    ? 'bg-[#34D164]/10 border-2 border-[#34D164] shadow-sm' 
+                    : 'hover:bg-white hover:shadow-sm border-2 border-gray-100 bg-white'
+                }`}
+                onClick={() => {
+                  setFormData(prev => ({ ...prev, selectedTrades: [trade] }));
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setFormData(prev => ({ ...prev, selectedTrades: [trade] }));
+                  }
+                }}
+              >
+                <span className="font-lato text-gray-700 text-sm">{trade}</span>
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all flex-shrink-0 ${
+                  formData.selectedTrades.includes(trade)
+                    ? 'bg-[#34D164] border-[#34D164]'
+                    : 'border-gray-300 bg-white'
+                }`}>
+                  {formData.selectedTrades.includes(trade) && (
+                    <CheckCircle className="w-3 h-3 text-white" />
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+          {errors.selectedTrades && <p className="text-red-500 text-xs mt-1 font-lato">{errors.selectedTrades}</p>}
+        </div>
+      </div>
+
+      {/* Section 5: Security - Password */}
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
@@ -1389,26 +1444,20 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
               <CardTitle className="text-2xl font-bold font-montserrat text-[#121E3C]">
                 {getStepTitle()}
               </CardTitle>
-              <p className="text-gray-400 font-lato text-sm mt-1">
-                {getStepDescription()}
+              {/* Already have an account link */}
+              <p className="text-gray-500 font-lato text-sm mt-3">
+                Already have an account?{' '}
+                <button 
+                  type="button" 
+                  onClick={onSwitchToLogin || onClose}
+                  className="text-[#34D164] font-semibold hover:underline"
+                >
+                  Login
+                </button>
               </p>
-              {/* Already have an account link - only on step 1 */}
-              {currentStep === 1 && (
-                <p className="text-gray-500 font-lato text-sm mt-3">
-                  Already have an account?{' '}
-                  <button 
-                    type="button" 
-                    onClick={onSwitchToLogin || onClose}
-                    className="text-[#34D164] font-semibold hover:underline"
-                  >
-                    Login
-                  </button>
-                </p>
-              )}
             </CardHeader>
 
             <CardContent className="px-6 lg:px-10 pb-8">
-              {renderProgressBar()}
         {errors.submit && (
           <div className="mb-4 flex items-start rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
             <AlertCircle className="mr-2 h-4 w-4" />
@@ -1416,131 +1465,28 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
           </div>
         )}
         
-        <div className="min-h-[500px]">
-          {currentStep === 1 && renderStep1()}
-          {currentStep === 2 && renderStep2()}
-          {currentStep === 3 && renderStep3()}
-          {currentStep === 4 && (
-            <SkillsTestComponent 
-              formData={formData} 
-              updateFormData={updateFormData}
-              onTestComplete={(results) => {
-                if (results.passed) {
-                  toast({
-                    title: "Skills Test Passed!",
-                    description: `Congratulations! You scored ${results.overallScore}%. You can now continue with your registration.`,
-                  });
-                } else {
-                  toast({
-                    title: "Skills Test Failed",
-                    description: `You scored ${results.overallScore}%. You need 80% or higher to continue.`,
-                    variant: "destructive"
-                  });
-                }
-              }}
-            />
-          )}
-          {currentStep === 5 && <ProfileSetup formData={formData} updateFormData={updateFormData} />}
-          {currentStep === 6 && (
-            <div className="space-y-8 px-2">
-              {/* Section Header */}
-              <div className="space-y-4">
-                <h3 className="text-xs font-semibold font-lato text-gray-400 uppercase tracking-wider">Wallet Setup</h3>
-                
-                {/* Main Card */}
-                <div className="bg-gradient-to-br from-[#121E3C] to-[#1e3a5f] rounded-2xl p-6 text-white">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center">
-                      <Wallet className="h-6 w-6 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold font-montserrat">Fund your wallet</h3>
-                      <p className="text-white/70 text-sm font-lato">
-                        Access homeowner contact details for jobs
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* How it works */}
-                  <div className="bg-white/10 rounded-xl p-4 mb-5">
-                    <h4 className="font-medium text-white/90 mb-2 text-sm font-lato">How it works:</h4>
-                    <ul className="text-sm text-white/70 space-y-1 font-lato">
-                      <li>• 1 coin = ₦100</li>
-                      <li>• Fund once, access multiple job contacts</li>
-                      <li>• Unused coins remain in your wallet</li>
-                    </ul>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="space-y-3">
-                    <button
-                      onClick={() => {
-                        console.log('🔵 FUND NOW BUTTON CLICKED (DIRECT)');
-                        updateFormData('walletSetup', 'fund_now');
-                        setShowPaymentPage(true);
-                      }}
-                      disabled={isLoading}
-                      className="w-full bg-[#34D164] hover:bg-[#2ab854] text-white py-3.5 px-6 rounded-xl font-medium font-lato disabled:opacity-50 transition-all shadow-lg shadow-[#34D164]/20"
-                      type="button"
-                    >
-                      {isLoading ? 'Processing...' : 'Fund Now & Complete Registration'}
-                    </button>
-                    
-                    <button
-                      onClick={() => {
-                        console.log('🔘 SET UP WALLET LATER BUTTON CLICKED (DIRECT)');
-                        updateFormData('walletSetup', 'later');
-                        // Pass explicit override to avoid async state race
-                        handleFinalSubmit('later');
-                      }}
-                      disabled={isLoading}
-                      className="w-full border border-white/30 text-white/80 hover:bg-white/10 py-3.5 px-6 rounded-xl font-medium font-lato disabled:opacity-50 transition-all"
-                      type="button"
-                    >
-                      {isLoading ? 'Completing Registration...' : 'Set Up Wallet Later'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+        <div className="min-h-[400px]">
+          {renderStep1()}
         </div>
 
-        <div className={`${currentStep === 4 && !formData.skillsTestPassed ? 'hidden md:block' : ''} pt-6 border-t border-gray-100 mt-8`}>
-          <div className="flex justify-between items-center">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={prevStep}
-              disabled={currentStep === 1}
-              className="flex items-center gap-2 text-gray-500 hover:text-gray-700 hover:bg-gray-50 font-lato disabled:opacity-30"
-            >
-              <ArrowLeft size={16} />
-              <span>Back</span>
-            </Button>
-
-            {currentStep < 6 && (
-              <Button
-                type="button"
-                onClick={nextStep}
-                disabled={isLoading || (currentStep === 4 && !formData.skillsTestPassed)}
-                aria-disabled={isLoading || (currentStep === 4 && !formData.skillsTestPassed)}
-                title={currentStep === 4 && !formData.skillsTestPassed ? 'Complete the skills test to continue' : undefined}
-                className="flex items-center gap-2 bg-[#34D164] hover:bg-[#2ab854] text-white px-6 py-2.5 rounded-xl font-medium font-lato shadow-sm transition-all disabled:opacity-50"
-              >
-                <span>Continue</span>
-                <ArrowRight size={16} />
-              </Button>
-            )}
-            {currentStep === 6 && (
-              <div className="text-sm text-gray-600">
-                Choose your wallet setup option below
-              </div>
-            )}
-          </div>
-          {currentStep === 4 && !formData.skillsTestPassed && (
-            <p className="mt-3 text-center text-xs text-gray-400 font-lato">Complete the skills test above to continue.</p>
-          )}
+        {/* Create Account Button */}
+        <div className="pt-6 border-t border-gray-100 mt-8">
+          <Button
+            type="button"
+            onClick={handleFinalSubmit}
+            disabled={isLoading}
+            className="w-full bg-[#34D164] hover:bg-[#2ab854] text-white py-3 rounded-xl font-medium font-lato shadow-sm transition-all disabled:opacity-50"
+          >
+            {isLoading ? 'Creating Account...' : 'Create Account'}
+          </Button>
+          
+          {/* Terms */}
+          <p className="text-center text-xs text-gray-400 font-lato mt-4">
+            By creating an account, you agree to our{' '}
+            <a href="/terms" className="text-[#34D164] hover:underline">Terms of Service</a>
+            {' '}and{' '}
+            <a href="/privacy" className="text-[#34D164] hover:underline">Privacy Policy</a>
+          </p>
         </div>
       </CardContent>
           </Card>

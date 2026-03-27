@@ -67,6 +67,10 @@ class User(BaseModel):
     longitude: Optional[float] = None          # Home base longitude for tradespeople
     travel_distance_km: Optional[int] = 25     # Maximum travel distance in kilometers (default 25km)
     business_type: Optional[str] = None
+    skills_test_passed: bool = False
+    skills_test_score: Optional[int] = None
+    skills_test_completed_at: Optional[datetime] = None
+    business_verified: bool = False
 
     def dict(self, **kwargs):
         d = super().dict(**kwargs)
@@ -91,13 +95,13 @@ class TradespersonRegistration(BaseModel):
     email: EmailStr
     phone: str
     password: str = Field(..., min_length=8)
-    location: str
-    postcode: str
-    trade_categories: List[str]
-    experience_years: int = Field(..., ge=0, le=50)
+    location: Optional[str] = None
+    postcode: Optional[str] = None
+    trade_categories: List[str] = Field(default_factory=list)
+    experience_years: int = Field(0, ge=0, le=50)
     company_name: Optional[str] = None
-    description: str = Field(..., min_length=50, max_length=1000)
-    certifications: List[Union[str, Certification]] = []
+    description: Optional[str] = Field(None, max_length=1000)
+    certifications: List[Union[str, Certification]] = Field(default_factory=list)
     referral_code: Optional[str] = None  # Optional referral code
     business_type: Optional[str] = None
 
@@ -144,18 +148,25 @@ class UserProfile(BaseModel):
     total_jobs: Optional[int] = None
     verified_tradesperson: Optional[bool] = None
     business_type: Optional[str] = None
+    travel_distance_km: Optional[int] = None
+    skills_test_passed: bool = False
+    skills_test_score: Optional[int] = None
+    skills_test_completed_at: Optional[datetime] = None
+    business_verified: bool = False
 
 class UserProfileUpdate(BaseModel):
     name: Optional[str] = None
     phone: Optional[str] = None
     location: Optional[str] = None
     postcode: Optional[str] = None
-
-class TradespersonProfileUpdate(UserProfileUpdate):
     trade_categories: Optional[List[str]] = None
     experience_years: Optional[int] = None
     company_name: Optional[str] = None
     description: Optional[str] = None
+    business_type: Optional[str] = None
+    travel_distance_km: Optional[int] = None
+
+class TradespersonProfileUpdate(UserProfileUpdate):
     certifications: Optional[List[Union[str, Certification]]] = None
 
 # Token Models
