@@ -144,6 +144,7 @@ export const statsAPI = {
     return {
       ...d,
       total_tradespeople: Number(d.total_tradespeople ?? d.totalTradespeople ?? 0),
+      total_homeowners: Number(d.total_homeowners ?? d.totalHomeowners ?? 0),
       total_categories: Number(d.total_categories ?? d.totalCategories ?? d.categories_count ?? 0),
       total_reviews: Number(d.total_reviews ?? d.totalReviews ?? 0),
     };

@@ -1956,6 +1956,7 @@ class Database:
             total_categories = len(all_trades)
             return {
                 "total_tradespeople": 0,
+                "total_homeowners": 0,
                 "total_categories": total_categories,
                 "total_reviews": 0,
                 "average_rating": 0.0,
@@ -1965,6 +1966,7 @@ class Database:
 
         # Total tradespeople from users collection
         total_tradespeople = await self.database.users.count_documents({"role": "tradesperson"})
+        total_homeowners = await self.database.users.count_documents({"role": "homeowner"})
         
         # Total reviews
         total_reviews = await self.database.reviews.count_documents({})
@@ -2018,6 +2020,7 @@ class Database:
 
         return {
             "total_tradespeople": total_tradespeople,
+            "total_homeowners": total_homeowners,
             "total_categories": total_categories,
             "total_states": total_states,
             "total_reviews": total_reviews,
