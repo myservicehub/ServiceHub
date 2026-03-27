@@ -1,72 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { X, BookOpen, CheckCircle, Clock, Award, ArrowRight, ArrowLeft, AlertCircle } from 'lucide-react';
+import { X, BookOpen, CheckCircle, Clock, Award, ArrowRight, ArrowLeft, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../hooks/use-toast';
 import { jobsAPI } from '../../api/jobs';
-
-// Sample quiz questions based on trade categories
-const getQuizQuestions = (tradeCategories = []) => {
-  const generalQuestions = [
-    {
-      id: 1,
-      question: "What is the most important factor when starting a new job?",
-      options: [
-        "Starting work immediately",
-        "Assessing the scope and discussing with the client",
-        "Quoting the highest price possible",
-        "Working without a plan"
-      ],
-      correctIndex: 1,
-    },
-    {
-      id: 2,
-      question: "How should you handle a customer complaint?",
-      options: [
-        "Ignore it and continue working",
-        "Argue with the customer",
-        "Listen carefully, apologize, and find a solution",
-        "Leave the job immediately"
-      ],
-      correctIndex: 2,
-    },
-    {
-      id: 3,
-      question: "What safety equipment should always be worn on a job site?",
-      options: [
-        "Casual clothing",
-        "Appropriate PPE for the task",
-        "No equipment needed",
-        "Only gloves"
-      ],
-      correctIndex: 1,
-    },
-    {
-      id: 4,
-      question: "When is it appropriate to request an upfront payment?",
-      options: [
-        "Never",
-        "For large jobs requiring material purchases",
-        "For every small job",
-        "Only after completing the work"
-      ],
-      correctIndex: 1,
-    },
-    {
-      id: 5,
-      question: "What should you do if you encounter unexpected issues during a job?",
-      options: [
-        "Fix it without telling the client",
-        "Leave the job",
-        "Communicate with the client and discuss options",
-        "Charge extra without explanation"
-      ],
-      correctIndex: 2,
-    },
-  ];
-
-  return generalQuestions;
-};
+import { skillsAPI } from '../../api/wallet';
 
 const SkillsAssessmentModal = ({ isOpen, onClose, onComplete }) => {
   const [showIntro, setShowIntro] = useState(true);
@@ -74,11 +12,12 @@ const SkillsAssessmentModal = ({ isOpen, onClose, onComplete }) => {
   const [selectedAnswers, setSelectedAnswers] = useState({});
   const [showResults, setShowResults] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingQuestions, setIsFetchingQuestions] = useState(false);
+  const [questions, setQuestions] = useState([]);
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes
   const { user, refreshUser } = useAuth();
   const { toast } = useToast();
 
-  const questions = getQuizQuestions(user?.trade_categories);
   const totalQuestions = questions.length;
 
   // Timer - only starts when quiz begins (not in intro)
@@ -97,7 +36,7 @@ const SkillsAssessmentModal = ({ isOpen, onClose, onComplete }) => {
     return () => clearInterval(timer);
   }, [isOpen, timeLeft, showResults, showIntro]);
 
-  // Reset state when modal opens
+  // Fetch questions from database when modal opens
   useEffect(() => {
     if (isOpen) {
       setShowIntro(true);
@@ -105,8 +44,33 @@ const SkillsAssessmentModal = ({ isOpen, onClose, onComplete }) => {
       setSelectedAnswers({});
       setShowResults(false);
       setTimeLeft(300);
+      fetchQuestions();
     }
   }, [isOpen]);
+
+  const fetchQuestions = async () => {
+    const tradeCategory = user?.trade_categories?.[0] || 'General Handyman Work';
+    setIsFetchingQuestions(true);
+    try {
+      const response = await skillsAPI.getQuestionsForTrade(tradeCategory);
+      if (response?.questions?.length > 0) {
+        const formatted = response.questions.map((q, idx) => ({
+          id: idx + 1,
+          question: q.question,
+          options: q.options || [],
+          correctIndex: q.correct ?? 0,
+        }));
+        setQuestions(formatted);
+      } else {
+        toast({ title: "No questions available", description: "Please try again later", variant: "destructive" });
+      }
+    } catch (error) {
+      console.error('Failed to fetch questions:', error);
+      toast({ title: "Failed to load questions", description: "Please try again", variant: "destructive" });
+    } finally {
+      setIsFetchingQuestions(false);
+    }
+  };
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -240,7 +204,11 @@ const SkillsAssessmentModal = ({ isOpen, onClose, onComplete }) => {
           {showIntro ? (
             <div className="text-center py-2">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#121E3C]/10 flex items-center justify-center">
-                <Award className="w-8 h-8 text-[#121E3C]" />
+                {isFetchingQuestions ? (
+                  <Loader2 className="w-8 h-8 text-[#121E3C] animate-spin" />
+                ) : (
+                  <Award className="w-8 h-8 text-[#121E3C]" />
+                )}
               </div>
 
               <h3 className="text-xl font-bold text-[#121E3C] font-montserrat mb-3">
@@ -257,7 +225,7 @@ const SkillsAssessmentModal = ({ isOpen, onClose, onComplete }) => {
                 <ul className="space-y-2 text-sm text-gray-600 font-lato">
                   <li className="flex items-center gap-2">
                     <CheckCircle className="w-4 h-4 text-[#121E3C] flex-shrink-0" />
-                    <span><strong>5 questions</strong> about professional practices</span>
+                    <span><strong>{isFetchingQuestions ? '...' : totalQuestions} questions</strong> about your trade</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-[#121E3C] flex-shrink-0" />
@@ -272,13 +240,14 @@ const SkillsAssessmentModal = ({ isOpen, onClose, onComplete }) => {
 
               <Button
                 onClick={() => setShowIntro(false)}
+                disabled={isFetchingQuestions || questions.length === 0}
                 className="w-full bg-[#121E3C] hover:bg-[#0d1629] text-white py-3"
               >
-                Start Assessment
-                <ArrowRight className="w-4 h-4 ml-2" />
+                {isFetchingQuestions ? 'Loading Questions...' : 'Start Assessment'}
+                {!isFetchingQuestions && <ArrowRight className="w-4 h-4 ml-2" />}
               </Button>
             </div>
-          ) : !showResults ? (
+          ) : !showResults && currentQ ? (
             <div>
               <p className="text-sm sm:text-base font-medium text-gray-900 mb-4">{currentQ.question}</p>
               <div className="space-y-2">
