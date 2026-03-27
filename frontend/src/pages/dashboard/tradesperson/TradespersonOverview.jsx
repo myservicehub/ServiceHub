@@ -19,6 +19,8 @@ import {
   Eye,
 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
+import ProfileCompletionBanner from '../../../components/dashboard/ProfileCompletionBanner';
+import CompleteProfileModal from '../../../components/dashboard/CompleteProfileModal';
 
 const TradespersonOverview = () => {
   const [stats, setStats] = useState({
@@ -30,12 +32,51 @@ const TradespersonOverview = () => {
   });
   const [recentJobs, setRecentJobs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const [showCompleteProfileModal, setShowCompleteProfileModal] = useState(false);
+  const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
+
+  // Check if profile is incomplete (missing key fields)
+  const isProfileIncomplete = !user?.experience_years || 
+    !user?.business_type || 
+    !user?.company_name || 
+    !user?.description || 
+    (user?.description?.length || 0) < 50;
+  
+  const isContactVerified = user?.email_verified && user?.phone_verified;
+  const isSkillsTestPassed = user?.skills_test_passed || false;
 
   useEffect(() => {
     loadDashboardData();
   }, []);
+
+  // Auto-show profile completion modal for incomplete profiles
+  useEffect(() => {
+    if (!loading && isProfileIncomplete) {
+      // Check if user has dismissed the modal recently (within 24 hours)
+      const dismissedAt = localStorage.getItem('profileModalDismissed');
+      const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+      
+      if (!dismissedAt || parseInt(dismissedAt) < oneDayAgo) {
+        // Small delay to let the page render first
+        const timer = setTimeout(() => {
+          setShowCompleteProfileModal(true);
+        }, 1000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [loading, isProfileIncomplete]);
+
+  const handleCloseProfileModal = () => {
+    setShowCompleteProfileModal(false);
+    localStorage.setItem('profileModalDismissed', Date.now().toString());
+  };
+
+  const handleProfileComplete = async () => {
+    if (refreshUser) await refreshUser();
+    setShowCompleteProfileModal(false);
+    localStorage.removeItem('profileModalDismissed');
+  };
 
   const loadDashboardData = async () => {
     try {
@@ -166,6 +207,18 @@ const TradespersonOverview = () => {
           Browse Jobs
         </Button>
       </div>
+
+      {/* Profile Completion Banner - Shows only for incomplete profiles */}
+      {(isProfileIncomplete || !isContactVerified || !isSkillsTestPassed) && (
+        <ProfileCompletionBanner
+          onCompleteProfile={() => setShowCompleteProfileModal(true)}
+          onVerifyContact={() => navigate('/trades/profile?tab=verification')}
+          onTakeSkillsTest={() => navigate('/trades/skills-test')}
+          profileCompleted={!isProfileIncomplete}
+          contactVerified={isContactVerified}
+          skillsTestPassed={isSkillsTestPassed}
+        />
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -327,6 +380,13 @@ const TradespersonOverview = () => {
           </Button>
         </div>
       </div>
+
+      {/* Complete Profile Modal */}
+      <CompleteProfileModal
+        isOpen={showCompleteProfileModal}
+        onClose={handleCloseProfileModal}
+        onComplete={handleProfileComplete}
+      />
     </div>
   );
 };

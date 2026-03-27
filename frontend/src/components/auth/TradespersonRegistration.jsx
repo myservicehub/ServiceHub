@@ -523,7 +523,7 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
         }
 
         if (typeof onClose === 'function') onClose();
-        navigate('/trades/profile');
+        navigate('/trades/overview');
       } else {
         // Ensure error is a string, not an object
         const errorMessage = typeof result.error === 'string' 
@@ -579,6 +579,11 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
           newErrors.phone = 'Phone number is required';
         } else if (!validateNigerianPhone(formData.phone)) {
           newErrors.phone = 'Please enter a valid Nigerian phone number (e.g., 08140120508 or 8140120508)';
+        }
+        
+        // State validation
+        if (!formData.state) {
+          newErrors.state = 'Please select your state';
         }
         
         // Primary expertise validation
@@ -743,13 +748,32 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
           </div>
           {errors.phone && <p className="text-red-500 text-xs mt-1 font-lato">{errors.phone}</p>}
         </div>
+
+        <div>
+          <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
+            State
+          </label>
+          <select
+            value={formData.state}
+            onChange={(e) => updateFormData('state', e.target.value)}
+            className={`w-full h-12 px-4 font-lato text-sm rounded-xl border bg-gray-50/50 focus:bg-white focus:border-[#34D164] focus:ring-[#34D164]/20 transition-all ${
+              errors.state ? 'border-red-400' : 'border-gray-200'
+            }`}
+          >
+            <option value="">Select your state</option>
+            {nigerianStates.map((state) => (
+              <option key={state} value={state}>{state}</option>
+            ))}
+          </select>
+          {errors.state && <p className="text-red-500 text-xs mt-1 font-lato">{errors.state}</p>}
+        </div>
       </div>
 
       {/* Section 3: Referral */}
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
-            Referral code
+            Referral code <span className="text-gray-400 font-normal">(optional)</span>
           </label>
           <Input
             placeholder="Enter a referral code if you have one"
