@@ -199,77 +199,48 @@ const SkillsAssessmentModal = ({ isOpen, onClose, onComplete }) => {
   const allAnswered = answeredCount === totalQuestions;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-20 sm:pb-4">
-      {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 pb-16 sm:p-4 sm:pb-4">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
-      {/* Modal */}
-      <div className="relative w-full max-w-2xl max-h-[85vh] sm:max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden">
-        {/* Header */}
-        <div className="relative p-4 sm:p-6 border-b border-gray-100">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-500">
-                <BookOpen className="w-5 h-5 text-white" />
+      <div className="relative w-full max-w-lg max-h-[80vh] sm:max-h-[85vh] bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b flex-shrink-0">
+          <div>
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900">
+              {showIntro ? 'Skills Assessment' : showResults ? 'Results' : `Question ${currentQuestion + 1}/${totalQuestions}`}
+            </h2>
+            {!showResults && !showIntro && (
+              <div className={`text-xs mt-0.5 ${timeLeft <= 60 ? 'text-red-500' : 'text-gray-500'}`}>
+                {formatTime(timeLeft)} remaining
               </div>
-              <div>
-                <h2 className="text-lg sm:text-xl font-bold text-[#121E3C] font-montserrat">
-                  Skills Assessment
-                </h2>
-                <p className="text-xs text-gray-500 font-lato mt-0.5">
-                  {showIntro ? 'Prove your expertise' : showResults ? 'Your Results' : `Question ${currentQuestion + 1} of ${totalQuestions}`}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              {!showResults && !showIntro && (
-                <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${
-                  timeLeft <= 60 ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600'
-                }`}>
-                  <Clock className="w-4 h-4" />
-                  <span className="text-sm font-medium font-mono">{formatTime(timeLeft)}</span>
-                </div>
-              )}
-              <button
-                onClick={onClose}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
+            )}
           </div>
-
-          {/* Progress bar */}
-          {!showResults && !showIntro && (
-            <div className="mt-4">
-              <div className="flex gap-1">
-                {questions.map((_, idx) => (
-                  <div
-                    key={idx}
-                    className={`h-1.5 flex-1 rounded-full transition-all ${
-                      selectedAnswers[questions[idx]?.id] !== undefined
-                        ? 'bg-purple-500'
-                        : idx === currentQuestion
-                          ? 'bg-purple-300'
-                          : 'bg-gray-200'
-                    }`}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
+          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-full">
+            <X className="w-5 h-5 text-gray-400" />
+          </button>
         </div>
 
-        {/* Content */}
-        <div className="p-4 sm:p-6 overflow-y-auto max-h-[55vh]">
+        {!showResults && !showIntro && (
+          <div className="px-4 sm:px-5 pt-3 flex-shrink-0">
+            <div className="flex gap-1">
+              {questions.map((_, idx) => (
+                <div
+                  key={idx}
+                  className={`h-1 flex-1 rounded-full ${
+                    selectedAnswers[questions[idx]?.id] !== undefined
+                      ? 'bg-purple-500'
+                      : idx === currentQuestion ? 'bg-purple-300' : 'bg-gray-200'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="p-4 sm:p-5 overflow-y-auto flex-1">
           {showIntro ? (
-            /* Intro Screen */
-            <div className="text-center py-4">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-purple-100 to-indigo-100 flex items-center justify-center">
-                <Award className="w-10 h-10 text-purple-500" />
+            <div className="text-center py-2">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-purple-100 flex items-center justify-center">
+                <Award className="w-8 h-8 text-purple-500" />
               </div>
 
               <h3 className="text-xl font-bold text-[#121E3C] font-montserrat mb-3">
@@ -308,40 +279,22 @@ const SkillsAssessmentModal = ({ isOpen, onClose, onComplete }) => {
               </Button>
             </div>
           ) : !showResults ? (
-            <div className="space-y-6">
-              {/* Question */}
-              <div>
-                <h3 className="text-base sm:text-lg font-semibold text-[#121E3C] font-montserrat mb-4">
-                  {currentQ.question}
-                </h3>
-
-                {/* Options */}
-                <div className="space-y-3">
-                  {currentQ.options.map((option, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => handleSelectAnswer(currentQ.id, idx)}
-                      className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
-                        selectedAnswers[currentQ.id] === idx
-                          ? 'border-purple-500 bg-purple-50'
-                          : 'border-gray-200 hover:border-purple-300 hover:bg-gray-50'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                          selectedAnswers[currentQ.id] === idx
-                            ? 'border-purple-500 bg-purple-500'
-                            : 'border-gray-300'
-                        }`}>
-                          {selectedAnswers[currentQ.id] === idx && (
-                            <CheckCircle className="w-4 h-4 text-white" />
-                          )}
-                        </div>
-                        <span className="text-sm text-gray-700 font-lato">{option}</span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
+            <div>
+              <p className="text-sm sm:text-base font-medium text-gray-900 mb-4">{currentQ.question}</p>
+              <div className="space-y-2">
+                {currentQ.options.map((option, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleSelectAnswer(currentQ.id, idx)}
+                    className={`w-full text-left p-3 rounded-lg border transition-all text-sm ${
+                      selectedAnswers[currentQ.id] === idx
+                        ? 'border-purple-500 bg-purple-50 text-purple-700'
+                        : 'border-gray-200 hover:border-purple-300'
+                    }`}
+                  >
+                    {option}
+                  </button>
+                ))}
               </div>
             </div>
           ) : (

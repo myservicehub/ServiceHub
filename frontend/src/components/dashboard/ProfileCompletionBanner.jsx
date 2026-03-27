@@ -11,10 +11,6 @@ const ProfileCompletionBanner = ({
   skillsTestPassed = false,
   businessVerified = false
 }) => {
-  // Check if first 3 steps are done to show business verification
-  const showBusinessVerification = profileCompleted && contactVerified && skillsTestPassed;
-  
-  // Don't render if ALL steps including business verification are completed
   if (profileCompleted && contactVerified && skillsTestPassed && businessVerified) {
     return null;
   }
@@ -22,8 +18,8 @@ const ProfileCompletionBanner = ({
   const steps = [
     {
       id: 'profile',
-      title: 'Complete Profile',
-      description: 'Add your expertise, business details, and bio',
+      title: 'Update Details',
+      description: 'Add expertise, location, and bio',
       icon: User,
       completed: profileCompleted,
       onClick: onCompleteProfile,
@@ -34,7 +30,7 @@ const ProfileCompletionBanner = ({
     {
       id: 'verify',
       title: 'Verify Contact',
-      description: 'Verify your email and phone number',
+      description: 'Verify email and phone',
       icon: Mail,
       completed: contactVerified,
       onClick: onVerifyContact,
@@ -44,8 +40,8 @@ const ProfileCompletionBanner = ({
     },
     {
       id: 'skills',
-      title: 'Skills Assessment',
-      description: 'Take a quick test to showcase your expertise',
+      title: 'Skills Test',
+      description: 'Quick test for verified badge',
       icon: BookOpen,
       completed: skillsTestPassed,
       onClick: onTakeSkillsTest,
@@ -53,27 +49,22 @@ const ProfileCompletionBanner = ({
       borderColor: 'border-purple-500',
       priority: profileCompleted && contactVerified && !skillsTestPassed,
     },
-  ];
-
-  // Add business verification step if first 3 are complete
-  if (showBusinessVerification) {
-    steps.push({
+    {
       id: 'business',
       title: 'Business Verification',
-      description: 'Verify your business for premium badge',
+      description: 'Verify business for premium badge',
       icon: Building2,
       completed: businessVerified,
       onClick: onBusinessVerification,
       bgColor: 'bg-gradient-to-br from-emerald-500 to-teal-500',
       borderColor: 'border-emerald-500',
-      priority: !businessVerified,
-    });
-  }
+      priority: profileCompleted && contactVerified && skillsTestPassed && !businessVerified,
+    },
+  ];
 
-  // Calculate completion percentage
-  const totalSteps = showBusinessVerification ? 4 : 3;
-  const completedCount = [profileCompleted, contactVerified, skillsTestPassed, showBusinessVerification && businessVerified].filter(Boolean).length;
-  const completionPercent = Math.round((completedCount / totalSteps) * 100);
+  const completedCount = [profileCompleted, contactVerified, skillsTestPassed, businessVerified].filter(Boolean).length;
+  const completionPercent = Math.round((completedCount / 4) * 100);
+  const remainingSteps = 4 - completedCount;
 
   return (
     <div className="mb-6">
@@ -84,7 +75,7 @@ const ProfileCompletionBanner = ({
             Complete Your Profile
           </h2>
           <p className="text-sm text-gray-500 font-lato">
-            {completionPercent}% complete • {3 - completedCount} steps remaining
+            {completionPercent}% complete • {remainingSteps} steps remaining
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -98,8 +89,7 @@ const ProfileCompletionBanner = ({
         </div>
       </div>
 
-      {/* Cards Grid */}
-      <div className={`grid grid-cols-1 gap-3 ${showBusinessVerification ? 'sm:grid-cols-2 lg:grid-cols-4' : 'md:grid-cols-3'}`}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {steps.map((step) => (
           <button
             key={step.id}

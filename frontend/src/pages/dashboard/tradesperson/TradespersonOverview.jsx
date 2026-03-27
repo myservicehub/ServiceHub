@@ -23,6 +23,7 @@ import ProfileCompletionBanner from '../../../components/dashboard/ProfileComple
 import CompleteProfileModal from '../../../components/dashboard/CompleteProfileModal';
 import VerifyContactModal from '../../../components/dashboard/VerifyContactModal';
 import SkillsAssessmentModal from '../../../components/dashboard/SkillsAssessmentModal';
+import BusinessVerificationModal from '../../../components/dashboard/BusinessVerificationModal';
 
 const TradespersonOverview = () => {
   const [stats, setStats] = useState({
@@ -37,6 +38,7 @@ const TradespersonOverview = () => {
   const [showCompleteProfileModal, setShowCompleteProfileModal] = useState(false);
   const [showVerifyContactModal, setShowVerifyContactModal] = useState(false);
   const [showSkillsModal, setShowSkillsModal] = useState(false);
+  const [showBusinessModal, setShowBusinessModal] = useState(false);
   const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
 
@@ -84,8 +86,12 @@ const TradespersonOverview = () => {
   };
 
   const handleBusinessVerification = () => {
-    // Navigate to business verification page or open modal
-    navigate('/trades/profile?tab=verification');
+    setShowBusinessModal(true);
+  };
+
+  const handleBusinessComplete = async () => {
+    if (refreshUser) await refreshUser();
+    setShowBusinessModal(false);
   };
 
   const loadDashboardData = async () => {
@@ -412,6 +418,13 @@ const TradespersonOverview = () => {
         isOpen={showSkillsModal}
         onClose={() => setShowSkillsModal(false)}
         onComplete={handleSkillsComplete}
+      />
+
+      {/* Business Verification Modal */}
+      <BusinessVerificationModal
+        isOpen={showBusinessModal}
+        onClose={() => setShowBusinessModal(false)}
+        onComplete={handleBusinessComplete}
       />
     </div>
   );

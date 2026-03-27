@@ -455,9 +455,18 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
 
         {/* Travel Distance */}
         <div>
-          <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
-            How far can you travel for work?
-          </label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="block text-sm font-medium font-lato text-[#121E3C]">
+              How far can you travel for work?
+            </label>
+            <button
+              type="button"
+              onClick={() => updateFormData('travelDistance', 15)}
+              className="text-xs text-purple-600 hover:text-purple-700 font-medium"
+            >
+              Apply 15km (recommended)
+            </button>
+          </div>
           <div className="space-y-3 p-4 bg-gray-50/50 rounded-xl border border-gray-200">
             <input
               type="range"
