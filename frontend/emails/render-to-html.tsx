@@ -23,6 +23,7 @@ import { EmailOtp } from './emails/email-otp';
 import { EmailVerification } from './emails/email-verification';
 import { ContactForm } from './emails/contact-form';
 import { PasswordReset } from './emails/password-reset';
+import { TradespersonWelcome } from './emails/tradesperson-welcome';
 
 // Define placeholder props for each email template
 const emailTemplates = [
@@ -230,6 +231,14 @@ const emailTemplates = [
       subject: '{{subject}}',
       message: '{{message}}',
       date: '{{date}}',
+    }
+  },
+  {
+    name: 'tradesperson-welcome',
+    component: TradespersonWelcome,
+    props: {
+      tradespersonName: '{{tradespersonName}}',
+      completeRegistrationUrl: '{{completeRegistrationUrl}}',
     }
   },
 ];
