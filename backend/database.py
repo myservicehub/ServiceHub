@@ -5534,18 +5534,84 @@ class Database:
         """Get all states combining static list and database custom states"""
         try:
             from models.nigerian_states import NIGERIAN_STATES
-            custom_states = await self.get_custom_states()
-            
-            # Combine and unique
-            all_states = list(set(NIGERIAN_STATES + custom_states))
+            state_records = await self.database.system_locations.find({"type": "state"}).to_list(length=None)
+            static_states = set(NIGERIAN_STATES)
+
+            inactive_static = set()
+            custom_active = set()
+            for record in state_records:
+                name = (record.get("name") or "").strip()
+                if not name:
+                    continue
+                is_active = bool(record.get("active", True))
+                if name in static_states:
+                    if not is_active:
+                        inactive_static.add(name)
+                else:
+                    if is_active:
+                        custom_active.add(name)
+
+            all_states = (static_states - inactive_static).union(custom_active)
             return sorted(all_states)
         except Exception as e:
             print(f"Error in get_all_states_dynamic: {e}")
             from models.nigerian_states import NIGERIAN_STATES
             return NIGERIAN_STATES
 
+    async def get_all_states_admin_details(self):
+        """Get all states with active/inactive status for admin management."""
+        try:
+            from models.nigerian_states import NIGERIAN_STATES
+
+            static_map = {
+                state_name: {
+                    "name": state_name,
+                    "active": True,
+                    "source": "static",
+                    "region": "",
+                    "postcode_samples": [],
+                }
+                for state_name in NIGERIAN_STATES
+            }
+
+            state_records = await self.database.system_locations.find({"type": "state"}).to_list(length=None)
+            for record in state_records:
+                name = (record.get("name") or "").strip()
+                if not name:
+                    continue
+                active = bool(record.get("active", True))
+                region = record.get("region", "")
+                postcode_samples = record.get("postcode_samples", [])
+
+                if name in static_map:
+                    static_map[name]["active"] = active
+                    if region:
+                        static_map[name]["region"] = region
+                    if postcode_samples:
+                        static_map[name]["postcode_samples"] = postcode_samples
+                else:
+                    static_map[name] = {
+                        "name": name,
+                        "active": active,
+                        "source": "custom",
+                        "region": region,
+                        "postcode_samples": postcode_samples,
+                    }
+
+            return sorted(static_map.values(), key=lambda x: x["name"])
+        except Exception as e:
+            print(f"Error in get_all_states_admin_details: {e}")
+            from models.nigerian_states import NIGERIAN_STATES
+            return sorted(
+                [{"name": s, "active": True, "source": "static", "region": "", "postcode_samples": []} for s in NIGERIAN_STATES],
+                key=lambda x: x["name"]
+            )
+
     async def get_lgas_for_state_dynamic(self, state_name: str):
         try:
+            active_states = await self.get_all_states_dynamic()
+            if state_name not in active_states:
+                return []
             from models.nigerian_lgas import get_lgas_for_state
             static_lgas = get_lgas_for_state(state_name)
             custom_lgas = await self.get_custom_lgas_for_state(state_name)
@@ -5590,7 +5656,7 @@ class Database:
         try:
             states_cursor = self.database.system_locations.find({"type": "state"})
             states = await states_cursor.to_list(length=None)
-            return [state["name"] for state in states]
+            return [state["name"] for state in states if state.get("active", True)]
         except Exception as e:
             print(f"Error getting custom states: {e}")
             return []
@@ -5605,7 +5671,8 @@ class Database:
                 "region": region,
                 "postcode_samples": postcode_samples.split(",") if postcode_samples else [],
                 "created_at": datetime.now(),
-                "type": "state"
+                "type": "state",
+                "active": True,
             }
             
             # Check if state already exists
@@ -5661,6 +5728,58 @@ class Database:
             return result.deleted_count > 0
         except Exception as e:
             print(f"Error deleting state: {e}")
+            return False
+
+    async def set_state_active(self, state_name: str, active: bool):
+        """Activate or deactivate a state without deleting it."""
+        try:
+            from models.nigerian_states import NIGERIAN_STATES
+            state_name = (state_name or "").strip()
+            if not state_name:
+                return False
+
+            static_exists = state_name in NIGERIAN_STATES
+            existing_doc = await self.database.system_locations.find_one({"name": state_name, "type": "state"})
+
+            if not static_exists and not existing_doc:
+                return False
+
+            if static_exists:
+                if active:
+                    if existing_doc and existing_doc.get("is_system_override"):
+                        await self.database.system_locations.delete_one({"_id": existing_doc["_id"]})
+                    elif existing_doc:
+                        await self.database.system_locations.update_one(
+                            {"_id": existing_doc["_id"]},
+                            {"$set": {"active": True, "updated_at": datetime.now()}}
+                        )
+                    return True
+
+                if existing_doc:
+                    await self.database.system_locations.update_one(
+                        {"_id": existing_doc["_id"]},
+                        {"$set": {"active": False, "updated_at": datetime.now(), "is_system_override": True}}
+                    )
+                else:
+                    await self.database.system_locations.insert_one({
+                        "name": state_name,
+                        "type": "state",
+                        "active": False,
+                        "is_system_override": True,
+                        "region": "",
+                        "postcode_samples": [],
+                        "created_at": datetime.now(),
+                        "updated_at": datetime.now(),
+                    })
+                return True
+
+            await self.database.system_locations.update_one(
+                {"_id": existing_doc["_id"]},
+                {"$set": {"active": bool(active), "updated_at": datetime.now()}}
+            )
+            return True
+        except Exception as e:
+            print(f"Error setting state active status: {e}")
             return False
     
     async def add_new_lga(self, state_name: str, lga_name: str, zip_codes: str = ""):

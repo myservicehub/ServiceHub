@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { X } from 'lucide-react';
+import { X, ToggleLeft } from 'lucide-react';
 import { adminAPI, walletAPI, tradeCategoryQuestionsAPI } from '../api/wallet';
 import { adminReferralsAPI, adminVerificationAPI } from '../api/referrals';
 import { getTradespeopleVerificationFileBase64 } from '../api/tradespeopleVerificationBase64';
@@ -317,6 +317,33 @@ const AdminDashboard = () => {
     return 'General Services';
   };
 
+  const normalizeStateRecord = (state) => {
+    if (typeof state === 'string') {
+      return { id: state, name: state, active: true, source: 'static', region: '', postcode_samples: [] };
+    }
+    return {
+      id: state?.id || state?.name,
+      name: state?.name || '',
+      active: state?.active !== false,
+      source: state?.source || 'custom',
+      region: state?.region || '',
+      postcode_samples: state?.postcode_samples || [],
+    };
+  };
+
+  const parseStatesPayload = (payload) => {
+    const details = Array.isArray(payload?.state_details) ? payload.state_details : [];
+    if (details.length > 0) {
+      return details.map(normalizeStateRecord);
+    }
+    return (payload?.states || []).map(normalizeStateRecord);
+  };
+
+  const activeStateNames = useMemo(
+    () => states.filter((s) => s.active).map((s) => s.name),
+    [states]
+  );
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -369,7 +396,7 @@ const AdminDashboard = () => {
         // Load location and trade data based on active sub-tab
         if (activeLocationTab === 'states') {
           const data = await adminAPI.getAllStates();
-          setStates(data.states || []);
+          setStates(parseStatesPayload(data));
         } else if (activeLocationTab === 'lgas') {
           const data = await adminAPI.getAllLGAs();
           setLgas(data.lgas || {});
@@ -831,7 +858,7 @@ const AdminDashboard = () => {
     try {
       // Load states data for dropdowns
       const statesData = await adminAPI.getAllStates();
-      setStates(statesData.states || []);
+      setStates(parseStatesPayload(statesData));
     } catch (error) {
       console.error('Failed to load states data:', error);
     }
@@ -1539,7 +1566,7 @@ const AdminDashboard = () => {
     let allItems = [];
     switch (entityType) {
       case 'states':
-        allItems = states.map(state => ({ name: state }));
+        allItems = states.map(state => ({ name: state.name, id: state.id || state.name }));
         break;
       case 'trades':
         allItems = trades.map(trade => ({ name: trade }));
@@ -2670,9 +2697,30 @@ const AdminDashboard = () => {
 
                         {/* Enhanced States Table */}
                         <AdminDataTable
-                          data={states.map(state => ({ name: state, id: state }))}
+                          data={states.map(state => ({
+                            ...state,
+                            id: state.id || state.name,
+                            name: state.name,
+                            source: state.source || 'custom',
+                            postcode_samples: Array.isArray(state.postcode_samples)
+                              ? state.postcode_samples.join(', ')
+                              : (state.postcode_samples || '')
+                          }))}
                           columns={[
-                            { key: 'name', title: 'State Name', sortable: true }
+                            { key: 'name', title: 'State Name', sortable: true },
+                            {
+                              key: 'active',
+                              title: 'Status',
+                              sortable: true,
+                              render: (value) => (
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                  value ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700'
+                                }`}>
+                                  {value ? 'Active' : 'Inactive'}
+                                </span>
+                              ),
+                            },
+                            { key: 'source', title: 'Source', sortable: true }
                           ]}
                           entityName="state"
                           entityNamePlural="states"
@@ -2684,6 +2732,34 @@ const AdminDashboard = () => {
                           })}
                           allowInlineEdit={true}
                           allowDelete={true}
+                          customActions={[
+                            {
+                              id: 'toggle-activation',
+                              icon: ToggleLeft,
+                              title: 'Toggle activation',
+                              className: 'text-amber-600 hover:text-amber-800',
+                              onClick: async (item) => {
+                                try {
+                                  setIsProcessing(true);
+                                  const nextActive = !item.active;
+                                  await adminAPI.setStateActivation(item.name, nextActive);
+                                  toast({
+                                    title: 'Success',
+                                    description: `${item.name} has been ${nextActive ? 'reactivated' : 'deactivated'}`
+                                  });
+                                  fetchData();
+                                } catch (error) {
+                                  toast({
+                                    title: 'Error',
+                                    description: `Failed to update ${item.name} activation`,
+                                    variant: 'destructive'
+                                  });
+                                } finally {
+                                  setIsProcessing(false);
+                                }
+                              }
+                            }
+                          ]}
                           showSelection={true}
                           selectedItems={selectedItems}
                           onSelectionChange={handleSelectionChange}
@@ -2743,7 +2819,7 @@ const AdminDashboard = () => {
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                   >
                                     <option value="">Select State</option>
-                                    {states.map((state, index) => (
+                                    {activeStateNames.map((state, index) => (
                                       <option key={index} value={state}>{state}</option>
                                     ))}
                                   </select>
@@ -2909,7 +2985,7 @@ const AdminDashboard = () => {
                                     }}
                                   >
                                     <option value="">Select State</option>
-                                    {states.map((state, index) => (
+                                    {activeStateNames.map((state, index) => (
                                       <option key={index} value={state}>{state}</option>
                                     ))}
                                   </select>

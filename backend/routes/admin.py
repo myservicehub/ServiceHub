@@ -1302,9 +1302,9 @@ async def update_user_status(
 @router.get("/locations/states")
 async def get_all_states():
     """Get all Nigerian states"""
-    # Use unified dynamic state fetching
+    state_details = await database.get_all_states_admin_details()
     all_states = await database.get_all_states_dynamic()
-    return {"states": all_states}
+    return {"states": all_states, "state_details": state_details}
 
 @router.post("/locations/states")
 async def add_new_state(
@@ -1365,6 +1365,21 @@ async def delete_state(state_name: str):
         raise HTTPException(status_code=404, detail="State not found")
     
     return {"message": f"State '{state_name}' deleted successfully"}
+
+@router.put("/locations/states/{state_name}/activation")
+async def set_state_activation(
+    state_name: str,
+    active: bool = Form(...)
+):
+    """Activate or deactivate a state without deleting it."""
+    success = await database.set_state_active(state_name, active)
+    if not success:
+        raise HTTPException(status_code=404, detail="State not found")
+    return {
+        "message": f"State '{state_name}' {'activated' if active else 'deactivated'} successfully",
+        "state_name": state_name,
+        "active": active,
+    }
 
 @router.get("/locations/lgas")
 async def get_all_lgas():
