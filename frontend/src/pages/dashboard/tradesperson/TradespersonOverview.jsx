@@ -62,9 +62,13 @@ const TradespersonOverview = () => {
     const dismissedAt = Number(localStorage.getItem('profileModalDismissed') || 0);
     const isDismissed = dismissedAt > 0 && (Date.now() - dismissedAt) < (24 * 60 * 60 * 1000);
 
-    if (isProfileIncomplete && !isDismissed) {
-      setShowCompleteProfileModal(true);
-    } else if (!isContactVerified) {
+    if (isProfileIncomplete) {
+      if (!isDismissed) {
+        setShowCompleteProfileModal(true);
+      }
+      return;
+    }
+    if (!isContactVerified) {
       setShowVerifyContactModal(true);
     } else if (!isSkillsTestPassed) {
       setShowSkillsModal(true);
@@ -82,6 +86,7 @@ const TradespersonOverview = () => {
     if (refreshUser) await refreshUser();
     setShowCompleteProfileModal(false);
     localStorage.removeItem('profileModalDismissed');
+    setShowVerifyContactModal(true);
   };
 
   const handleVerifyContactComplete = async () => {
