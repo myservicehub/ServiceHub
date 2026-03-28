@@ -6,7 +6,7 @@ from models import (
 )
 from models.auth import User
 from models.notifications import NotificationType
-from ..auth.dependencies import get_current_tradesperson, get_current_homeowner, get_current_active_user, require_tradesperson_verified
+from ..auth.dependencies import get_current_tradesperson, get_current_homeowner, get_current_active_user, require_tradesperson_all_steps_completed
 from ..database import database
 from ..services.notifications import notification_service
 from datetime import datetime
@@ -22,7 +22,7 @@ router = APIRouter(prefix="/api/interests", tags=["interests"])
 async def show_interest(
     interest_data: InterestCreate,
     background_tasks: BackgroundTasks,
-    current_user: User = Depends(require_tradesperson_verified)
+    current_user: User = Depends(require_tradesperson_all_steps_completed)
 ):
     """Tradesperson shows interest in a job"""
     try:
@@ -211,7 +211,7 @@ async def share_contact_details(
 
 @router.get("/my-interests", response_model=List[dict])
 async def get_my_interests(
-    current_user: User = Depends(get_current_tradesperson)
+    current_user: User = Depends(require_tradesperson_all_steps_completed)
 ):
     """Get tradesperson's interest history"""
     try:
@@ -471,7 +471,7 @@ async def _notify_payment_confirmation(tradesperson: dict, job: dict, interest_i
 
 @router.get("/completed-jobs", response_model=List[dict])
 async def get_completed_jobs(
-    current_user: User = Depends(get_current_tradesperson)
+    current_user: User = Depends(require_tradesperson_all_steps_completed)
 ):
     """Get all completed jobs for the current tradesperson"""
     try:

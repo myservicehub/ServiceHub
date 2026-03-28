@@ -24,6 +24,7 @@ import CompleteProfileModal from '../../../components/dashboard/CompleteProfileM
 import VerifyContactModal from '../../../components/dashboard/VerifyContactModal';
 import SkillsAssessmentModal from '../../../components/dashboard/SkillsAssessmentModal';
 import BusinessVerificationModal from '../../../components/dashboard/BusinessVerificationModal';
+import { getTradespersonCompletionStatus } from '../../../utils/tradespersonCompletion';
 
 const TradespersonOverview = () => {
   const [stats, setStats] = useState({
@@ -42,16 +43,13 @@ const TradespersonOverview = () => {
   const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
 
-  // Check if profile is incomplete (missing key fields)
-  const isProfileIncomplete = !user?.experience_years || 
-    !user?.business_type || 
-    !user?.company_name || 
-    !user?.description || 
-    (user?.description?.length || 0) < 50;
-  
-  const isContactVerified = user?.email_verified && user?.phone_verified;
-  const isSkillsTestPassed = user?.skills_test_passed || false;
-  const isBusinessVerified = user?.business_verified || false;
+  const {
+    profileCompleted,
+    contactVerified: isContactVerified,
+    skillsTestPassed: isSkillsTestPassed,
+    businessVerified: isBusinessVerified,
+  } = getTradespersonCompletionStatus(user);
+  const isProfileIncomplete = !profileCompleted;
 
   useEffect(() => {
     loadDashboardData();
@@ -60,9 +58,11 @@ const TradespersonOverview = () => {
   // Auto-show the next incomplete step modal on load
   useEffect(() => {
     if (loading) return;
-    
-    // Show first incomplete step in priority order
-    if (isProfileIncomplete) {
+
+    const dismissedAt = Number(localStorage.getItem('profileModalDismissed') || 0);
+    const isDismissed = dismissedAt > 0 && (Date.now() - dismissedAt) < (24 * 60 * 60 * 1000);
+
+    if (isProfileIncomplete && !isDismissed) {
       setShowCompleteProfileModal(true);
     } else if (!isContactVerified) {
       setShowVerifyContactModal(true);
@@ -240,7 +240,7 @@ const TradespersonOverview = () => {
           onVerifyContact={() => setShowVerifyContactModal(true)}
           onTakeSkillsTest={() => setShowSkillsModal(true)}
           onBusinessVerification={handleBusinessVerification}
-          profileCompleted={!isProfileIncomplete}
+          profileCompleted={profileCompleted}
           contactVerified={isContactVerified}
           skillsTestPassed={isSkillsTestPassed}
           businessVerified={isBusinessVerified}

@@ -4,6 +4,8 @@ import { useAuth } from '../contexts/AuthContext';
 import TradespersonDashboardSidebar from '../components/dashboard/TradespersonDashboardSidebar';
 import TradespersonDashboardHeader from '../components/dashboard/TradespersonDashboardHeader';
 import { cn } from '../lib/utils';
+import { useToast } from '../hooks/use-toast';
+import { getTradespersonCompletionStatus } from '../utils/tradespersonCompletion';
 import {
   Briefcase,
   Search,
@@ -16,8 +18,11 @@ const TradespersonDashboardLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { user, isAuthenticated, isTradesperson, loading } = useAuth();
+  const { toast } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
+  const completion = getTradespersonCompletionStatus(user);
+  const restrictedRoutes = ['/trades/interests', '/trades/completed', '/trades/messages'];
 
   useEffect(() => {
     setSidebarOpen(false);
@@ -32,6 +37,18 @@ const TradespersonDashboardLayout = () => {
       navigate('/trades/overview', { replace: true });
     }
   }, [loading, isAuthenticated, isTradesperson, navigate]);
+
+  useEffect(() => {
+    if (loading || !isAuthenticated() || !isTradesperson()) return;
+    if (completion.allStepsCompleted) return;
+    if (!restrictedRoutes.some((route) => location.pathname.startsWith(route))) return;
+    toast({
+      title: 'Complete Profile First',
+      description: 'Finish all 4 profile completion steps to access this page.',
+      variant: 'destructive',
+    });
+    navigate('/trades/overview', { replace: true });
+  }, [loading, isAuthenticated, isTradesperson, completion.allStepsCompleted, location.pathname, navigate, toast]);
 
   if (loading) {
     return (
@@ -116,7 +133,19 @@ const MobileBottomNav = () => {
           return (
             <button
               key={item.path}
-              onClick={() => navigate(item.path)}
+              onClick={() => {
+                const isRestricted = ['/trades/interests', '/trades/messages'].some((route) => item.path.startsWith(route));
+                if (isRestricted && !completion.allStepsCompleted) {
+                  toast({
+                    title: 'Complete Profile First',
+                    description: 'Finish all 4 profile completion steps to access this page.',
+                    variant: 'destructive',
+                  });
+                  navigate('/trades/overview');
+                  return;
+                }
+                navigate(item.path);
+              }}
               className={cn(
                 "flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-all duration-200 relative",
                 isActive(item.path)

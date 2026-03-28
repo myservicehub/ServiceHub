@@ -242,3 +242,17 @@ async def require_tradesperson_verified(current_user: User = Depends(get_current
     if not getattr(current_user, "verified_tradesperson", False):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Tradesperson must complete verification")
     return current_user
+
+async def require_tradesperson_all_steps_completed(current_user: User = Depends(get_current_tradesperson)) -> User:
+    profile_completed = (
+        bool(getattr(current_user, "trade_categories", None)) and
+        int(getattr(current_user, "experience_years", 0) or 0) > 0 and
+        bool(str(getattr(current_user, "location", "") or "").strip()) and
+        len(str(getattr(current_user, "description", "") or "").strip()) >= 50
+    )
+    contact_verified = bool(getattr(current_user, "email_verified", False) and getattr(current_user, "phone_verified", False))
+    skills_test_passed = bool(getattr(current_user, "skills_test_passed", False))
+    business_verified = bool(getattr(current_user, "business_verified", False) or getattr(current_user, "verified_tradesperson", False))
+    if not (profile_completed and contact_verified and skills_test_passed and business_verified):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Complete all 4 profile completion steps before accessing this feature")
+    return current_user

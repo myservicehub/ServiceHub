@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import Logo from '../Logo';
 import {
@@ -24,10 +24,15 @@ import {
   Scale,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { getTradespersonCompletionStatus } from '../../utils/tradespersonCompletion';
+import { useToast } from '../../hooks/use-toast';
 
 const TradespersonDashboardSidebar = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { toast } = useToast();
+  const { allStepsCompleted } = getTradespersonCompletionStatus(user);
 
   const navigation = [
     {
@@ -45,16 +50,19 @@ const TradespersonDashboardSidebar = ({ isOpen, isCollapsed, onClose, onToggleCo
       name: 'My Interests',
       href: '/trades/interests',
       icon: Heart,
+      locked: true,
     },
     {
       name: 'Completed Jobs',
       href: '/trades/completed',
       icon: CheckCircle,
+      locked: true,
     },
     {
       name: 'Messages',
       href: '/trades/messages',
       icon: MessageSquare,
+      locked: true,
     },
     {
       name: 'Wallet',
@@ -114,6 +122,40 @@ const TradespersonDashboardSidebar = ({ isOpen, isCollapsed, onClose, onToggleCo
     const isActive = item.end
       ? location.pathname === item.href
       : location.pathname.startsWith(item.href);
+    const isLocked = !!item.locked && !allStepsCompleted;
+
+    if (isLocked) {
+      return (
+        <button
+          type="button"
+          onClick={() => {
+            onClose();
+            toast({
+              title: 'Complete Profile First',
+              description: 'Finish all 4 profile completion steps to access this page.',
+              variant: 'destructive',
+            });
+            navigate('/trades/overview');
+          }}
+          className={cn(
+            "group relative flex w-full items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-all duration-200",
+            collapsed ? "justify-center" : "",
+            "text-white/30 bg-transparent cursor-not-allowed"
+          )}
+        >
+          <item.icon
+            className={cn(
+              "flex-shrink-0 transition-all duration-200",
+              collapsed ? "w-6 h-6" : "w-5 h-5",
+              "text-white/30"
+            )}
+          />
+          {!collapsed && (
+            <span className="flex-1 truncate">{item.name}</span>
+          )}
+        </button>
+      );
+    }
 
     return (
       <NavLink

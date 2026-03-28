@@ -34,6 +34,7 @@ import LocationSettingsModal from '../components/LocationSettingsModal';
 import { authAPI } from '../api/services';
 import { notificationsAPI } from '../api/notifications';
 import { resolveCoordinatesFromLocationText, DEFAULT_TRAVEL_DISTANCE_KM, nearestStateFromCoordinates, computeDistanceKm } from '../utils/locationCoordinates';
+import { getTradespersonCompletionStatus } from '../utils/tradespersonCompletion';
 
 import AuthenticatedImage from '../components/common/AuthenticatedImage';
 
@@ -80,6 +81,7 @@ const BrowseJobsPage = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
+  const { allStepsCompleted } = getTradespersonCompletionStatus(user);
 
   const [jobs, setJobs] = useState([]);
   const jobAnswersCache = useRef({});
@@ -628,6 +630,15 @@ const BrowseJobsPage = () => {
         description: "Only tradespeople can show interest in jobs.",
         variant: "destructive",
       });
+      return;
+    }
+    if (!allStepsCompleted) {
+      toast({
+        title: "Complete Profile First",
+        description: "Finish all 4 profile completion steps to show interest in jobs.",
+        variant: "destructive",
+      });
+      navigate('/trades/overview');
       return;
     }
 
@@ -1629,16 +1640,16 @@ const BrowseJobsPage = () => {
                         console.error('Show interest failed, keeping modal open:', error);
                       }
                     }}
-                    disabled={!user?.verified_tradesperson ||
+                    disabled={!allStepsCompleted ||
                              loadingStates.showInterest[selectedJobDetails.id] || 
                              (userInterests && userInterests.includes(selectedJobDetails.id))}
                     className="text-white font-lato"
                     style={{backgroundColor: '#34D164'}}
                   >
-                    {!user?.verified_tradesperson ? (
+                    {!allStepsCompleted ? (
                       <>
                         <Heart size={16} className="mr-2" />
-                        Verify to Show Interest
+                        Complete 4 Steps First
                       </>
                     ) : loadingStates.showInterest[selectedJobDetails.id] ? (
                       <>
