@@ -339,6 +339,13 @@ const VerifyAccountPage = () => {
 
       // Then submit business verification
       await authAPI.submitTradespersonVerification(payload);
+      try {
+        if (typeof getCurrentUser === 'function') {
+          await getCurrentUser();
+        } else if (typeof updateUser === 'function') {
+          updateUser({ ...(user || {}), verification_submitted: true, business_verification_submitted: true });
+        }
+      } catch {}
 
       setSubmitted(true);
       toast({ title: 'Submitted', description: "Your verification and references have been submitted for review. You'll be notified within 2-3 business days." });

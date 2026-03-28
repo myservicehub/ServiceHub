@@ -804,12 +804,17 @@ async def get_current_user_profile(current_user: User = Depends(get_current_user
     user_data = current_user.dict()
     
     user_data["skills_test_passed"] = bool(user_data.get("skills_test_passed"))
-    user_data["business_verified"] = bool(
-        user_data.get("business_verified")
-        or user_data.get("verified_tradesperson")
-        or user_data.get("is_verified")
-        or user_data.get("identity_verified")
-    )
+    if current_user.role == UserRole.TRADESPERSON:
+        user_data["business_verified"] = bool(
+            user_data.get("business_verified")
+            or user_data.get("verified_tradesperson")
+        )
+    else:
+        user_data["business_verified"] = bool(
+            user_data.get("business_verified")
+            or user_data.get("is_verified")
+            or user_data.get("identity_verified")
+        )
 
     # For tradespeople, calculate actual completed jobs count
     if current_user.role == UserRole.TRADESPERSON:

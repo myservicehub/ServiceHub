@@ -59,6 +59,7 @@ class User(BaseModel):
     referred_by: Optional[str] = None            # ID of user who referred this user
     is_verified: bool = False                    # Document verification status
     verification_submitted: bool = False         # Has user submitted verification documents
+    business_verification_submitted: bool = False
     total_referrals: Optional[int] = 0          # Number of successful referrals made
     referral_coins_earned: Optional[int] = 0    # Total coins earned from referrals
     
@@ -71,6 +72,7 @@ class User(BaseModel):
     skills_test_score: Optional[int] = None
     skills_test_completed_at: Optional[datetime] = None
     business_verified: bool = False
+    business_verification_submitted: bool = False
 
     def dict(self, **kwargs):
         d = super().dict(**kwargs)

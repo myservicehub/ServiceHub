@@ -5,6 +5,7 @@ import { Input } from '../ui/input';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../hooks/use-toast';
 import { authAPI } from '../../api/services';
+import { useNavigate } from 'react-router-dom';
 
 const BUSINESS_TYPES = [
   'Self-Employed / Sole Trader',
@@ -25,6 +26,7 @@ const normalizeBusinessType = (value) => {
 };
 
 const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
+  const navigate = useNavigate();
   const { user, refreshUser } = useAuth();
   const { toast } = useToast();
   
@@ -39,6 +41,12 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
   useEffect(() => {
     setBusinessType(normalizeBusinessType(user?.business_type || ''));
   }, [user?.business_type]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    onClose();
+    navigate('/verify-account');
+  }, [isOpen, onClose, navigate]);
 
   const handleFileChange = (setter) => (e) => {
     if (e.target.files?.[0]) {

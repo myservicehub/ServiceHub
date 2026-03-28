@@ -48,6 +48,7 @@ const TradespersonOverview = () => {
     contactVerified: isContactVerified,
     skillsTestPassed: isSkillsTestPassed,
     businessVerified: isBusinessVerified,
+    businessPending: isBusinessPending,
   } = getTradespersonCompletionStatus(user);
   const isProfileIncomplete = !profileCompleted;
 
@@ -72,10 +73,10 @@ const TradespersonOverview = () => {
       setShowVerifyContactModal(true);
     } else if (!isSkillsTestPassed) {
       setShowSkillsModal(true);
-    } else if (!isBusinessVerified) {
+    } else if (!isBusinessVerified && !isBusinessPending) {
       setShowBusinessModal(true);
     }
-  }, [loading, isProfileIncomplete, isContactVerified, isSkillsTestPassed, isBusinessVerified]);
+  }, [loading, isProfileIncomplete, isContactVerified, isSkillsTestPassed, isBusinessVerified, isBusinessPending]);
 
   const handleCloseProfileModal = () => {
     setShowCompleteProfileModal(false);
@@ -249,6 +250,7 @@ const TradespersonOverview = () => {
           contactVerified={isContactVerified}
           skillsTestPassed={isSkillsTestPassed}
           businessVerified={isBusinessVerified}
+          businessPending={isBusinessPending}
         />
       )}
 

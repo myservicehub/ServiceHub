@@ -4838,7 +4838,7 @@ class Database:
             try:
                 await self.users_collection.update_one(
                     {"id": user_id},
-                    {"$set": {"verification_submitted": True, "updated_at": datetime.utcnow()}}
+                    {"$set": {"verification_submitted": True, "business_verification_submitted": True, "updated_at": datetime.utcnow()}}
                 )
             except Exception:
                 pass
@@ -4872,7 +4872,7 @@ class Database:
         try:
             await self.users_collection.update_one(
                 {"id": user_id},
-                {"$set": {"verification_submitted": True, "updated_at": datetime.utcnow()}}
+                {"$set": {"verification_submitted": True, "business_verification_submitted": True, "updated_at": datetime.utcnow()}}
             )
         except Exception:
             # Non-fatal: if this fails, submission record still exists
@@ -4967,7 +4967,7 @@ class Database:
         # Update user flags
         await self.users_collection.update_one(
             {"id": user_id},
-            {"$set": {"verified_tradesperson": True, "is_verified": True, "updated_at": datetime.utcnow()}}
+            {"$set": {"verified_tradesperson": True, "business_verification_submitted": True, "is_verified": True, "updated_at": datetime.utcnow()}}
         )
         try:
             # Process referral reward upon full business verification
@@ -5020,7 +5020,7 @@ class Database:
         try:
             await self.users_collection.update_one(
                 {"id": user_id},
-                {"$set": {"verified_tradesperson": False, "is_verified": False, "updated_at": datetime.utcnow()}}
+                {"$set": {"verified_tradesperson": False, "business_verification_submitted": False, "is_verified": False, "updated_at": datetime.utcnow()}}
             )
         except Exception:
             pass

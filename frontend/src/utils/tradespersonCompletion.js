@@ -12,12 +12,14 @@ export const getTradespersonCompletionStatus = (user) => {
   const contactVerified = !!(user?.email_verified && user?.phone_verified);
   const skillsTestPassed = !!user?.skills_test_passed;
   const businessVerified = !!(user?.business_verified || user?.verified_tradesperson);
+  const businessPending = !businessVerified && !!user?.business_verification_submitted;
   const allStepsCompleted = profileCompleted && contactVerified && skillsTestPassed && businessVerified;
   return {
     profileCompleted,
     contactVerified,
     skillsTestPassed,
     businessVerified,
+    businessPending,
     allStepsCompleted,
   };
 };

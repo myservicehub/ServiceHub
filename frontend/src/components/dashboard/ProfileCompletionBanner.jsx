@@ -9,7 +9,8 @@ const ProfileCompletionBanner = ({
   profileCompleted = false,
   contactVerified = false,
   skillsTestPassed = false,
-  businessVerified = false
+  businessVerified = false,
+  businessPending = false
 }) => {
   if (profileCompleted && contactVerified && skillsTestPassed && businessVerified) {
     return null;
@@ -55,10 +56,11 @@ const ProfileCompletionBanner = ({
       description: 'Verify business for premium badge',
       icon: Building2,
       completed: businessVerified,
+      pending: businessPending,
       onClick: onBusinessVerification,
       bgColor: 'bg-gradient-to-br from-emerald-500 to-teal-500',
       borderColor: 'border-emerald-500',
-      priority: profileCompleted && contactVerified && skillsTestPassed && !businessVerified,
+      priority: profileCompleted && contactVerified && skillsTestPassed && !businessVerified && !businessPending,
     },
   ];
 
@@ -94,10 +96,12 @@ const ProfileCompletionBanner = ({
           <button
             key={step.id}
             onClick={step.completed ? undefined : step.onClick}
-            disabled={step.completed}
+            disabled={step.completed || step.pending}
             className={`relative group text-left p-4 sm:p-5 rounded-2xl border-2 transition-all duration-300 ${
               step.completed
                 ? 'bg-green-50/50 border-green-200 cursor-default'
+                : step.pending
+                  ? 'bg-amber-50/50 border-amber-200 cursor-default'
                 : step.priority
                   ? `bg-white ${step.borderColor} shadow-lg hover:shadow-xl hover:-translate-y-1`
                   : 'bg-white border-gray-200 hover:border-orange-300 hover:shadow-md hover:-translate-y-0.5'
@@ -118,10 +122,14 @@ const ProfileCompletionBanner = ({
               <div className={`p-2.5 sm:p-3 rounded-xl flex-shrink-0 ${
                 step.completed 
                   ? 'bg-green-100' 
+                  : step.pending
+                    ? 'bg-amber-100'
                   : step.bgColor
               }`}>
                 {step.completed ? (
                   <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />
+                ) : step.pending ? (
+                  <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-amber-500" />
                 ) : (
                   <step.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 )}
@@ -140,9 +148,9 @@ const ProfileCompletionBanner = ({
                   )}
                 </div>
                 <p className={`text-xs sm:text-sm mt-0.5 sm:mt-1 font-lato ${
-                  step.completed ? 'text-green-600' : 'text-gray-500'
+                  step.completed ? 'text-green-600' : step.pending ? 'text-amber-700' : 'text-gray-500'
                 }`}>
-                  {step.completed ? '✓ Completed' : step.description}
+                  {step.completed ? '✓ Completed' : step.pending ? '⏳ Pending admin approval' : step.description}
                 </p>
               </div>
 
