@@ -186,6 +186,9 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
       const profileData = {
         trade_categories: formData.selectedTrades,
         experience_years: experienceMapping[formData.experienceYears] || 1,
+        business_type: formData.businessType || null,
+        company_name: formData.tradingName || null,
+        location: formData.state || user?.location || null,
         description: formData.profileDescription,
         postcode: formData.postcode || '000000',
         travel_distance_km: formData.travelDistance,
