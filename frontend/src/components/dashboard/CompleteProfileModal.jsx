@@ -113,7 +113,9 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
         if (!formData.experienceYears) newErrors.experienceYears = 'Experience level is required';
         break;
       case 2:
+        if (!formData.tradingName?.trim()) newErrors.tradingName = 'Company name is required';
         if (!formData.lga) newErrors.lga = 'LGA is required';
+        if (!formData.businessAddress?.trim()) newErrors.businessAddress = 'Address is required';
         break;
       case 3:
         // ID verification is optional but if started, must complete
@@ -493,6 +495,22 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
   function renderStep2() {
     return (
       <div className="space-y-6">
+        {/* Company Name */}
+        <div>
+          <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
+            Company name <span className="text-red-500">*</span>
+          </label>
+          <Input
+            placeholder="Enter company or trading name"
+            value={formData.tradingName}
+            onChange={(e) => updateFormData('tradingName', e.target.value)}
+            className={`h-12 font-lato text-sm rounded-xl bg-gray-50/50 focus:bg-white focus:border-[#121E3C] focus:ring-[#121E3C]/20 transition-all ${
+              errors.tradingName ? 'border-red-400' : 'border-gray-200'
+            }`}
+          />
+          {errors.tradingName && <p className="text-red-500 text-xs mt-1 font-lato">{errors.tradingName}</p>}
+        </div>
+
         {/* LGA */}
         <div>
           <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
@@ -517,15 +535,18 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
         {/* Work Address */}
         <div>
           <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
-            Work address <span className="text-gray-400 font-normal">(optional)</span>
+            Work address <span className="text-red-500">*</span>
           </label>
           <textarea
             placeholder="Street and house number, Town"
             value={formData.businessAddress}
             onChange={(e) => updateFormData('businessAddress', e.target.value)}
-            className="w-full px-4 py-3 font-lato text-sm rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#121E3C] focus:ring-[#121E3C]/20 transition-all"
+            className={`w-full px-4 py-3 font-lato text-sm rounded-xl border bg-gray-50/50 focus:bg-white focus:border-[#121E3C] focus:ring-[#121E3C]/20 transition-all ${
+              errors.businessAddress ? 'border-red-400' : 'border-gray-200'
+            }`}
             rows="2"
           />
+          {errors.businessAddress && <p className="text-red-500 text-xs mt-1 font-lato">{errors.businessAddress}</p>}
         </div>
 
         {/* Postcode */}
