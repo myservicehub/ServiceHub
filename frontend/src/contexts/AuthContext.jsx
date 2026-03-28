@@ -276,6 +276,10 @@ export const AuthProvider = ({ children }) => {
     return user?.status === 'active';
   };
 
+  const refreshUser = async () => {
+    await getCurrentUser();
+  };
+
   const value = {
     user,
     loading,
@@ -294,6 +298,7 @@ export const AuthProvider = ({ children }) => {
     isTradesperson,
     isActive,
     getCurrentUser,
+    refreshUser,
     refreshAccessToken,
   };
 
