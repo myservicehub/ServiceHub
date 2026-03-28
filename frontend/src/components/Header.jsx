@@ -72,12 +72,14 @@ const Header = () => {
             >
               Find trades
             </a>
-            <a 
-              onClick={() => navigate('/post-job')}
-              className="text-white/80 text-sm font-lato transition-colors hover:text-white cursor-pointer"
-            >
-              Post a job
-            </a>
+            {(!isAuthenticated() || isHomeowner()) && (
+              <a 
+                onClick={() => navigate('/post-job')}
+                className="text-white/80 text-sm font-lato transition-colors hover:text-white cursor-pointer"
+              >
+                Post a job
+              </a>
+            )}
           </nav>
 
           {/* Desktop Auth Buttons */}
@@ -142,12 +144,14 @@ const Header = () => {
               >
                 Find trades
               </a>
-              <a 
-                onClick={() => { navigate('/post-job'); setIsMenuOpen(false); }}
-                className="py-2.5 text-white/80 text-sm font-lato transition-colors hover:text-white cursor-pointer"
-              >
-                Post a job
-              </a>
+              {(!isAuthenticated() || isHomeowner()) && (
+                <a 
+                  onClick={() => { navigate('/post-job'); setIsMenuOpen(false); }}
+                  className="py-2.5 text-white/80 text-sm font-lato transition-colors hover:text-white cursor-pointer"
+                >
+                  Post a job
+                </a>
+              )}
 
               <div className="border-t border-white/10 my-3"></div>
 

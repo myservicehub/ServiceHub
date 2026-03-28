@@ -161,7 +161,7 @@ const ProfileCompletionBanner = ({
 
       {/* Motivational text */}
       <p className="text-center text-xs text-gray-400 mt-4 font-lato">
-        Complete profiles get <span className="text-orange-500 font-medium">3x more job inquiries</span> from homeowners
+        Complete your profile to show interest in jobs near you
       </p>
     </div>
   );

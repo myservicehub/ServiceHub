@@ -217,7 +217,7 @@ const SkillsAssessmentModal = ({ isOpen, onClose, onComplete }) => {
 
               <p className="text-gray-600 font-lato mb-6 max-w-md mx-auto">
                 Take this quick assessment to earn a <strong>Skills Verified</strong> badge on your profile. 
-                Verified tradespersons get <span className="text-[#121E3C] font-medium">2x more job inquiries</span> from homeowners.
+                Verified tradespersons can now show interest in jobs that are close to them.
               </p>
 
               <div className="bg-[#121E3C]/5 rounded-xl p-4 mb-6 text-left">
