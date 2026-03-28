@@ -2,6 +2,8 @@ import apiClient from './client';
 
 // Jobs API endpoints
 export const jobsAPI = {
+  apiClient,
+
   // Create a new job
   createJob: async (jobData) => {
     const response = await apiClient.post('/jobs', jobData);
@@ -17,6 +19,16 @@ export const jobsAPI = {
   // Get jobs for current user
   getMyJobs: async (params = {}) => {
     const response = await apiClient.get('/jobs/my-jobs', { params });
+    return response.data;
+  },
+
+  getMyInterests: async (params = {}) => {
+    const response = await apiClient.get('/interests/my-interests', { params });
+    return response.data;
+  },
+
+  getTradeCategories: async () => {
+    const response = await apiClient.get('/auth/trade-categories');
     return response.data;
   },
 
