@@ -26,6 +26,15 @@ const businessTypes = [
   'Partnership'
 ];
 
+const mapExperienceYearsToRange = (years) => {
+  const value = Number(years || 0);
+  if (value <= 1) return '';
+  if (value <= 2) return '1-3';
+  if (value <= 4) return '3-5';
+  if (value <= 10) return '5-10';
+  return '10+';
+};
+
 const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
   const uploadSectionRef = useRef(null);
   const [currentStep, setCurrentStep] = useState(1);
@@ -63,6 +72,31 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
   });
 
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setCurrentStep(1);
+    setErrors({});
+    setShowTradeSelector(false);
+    setDragActive(false);
+    setFormData({
+      selectedTrades: user?.trade_categories || [],
+      experienceYears: mapExperienceYearsToRange(user?.experience_years),
+      travelDistance: user?.travel_distance_km || 25,
+      businessType: user?.business_type || '',
+      tradingName: user?.company_name || '',
+      state: user?.location || '',
+      lga: '',
+      businessAddress: '',
+      postcode: user?.postcode || '',
+      idType: '',
+      idDocument: null,
+      idDocumentFile: null,
+      selfieDocument: null,
+      selfieDocumentFile: null,
+      profileDescription: user?.description || '',
+    });
+  }, [isOpen, user]);
 
   // Load trade categories from API
   useEffect(() => {

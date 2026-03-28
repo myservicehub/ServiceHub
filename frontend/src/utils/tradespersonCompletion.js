@@ -1,9 +1,10 @@
 export const isTradespersonProfileCompleted = (user) => {
   const hasTrades = Array.isArray(user?.trade_categories) && user.trade_categories.length > 0;
   const hasExperience = Number(user?.experience_years || 0) > 0;
+  const hasCompanyName = !!String(user?.company_name || '').trim();
   const hasLocation = !!String(user?.location || '').trim();
   const hasDescription = (String(user?.description || '').trim().length || 0) >= 50;
-  return hasTrades && hasExperience && hasLocation && hasDescription;
+  return hasTrades && hasExperience && hasCompanyName && hasLocation && hasDescription;
 };
 
 export const getTradespersonCompletionStatus = (user) => {

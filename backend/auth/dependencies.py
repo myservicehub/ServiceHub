@@ -247,6 +247,7 @@ async def require_tradesperson_all_steps_completed(current_user: User = Depends(
     profile_completed = (
         bool(getattr(current_user, "trade_categories", None)) and
         int(getattr(current_user, "experience_years", 0) or 0) > 0 and
+        bool(str(getattr(current_user, "company_name", "") or "").strip()) and
         bool(str(getattr(current_user, "location", "") or "").strip()) and
         len(str(getattr(current_user, "description", "") or "").strip()) >= 50
     )
