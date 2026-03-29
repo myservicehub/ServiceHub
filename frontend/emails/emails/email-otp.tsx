@@ -23,7 +23,9 @@ const assetsBaseUrl = 'https://my-servicehub.vercel.app';
 export const EmailOtp = ({
   name = 'John',
   otpCode = '847291',
-}: EmailOtpProps) => (
+}: EmailOtpProps) => {
+  const isTemplateToken = /^\{\{.*\}\}$/.test(String(otpCode || '').trim());
+  return (
   <Html>
     <Head>
       <meta name="color-scheme" content="light only" />
@@ -89,11 +91,17 @@ export const EmailOtp = ({
               <td style={{ textAlign: 'center' as const }}>
                 <table cellPadding="0" cellSpacing="8" style={{ margin: '0 auto' }}>
                   <tr>
-                    {otpCode.split('').map((digit, index) => (
-                      <td key={index} style={otpDigitBox}>
-                        <Text style={otpDigitText}>{digit}</Text>
+                    {isTemplateToken ? (
+                      <td style={otpTokenCell}>
+                        <Text style={otpTokenText}>{otpCode}</Text>
                       </td>
-                    ))}
+                    ) : (
+                      otpCode.split('').map((digit, index) => (
+                        <td key={index} style={otpDigitBox}>
+                          <Text style={otpDigitText}>{digit}</Text>
+                        </td>
+                      ))
+                    )}
                   </tr>
                 </table>
               </td>
@@ -192,7 +200,8 @@ export const EmailOtp = ({
       </Container>
     </Body>
   </Html>
-);
+  );
+};
 
 export default EmailOtp;
 
@@ -299,6 +308,23 @@ const otpDigitText = {
   color: '#0a1b3d',
   margin: '0',
   lineHeight: '56px',
+  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+};
+
+const otpTokenCell = {
+  backgroundColor: '#f3f4f6',
+  borderRadius: '10px',
+  padding: '10px 16px',
+  textAlign: 'center' as const,
+};
+
+const otpTokenText = {
+  fontSize: '28px',
+  fontWeight: '700',
+  color: '#0a1b3d',
+  margin: '0',
+  letterSpacing: '5px',
+  lineHeight: '36px',
   fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
 };
 

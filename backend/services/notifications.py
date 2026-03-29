@@ -1379,8 +1379,12 @@ class NotificationService:
                     logger.info("📧 SendGrid email service initialized")
             except Exception as e:
                 logger.error(f"❌ Failed to initialize email provider: {e}")
-                # Fall back to mock for development
-                self.email_service = MockEmailService()
+                allow_mock_notifications = os.environ.get("ALLOW_MOCK_NOTIFICATIONS", "0") in ("1", "true", "True")
+                if allow_mock_notifications:
+                    self.email_service = MockEmailService()
+                    logger.warning("⚠️ Using MockEmailService because ALLOW_MOCK_NOTIFICATIONS is enabled")
+                else:
+                    raise
         
         if self.sms_service is None:
             try:
@@ -1388,8 +1392,12 @@ class NotificationService:
                 logger.info("📱 Termii SMS service initialized")
             except Exception as e:
                 logger.error(f"❌ Failed to initialize Termii: {e}")
-                # Fall back to mock for development
-                self.sms_service = MockSMSService()
+                allow_mock_notifications = os.environ.get("ALLOW_MOCK_NOTIFICATIONS", "0") in ("1", "true", "True")
+                if allow_mock_notifications:
+                    self.sms_service = MockSMSService()
+                    logger.warning("⚠️ Using MockSMSService because ALLOW_MOCK_NOTIFICATIONS is enabled")
+                else:
+                    raise
     
     async def send_notification(
         self,
@@ -1475,26 +1483,23 @@ class NotificationService:
             # Determine final status based on channel preference and results
             if channel == NotificationChannel.EMAIL:
                 if email_failed:
-                    # Even if email fails, we want to save the notification for in-app display
-                    notification.status = NotificationStatus.SENT
+                    notification.status = NotificationStatus.FAILED
                     notification.metadata["delivery_error"] = str(email_error)
-                    logger.error(f"⚠️ Email notification failed but saved for in-app: {str(email_error)}")
+                    logger.error(f"⚠️ Email notification failed: {str(email_error)}")
                 else:
                     notification.status = NotificationStatus.SENT
             elif channel == NotificationChannel.SMS:
                 if sms_failed:
-                    # Even if SMS fails, we want to save the notification for in-app display
-                    notification.status = NotificationStatus.SENT
+                    notification.status = NotificationStatus.FAILED
                     notification.metadata["delivery_error"] = str(sms_error)
-                    logger.error(f"⚠️ SMS notification failed but saved for in-app: {str(sms_error)}")
+                    logger.error(f"⚠️ SMS notification failed: {str(sms_error)}")
                 else:
                     notification.status = NotificationStatus.SENT
             elif channel == NotificationChannel.BOTH:
                 if email_failed and sms_failed:
-                    # Both failed
-                    notification.status = NotificationStatus.SENT
+                    notification.status = NotificationStatus.FAILED
                     notification.metadata["delivery_error"] = f"Email: {str(email_error)}, SMS: {str(sms_error)}"
-                    logger.error(f"⚠️ Both channels failed but saved for in-app. Email: {str(email_error)}, SMS: {str(sms_error)}")
+                    logger.error(f"⚠️ Both channels failed. Email: {str(email_error)}, SMS: {str(sms_error)}")
                 elif email_failed:
                     notification.status = NotificationStatus.SENT  # SMS succeeded
                     notification.metadata["email_delivery_error"] = str(email_error)
@@ -1513,8 +1518,7 @@ class NotificationService:
                 logger.error(f"❌ Notification failed: {notification.id} (channel: {channel.value})")
 
         except Exception as e:
-            # If an unexpected error occurs (not just delivery failure), we still want to try to save it
-            notification.status = NotificationStatus.SENT
+            notification.status = NotificationStatus.FAILED
             notification.metadata["system_error"] = str(e)
             logger.error(f"❌ Notification processing error: {notification.id} - {str(e)}")
             import traceback

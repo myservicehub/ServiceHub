@@ -1500,13 +1500,20 @@ async def send_email_otp(payload: SendEmailOTPRequest, current_user: User = Depe
                 f"serviceHub Team"
             )
 
+        allow_mock_notifications = os.environ.get("ALLOW_MOCK_NOTIFICATIONS", "0") in ("1", "true", "True")
         email_ok = False
         try:
             try:
                 email_service = ResendEmailService()
             except Exception as e:
                 logger.warning(f"Resend unavailable, falling back to SendGrid/Mock: {e}")
-                email_service = SendGridEmailService()
+                try:
+                    email_service = SendGridEmailService()
+                except Exception as e2:
+                    if not allow_mock_notifications:
+                        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Email service unavailable. Please try again.")
+                    logger.warning(f"SendGrid unavailable, falling back to MockEmailService: {e2}")
+                    email_service = MockEmailService()
             email_ok = await email_service.send_email(
                 to=registered_email,
                 subject=subject,
@@ -1514,23 +1521,14 @@ async def send_email_otp(payload: SendEmailOTPRequest, current_user: User = Depe
                 metadata={"purpose": "email_verification", "user_id": current_user.id}
             )
         except Exception as e:
-            logger.warning(f"Primary email provider unavailable, using mock email: {e}")
-            try:
-                mock_service = MockEmailService()
-                email_ok = await mock_service.send_email(
-                    to=registered_email,
-                    subject=subject,
-                    content=content,
-                    metadata={"purpose": "email_verification", "user_id": current_user.id}
-                )
-            except Exception as e2:
-                logger.error(f"Failed to send email OTP: {e2}")
-                email_ok = False
+            logger.error(f"Failed to send email OTP: {e}")
+            email_ok = False
         if email_ok:
             logger.info(f"Email OTP sent to {registered_email}")
 
         if not email_ok:
             logger.error(f"Failed to send OTP email to {registered_email}")
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Failed to send verification email. Please try again.")
 
         resp = {"message": "Verification code sent"}
         try:
@@ -1546,16 +1544,7 @@ async def send_email_otp(payload: SendEmailOTPRequest, current_user: User = Depe
         raise
     except Exception as e:
         logger.error(f"Error sending email OTP: {e}")
-        resp = {"message": "Verification code sent"}
-        try:
-            dev_flag = os.environ.get('OTP_DEV_MODE', '0')
-            logger.info(f"OTP_DEV_MODE={dev_flag}")
-            if dev_flag in ('1', 'true', 'True'):
-                resp["debug_code"] = otp_code
-                logger.info(f"OTP dev mode active; email debug_code={otp_code}")
-        except Exception:
-            pass
-        return resp
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to send verification email")
 
 @router.post("/verify-email-otp")
 async def verify_email_otp(payload: VerifyEmailOTPRequest, current_user: User = Depends(get_current_active_user)):
