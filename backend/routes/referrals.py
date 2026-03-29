@@ -50,23 +50,6 @@ async def get_my_referrals(
         }
     }
 
-@router.get("/history")
-async def get_referral_history(
-    skip: int = 0,
-    limit: int = 10,
-    current_user = Depends(get_current_user)
-):
-    """Get referral point earning history"""
-    history = await database.get_referral_history(current_user.id, skip=skip, limit=limit)
-    return {
-        "history": history,
-        "pagination": {
-            "skip": skip,
-            "limit": limit,
-            "total": len(history)
-        }
-    }
-
 @router.post("/verify-documents")
 async def submit_verification_documents(
     document_type: DocumentType = Form(...),
@@ -358,7 +341,6 @@ async def get_wallet_with_referral_info(current_user = Depends(get_current_user)
         balance_coins=wallet["balance_coins"],
         balance_naira=wallet["balance_coins"] * 100,
         referral_coins=eligibility["referral_coins"],
-        referral_points=eligibility.get("referral_points", 0),
         referral_coins_naira=eligibility["referral_coins"] * 100,
         can_withdraw_referrals=eligibility["can_withdraw_referrals"],
         transactions=transactions
@@ -375,30 +357,28 @@ async def check_withdrawal_eligibility(current_user = Depends(get_current_user))
         "message": f"You can withdraw referral coins when your total wallet balance reaches {eligibility['minimum_required']} coins." if not eligibility["can_withdraw_referrals"] else "You are eligible to withdraw referral coins!"
     }
 
-@router.post("/convert-rewards")
-async def convert_referral_rewards(current_user = Depends(get_current_user)):
-    """Convert referral points to wallet coins"""
-    # Use global database instance from database.py
+@router.post("/withdraw-to-wallet")
+async def withdraw_referral_to_wallet(current_user = Depends(get_current_user)):
+    """Convert referral rewards to normal wallet balance"""
     result = await database.convert_referral_rewards_to_wallet(current_user.id)
-    
-    if not result["success"]:
-        error_code = result.get("error")
-        if error_code == "minimum_required":
-            min_req = result.get("minimum_required")
-            shortfall = result.get("shortfall")
-            raise HTTPException(
-                status_code=400,
-                detail=f"Minimum {min_req} points required for conversion. You need {shortfall} more points."
-            )
-        elif error_code == "none_available":
-            raise HTTPException(
-                status_code=400,
-                detail="No referral points available to convert."
-            )
-        else:
-            raise HTTPException(status_code=400, detail="Conversion failed")
-            
-    return result
+    if not result.get("success"):
+        error = result.get("error")
+        if error == "minimum_required":
+            raise HTTPException(status_code=400, detail=f"Minimum {result.get('minimum_required', 5)} coins required")
+        if error == "none_available":
+            raise HTTPException(status_code=400, detail="No referral rewards available to convert")
+        raise HTTPException(status_code=400, detail="Unable to process withdrawal")
+    eligibility = await database.check_withdrawal_eligibility(current_user.id)
+    wallet = await database.get_wallet_by_user_id(current_user.id)
+    transactions = await database.get_wallet_transactions(current_user.id, limit=10)
+    return WalletResponseWithReferrals(
+        balance_coins=wallet["balance_coins"],
+        balance_naira=wallet["balance_coins"] * 100,
+        referral_coins=eligibility["referral_coins"],
+        referral_coins_naira=eligibility["referral_coins"] * 100,
+        can_withdraw_referrals=eligibility["can_withdraw_referrals"],
+        transactions=transactions
+    )
 # Serve verification document images
 @router.get("/verification-document/{filename}")
 async def serve_verification_document(filename: str):
