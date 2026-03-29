@@ -173,12 +173,12 @@ async def submit_verification_documents(
 @router.post("/tradesperson-references")
 async def submit_tradesperson_references(
     work_referrer_name: str = Form(...),
-    work_referrer_phone: str = Form(...),
+    work_referrer_phone: Optional[str] = Form(None),
     work_referrer_company_email: str = Form(...),
     work_referrer_company_name: str = Form(...),
     work_referrer_relationship: str = Form(...),
     character_referrer_name: str = Form(...),
-    character_referrer_phone: str = Form(...),
+    character_referrer_phone: Optional[str] = Form(None),
     character_referrer_email: str = Form(...),
     character_referrer_relationship: str = Form(...),
     current_user = Depends(get_current_tradesperson)
@@ -202,21 +202,21 @@ async def submit_tradesperson_references(
         raise HTTPException(status_code=400, detail="Company email must be a work domain, not a generic provider")
 
     # Validate phone numbers
-    if not is_valid_phone(work_referrer_phone.strip()):
+    if work_referrer_phone and work_referrer_phone.strip() and not is_valid_phone(work_referrer_phone.strip()):
         raise HTTPException(status_code=400, detail="Invalid work referee phone. Use +234XXXXXXXXXX or 0XXXXXXXXXX")
-    if not is_valid_phone(character_referrer_phone.strip()):
+    if character_referrer_phone and character_referrer_phone.strip() and not is_valid_phone(character_referrer_phone.strip()):
         raise HTTPException(status_code=400, detail="Invalid character referee phone. Use +234XXXXXXXXXX or 0XXXXXXXXXX")
 
     work_referrer = {
         "name": work_referrer_name.strip(),
-        "phone": work_referrer_phone.strip(),
+        "phone": (work_referrer_phone or "").strip(),
         "company_email": work_referrer_company_email.strip().lower(),
         "company_name": work_referrer_company_name.strip(),
         "relationship": work_referrer_relationship.strip(),
     }
     character_referrer = {
         "name": character_referrer_name.strip(),
-        "phone": character_referrer_phone.strip(),
+        "phone": (character_referrer_phone or "").strip(),
         "email": character_referrer_email.strip().lower(),
         "relationship": character_referrer_relationship.strip(),
     }

@@ -240,18 +240,14 @@ const VerifyAccountPage = () => {
         return (/^\+234\d{10}$/.test(phone) || /^0\d{10}$/.test(phone));
       } catch { return false; }
     };
-    if (!workRef.phone?.trim()) {
-      errs.work_referrer_phone = 'Work referee phone is required';
-    } else if (!isValidPhone(workRef.phone)) {
+    if (workRef.phone?.trim() && !isValidPhone(workRef.phone)) {
       errs.work_referrer_phone = 'Enter a valid phone (+234XXXXXXXXXX or 0XXXXXXXXXX)';
     }
     if (!workRef.company_email?.trim()) errs.work_referrer_company_email = 'Company email is required';
     if (!workRef.company_name?.trim()) errs.work_referrer_company_name = 'Company name is required';
     if (!workRef.relationship?.trim()) errs.work_referrer_relationship = 'Relationship is required';
     if (!charRef.name?.trim()) errs.character_referrer_name = 'Character referee name is required';
-    if (!charRef.phone?.trim()) {
-      errs.character_referrer_phone = 'Character referee phone is required';
-    } else if (!isValidPhone(charRef.phone)) {
+    if (charRef.phone?.trim() && !isValidPhone(charRef.phone)) {
       errs.character_referrer_phone = 'Enter a valid phone (+234XXXXXXXXXX or 0XXXXXXXXXX)';
     }
     if (!charRef.email?.trim()) errs.character_referrer_email = 'Character referee email is required';
@@ -1186,7 +1182,7 @@ const VerifyAccountPage = () => {
                               <div className="space-y-3">
                                 <input className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato bg-white" placeholder="Referee name *" value={workRef.name} onChange={(e)=>setWorkRef({...workRef, name: e.target.value})} />
                                 {refErrors.work_referrer_name && (<p className="text-xs text-red-600 mt-1 font-lato">{refErrors.work_referrer_name}</p>)}
-                                <input className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato bg-white" placeholder="Referee phone *" value={workRef.phone} onChange={(e)=>setWorkRef({...workRef, phone: e.target.value})} />
+                                <input className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato bg-white" placeholder="Referee phone (optional)" value={workRef.phone} onChange={(e)=>setWorkRef({...workRef, phone: e.target.value})} />
                                 {refErrors.work_referrer_phone && (<p className="text-xs text-red-600 mt-1 font-lato">{refErrors.work_referrer_phone}</p>)}
                                 <input className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato bg-white" placeholder="Company email *" value={workRef.company_email} onChange={(e)=>setWorkRef({...workRef, company_email: e.target.value})} />
                                 {refErrors.work_referrer_company_email && (<p className="text-xs text-red-600 mt-1 font-lato">{refErrors.work_referrer_company_email}</p>)}
@@ -1202,7 +1198,7 @@ const VerifyAccountPage = () => {
                               <div className="space-y-3">
                                 <input className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato bg-white" placeholder="Referee name *" value={charRef.name} onChange={(e)=>setCharRef({...charRef, name: e.target.value})} />
                                 {refErrors.character_referrer_name && (<p className="text-xs text-red-600 mt-1 font-lato">{refErrors.character_referrer_name}</p>)}
-                                <input className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato bg-white" placeholder="Referee phone *" value={charRef.phone} onChange={(e)=>setCharRef({...charRef, phone: e.target.value})} />
+                                <input className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato bg-white" placeholder="Referee phone (optional)" value={charRef.phone} onChange={(e)=>setCharRef({...charRef, phone: e.target.value})} />
                                 {refErrors.character_referrer_phone && (<p className="text-xs text-red-600 mt-1 font-lato">{refErrors.character_referrer_phone}</p>)}
                                 <input className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato bg-white" placeholder="Referee email *" value={charRef.email} onChange={(e)=>setCharRef({...charRef, email: e.target.value})} />
                                 {refErrors.character_referrer_email && (<p className="text-xs text-red-600 mt-1 font-lato">{refErrors.character_referrer_email}</p>)}
