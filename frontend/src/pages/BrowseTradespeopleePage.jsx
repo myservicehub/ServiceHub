@@ -234,6 +234,8 @@ const BrowseTradespeopleePage = () => {
       if (/10\s*\+/.test(normalized)) return { label: '10+ years', color: 'bg-purple-100 text-purple-800' };
     }
     const experience = getExperienceYears(tradesperson);
+    const hasExplicitExperience = raw !== null && raw !== undefined && `${raw}`.trim() !== '';
+    if (hasExplicitExperience && experience <= 0) return { label: '0-1 years', color: 'bg-yellow-100 text-yellow-800' };
     if (experience >= 10) return { label: '10+ years', color: 'bg-purple-100 text-purple-800' };
     if (experience >= 5) return { label: '5-10 years', color: 'bg-indigo-100 text-indigo-800' };
     if (experience >= 3) return { label: '3-5 years', color: 'bg-blue-100 text-blue-800' };

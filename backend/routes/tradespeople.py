@@ -4,8 +4,35 @@ from .. import models
 from ..database import database
 from datetime import datetime
 import uuid
+import re
 
 router = APIRouter(prefix="/api/tradespeople", tags=["tradespeople"])
+
+def _normalized_experience(source: dict):
+    candidates = [
+        source.get("experience_years"),
+        source.get("years_experience"),
+        source.get("experienceYears"),
+        source.get("yearsExperience"),
+        source.get("years_of_experience"),
+        source.get("experience"),
+    ]
+    raw = next((v for v in candidates if v not in (None, "")), None)
+    level = source.get("experience_level")
+    if not level and isinstance(raw, str) and ("-" in raw or "+" in raw):
+        level = raw
+    if raw is None:
+        return None, (level or "")
+    if isinstance(raw, (int, float)):
+        return float(raw), (level or "")
+    if isinstance(raw, str):
+        nums = [int(n) for n in re.findall(r"\d+", raw)]
+        if len(nums) == 0:
+            return 0.0, (level or raw)
+        if len(nums) == 1:
+            return float(nums[0]), (level or raw)
+        return float(max(nums)), (level or raw)
+    return None, (level or "")
 
 @router.post("/", response_model=models.Tradesperson)
 async def create_tradesperson(tradesperson_data: models.TradespersonCreate):
@@ -144,9 +171,7 @@ async def get_tradespeople(
                     avg_rating = round(rating_result[0]["avg_rating"], 1)
             
             # Transform to expected format
-            experience_years_value = tp.get("experience_years")
-            if experience_years_value in (None, ""):
-                experience_years_value = tp.get("years_experience", 0)
+            experience_years_value, experience_level_value = _normalized_experience(tp)
 
             tradesperson_data = {
                 "id": tp.get("id", ""),
@@ -162,7 +187,7 @@ async def get_tradespeople(
                 "postcode": tp.get("postcode", ""),
                 "years_experience": experience_years_value,
                 "experience_years": experience_years_value,
-                "experience_level": tp.get("experience_level", ""),
+                "experience_level": experience_level_value,
                 "business_name": tp.get("business_name", ""),
                 "company_name": tp.get("company_name", ""),
                 "profile_image": tp.get("profile_image", ""),
@@ -262,9 +287,7 @@ async def get_tradesperson(tradesperson_id: str):
             })
         
         # Transform to expected format
-        experience_years_value = user.get("experience_years")
-        if experience_years_value in (None, ""):
-            experience_years_value = user.get("years_experience", 0)
+        experience_years_value, experience_level_value = _normalized_experience(user)
 
         tradesperson_data = {
             "id": user.get("id", ""),
@@ -280,7 +303,7 @@ async def get_tradesperson(tradesperson_id: str):
             "postcode": user.get("postcode", ""),
             "years_experience": experience_years_value,
             "experience_years": experience_years_value,
-            "experience_level": user.get("experience_level", ""),
+            "experience_level": experience_level_value,
             "business_name": user.get("business_name", ""),
             "company_name": user.get("company_name", ""),
             "profile_image": user.get("profile_image", ""),
