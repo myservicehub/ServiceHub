@@ -1158,6 +1158,34 @@ class Database:
                 job["id"] = job.get("job_id") or job["_id"]
         return job
 
+    async def _get_deleted_user_ids(self, user_ids: List[str]) -> set:
+        if not user_ids:
+            return set()
+        docs = await self.users_collection.find(
+            {"id": {"$in": list(user_ids)}, "status": "deleted"},
+            {"id": 1}
+        ).to_list(length=len(user_ids))
+        return {d.get("id") for d in docs if d.get("id")}
+
+    def _extract_homeowner_id(self, job: dict) -> Optional[str]:
+        h_id = job.get("homeowner_id")
+        if not h_id and isinstance(job.get("homeowner"), dict):
+            h_id = job["homeowner"].get("id")
+        return h_id
+
+    async def _filter_jobs_from_deleted_homeowners(self, jobs: List[dict]) -> List[dict]:
+        if not jobs:
+            return jobs
+        homeowner_ids = {
+            h_id for h_id in
+            (self._extract_homeowner_id(job) for job in jobs)
+            if h_id and h_id != "unknown"
+        }
+        deleted_ids = await self._get_deleted_user_ids(list(homeowner_ids))
+        if not deleted_ids:
+            return jobs
+        return [job for job in jobs if self._extract_homeowner_id(job) not in deleted_ids]
+
     @time_it
     async def get_jobs(self, skip: int = 0, limit: int = 10, filters: dict = None) -> List[dict]:
         query = filters or {}
@@ -1178,6 +1206,7 @@ class Database:
         except asyncio.TimeoutError:
             logger.warning(f"get_jobs timeout after 10 seconds; returning empty")
             jobs = []
+        jobs = await self._filter_jobs_from_deleted_homeowners(jobs)
         
         for job in jobs:
             job_id_str = str(job['_id'])
@@ -1201,6 +1230,7 @@ class Database:
         # 1. Fetch jobs
         cursor = self.database.jobs.find(query).sort("created_at", -1).skip(skip).limit(limit)
         jobs = await cursor.to_list(length=limit)
+        jobs = await self._filter_jobs_from_deleted_homeowners(jobs)
         
         if not jobs:
             return []
@@ -1615,7 +1645,8 @@ class Database:
         return tradesperson
 
     async def get_tradespeople(self, skip: int = 0, limit: int = 10, filters: dict = None) -> List[dict]:
-        query = filters or {}
+        query = filters.copy() if filters else {}
+        query.setdefault("status", {"$ne": "deleted"})
         cursor = self.database.tradespeople.find(query).sort("average_rating", -1).skip(skip).limit(limit)
         tradespeople = await cursor.to_list(length=limit)
         
@@ -1624,7 +1655,8 @@ class Database:
         return tradespeople
 
     async def get_tradespeople_count(self, filters: dict = None) -> int:
-        query = filters or {}
+        query = filters.copy() if filters else {}
+        query.setdefault("status", {"$ne": "deleted"})
         return await self.database.tradespeople.count_documents(query)
 
     async def update_tradesperson_stats(self, tradesperson_id: str):
@@ -3647,6 +3679,7 @@ class Database:
         }).skip(skip).limit(limit * 3)  # Get more to allow for distance filtering
         
         raw_jobs = await cursor.to_list(length=None)
+        raw_jobs = await self._filter_jobs_from_deleted_homeowners(raw_jobs)
         jobs_with_distance = []
         
         async def process_job(job):
@@ -3851,6 +3884,7 @@ class Database:
             )
             
             raw_jobs = await asyncio.wait_for(cursor.to_list(length=fetch_limit), timeout=10.0)
+            raw_jobs = await self._filter_jobs_from_deleted_homeowners(raw_jobs)
 
             jobs_within_distance: List[Dict[str, Any]] = []
             jobs_without_coords: List[Dict[str, Any]] = []
@@ -3908,6 +3942,7 @@ class Database:
                     .limit(limit)
                 )
                 jobs = await asyncio.wait_for(cursor.to_list(length=limit), timeout=10.0)
+                jobs = await self._filter_jobs_from_deleted_homeowners(jobs)
                 for job in jobs:
                     # Ensure both id and _id are strings for frontend consistency
                     job_id_str = str(job["_id"])
@@ -3972,6 +4007,7 @@ class Database:
                 except asyncio.TimeoutError:
                     logger.warning(f"Search query timeout; returning empty results")
                     return []
+                raw_jobs = await self._filter_jobs_from_deleted_homeowners(raw_jobs)
 
                 jobs_within_distance: List[Dict[str, Any]] = []
                 jobs_without_coords: List[Dict[str, Any]] = []
@@ -4019,6 +4055,7 @@ class Database:
                 except asyncio.TimeoutError:
                     logger.warning(f"Search query (no location) timeout; returning empty results")
                     return []
+                results = await self._filter_jobs_from_deleted_homeowners(results)
                     
                 for job in results:
                     # Ensure both id and _id are strings for frontend consistency

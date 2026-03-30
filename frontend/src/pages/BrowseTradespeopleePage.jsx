@@ -123,9 +123,11 @@ const BrowseTradespeopleePage = () => {
       };
 
       const response = await tradespeopleAPI.getAllTradespeople(params);
-      setTradespeople(response.tradespeople || response.data || []);
+      const rows = response.tradespeople || response.data || [];
+      const visibleRows = Array.isArray(rows) ? rows.filter((item) => item?.status !== 'deleted') : [];
+      setTradespeople(visibleRows);
       setTotalPages(response.total_pages || 1);
-      setTotalTradespeople(response.total || 0);
+      setTotalTradespeople(visibleRows.length);
     } catch (error) {
       console.error('Failed to load tradespeople:', error);
       toast({
@@ -184,6 +186,22 @@ const BrowseTradespeopleePage = () => {
     ));
   };
 
+  const getExperienceYears = (tradesperson) => {
+    const direct = tradesperson?.experience_years ?? tradesperson?.years_experience;
+    if (typeof direct === 'number' && Number.isFinite(direct)) return direct;
+    if (typeof direct === 'string') {
+      const nums = direct.match(/\d+/g)?.map(Number) || [];
+      if (nums.length === 0) return 0;
+      if (nums.length === 1) return nums[0];
+      return Math.max(...nums);
+    }
+    return 0;
+  };
+
+  const getDisplayName = (tradesperson) => {
+    return tradesperson?.company_name?.trim() || tradesperson?.business_name?.trim() || tradesperson?.name || 'Unknown';
+  };
+
   const getExperienceLevel = (experience) => {
     if (experience >= 10) return { label: 'Expert', color: 'bg-purple-100 text-purple-800' };
     if (experience >= 5) return { label: 'Professional', color: 'bg-blue-100 text-blue-800' };
@@ -199,7 +217,8 @@ const BrowseTradespeopleePage = () => {
   };
 
   const TradespersonCard = ({ tradesperson, isListView = false }) => {
-    const experienceLevel = getExperienceLevel(tradesperson.years_experience || 0);
+    const experienceLevel = getExperienceLevel(getExperienceYears(tradesperson));
+    const displayName = getDisplayName(tradesperson);
     const verificationIcon = tradesperson.is_verified ? CheckCircle : AlertCircle;
     const verificationColor = tradesperson.is_verified ? 'text-green-600' : 'text-gray-500';
 
@@ -213,7 +232,7 @@ const BrowseTradespeopleePage = () => {
                 {tradesperson.profile_image ? (
                   <img
                     src={tradesperson.profile_image}
-                    alt={tradesperson.name}
+                    alt={displayName}
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -230,7 +249,7 @@ const BrowseTradespeopleePage = () => {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="text-base font-semibold font-montserrat text-[#121E3C] truncate">
-                      {tradesperson.name}
+                      {displayName}
                     </h3>
                     {React.createElement(verificationIcon, { 
                       size: 14, 
@@ -320,7 +339,7 @@ const BrowseTradespeopleePage = () => {
                 {tradesperson.profile_image ? (
                   <img
                     src={tradesperson.profile_image}
-                    alt={tradesperson.name}
+                    alt={displayName}
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -340,7 +359,7 @@ const BrowseTradespeopleePage = () => {
           {/* Info */}
           <div className="text-center">
             <h3 className="text-lg font-semibold font-montserrat text-[#121E3C] mb-1">
-              {tradesperson.name}
+              {displayName}
             </h3>
             
             <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#121E3C]/5 rounded-full text-xs text-[#121E3C] font-medium mb-3">
