@@ -186,11 +186,26 @@ const BrowseTradespeopleePage = () => {
     ));
   };
 
+  const getExperienceRaw = (tradesperson) => {
+    return (
+      tradesperson?.experience_level ??
+      tradesperson?.experience ??
+      tradesperson?.experienceYears ??
+      tradesperson?.experience_years ??
+      tradesperson?.years_experience ??
+      tradesperson?.user?.experience_level ??
+      tradesperson?.user?.experience_years ??
+      tradesperson?.profile?.experience_level ??
+      tradesperson?.profile?.experience_years ??
+      null
+    );
+  };
+
   const getExperienceYears = (tradesperson) => {
-    const direct = tradesperson?.experience_years ?? tradesperson?.years_experience;
-    if (typeof direct === 'number' && Number.isFinite(direct)) return direct;
-    if (typeof direct === 'string') {
-      const nums = direct.match(/\d+/g)?.map(Number) || [];
+    const raw = getExperienceRaw(tradesperson);
+    if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
+    if (typeof raw === 'string') {
+      const nums = raw.match(/\d+/g)?.map(Number) || [];
       if (nums.length === 0) return 0;
       if (nums.length === 1) return nums[0];
       return Math.max(...nums);
@@ -202,11 +217,22 @@ const BrowseTradespeopleePage = () => {
     return tradesperson?.company_name?.trim() || tradesperson?.business_name?.trim() || tradesperson?.name || 'Unknown';
   };
 
-  const getExperienceLevel = (experience) => {
-    if (experience >= 10) return { label: 'Expert', color: 'bg-purple-100 text-purple-800' };
-    if (experience >= 5) return { label: 'Professional', color: 'bg-blue-100 text-blue-800' };
-    if (experience >= 2) return { label: 'Experienced', color: 'bg-green-100 text-green-800' };
-    return { label: 'Beginner', color: 'bg-yellow-100 text-yellow-800' };
+  const getExperienceLevel = (tradesperson) => {
+    const raw = getExperienceRaw(tradesperson);
+    if (typeof raw === 'string' && raw.trim()) {
+      const normalized = raw.trim();
+      if (/0\s*-\s*1/.test(normalized)) return { label: '0-1 years', color: 'bg-yellow-100 text-yellow-800' };
+      if (/1\s*-\s*3/.test(normalized)) return { label: '1-3 years', color: 'bg-green-100 text-green-800' };
+      if (/3\s*-\s*5/.test(normalized)) return { label: '3-5 years', color: 'bg-blue-100 text-blue-800' };
+      if (/5\s*-\s*10/.test(normalized)) return { label: '5-10 years', color: 'bg-indigo-100 text-indigo-800' };
+      if (/10\s*\+/.test(normalized)) return { label: '10+ years', color: 'bg-purple-100 text-purple-800' };
+    }
+    const experience = getExperienceYears(tradesperson);
+    if (experience >= 10) return { label: '10+ years', color: 'bg-purple-100 text-purple-800' };
+    if (experience >= 5) return { label: '5-10 years', color: 'bg-indigo-100 text-indigo-800' };
+    if (experience >= 3) return { label: '3-5 years', color: 'bg-blue-100 text-blue-800' };
+    if (experience >= 1) return { label: '1-3 years', color: 'bg-green-100 text-green-800' };
+    return { label: 'Not set', color: 'bg-gray-100 text-gray-700' };
   };
 
   const formatDate = (dateString) => {
@@ -217,7 +243,7 @@ const BrowseTradespeopleePage = () => {
   };
 
   const TradespersonCard = ({ tradesperson, isListView = false }) => {
-    const experienceLevel = getExperienceLevel(getExperienceYears(tradesperson));
+    const experienceLevel = getExperienceLevel(tradesperson);
     const displayName = getDisplayName(tradesperson);
     const verificationIcon = tradesperson.is_verified ? CheckCircle : AlertCircle;
     const verificationColor = tradesperson.is_verified ? 'text-green-600' : 'text-gray-500';
