@@ -1543,72 +1543,77 @@ class NotificationService:
         notification.subject = subject
         notification.content = plain_text  # Store plain text in DB for dashboard/history
         
-        # Attempt to override with frontend-rendered HTML if available
-        try:
-            from pathlib import Path
-            # Map notification type to filename in backend/email_templates/html
-            filename_map = {
-                "new_interest": "new-interest.html",
-                "contact_shared": "contact-shared.html",
-                "job_posted": "job-posted.html",
-                "payment_confirmation": "payment-confirmation.html",
-                "new_message": "new-message.html",
-                "job_approved": "job-approved.html",
-                "job_rejected": "job-rejected.html",
-                "job_updated": "job-updated.html",
-                "review_invitation": "review-invitation.html",
-                "review_reminder": "review-reminder.html",
-                "job_completed": "job-completed.html",
-                "job_cancelled": "job-cancelled.html",
-                "external_review_invitation": "external-review-invitation.html",
-                "new_review_received": "new-review-received.html",
-                "new_matching_job": "new-matching-job.html",
-                "contact_form": "contact-form.html",
-            }
-            html_dir = os.environ.get("BACKEND_EMAILS_HTML_DIR") or os.environ.get("FRONTEND_EMAILS_HTML_DIR")
+        from pathlib import Path
+        filename_map = {
+            "new_interest": "new-interest.html",
+            "contact_shared": "contact-shared.html",
+            "job_posted": "job-posted.html",
+            "payment_confirmation": "payment-confirmation.html",
+            "new_message": "new-message.html",
+            "job_approved": "job-approved.html",
+            "job_rejected": "job-rejected.html",
+            "job_updated": "job-updated.html",
+            "review_invitation": "review-invitation.html",
+            "review_reminder": "review-reminder.html",
+            "job_completed": "job-completed.html",
+            "job_cancelled": "job-cancelled.html",
+            "external_review_invitation": "external-review-invitation.html",
+            "new_review_received": "new-review-received.html",
+            "new_matching_job": "new-matching-job.html",
+            "contact_form": "contact-form.html",
+        }
+        filename = filename_map.get(notification.type.value)
+        if not filename:
+            raise ValueError(f"No rendered HTML template mapping found for {notification.type.value}")
+
+        project_root = Path(__file__).resolve().parents[1].parent
+        candidate_dirs = [
+            os.environ.get("BACKEND_EMAILS_HTML_DIR"),
+            os.environ.get("FRONTEND_EMAILS_HTML_DIR"),
+            str(project_root / "backend" / "email_templates" / "html"),
+            str(project_root / "frontend" / "emails" / "html"),
+        ]
+        path = None
+        for html_dir in candidate_dirs:
             if not html_dir:
-                project_root = Path(__file__).resolve().parents[1].parent
-                default_dir = project_root / "backend" / "email_templates" / "html"
-                if default_dir.exists():
-                    html_dir = str(default_dir)
-            filename = filename_map.get(notification.type.value)
-            if html_dir and filename:
-                path = os.path.join(html_dir, filename)
-                if os.path.exists(path):
-                    with open(path, "r", encoding="utf-8") as f:
-                        override_html = f.read()
-                    # Augment template data with camelCase keys and basic aliases
-                    def to_camel(s: str) -> str:
-                        parts = s.split('_')
-                        return parts[0] + ''.join(p.capitalize() for p in parts[1:])
-                    values = dict(template_data or {})
-                    for k, v in list(values.items()):
-                        if isinstance(k, str) and "_" in k:
-                            camel = to_camel(k)
-                            values[camel] = v
-                            if camel:
-                                values[camel[0].upper() + camel[1:]] = v
-                    # Common aliases
-                    if "admin_notes" in values:
-                        values["adminNotes"] = values["admin_notes"]
-                    if "admin_notes_html" in values:
-                        values["adminNotesHTML"] = values["admin_notes_html"]
-                    if "job_url" in values:
-                        values["jobUrl"] = values["job_url"]
-                    if "see_more_url" in values:
-                        values["seeMoreUrl"] = values["see_more_url"]
-                    if "review_url" in values:
-                        values["reviewUrl"] = values["review_url"]
-                    if "conversation_url" in values:
-                        values["conversationUrl"] = values["conversation_url"]
-                    if "distance_km" in values and "distance" not in values:
-                        values["distance"] = values["distance_km"]
-                    # Replace placeholders {{key}}
-                    override_html = re.sub(r"\{\{\s*([a-zA-Z0-9_]+)\s*\}\}", lambda m: str(values.get(m.group(1), "")), override_html)
-                    if override_html:
-                        content = override_html
-        except Exception as e:
-            logger.warning(f"Frontend email HTML override failed for {notification.type.value}: {e}")
+                continue
+            candidate_path = os.path.join(html_dir, filename)
+            if os.path.exists(candidate_path):
+                path = candidate_path
+                break
+        if not path:
+            raise FileNotFoundError(f"Rendered HTML template not found for {notification.type.value}: {filename}")
+
+        with open(path, "r", encoding="utf-8") as f:
+            override_html = f.read()
+        def to_camel(s: str) -> str:
+            parts = s.split('_')
+            return parts[0] + ''.join(p.capitalize() for p in parts[1:])
+        values = dict(template_data or {})
+        for k, v in list(values.items()):
+            if isinstance(k, str) and "_" in k:
+                camel = to_camel(k)
+                values[camel] = v
+                if camel:
+                    values[camel[0].upper() + camel[1:]] = v
+        if "admin_notes" in values:
+            values["adminNotes"] = values["admin_notes"]
+        if "admin_notes_html" in values:
+            values["adminNotesHTML"] = values["admin_notes_html"]
+        if "job_url" in values:
+            values["jobUrl"] = values["job_url"]
+        if "see_more_url" in values:
+            values["seeMoreUrl"] = values["see_more_url"]
+        if "review_url" in values:
+            values["reviewUrl"] = values["review_url"]
+        if "conversation_url" in values:
+            values["conversationUrl"] = values["conversation_url"]
+        if "distance_km" in values and "distance" not in values:
+            values["distance"] = values["distance_km"]
+        override_html = re.sub(r"\{\{\s*([a-zA-Z0-9_]+)\s*\}\}", lambda m: str(values.get(m.group(1), "")), override_html)
+        if not override_html:
+            raise ValueError(f"Rendered HTML template is empty for {notification.type.value}: {filename}")
+        content = override_html
         
         success = await self.email_service.send_email(
             to=notification.recipient_email,

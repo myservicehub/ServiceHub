@@ -232,7 +232,9 @@ const PortfolioGallery = ({
     );
   }
 
-  if (!items || items.length === 0) {
+  const safeItems = (Array.isArray(items) ? items : []).filter((item) => item && item.id && item.image_url);
+
+  if (safeItems.length === 0) {
     return (
       <div className="text-center py-12">
         <ImageIcon size={64} className="mx-auto text-gray-400 mb-4" />
@@ -248,7 +250,7 @@ const PortfolioGallery = ({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {items.map((item) => (
+      {safeItems.map((item) => (
         <PortfolioItem
           key={item.id}
           item={item}

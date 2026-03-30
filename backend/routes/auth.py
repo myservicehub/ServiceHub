@@ -1467,38 +1467,34 @@ async def send_email_otp(payload: SendEmailOTPRequest, current_user: User = Depe
 
         # Send Email via Resend (preferred) or SendGrid / Mock
         subject = "Your ServiceHub Verification Code"
-        # Try to use redesigned HTML template
-        content = None
-        try:
-            from pathlib import Path
-            emails_dir = os.environ.get("BACKEND_EMAILS_HTML_DIR") or os.environ.get("FRONTEND_EMAILS_HTML_DIR")
+        from pathlib import Path
+        project_root = Path(__file__).resolve().parents[1].parent
+        candidate_dirs = [
+            os.environ.get("BACKEND_EMAILS_HTML_DIR"),
+            os.environ.get("FRONTEND_EMAILS_HTML_DIR"),
+            str(project_root / "backend" / "email_templates" / "html"),
+            str(project_root / "frontend" / "emails" / "html"),
+        ]
+        template_path = None
+        for emails_dir in candidate_dirs:
             if not emails_dir:
-                project_root = Path(__file__).resolve().parents[1].parent
-                default_dir = project_root / "backend" / "email_templates" / "html"
-                emails_dir = str(default_dir)
-            template_path = os.path.join(emails_dir, "email-otp.html")
-            if os.path.exists(template_path):
-                with open(template_path, "r", encoding="utf-8") as f:
-                    raw = f.read()
-                content = raw
-                assets_base = (
-                    os.environ.get("EMAIL_ASSETS_BASE_URL")
-                    or os.environ.get("PUBLIC_ASSETS_BASE_URL")
-                    or "https://my-servicehub.vercel.app"
-                )
-                content = re.sub(r"\{\{\s*name\s*\}\}", current_user.name or "", content)
-                content = re.sub(r"\{\{\s*otpCode\s*\}\}", otp_code, content)
-                content = re.sub(r"\{\{\s*assetsBaseUrl\s*\}\}", assets_base.rstrip("/"), content)
-        except Exception:
-            content = None
-        if not content:
-            # Fallback plain text
-            content = (
-                f"Hello {current_user.name},\n\n"
-                f"Your verification code is {otp_code}. It expires in 10 minutes.\n\n"
-                f"If you didn't request this, you can ignore this email.\n\n"
-                f"serviceHub Team"
-            )
+                continue
+            candidate_path = os.path.join(emails_dir, "email-otp.html")
+            if os.path.exists(candidate_path):
+                template_path = candidate_path
+                break
+        if not template_path:
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Email template unavailable")
+        with open(template_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        assets_base = (
+            os.environ.get("EMAIL_ASSETS_BASE_URL")
+            or os.environ.get("PUBLIC_ASSETS_BASE_URL")
+            or "https://my-servicehub.vercel.app"
+        )
+        content = re.sub(r"\{\{\s*name\s*\}\}", current_user.name or "", content)
+        content = re.sub(r"\{\{\s*otpCode\s*\}\}", otp_code, content)
+        content = re.sub(r"\{\{\s*assetsBaseUrl\s*\}\}", assets_base.rstrip("/"), content)
 
         allow_mock_notifications = os.environ.get("ALLOW_MOCK_NOTIFICATIONS", "0") in ("1", "true", "True")
         email_ok = False
@@ -1629,75 +1625,35 @@ async def request_password_reset(request_data: PasswordResetRequest):
             
             # Create email content
             email_subject = "Reset Your serviceHub Password"
-            # Try to use redesigned HTML template if available
-            email_content = None
-            try:
-                emails_dir = os.environ.get("BACKEND_EMAILS_HTML_DIR") or os.environ.get("FRONTEND_EMAILS_HTML_DIR")
+            project_root = Path(__file__).resolve().parents[1].parent
+            candidate_dirs = [
+                os.environ.get("BACKEND_EMAILS_HTML_DIR"),
+                os.environ.get("FRONTEND_EMAILS_HTML_DIR"),
+                str(project_root / "backend" / "email_templates" / "html"),
+                str(project_root / "frontend" / "emails" / "html"),
+            ]
+            template_path = None
+            for emails_dir in candidate_dirs:
                 if not emails_dir:
-                    project_root = Path(__file__).resolve().parents[1].parent
-                    default_dir = project_root / "backend" / "email_templates" / "html"
-                    emails_dir = str(default_dir)
-                template_path = os.path.join(emails_dir, "password-reset.html")
-                if os.path.exists(template_path):
-                    with open(template_path, "r", encoding="utf-8") as f:
-                        raw = f.read()
-                    # Replace placeholders
-                    nm = user_data.get('name', 'User') or 'User'
-                    assets_base = (
-                        os.environ.get("EMAIL_ASSETS_BASE_URL")
-                        or os.environ.get("PUBLIC_ASSETS_BASE_URL")
-                        or "https://my-servicehub.vercel.app"
-                    )
-                    html = raw
-                    html = re.sub(r"\{\{\s*name\s*\}\}", nm, html)
-                    html = re.sub(r"\{\{\s*resetLink\s*\}\}", reset_link, html)
-                    html = re.sub(r"\{\{\s*assetsBaseUrl\s*\}\}", assets_base.rstrip("/"), html)
-                    email_content = html
-            except Exception:
-                email_content = None
-            if not email_content:
-                email_content = f"""
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="utf-8">
-                    <style>
-                        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
-                        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-                        .header {{ background-color: #34D164; color: white; padding: 20px; text-align: center; }}
-                        .content {{ background-color: #f9f9f9; padding: 30px; }}
-                        .button {{ display: inline-block; background-color: #34D164; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }}
-                        .footer {{ text-align: center; padding: 20px; color: #666; font-size: 12px; }}
-                        .warning {{ color: #d32f2f; font-weight: bold; margin-top: 20px; }}
-                    </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <div class="header">
-                            <h1>serviceHub</h1>
-                            <h2>Password Reset Request</h2>
-                        </div>
-                        <div class="content">
-                            <p>Hello {user_data.get('name', 'User')},</p>
-                            <p>We received a request to reset your password for your serviceHub account.</p>
-                            <p>Click the button below to reset your password:</p>
-                            <p style="text-align: center;">
-                                <a href="{reset_link}" class="button">Reset Password</a>
-                            </p>
-                            <p>Or copy and paste this link into your browser:</p>
-                            <p style="word-break: break-all; color: #666; font-size: 12px;">{reset_link}</p>
-                            <p class="warning">⚠️ This link will expire in 1 hour for security reasons.</p>
-                            <p>If you didn't request a password reset, please ignore this email. Your password will remain unchanged.</p>
-                            <p>For security reasons, never share this link with anyone.</p>
-                        </div>
-                        <div class="footer">
-                            <p>© {datetime.utcnow().year} serviceHub. All rights reserved.</p>
-                            <p>This is an automated message, please do not reply to this email.</p>
-                        </div>
-                    </div>
-                </body>
-                </html>
-                """
+                    continue
+                candidate_path = os.path.join(emails_dir, "password-reset.html")
+                if os.path.exists(candidate_path):
+                    template_path = candidate_path
+                    break
+            if not template_path:
+                raise RuntimeError("Rendered email template unavailable: password-reset.html")
+            with open(template_path, "r", encoding="utf-8") as f:
+                raw = f.read()
+            nm = user_data.get('name', 'User') or 'User'
+            assets_base = (
+                os.environ.get("EMAIL_ASSETS_BASE_URL")
+                or os.environ.get("PUBLIC_ASSETS_BASE_URL")
+                or "https://my-servicehub.vercel.app"
+            )
+            email_content = raw
+            email_content = re.sub(r"\{\{\s*name\s*\}\}", nm, email_content)
+            email_content = re.sub(r"\{\{\s*resetLink\s*\}\}", reset_link, email_content)
+            email_content = re.sub(r"\{\{\s*assetsBaseUrl\s*\}\}", assets_base.rstrip("/"), email_content)
             
             # Send email
             if email_service:

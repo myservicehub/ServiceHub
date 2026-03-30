@@ -172,6 +172,24 @@ const ProfilePage = () => {
     }
   };
 
+  const normalizePortfolioItem = useCallback((rawItem) => {
+    if (!rawItem || typeof rawItem !== 'object') return null;
+    const item = rawItem.item || rawItem.portfolio_item || rawItem.data || rawItem;
+    if (!item || typeof item !== 'object') return null;
+    const id = item.id || item._id;
+    const imageUrl = item.image_url || item.image || item.file_url || item.url;
+    if (!id || !imageUrl) return null;
+    return {
+      ...item,
+      id,
+      image_url: imageUrl,
+      title: item.title || 'Portfolio Item',
+      category: item.category || 'other',
+      is_public: item.is_public ?? true,
+      created_at: item.created_at || new Date().toISOString(),
+    };
+  }, []);
+
   // Get available tabs based on user role
   const getAvailableTabs = () => {
     const baseTabs = [
@@ -399,7 +417,10 @@ const ProfilePage = () => {
     try {
       setPortfolioLoading(true);
       const response = await portfolioAPI.getMyPortfolio();
-      setPortfolioItems(response.items || []);
+      const normalizedItems = (response?.items || [])
+        .map(normalizePortfolioItem)
+        .filter(Boolean);
+      setPortfolioItems(normalizedItems);
     } catch (error) {
       console.error('Failed to load portfolio:', error);
       toast({
@@ -460,13 +481,24 @@ const ProfilePage = () => {
   };
 
   const handlePortfolioUploadSuccess = (newItem) => {
-    setPortfolioItems(prev => [newItem, ...prev]);
+    const normalized = normalizePortfolioItem(newItem);
+    if (!normalized) {
+      toast({
+        title: "Upload completed with invalid data",
+        description: "Please refresh your portfolio to view the latest item.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setPortfolioItems(prev => [normalized, ...prev.filter(Boolean)]);
     setShowUploadForm(false);
   };
 
   const handlePortfolioUpdate = (updatedItem) => {
+    const normalized = normalizePortfolioItem(updatedItem);
+    if (!normalized) return;
     setPortfolioItems(prev => 
-      prev.map(item => item.id === updatedItem.id ? updatedItem : item)
+      prev.map(item => item?.id === normalized.id ? normalized : item).filter(Boolean)
     );
   };
 

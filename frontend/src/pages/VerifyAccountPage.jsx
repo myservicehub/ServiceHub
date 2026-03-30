@@ -468,7 +468,7 @@ const VerifyAccountPage = () => {
         <div className="p-4 sm:p-6 lg:p-8">
           {/* Page Header */}
           <div className="mb-8">
-            <h1 className="text-2xl sm:text-3xl font-bold font-montserrat text-[#121E3C]">Verify Your Profile</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold font-montserrat text-[#121E3C]">Verify Your Business</h1>
             <p className="text-gray-500 mt-1 text-sm font-lato">Complete your business verification to unlock all platform features</p>
           </div>
 
