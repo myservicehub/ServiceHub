@@ -99,7 +99,7 @@ async def get_tradespeople(
         elif sort_by == "reviews":
             sort_criteria = [("total_reviews", -1), ("average_rating", -1)]
         elif sort_by == "experience":
-            sort_criteria = [("years_experience", -1), ("average_rating", -1)]
+            sort_criteria = [("experience_years", -1), ("average_rating", -1)]
         elif sort_by == "recent":
             sort_criteria = [("created_at", -1)]
         else:
@@ -144,6 +144,10 @@ async def get_tradespeople(
                     avg_rating = round(rating_result[0]["avg_rating"], 1)
             
             # Transform to expected format
+            experience_years_value = tp.get("experience_years")
+            if experience_years_value in (None, ""):
+                experience_years_value = tp.get("years_experience", 0)
+
             tradesperson_data = {
                 "id": tp.get("id", ""),
                 "name": tp.get("name", ""),
@@ -156,7 +160,9 @@ async def get_tradespeople(
                 "city": tp.get("city", ""),
                 "state": tp.get("state", ""),
                 "postcode": tp.get("postcode", ""),
-                "years_experience": tp.get("years_experience", 0),
+                "years_experience": experience_years_value,
+                "experience_years": experience_years_value,
+                "experience_level": tp.get("experience_level", ""),
                 "business_name": tp.get("business_name", ""),
                 "company_name": tp.get("company_name", ""),
                 "profile_image": tp.get("profile_image", ""),
@@ -256,6 +262,10 @@ async def get_tradesperson(tradesperson_id: str):
             })
         
         # Transform to expected format
+        experience_years_value = user.get("experience_years")
+        if experience_years_value in (None, ""):
+            experience_years_value = user.get("years_experience", 0)
+
         tradesperson_data = {
             "id": user.get("id", ""),
             "name": user.get("name", ""),
@@ -268,7 +278,9 @@ async def get_tradesperson(tradesperson_id: str):
             "city": user.get("city", ""),
             "state": user.get("state", ""),
             "postcode": user.get("postcode", ""),
-            "years_experience": user.get("years_experience", 0),
+            "years_experience": experience_years_value,
+            "experience_years": experience_years_value,
+            "experience_level": user.get("experience_level", ""),
             "business_name": user.get("business_name", ""),
             "company_name": user.get("company_name", ""),
             "profile_image": user.get("profile_image", ""),
