@@ -1552,7 +1552,7 @@ class NotificationService:
             "new_message": "new-message.html",
             "job_approved": "job-approved.html",
             "job_rejected": "job-rejected.html",
-            "job_updated": "job-updated.html",
+            "job_updated": "job-approved.html",
             "review_invitation": "review-invitation.html",
             "review_reminder": "review-reminder.html",
             "job_completed": "job-completed.html",
