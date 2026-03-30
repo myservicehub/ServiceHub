@@ -191,12 +191,18 @@ const BrowseTradespeopleePage = () => {
       tradesperson?.experience_level ??
       tradesperson?.experience ??
       tradesperson?.experienceYears ??
+      tradesperson?.yearsExperience ??
       tradesperson?.experience_years ??
+      tradesperson?.experienceYear ??
+      tradesperson?.experienceyear ??
       tradesperson?.years_experience ??
+      tradesperson?.years_of_experience ??
       tradesperson?.user?.experience_level ??
       tradesperson?.user?.experience_years ??
+      tradesperson?.user?.yearsExperience ??
       tradesperson?.profile?.experience_level ??
       tradesperson?.profile?.experience_years ??
+      tradesperson?.profile?.yearsExperience ??
       null
     );
   };

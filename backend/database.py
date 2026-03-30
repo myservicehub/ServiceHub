@@ -1632,16 +1632,60 @@ class Database:
         tradesperson_data['_id'] = str(result.inserted_id)
         return tradesperson_data
 
+    async def _hydrate_tradespeople_from_users(self, tradespeople: List[dict]) -> List[dict]:
+        if not tradespeople:
+            return tradespeople
+        ids = [t.get("id") for t in tradespeople if t.get("id")]
+        emails = [t.get("email") for t in tradespeople if t.get("email")]
+        query = {"$or": []}
+        if ids:
+            query["$or"].append({"id": {"$in": ids}})
+        if emails:
+            query["$or"].append({"email": {"$in": emails}})
+        if not query["$or"]:
+            return tradespeople
+        users = await self.users_collection.find(
+            query,
+            {
+                "id": 1,
+                "email": 1,
+                "experience_years": 1,
+                "experience_level": 1,
+                "experience": 1,
+                "years_experience": 1,
+            }
+        ).to_list(length=max(len(ids), len(emails), 1))
+        by_id = {u.get("id"): u for u in users if u.get("id")}
+        by_email = {u.get("email"): u for u in users if u.get("email")}
+        for t in tradespeople:
+            source = by_id.get(t.get("id")) or by_email.get(t.get("email"))
+            if not source:
+                continue
+            if t.get("experience_years") in (None, "", 0):
+                if source.get("experience_years") not in (None, ""):
+                    t["experience_years"] = source.get("experience_years")
+            if t.get("experience_level") in (None, "") and source.get("experience_level") not in (None, ""):
+                t["experience_level"] = source.get("experience_level")
+            if t.get("experience") in (None, "") and source.get("experience") not in (None, ""):
+                t["experience"] = source.get("experience")
+            if t.get("years_experience") in (None, "") and source.get("years_experience") not in (None, ""):
+                t["years_experience"] = source.get("years_experience")
+        return tradespeople
+
     async def get_tradesperson_by_id(self, tradesperson_id: str) -> Optional[dict]:
         tradesperson = await self.database.tradespeople.find_one({"id": tradesperson_id})
         if tradesperson:
             tradesperson['_id'] = str(tradesperson['_id'])
+            hydrated = await self._hydrate_tradespeople_from_users([tradesperson])
+            tradesperson = hydrated[0]
         return tradesperson
 
     async def get_tradesperson_by_email(self, email: str) -> Optional[dict]:
         tradesperson = await self.database.tradespeople.find_one({"email": email})
         if tradesperson:
             tradesperson['_id'] = str(tradesperson['_id'])
+            hydrated = await self._hydrate_tradespeople_from_users([tradesperson])
+            tradesperson = hydrated[0]
         return tradesperson
 
     async def get_tradespeople(self, skip: int = 0, limit: int = 10, filters: dict = None) -> List[dict]:
@@ -1652,6 +1696,7 @@ class Database:
         
         for tradesperson in tradespeople:
             tradesperson['_id'] = str(tradesperson['_id'])
+        tradespeople = await self._hydrate_tradespeople_from_users(tradespeople)
         return tradespeople
 
     async def get_tradespeople_count(self, filters: dict = None) -> int:
