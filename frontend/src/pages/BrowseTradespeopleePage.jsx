@@ -28,7 +28,7 @@ import {
   CheckCircle,
   AlertCircle
 } from 'lucide-react';
-import { tradespeopleAPI, statsAPI } from '../api/services';
+import { tradespeopleAPI, statsAPI, authAPI } from '../api/services';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
 import { useStates } from '../hooks/useStates';
@@ -70,18 +70,25 @@ const BrowseTradespeopleePage = () => {
     const fetchTradeCategories = async () => {
       try {
         setLoadingCategories(true);
-        const response = await statsAPI.getCategories();
-        const cats = response.categories || response.data || response;
-        if (Array.isArray(cats)) {
-          const names = cats.map(c => c.name || c.title).filter(Boolean);
-          if (names.length > 0) {
-            setTradeCategories(names);
-          } else {
-            setTradeCategories(FALLBACK_TRADES);
-          }
-        } else {
-          setTradeCategories(FALLBACK_TRADES);
+        const authRes = await authAPI.getTradeCategories();
+        const authCats = authRes?.categories || authRes?.trades || [];
+        const authNames = Array.isArray(authCats)
+          ? authCats.map((c) => (typeof c === 'string' ? c : c?.name || c?.title)).filter(Boolean)
+          : [];
+        if (authNames.length > 0) {
+          setTradeCategories([...new Set(authNames)]);
+          return;
         }
+        const statsRes = await statsAPI.getCategories();
+        const statsCats = statsRes?.categories || statsRes?.data || statsRes;
+        if (Array.isArray(statsCats)) {
+          const names = statsCats.map((c) => c.name || c.title).filter(Boolean);
+          if (names.length > 0) {
+            setTradeCategories([...new Set(names)]);
+            return;
+          }
+        }
+        setTradeCategories(FALLBACK_TRADES);
       } catch (error) {
         console.error('Failed to load trade categories:', error);
         setTradeCategories(FALLBACK_TRADES);
@@ -96,7 +103,7 @@ const BrowseTradespeopleePage = () => {
   useEffect(() => {
     // Get initial search params from URL or location state
     const searchParams = new URLSearchParams(location.search);
-    const trade = searchParams.get('trade') || location.state?.trade || '';
+    const trade = searchParams.get('trade') || searchParams.get('category') || location.state?.trade || location.state?.category || '';
     const locationParam = searchParams.get('location') || location.state?.location || '';
     const query = searchParams.get('q') || location.state?.query || '';
 

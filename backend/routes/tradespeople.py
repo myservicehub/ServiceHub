@@ -59,6 +59,36 @@ def _normalized_experience(source: dict):
         return float(max(nums)), (level or raw)
     return None, level
 
+async def _trade_aliases(trade: str) -> List[str]:
+    base = (trade or "").strip()
+    if not base:
+        return []
+    aliases = {base}
+    lower = base.lower()
+    if lower.endswith(" services"):
+        aliases.add(base[:-9].strip())
+    else:
+        aliases.add(f"{base} Services")
+    try:
+        collection = getattr(getattr(database, "database", None), "system_trades", None)
+        if collection is not None:
+            related = await collection.find({
+                "$or": [
+                    {"name": {"$regex": f"^{re.escape(base)}$", "$options": "i"}},
+                    {"replaces": {"$regex": f"^{re.escape(base)}$", "$options": "i"}}
+                ]
+            }).to_list(length=200)
+            for item in related:
+                name = (item.get("name") or "").strip()
+                replaces = (item.get("replaces") or "").strip()
+                if name:
+                    aliases.add(name)
+                if replaces:
+                    aliases.add(replaces)
+    except Exception:
+        pass
+    return [a for a in aliases if a]
+
 @router.post("/", response_model=models.Tradesperson)
 async def create_tradesperson(tradesperson_data: models.TradespersonCreate):
     """Register a new tradesperson"""
@@ -114,35 +144,51 @@ async def get_tradespeople(
 
         skip = (page - 1) * limit
         
-        # Build filters for users collection where role is tradesperson
-        filters = {"role": "tradesperson"}  # Removed status filter to show all tradespeople
-        
-        # Search across name, business_name, bio, profession fields
+        filters = {"role": "tradesperson"}
+        and_filters = []
+
         if search:
             search_pattern = {"$regex": search, "$options": "i"}
-            filters["$or"] = [
-                {"name": search_pattern},
-                {"business_name": search_pattern},
-                {"bio": search_pattern},
-                {"profession": search_pattern}
-            ]
-        
-        # Filter by trade/profession
+            and_filters.append({
+                "$or": [
+                    {"name": search_pattern},
+                    {"business_name": search_pattern},
+                    {"bio": search_pattern},
+                    {"profession": search_pattern},
+                    {"trade_categories": search_pattern}
+                ]
+            })
+
         if trade:
-            filters["profession"] = {"$regex": trade, "$options": "i"}
-            
-        # Filter by location (check city, state, location fields)
+            aliases = await _trade_aliases(trade)
+            trade_conditions = []
+            for alias in aliases:
+                alias_pattern = {"$regex": f"^{re.escape(alias)}$", "$options": "i"}
+                trade_conditions.extend([
+                    {"profession": alias_pattern},
+                    {"main_trade": alias_pattern},
+                    {"trade_categories": alias_pattern},
+                    {"professional_information.trade_categories": alias_pattern}
+                ])
+            if trade_conditions:
+                and_filters.append({"$or": trade_conditions})
+
         if location:
             location_pattern = {"$regex": location, "$options": "i"}
-            filters["$or"] = filters.get("$or", []) + [
-                {"city": location_pattern},
-                {"state": location_pattern}, 
-                {"location": location_pattern}
-            ]
+            and_filters.append({
+                "$or": [
+                    {"city": location_pattern},
+                    {"state": location_pattern},
+                    {"location": location_pattern}
+                ]
+            })
         
         # Filter by minimum rating
         if min_rating is not None:
             filters["average_rating"] = {"$gte": min_rating}
+
+        if and_filters:
+            filters["$and"] = and_filters
         
         # Build sort criteria
         sort_criteria = []
