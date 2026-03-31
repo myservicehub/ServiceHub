@@ -476,7 +476,7 @@ const ContactUsPage = () => {
                     ServiceHub Nigeria, 6, D Place Guest House, Off Omimi Link Road, Ekpan, Delta State, Nigeria
                   </p>
                   <p className="text-[10px] text-gray-400">
-                    We serve {platformStats?.total_states || '8'} states across Nigeria including FCT.
+                    We serve {platformStats?.total_states ?? '0'} states across Nigeria including FCT.
                   </p>
                 </div>
               </div>

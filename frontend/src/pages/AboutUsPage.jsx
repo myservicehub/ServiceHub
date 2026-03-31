@@ -65,8 +65,8 @@ const AboutUsPage = () => {
   const stats = [
     { number: platformStats?.total_tradespeople || "5,000", suffix: "+", label: "Tradespeople" },
     { number: platformStats?.total_categories || "28", suffix: "+", label: "Service Categories" },
-    { number: platformStats?.total_states || "8", suffix: "", label: "Nigerian States" },
-    { number: platformStats?.total_jobs || "1,200", suffix: "+", label: "Jobs Completed" }
+    { number: platformStats?.total_states ?? "0", suffix: "", label: "Nigerian States" },
+    { number: platformStats?.total_jobs_completed ?? platformStats?.total_jobs ?? "0", suffix: "+", label: "Jobs Completed" }
   ];
 
   return (

@@ -2053,9 +2053,12 @@ class Database:
                 "total_tradespeople": 0,
                 "total_homeowners": 0,
                 "total_categories": total_categories,
+                "total_states": 0,
                 "total_reviews": 0,
                 "average_rating": 0.0,
                 "total_jobs": 0,
+                "total_jobs_posted": 0,
+                "total_jobs_completed": 0,
                 "active_jobs": 0
             }
 
@@ -2077,20 +2080,21 @@ class Database:
         result = await self.database.reviews.aggregate(pipeline).to_list(1)
         average_rating = round(result[0]['avg_rating'], 1) if result else 0.0
         
-        # Total jobs
+        # Total jobs (posted)
         total_jobs = await self.database.jobs.count_documents({})
+        total_jobs_completed = await self.database.jobs.count_documents({"status": "completed"})
         
         # Active jobs
         active_jobs = await self.database.jobs.count_documents({
             "status": "active"
         })
         
-        # Get total states
+        # Get total states from dynamic/admin-managed source
         try:
-            from models.nigerian_states import NIGERIAN_STATES
-            total_states = len(NIGERIAN_STATES)
+            all_states = await self.get_all_states_dynamic()
+            total_states = len(all_states or [])
         except Exception:
-            total_states = 37 # Default for Nigeria (36 + FCT)
+            total_states = 0
         
         # Get total available categories from static trade categories
         try:
@@ -2120,7 +2124,9 @@ class Database:
             "total_states": total_states,
             "total_reviews": total_reviews,
             "average_rating": average_rating,
-            "total_jobs": total_jobs,
+            "total_jobs": total_jobs_completed,
+            "total_jobs_posted": total_jobs,
+            "total_jobs_completed": total_jobs_completed,
             "active_jobs": active_jobs
         }
 

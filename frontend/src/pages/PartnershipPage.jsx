@@ -173,7 +173,7 @@ const PartnershipPage = () => {
     {
       icon: Users,
       title: 'Large User Base',
-      description: `Access to thousands of verified homeowners and skilled tradespeople across ${platformStats?.total_states || '8'} Nigerian states`
+      description: `Access to thousands of verified homeowners and skilled tradespeople across ${platformStats?.total_states ?? '0'} Nigerian states`
     },
     {
       icon: Shield,
@@ -198,7 +198,7 @@ const PartnershipPage = () => {
   ];
 
   const stats = [
-    { number: platformStats?.total_states || '8', suffix: '+', label: 'Nigerian States Covered' },
+    { number: platformStats?.total_states ?? '0', suffix: '+', label: 'Nigerian States Covered' },
     { number: platformStats?.total_categories || '28', suffix: '+', label: 'Service Categories' },
     { number: platformStats?.total_tradespeople || '1000', suffix: '+', label: 'Active Professionals' },
     { number: '95%', label: 'Customer Satisfaction' }

@@ -18,24 +18,13 @@ export const useStates = () => {
         setLoading(true);
         setError(null);
         
-        const response = await apiClient.get('/jobs/locations/states');
+        const response = await apiClient.get('/auth/nigerian-states');
         setStates(response.data.states || []);
       } catch (err) {
         console.error('Failed to fetch states:', err);
         setError(err.message || 'Failed to load states');
         
-        // Fallback to hardcoded states if API fails
-        const fallbackStates = [
-          'Abuja',
-          'Lagos', 
-          'Delta',
-          'Rivers State',
-          'Benin',
-          'Bayelsa',
-          'Enugu',
-          'Cross Rivers'
-        ];
-        setStates(fallbackStates);
+        setStates([]);
       } finally {
         setLoading(false);
       }

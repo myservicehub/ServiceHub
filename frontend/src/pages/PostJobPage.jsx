@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import JobPostingForm from '../components/JobPostingForm';
 import { CheckCircle, Users, Clock, Star, AlertCircle, Shield, Award } from 'lucide-react';
@@ -6,10 +6,12 @@ import { Button } from '../components/ui/button';
 import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { statsAPI } from '../api/services';
 
 const PostJobPage = () => {
   const [isJobPosted, setIsJobPosted] = useState(false);
   const [postedJob, setPostedJob] = useState(null);
+  const [platformStats, setPlatformStats] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
   const initialCategory = location?.state?.initialCategory || null;
@@ -18,6 +20,18 @@ const PostJobPage = () => {
   
   // Check if we're inside the dashboard layout
   const isInDashboard = location.pathname.startsWith('/dashboard');
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const data = await statsAPI.getStats();
+        setPlatformStats(data);
+      } catch (err) {
+        console.error('Failed to fetch stats:', err);
+      }
+    };
+    fetchStats();
+  }, []);
 
   const handleJobComplete = (jobData) => {
     setPostedJob(jobData);
@@ -212,10 +226,10 @@ const PostJobPage = () => {
               <h2 className="text-base font-semibold font-montserrat text-white text-center mb-6">Why Choose ServiceHub?</h2>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center">
                 {[
-                  { value: '40+', label: 'Completed Jobs' },
-                  { value: '15+', label: 'Trade Categories' },
-                  { value: '100+', label: 'Happy Customers' },
-                  { value: '4.8★', label: 'Average Rating' },
+                  { value: `${platformStats?.total_jobs_completed ?? platformStats?.total_jobs ?? 0}+`, label: 'Completed Jobs' },
+                  { value: `${platformStats?.total_categories ?? 0}+`, label: 'Trade Categories' },
+                  { value: `${platformStats?.total_homeowners ?? 0}+`, label: 'Happy Customers' },
+                  { value: `${platformStats?.average_rating ?? '0.0'}★`, label: 'Average Rating' },
                 ].map((stat) => (
                   <div key={stat.label} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4">
                     <div className="text-xl font-bold font-montserrat text-[#34D164]">{stat.value}</div>
