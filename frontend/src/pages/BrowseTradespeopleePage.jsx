@@ -190,6 +190,8 @@ const BrowseTradespeopleePage = () => {
     return (
       tradesperson?.experience_level ??
       tradesperson?.experience ??
+      tradesperson?.experience?.years ??
+      tradesperson?.experience?.years_of_experience ??
       tradesperson?.experienceYears ??
       tradesperson?.yearsExperience ??
       tradesperson?.experience_years ??
@@ -197,11 +199,25 @@ const BrowseTradespeopleePage = () => {
       tradesperson?.experienceyear ??
       tradesperson?.years_experience ??
       tradesperson?.years_of_experience ??
+      tradesperson?.professional_information?.experience_level ??
+      tradesperson?.professional_information?.experience_years ??
+      tradesperson?.professional_information?.years_experience ??
+      tradesperson?.professional_information?.years_of_experience ??
+      tradesperson?.professionalInformation?.experienceLevel ??
+      tradesperson?.professionalInformation?.experienceYears ??
+      tradesperson?.professionalInformation?.experience_years ??
+      tradesperson?.professionalInformation?.yearsExperience ??
+      tradesperson?.professionalInformation?.years_experience ??
+      tradesperson?.professionalInformation?.years_of_experience ??
       tradesperson?.user?.experience_level ??
       tradesperson?.user?.experience_years ??
+      tradesperson?.user?.years_experience ??
+      tradesperson?.user?.years_of_experience ??
       tradesperson?.user?.yearsExperience ??
       tradesperson?.profile?.experience_level ??
       tradesperson?.profile?.experience_years ??
+      tradesperson?.profile?.years_experience ??
+      tradesperson?.profile?.years_of_experience ??
       tradesperson?.profile?.yearsExperience ??
       null
     );
