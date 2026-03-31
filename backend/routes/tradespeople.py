@@ -42,10 +42,14 @@ def _normalized_experience(source: dict):
     )
     if not level and isinstance(raw, str) and ("-" in raw or "+" in raw):
         level = raw
+    # Normalize blank levels to None so consumers don't treat "" as meaningful.
+    if isinstance(level, str) and level.strip() == "":
+        level = None
+
     if raw is None:
-        return None, (level or "")
+        return None, level
     if isinstance(raw, (int, float)):
-        return float(raw), (level or "")
+        return float(raw), level
     if isinstance(raw, str):
         nums = [int(n) for n in re.findall(r"\d+", raw)]
         if len(nums) == 0:
@@ -53,7 +57,7 @@ def _normalized_experience(source: dict):
         if len(nums) == 1:
             return float(nums[0]), (level or raw)
         return float(max(nums)), (level or raw)
-    return None, (level or "")
+    return None, level
 
 @router.post("/", response_model=models.Tradesperson)
 async def create_tradesperson(tradesperson_data: models.TradespersonCreate):
