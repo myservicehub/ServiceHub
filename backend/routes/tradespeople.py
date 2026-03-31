@@ -9,16 +9,37 @@ import re
 router = APIRouter(prefix="/api/tradespeople", tags=["tradespeople"])
 
 def _normalized_experience(source: dict):
+    # Experience may be stored in multiple shapes depending on which frontend flow saved it.
+    # Keep this extraction broad so list endpoints are consistent.
+    professional_info = source.get("professional_information") or source.get("professionalInformation") or {}
+    experience_obj = source.get("experience") if isinstance(source.get("experience"), dict) else {}
+
     candidates = [
+        # flat (preferred)
         source.get("experience_years"),
         source.get("years_experience"),
+        source.get("years_of_experience"),
         source.get("experienceYears"),
         source.get("yearsExperience"),
-        source.get("years_of_experience"),
+        # nested professional info
+        professional_info.get("experience_years") if isinstance(professional_info, dict) else None,
+        professional_info.get("years_experience") if isinstance(professional_info, dict) else None,
+        professional_info.get("years_of_experience") if isinstance(professional_info, dict) else None,
+        professional_info.get("experienceYears") if isinstance(professional_info, dict) else None,
+        # nested experience object
+        experience_obj.get("years") if isinstance(experience_obj, dict) else None,
+        experience_obj.get("experience_years") if isinstance(experience_obj, dict) else None,
+        experience_obj.get("years_of_experience") if isinstance(experience_obj, dict) else None,
+        # fallback raw
         source.get("experience"),
     ]
+
     raw = next((v for v in candidates if v not in (None, "")), None)
-    level = source.get("experience_level")
+    level = (
+        source.get("experience_level")
+        or (professional_info.get("experience_level") if isinstance(professional_info, dict) else None)
+        or (experience_obj.get("experience_level") if isinstance(experience_obj, dict) else None)
+    )
     if not level and isinstance(raw, str) and ("-" in raw or "+" in raw):
         level = raw
     if raw is None:
@@ -172,6 +193,9 @@ async def get_tradespeople(
             
             # Transform to expected format
             experience_years_value, experience_level_value = _normalized_experience(tp)
+            # Ensure we always return a numeric experience_years for the list response
+            if experience_years_value is None:
+                experience_years_value = 0.0
 
             tradesperson_data = {
                 "id": tp.get("id", ""),
@@ -185,8 +209,8 @@ async def get_tradespeople(
                 "city": tp.get("city", ""),
                 "state": tp.get("state", ""),
                 "postcode": tp.get("postcode", ""),
-                "years_experience": experience_years_value,
-                "experience_years": experience_years_value,
+                "years_experience": float(experience_years_value),
+                "experience_years": float(experience_years_value),
                 "experience_level": experience_level_value,
                 "business_name": tp.get("business_name", ""),
                 "company_name": tp.get("company_name", ""),
@@ -288,6 +312,8 @@ async def get_tradesperson(tradesperson_id: str):
         
         # Transform to expected format
         experience_years_value, experience_level_value = _normalized_experience(user)
+        if experience_years_value is None:
+            experience_years_value = 0.0
 
         tradesperson_data = {
             "id": user.get("id", ""),
@@ -301,8 +327,8 @@ async def get_tradesperson(tradesperson_id: str):
             "city": user.get("city", ""),
             "state": user.get("state", ""),
             "postcode": user.get("postcode", ""),
-            "years_experience": experience_years_value,
-            "experience_years": experience_years_value,
+            "years_experience": float(experience_years_value),
+            "experience_years": float(experience_years_value),
             "experience_level": experience_level_value,
             "business_name": user.get("business_name", ""),
             "company_name": user.get("company_name", ""),
