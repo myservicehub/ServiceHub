@@ -56,7 +56,7 @@ import uuid
 from collections import Counter
 
 # Get backend URL from environment
-BACKEND_URL = "https://trademe-platform.preview.emergentagent.com/api"
+BACKEND_URL = "https://api.myservicehub.co/api"
 
 class ReviewSubmissionFixTester:
     def __init__(self):

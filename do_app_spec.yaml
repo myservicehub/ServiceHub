@@ -67,10 +67,10 @@ services:
     value: sendgrid
   - key: ALLOWED_ORIGINS
     scope: RUN_AND_BUILD_TIME
-    value: https://my-servicehub.vercel.app, http://localhost:3000
+    value: https://myservicehub.co, https://www.myservicehub.co
   - key: FRONTEND_URL
     scope: RUN_AND_BUILD_TIME
-    value: https://my-servicehub.vercel.app
+    value: https://www.myservicehub.co
   - key: UPLOADS_DIR
     scope: RUN_AND_BUILD_TIME
     value: /app/uploads

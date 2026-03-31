@@ -10,7 +10,7 @@ import json
 import uuid
 
 # Get backend URL from environment
-BACKEND_URL = "https://trademe-platform.preview.emergentagent.com/api"
+BACKEND_URL = "https://api.myservicehub.co/api"
 
 def test_complete_auth_flow():
     """Test complete authentication flow: register -> login -> access protected endpoint"""

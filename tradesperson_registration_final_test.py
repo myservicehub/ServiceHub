@@ -27,7 +27,7 @@ import jwt
 from typing import Dict, Any, Optional
 
 # Backend URL from environment
-BACKEND_URL = "https://trademe-platform.preview.emergentagent.com/api"
+BACKEND_URL = "https://api.myservicehub.co/api"
 
 class TradespersonRegistrationFinalTester:
     def __init__(self):

@@ -6,7 +6,7 @@ Test the exact frontend call pattern that was failing
 import requests
 import json
 
-BACKEND_URL = "https://trademe-platform.preview.emergentagent.com/api"
+BACKEND_URL = "https://api.myservicehub.co/api"
 
 def test_frontend_pattern():
     print("🔍 TESTING FRONTEND CALL PATTERN")

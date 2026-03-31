@@ -13,17 +13,11 @@ const getBackendUrl = () => {
     ? (window.BACKEND_URL_OVERRIDE || localStorage.getItem('BACKEND_URL_OVERRIDE') || '')
     : '';
   let url = runtimeOverride || buildEnvUrl;
-  // Guardrail: ignore deprecated onrender host to prevent saving data to wrong backend
-  if (url && typeof url === 'string' && url.includes('onrender.com')) {
-    url = '';
-  }
   if (!url && isLocalhost) {
     url = '';
   }
   // If no BACKEND_URL is configured, prefer a relative API base ("/api").
-  // Previously we mapped vercel.app hosts to an external preview backend which
-  // caused production deployments to call the wrong origin and intermittently
-  // time out. Leave `url` empty so API calls use the same origin by default
+  // Leave `url` empty so API calls use the same origin by default
   // unless a build/runtime override is explicitly provided.
   return url;
 };

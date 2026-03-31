@@ -12,7 +12,7 @@ import uuid
 import time
 from datetime import datetime
 
-BACKEND_URL = "https://trademe-platform.preview.emergentagent.com/api"
+BACKEND_URL = "https://api.myservicehub.co/api"
 
 class CompleteJobCompletionTester:
     def __init__(self):

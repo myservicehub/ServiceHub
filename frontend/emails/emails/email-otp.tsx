@@ -18,7 +18,7 @@ interface EmailOtpProps {
   otpCode?: string;
 }
 
-const assetsBaseUrl = 'https://my-servicehub.vercel.app';
+const assetsBaseUrl = 'https://www.myservicehub.co';
 
 export const EmailOtp = ({
   name = 'John',
@@ -248,7 +248,7 @@ const heroSection = {
 const heroTable = {
   width: '100%',
   height: '200px',
-  backgroundImage: 'url(https://my-servicehub.vercel.app/stock/bg2.jpeg)',
+  backgroundImage: 'url(https://www.myservicehub.co/stock/bg2.jpeg)',
   backgroundSize: 'cover',
   backgroundPosition: 'bottom',
   backgroundRepeat: 'no-repeat',

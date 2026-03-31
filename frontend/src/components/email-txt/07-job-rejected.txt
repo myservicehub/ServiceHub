@@ -32,7 +32,7 @@ How to Fix:
 
 We're here to help! If you have questions about these requirements, please contact our support team.
 
-Visit your jobs: https://my-servicehub.vercel.app/dashboard/jobs
+Visit your jobs: https://www.myservicehub.co/dashboard/jobs
 
 If you have any questions, please contact our support team.
 
@@ -40,4 +40,4 @@ Best regards,
 serviceHub Team
 
 === SMS VERSION ===
-⚠️ Your job '{job_title}' needs updates before approval. Check your email for details or visit: https://my-servicehub.vercel.app/dashboard/jobs
+⚠️ Your job '{job_title}' needs updates before approval. Check your email for details or visit: https://www.myservicehub.co/dashboard/jobs

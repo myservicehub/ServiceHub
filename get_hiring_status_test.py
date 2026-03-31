@@ -34,7 +34,7 @@ import uuid
 from datetime import datetime
 
 # Get backend URL from environment
-BACKEND_URL = "https://trademe-platform.preview.emergentagent.com/api"
+BACKEND_URL = "https://api.myservicehub.co/api"
 
 class GetHiringStatusTester:
     def __init__(self):

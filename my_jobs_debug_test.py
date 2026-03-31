@@ -45,7 +45,7 @@ from typing import Dict, List, Any, Optional
 import uuid
 
 # Get backend URL from environment
-BACKEND_URL = "https://trademe-platform.preview.emergentagent.com/api"
+BACKEND_URL = "https://api.myservicehub.co/api"
 
 # Test credentials from environment
 TEST_HOMEOWNER_EMAIL = os.getenv("SERVICEHUB_TEST_HOMEOWNER_EMAIL", "test_homeowner@example.com")
@@ -436,8 +436,8 @@ class MyJobsDebugTester:
         # Test with Origin header (simulating frontend request)
         print(f"\n--- Test 1: CORS Headers ---")
         headers = {
-            'Origin': 'https://trademe-platform.preview.emergentagent.com',
-            'Referer': 'https://trademe-platform.preview.emergentagent.com/my-jobs'
+            'Origin': 'https://api.myservicehub.co',
+            'Referer': 'https://api.myservicehub.co/my-jobs'
         }
         
         response = self.make_request("GET", "/jobs/my-jobs", auth_token=self.user_token, headers=headers)

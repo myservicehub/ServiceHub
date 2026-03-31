@@ -7,7 +7,7 @@ import requests
 import json
 import uuid
 
-BACKEND_URL = "https://trademe-platform.preview.emergentagent.com/api"
+BACKEND_URL = "https://api.myservicehub.co/api"
 
 def make_request(method, endpoint, auth_token=None, **kwargs):
     """Make HTTP request with error handling"""

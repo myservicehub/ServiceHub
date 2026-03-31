@@ -4607,7 +4607,7 @@ class Database:
             "verified_referrals": verified_referrals,
             "total_coins_earned": total_coins_earned,
             "referral_code": referral_code,
-            "referral_link": f"{os.environ.get('FRONTEND_URL', 'https://servicehub.ng')}/signup?ref={referral_code}"
+            "referral_link": f"{os.environ.get('FRONTEND_URL', 'https://myservicehub.co')}/signup?ref={referral_code}"
         }
 
     @time_it
@@ -7405,7 +7405,7 @@ We may update this Cookie Policy to reflect changes in technology or regulations
                 {
                     "contact_type": "email_support",
                     "label": "Support Email",
-                    "value": "support@servicehub.ng",
+                    "value": "support@myservicehub.co",
                     "is_active": True,
                     "display_order": 1,
                     "notes": "Customer support and technical issues"
@@ -7453,7 +7453,7 @@ We may update this Cookie Policy to reflect changes in technology or regulations
                 {
                     "contact_type": "website_url",
                     "label": "Website",
-                    "value": "https://servicehub.ng",
+                    "value": "https://myservicehub.co",
                     "is_active": True,
                     "display_order": 1,
                     "notes": "Main website URL"

@@ -55,7 +55,7 @@ NOTIFICATION TYPE: JOB_APPROVED
 
                 <p>Tradespeople in your area will be notified and can start showing interest immediately. You'll receive notifications as soon as they apply.</p>
                 
-                <a class="cta" href="https://my-servicehub.vercel.app/dashboard/jobs" target="_blank">Manage Your Job & Applications</a>
+                <a class="cta" href="https://www.myservicehub.co/dashboard/jobs" target="_blank">Manage Your Job & Applications</a>
             </div>
             <div class="footer">serviceHub Team • Nigeria's Trusted Service Marketplace</div>
         </div>
@@ -64,4 +64,4 @@ NOTIFICATION TYPE: JOB_APPROVED
 </html>
 
 === SMS VERSION ===
-✅ Your job '{job_title}' has been approved and is now live! Tradespeople can now see and apply. Check: https://my-servicehub.vercel.app/dashboard/jobs
+✅ Your job '{job_title}' has been approved and is now live! Tradespeople can now see and apply. Check: https://www.myservicehub.co/dashboard/jobs

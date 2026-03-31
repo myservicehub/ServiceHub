@@ -133,7 +133,7 @@ The Vercel/Netlify deployment will automatically pick up the changes on next bui
 ## Testing & Verification
 
 ### ✅ Test 1: Browse Jobs Page Loads
-**Action:** Navigate to `https://my-servicehub.vercel.app/browse-jobs`
+**Action:** Navigate to `https://www.myservicehub.co/browse-jobs`
 **Expected:** 
 - Jobs load within 3-5 seconds
 - No error toast appears

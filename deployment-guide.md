@@ -4,7 +4,7 @@
 - **Frontend**: React.js (port 3000)
 - **Backend**: FastAPI (port 8001)  
 - **Database**: MongoDB (port 27017)
-- **Current Domain**: https://trademe-platform.preview.emergentagent.com
+- **Current Domain**: https://api.myservicehub.co
 
 ## 🌟 RECOMMENDED: Vercel + Railway + MongoDB Atlas
 
@@ -31,7 +31,7 @@
 3. Update frontend/.env:
    - REACT_APP_BACKEND_URL=https://servicehub-backend.railway.app
 4. Deploy: `vercel --prod`
-5. Get Vercel URL (e.g., https://servicehub.vercel.app)
+5. Get Vercel URL (e.g., https://www.myservicehub.co)
 
 ### Step 4: Custom Domain (Optional)
 1. Buy domain from Namecheap, GoDaddy, etc.

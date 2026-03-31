@@ -10,7 +10,7 @@ from datetime import datetime
 from typing import Dict, List, Any
 
 # Get backend URL from environment
-BACKEND_URL = "https://trademe-platform.preview.emergentagent.com/api"
+BACKEND_URL = "https://api.myservicehub.co/api"
 
 def test_detailed_data_structure():
     """Test detailed data structure of completed jobs response"""

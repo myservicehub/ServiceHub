@@ -47,7 +47,7 @@ export const ReviewInvitation = ({
                 <table cellPadding="0" cellSpacing="0" style={logoContainer}>
                   <tr>
                     <td style={{ verticalAlign: 'middle', paddingRight: '10px' }}>
-                      <Img src="https://my-servicehub.vercel.app/Logo-Icon-Green.png" width="40" height="40" alt="ServiceHub" />
+                      <Img src="https://www.myservicehub.co/Logo-Icon-Green.png" width="40" height="40" alt="ServiceHub" />
                     </td>
                     <td style={{ verticalAlign: 'middle' }}>
                       <Text style={logoText}>
@@ -143,7 +143,7 @@ export const ReviewInvitation = ({
                 <table cellPadding="0" cellSpacing="0" style={{ margin: '0 auto' }}>
                   <tr>
                     <td style={{ verticalAlign: 'middle', paddingRight: '8px' }}>
-                      <Img src="https://my-servicehub.vercel.app/Logo-Icon-Green.png" width="28" height="28" alt="ServiceHub" />
+                      <Img src="https://www.myservicehub.co/Logo-Icon-Green.png" width="28" height="28" alt="ServiceHub" />
                     </td>
                     <td style={{ verticalAlign: 'middle' }}>
                       <Text style={footerLogoText}>
@@ -212,7 +212,7 @@ const logoText = { fontSize: '20px', fontWeight: '700', margin: '0', letterSpaci
 const logoServiceWhite = { color: '#ffffff' };
 const logoHubWhite = { color: '#dcfce7' };
 const heroSection = { width: '100%' };
-const heroTable = { width: '100%', height: '200px', backgroundImage: 'url(https://my-servicehub.vercel.app/stock/bg10.jpg)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' };
+const heroTable = { width: '100%', height: '200px', backgroundImage: 'url(https://www.myservicehub.co/stock/bg10.jpg)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' };
 const heroTd = { height: '200px', textAlign: 'center' as const, verticalAlign: 'middle' as const };
 const logoContainer = { borderRadius: '12px', padding: '16px 28px' };
 const contentSection = { padding: '40px 32px', backgroundColor: '#ffffff' };

@@ -10,7 +10,7 @@ import json
 import os
 from datetime import datetime
 
-BACKEND_URL = "https://trademe-platform.preview.emergentagent.com/api"
+BACKEND_URL = "https://api.myservicehub.co/api"
 
 # Test credentials from environment
 TEST_HOMEOWNER_EMAIL = os.getenv("SERVICEHUB_TEST_HOMEOWNER_EMAIL", "test_homeowner@example.com")

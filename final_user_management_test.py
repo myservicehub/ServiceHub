@@ -21,7 +21,7 @@ import json
 import uuid
 import time
 
-BACKEND_URL = "https://trademe-platform.preview.emergentagent.com/api"
+BACKEND_URL = "https://api.myservicehub.co/api"
 
 class FinalUserManagementTest:
     def __init__(self):

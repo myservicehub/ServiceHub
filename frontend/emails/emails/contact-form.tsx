@@ -44,7 +44,7 @@ export const ContactForm = ({
                 <table cellPadding="0" cellSpacing="0" style={{ margin: '0 auto' }}>
                   <tr>
                     <td style={{ verticalAlign: 'middle', paddingRight: '10px' }}>
-                      <Img src="https://my-servicehub.vercel.app/Logo-Icon-Green.png" width="32" height="32" alt="ServiceHub" />
+                      <Img src="https://www.myservicehub.co/Logo-Icon-Green.png" width="32" height="32" alt="ServiceHub" />
                     </td>
                     <td style={{ verticalAlign: 'middle' }}>
                       <Text style={logoText}>
@@ -115,7 +115,7 @@ export const ContactForm = ({
                 <table cellPadding="0" cellSpacing="0" style={{ margin: '0 auto' }}>
                   <tr>
                     <td style={{ verticalAlign: 'middle', paddingRight: '8px' }}>
-                      <Img src="https://my-servicehub.vercel.app/Logo-Icon-Green.png" width="24" height="24" alt="ServiceHub" />
+                      <Img src="https://www.myservicehub.co/Logo-Icon-Green.png" width="24" height="24" alt="ServiceHub" />
                     </td>
                     <td style={{ verticalAlign: 'middle' }}>
                       <Text style={footerLogoText}>

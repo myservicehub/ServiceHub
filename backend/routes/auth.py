@@ -1490,7 +1490,7 @@ async def send_email_otp(payload: SendEmailOTPRequest, current_user: User = Depe
         assets_base = (
             os.environ.get("EMAIL_ASSETS_BASE_URL")
             or os.environ.get("PUBLIC_ASSETS_BASE_URL")
-            or "https://my-servicehub.vercel.app"
+            or "https://www.myservicehub.co"
         )
         content = re.sub(r"\{\{\s*name\s*\}\}", current_user.name or "", content)
         content = re.sub(r"\{\{\s*otpCode\s*\}\}", otp_code, content)
@@ -1648,7 +1648,7 @@ async def request_password_reset(request_data: PasswordResetRequest):
             assets_base = (
                 os.environ.get("EMAIL_ASSETS_BASE_URL")
                 or os.environ.get("PUBLIC_ASSETS_BASE_URL")
-                or "https://my-servicehub.vercel.app"
+                or "https://www.myservicehub.co"
             )
             email_content = raw
             email_content = re.sub(r"\{\{\s*name\s*\}\}", nm, email_content)

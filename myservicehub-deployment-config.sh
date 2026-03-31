@@ -6,7 +6,8 @@
 # Configuration Variables
 DOMAIN="myservicehub.co"
 WWW_DOMAIN="www.myservicehub.co"
-BACKEND_URL="https://${DOMAIN}"
+BACKEND_URL="https://api.${DOMAIN}"
+FRONTEND_URL="https://${WWW_DOMAIN}"
 PROJECT_PATH="/var/www/servicehub"
 
 echo "🌐 Configuring ServiceHub for domain: ${DOMAIN}"
@@ -15,16 +16,16 @@ echo "🌐 Configuring ServiceHub for domain: ${DOMAIN}"
 echo "📝 Updating backend .env file..."
 cat > ${PROJECT_PATH}/backend/.env << EOF
 MONGO_URL=mongodb://localhost:27017/servicehub
-FRONTEND_URL=${BACKEND_URL}
+FRONTEND_URL=${FRONTEND_URL}
 JWT_SECRET=$(openssl rand -base64 32)
 PORT=8001
-CORS_ORIGINS="https://${DOMAIN},https://${WWW_DOMAIN}"
+ALLOWED_ORIGINS="https://${DOMAIN},https://${WWW_DOMAIN}"
 EOF
 
 # Update frontend environment variables
 echo "📝 Updating frontend .env file..."
 cat > ${PROJECT_PATH}/frontend/.env << EOF
-REACT_APP_BACKEND_URL=${BACKEND_URL}
+VITE_BACKEND_URL=${BACKEND_URL}
 EOF
 
 # Create domain-specific Nginx configuration
@@ -61,7 +62,7 @@ server {
         proxy_cache_bypass \$http_upgrade;
         
         # CORS headers for API
-        add_header Access-Control-Allow-Origin "${BACKEND_URL}" always;
+            add_header Access-Control-Allow-Origin "${FRONTEND_URL}" always;
         add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS" always;
         add_header Access-Control-Allow-Headers "Authorization, Content-Type" always;
     }
@@ -69,7 +70,7 @@ server {
     # Handle preflight requests
     location /api/ {
         if (\$request_method = 'OPTIONS') {
-            add_header Access-Control-Allow-Origin "${BACKEND_URL}";
+            add_header Access-Control-Allow-Origin "${FRONTEND_URL}";
             add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS";
             add_header Access-Control-Allow-Headers "Authorization, Content-Type";
             add_header Access-Control-Max-Age 1728000;

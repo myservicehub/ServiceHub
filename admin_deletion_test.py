@@ -9,7 +9,7 @@ import requests
 import json
 import uuid
 
-BACKEND_URL = "https://trademe-platform.preview.emergentagent.com/api"
+BACKEND_URL = "https://api.myservicehub.co/api"
 
 def test_admin_deletion_protection():
     """Test that admin users cannot be deleted"""

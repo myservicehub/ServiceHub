@@ -85,8 +85,8 @@ vercel --prod
 - **MongoDB Atlas**: https://www.mongodb.com/support
 
 ## 🎉 Success Indicators
-✅ Your website loads at: https://your-domain.vercel.app
-✅ API responds at: https://your-api.railway.app/api/health
-✅ Database shows collections: https://your-api.railway.app/api/database-info
+✅ Your website loads at: https://www.myservicehub.co
+✅ API responds at: https://api.myservicehub.co/api/health
+✅ Database shows collections: https://api.myservicehub.co/api/database-info
 ✅ User registration and login work
 ✅ All major features functional

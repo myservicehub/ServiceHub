@@ -27,7 +27,7 @@
 ssh root@YOUR_VPS_IP_ADDRESS
 
 # Download and run my complete setup script
-wget https://trademe-platform.preview.emergentagent.com/auto-deploy.sh
+wget https://api.myservicehub.co/auto-deploy.sh
 chmod +x auto-deploy.sh
 ./auto-deploy.sh
 ```

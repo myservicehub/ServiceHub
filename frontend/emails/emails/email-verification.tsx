@@ -19,7 +19,7 @@ interface EmailVerificationProps {
   verifyLink?: string;
 }
 
-const baseUrl = 'https://my-servicehub.vercel.app';
+const baseUrl = 'https://www.myservicehub.co';
 
 export const EmailVerification = ({
   name = 'John',
@@ -55,7 +55,7 @@ export const EmailVerification = ({
                   <tr>
                     <td style={{ verticalAlign: 'middle', paddingRight: '10px' }}>
                       <Img
-                        src="https://my-servicehub.vercel.app/Logo-Icon-Green.png"
+                        src="https://www.myservicehub.co/Logo-Icon-Green.png"
                         width="40"
                         height="40"
                         alt="ServiceHub"
@@ -117,7 +117,7 @@ export const EmailVerification = ({
                   <tr>
                     <td style={{ verticalAlign: 'middle', paddingRight: '8px' }}>
                       <Img
-                        src="https://my-servicehub.vercel.app/Logo-Icon-Green.png"
+                        src="https://www.myservicehub.co/Logo-Icon-Green.png"
                         width="28"
                         height="28"
                         alt="ServiceHub"
@@ -235,7 +235,7 @@ const heroSection = {
 const heroTable = {
   width: '100%',
   height: '200px',
-  backgroundImage: 'url(https://my-servicehub.vercel.app/stock/bg2.jpeg)',
+  backgroundImage: 'url(https://www.myservicehub.co/stock/bg2.jpeg)',
   backgroundSize: 'cover',
   backgroundPosition: 'bottom',
   backgroundRepeat: 'no-repeat',

@@ -126,7 +126,7 @@ api_router = APIRouter()
 
 # Add CORS middleware (configurable via environment variable)
 # ALLOWED_ORIGINS can be a comma-separated list of origins, e.g.
-# "https://my-servicehub.vercel.app, http://localhost:3001"
+# "https://www.myservicehub.co, http://localhost:3001"
 allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "*")
 if allowed_origins_env.strip() == "*" or allowed_origins_env.strip() == "":
     # Note: allow_origins=["*"] cannot be used with allow_credentials=True in Starlette
