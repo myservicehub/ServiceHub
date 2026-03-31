@@ -180,7 +180,24 @@ const BlogPage = () => {
           throw new Error(`HTTP ${response.status} ${errText}`);
         }
         const data = await response.json();
-        return data.blog_posts || [];
+        const raw =
+          data?.blog_posts ||
+          data?.posts ||
+          data?.content_items ||
+          data?.items ||
+          [];
+
+        const list = Array.isArray(raw) ? raw : [];
+        // Defensive normalization: some backends return all content items.
+        // Only keep published blog posts for the public blog listing.
+        const normalized = list
+          .filter((p) => (p?.status || 'published') === 'published')
+          .filter((p) => !p?.content_type || p?.content_type === 'blog_post')
+          .map((p) => ({
+            ...p,
+            id: p.id || p._id || p.slug || String(Math.random()),
+          }));
+        return normalized;
       } catch (error) {
         console.error('Error fetching blog posts:', error);
         // propagate so callers know something went wrong
@@ -193,7 +210,11 @@ const BlogPage = () => {
         const response = await fetch(`${BASE_URL}/api/public/content/blog/post/${slug}`);
         if (!response.ok) return null;
         const data = await response.json();
-        return data.blog_post || null;
+        const post = data?.blog_post || data?.post || data?.content_item || data?.item || null;
+        if (!post) return null;
+        if ((post?.status || 'published') !== 'published') return null;
+        if (post?.content_type && post.content_type !== 'blog_post') return null;
+        return { ...post, id: post.id || post._id || post.slug || slug };
       } catch (error) {
         console.error('Error fetching blog post:', error);
         return null;
@@ -203,9 +224,24 @@ const BlogPage = () => {
     getFeaturedPosts: async () => {
       try {
         const response = await fetch(`${BASE_URL}/api/public/content/blog/featured`);
-        if (!response.ok) return [];
+        if (!response.ok) {
+          // Not all deployments implement a featured endpoint; fall back to filtering posts.
+          return [];
+        }
         const data = await response.json();
-        return data.featured_posts || [];
+        const raw =
+          data?.featured_posts ||
+          data?.blog_posts ||
+          data?.posts ||
+          data?.content_items ||
+          data?.items ||
+          [];
+        const list = Array.isArray(raw) ? raw : [];
+        return list
+          .filter((p) => (p?.status || 'published') === 'published')
+          .filter((p) => !p?.content_type || p?.content_type === 'blog_post')
+          .filter((p) => Boolean(p?.is_featured))
+          .map((p) => ({ ...p, id: p.id || p._id || p.slug || String(Math.random()) }));
       } catch (error) {
         console.error('Error fetching featured posts:', error);
         return [];
@@ -302,12 +338,6 @@ const BlogPage = () => {
 
       // Get featured posts
       const featured = await blogAPI.getFeaturedPosts();
-      if (featured && featured.length > 0) {
-        setFeaturedPosts(featured);
-      } else {
-        // Fallback to local featured posts
-        setFeaturedPosts(FALLBACK_POSTS.filter(p => p.is_featured));
-      }
 
       // Get regular posts
       let allPosts = [];
@@ -320,6 +350,16 @@ const BlogPage = () => {
       }
       
       const hasActiveFilter = filters.contentType !== 'all' || !!filters.category || !!filters.search || !!filters.tag;
+
+      // Prefer backend featured posts; otherwise derive featured from backend posts; otherwise use local featured.
+      const derivedFeatured = (Array.isArray(allPosts) ? allPosts : []).filter(p => Boolean(p?.is_featured));
+      if (featured && featured.length > 0) {
+        setFeaturedPosts(featured);
+      } else if (derivedFeatured.length > 0) {
+        setFeaturedPosts(derivedFeatured.slice(0, 4));
+      } else {
+        setFeaturedPosts(FALLBACK_POSTS.filter(p => p.is_featured));
+      }
 
       // When filtering, include featured posts too so valid matches are never hidden
       let regularPosts = hasActiveFilter

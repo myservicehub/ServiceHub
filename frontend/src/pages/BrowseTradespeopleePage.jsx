@@ -227,20 +227,31 @@ const BrowseTradespeopleePage = () => {
     const raw = getExperienceRaw(tradesperson);
     if (typeof raw === 'string' && raw.trim()) {
       const normalized = raw.trim();
-      if (/0\s*-\s*1/.test(normalized)) return { label: '0-1 years', color: 'bg-yellow-100 text-yellow-800' };
-      if (/1\s*-\s*3/.test(normalized)) return { label: '1-3 years', color: 'bg-green-100 text-green-800' };
-      if (/3\s*-\s*5/.test(normalized)) return { label: '3-5 years', color: 'bg-blue-100 text-blue-800' };
-      if (/5\s*-\s*10/.test(normalized)) return { label: '5-10 years', color: 'bg-indigo-100 text-indigo-800' };
-      if (/10\s*\+/.test(normalized)) return { label: '10+ years', color: 'bg-purple-100 text-purple-800' };
+      if (/0\s*-\s*1/.test(normalized) || /\bnew to the trade\b/i.test(normalized)) {
+        return { label: 'New to the trade', color: 'bg-yellow-100 text-yellow-800' };
+      }
+      if (/1\s*-\s*3/.test(normalized) || /\bsome experience\b/i.test(normalized)) {
+        return { label: 'Some experience', color: 'bg-green-100 text-green-800' };
+      }
+      if (/3\s*-\s*5/.test(normalized) || /\bexperienced\b/i.test(normalized)) {
+        return { label: 'Experienced', color: 'bg-blue-100 text-blue-800' };
+      }
+      if (/5\s*-\s*10/.test(normalized) || /\bvery experienced\b/i.test(normalized)) {
+        return { label: 'Very experienced', color: 'bg-indigo-100 text-indigo-800' };
+      }
+      if (/10\s*\+/.test(normalized) || /\bexpert level\b/i.test(normalized) || /\bexpert\b/i.test(normalized)) {
+        return { label: 'Expert level', color: 'bg-purple-100 text-purple-800' };
+      }
     }
     const experience = getExperienceYears(tradesperson);
     const hasExplicitExperience = raw !== null && raw !== undefined && `${raw}`.trim() !== '';
-    if (hasExplicitExperience && experience <= 0) return { label: '0-1 years', color: 'bg-yellow-100 text-yellow-800' };
-    if (experience >= 10) return { label: '10+ years', color: 'bg-purple-100 text-purple-800' };
-    if (experience >= 5) return { label: '5-10 years', color: 'bg-indigo-100 text-indigo-800' };
-    if (experience >= 3) return { label: '3-5 years', color: 'bg-blue-100 text-blue-800' };
-    if (experience >= 1) return { label: '1-3 years', color: 'bg-green-100 text-green-800' };
-    return { label: 'Not set', color: 'bg-gray-100 text-gray-700' };
+    if (hasExplicitExperience && experience <= 0) return { label: 'New to the trade', color: 'bg-yellow-100 text-yellow-800' };
+    if (experience >= 10) return { label: 'Expert level', color: 'bg-purple-100 text-purple-800' };
+    if (experience >= 5) return { label: 'Very experienced', color: 'bg-indigo-100 text-indigo-800' };
+    if (experience >= 3) return { label: 'Experienced', color: 'bg-blue-100 text-blue-800' };
+    if (experience >= 1) return { label: 'Some experience', color: 'bg-green-100 text-green-800' };
+    // If the field is missing/empty, don't show "Not set"—default to the lowest level.
+    return { label: 'New to the trade', color: 'bg-yellow-100 text-yellow-800' };
   };
 
   const formatDate = (dateString) => {
