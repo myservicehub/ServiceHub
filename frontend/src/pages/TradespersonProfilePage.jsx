@@ -42,7 +42,8 @@ import {
   FileText
 } from 'lucide-react';
 import AuthenticatedImage from '../components/common/AuthenticatedImage';
-import { tradespeopleAPI, portfolioAPI, reviewsAPI } from '../api/services';
+import { tradespeopleAPI, portfolioAPI } from '../api/services';
+import { reviewsAPI } from '../api/reviews';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
 
@@ -87,10 +88,13 @@ const TradespersonProfilePage = () => {
       setLoading(true);
       const response = await tradespeopleAPI.getTradesperson(id);
       setTradesperson(response.tradesperson || response);
-      
-      // Load reviews summary
-      const summaryResponse = await reviewsAPI.getReviewSummary(id);
-      setReviewsSummary(summaryResponse);
+      try {
+        const summaryResponse = await reviewsAPI.getReviewSummary(id);
+        setReviewsSummary(summaryResponse);
+      } catch (summaryError) {
+        console.error('Failed to load reviews summary:', summaryError);
+        setReviewsSummary(null);
+      }
     } catch (error) {
       console.error('Failed to load tradesperson data:', error);
       toast({

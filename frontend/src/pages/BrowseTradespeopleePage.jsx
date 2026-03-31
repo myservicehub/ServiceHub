@@ -154,7 +154,20 @@ const BrowseTradespeopleePage = () => {
     setCurrentPage(1);
   };
 
-  const handleViewProfile = (tradespersonId) => {
+  const handleViewProfile = (tradesperson) => {
+    const tradespersonId =
+      tradesperson?.id ||
+      tradesperson?.tradesperson_id ||
+      tradesperson?.user_id ||
+      tradesperson?._id;
+    if (!tradespersonId) {
+      toast({
+        title: "Profile unavailable",
+        description: "This tradesperson profile cannot be opened right now.",
+        variant: "destructive",
+      });
+      return;
+    }
     navigate(`/tradesperson/${tradespersonId}`);
   };
 
@@ -351,7 +364,7 @@ const BrowseTradespeopleePage = () => {
                     size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleViewProfile(tradesperson.id);
+                      handleViewProfile(tradesperson);
                     }}
                     className="rounded-lg"
                   >
@@ -456,7 +469,7 @@ const BrowseTradespeopleePage = () => {
                 size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleViewProfile(tradesperson.id);
+                  handleViewProfile(tradesperson);
                 }}
                 className="flex-1 rounded-xl text-xs h-10 border-gray-200 hover:border-[#121E3C] hover:bg-[#121E3C] hover:text-white transition-all duration-300"
               >
