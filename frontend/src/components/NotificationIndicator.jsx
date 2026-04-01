@@ -60,10 +60,14 @@ const NotificationIndicator = () => {
       setUnreadCount(data.unread || 0);
       setRecentNotifications(data.notifications || []);
     } catch (error) {
-      // If the server returns 403, stop periodic polling to avoid repeated forbidden requests
       const status = error?.response?.status;
       if (status === 403) {
-        console.warn('Notifications API returned 403 — stopping notification polling.');
+        if (pollRef.current) {
+          clearInterval(pollRef.current);
+          pollRef.current = null;
+        }
+      }
+      if (error?.code === 'ERR_NETWORK') {
         if (pollRef.current) {
           clearInterval(pollRef.current);
           pollRef.current = null;

@@ -38,6 +38,12 @@ const apiClient = axios.create({
   },
 });
 
+const sameOriginClient = axios.create({
+  baseURL: '/api',
+  timeout: 60000,
+  headers: { 'Content-Type': 'application/json' },
+});
+
 // Separate client for refresh to avoid interceptor loops
 const refreshClient = axios.create({
   baseURL: API_BASE,
@@ -140,9 +146,14 @@ apiClient.interceptors.response.use(
   (error) => {
     const { response, config } = error;
     if (!response) {
-      // Network or CORS error
-      if (import.meta && import.meta.env && import.meta.env.DEV) {
-        console.error('❌ API Response Error:', error.message);
+      if (BACKEND_URL && !config._corsSameOriginRetry) {
+        const isBrowser = typeof window !== 'undefined';
+        const hostname = isBrowser ? window.location.hostname : '';
+        const retryOk = !!hostname;
+        if (retryOk) {
+          const newConfig = { ...config, baseURL: '/api', _corsSameOriginRetry: true };
+          return sameOriginClient.request(newConfig);
+        }
       }
       return Promise.reject(error);
     }
