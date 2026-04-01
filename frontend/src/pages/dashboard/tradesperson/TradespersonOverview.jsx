@@ -59,14 +59,8 @@ const TradespersonOverview = () => {
   // Auto-show the next incomplete step modal on load
   useEffect(() => {
     if (loading) return;
-
-    const dismissedAt = Number(localStorage.getItem('profileModalDismissed') || 0);
-    const isDismissed = dismissedAt > 0 && (Date.now() - dismissedAt) < (24 * 60 * 60 * 1000);
-
     if (isProfileIncomplete) {
-      if (!isDismissed) {
-        setShowCompleteProfileModal(true);
-      }
+      setShowCompleteProfileModal(true);
       return;
     }
     if (!isContactVerified) {
@@ -80,7 +74,7 @@ const TradespersonOverview = () => {
 
   const handleCloseProfileModal = () => {
     setShowCompleteProfileModal(false);
-    localStorage.setItem('profileModalDismissed', Date.now().toString());
+    // Do not suppress future auto-open; always prompt until completed
   };
 
   const handleProfileComplete = async () => {
