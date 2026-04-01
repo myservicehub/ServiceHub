@@ -3290,19 +3290,20 @@ class Database:
         })
         users = await self.database.users.find(
             {"id": {"$in": user_ids}},
-            {"id": 1, "name": 1, "email": 1}
+            {"id": 1, "user_id": 1, "public_id": 1, "name": 1, "email": 1}
         ).to_list(length=len(user_ids)) if user_ids else []
         user_map = {u.get("id"): u for u in users}
 
         serialized_recent_wallet_transactions = []
         for tx in recent_wallet_transactions:
             user = user_map.get(tx.get("user_id"), {})
+            short_user_id = user.get("user_id") or user.get("public_id") or tx.get("user_id", "")
             created_at = tx.get("created_at")
             processed_at = tx.get("processed_at")
             serialized_recent_wallet_transactions.append({
                 "id": tx.get("id") or str(tx.get("_id", "")),
                 "reference": tx.get("reference", ""),
-                "user_id": tx.get("user_id", ""),
+                "user_id": short_user_id,
                 "user_name": user.get("name", "Unknown"),
                 "user_email": user.get("email", "Unknown"),
                 "amount_naira": tx.get("amount_naira", 0),
