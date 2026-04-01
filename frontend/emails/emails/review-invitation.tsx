@@ -170,16 +170,16 @@ export const ReviewInvitation = ({
           <table cellPadding="0" cellSpacing="0" style={{ width: '100%', marginBottom: '24px' }}>
             <tr>
               <td style={socialRow}>
-                <Link href="https://twitter.com/servicehubng" style={socialIconLink}>
+                <Link href="https://x.com/myservice_hub" style={socialIconLink}>
                   <Img src="https://cdn-icons-png.flaticon.com/512/5968/5968958.png" width="22" height="22" alt="X" style={socialIcon} />
                 </Link>
-                <Link href="https://facebook.com/servicehubng" style={socialIconLink}>
+                <Link href="https://www.facebook.com/share/18xd2rkVkV/" style={socialIconLink}>
                   <Img src="https://cdn-icons-png.flaticon.com/512/5968/5968764.png" width="22" height="22" alt="Facebook" style={socialIcon} />
                 </Link>
-                <Link href="https://instagram.com/servicehubng" style={socialIconLink}>
+                <Link href="https://www.instagram.com/myservice_hub?igsh=MTg2cWwweGQ3MzdoMA==" style={socialIconLink}>
                   <Img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" width="22" height="22" alt="Instagram" style={socialIcon} />
                 </Link>
-                <Link href="https://youtube.com/@servicehubng" style={socialIconLink}>
+                <Link href="https://youtube.com/@myservicehub?si=bKHBrzZ-Hu4hjHW6" style={socialIconLink}>
                   <Img src="https://cdn-icons-png.flaticon.com/512/1384/1384060.png" width="22" height="22" alt="YouTube" style={socialIcon} />
                 </Link>
               </td>
