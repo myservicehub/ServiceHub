@@ -2879,8 +2879,8 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       
       {/* Questions Modal */}
       {showQuestionsModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 sm:p-4">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl max-w-lg w-full max-h-[85vh] sm:max-h-[90vh] overflow-hidden flex flex-col mb-[env(safe-area-inset-bottom,0px)]">
             {/* Modal Header */}
             <div className="p-6 border-b border-gray-100">
               <div className="flex items-center justify-between">
@@ -2915,7 +2915,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
             </div>
 
             {/* Modal Body */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 min-h-0">
               {(() => {
                 const visibleQuestions = getVisibleQuestions();
                 const currentQuestion = visibleQuestions[currentQuestionIndex];
@@ -2952,7 +2952,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
             </div>
 
             {/* Modal Footer */}
-            <div className="p-6 border-t border-gray-100 bg-gray-50/50">
+            <div className="p-4 sm:p-6 border-t border-gray-100 bg-gray-50/50 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-6">
               <div className="flex gap-3">
                 <Button
                   type="button"
