@@ -474,19 +474,22 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleResetWalletView = () => {
-    setStats((prev) => ({
-      ...(prev || {}),
-      wallet_stats: {
-        pending_funding_requests: 0,
-        total_pending_amount_naira: 0,
-        total_pending_amount_coins: 0,
-        confirmed_funding_requests: 0,
-        total_confirmed_amount_naira: 0,
-        total_confirmed_amount_coins: 0,
-        recent_transactions: []
-      }
-    }));
+  const handleResetWalletView = async () => {
+    try {
+      const result = await adminAPI.clearMarkedWalletTransactions();
+      toast({
+        title: "Marked transactions cleared",
+        description: `${result?.deleted_count || 0} transactions removed`
+      });
+      await fetchData();
+    } catch (error) {
+      console.error('Failed to clear marked wallet transactions:', error);
+      toast({
+        title: "Failed to clear marked transactions",
+        description: error?.response?.data?.detail || "Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   // Preload tradespeople verification files (photos/documents) as Base64 for display
@@ -1761,6 +1764,7 @@ const AdminDashboard = () => {
                           <thead className="bg-gray-100 text-gray-700">
                             <tr>
                               <th className="text-left px-4 py-3">Date</th>
+                              <th className="text-left px-4 py-3">User ID</th>
                               <th className="text-left px-4 py-3">User</th>
                               <th className="text-left px-4 py-3">Email</th>
                               <th className="text-left px-4 py-3">Reference</th>
@@ -1774,6 +1778,7 @@ const AdminDashboard = () => {
                                 <td className="px-4 py-3 text-gray-600">
                                   {tx.created_at ? new Date(tx.created_at).toLocaleString() : '—'}
                                 </td>
+                                <td className="px-4 py-3 text-gray-600">{tx.user_id || '—'}</td>
                                 <td className="px-4 py-3 font-medium text-gray-800">{tx.user_name || 'Unknown'}</td>
                                 <td className="px-4 py-3 text-gray-600">{tx.user_email || 'Unknown'}</td>
                                 <td className="px-4 py-3 text-gray-600">{tx.reference || '—'}</td>

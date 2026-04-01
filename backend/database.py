@@ -3371,6 +3371,18 @@ class Database:
         
         return requests
 
+    async def clear_wallet_transactions_without_reference(self) -> int:
+        """Delete wallet funding transactions that have no usable reference."""
+        result = await self.wallet_transactions_collection.delete_many({
+            "transaction_type": "wallet_funding",
+            "$or": [
+                {"reference": {"$exists": False}},
+                {"reference": None},
+                {"reference": ""},
+            ]
+        })
+        return int(result.deleted_count or 0)
+
     async def confirm_wallet_funding(self, transaction_id: str, admin_id: str, admin_notes: str = "") -> bool:
         """Confirm wallet funding request"""
         # Get transaction

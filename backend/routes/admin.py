@@ -800,6 +800,20 @@ async def get_admin_dashboard_stats():
     """Get admin dashboard statistics (optimized)"""
     return await database.get_admin_dashboard_stats()
 
+@router.post("/wallet/transactions/clear-marked")
+async def clear_marked_wallet_transactions(admin: dict = Depends(require_permission(AdminPermission.MANAGE_WALLET_FUNDING))):
+    """Clear wallet funding transactions with missing references."""
+    try:
+        deleted_count = await database.clear_wallet_transactions_without_reference()
+        logger.info(f"Admin {admin['id']} cleared {deleted_count} wallet transactions without reference")
+        return {
+            "message": "Marked wallet transactions cleared successfully",
+            "deleted_count": deleted_count
+        }
+    except Exception as e:
+        logger.error(f"Error clearing marked wallet transactions: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to clear marked wallet transactions")
+
 # ==========================================
 # USER MANAGEMENT
 # ==========================================

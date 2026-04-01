@@ -205,6 +205,11 @@ export const adminAPI = {
     return response.data;
   },
 
+  async clearMarkedWalletTransactions() {
+    const response = await apiClient.post('/admin/wallet/transactions/clear-marked');
+    return response.data;
+  },
+
   // User Management Methods
   async getAllUsers(skip = 0, limit = 50, role = null, status = null, search = null) {
     const params = new URLSearchParams({ skip: skip.toString(), limit: limit.toString() });
