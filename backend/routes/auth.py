@@ -16,6 +16,7 @@ from ..auth.security import (
 )
 from ..auth.dependencies import get_current_user, get_current_active_user, get_current_tradesperson, require_permission
 from ..models.admin import AdminPermission
+from ..models.notifications import NotificationType
 from ..database import database
 from ..models.trade_categories import NIGERIAN_TRADE_CATEGORIES, validate_trade_category, normalize_trade_category
 from ..models.nigerian_states import NIGERIAN_STATES, validate_nigerian_state
@@ -568,6 +569,24 @@ async def register_tradesperson(request: Request, registration_data: Tradesperso
 
                 # Update last login
                 await database.update_user_last_login(created_user["id"])
+
+                try:
+                    frontend_url = os.environ.get("FRONTEND_URL", "https://www.myservicehub.co").rstrip("/")
+                    complete_registration_url = f"{frontend_url}/dashboard/verify-account"
+                    await notification_service.send_notification(
+                        user_id=created_user["id"],
+                        notification_type=NotificationType.TRADESPERSON_WELCOME,
+                        template_data={
+                            "tradesperson_name": created_user.get("name", "there"),
+                            "complete_registration_url": complete_registration_url,
+                            "tradespersonName": created_user.get("name", "there"),
+                            "completeRegistrationUrl": complete_registration_url,
+                        },
+                        recipient_email=created_user.get("email"),
+                        recipient_phone=None,
+                    )
+                except Exception as notify_err:
+                    logger.error(f"Failed to send tradesperson welcome email: {notify_err}")
 
                 # Prepare user data for response (remove password hash)
                 user_response = {k: v for k, v in created_user.items() if k != "password_hash"}

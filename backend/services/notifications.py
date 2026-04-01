@@ -1304,6 +1304,17 @@ serviceHub Team
             )
         }
 
+        templates[NotificationType.TRADESPERSON_WELCOME] = {
+            NotificationChannel.EMAIL: NotificationTemplate(
+                id=str(uuid.uuid4()),
+                type=NotificationType.TRADESPERSON_WELCOME,
+                channel=NotificationChannel.EMAIL,
+                subject_template="Welcome to ServiceHub, {tradesperson_name}",
+                content_template="Welcome to ServiceHub, {tradesperson_name}",
+                variables=["tradesperson_name", "complete_registration_url"]
+            )
+        }
+
         return templates
     
     def get_template(self, notification_type: NotificationType, channel: NotificationChannel) -> Optional[NotificationTemplate]:
@@ -1561,6 +1572,7 @@ class NotificationService:
             "new_review_received": "new-review-received.html",
             "new_matching_job": "new-matching-job.html",
             "contact_form": "contact-form.html",
+            "tradesperson_welcome": "tradesperson-welcome.html",
         }
         filename = filename_map.get(notification.type.value)
         if not filename:

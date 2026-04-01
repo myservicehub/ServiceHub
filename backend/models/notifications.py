@@ -23,6 +23,7 @@ class NotificationType(str, Enum):
     EXTERNAL_REVIEW_INVITATION = "external_review_invitation"
     NEW_REVIEW_RECEIVED = "new_review_received"
     CONTACT_FORM = "contact_form"
+    TRADESPERSON_WELCOME = "tradesperson_welcome"
 
 class NotificationChannel(str, Enum):
     EMAIL = "email"
@@ -58,6 +59,7 @@ class NotificationPreferences(BaseModel):
     job_cancelled: NotificationChannel = NotificationChannel.BOTH  # Job cancellation notifications
     external_review_invitation: NotificationChannel = NotificationChannel.BOTH
     new_review_received: NotificationChannel = NotificationChannel.BOTH
+    tradesperson_welcome: NotificationChannel = NotificationChannel.EMAIL
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -123,6 +125,7 @@ class UpdatePreferencesRequest(BaseModel):
     new_application: Optional[NotificationChannel] = None
     review_invitation: Optional[NotificationChannel] = None
     review_reminder: Optional[NotificationChannel] = None
+    tradesperson_welcome: Optional[NotificationChannel] = None
 
 class NotificationStatsResponse(BaseModel):
     """Notification statistics for admin/monitoring"""
