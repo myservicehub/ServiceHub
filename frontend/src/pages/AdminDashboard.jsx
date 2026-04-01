@@ -355,6 +355,11 @@ const AdminDashboard = () => {
         const data = await adminAPI.getAllJobsAdmin(0, 100, jobsFilter || null);
         setJobs(data.jobs || []);
       } else if (activeTab === 'verifications') {
+        if (!adminAPI.hasPermission('verify_users')) {
+          toast({ title: "Permission denied", description: "You do not have permission to view verifications.", variant: "destructive" });
+          setActiveTab('stats');
+          return;
+        }
         const data = await adminReferralsAPI.getPendingVerifications();
         setVerifications(data.verifications || []);
         // Preload base64 images for ID verification documents (requires admin token via axios)
@@ -384,6 +389,11 @@ const AdminDashboard = () => {
           }
         } catch {}
       } else if (activeTab === 'tradespeople_verification') {
+        if (!adminAPI.hasPermission('verify_users')) {
+          toast({ title: "Permission denied", description: "You do not have permission to view tradespeople verification.", variant: "destructive" });
+          setActiveTab('stats');
+          return;
+        }
         const data = await adminVerificationAPI.getPendingTradespeopleVerifications();
         setTradespeopleVerifications(data.verifications || []);
       } else if (activeTab === 'users') {
@@ -449,6 +459,11 @@ const AdminDashboard = () => {
         const data = await adminAPI.getDashboardStats();
         setStats(data);
       } else if (activeTab === 'reviews-management') {
+        if (!adminAPI.hasPermission('manage_jobs')) {
+          toast({ title: "Permission denied", description: "You do not have permission to manage reviews.", variant: "destructive" });
+          setActiveTab('stats');
+          return;
+        }
         setReviewsLoading(true);
         const data = await adminReviewsAPI.getAllReviews({ page: reviewsPage, limit: reviewsLimit, status: reviewsStatus || '', min_rating: reviewsMinRating || '', review_type: '', search: reviewsSearch || '' });
         const list = data.reviews || [];
@@ -458,6 +473,11 @@ const AdminDashboard = () => {
         setReviewsPages(pagination.pages || Math.ceil((pagination.total || list.length) / reviewsLimit));
         setReviewsLoading(false);
       } else if (activeTab === 'job-posting-feedback') {
+        if (!adminAPI.hasPermission('manage_jobs')) {
+          toast({ title: "Permission denied", description: "You do not have permission to view job posting feedback.", variant: "destructive" });
+          setActiveTab('stats');
+          return;
+        }
         const data = await adminAPI.getJobPostingExitFeedback(0, 200, jobPostingExitFeedbackSearch || '');
         setJobPostingExitFeedback(data.feedback || []);
         setJobPostingExitFeedbackTotal(data?.pagination?.total || 0);
@@ -466,7 +486,7 @@ const AdminDashboard = () => {
       console.error('Failed to fetch data:', error);
       toast({
         title: "Error",
-        description: "Failed to load data",
+        description: error?.response?.data?.detail || "Failed to load data",
         variant: "destructive"
       });
     } finally {
@@ -476,6 +496,10 @@ const AdminDashboard = () => {
 
   const handleResetWalletView = async () => {
     try {
+      if (!adminAPI.hasPermission('manage_wallet_funding')) {
+        toast({ title: "Permission denied", description: "You do not have permission to clear marked wallet transactions.", variant: "destructive" });
+        return;
+      }
       const result = await adminAPI.clearMarkedWalletTransactions();
       toast({
         title: "Marked transactions cleared",

@@ -24,6 +24,7 @@ from sendgrid.helpers.mail import (
 )
 import requests
 import base64
+import re
 
 # Configure logging for notifications
 logging.basicConfig(level=logging.INFO)
