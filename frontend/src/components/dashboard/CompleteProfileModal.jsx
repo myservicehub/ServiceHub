@@ -152,9 +152,12 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
         if (!formData.businessAddress?.trim()) newErrors.businessAddress = 'Address is required';
         break;
       case 3:
-        // ID verification is optional but if started, must complete
+        // ID verification is optional but if started, all required uploads must be provided
         if (formData.idType && !formData.idDocument) {
           newErrors.idDocument = 'Please upload your ID document';
+        }
+        if (formData.idType && !formData.selfieDocument) {
+          newErrors.selfieDocument = 'Please upload your selfie';
         }
         break;
       case 4:
@@ -719,7 +722,7 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
             {/* Selfie Upload */}
             <div>
               <label className="block text-sm font-medium font-lato mb-2 text-[#121E3C]">
-                Upload Selfie <span className="text-gray-400 font-normal">(optional but recommended)</span>
+                Upload Selfie <span className="text-red-500 font-normal">*</span>
               </label>
               <div className="border-2 border-dashed rounded-xl p-6 text-center border-gray-300 hover:border-orange-300 bg-gray-50 transition-all">
                 {formData.selfieDocument ? (
@@ -756,6 +759,7 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
                   </label>
                 )}
               </div>
+              {errors.selfieDocument && <p className="text-red-500 text-xs mt-1 font-lato">{errors.selfieDocument}</p>}
             </div>
           </div>
         )}

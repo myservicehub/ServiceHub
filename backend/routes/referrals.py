@@ -115,7 +115,10 @@ async def submit_verification_documents(
     except Exception as e:
         raise HTTPException(status_code=400, detail="Invalid document image file")
 
-    # Process Selfie (Optional in backend to support older apps, but enforced in frontend)
+    if not selfie_image and not selfie_image_base64:
+        raise HTTPException(status_code=400, detail="Selfie image is required")
+
+    # Process Selfie
     selfie_filename = None
     selfie_b64_data = None
     
