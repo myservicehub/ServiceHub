@@ -680,85 +680,112 @@ const MyInterestsPage = () => {
 
       {/* Contact Details Modal */}
       {showContactModal && selectedContact && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold font-montserrat" style={{color: '#121E3C'}}>
-                Homeowner Contact Details
-              </h3>
-              <button
-                onClick={() => setShowContactModal(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ✕
-              </button>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 sm:p-4">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-green-100 flex items-center justify-center">
+                    <CheckCircle className="w-6 h-6 text-green-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold font-montserrat text-[#121E3C]">
+                      Contact Details
+                    </h3>
+                    <p className="text-sm text-gray-500 font-lato">Access granted</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowContactModal(false)}
+                  className="w-10 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+                >
+                  <span className="text-gray-500 text-xl">×</span>
+                </button>
+              </div>
             </div>
             
-            <div className="space-y-4">
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <span className="font-semibold text-green-800">Contact Access Granted</span>
-                </div>
-                <p className="text-green-700 text-sm">
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-5">
+              {/* Success Banner */}
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-4">
+                <p className="text-green-700 text-sm font-lato">
                   You can now contact the homeowner directly about this job.
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                  <User className="w-5 h-5 text-gray-600" />
+              {/* Contact Cards */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl">
+                  <div className="w-11 h-11 rounded-xl bg-[#121E3C]/10 flex items-center justify-center">
+                    <User className="w-5 h-5 text-[#121E3C]" />
+                  </div>
                   <div>
-                    <p className="text-sm text-gray-600">Name</p>
-                    <p className="font-semibold">{selectedContact.homeowner_name}</p>
+                    <p className="text-xs text-gray-500 font-lato">Name</p>
+                    <p className="font-semibold text-[#121E3C] font-lato">{selectedContact.homeowner_name}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                  <Phone className="w-5 h-5 text-gray-600" />
-                  <div>
-                    <p className="text-sm text-gray-600">Phone</p>
-                    <p className="font-semibold">{selectedContact.homeowner_phone}</p>
+                <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl">
+                  <div className="w-11 h-11 rounded-xl bg-[#34D164]/10 flex items-center justify-center">
+                    <Phone className="w-5 h-5 text-[#34D164]" />
                   </div>
+                  <div className="flex-1">
+                    <p className="text-xs text-gray-500 font-lato">Phone</p>
+                    <p className="font-semibold text-[#121E3C] font-lato">{selectedContact.homeowner_phone}</p>
+                  </div>
+                  <a 
+                    href={`tel:${selectedContact.homeowner_phone}`}
+                    className="px-3 py-1.5 bg-[#34D164] text-white text-xs font-medium rounded-lg hover:bg-[#2ab854] transition-colors"
+                  >
+                    Call
+                  </a>
                 </div>
 
-                <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg col-span-1 md:col-span-2">
-                  <Mail className="w-5 h-5 text-gray-600" />
-                  <div>
-                    <p className="text-sm text-gray-600">Email</p>
-                    <p className="font-semibold">{selectedContact.homeowner_email}</p>
+                <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl">
+                  <div className="w-11 h-11 rounded-xl bg-blue-100 flex items-center justify-center">
+                    <Mail className="w-5 h-5 text-blue-600" />
                   </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-gray-500 font-lato">Email</p>
+                    <p className="font-semibold text-[#121E3C] font-lato truncate">{selectedContact.homeowner_email}</p>
+                  </div>
+                  <a 
+                    href={`mailto:${selectedContact.homeowner_email}`}
+                    className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Email
+                  </a>
                 </div>
               </div>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="font-semibold text-blue-800 mb-2">Next Steps</h4>
-                <ul className="text-blue-700 text-sm space-y-1">
-                  <li>• Contact the homeowner to discuss the job requirements</li>
-                  <li>• Provide a detailed quote and timeline</li>
-                  <li>• Schedule a site visit if necessary</li>
-                  <li>• Maintain professional communication throughout</li>
+              {/* Tips Section */}
+              <div className="bg-[#121E3C]/5 rounded-2xl p-4">
+                <h4 className="font-semibold text-[#121E3C] font-montserrat text-sm mb-3">Next Steps</h4>
+                <ul className="text-gray-600 text-sm space-y-2 font-lato">
+                  <li className="flex items-start gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#34D164] mt-1.5 shrink-0"></span>
+                    Contact the homeowner to discuss job requirements
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#34D164] mt-1.5 shrink-0"></span>
+                    Provide a detailed quote and timeline
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#34D164] mt-1.5 shrink-0"></span>
+                    Schedule a site visit if necessary
+                  </li>
                 </ul>
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 mt-6">
+            {/* Modal Footer */}
+            <div className="p-6 border-t border-gray-100 bg-gray-50/50">
               <Button
-                variant="outline"
                 onClick={() => setShowContactModal(false)}
+                className="w-full h-12 rounded-xl bg-[#121E3C] hover:bg-[#1a2d54] text-white font-lato"
               >
-                Close
-              </Button>
-              <Button
-                onClick={() => {
-                  setShowContactModal(false);
-                  // You could add functionality to open phone/email app here
-                }}
-                className="text-white"
-                style={{backgroundColor: '#34D164'}}
-              >
-                <Phone className="w-4 h-4 mr-2" />
-                Contact Now
+                Done
               </Button>
             </div>
           </div>
