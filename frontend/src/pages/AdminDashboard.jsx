@@ -474,6 +474,21 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleResetWalletView = () => {
+    setStats((prev) => ({
+      ...(prev || {}),
+      wallet_stats: {
+        pending_funding_requests: 0,
+        total_pending_amount_naira: 0,
+        total_pending_amount_coins: 0,
+        confirmed_funding_requests: 0,
+        total_confirmed_amount_naira: 0,
+        total_confirmed_amount_coins: 0,
+        recent_transactions: []
+      }
+    }));
+  };
+
   // Preload tradespeople verification files (photos/documents) as Base64 for display
   useEffect(() => {
     if (!isLoggedIn || activeTab !== 'tradespeople_verification') return;
@@ -1690,12 +1705,20 @@ const AdminDashboard = () => {
                 <div className="space-y-6">
                   <div className="flex justify-between items-center">
                     <h2 className="text-xl font-semibold">Recent Wallet Transactions</h2>
-                    <button
-                      onClick={fetchData}
-                      className="text-blue-600 hover:text-blue-700"
-                    >
-                      Refresh
-                    </button>
+                    <div className="flex items-center gap-4">
+                      <button
+                        onClick={handleResetWalletView}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        Reset
+                      </button>
+                      <button
+                        onClick={fetchData}
+                        className="text-blue-600 hover:text-blue-700"
+                      >
+                        Refresh
+                      </button>
+                    </div>
                   </div>
 
                   {loading ? (
@@ -1724,6 +1747,52 @@ const AdminDashboard = () => {
                       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                         <p className="text-sm text-yellow-700">Pending Legacy Requests</p>
                         <p className="text-2xl font-semibold text-yellow-900">{stats.wallet_stats.pending_funding_requests || 0}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {!loading && Array.isArray(stats?.wallet_stats?.recent_transactions) && stats.wallet_stats.recent_transactions.length > 0 && (
+                    <div className="bg-white border rounded-lg overflow-hidden">
+                      <div className="px-4 py-3 border-b bg-gray-50">
+                        <h3 className="font-medium text-gray-800">Transaction History</h3>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full text-sm">
+                          <thead className="bg-gray-100 text-gray-700">
+                            <tr>
+                              <th className="text-left px-4 py-3">Date</th>
+                              <th className="text-left px-4 py-3">User</th>
+                              <th className="text-left px-4 py-3">Email</th>
+                              <th className="text-left px-4 py-3">Reference</th>
+                              <th className="text-left px-4 py-3">Amount</th>
+                              <th className="text-left px-4 py-3">Status</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {stats.wallet_stats.recent_transactions.map((tx, idx) => (
+                              <tr key={tx.id || tx.reference || idx} className="border-t">
+                                <td className="px-4 py-3 text-gray-600">
+                                  {tx.created_at ? new Date(tx.created_at).toLocaleString() : '—'}
+                                </td>
+                                <td className="px-4 py-3 font-medium text-gray-800">{tx.user_name || 'Unknown'}</td>
+                                <td className="px-4 py-3 text-gray-600">{tx.user_email || 'Unknown'}</td>
+                                <td className="px-4 py-3 text-gray-600">{tx.reference || '—'}</td>
+                                <td className="px-4 py-3 text-gray-800">₦{Number(tx.amount_naira || 0).toLocaleString()}</td>
+                                <td className="px-4 py-3">
+                                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                    tx.status === 'confirmed'
+                                      ? 'bg-green-100 text-green-700'
+                                      : tx.status === 'pending'
+                                      ? 'bg-yellow-100 text-yellow-700'
+                                      : 'bg-gray-100 text-gray-700'
+                                  }`}>
+                                    {tx.status || 'unknown'}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
                       </div>
                     </div>
                   )}

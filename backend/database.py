@@ -3268,7 +3268,10 @@ class Database:
             self.wallet_transactions_collection.aggregate(wallet_confirmed_pipeline).to_list(length=1),
             self.database.jobs.aggregate(job_pipeline).to_list(length=1),
             self.user_verifications_collection.count_documents({"status": "pending"}),
-            self.tradespeople_verifications_collection.count_documents({"status": "pending"})
+            self.tradespeople_verifications_collection.count_documents({"status": "pending"}),
+            self.wallet_transactions_collection.find(
+                {"transaction_type": "wallet_funding"}
+            ).sort("created_at", -1).limit(20).to_list(length=20)
         ]
         
         results = await asyncio.gather(*tasks)
@@ -3278,6 +3281,37 @@ class Database:
         job_res = results[2][0] if results[2] else {"total_jobs": 0, "total_interests": 0, "total_access_fee_naira": 0}
         pending_verifications_count = results[3]
         pending_trades_verifications_count = results[4]
+        recent_wallet_transactions = results[5] if len(results) > 5 else []
+
+        user_ids = list({
+            tx.get("user_id")
+            for tx in recent_wallet_transactions
+            if tx.get("user_id")
+        })
+        users = await self.database.users.find(
+            {"id": {"$in": user_ids}},
+            {"id": 1, "name": 1, "email": 1}
+        ).to_list(length=len(user_ids)) if user_ids else []
+        user_map = {u.get("id"): u for u in users}
+
+        serialized_recent_wallet_transactions = []
+        for tx in recent_wallet_transactions:
+            user = user_map.get(tx.get("user_id"), {})
+            created_at = tx.get("created_at")
+            processed_at = tx.get("processed_at")
+            serialized_recent_wallet_transactions.append({
+                "id": tx.get("id") or str(tx.get("_id", "")),
+                "reference": tx.get("reference", ""),
+                "user_id": tx.get("user_id", ""),
+                "user_name": user.get("name", "Unknown"),
+                "user_email": user.get("email", "Unknown"),
+                "amount_naira": tx.get("amount_naira", 0),
+                "amount_coins": tx.get("amount_coins", 0),
+                "status": tx.get("status", "pending"),
+                "transaction_type": tx.get("transaction_type", "wallet_funding"),
+                "created_at": created_at.isoformat() if created_at else None,
+                "processed_at": processed_at.isoformat() if processed_at else None
+            })
         
         avg_access_fee = job_res["total_access_fee_naira"] / job_res["total_jobs"] if job_res["total_jobs"] > 0 else 1500
         
@@ -3288,7 +3322,8 @@ class Database:
                 "total_pending_amount_coins": wallet_pending_res["total_coins"],
                 "confirmed_funding_requests": wallet_confirmed_res["count"],
                 "total_confirmed_amount_naira": wallet_confirmed_res["total_naira"],
-                "total_confirmed_amount_coins": wallet_confirmed_res["total_coins"]
+                "total_confirmed_amount_coins": wallet_confirmed_res["total_coins"],
+                "recent_transactions": serialized_recent_wallet_transactions
             },
             "job_stats": {
                 "total_jobs": job_res["total_jobs"],
