@@ -308,7 +308,8 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
   // Load trade questions when category changes
   useEffect(() => {
     if (formData.category) {
-      loadTradeQuestions(formData.category);
+      // Skip auto-popup if questions were already completed (draft restore scenario)
+      loadTradeQuestions(formData.category, questionsCompleted);
     }
   }, [formData.category]);
 
@@ -717,7 +718,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
   };
 
   // Load questions when trade category changes
-  const loadTradeQuestions = async (category) => {
+  const loadTradeQuestions = async (category, skipAutoPopup = false) => {
     if (!category) {
       setTradeQuestions([]);
       setQuestionAnswers({});
@@ -731,26 +732,35 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       const questions = response.questions || [];
       setTradeQuestions(questions);
       
-      // Initialize answers for required questions
-      const initialAnswers = {};
-      questions.forEach(question => {
-        if (question.question_type === 'yes_no') {
-          initialAnswers[question.id] = null;
-        } else if (question.question_type === 'multiple_choice_multiple') {
-          initialAnswers[question.id] = [];
-        } else if (question.question_type === 'file_upload') {
-          initialAnswers[question.id] = [];
-        } else {
-          initialAnswers[question.id] = '';
+      // Only initialize answers if we don't already have saved answers (draft restore)
+      setQuestionAnswers(prev => {
+        const hasExistingAnswers = Object.keys(prev).length > 0;
+        if (hasExistingAnswers) {
+          return prev; // Keep existing answers from draft
         }
+        // Initialize answers for required questions
+        const initialAnswers = {};
+        questions.forEach(question => {
+          if (question.question_type === 'yes_no') {
+            initialAnswers[question.id] = null;
+          } else if (question.question_type === 'multiple_choice_multiple') {
+            initialAnswers[question.id] = [];
+          } else if (question.question_type === 'file_upload') {
+            initialAnswers[question.id] = [];
+          } else {
+            initialAnswers[question.id] = '';
+          }
+        });
+        return initialAnswers;
       });
-      setQuestionAnswers(initialAnswers);
       
-      // Reset to first question
-      resetQuestionNavigation();
+      // Reset to first question only if not restoring
+      if (!skipAutoPopup) {
+        resetQuestionNavigation();
+      }
       
-      // Auto-popup the quiz modal if there are questions
-      if (questions.length > 0) {
+      // Auto-popup the quiz modal if there are questions AND questions aren't already completed
+      if (questions.length > 0 && !skipAutoPopup && !questionsCompleted) {
         setShowQuestionsModal(true);
       }
       
