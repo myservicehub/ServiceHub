@@ -155,7 +155,7 @@ const InterestedTradespeopleePage = () => {
         description: "Please complete your profile with name, email, and phone before sharing contact details.",
         variant: "destructive",
       });
-      navigate('/profile');
+      navigate('/dashboard/profile');
       return;
     }
 

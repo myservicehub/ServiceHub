@@ -162,7 +162,7 @@ const VerifyAccountPage = () => {
     const params = new URLSearchParams(location.search);
     const hasToken = !!params.get('token');
     if (!hasToken && isAuthenticated() && user?.role === 'homeowner') {
-      navigate('/profile', { replace: true });
+      navigate('/dashboard/profile', { replace: true });
     }
   }, [isAuthenticated, user, location.search]);
 

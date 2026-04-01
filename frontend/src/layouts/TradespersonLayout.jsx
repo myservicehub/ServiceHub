@@ -42,7 +42,7 @@ const TradespersonLayout = ({ children }) => {
   ];
 
   const secondaryNavigation = [
-    { name: 'Profile', href: '/profile', icon: User },
+    { name: 'Profile', href: '/trades/profile', icon: User },
     { name: 'Help & Support', href: '/help', icon: HelpCircle },
   ];
 
