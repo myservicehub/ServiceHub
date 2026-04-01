@@ -8,6 +8,7 @@ import {
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import careersAPI from '../api/careers';
+import { statsAPI } from '../api/services';
 
 const CareersPage = () => {
   const [openPositions, setOpenPositions] = useState([]);
@@ -15,6 +16,10 @@ const CareersPage = () => {
   const [departments, setDepartments] = useState(['all']);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [platformStats, setPlatformStats] = useState({
+    total_tradespeople: 0,
+    total_jobs_completed: 0
+  });
   const [submitting, setSubmitting] = useState(false);
   const [applicationForm, setApplicationForm] = useState({
     name: '',
@@ -46,6 +51,22 @@ const CareersPage = () => {
       setOpenPositions([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadPlatformStats = async () => {
+    try {
+      const stats = await statsAPI.getStats();
+      setPlatformStats({
+        total_tradespeople: Number(stats?.total_tradespeople ?? 0),
+        total_jobs_completed: Number(stats?.total_jobs_completed ?? stats?.total_jobs ?? 0)
+      });
+    } catch (err) {
+      console.error('Error loading platform stats for careers page:', err);
+      setPlatformStats({
+        total_tradespeople: 0,
+        total_jobs_completed: 0
+      });
     }
   };
 
@@ -113,6 +134,7 @@ const CareersPage = () => {
 
   useEffect(() => {
     loadJobPositions();
+    loadPlatformStats();
   }, []);
 
   const filteredPositions = selectedDepartment === 'all' 
@@ -296,9 +318,9 @@ const CareersPage = () => {
           <div className="max-w-4xl mx-auto">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { value: '50+', label: 'Team Members' },
-                { value: '10,000+', label: 'Active Tradespeople' },
-                { value: '25,000+', label: 'Completed Jobs' },
+                { value: '10+', label: 'Team Members' },
+                { value: platformStats.total_tradespeople.toLocaleString(), label: 'Active Tradespeople' },
+                { value: platformStats.total_jobs_completed.toLocaleString(), label: 'Completed Jobs' },
                 { value: '15+', label: 'Cities Covered' }
               ].map((stat, idx) => (
                 <div key={idx} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4 text-center">
