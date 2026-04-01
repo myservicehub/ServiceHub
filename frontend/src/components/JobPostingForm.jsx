@@ -1715,6 +1715,14 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       
       // If detail is a string
       if (typeof detail === 'string') {
+        const normalizedDetail = detail.toLowerCase();
+        if (
+          normalizedDetail.includes('password') &&
+          (normalizedDetail.includes('already') || normalizedDetail.includes('exists')) &&
+          normalizedDetail.includes('account')
+        ) {
+          return 'Email address already registered. Please sign in or reset your password.';
+        }
         return detail;
       }
       
@@ -1841,6 +1849,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
 
       const payload = { 
         job: jobData, 
+        email: formData.homeowner_email,
         password: formData.password,
         question_answers: Object.keys(initialAnswers).length > 0 ? {
           trade_category: formData.category,
