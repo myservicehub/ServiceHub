@@ -127,15 +127,23 @@ api_router = APIRouter()
 # Add CORS middleware (configurable via environment variable)
 # ALLOWED_ORIGINS can be a comma-separated list of origins, e.g.
 # "https://www.myservicehub.co, http://localhost:3001"
-allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "*")
-if allowed_origins_env.strip() == "*" or allowed_origins_env.strip() == "":
-    # Note: allow_origins=["*"] cannot be used with allow_credentials=True in Starlette
-    # Instead, we use allow_origin_regex=".*" to allow all origins with credentials
-    allowed_origins = []
-    allow_origin_regex = ".*"
-else:
-    allowed_origins = [o.strip() for o in allowed_origins_env.split(",") if o.strip()]
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "")
+if allowed_origins_env.strip() == "":
+    # Default to explicit production and local origins to satisfy strict CORS with credentials
+    allowed_origins = [
+        "https://myservicehub.co",
+        "https://www.myservicehub.co",
+        "http://localhost:3000",
+        "http://localhost:5173",
+    ]
     allow_origin_regex = None
+else:
+    if "*" in [o.strip() for o in allowed_origins_env.split(",")]:
+        allowed_origins = []
+        allow_origin_regex = ".*"
+    else:
+        allowed_origins = [o.strip() for o in allowed_origins_env.split(",") if o.strip()]
+        allow_origin_regex = None
 
 app.add_middleware(
     CORSMiddleware,
