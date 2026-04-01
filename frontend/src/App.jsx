@@ -142,6 +142,7 @@ function App() {
                 <Route path="/signup" element={<Navigate to="/?promo=tradesperson" replace />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/verify-account" element={<VerifyAccountPage />} />
+                <Route path="/dashboard/verify-account" element={<Navigate to="/verify-account" replace />} />
                 
                 {/* Legal Pages */}
                 <Route path="/privacy-policy" element={<PrivacyPage />} />

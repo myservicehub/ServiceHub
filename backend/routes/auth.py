@@ -68,7 +68,7 @@ async def _send_tradesperson_welcome_email(user_data: Dict[str, Any]) -> bool:
             return False
 
         frontend_url = os.environ.get("FRONTEND_URL", "https://www.myservicehub.co").rstrip("/")
-        complete_registration_url = f"{frontend_url}/dashboard/verify-account"
+        complete_registration_url = f"{frontend_url}/verify-account"
         notification = await notification_service.send_notification(
             user_id=user_data.get("id"),
             notification_type=NotificationType.TRADESPERSON_WELCOME,
