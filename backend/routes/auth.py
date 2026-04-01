@@ -60,6 +60,58 @@ async def _find_existing_user_by_phone(phone: str) -> Optional[dict]:
         return None
     return await database.get_user_by_phone(phone)
 
+async def _send_tradesperson_welcome_email(user_data: Dict[str, Any]) -> bool:
+    try:
+        recipient_email = (user_data.get("email") or "").strip()
+        if not recipient_email:
+            logger.error("Failed to send tradesperson welcome email: missing recipient email")
+            return False
+
+        frontend_url = os.environ.get("FRONTEND_URL", "https://www.myservicehub.co").rstrip("/")
+        complete_registration_url = f"{frontend_url}/dashboard/verify-account"
+        notification = await notification_service.send_notification(
+            user_id=user_data.get("id"),
+            notification_type=NotificationType.TRADESPERSON_WELCOME,
+            template_data={
+                "tradesperson_name": user_data.get("name", "there"),
+                "complete_registration_url": complete_registration_url,
+                "tradespersonName": user_data.get("name", "there"),
+                "completeRegistrationUrl": complete_registration_url,
+            },
+            recipient_email=recipient_email,
+            recipient_phone=None,
+        )
+
+        status_obj = getattr(notification, "status", None)
+        status_value = getattr(status_obj, "value", status_obj)
+        if str(status_value).lower() == "failed":
+            delivery_error = ""
+            try:
+                delivery_error = (notification.metadata or {}).get("delivery_error", "")
+            except Exception:
+                delivery_error = ""
+            logger.error(f"Failed to send tradesperson welcome email: {delivery_error or 'notification status failed'}")
+            return False
+        return True
+    except Exception as notify_err:
+        logger.error(f"Failed to send tradesperson welcome email: {notify_err}")
+        return False
+
+async def _get_active_states() -> List[str]:
+    try:
+        if getattr(database, "connected", False) and getattr(database, "database", None) is not None:
+            states = await database.get_all_states_dynamic()
+            return states or NIGERIAN_STATES
+    except Exception:
+        pass
+    return NIGERIAN_STATES
+
+async def _validate_active_state(state_name: str) -> bool:
+    if not state_name:
+        return False
+    active_states = await _get_active_states()
+    return state_name in active_states
+
 @router.post("/register/homeowner")
 @limiter.limit("5/minute")
 async def register_homeowner(request: Request, registration_data: HomeownerRegistration):
@@ -115,11 +167,11 @@ async def register_homeowner(request: Request, registration_data: HomeownerRegis
                 detail="Phone number already registered to another account"
             )
 
-        # Validate location/state
-        if registration_data.location and not validate_nigerian_state(registration_data.location):
+        # Validate location/state using dynamic active states
+        if registration_data.location and not await _validate_active_state(registration_data.location):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Invalid location. Must be one of: {', '.join(NIGERIAN_STATES)}"
+                detail=f"Invalid location. Must be one of: {', '.join(await _get_active_states())}"
             )
 
         # Create user data
@@ -487,10 +539,10 @@ async def register_tradesperson(request: Request, registration_data: Tradesperso
             )
 
         location_input = (registration_data.location or "").strip()
-        if location_input and not validate_nigerian_state(location_input):
+        if location_input and not await _validate_active_state(location_input):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Invalid location. Must be one of: {', '.join(NIGERIAN_STATES)}"
+                detail=f"Invalid location. Must be one of: {', '.join(await _get_active_states())}"
             )
         normalized_location = location_input if location_input else "Not specified"
         normalized_postcode = (registration_data.postcode or "").strip() or "000000"
@@ -570,23 +622,7 @@ async def register_tradesperson(request: Request, registration_data: Tradesperso
                 # Update last login
                 await database.update_user_last_login(created_user["id"])
 
-                try:
-                    frontend_url = os.environ.get("FRONTEND_URL", "https://www.myservicehub.co").rstrip("/")
-                    complete_registration_url = f"{frontend_url}/dashboard/verify-account"
-                    await notification_service.send_notification(
-                        user_id=created_user["id"],
-                        notification_type=NotificationType.TRADESPERSON_WELCOME,
-                        template_data={
-                            "tradesperson_name": created_user.get("name", "there"),
-                            "complete_registration_url": complete_registration_url,
-                            "tradespersonName": created_user.get("name", "there"),
-                            "completeRegistrationUrl": complete_registration_url,
-                        },
-                        recipient_email=created_user.get("email"),
-                        recipient_phone=None,
-                    )
-                except Exception as notify_err:
-                    logger.error(f"Failed to send tradesperson welcome email: {notify_err}")
+                await _send_tradesperson_welcome_email(created_user)
 
                 # Prepare user data for response (remove password hash)
                 user_response = {k: v for k, v in created_user.items() if k != "password_hash"}
@@ -628,6 +664,8 @@ async def register_tradesperson(request: Request, registration_data: Tradesperso
                 )
                 refresh_token = create_refresh_token(data={"sub": synthetic_user["id"], "email": synthetic_user["email"]})
 
+                await _send_tradesperson_welcome_email(synthetic_user)
+
                 return LoginResponse(
                     access_token=access_token,
                     refresh_token=refresh_token,
@@ -660,6 +698,8 @@ async def register_tradesperson(request: Request, registration_data: Tradesperso
                 expires_delta=access_token_expires
             )
             refresh_token = create_refresh_token(data={"sub": synthetic_user["id"], "email": synthetic_user["email"]})
+
+            await _send_tradesperson_welcome_email(synthetic_user)
 
             return LoginResponse(
                 access_token=access_token,
@@ -736,6 +776,8 @@ async def register_tradesperson(request: Request, registration_data: Tradesperso
                     expires_delta=access_token_expires
                 )
                 refresh_token = create_refresh_token(data={"sub": synthetic_user["id"], "email": synthetic_user["email"]})
+
+                await _send_tradesperson_welcome_email(synthetic_user)
 
                 return LoginResponse(
                     access_token=access_token,
