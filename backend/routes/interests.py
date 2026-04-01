@@ -211,7 +211,7 @@ async def share_contact_details(
 
 @router.get("/my-interests", response_model=List[dict])
 async def get_my_interests(
-    current_user: User = Depends(require_tradesperson_all_steps_completed)
+    current_user: User = Depends(get_current_tradesperson)
 ):
     """Get tradesperson's interest history"""
     try:
@@ -471,7 +471,7 @@ async def _notify_payment_confirmation(tradesperson: dict, job: dict, interest_i
 
 @router.get("/completed-jobs", response_model=List[dict])
 async def get_completed_jobs(
-    current_user: User = Depends(require_tradesperson_all_steps_completed)
+    current_user: User = Depends(get_current_tradesperson)
 ):
     """Get all completed jobs for the current tradesperson"""
     try:
