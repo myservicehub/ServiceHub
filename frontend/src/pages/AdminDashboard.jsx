@@ -66,6 +66,16 @@ const AdminDashboard = () => {
 
     return filtered;
   }, [users, usersSearch, usersTradeFilter]);
+
+  // Paginate visible (filtered) users
+  const paginatedUsers = useMemo(() => {
+    const start = (usersPage - 1) * usersLimit;
+    const end = start + usersLimit;
+    return visibleUsers.slice(start, end);
+  }, [visibleUsers, usersPage, usersLimit]);
+
+  const totalFilteredUsers = visibleUsers.length;
+  const totalPages = Math.max(1, Math.ceil(totalFilteredUsers / usersLimit));
   const [userStats, setUserStats] = useState(null);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -5044,7 +5054,7 @@ const AdminDashboard = () => {
                             </tr>
                           </thead>
                           <tbody className="bg-white divide-y divide-gray-200">
-                            {visibleUsers.map((user) => (
+                            {paginatedUsers.map((user) => (
                               <tr key={user.id} className="hover:bg-gray-50">
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <div className="flex items-center">
@@ -5172,7 +5182,7 @@ const AdminDashboard = () => {
                           </tbody>
                         </table>
                         <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t">
-                          <div className="text-sm text-gray-600">Page {usersPage} of {Math.max(1, Math.ceil(usersTotal / usersLimit))}</div>
+                          <div className="text-sm text-gray-600">Page {usersPage} of {totalPages}</div>
                           <div className="flex space-x-2">
                             <button
                               className={`px-3 py-1 rounded border ${usersPage > 1 ? 'bg-white text-gray-700 hover:bg-gray-100' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
@@ -5182,8 +5192,8 @@ const AdminDashboard = () => {
                               Previous
                             </button>
                             <button
-                              className={`px-3 py-1 rounded border ${(usersPage < Math.ceil(usersTotal / usersLimit)) ? 'bg-white text-gray-700 hover:bg-gray-100' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
-                              disabled={!(usersPage < Math.ceil(usersTotal / usersLimit))}
+                              className={`px-3 py-1 rounded border ${(usersPage < totalPages) ? 'bg-white text-gray-700 hover:bg-gray-100' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
+                              disabled={!(usersPage < totalPages)}
                               onClick={() => { setUsersPage((p) => p + 1); usersTabRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
                             >
                               Next

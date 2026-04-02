@@ -12,7 +12,8 @@
     {
       "source": "/index.html",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+        { "key": "Content-Security-Policy", "value": "default-src 'self' https:; script-src 'self' 'unsafe-inline' https://widget.ebanqo.io https://webchat.ebanqo.io; style-src 'self' 'unsafe-inline' https://widget.ebanqo.io https://webchat.ebanqo.io; frame-src 'self' https://widget.ebanqo.io https://webchat.ebanqo.io; connect-src 'self' https: wss:;" }
       ]
     },
     {
