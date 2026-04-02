@@ -56,11 +56,14 @@ const AdminDashboard = () => {
 
     // Apply trade category filter
     if (usersTradeFilter) {
+      const filterLower = usersTradeFilter.toLowerCase();
       filtered = filtered.filter(user => {
         if (user.role !== 'tradesperson' || !user.trade_categories) return false;
-        return user.trade_categories.some(cat => 
-          cat.toLowerCase().includes(usersTradeFilter.toLowerCase())
-        );
+        return user.trade_categories.some(cat => {
+          const catLower = cat.toLowerCase();
+          // Match if either includes the other (bidirectional matching)
+          return catLower.includes(filterLower) || filterLower.includes(catLower);
+        });
       });
     }
 
