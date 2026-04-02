@@ -6740,7 +6740,19 @@ const AdminDashboard = () => {
                             {selectedUser.wallet_balance || 0} coins
                           </div>
                         </div>
-                        {selectedUser.specializations && (
+                        {selectedUser.trade_categories && selectedUser.trade_categories.length > 0 && (
+                          <div>
+                            <strong>Trade Categories:</strong>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {selectedUser.trade_categories.map((category, index) => (
+                                <span key={index} className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                                  {category}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {selectedUser.specializations && selectedUser.specializations.length > 0 && (
                           <div>
                             <strong>Specializations:</strong>
                             <div className="flex flex-wrap gap-1 mt-1">
