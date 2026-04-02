@@ -408,6 +408,7 @@ async def _notify_tradesperson_contact_shared(job: dict, tradesperson_id: str, i
         if access_fee_naira is None:
             access_fee_naira = 1000
         template_data = {
+            "job_id": job.get("id"),
             "tradesperson_name": tradesperson.get("business_name") or tradesperson.get("name", "Tradesperson"),
             "job_title": job.get("title", "Untitled Job"),
             "job_location": job.get("location", ""),
@@ -443,6 +444,7 @@ async def _notify_payment_confirmation(tradesperson: dict, job: dict, interest_i
         
         # Prepare template data
         template_data = {
+            "job_id": job.get("id"),
             "tradesperson_name": tradesperson.get("business_name") or tradesperson.get("name", "Tradesperson"),
             "job_title": job.get("title", "Untitled Job"),
             "job_location": job.get("location", ""),

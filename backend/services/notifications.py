@@ -445,6 +445,7 @@ class NotificationTemplateService:
                 <p>Hello {tradesperson_name},</p>
                 <p>Excellent news! The homeowner has shared their contact details for the job you showed interest in:</p>
                 <ul class="list">
+                    <li><span class="label">Job ID</span> <span class="value">{job_id}</span></li>
                     <li><span class="label">Job</span> <span class="value">{job_title}</span></li>
                     <li><span class="label">Location</span> <span class="value">{job_location}</span></li>
                 </ul>
@@ -458,7 +459,7 @@ class NotificationTemplateService:
 </body>
 </html>
                 """,
-                variables=["tradesperson_name", "job_title", "job_location", "payment_url", "access_fee"]
+                variables=["tradesperson_name", "job_id", "job_title", "job_location", "payment_url", "access_fee"]
             ),
             NotificationChannel.SMS: NotificationTemplate(
                 id=str(uuid.uuid4()),
@@ -582,7 +583,9 @@ class NotificationTemplateService:
                 
                 <div class="contact-box">
                     <ul class="list">
+                        <li><span class="label">Job ID</span> <span class="value">{job_id}</span></li>
                         <li><span class="label">Job</span> <span class="value">{job_title}</span></li>
+                        <li><span class="label">Location</span> <span class="value">{job_location}</span></li>
                         <li><span class="label">Homeowner</span> <span class="value">{homeowner_name}</span></li>
                         <li><span class="label">Email</span> <span class="value">{homeowner_email}</span></li>
                         <li><span class="label">Phone</span> <span class="value">{homeowner_phone}</span></li>
@@ -598,7 +601,7 @@ class NotificationTemplateService:
 </body>
 </html>
                 """,
-                variables=["tradesperson_name", "job_title", "job_location", "homeowner_name", "homeowner_email", "homeowner_phone", "access_fee"]
+                variables=["tradesperson_name", "job_id", "job_title", "job_location", "homeowner_name", "homeowner_email", "homeowner_phone", "access_fee"]
             ),
             NotificationChannel.SMS: NotificationTemplate(
                 id=str(uuid.uuid4()),
@@ -1110,6 +1113,7 @@ Hello {tradesperson_name},
 
 The job you showed interest in has been marked as completed by the homeowner.
 
+📋 Job #: {job_id}
 📋 Job: {job_title}
 📍 Location: {job_location}
 👤 Homeowner: {homeowner_name}
@@ -1125,7 +1129,7 @@ View your interests: {interests_url}
 Best regards,
 serviceHub Team
                 """,
-                variables=["tradesperson_name", "job_title", "job_location", "homeowner_name", "completion_date", "interests_url"]
+                variables=["tradesperson_name", "job_id", "job_title", "job_location", "homeowner_name", "completion_date", "interests_url"]
             ),
             NotificationChannel.SMS: NotificationTemplate(
                 id=str(uuid.uuid4()),
@@ -1149,6 +1153,7 @@ Hello {tradesperson_name},
 
 Unfortunately, the job you showed interest in has been cancelled by the homeowner.
 
+📋 Job #: {job_id}
 📋 Job: {job_title}
 📍 Location: {job_location}
 👤 Homeowner: {homeowner_name}
@@ -1166,7 +1171,7 @@ Don't worry - there are many other opportunities available! Keep browsing for ne
 Best regards,
 serviceHub Team
                 """,
-                variables=["tradesperson_name", "job_title", "job_location", "homeowner_name", "cancellation_date", "cancellation_reason", "browse_jobs_url", "interests_url"]
+                variables=["tradesperson_name", "job_id", "job_title", "job_location", "homeowner_name", "cancellation_date", "cancellation_reason", "browse_jobs_url", "interests_url"]
             ),
             NotificationChannel.SMS: NotificationTemplate(
                 id=str(uuid.uuid4()),
@@ -1208,7 +1213,7 @@ serviceHub Team
         </div>
         <h2>Hello {Name}</h2>
         <p>There's a new job in your area!</p>
-        <p><a href="{job_url}" style="color:#0a1b3d; text-decoration:none; font-weight:bold;">{trade_title}</a></p>
+        <p><strong>Job #</strong><a href="{job_url}" style="color:#0a1b3d; text-decoration:none; font-weight:bold;">{job_id} - {trade_title}</a></p>
         <p>{trade_category}</p>
         <p>{Location} & {miles}</p>
         <a href="{see_more_url}" class="button">See more details</a>
@@ -1239,7 +1244,7 @@ serviceHub Team
     </body>
     </html>
 """,
-                variables=["Name", "trade_title", "trade_category", "Location", "miles", "see_more_url", "job_url", "support_url", "preferences_url", "privacy_url", "terms_url", "logo_url"]
+                variables=["Name", "job_id", "trade_title", "trade_category", "Location", "miles", "distance_km", "see_more_url", "job_url", "support_url", "preferences_url", "privacy_url", "terms_url", "logo_url"]
             ),
             NotificationChannel.SMS: NotificationTemplate(
                 id=str(uuid.uuid4()),

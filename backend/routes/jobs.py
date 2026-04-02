@@ -854,6 +854,7 @@ async def notify_job_completion(job_id: str, job: dict, homeowner: User):
                 # Prepare notification template data
                 frontend_url = os.environ.get('FRONTEND_URL', 'https://myservicehub.co')
                 template_data = {
+                    "job_id": job_id,
                     "tradesperson_name": tradesperson_info.get("name", "Tradesperson"),
                     "job_title": job.get("title", "Untitled Job"),
                     "job_location": job.get("location", ""),
@@ -966,6 +967,7 @@ async def notify_job_cancellation(job_id: str, job: dict, homeowner: User, reaso
                 preferences = await database.get_user_notification_preferences(tradesperson_id)
                 frontend_url = os.environ.get("FRONTEND_URL", "https://myservicehub.co")
                 template_data = {
+                    "job_id": job_id,
                     "tradesperson_name": tradesperson_info.get("name", "Tradesperson"),
                     "job_title": job.get("title", "Untitled Job"),
                     "job_location": job.get("location", ""),
@@ -1096,6 +1098,8 @@ async def notify_matching_tradespeople_new_job(job: dict):
                     continue
                 template_data = {
                     "Name": name,
+                    "job_id": job.get("id"),
+                    "distance_km": round(km, 2) if km is not None else None,
                     "trade_title": job.get("title", "Job"),
                     "trade_category": job.get("category", ""),
                     "Location": job.get("location", ""),
