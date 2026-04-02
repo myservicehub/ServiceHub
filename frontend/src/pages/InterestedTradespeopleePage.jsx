@@ -155,7 +155,7 @@ const InterestedTradespeopleePage = () => {
         description: "Please complete your profile with name, email, and phone before sharing contact details.",
         variant: "destructive",
       });
-      navigate('/profile');
+      navigate('/dashboard/profile');
       return;
     }
 
@@ -740,108 +740,120 @@ const InterestedTradespeopleePage = () => {
 
       {/* Full Profile Modal */}
       {showProfileModal && selectedTradesperson && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b p-6 z-10">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold font-montserrat" style={{color: '#121E3C'}}>
-                  {selectedTradesperson.tradesperson_name} - Full Profile
-                </h2>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 sm:p-4">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-100 p-5 sm:p-6 z-10">
+              <div className="flex justify-between items-start gap-4">
+                <div className="flex items-center gap-4 min-w-0">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gray-200 overflow-hidden flex-shrink-0">
+                    {selectedTradesperson.profile_image ? (
+                      <img
+                        src={selectedTradesperson.profile_image}
+                        alt={selectedTradesperson.tradesperson_name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#121E3C] to-[#1a2d54]">
+                        <User size={28} className="text-white" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <h2 className="text-lg sm:text-xl font-bold font-montserrat text-[#121E3C] truncate">
+                      {selectedTradesperson.tradesperson_name}
+                    </h2>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="flex">{getStarRating(selectedTradesperson.average_rating || 0)}</div>
+                      <span className="text-sm font-medium text-[#121E3C]">
+                        {(selectedTradesperson.average_rating || 0).toFixed(1)}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        ({selectedTradesperson.total_reviews || 0})
+                      </span>
+                    </div>
+                  </div>
+                </div>
                 <button
                   onClick={() => setShowProfileModal(false)}
-                  className="text-gray-500 hover:text-gray-700 text-xl"
+                  className="w-10 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors shrink-0"
                 >
-                  ✕
+                  <span className="text-gray-500 text-xl">×</span>
                 </button>
               </div>
             </div>
 
-            <div className="p-6">
-              {/* Profile Header */}
-              <div className="flex gap-6 mb-6">
-                <div className="w-24 h-24 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
-                  {selectedTradesperson.profile_image ? (
-                    <img
-                      src={selectedTradesperson.profile_image}
-                      alt={selectedTradesperson.tradesperson_name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-400 to-blue-600">
-                      <User size={40} className="text-white" />
-                    </div>
-                  )}
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6">
+              {/* Quick Info Cards */}
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl">
+                  <div className="w-10 h-10 rounded-xl bg-[#34D164]/10 flex items-center justify-center">
+                    <Briefcase size={18} className="text-[#34D164]" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs text-gray-500 font-lato">Trade</p>
+                    <p className="text-sm font-medium text-[#121E3C] font-lato truncate">{selectedTradesperson.trade_categories?.join(', ') || 'N/A'}</p>
+                  </div>
                 </div>
-
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <Contact size={20} style={{color: '#34D164'}} />
-                    <h3 className="text-2xl font-bold font-montserrat">
-                      {selectedTradesperson.tradesperson_name}
-                    </h3>
-                    {getStatusBadge(selectedTradesperson.status)}
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl">
+                  <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+                    <MapPin size={18} className="text-blue-600" />
                   </div>
-                  
-                  <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-3">
-                    <div className="flex items-center gap-1">
-                      <Briefcase size={16} />
-                      <span>{selectedTradesperson.trade_categories?.join(', ')}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <MapPin size={16} />
-                      <span>{selectedTradesperson.location}</span>
-                    </div>
-                    <Badge className={getExperienceLevel(selectedTradesperson.experience_years).color}>
-                      {getExperienceLevel(selectedTradesperson.experience_years).label}
-                    </Badge>
+                  <div className="min-w-0">
+                    <p className="text-xs text-gray-500 font-lato">Location</p>
+                    <p className="text-sm font-medium text-[#121E3C] font-lato truncate">{selectedTradesperson.location || 'N/A'}</p>
                   </div>
-
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="flex">{getStarRating(selectedTradesperson.average_rating || 0)}</div>
-                    <span className="font-medium">
-                      {(selectedTradesperson.average_rating || 0).toFixed(1)}
-                    </span>
-                    <span className="text-gray-600">
-                      ({selectedTradesperson.total_reviews || 0} reviews)
-                    </span>
-                  </div>
-
-                  {selectedTradesperson.company_name && (
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <Building size={16} />
-                      <span>{selectedTradesperson.company_name}</span>
-                    </div>
-                  )}
                 </div>
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl">
+                  <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
+                    <Clock size={18} className="text-purple-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs text-gray-500 font-lato">Experience</p>
+                    <p className="text-sm font-medium text-[#121E3C] font-lato">{selectedTradesperson.experience_years || 0} years</p>
+                  </div>
+                </div>
+                {selectedTradesperson.company_name && (
+                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl">
+                    <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
+                      <Building size={18} className="text-amber-600" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs text-gray-500 font-lato">Company</p>
+                      <p className="text-sm font-medium text-[#121E3C] font-lato truncate">{selectedTradesperson.company_name}</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Tabs */}
               <Tabs value={activeProfileTab} onValueChange={setActiveProfileTab}>
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="overview">Overview</TabsTrigger>
-                  <TabsTrigger value="portfolio">
+                <TabsList className="grid w-full grid-cols-3 bg-gray-100 rounded-xl p-1 h-auto">
+                  <TabsTrigger value="overview" className="rounded-lg py-2.5 text-sm font-medium data-[state=active]:bg-white data-[state=active]:text-[#121E3C] data-[state=active]:shadow-sm">Overview</TabsTrigger>
+                  <TabsTrigger value="portfolio" className="rounded-lg py-2.5 text-sm font-medium data-[state=active]:bg-white data-[state=active]:text-[#121E3C] data-[state=active]:shadow-sm">
                     Portfolio ({portfolioData[selectedTradesperson.tradesperson_id]?.length || 0})
                   </TabsTrigger>
-                  <TabsTrigger value="reviews">
+                  <TabsTrigger value="reviews" className="rounded-lg py-2.5 text-sm font-medium data-[state=active]:bg-white data-[state=active]:text-[#121E3C] data-[state=active]:shadow-sm">
                     Reviews ({reviewsData[selectedTradesperson.tradesperson_id]?.length || 0})
                   </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="overview" className="mt-6">
-                  <div className="space-y-6">
+                <TabsContent value="overview" className="mt-5">
+                  <div className="space-y-5">
                     {/* Description */}
                     {selectedTradesperson.description && (
-                      <div>
-                        <h4 className="font-semibold mb-2">About</h4>
-                        <p className="text-gray-700">{selectedTradesperson.description}</p>
+                      <div className="bg-[#121E3C]/5 rounded-2xl p-4">
+                        <h4 className="font-semibold text-[#121E3C] font-montserrat text-sm mb-2">About</h4>
+                        <p className="text-gray-600 text-sm font-lato leading-relaxed">{selectedTradesperson.description}</p>
                       </div>
                     )}
 
                     {/* Certifications */}
                     {selectedTradesperson.certifications && selectedTradesperson.certifications.length > 0 && (
-                      <div className="mb-6">
-                        <h4 className="font-semibold mb-3 flex items-center gap-2">
-                          <Award size={18} className="text-green-600" />
+                      <div>
+                        <h4 className="font-semibold text-[#121E3C] font-montserrat text-sm mb-3 flex items-center gap-2">
+                          <Award size={16} className="text-[#34D164]" />
                           Certifications
                         </h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -863,17 +875,17 @@ const InterestedTradespeopleePage = () => {
                             };
 
                             return (
-                              <div key={index} className="flex flex-col p-3 bg-gray-50 rounded-lg border border-gray-100">
+                              <div key={index} className="flex flex-col p-3 bg-gray-50 rounded-2xl border border-gray-100">
                                 <div className="flex items-center justify-between mb-2">
                                   <div className="flex items-center gap-2">
-                                    <Shield size={14} className="text-green-600" />
-                                    <span className="text-sm font-medium text-gray-800">{name}</span>
+                                    <Shield size={14} className="text-[#34D164]" />
+                                    <span className="text-sm font-medium text-[#121E3C] font-lato">{name}</span>
                                   </div>
                                   {image_url && (
                                     <Button
                                       variant="ghost"
                                       size="sm"
-                                      className="text-green-600 hover:text-green-700 h-auto p-0 flex items-center gap-1"
+                                      className="text-[#34D164] hover:text-[#2ab854] h-auto p-0 flex items-center gap-1"
                                       onClick={() => window.open(getFullUrl(image_url), '_blank')}
                                     >
                                       <ExternalLink size={12} />
@@ -883,7 +895,7 @@ const InterestedTradespeopleePage = () => {
                                 </div>
                                 
                                 {image_url && !isPdf && (
-                                  <div className="h-20 rounded overflow-hidden border bg-white shadow-sm mt-1">
+                                  <div className="h-20 rounded-xl overflow-hidden border bg-white shadow-sm mt-1">
                                     <AuthenticatedImage 
                                       src={getFullUrl(image_url)} 
                                       alt={name} 
@@ -893,11 +905,11 @@ const InterestedTradespeopleePage = () => {
                                 )}
                                 {image_url && isPdf && (
                                   <div 
-                                    className="flex items-center p-2 bg-white border rounded cursor-pointer hover:border-green-400 transition-colors mt-1"
+                                    className="flex items-center p-2 bg-white border rounded-xl cursor-pointer hover:border-[#34D164] transition-colors mt-1"
                                     onClick={() => window.open(getFullUrl(image_url), '_blank')}
                                   >
                                     <FileText size={16} className="text-red-500 mr-2" />
-                                    <span className="text-[10px] font-medium text-gray-600">PDF Document</span>
+                                    <span className="text-xs font-medium text-gray-600 font-lato">PDF Document</span>
                                   </div>
                                 )}
                               </div>
@@ -906,45 +918,36 @@ const InterestedTradespeopleePage = () => {
                         </div>
                       </div>
                     )}
-
-                    {/* Service Areas */}
-                    <div>
-                      <h4 className="font-semibold mb-2">Service Areas</h4>
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <div className="flex items-center gap-2">
-                          <MapPin size={16} className="text-gray-500" />
-                          <span>{selectedTradesperson.location}</span>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 </TabsContent>
 
-                <TabsContent value="portfolio" className="mt-6">
+                <TabsContent value="portfolio" className="mt-5">
                   <div className="space-y-4">
                     {portfolioData[selectedTradesperson.tradesperson_id]?.length === 0 ? (
-                      <div className="text-center py-8">
-                        <Camera className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                        <p className="text-gray-500">No portfolio items available</p>
+                      <div className="text-center py-12 bg-gray-50 rounded-2xl">
+                        <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
+                          <Camera className="w-8 h-8 text-gray-300" />
+                        </div>
+                        <p className="text-gray-500 font-lato">No portfolio items available</p>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                         {portfolioData[selectedTradesperson.tradesperson_id]?.map((item, index) => (
                           <div 
                             key={index}
                             className="group cursor-pointer"
                             onClick={() => handleImageClick(item)}
                           >
-                            <div className="aspect-square rounded-lg overflow-hidden mb-2">
+                            <div className="aspect-square rounded-2xl overflow-hidden mb-2 bg-gray-100">
                               <img
                                 src={item.image_url || item.url}
                                 alt={item.title || item.description}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                               />
                             </div>
-                            <h5 className="font-medium text-sm">{item.title || 'Untitled'}</h5>
+                            <h5 className="font-medium text-sm text-[#121E3C] font-lato truncate">{item.title || 'Untitled'}</h5>
                             {item.description && (
-                              <p className="text-xs text-gray-600 line-clamp-2">{item.description}</p>
+                              <p className="text-xs text-gray-500 font-lato line-clamp-1">{item.description}</p>
                             )}
                           </div>
                         ))}
@@ -953,34 +956,34 @@ const InterestedTradespeopleePage = () => {
                   </div>
                 </TabsContent>
 
-                <TabsContent value="reviews" className="mt-6">
-                  <div className="space-y-4">
+                <TabsContent value="reviews" className="mt-5">
+                  <div className="space-y-3">
                     {reviewsData[selectedTradesperson.tradesperson_id]?.length === 0 ? (
-                      <div className="text-center py-8">
-                        <MessageCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                        <p className="text-gray-500">No reviews available</p>
+                      <div className="text-center py-12 bg-gray-50 rounded-2xl">
+                        <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
+                          <MessageCircle className="w-8 h-8 text-gray-300" />
+                        </div>
+                        <p className="text-gray-500 font-lato">No reviews available</p>
                       </div>
                     ) : (
-                      <div className="space-y-4">
+                      <div className="space-y-3">
                         {reviewsData[selectedTradesperson.tradesperson_id]?.map((review, index) => (
-                          <div key={index} className="border rounded-lg p-4">
-                            <div className="flex items-start justify-between mb-3">
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                                  <User size={20} className="text-gray-600" />
-                                </div>
-                                <div>
-                                  <h5 className="font-medium">{review.reviewer_name || 'Anonymous'}</h5>
-                                  <div className="flex items-center gap-2">
-                                    <div className="flex">{getStarRating(review.rating)}</div>
-                                    <span className="text-sm text-gray-500">
-                                      {formatDate(review.created_at)}
-                                    </span>
-                                  </div>
+                          <div key={index} className="bg-gray-50 rounded-2xl p-4">
+                            <div className="flex items-start gap-3 mb-3">
+                              <div className="w-10 h-10 rounded-xl bg-[#121E3C]/10 flex items-center justify-center shrink-0">
+                                <User size={18} className="text-[#121E3C]" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h5 className="font-medium text-[#121E3C] font-lato">{review.reviewer_name || 'Anonymous'}</h5>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <div className="flex">{getStarRating(review.rating)}</div>
+                                  <span className="text-xs text-gray-400">
+                                    {formatDate(review.created_at)}
+                                  </span>
                                 </div>
                               </div>
                             </div>
-                            <p className="text-gray-700">{review.comment || review.content}</p>
+                            <p className="text-gray-600 text-sm font-lato leading-relaxed">{review.comment || review.content}</p>
                           </div>
                         ))}
                       </div>
@@ -989,32 +992,42 @@ const InterestedTradespeopleePage = () => {
                 </TabsContent>
               </Tabs>
             </div>
+
+            {/* Modal Footer */}
+            <div className="p-5 sm:p-6 border-t border-gray-100 bg-gray-50/50">
+              <Button
+                onClick={() => setShowProfileModal(false)}
+                className="w-full h-12 rounded-xl bg-[#121E3C] hover:bg-[#1a2d54] text-white font-lato"
+              >
+                Close
+              </Button>
+            </div>
           </div>
         </div>
       )}
 
       {/* Image Modal */}
       {showImageModal && selectedImage && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="max-w-4xl w-full">
-            <div className="bg-white rounded-lg overflow-hidden">
-              <div className="flex justify-between items-center p-4 border-b">
-                <h3 className="font-semibold">{selectedImage.title || 'Portfolio Item'}</h3>
+            <div className="bg-white rounded-3xl overflow-hidden">
+              <div className="flex justify-between items-center p-5 border-b border-gray-100">
+                <h3 className="font-semibold text-[#121E3C] font-montserrat">{selectedImage.title || 'Portfolio Item'}</h3>
                 <button
                   onClick={() => setShowImageModal(false)}
-                  className="text-gray-500 hover:text-gray-700 text-xl"
+                  className="w-10 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
                 >
-                  ✕
+                  <span className="text-gray-500 text-xl">×</span>
                 </button>
               </div>
-              <div className="p-4">
+              <div className="p-5">
                 <img
                   src={selectedImage.image_url || selectedImage.url}
                   alt={selectedImage.title || selectedImage.description}
-                  className="w-full h-auto max-h-96 object-contain mx-auto"
+                  className="w-full h-auto max-h-[60vh] object-contain mx-auto rounded-2xl"
                 />
                 {selectedImage.description && (
-                  <p className="text-gray-600 mt-4">{selectedImage.description}</p>
+                  <p className="text-gray-600 mt-4 text-sm font-lato text-center">{selectedImage.description}</p>
                 )}
               </div>
             </div>

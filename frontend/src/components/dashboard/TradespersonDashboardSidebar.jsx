@@ -25,13 +25,11 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getTradespersonCompletionStatus } from '../../utils/tradespersonCompletion';
-import { useToast } from '../../hooks/use-toast';
 
-const TradespersonDashboardSidebar = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) => {
+const TradespersonDashboardSidebar = ({ isOpen, isCollapsed, onClose, onToggleCollapse, onShowVerificationModal }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const { toast } = useToast();
   const { allStepsCompleted } = getTradespersonCompletionStatus(user);
 
   const navigation = [
@@ -130,12 +128,9 @@ const TradespersonDashboardSidebar = ({ isOpen, isCollapsed, onClose, onToggleCo
           type="button"
           onClick={() => {
             onClose();
-            toast({
-              title: 'Complete Profile First',
-              description: 'Finish all 4 profile completion steps to access this page.',
-              variant: 'destructive',
-            });
-            navigate('/trades/overview');
+            if (onShowVerificationModal) {
+              onShowVerificationModal();
+            }
           }}
           className={cn(
             "group relative flex w-full items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-all duration-200",
