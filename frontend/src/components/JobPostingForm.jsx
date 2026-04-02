@@ -1348,11 +1348,11 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
     switch (question.question_type) {
       case 'multiple_choice_single':
         return (
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {question.options?.map((option, optIndex) => (
               <label 
                 key={optIndex} 
-                className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                className={`flex items-start gap-3 p-3 sm:p-4 rounded-xl border-2 cursor-pointer transition-all active:scale-[0.98] ${
                   questionAnswers[question.id] === option.value
                     ? 'border-[#34D164] bg-[#34D164]/5'
                     : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
@@ -1367,7 +1367,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                   className="sr-only"
                   id={`field-question_${question.id}-${optIndex}`}
                 />
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
                   questionAnswers[question.id] === option.value
                     ? 'border-[#34D164] bg-[#34D164]'
                     : 'border-gray-300'
@@ -1376,7 +1376,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                     <div className="w-2 h-2 bg-white rounded-full" />
                   )}
                 </div>
-                <span className={`text-sm font-lato flex-1 ${
+                <span className={`text-sm font-lato flex-1 leading-snug ${
                   questionAnswers[question.id] === option.value ? 'text-[#121E3C] font-medium' : 'text-gray-700'
                 }`}>{option.text}</span>
               </label>
@@ -1461,13 +1461,13 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       
       case 'multiple_choice_multiple':
         return (
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {question.options?.map((option, optIndex) => {
               const isSelected = (questionAnswers[question.id] || []).includes(option.value);
               return (
                 <label 
                   key={optIndex} 
-                  className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                  className={`flex items-start gap-3 p-3 sm:p-4 rounded-xl border-2 cursor-pointer transition-all active:scale-[0.98] ${
                     isSelected
                       ? 'border-[#34D164] bg-[#34D164]/5'
                       : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
@@ -1482,7 +1482,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                     name={`question_${question.id}`}
                     id={`field-question_${question.id}-${optIndex}`}
                   />
-                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
                     isSelected
                       ? 'border-[#34D164] bg-[#34D164]'
                       : 'border-gray-300'
@@ -1491,7 +1491,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                       <Check size={12} className="text-white" />
                     )}
                   </div>
-                  <span className={`text-sm font-lato flex-1 ${
+                  <span className={`text-sm font-lato flex-1 leading-snug ${
                     isSelected ? 'text-[#121E3C] font-medium' : 'text-gray-700'
                   }`}>{option.text}</span>
                 </label>
@@ -2889,15 +2889,18 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       
       {/* Questions Modal */}
       {showQuestionsModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 sm:p-4">
-          <div className="bg-white rounded-t-2xl sm:rounded-2xl max-w-lg w-full max-h-[85vh] sm:max-h-[90vh] overflow-hidden flex flex-col mb-[env(safe-area-inset-bottom,0px)]">
-            {/* Modal Header */}
-            <div className="p-6 border-b border-gray-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-xl font-bold font-montserrat text-[#121E3C]">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-[100] p-0 sm:p-4">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full sm:max-w-lg h-[90dvh] sm:h-auto sm:max-h-[85vh] overflow-hidden flex flex-col">
+            {/* Modal Header - Fixed */}
+            <div className="flex-shrink-0 p-4 sm:p-6 border-b border-gray-100 bg-white">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg sm:text-xl font-bold font-montserrat text-[#121E3C] truncate">
                     Job Details
                   </h3>
+                  <p className="text-xs text-gray-400 font-lato mt-0.5">
+                    Question {currentQuestionIndex + 1} of {getVisibleQuestions().length}
+                  </p>
                 </div>
                 <button
                   type="button"
@@ -2907,13 +2910,13 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                       setShowQuizFeedbackModal(true);
                     }
                   }}
-                  className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+                  className="flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
                 >
-                  <span className="text-gray-500 text-lg">×</span>
+                  <span className="text-gray-500 text-xl">×</span>
                 </button>
               </div>
               {/* Progress bar */}
-              <div className="mt-4 w-full bg-gray-200 rounded-full h-1.5">
+              <div className="mt-3 w-full bg-gray-200 rounded-full h-1.5">
                 <div
                   className="h-1.5 rounded-full transition-all duration-300"
                   style={{
@@ -2924,8 +2927,8 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
               </div>
             </div>
 
-            {/* Modal Body */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 min-h-0">
+            {/* Modal Body - Scrollable */}
+            <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 min-h-0">
               {(() => {
                 const visibleQuestions = getVisibleQuestions();
                 const currentQuestion = visibleQuestions[currentQuestionIndex];
@@ -2939,17 +2942,19 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                 }
 
                 return (
-                  <div className="space-y-4">
-                    <label className="block text-lg font-medium font-lato text-[#121E3C]">
+                  <div className="space-y-4 pb-4">
+                    <label className="block text-base sm:text-lg font-medium font-lato text-[#121E3C] leading-snug">
                       {currentQuestion.question_text}
                       {currentQuestion.is_required && <span className="text-red-500 ml-1">*</span>}
                     </label>
                     
                     {currentQuestion.help_text && (
-                      <p className="text-gray-500 text-sm font-lato">{currentQuestion.help_text}</p>
+                      <p className="text-gray-500 text-xs sm:text-sm font-lato">{currentQuestion.help_text}</p>
                     )}
 
-                    {renderQuestionInput(currentQuestion)}
+                    <div className="mt-2">
+                      {renderQuestionInput(currentQuestion)}
+                    </div>
 
                     {errors[`question_${currentQuestion.id}`] && (
                       <p className="text-red-500 text-sm font-lato mt-1">
@@ -2961,8 +2966,8 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
               })()}
             </div>
 
-            {/* Modal Footer */}
-            <div className="p-4 sm:p-6 border-t border-gray-100 bg-gray-50/50 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-6">
+            {/* Modal Footer - Fixed */}
+            <div className="flex-shrink-0 p-4 sm:p-6 border-t border-gray-100 bg-white pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-6">
               <div className="flex gap-3">
                 <Button
                   type="button"
@@ -3053,23 +3058,27 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       )}
 
       {showReviewModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full p-6">
-            <div className="mb-4">
-              <h3 className="text-xl font-bold font-montserrat" style={{color: '#121E3C'}}>Review your answers</h3>
-              <p className="text-gray-600 text-sm font-lato">Please review your responses before continuing to the next step.</p>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-[100] p-0 sm:p-4">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full sm:max-w-2xl max-h-[85dvh] sm:max-h-[80vh] overflow-hidden flex flex-col">
+            <div className="flex-shrink-0 p-4 sm:p-6 border-b border-gray-100">
+              <h3 className="text-lg sm:text-xl font-bold font-montserrat text-[#121E3C]">Review your answers</h3>
+              <p className="text-gray-500 text-xs sm:text-sm font-lato mt-1">Please review your responses before continuing.</p>
             </div>
-            <div className="max-h-80 overflow-y-auto border rounded-md p-4 mb-6">
-              {getQuestionsForReview().map((q) => (
-                <div key={q.id} className="mb-3">
-                  <div className="text-sm font-medium font-lato" style={{color: '#121E3C'}}>{q.question_text}</div>
-                  <div className="text-sm text-gray-700 font-lato">{formatAnswerText(q, questionAnswers[q.id]) || '—'}</div>
-                </div>
-              ))}
+            <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">
+              <div className="space-y-4">
+                {getQuestionsForReview().map((q) => (
+                  <div key={q.id} className="p-3 bg-gray-50 rounded-xl">
+                    <div className="text-sm font-medium font-lato text-[#121E3C] mb-1">{q.question_text}</div>
+                    <div className="text-sm text-gray-600 font-lato">{formatAnswerText(q, questionAnswers[q.id]) || '—'}</div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="flex gap-3">
-              <Button variant="outline" className="w-full font-lato" onClick={() => setShowReviewModal(false)}>Edit Answers</Button>
-              <Button className="w-full text-white font-lato" style={{backgroundColor: '#34D164'}} onClick={() => { setShowReviewModal(false); nextStep(); }}>Confirm and Continue</Button>
+            <div className="flex-shrink-0 p-4 sm:p-6 border-t border-gray-100 bg-white pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-6">
+              <div className="flex gap-3">
+                <Button variant="outline" className="flex-1 h-12 rounded-xl font-lato" onClick={() => setShowReviewModal(false)}>Edit Answers</Button>
+                <Button className="flex-1 h-12 rounded-xl text-white font-lato" style={{backgroundColor: '#34D164'}} onClick={() => { setShowReviewModal(false); nextStep(); }}>Confirm</Button>
+              </div>
             </div>
           </div>
         </div>
@@ -3077,13 +3086,18 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
 
       {/* Quiz Feedback Modal */}
       {showQuizFeedbackModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full overflow-hidden">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-xl font-bold font-montserrat text-[#121E3C]">
-                  Can you tell us why you're going?
-                </h3>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-[100] p-0 sm:p-4">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full sm:max-w-md max-h-[85dvh] sm:max-h-[85vh] overflow-hidden flex flex-col">
+            <div className="flex-shrink-0 p-4 sm:p-6 border-b border-gray-100">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <h3 className="text-lg sm:text-xl font-bold font-montserrat text-[#121E3C]">
+                    Can you tell us why you're going?
+                  </h3>
+                  <p className="text-gray-500 text-xs sm:text-sm font-lato mt-1">
+                    Your feedback will help us serve you better
+                  </p>
+                </div>
                 <button
                   type="button"
                   onClick={() => {
@@ -3095,17 +3109,16 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                     setQuestionsCompleted(false);
                     updateFormData('category', '');
                   }}
-                  className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors"
+                  className="flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
                 >
-                  <span className="text-gray-400 text-xl">×</span>
+                  <span className="text-gray-500 text-xl">×</span>
                 </button>
               </div>
-              <p className="text-gray-500 text-sm font-lato mb-5">
-                Your feedback will help us serve you better
-              </p>
-              
+            </div>
+            
+            <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">
               {/* Radio options */}
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {[
                   "I don't want to share my personal information",
                   "I'm not sure what this job will cost",
@@ -3116,14 +3129,13 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                 ].map((option) => (
                   <label
                     key={option}
-                    className={`flex items-center justify-between p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                    className={`flex items-start gap-3 p-3 sm:p-4 border-2 rounded-xl cursor-pointer transition-all active:scale-[0.98] ${
                       quizFeedbackOption === option
                         ? 'border-[#121E3C] bg-gray-50'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
-                    <span className="font-lato text-sm text-gray-700">{option}</span>
-                    <div className={`w-5 h-5 border-2 rounded-full flex items-center justify-center transition-all ${
+                    <div className={`w-5 h-5 border-2 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
                       quizFeedbackOption === option
                         ? 'border-[#121E3C] bg-[#121E3C]'
                         : 'border-gray-300'
@@ -3132,6 +3144,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                         <div className="w-2 h-2 bg-white rounded-full"></div>
                       )}
                     </div>
+                    <span className="font-lato text-sm text-gray-700 flex-1 leading-snug">{option}</span>
                     <input
                       type="radio"
                       name="quizFeedbackOption"
@@ -3142,7 +3155,6 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                     />
                   </label>
                 ))}
-              </div>
 
               {/* Conditional textarea for "Something else" */}
               {quizFeedbackOption === "Something else" && (
@@ -3159,9 +3171,11 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                   />
                 </div>
               )}
+              </div>
             </div>
             
-            <div className="p-4 bg-gray-50 border-t border-gray-100 flex flex-col gap-3">
+            <div className="flex-shrink-0 p-4 sm:p-6 bg-white border-t border-gray-100 pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-6">
+              <div className="flex flex-col gap-3">
               <Button
                 type="button"
                 onClick={async () => {
@@ -3208,6 +3222,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
               >
                 Skip
               </button>
+              </div>
             </div>
           </div>
         </div>
