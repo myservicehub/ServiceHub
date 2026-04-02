@@ -3,8 +3,8 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import TradespersonDashboardSidebar from '../components/dashboard/TradespersonDashboardSidebar';
 import TradespersonDashboardHeader from '../components/dashboard/TradespersonDashboardHeader';
+import VerificationRequiredModal from '../components/dashboard/VerificationRequiredModal';
 import { cn } from '../lib/utils';
-import { useToast } from '../hooks/use-toast';
 import { getTradespersonCompletionStatus } from '../utils/tradespersonCompletion';
 import {
   Briefcase,
@@ -17,8 +17,8 @@ import {
 const TradespersonDashboardLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
   const { user, isAuthenticated, isTradesperson, loading } = useAuth();
-  const { toast } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
   const completion = getTradespersonCompletionStatus(user);
@@ -42,13 +42,9 @@ const TradespersonDashboardLayout = () => {
     if (loading || !isAuthenticated() || !isTradesperson()) return;
     if (completion.allStepsCompleted) return;
     if (!restrictedRoutes.some((route) => location.pathname.startsWith(route))) return;
-    toast({
-      title: 'Complete Profile First',
-      description: 'Finish all 4 profile completion steps to access this page.',
-      variant: 'destructive',
-    });
+    setShowVerificationModal(true);
     navigate('/trades/overview', { replace: true });
-  }, [loading, isAuthenticated, isTradesperson, completion.allStepsCompleted, location.pathname, navigate, toast]);
+  }, [loading, isAuthenticated, isTradesperson, completion.allStepsCompleted, location.pathname, navigate]);
 
   if (loading) {
     return (
@@ -79,6 +75,7 @@ const TradespersonDashboardLayout = () => {
         isCollapsed={sidebarCollapsed}
         onClose={() => setSidebarOpen(false)}
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        onShowVerificationModal={() => setShowVerificationModal(true)}
       />
 
       {/* Main content area */}
@@ -103,21 +100,30 @@ const TradespersonDashboardLayout = () => {
       </div>
 
       {/* Mobile bottom navigation */}
-      <MobileBottomNav />
+      <MobileBottomNav 
+        allStepsCompleted={completion.allStepsCompleted} 
+        onShowVerificationModal={() => setShowVerificationModal(true)} 
+      />
+
+      {/* Verification Required Modal */}
+      <VerificationRequiredModal 
+        isOpen={showVerificationModal} 
+        onClose={() => setShowVerificationModal(false)} 
+      />
     </div>
   );
 };
 
-const MobileBottomNav = () => {
+const MobileBottomNav = ({ allStepsCompleted, onShowVerificationModal }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
   const navItems = [
-    { path: '/trades/overview', icon: Briefcase, label: 'Home' },
-    { path: '/trades/browsejobs', icon: Search, label: 'Jobs' },
-    { path: '/trades/interests', icon: Heart, label: 'Interests' },
-    { path: '/trades/messages', icon: MessageSquare, label: 'Messages' },
-    { path: '/trades/profile', icon: User, label: 'Profile' },
+    { path: '/trades/overview', icon: Briefcase, label: 'Home', restricted: false },
+    { path: '/trades/browsejobs', icon: Search, label: 'Jobs', restricted: false },
+    { path: '/trades/interests', icon: Heart, label: 'Interests', restricted: true },
+    { path: '/trades/messages', icon: MessageSquare, label: 'Messages', restricted: true },
+    { path: '/trades/profile', icon: User, label: 'Profile', restricted: false },
   ];
 
   const isActive = (path) => {
@@ -130,40 +136,42 @@ const MobileBottomNav = () => {
       <div className="flex items-center justify-around h-16 px-2">
         {navItems.map((item) => {
           const IconComponent = item.icon;
+          const isLocked = item.restricted && !allStepsCompleted;
+          
           return (
             <button
               key={item.path}
               onClick={() => {
-                const isRestricted = ['/trades/interests', '/trades/messages'].some((route) => item.path.startsWith(route));
-                if (isRestricted && !completion.allStepsCompleted) {
-                  toast({
-                    title: 'Complete Profile First',
-                    description: 'Finish all 4 profile completion steps to access this page.',
-                    variant: 'destructive',
-                  });
-                  navigate('/trades/overview');
+                if (isLocked) {
+                  onShowVerificationModal();
                   return;
                 }
                 navigate(item.path);
               }}
               className={cn(
                 "flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-all duration-200 relative",
-                isActive(item.path)
-                  ? "text-[#34D164]"
-                  : "text-gray-400 hover:text-[#121E3C]"
+                isLocked
+                  ? "text-gray-300"
+                  : isActive(item.path)
+                    ? "text-[#34D164]"
+                    : "text-gray-400 hover:text-[#121E3C]"
               )}
             >
               <IconComponent className={cn(
                 "w-5 h-5 transition-transform duration-200",
-                isActive(item.path) && "scale-110"
+                isActive(item.path) && !isLocked && "scale-110"
               )} />
               <span className={cn(
                 "text-[10px] font-medium transition-all",
-                isActive(item.path) ? "text-[#34D164]" : "text-gray-500"
+                isLocked
+                  ? "text-gray-300"
+                  : isActive(item.path) 
+                    ? "text-[#34D164]" 
+                    : "text-gray-500"
               )}>
                 {item.label}
               </span>
-              {isActive(item.path) && (
+              {isActive(item.path) && !isLocked && (
                 <span className="absolute top-0 w-8 h-0.5 bg-[#34D164] rounded-full" />
               )}
             </button>
