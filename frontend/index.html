@@ -12,8 +12,11 @@
     <script type="module" src="/src/index.jsx"></script>
     <!-- EBANQO Widget for customer support chat -->
     <script>
-      // Only load widget if NOT on admin page
-      if (!window.location.pathname.includes('/admin')) {
+      // Only load widget on public pages, not on dashboards or admin
+      const restrictedPaths = ['/admin', '/homeowner-dashboard', '/tradesperson-dashboard', '/dashboard', '/profile', '/my-jobs', '/my-interests', '/wallet', '/messages', '/my-profile'];
+      const isRestricted = restrictedPaths.some(path => window.location.pathname.includes(path));
+      
+      if (!isRestricted) {
         (function (w, d, s, o, f, js, fjs) {
           w['EBANQO-WIDGET'] = o;
           w[o] =
