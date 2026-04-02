@@ -293,23 +293,6 @@ const AdminDashboard = () => {
     return message || fallback;
   };
 
-  // Hide EBANQO widget on admin page
-  useEffect(() => {
-    const hideWidget = () => {
-      const widget = document.querySelector('iframe[src*="ebanqo"]');
-      if (widget) {
-        widget.style.display = 'none';
-      }
-    };
-    hideWidget();
-    return () => {
-      const widget = document.querySelector('iframe[src*="ebanqo"]');
-      if (widget) {
-        widget.style.display = 'block';
-      }
-    };
-  }, []);
-
   useEffect(() => {
     if (isLoggedIn) {
       fetchData();
