@@ -4959,6 +4959,8 @@ const AdminDashboard = () => {
                           ))}
                         </select>
                       </div>
+                    </div>
+                  </div>
 
                   {/* User Statistics Cards */}
                   {userStats && (
