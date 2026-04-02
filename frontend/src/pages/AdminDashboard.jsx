@@ -39,14 +39,33 @@ const AdminDashboard = () => {
   const [usersTradeFilter, setUsersTradeFilter] = useState('');
   const [usersTotal, setUsersTotal] = useState(0);
   const visibleUsers = useMemo(() => {
-    if (!usersTradeFilter) return users;
-    return users.filter(user => {
-      if (user.role !== 'tradesperson' || !user.trade_categories) return false;
-      return user.trade_categories.some(cat => 
-        cat.toLowerCase().includes(usersTradeFilter.toLowerCase())
+    let filtered = users;
+
+    // Apply search filter
+    if (usersSearch) {
+      const searchLower = usersSearch.toLowerCase();
+      filtered = filtered.filter(user =>
+        user.name?.toLowerCase().includes(searchLower) ||
+        user.email?.toLowerCase().includes(searchLower) ||
+        user.phone?.toLowerCase().includes(searchLower) ||
+        user.user_id?.toLowerCase().includes(searchLower) ||
+        user.public_id?.toLowerCase().includes(searchLower) ||
+        user.id?.toLowerCase().includes(searchLower)
       );
-    });
-  }, [users, usersTradeFilter]);
+    }
+
+    // Apply trade category filter
+    if (usersTradeFilter) {
+      filtered = filtered.filter(user => {
+        if (user.role !== 'tradesperson' || !user.trade_categories) return false;
+        return user.trade_categories.some(cat => 
+          cat.toLowerCase().includes(usersTradeFilter.toLowerCase())
+        );
+      });
+    }
+
+    return filtered;
+  }, [users, usersSearch, usersTradeFilter]);
   const [userStats, setUserStats] = useState(null);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
