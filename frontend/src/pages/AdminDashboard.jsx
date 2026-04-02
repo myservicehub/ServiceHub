@@ -36,10 +36,17 @@ const AdminDashboard = () => {
   const [usersPage, setUsersPage] = useState(1);
   const [usersLimit, setUsersLimit] = useState(20);
   const [usersSearch, setUsersSearch] = useState('');
+  const [usersTradeFilter, setUsersTradeFilter] = useState('');
   const [usersTotal, setUsersTotal] = useState(0);
   const visibleUsers = useMemo(() => {
-    return users;
-  }, [users]);
+    if (!usersTradeFilter) return users;
+    return users.filter(user => {
+      if (user.role !== 'tradesperson' || !user.trade_categories) return false;
+      return user.trade_categories.some(cat => 
+        cat.toLowerCase().includes(usersTradeFilter.toLowerCase())
+      );
+    });
+  }, [users, usersTradeFilter]);
   const [userStats, setUserStats] = useState(null);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -398,10 +405,14 @@ const AdminDashboard = () => {
         setTradespeopleVerifications(data.verifications || []);
       } else if (activeTab === 'users') {
         const skip = (usersPage - 1) * usersLimit;
-        const data = await adminAPI.getAllUsers(skip, usersLimit, null, null, usersSearch || null);
-        setUsers(data.users || []);
-        setUserStats(data.stats || {});
-        setUsersTotal((data.pagination && (data.pagination.total ?? 0)) || (data.users ? data.users.length : 0));
+        const [userData, tradesData] = await Promise.all([
+          adminAPI.getAllUsers(skip, usersLimit, null, null, usersSearch || null),
+          adminAPI.getAllTrades().catch(() => ({ trades: [] }))
+        ]);
+        setUsers(userData.users || []);
+        setUserStats(userData.stats || {});
+        setUsersTotal((userData.pagination && (userData.pagination.total ?? 0)) || (userData.users ? userData.users.length : 0));
+        setTrades(tradesData.trades || []);
       } else if (activeTab === 'locations') {
         // Load location and trade data based on active sub-tab
         if (activeLocationTab === 'states') {
@@ -4923,14 +4934,31 @@ const AdminDashboard = () => {
                           Search
                         </button>
                         <button
-                          onClick={() => { setUsersSearch(''); setUsersPage(1); fetchData(); usersTabRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
+                          onClick={() => { setUsersSearch(''); setUsersTradeFilter(''); setUsersPage(1); fetchData(); usersTabRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
                           className="text-gray-600 hover:text-gray-800 px-4 py-2 border border-gray-300 rounded-lg text-sm"
                         >
                           Clear
                         </button>
                       </div>
-                    </div>
-                  </div>
+
+                      {/* Trade Category Filter */}
+                      <div className="mt-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Filter by Trade Category:
+                        </label>
+                        <select
+                          value={usersTradeFilter}
+                          onChange={(e) => setUsersTradeFilter(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        >
+                          <option value="">All Trades</option>
+                          {trades && trades.map((trade) => (
+                            <option key={trade} value={trade}>
+                              {trade}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
 
                   {/* User Statistics Cards */}
                   {userStats && (
@@ -5016,9 +5044,9 @@ const AdminDashboard = () => {
                                     <div className="text-xs text-gray-400">
                                       ID: {user.user_id || user.public_id || user.id}
                                     </div>
-                                    {user.phone && (
-                                      <div className="text-xs text-gray-400">
-                                        {user.phone}
+                                    {user.role === 'tradesperson' && user.trade_categories && user.trade_categories.length > 0 && (
+                                      <div className="text-xs text-gray-600 mt-1">
+                                        <span className="font-medium">Trades:</span> {user.trade_categories.slice(0, 2).join(', ')}{user.trade_categories.length > 2 ? '...' : ''}
                                       </div>
                                     )}
                                     </div>

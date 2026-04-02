@@ -65,6 +65,23 @@
       To begin the development, run `npm start` or `yarn start`.
       To create a production bundle, use `npm run build` or `yarn build`.
     -->
+
+        <!-- EBANQO Widget for customer support chat -->
+        <script>
+            (function (w, d, s, o, f, js, fjs) {
+                w['EBANQO-WIDGET'] = o;
+                w[o] = w[o] ||
+                    function () {
+                        (w[o].q = w[o].q || []).push(arguments);
+                    };
+                (js = d.createElement(s)), (fjs = d.getElementsByTagName(s)[0]);
+                js.id = o;
+                js.src = f;
+                js.async = 1;
+                fjs.parentNode.insertBefore(js, fjs);
+            })(window, document, 'script', 'ebanqo_widget', 'https://widget.ebanqo.io/app.js');
+            ebanqo_widget('init', { url: 'https://webchat.ebanqo.io/v2/servicehubltd' });
+        </script>
         
     </body>
 <!-- Removed PostHog analytics snippet for production readiness -->
