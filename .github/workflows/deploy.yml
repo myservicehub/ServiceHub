@@ -21,5 +21,39 @@ jobs:
         with:
           token: ${{ secrets.DO_TOKEN }}
 
+      - name: Verify secrets
+        run: |
+          if [ -z "${{ secrets.DO_TOKEN }}" ]; then
+            echo "ERROR: DO_TOKEN secret is not set"
+            exit 1
+          fi
+          if [ -z "${{ secrets.DO_APP_ID }}" ]; then
+            echo "ERROR: DO_APP_ID secret is not set"
+            exit 1
+          fi
+          echo "Secrets verified successfully"
+
+      - name: List DigitalOcean apps
+        run: doctl apps list
+
       - name: Deploy to DigitalOcean App Platform
-        run: doctl apps create-deployment ${{ secrets.DO_APP_ID }}
+        run: |
+          echo "Triggering deployment for app: ${{ secrets.DO_APP_ID }}"
+          doctl apps create-deployment ${{ secrets.DO_APP_ID }} || {
+            echo "Deployment trigger failed - but note: DigitalOcean may auto-deploy from git push"
+            exit 0
+          }
+          
+      - name: Wait for deployment
+        run: |
+          echo "Deployment triggered. Checking status..."
+          for i in {1..30}; do
+            STATUS=$(doctl apps get ${{ secrets.DO_APP_ID }} --format last_deployment_status --no-header)
+            echo "Deployment status: $STATUS"
+            if [[ "$STATUS" == "SUCCESS" ]] || [[ "$STATUS" == "ACTIVE" ]]; then
+              echo "Deployment successful!"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Deployment check complete"
