@@ -14,14 +14,71 @@ import {
 import { portfolioAPI } from '../../api/services';
 import { useToast } from '../../hooks/use-toast';
 
+// Valid backend enum values for portfolio categories
+const VALID_BACKEND_CATEGORIES = [
+  'plumbing', 'electrical', 'carpentry', 'painting', 'tiling', 'roofing',
+  'heating_gas', 'kitchen_fitting', 'bathroom_fitting', 'garden_landscaping',
+  'flooring', 'plastering', 'other'
+];
+
+// Mapping from common trade category names to valid backend enum values
+const CATEGORY_MAPPING = {
+  'plumbing': 'plumbing',
+  'electrical': 'electrical',
+  'electrician': 'electrical',
+  'carpentry': 'carpentry',
+  'carpenter': 'carpentry',
+  'painting': 'painting',
+  'painter': 'painting',
+  'painting & decorating': 'painting',
+  'tiling': 'tiling',
+  'tiler': 'tiling',
+  'roofing': 'roofing',
+  'roofer': 'roofing',
+  'heating & gas': 'heating_gas',
+  'heating_gas': 'heating_gas',
+  'gas': 'heating_gas',
+  'hvac': 'heating_gas',
+  'kitchen fitting': 'kitchen_fitting',
+  'kitchen_fitting': 'kitchen_fitting',
+  'kitchen & bathroom fitting': 'kitchen_fitting',
+  'bathroom fitting': 'bathroom_fitting',
+  'bathroom_fitting': 'bathroom_fitting',
+  'garden & landscaping': 'garden_landscaping',
+  'garden_landscaping': 'garden_landscaping',
+  'landscaping': 'garden_landscaping',
+  'gardening': 'garden_landscaping',
+  'flooring': 'flooring',
+  'plastering': 'plastering',
+  'plasterer': 'plastering',
+  'generator services': 'electrical',
+  'ac & refrigeration': 'heating_gas',
+  'cleaning services': 'other',
+  'fumigation': 'other',
+  'interior design': 'other',
+  'other': 'other'
+};
+
 // Default fallback categories if user has none
 const DEFAULT_CATEGORIES = [
   { value: 'other', label: 'Other' }
 ];
 
-// Helper to convert trade category name to value format
+// Helper to convert trade category name to valid backend enum value
 const categoryToValue = (category) => {
-  return category.toLowerCase().replace(/[&\s]+/g, '_').replace(/[^a-z0-9_]/g, '');
+  const normalized = category.toLowerCase().trim();
+  // Check direct mapping first
+  if (CATEGORY_MAPPING[normalized]) {
+    return CATEGORY_MAPPING[normalized];
+  }
+  // Try to find partial match
+  for (const [key, value] of Object.entries(CATEGORY_MAPPING)) {
+    if (normalized.includes(key) || key.includes(normalized)) {
+      return value;
+    }
+  }
+  // Default to 'other' if no match found
+  return 'other';
 };
 
 const ImageUpload = ({ onUploadSuccess, onCancel, userCategories = [] }) => {
@@ -180,8 +237,8 @@ const ImageUpload = ({ onUploadSuccess, onCancel, userCategories = [] }) => {
 
   return (
     <Card className="w-full max-w-2xl mx-auto">
-      <CardContent className="p-6">
-        <h3 className="text-lg font-semibold font-montserrat mb-4" style={{color: '#121E3C'}}>
+      <CardContent className="p-4 sm:p-6">
+        <h3 className="text-base sm:text-lg font-semibold font-montserrat mb-4" style={{color: '#121E3C'}}>
           Add Portfolio Item
         </h3>
 
@@ -288,13 +345,13 @@ const ImageUpload = ({ onUploadSuccess, onCancel, userCategories = [] }) => {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-end space-x-3 pt-4 border-t">
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 border-t">
             {onCancel && (
               <Button
                 variant="outline"
                 onClick={onCancel}
                 disabled={uploading}
-                className="font-lato"
+                className="font-lato w-full sm:w-auto"
               >
                 Cancel
               </Button>
@@ -303,7 +360,7 @@ const ImageUpload = ({ onUploadSuccess, onCancel, userCategories = [] }) => {
             <Button
               onClick={handleUpload}
               disabled={uploading || !selectedFile}
-              className="text-white font-lato"
+              className="text-white font-lato w-full sm:w-auto"
               style={{backgroundColor: '#34D164'}}
             >
               {uploading ? (
@@ -314,7 +371,7 @@ const ImageUpload = ({ onUploadSuccess, onCancel, userCategories = [] }) => {
               ) : (
                 <>
                   <Upload size={16} className="mr-2" />
-                  Upload Portfolio Item
+                  Upload
                 </>
               )}
             </Button>

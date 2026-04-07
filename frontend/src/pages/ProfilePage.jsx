@@ -1307,7 +1307,7 @@ const ProfilePage = () => {
                 <TabsContent value="portfolio" className="space-y-6">
                   <Card>
                     <CardHeader>
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <CardTitle className="flex items-center font-montserrat" style={{color: '#121E3C'}}>
                           <Camera size={20} className="mr-2" style={{color: '#34D164'}} />
                           My Portfolio
@@ -1315,7 +1315,7 @@ const ProfilePage = () => {
                         
                         <Button
                           onClick={() => setShowUploadForm(!showUploadForm)}
-                          className="text-white font-lato"
+                          className="text-white font-lato w-full sm:w-auto"
                           style={{backgroundColor: '#34D164'}}
                         >
                           <Plus size={16} className="mr-2" />
