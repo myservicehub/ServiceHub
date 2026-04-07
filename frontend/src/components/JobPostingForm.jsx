@@ -2895,12 +2895,9 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
             <div className="flex-shrink-0 p-4 sm:p-6 border-b border-gray-100 bg-white">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-lg sm:text-xl font-bold font-montserrat text-[#121E3C] truncate">
+                  <h3 className="text-base sm:text-lg font-semibold text-[#121E3C] font-montserrat">
                     Job Details
                   </h3>
-                  <p className="text-xs text-gray-400 font-lato mt-0.5">
-                    Question {currentQuestionIndex + 1} of {getVisibleQuestions().length}
-                  </p>
                 </div>
                 <button
                   type="button"
