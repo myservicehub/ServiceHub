@@ -153,6 +153,8 @@ class UserProfile(BaseModel):
     total_jobs: Optional[int] = None
     verified_tradesperson: Optional[bool] = None
     business_type: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     travel_distance_km: Optional[int] = None
     location_source: Optional[str] = None
     location_confirmed_at: Optional[datetime] = None
