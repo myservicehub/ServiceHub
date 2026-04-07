@@ -1220,10 +1220,10 @@ const BrowseJobsPage = () => {
 
       {/* Job Details Modal */}
       {showJobModal && selectedJobDetails && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-            {/* Modal Header */}
-            <div className="sticky top-0 bg-white border-b border-gray-100 p-6 z-10">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-[100] p-0 sm:p-4">
+          <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-4xl w-full h-[90dvh] sm:h-auto sm:max-h-[85vh] overflow-hidden flex flex-col shadow-2xl">
+            {/* Modal Header - Fixed */}
+            <div className="flex-shrink-0 bg-white border-b border-gray-100 p-4 sm:p-6">
               <div className="flex justify-between items-start gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
@@ -1250,7 +1250,8 @@ const BrowseJobsPage = () => {
               </div>
             </div>
 
-            <div className="p-6">
+            {/* Modal Body - Scrollable */}
+            <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 min-h-0">
               {/* Quick Info Cards */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
                 <div className="bg-gray-50 rounded-xl p-3">
@@ -1616,16 +1617,20 @@ const BrowseJobsPage = () => {
                 );
               })()}
 
-              {/* Action Buttons */}
-              <div className="flex justify-between items-center pt-6 border-t">
-                <div className="text-sm text-gray-500 font-lato">
+            </div>
+
+            {/* Modal Footer - Fixed */}
+            <div className="flex-shrink-0 border-t border-gray-100 bg-white p-4 sm:p-6 pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-6">
+              <div className="flex justify-between items-center">
+                <div className="text-sm text-gray-500 font-lato hidden sm:block">
                   Posted {getTimeAgo(selectedJobDetails.created_at)}
                 </div>
                 
-                <div className="flex space-x-3">
+                <div className="flex space-x-3 w-full sm:w-auto">
                   <Button
                     variant="outline"
                     onClick={() => setShowJobModal(false)}
+                    className="flex-1 sm:flex-none"
                   >
                     Close
                   </Button>
@@ -1643,7 +1648,7 @@ const BrowseJobsPage = () => {
                     disabled={!allStepsCompleted ||
                              loadingStates.showInterest[selectedJobDetails.id] || 
                              (userInterests && userInterests.includes(selectedJobDetails.id))}
-                    className="text-white font-lato"
+                    className="text-white font-lato flex-1 sm:flex-none"
                     style={{backgroundColor: '#34D164'}}
                   >
                     {!allStepsCompleted ? (
