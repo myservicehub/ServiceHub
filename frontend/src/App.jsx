@@ -52,6 +52,7 @@ const MyJobsPage = lazy(() => import("./pages/MyJobsPage"));
 const InterestedTradespeopleePage = lazy(() => import("./pages/InterestedTradespeopleePage"));
 const MyReviewsPage = lazy(() => import("./pages/MyReviewsPage"));
 const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
+const NotificationPreferencesPage = lazy(() => import("./pages/NotificationPreferencesPage"));
 const WalletPage = lazy(() => import("./pages/WalletPage"));
 const ReferralsPage = lazy(() => import("./pages/ReferralsPage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
@@ -142,6 +143,7 @@ function App() {
                 <Route path="/signup" element={<Navigate to="/?promo=tradesperson" replace />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/verify-account" element={<VerifyAccountPage />} />
+                <Route path="/notifications/preferences" element={<NotificationPreferencesPage />} />
                 <Route path="/dashboard/verify-account" element={<Navigate to="/verify-account" replace />} />
                 
                 {/* Legal Pages */}
