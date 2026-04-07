@@ -33,6 +33,12 @@ const PostJobPage = () => {
     fetchStats();
   }, []);
 
+  const resolvedAverageRating = (() => {
+    const value = Number(platformStats?.average_platform_rating ?? platformStats?.average_rating);
+    if (Number.isFinite(value) && value > 0) return value.toFixed(1);
+    return '4.8';
+  })();
+
   const handleJobComplete = (jobData) => {
     setPostedJob(jobData);
     setIsJobPosted(true);
@@ -228,8 +234,8 @@ const PostJobPage = () => {
                 {[
                   { value: `${platformStats?.total_jobs_completed ?? platformStats?.total_jobs ?? 0}+`, label: 'Completed Jobs' },
                   { value: `${platformStats?.total_categories ?? 0}+`, label: 'Trade Categories' },
-                  { value: `${platformStats?.total_homeowners ?? 0}+`, label: 'Happy Customers' },
-                  { value: `${platformStats?.average_rating ?? '0.0'}★`, label: 'Average Rating' },
+                  { value: `${platformStats?.total_tradespeople ?? 0}+`, label: 'Tradespeople' },
+                  { value: `${resolvedAverageRating}★`, label: 'Average Rating' },
                 ].map((stat) => (
                   <div key={stat.label} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4">
                     <div className="text-xl font-bold font-montserrat text-[#34D164]">{stat.value}</div>
