@@ -465,28 +465,29 @@ const TradespersonProfilePage = () => {
                   {portfolio.length > 0 && (
                     <div>
                       <div className="flex justify-between items-center mb-3">
-                        <h3 className="text-lg font-semibold font-montserrat">Recent Work</h3>
+                        <h3 className="text-lg font-semibold font-montserrat" style={{color: '#121E3C'}}>Recent Work</h3>
                         <Button 
                           variant="ghost" 
                           onClick={() => setActiveTab('portfolio')}
-                          className="text-sm"
+                          className="text-sm font-lato"
+                          style={{color: '#34D164'}}
                         >
                           View All →
                         </Button>
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {portfolio.slice(0, 4).map((item, index) => (
-                          <div 
+                          <Card 
                             key={index}
-                            className="aspect-square rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                            className="aspect-square overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 group"
                             onClick={() => handleImageClick(item)}
                           >
                             <img
                               src={item.image_url || item.url}
                               alt={item.title || item.description}
-                              className="w-full h-full object-cover"
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                             />
-                          </div>
+                          </Card>
                         ))}
                       </div>
                     </div>
@@ -496,31 +497,32 @@ const TradespersonProfilePage = () => {
                   {reviews.length > 0 && (
                     <div>
                       <div className="flex justify-between items-center mb-3">
-                        <h3 className="text-lg font-semibold font-montserrat">Recent Reviews</h3>
+                        <h3 className="text-lg font-semibold font-montserrat" style={{color: '#121E3C'}}>Recent Reviews</h3>
                         <Button 
                           variant="ghost" 
                           onClick={() => setActiveTab('reviews')}
-                          className="text-sm"
+                          className="text-sm font-lato"
+                          style={{color: '#34D164'}}
                         >
                           View All →
                         </Button>
                       </div>
                       <div className="space-y-4">
                         {reviews.slice(0, 3).map((review, index) => (
-                          <div key={index} className="bg-gray-50 rounded-lg p-4">
+                          <Card key={index} className="p-4">
                             <div className="flex items-start justify-between mb-2">
                               <div className="flex items-center gap-2">
                                 <div className="flex">{getStarRating(review.rating)}</div>
-                                <span className="font-medium">{review.reviewer_name}</span>
+                                <span className="font-medium font-montserrat" style={{color: '#121E3C'}}>{review.reviewer_name}</span>
                               </div>
-                              <span className="text-sm text-gray-500">
+                              <span className="text-sm text-gray-500 font-lato">
                                 {formatDate(review.created_at)}
                               </span>
                             </div>
-                            <p className="text-gray-700 text-sm line-clamp-3">
+                            <p className="text-gray-700 text-sm font-lato line-clamp-3">
                               {review.comment}
                             </p>
-                          </div>
+                          </Card>
                         ))}
                       </div>
                     </div>
@@ -532,7 +534,7 @@ const TradespersonProfilePage = () => {
               <TabsContent value="portfolio" className="mt-6">
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-semibold font-montserrat">
+                    <h3 className="text-lg font-semibold font-montserrat" style={{color: '#121E3C'}}>
                       Portfolio ({portfolio.length} items)
                     </h3>
                     <div className="flex gap-2">
@@ -565,52 +567,56 @@ const TradespersonProfilePage = () => {
                   ) : portfolioView === 'grid' ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {portfolio.map((item, index) => (
-                        <div 
+                        <Card 
                           key={index}
-                          className="group cursor-pointer"
+                          className="group cursor-pointer overflow-hidden hover:shadow-lg transition-shadow duration-300"
                           onClick={() => handleImageClick(item)}
                         >
-                          <div className="aspect-square rounded-lg overflow-hidden mb-3">
+                          <div className="aspect-square overflow-hidden">
                             <img
                               src={item.image_url || item.url}
                               alt={item.title || item.description}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                             />
                           </div>
-                          <h4 className="font-medium mb-1">{item.title || 'Untitled'}</h4>
-                          <p className="text-sm text-gray-600 line-clamp-2">
-                            {item.description}
-                          </p>
-                          {item.completion_date && (
-                            <p className="text-xs text-gray-500 mt-1">
-                              Completed: {formatDate(item.completion_date)}
+                          <CardContent className="p-4">
+                            <h4 className="font-semibold font-montserrat mb-1" style={{color: '#121E3C'}}>{item.title || 'Untitled'}</h4>
+                            <p className="text-sm text-gray-600 font-lato line-clamp-2">
+                              {item.description}
                             </p>
-                          )}
-                        </div>
+                            {item.completion_date && (
+                              <p className="text-xs text-gray-500 font-lato mt-2">
+                                Completed: {formatDate(item.completion_date)}
+                              </p>
+                            )}
+                          </CardContent>
+                        </Card>
                       ))}
                     </div>
                   ) : (
                     <div className="space-y-4">
                       {portfolio.map((item, index) => (
-                        <div key={index} className="flex gap-4 p-4 bg-gray-50 rounded-lg">
-                          <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
-                            <img
-                              src={item.image_url || item.url}
-                              alt={item.title || item.description}
-                              className="w-full h-full object-cover cursor-pointer"
-                              onClick={() => handleImageClick(item)}
-                            />
+                        <Card key={index} className="overflow-hidden">
+                          <div className="flex gap-4 p-4">
+                            <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
+                              <img
+                                src={item.image_url || item.url}
+                                alt={item.title || item.description}
+                                className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform"
+                                onClick={() => handleImageClick(item)}
+                              />
+                            </div>
+                            <div className="flex-1">
+                              <h4 className="font-semibold font-montserrat mb-1" style={{color: '#121E3C'}}>{item.title || 'Untitled'}</h4>
+                              <p className="text-sm text-gray-600 font-lato mb-2">{item.description}</p>
+                              {item.completion_date && (
+                                <p className="text-xs text-gray-500 font-lato">
+                                  Completed: {formatDate(item.completion_date)}
+                                </p>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex-1">
-                            <h4 className="font-medium mb-1">{item.title || 'Untitled'}</h4>
-                            <p className="text-sm text-gray-600 mb-2">{item.description}</p>
-                            {item.completion_date && (
-                              <p className="text-xs text-gray-500">
-                                Completed: {formatDate(item.completion_date)}
-                              </p>
-                            )}
-                          </div>
-                        </div>
+                        </Card>
                       ))}
                     </div>
                   )}
