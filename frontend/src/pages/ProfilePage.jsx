@@ -1583,6 +1583,43 @@ const ProfilePage = () => {
                               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">Unverified</span>
                             )}
                           </div>
+                          {!isTradesperson() && !profileData.phone_verified && (
+                            <div className="mt-3 space-y-3">
+                              <div className="flex items-center gap-2">
+                                <Button size="sm" onClick={handleSendPhoneOTP} disabled={otpSending}>
+                                  {otpSending ? 'Sending…' : 'Send Code'}
+                                </Button>
+                                {otpMode && (
+                                  <Button size="sm" variant="ghost" onClick={handleSendPhoneOTP} disabled={otpSending}>
+                                    {otpSending ? 'Sending…' : 'Resend'}
+                                  </Button>
+                                )}
+                              </div>
+                              {otpMode && (
+                                <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
+                                  <div className="w-full sm:w-auto">
+                                  <InputOTP
+                                    maxLength={6}
+                                    value={otpCode}
+                                    onChange={(val) => setOtpCode(val)}
+                                  >
+                                    <InputOTPGroup className="gap-2">
+                                      <InputOTPSlot index={0} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
+                                      <InputOTPSlot index={1} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
+                                      <InputOTPSlot index={2} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
+                                      <InputOTPSlot index={3} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
+                                      <InputOTPSlot index={4} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
+                                      <InputOTPSlot index={5} className="w-10 h-12 rounded-lg bg-gray-50 border-gray-200" />
+                                    </InputOTPGroup>
+                                  </InputOTP>
+                                  </div>
+                                  <Button size="sm" className="w-full sm:w-auto" onClick={handleVerifyPhoneOTP} disabled={otpVerifying || otpCode.length !== 6}>
+                                    {otpVerifying ? 'Verifying…' : 'Verify'}
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          )}
                           {isTradesperson() && (
                             <div className="flex items-center space-x-2">
                               <Award size={14} />
