@@ -236,12 +236,14 @@ const PortfolioGallery = ({
 
   if (safeItems.length === 0) {
     return (
-      <div className="text-center py-12">
-        <ImageIcon size={64} className="mx-auto text-gray-400 mb-4" />
-        <h3 className="text-lg font-semibold font-montserrat text-gray-900 mb-2">
+      <div className="text-center py-16">
+        <div className="w-20 h-20 mx-auto mb-5 rounded-2xl bg-gray-100 flex items-center justify-center">
+          <ImageIcon size={36} className="text-gray-400" />
+        </div>
+        <h3 className="text-lg font-semibold font-montserrat mb-2" style={{color: '#121E3C'}}>
           {emptyMessage}
         </h3>
-        <p className="text-gray-600 font-lato">
+        <p className="text-gray-500 font-lato max-w-md mx-auto">
           {emptyDescription}
         </p>
       </div>

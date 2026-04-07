@@ -236,20 +236,20 @@ const ImageUpload = ({ onUploadSuccess, onCancel, userCategories = [] }) => {
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardContent className="p-4 sm:p-6">
-        <h3 className="text-base sm:text-lg font-semibold font-montserrat mb-4" style={{color: '#121E3C'}}>
+    <Card className="w-full border border-gray-100 shadow-sm">
+      <CardContent className="p-5 sm:p-6">
+        <h3 className="text-lg font-semibold font-montserrat mb-5" style={{color: '#121E3C'}}>
           Add Portfolio Item
         </h3>
 
-        {/* File Upload Area */}
-        <div className="space-y-4">
+        <div className="space-y-5">
+          {/* File Upload Area */}
           {!previewUrl ? (
             <div
-              className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+              className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${
                 dragActive 
-                  ? 'border-green-400 bg-green-50' 
-                  : 'border-gray-300 hover:border-gray-400'
+                  ? 'border-[#34D164] bg-green-50' 
+                  : 'border-gray-200 hover:border-gray-300 bg-gray-50/50'
               }`}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
@@ -264,34 +264,36 @@ const ImageUpload = ({ onUploadSuccess, onCancel, userCategories = [] }) => {
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               />
               
-              <div className="space-y-2">
-                <Upload size={48} className="mx-auto text-gray-400" />
+              <div className="space-y-3">
+                <div className="w-12 h-12 mx-auto rounded-full bg-white border border-gray-200 flex items-center justify-center">
+                  <Upload size={24} className="text-gray-400" />
+                </div>
                 <div>
-                  <p className="text-gray-600 font-lato">
-                    <span className="font-semibold">Click to upload</span> or drag and drop
+                  <p className="text-gray-700 font-lato">
+                    <span className="font-semibold text-[#121E3C]">Click to upload</span> or drag and drop
                   </p>
-                  <p className="text-sm text-gray-500 font-lato">
+                  <p className="text-sm text-gray-500 font-lato mt-1">
                     JPG, PNG, WebP up to 5MB
                   </p>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="relative">
+            <div className="relative rounded-xl overflow-hidden">
               <img
                 src={previewUrl}
                 alt="Preview"
-                className="w-full h-48 object-cover rounded-lg"
+                className="w-full h-48 object-cover"
               />
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleRemoveFile}
-                className="absolute top-2 right-2 bg-white hover:bg-gray-50"
+                className="absolute top-3 right-3 bg-white hover:bg-gray-50 rounded-lg shadow-sm"
               >
                 <X size={16} />
               </Button>
-              <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-sm">
+              <div className="absolute bottom-3 left-3 bg-black/60 text-white px-3 py-1.5 rounded-lg text-sm font-lato">
                 {selectedFile?.name}
               </div>
             </div>
@@ -300,40 +302,41 @@ const ImageUpload = ({ onUploadSuccess, onCancel, userCategories = [] }) => {
           {/* Form Fields */}
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
-                Title *
+              <label className="block text-sm font-medium font-montserrat mb-2" style={{color: '#121E3C'}}>
+                Title <span className="text-red-500">*</span>
               </label>
               <Input
                 value={formData.title}
                 onChange={(e) => handleInputChange('title', e.target.value)}
                 placeholder="e.g., Modern Kitchen Installation - Lagos"
-                className="font-lato"
+                className="font-lato rounded-lg border-gray-200 focus:border-[#34D164] focus:ring-[#34D164]"
                 maxLength={100}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
+              <label className="block text-sm font-medium font-montserrat mb-2" style={{color: '#121E3C'}}>
                 Description
               </label>
               <Textarea
                 value={formData.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
                 placeholder="Describe the project, techniques used, or any special features..."
-                className="font-lato"
+                className="font-lato rounded-lg border-gray-200 focus:border-[#34D164] focus:ring-[#34D164] resize-none"
                 rows={3}
                 maxLength={500}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium font-lato mb-2" style={{color: '#121E3C'}}>
-                Category *
+              <label className="block text-sm font-medium font-montserrat mb-2" style={{color: '#121E3C'}}>
+                Category <span className="text-red-500">*</span>
               </label>
               <select
                 value={formData.category}
                 onChange={(e) => handleInputChange('category', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md font-lato focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg font-lato text-[#121E3C] bg-white focus:outline-none focus:ring-2 focus:ring-[#34D164] focus:border-transparent appearance-none cursor-pointer"
+                style={{backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0.75rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.25rem'}}
               >
                 {portfolioCategories.map((category) => (
                   <option key={category.value} value={category.value}>
@@ -345,13 +348,13 @@ const ImageUpload = ({ onUploadSuccess, onCancel, userCategories = [] }) => {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 border-t">
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-5 border-t border-gray-100">
             {onCancel && (
               <Button
                 variant="outline"
                 onClick={onCancel}
                 disabled={uploading}
-                className="font-lato w-full sm:w-auto"
+                className="font-lato w-full sm:w-auto rounded-lg border-gray-200 hover:bg-gray-50"
               >
                 Cancel
               </Button>
@@ -360,7 +363,7 @@ const ImageUpload = ({ onUploadSuccess, onCancel, userCategories = [] }) => {
             <Button
               onClick={handleUpload}
               disabled={uploading || !selectedFile}
-              className="text-white font-lato w-full sm:w-auto"
+              className="text-white font-lato w-full sm:w-auto rounded-lg hover:opacity-90 transition-opacity"
               style={{backgroundColor: '#34D164'}}
             >
               {uploading ? (

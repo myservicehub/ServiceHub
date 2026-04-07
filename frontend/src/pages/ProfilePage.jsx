@@ -1305,17 +1305,21 @@ const ProfilePage = () => {
               {/* Portfolio Tab - Only for Tradespeople */}
               {isTradesperson() && (
                 <TabsContent value="portfolio" className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                        <CardTitle className="flex items-center font-montserrat" style={{color: '#121E3C'}}>
-                          <Camera size={20} className="mr-2" style={{color: '#34D164'}} />
-                          My Portfolio
-                        </CardTitle>
+                  <Card className="border border-gray-100 shadow-sm">
+                    <CardHeader className="pb-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center">
+                            <Camera size={20} className="text-[#34D164]" />
+                          </div>
+                          <CardTitle className="text-lg font-semibold font-montserrat" style={{color: '#121E3C'}}>
+                            My Portfolio
+                          </CardTitle>
+                        </div>
                         
                         <Button
                           onClick={() => setShowUploadForm(!showUploadForm)}
-                          className="text-white font-lato w-full sm:w-auto"
+                          className="text-white font-lato w-full sm:w-auto rounded-lg hover:opacity-90 transition-opacity"
                           style={{backgroundColor: '#34D164'}}
                         >
                           <Plus size={16} className="mr-2" />
@@ -1324,7 +1328,7 @@ const ProfilePage = () => {
                       </div>
                     </CardHeader>
                     
-                    <CardContent>
+                    <CardContent className="pt-0">
                       {showUploadForm && (
                         <div className="mb-6">
                           <ImageUpload
