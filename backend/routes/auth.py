@@ -53,6 +53,13 @@ def _normalize_user_profile_payload(user_data: Dict[str, Any]) -> Dict[str, Any]
         payload["location"] = "Not specified"
     if payload.get("postcode") in (None, ""):
         payload["postcode"] = "000000"
+    has_coords = payload.get("latitude") is not None and payload.get("longitude") is not None
+    explicit_confirmation_flag = payload.get("location_needs_confirmation")
+    if explicit_confirmation_flag is None:
+        # Legacy users may already have approximate coordinates but no confirmation metadata.
+        payload["location_needs_confirmation"] = bool(has_coords and not payload.get("location_confirmed_at"))
+    else:
+        payload["location_needs_confirmation"] = bool(explicit_confirmation_flag)
     return payload
 
 async def _find_existing_user_by_phone(phone: str) -> Optional[dict]:
@@ -1030,15 +1037,21 @@ async def update_user_location(
     latitude: float = Query(..., ge=-90, le=90, description="Latitude coordinate"),
     longitude: float = Query(..., ge=-180, le=180, description="Longitude coordinate"),
     travel_distance_km: Optional[int] = Query(None, ge=1, le=200, description="Maximum travel distance in kilometers"),
+    source: str = Query("gps", description="Location source: gps | map"),
     current_user: User = Depends(get_current_active_user)
 ):
     """Update user location and travel distance"""
     try:
+        source = (source or "gps").strip().lower()
+        if source not in {"gps", "map"}:
+            raise HTTPException(status_code=400, detail="source must be 'gps' or 'map'")
+
         success = await database.update_user_location(
             user_id=current_user.id,
             latitude=latitude,
             longitude=longitude,
-            travel_distance_km=travel_distance_km
+            travel_distance_km=travel_distance_km,
+            location_source=source,
         )
         
         if not success:
@@ -1048,7 +1061,8 @@ async def update_user_location(
             "message": "Location updated successfully",
             "latitude": latitude,
             "longitude": longitude,
-            "travel_distance_km": travel_distance_km
+            "travel_distance_km": travel_distance_km,
+            "source": source,
         }
         
     except HTTPException:

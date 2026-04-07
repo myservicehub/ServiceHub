@@ -469,6 +469,9 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
         } else if (formData.home_address.trim().length < 10) {
           newErrors.home_address = 'Home address must be at least 10 characters';
         }
+        if (!formData.jobLocation || typeof formData.jobLocation.lat !== 'number' || typeof formData.jobLocation.lng !== 'number') {
+          newErrors.jobLocation = 'Please pin your exact job location on the map';
+        }
         break;
 
       case 3: // Budget
@@ -2221,7 +2224,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
             {/* Map Location Picker */}
             <div>
               <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
-                Precise Location (Optional)
+                Precise Location *
               </label>
               <p className="text-xs text-gray-400 mb-3 font-lato">
                 Pin the exact location on the map to help tradespeople find you easily
@@ -2238,6 +2241,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
                   centerZoom={mapCenterZoom}
                 />
               </div>
+              {errors.jobLocation && <p className="text-red-500 text-xs mt-1 font-lato">{errors.jobLocation}</p>}
             </div>
           </div>
         );

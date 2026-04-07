@@ -67,6 +67,9 @@ class User(BaseModel):
     latitude: Optional[float] = None           # Home base latitude for tradespeople
     longitude: Optional[float] = None          # Home base longitude for tradespeople
     travel_distance_km: Optional[int] = 25     # Maximum travel distance in kilometers (default 25km)
+    location_source: Optional[str] = None      # gps | map | legacy-approximate
+    location_confirmed_at: Optional[datetime] = None
+    location_needs_confirmation: Optional[bool] = None
     business_type: Optional[str] = None
     skills_test_passed: bool = False
     skills_test_score: Optional[int] = None
@@ -151,6 +154,9 @@ class UserProfile(BaseModel):
     verified_tradesperson: Optional[bool] = None
     business_type: Optional[str] = None
     travel_distance_km: Optional[int] = None
+    location_source: Optional[str] = None
+    location_confirmed_at: Optional[datetime] = None
+    location_needs_confirmation: Optional[bool] = None
     skills_test_passed: bool = False
     skills_test_score: Optional[int] = None
     skills_test_completed_at: Optional[datetime] = None

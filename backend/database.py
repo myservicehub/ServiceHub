@@ -3809,13 +3809,25 @@ class Database:
         # Limit to requested number
         return jobs_with_distance[:limit]
 
-    async def update_user_location(self, user_id: str, latitude: float, longitude: float, travel_distance_km: int = None) -> bool:
+    async def update_user_location(
+        self,
+        user_id: str,
+        latitude: float,
+        longitude: float,
+        travel_distance_km: int = None,
+        location_source: str = None,
+    ) -> bool:
         """Update user's location and travel distance"""
         update_data = {
             "latitude": latitude,
             "longitude": longitude,
+            "location_confirmed_at": datetime.utcnow(),
+            "location_needs_confirmation": False,
             "updated_at": datetime.utcnow()
         }
+
+        if location_source:
+            update_data["location_source"] = location_source
         
         if travel_distance_km is not None:
             update_data["travel_distance_km"] = travel_distance_km

@@ -98,7 +98,8 @@ const BrowseJobsPage = () => {
   const [filters, setFilters] = useState(() => ({
     search: '',
     category: '',
-    useLocation: !!(user?.latitude && user?.longitude) || !!user?.location,
+    // Only enable distance filtering when we have real coordinates
+    useLocation: !!(user?.latitude && user?.longitude),
     maxDistance: user?.travel_distance_km || DEFAULT_TRAVEL_DISTANCE_KM
   }));
 
@@ -106,11 +107,6 @@ const BrowseJobsPage = () => {
   const [userLocation, setUserLocation] = useState(() => {
     if (user?.latitude && user?.longitude) {
       return { lat: user.latitude, lng: user.longitude };
-    }
-    // Try to resolve from location string if coordinates are missing
-    if (user?.location) {
-      const coords = resolveCoordinatesFromLocationText(user.location);
-      if (coords) return { lat: coords.latitude, lng: coords.longitude };
     }
     return null;
   });
@@ -177,11 +173,8 @@ const BrowseJobsPage = () => {
       if (user.latitude !== userLocation?.lat || user.longitude !== userLocation?.lng) {
         loadUserLocationData();
       }
-    } else if (user?.location && !userLocation) {
-      // If we have a string location but no coords yet, try to resolve it
-      loadUserLocationData();
     }
-  }, [user?.latitude, user?.longitude, user?.location]);
+  }, [user?.latitude, user?.longitude]);
 
   // If the user received a recent job notification (e.g. NEW_MATCHING_JOB / JOB_POSTED)
   // check the referenced job. If the job exists but is pending approval, surface
@@ -303,36 +296,13 @@ const BrowseJobsPage = () => {
         useLocation: true 
       }));
     } else {
-      // Prioritize user.state if available, then fallback to user.location
-      const stateToUse = user?.state;
-      const locationToUse = user?.location;
-      
-      let coords = null;
-      
-      // 1. Try structured location with state
-      if (stateToUse) {
-        coords = resolveCoordinatesFromStructuredLocation({
-          state: stateToUse,
-          lga: null,
-          town: null,
-          addressText: locationToUse || stateToUse
-        });
-      }
-      
-      // 2. Fallback to location text only if state resolution failed
-      if (!coords && locationToUse) {
-        coords = resolveCoordinatesFromLocationText(locationToUse);
-      }
-
-      if (coords && typeof coords.latitude === 'number' && typeof coords.longitude === 'number') {
-        // Convert util output { latitude, longitude } to map-friendly { lat, lng }
-        setUserLocation({ lat: coords.latitude, lng: coords.longitude });
-        setFilters(prev => ({
-          ...prev,
-          maxDistance: user?.travel_distance_km || DEFAULT_TRAVEL_DISTANCE_KM,
-          useLocation: true
-        }));
-      }
+      // Without exact coordinates, keep location filtering off to avoid inaccurate distances
+      setUserLocation(null);
+      setFilters(prev => ({
+        ...prev,
+        maxDistance: user?.travel_distance_km || DEFAULT_TRAVEL_DISTANCE_KM,
+        useLocation: false
+      }));
     }
   };
 
@@ -396,7 +366,8 @@ const BrowseJobsPage = () => {
               d = computeDistanceKm(userLocation.lat, userLocation.lng, job.latitude, job.longitude);
             } else if (job?.location) {
               const jc = resolveCoordinatesFromLocationText(job.location);
-              if (jc && typeof jc.latitude === 'number' && typeof jc.longitude === 'number') {
+              const isCoarseTextLocation = jc?.source === 'state' || jc?.source === 'text-state';
+              if (!isCoarseTextLocation && jc && typeof jc.latitude === 'number' && typeof jc.longitude === 'number') {
                 d = computeDistanceKm(userLocation.lat, userLocation.lng, jc.latitude, jc.longitude);
               }
             }

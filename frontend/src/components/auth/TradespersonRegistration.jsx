@@ -27,13 +27,14 @@ import {
   X,
   Image as ImageIcon,
   Car,
-  CreditCard
+  CreditCard,
+  Crosshair
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../hooks/use-toast';
 import useStates from '../../hooks/useStates';
 import { jobsAPI } from '../../api/services';
-import { resolveCoordinatesFromLocationText, resolveCoordinatesFromStructuredLocation, DEFAULT_TRAVEL_DISTANCE_KM } from '../../utils/locationCoordinates';
+import { DEFAULT_TRAVEL_DISTANCE_KM } from '../../utils/locationCoordinates';
 import SkillsTestComponent from './SkillsTestComponent';
 import { adminAPI } from '../../api/wallet';
 import PaymentPage from './PaymentPage';
@@ -127,6 +128,10 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
   const [dragActive, setDragActive] = useState(false);
   const [showPaymentPage, setShowPaymentPage] = useState(false);
   const { registerTradesperson, user, isAuthenticated } = useAuth();
+  const [capturingLocation, setCapturingLocation] = useState(false);
+  const [locationCoords, setLocationCoords] = useState(() =>
+    (user?.latitude && user?.longitude) ? { lat: user.latitude, lng: user.longitude } : null
+  );
   const { toast } = useToast();
   const { states: nigerianStates, lgas: stateLGAs, loading: statesLoading, loadLGAs } = useStates();
 
@@ -277,6 +282,39 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
+  };
+
+  const captureCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setErrors(prev => ({ ...prev, locationCoords: 'Your browser does not support location services' }));
+      return;
+    }
+
+    setCapturingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const coords = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
+        setLocationCoords(coords);
+        setErrors(prev => {
+          const next = { ...prev };
+          delete next.locationCoords;
+          return next;
+        });
+        toast({
+          title: 'Location captured',
+          description: 'We saved your precise coordinates for accurate nearby job matching.'
+        });
+        setCapturingLocation(false);
+      },
+      () => {
+        setErrors(prev => ({ ...prev, locationCoords: 'Please allow location access to continue' }));
+        setCapturingLocation(false);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 300000 }
+    );
   };
 
   const handleFileUpload = async (file, type = 'id') => {
@@ -489,34 +527,23 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
           onComplete(result);
         }
 
-        // Update profile location and travel distance post-registration
+        // Update profile location and travel distance post-registration (GPS-only)
         try {
-          const locationText = (formData.businessAddress && formData.businessAddress.trim())
-            ? formData.businessAddress
-            : `${formData.town ? formData.town + ', ' : ''}${formData.lga ? formData.lga + ', ' : ''}${formData.state}`;
-
-          const coordsStructured = resolveCoordinatesFromStructuredLocation({
-            state: formData.state,
-            lga: formData.lga,
-            town: formData.town,
-            addressText: locationText,
-          });
-          const coords = coordsStructured || resolveCoordinatesFromLocationText(locationText);
-          if (coords && coords.latitude && coords.longitude) {
+          if (locationCoords?.lat && locationCoords?.lng) {
             await jobsAPI.apiClient.put('/auth/profile/location', null, {
               params: {
-                latitude: coords.latitude,
-                longitude: coords.longitude,
+                latitude: locationCoords.lat,
+                longitude: locationCoords.lng,
                 travel_distance_km: formData.travelDistance || DEFAULT_TRAVEL_DISTANCE_KM,
               },
             });
             console.log('📍 Profile location updated:', {
-              latitude: coords.latitude,
-              longitude: coords.longitude,
+              latitude: locationCoords.lat,
+              longitude: locationCoords.lng,
               travel_distance_km: formData.travelDistance || DEFAULT_TRAVEL_DISTANCE_KM,
             });
           } else {
-            console.warn('⚠️ Could not resolve coordinates from location text:', locationText);
+            console.warn('⚠️ No precise coordinates captured for new tradesperson');
           }
         } catch (locErr) {
           console.warn('⚠️ Failed to update profile location:', locErr?.response?.data || locErr?.message || locErr);
@@ -617,6 +644,9 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
           newErrors.postcode = 'Zipcode is required';
         } else if (!/^\d{6}$/.test(formData.postcode)) {
           newErrors.postcode = 'Zipcode must be 6 digits';
+        }
+        if (!locationCoords?.lat || !locationCoords?.lng) {
+          newErrors.locationCoords = 'Tap "Use current location" to capture your precise coordinates';
         }
         break;
       case 3:
@@ -1013,6 +1043,30 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
               })()}
             </div>
           </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
+            Precise location <span className="text-red-500">*</span>
+          </label>
+          <p className="text-xs text-gray-400 mb-3 font-lato">
+            We use your phone location for accurate distance matching. No map needed.
+          </p>
+          <div className="flex items-center gap-3">
+            <Button
+              type="button"
+              onClick={captureCurrentLocation}
+              disabled={capturingLocation}
+              className="bg-[#121E3C] hover:bg-[#0d1629] text-white"
+            >
+              <Crosshair className="w-4 h-4 mr-2" />
+              {capturingLocation ? 'Capturing...' : 'Use Current Location'}
+            </Button>
+            <span className={`text-xs font-lato ${locationCoords ? 'text-green-600' : 'text-gray-500'}`}>
+              {locationCoords ? 'Precise location captured' : 'Not captured yet'}
+            </span>
+          </div>
+          {errors.locationCoords && <p className="text-red-500 text-xs mt-1 font-lato">{errors.locationCoords}</p>}
         </div>
       </div>
 

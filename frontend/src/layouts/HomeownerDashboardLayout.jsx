@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import DashboardSidebar from '../components/dashboard/DashboardSidebar';
 import DashboardHeader from '../components/dashboard/DashboardHeader';
+import LocationConfirmationBanner from '../components/LocationConfirmationBanner';
 import { cn } from '../lib/utils';
 
 const HomeownerDashboardLayout = () => {
@@ -72,6 +73,7 @@ const HomeownerDashboardLayout = () => {
         {/* Page content */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-20 lg:pb-8 overflow-x-hidden">
           <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 min-w-0">
+            <LocationConfirmationBanner />
             <Outlet />
           </div>
         </main>

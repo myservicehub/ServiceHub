@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import TradespersonDashboardSidebar from '../components/dashboard/TradespersonDashboardSidebar';
 import TradespersonDashboardHeader from '../components/dashboard/TradespersonDashboardHeader';
 import VerificationRequiredModal from '../components/dashboard/VerificationRequiredModal';
+import LocationConfirmationBanner from '../components/LocationConfirmationBanner';
 import { cn } from '../lib/utils';
 import { getTradespersonCompletionStatus } from '../utils/tradespersonCompletion';
 import {
@@ -94,6 +95,7 @@ const TradespersonDashboardLayout = () => {
         {/* Page content */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-20 lg:pb-8 overflow-x-hidden">
           <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 min-w-0">
+            <LocationConfirmationBanner />
             <Outlet />
           </div>
         </main>

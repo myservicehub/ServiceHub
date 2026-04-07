@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, ArrowLeft, ArrowRight, CheckCircle, Upload, Image as ImageIcon, BookOpen, CreditCard, Car, Edit3, Briefcase } from 'lucide-react';
+import { X, ArrowLeft, ArrowRight, CheckCircle, Upload, Image as ImageIcon, BookOpen, CreditCard, Car, Edit3, Briefcase, Crosshair } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../hooks/use-toast';
 import useStates from '../../hooks/useStates';
 import { jobsAPI } from '../../api/jobs';
-import { resolveCoordinatesFromStructuredLocation, resolveCoordinatesFromLocationText, DEFAULT_TRAVEL_DISTANCE_KM } from '../../utils/locationCoordinates';
+import { DEFAULT_TRAVEL_DISTANCE_KM } from '../../utils/locationCoordinates';
 
 // Fallback trade categories (alphabetically sorted)
 const FALLBACK_TRADE_CATEGORIES = [
@@ -42,9 +42,13 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
   const [tradeCategories, setTradeCategories] = useState(FALLBACK_TRADE_CATEGORIES);
   const [dragActive, setDragActive] = useState(false);
   const [showTradeSelector, setShowTradeSelector] = useState(false);
+  const [capturingLocation, setCapturingLocation] = useState(false);
   const { user, refreshUser } = useAuth();
   const { toast } = useToast();
   const { states: nigerianStates, lgas: stateLGAs, loading: statesLoading, loadLGAs } = useStates();
+  const [locationCoords, setLocationCoords] = useState(() =>
+    (user?.latitude && user?.longitude) ? { lat: user.latitude, lng: user.longitude } : null
+  );
 
   const [formData, setFormData] = useState({
     // Step 1: Expertise & Experience
@@ -96,6 +100,7 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
       selfieDocumentFile: null,
       profileDescription: user?.description || '',
     });
+    setLocationCoords((user?.latitude && user?.longitude) ? { lat: user.latitude, lng: user.longitude } : null);
   }, [isOpen, user]);
 
   // Load trade categories from API
@@ -127,6 +132,39 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
     }
   };
 
+  const captureCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setErrors(prev => ({ ...prev, locationCoords: 'Your browser does not support location services' }));
+      return;
+    }
+
+    setCapturingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const coords = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
+        setLocationCoords(coords);
+        setErrors(prev => {
+          const next = { ...prev };
+          delete next.locationCoords;
+          return next;
+        });
+        toast({
+          title: 'Location captured',
+          description: 'Your precise coordinates are ready for accurate nearby job matching.'
+        });
+        setCapturingLocation(false);
+      },
+      () => {
+        setErrors(prev => ({ ...prev, locationCoords: 'Please allow location access to continue' }));
+        setCapturingLocation(false);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 300000 }
+    );
+  };
+
   const getStateDistanceSuggestion = (state) => {
     if (!state) return { label: 'Typical', min: 15, max: 30, value: 20 };
     const urban = ['Lagos', 'Abuja', 'Abuja-FCT', 'Rivers', 'Port Harcourt'];
@@ -150,6 +188,9 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
         if (!formData.tradingName?.trim()) newErrors.tradingName = 'Company name is required';
         if (!formData.lga) newErrors.lga = 'LGA is required';
         if (!formData.businessAddress?.trim()) newErrors.businessAddress = 'Address is required';
+        if (!locationCoords?.lat || !locationCoords?.lng) {
+          newErrors.locationCoords = 'Tap "Use current location" to capture your precise coordinates';
+        }
         break;
       case 3:
         // ID verification is optional but if started, all required uploads must be provided
@@ -236,23 +277,13 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
       // Update profile via API
       await jobsAPI.apiClient.put('/auth/profile', profileData);
 
-      // Update location coordinates if we have address info
+      // Update location coordinates using precise GPS coordinates only
       try {
-        const locationText = formData.businessAddress?.trim()
-          ? formData.businessAddress
-          : `${formData.lga ? formData.lga + ', ' : ''}${formData.state}`;
-
-        const coords = resolveCoordinatesFromStructuredLocation({
-          state: formData.state,
-          lga: formData.lga,
-          addressText: locationText,
-        }) || resolveCoordinatesFromLocationText(locationText);
-
-        if (coords?.latitude && coords?.longitude) {
+        if (locationCoords?.lat && locationCoords?.lng) {
           await jobsAPI.apiClient.put('/auth/profile/location', null, {
             params: {
-              latitude: coords.latitude,
-              longitude: coords.longitude,
+              latitude: locationCoords.lat,
+              longitude: locationCoords.lng,
               travel_distance_km: formData.travelDistance || DEFAULT_TRAVEL_DISTANCE_KM,
             },
           });
@@ -584,6 +615,30 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
             rows="2"
           />
           {errors.businessAddress && <p className="text-red-500 text-xs mt-1 font-lato">{errors.businessAddress}</p>}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
+            Precise location <span className="text-red-500">*</span>
+          </label>
+          <p className="text-xs text-gray-400 mb-3 font-lato">
+            Use your current location to enable accurate distance-based job matching.
+          </p>
+          <div className="flex items-center gap-3">
+            <Button
+              type="button"
+              onClick={captureCurrentLocation}
+              disabled={capturingLocation}
+              className="bg-[#121E3C] hover:bg-[#0d1629] text-white"
+            >
+              <Crosshair className="w-4 h-4 mr-2" />
+              {capturingLocation ? 'Capturing...' : 'Use Current Location'}
+            </Button>
+            <span className={`text-xs font-lato ${locationCoords ? 'text-green-600' : 'text-gray-500'}`}>
+              {locationCoords ? 'Precise location captured' : 'Not captured yet'}
+            </span>
+          </div>
+          {errors.locationCoords && <p className="text-red-500 text-xs mt-1 font-lato">{errors.locationCoords}</p>}
         </div>
 
         {/* Postcode */}
