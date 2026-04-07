@@ -44,14 +44,21 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
   const [cacCertificate, setCacCertificate] = useState(null);
   const [cacStatusReport, setCacStatusReport] = useState(null);
   const [companyAddress, setCompanyAddress] = useState('');
+  const [directorName, setDirectorName] = useState('');
+  const [directorIdDocument, setDirectorIdDocument] = useState(null);
+  const [companyBankName, setCompanyBankName] = useState('');
+  const [companyAccountNumber, setCompanyAccountNumber] = useState('');
+  const [companyAccountName, setCompanyAccountName] = useState('');
   
   // Partnership fields
   const [bnCertificate, setBnCertificate] = useState(null);
   const [partnershipAgreement, setPartnershipAgreement] = useState(null);
+  const [partnerIdDocuments, setPartnerIdDocuments] = useState([]);
   
   // LLP fields
   const [llpCertificate, setLlpCertificate] = useState(null);
   const [llpAgreement, setLlpAgreement] = useState(null);
+  const [designatedPartners, setDesignatedPartners] = useState('');
   
   const [selfErrors, setSelfErrors] = useState({});
   const [refErrors, setRefErrors] = useState({});
@@ -164,13 +171,23 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
         residential_address: residentialAddress,
         work_photos: workPhotos,
         trade_certificate: tradeCertificate,
+        // LTD fields
         cac_certificate: cacCertificate,
         cac_status_report: cacStatusReport,
         company_address: companyAddress,
+        director_name: directorName,
+        director_id_document: directorIdDocument,
+        company_bank_name: companyBankName,
+        company_account_number: companyAccountNumber,
+        company_account_name: companyAccountName,
+        // Partnership fields
         bn_certificate: bnCertificate,
         partnership_agreement: partnershipAgreement,
+        partner_id_documents: partnerIdDocuments,
+        // LLP fields
         llp_certificate: llpCertificate,
         llp_agreement: llpAgreement,
+        designated_partners: designatedPartners,
       };
 
       if (businessType === 'Self-Employed / Sole Trader') {
@@ -477,6 +494,46 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
                   />
                 </div>
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Director Name <span className="text-red-500">*</span></label>
+                  <input
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato text-sm"
+                    placeholder="Enter director's full name"
+                    value={directorName}
+                    onChange={(e) => setDirectorName(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Director ID Document <span className="text-red-500">*</span></label>
+                  <label className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                    <Upload className="w-5 h-5 text-gray-400 mb-1" />
+                    <p className="text-xs text-gray-500 font-lato">{directorIdDocument ? directorIdDocument.name : 'Valid ID (NIN, Passport, etc.)'}</p>
+                    <input type="file" className="hidden" accept="image/*,.pdf" onChange={(e) => setDirectorIdDocument(e.target.files?.[0] || null)} />
+                  </label>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <p className="text-xs font-medium text-gray-600 mb-3 font-lato">Company Bank Details</p>
+                  <div className="space-y-3">
+                    <input
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato text-sm"
+                      placeholder="Bank Name *"
+                      value={companyBankName}
+                      onChange={(e) => setCompanyBankName(e.target.value)}
+                    />
+                    <input
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato text-sm"
+                      placeholder="Account Number *"
+                      value={companyAccountNumber}
+                      onChange={(e) => setCompanyAccountNumber(e.target.value)}
+                    />
+                    <input
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato text-sm"
+                      placeholder="Account Name *"
+                      value={companyAccountName}
+                      onChange={(e) => setCompanyAccountName(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Proof of Address</label>
                   <label className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
                     <Upload className="w-5 h-5 text-gray-400 mb-1" />
@@ -506,6 +563,23 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
                     <input type="file" className="hidden" accept="image/*,.pdf" onChange={(e) => setPartnershipAgreement(e.target.files?.[0] || null)} />
                   </label>
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Company/Business Address <span className="text-red-500">*</span></label>
+                  <input
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato text-sm"
+                    placeholder="Enter business address"
+                    value={companyAddress}
+                    onChange={(e) => setCompanyAddress(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Partner ID Documents <span className="text-red-500">*</span></label>
+                  <label className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                    <Users className="w-5 h-5 text-gray-400 mb-1" />
+                    <p className="text-xs text-gray-500 font-lato">{partnerIdDocuments.length > 0 ? `${partnerIdDocuments.length} file(s) selected` : 'Upload partner IDs (at least 1)'}</p>
+                    <input type="file" className="hidden" accept="image/*,.pdf" multiple onChange={(e) => setPartnerIdDocuments(Array.from(e.target.files || []))} />
+                  </label>
+                </div>
               </div>
             )}
 
@@ -526,6 +600,32 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
                     <FileText className="w-5 h-5 text-gray-400 mb-1" />
                     <p className="text-xs text-gray-500 font-lato">{llpAgreement ? llpAgreement.name : 'Click to upload'}</p>
                     <input type="file" className="hidden" accept="image/*,.pdf" onChange={(e) => setLlpAgreement(e.target.files?.[0] || null)} />
+                  </label>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Company/Business Address <span className="text-red-500">*</span></label>
+                  <input
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato text-sm"
+                    placeholder="Enter business address"
+                    value={companyAddress}
+                    onChange={(e) => setCompanyAddress(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Designated Partners <span className="text-red-500">*</span></label>
+                  <input
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato text-sm"
+                    placeholder="Enter names of designated partners (comma separated)"
+                    value={designatedPartners}
+                    onChange={(e) => setDesignatedPartners(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Partner ID Documents <span className="text-red-500">*</span></label>
+                  <label className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                    <Users className="w-5 h-5 text-gray-400 mb-1" />
+                    <p className="text-xs text-gray-500 font-lato">{partnerIdDocuments.length > 0 ? `${partnerIdDocuments.length} file(s) selected` : 'Upload partner IDs (at least 1)'}</p>
+                    <input type="file" className="hidden" accept="image/*,.pdf" multiple onChange={(e) => setPartnerIdDocuments(Array.from(e.target.files || []))} />
                   </label>
                 </div>
               </div>
