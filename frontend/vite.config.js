@@ -3,6 +3,32 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   base: '/',
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id || !id.includes('node_modules')) return;
+
+          if (
+            id.includes('/react/') ||
+            id.includes('/react-dom/') ||
+            id.includes('/react-router/') ||
+            id.includes('/react-router-dom/') ||
+            id.includes('/scheduler/')
+          ) {
+            return 'vendor-framework';
+          }
+          if (id.includes('@radix-ui') || id.includes('cmdk') || id.includes('vaul')) return 'vendor-ui';
+          if (id.includes('@googlemaps')) return 'vendor-maps';
+          if (id.includes('react-hook-form') || id.includes('@hookform')) return 'vendor-forms';
+          if (id.includes('zod') || id.includes('ajv') || id.includes('libphonenumber-js')) return 'vendor-validation';
+          if (id.includes('axios') || id.includes('date-fns') || id.includes('gsap') || id.includes('embla-carousel-react')) {
+            return 'vendor-utils';
+          }
+        }
+      }
+    }
+  },
   server: {
     port: 3000,
     host: true,

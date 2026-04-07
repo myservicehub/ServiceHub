@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Mail, User, Briefcase, Phone, Send, Star } from 'lucide-react';
 import { reviewsAPI } from '../../api/reviews';
 import { useToast } from '../../hooks/use-toast';
+import { authAPI } from '../../api/services';
 
 const RequestExternalReviewModal = ({ isOpen, onClose }) => {
   const { toast } = useToast();
@@ -14,6 +15,22 @@ const RequestExternalReviewModal = ({ isOpen, onClose }) => {
   });
 
   const [invitationsRemaining, setInvitationsRemaining] = useState(null);
+  const [tradeCategories, setTradeCategories] = useState([]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const loadTradeCategories = async () => {
+      try {
+        const response = await authAPI.getTradeCategories();
+        const categories = Array.isArray(response?.trades) ? response.trades : [];
+        setTradeCategories(categories);
+      } catch (error) {
+        console.error('Failed to load trade categories:', error);
+        setTradeCategories([]);
+      }
+    };
+    loadTradeCategories();
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -109,16 +126,21 @@ const RequestExternalReviewModal = ({ isOpen, onClose }) => {
               </label>
               <div className="relative">
                 <Briefcase size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
+                <select
                   name="job_title"
                   id="job_title"
                   required
-                  placeholder="e.g. Kitchen renovation, Plumbing repair"
                   className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#34D164]/20 focus:border-[#34D164] transition-all"
                   value={formData.job_title}
                   onChange={handleChange}
-                />
+                >
+                  <option value="">Select trade category</option>
+                  {tradeCategories.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 

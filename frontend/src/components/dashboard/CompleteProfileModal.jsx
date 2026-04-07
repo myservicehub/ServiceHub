@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../hooks/use-toast';
 import useStates from '../../hooks/useStates';
 import { jobsAPI } from '../../api/jobs';
+import { referralsAPI } from '../../api/referrals';
 import { DEFAULT_TRAVEL_DISTANCE_KM } from '../../utils/locationCoordinates';
 
 // Fallback trade categories (alphabetically sorted)
@@ -295,7 +296,6 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
       // Upload ID documents if provided
       if (formData.idDocumentFile && formData.idType) {
         try {
-          const { referralsAPI } = await import('../../api/referrals');
           await referralsAPI.submitVerificationDocuments(
             formData.idType === 'nin' ? 'national_id' : formData.idType === 'drivers_licence' ? 'drivers_license' : 'passport',
             user?.name || '',

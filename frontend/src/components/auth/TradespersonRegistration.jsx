@@ -34,6 +34,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../hooks/use-toast';
 import useStates from '../../hooks/useStates';
 import { jobsAPI } from '../../api/services';
+import { referralsAPI } from '../../api/referrals';
 import { DEFAULT_TRAVEL_DISTANCE_KM } from '../../utils/locationCoordinates';
 import SkillsTestComponent from './SkillsTestComponent';
 import { adminAPI } from '../../api/wallet';
@@ -498,7 +499,6 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
             };
             const docType = typeMap[formData.idType] || 'passport';
             const fullName = `${formData.firstName} ${formData.lastName}`.trim();
-            const { referralsAPI } = await import('../../api/referrals');
             await referralsAPI.submitVerificationDocuments(
                 docType, 
                 fullName, 

@@ -2960,6 +2960,41 @@ class Database:
         """Access to reviews collection"""
         return self.database.reviews
 
+    @property
+    def external_review_invitations_collection(self):
+        """Access to external review invitations collection"""
+        return self.database.external_review_invitations
+
+    async def create_external_review_invitation(self, invitation) -> bool:
+        """Create an external review invitation"""
+        try:
+            invitation_dict = invitation.dict() if hasattr(invitation, "dict") else dict(invitation or {})
+            invitation_dict["_id"] = invitation_dict.get("id", str(uuid.uuid4()))
+            await self.external_review_invitations_collection.insert_one(invitation_dict)
+            return True
+        except Exception as e:
+            logger.error(f"Failed to create external review invitation: {e}")
+            return False
+
+    async def get_external_review_invitation_by_token(self, token: str) -> Optional[dict]:
+        """Get external review invitation by token"""
+        invitation = await self.external_review_invitations_collection.find_one({"token": token})
+        if not invitation:
+            return None
+        if "_id" in invitation:
+            invitation["_id"] = str(invitation["_id"])
+        return invitation
+
+    async def update_external_review_invitation(self, token: str, update_data: Dict[str, Any]) -> bool:
+        """Update external review invitation by token"""
+        payload = dict(update_data or {})
+        payload["updated_at"] = datetime.utcnow()
+        result = await self.external_review_invitations_collection.update_one(
+            {"token": token},
+            {"$set": payload}
+        )
+        return result.modified_count > 0
+
     # Notification Management Methods
     async def create_notification(self, notification: Notification) -> Notification:
         """Create a new notification"""
