@@ -135,7 +135,7 @@ const SkillsAssessmentModal = ({ isOpen, onClose, onComplete }) => {
       } else {
         toast({
           title: "Keep practicing!",
-          description: "You can retake the test after 24 hours.",
+          description: "You can retake the test anytime.",
           variant: "destructive",
         });
       }
@@ -323,7 +323,7 @@ const SkillsAssessmentModal = ({ isOpen, onClose, onComplete }) => {
                     ) : (
                       <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
                         <p className="text-sm text-orange-700 font-lato">
-                          You need 60% to pass. You can retake this assessment after 24 hours.
+                          You need 80% to pass. You can retake this assessment anytime.
                         </p>
                       </div>
                     )}
@@ -374,7 +374,7 @@ const SkillsAssessmentModal = ({ isOpen, onClose, onComplete }) => {
                 onClick={handleRetakeOrClose}
                 className="w-full bg-[#121E3C] hover:bg-[#0d1629] text-white py-3"
               >
-                {calculateScore().percentage >= 60 ? 'Continue' : 'Close'}
+                {calculateScore().percentage >= 80 ? 'Continue' : 'Close'}
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             )}
