@@ -147,7 +147,10 @@ async def get_tradespeople(
         filters = {
             "role": "tradesperson",
             "status": {"$ne": "deleted"},
-            "business_name": {"$regex": r"\S", "$options": "i"},
+            "$or": [
+                {"business_name": {"$regex": r"\S", "$options": "i"}},
+                {"company_name": {"$regex": r"\S", "$options": "i"}},
+            ],
         }
         and_filters = []
 
@@ -289,8 +292,8 @@ async def get_tradespeople(
                 "years_experience": float(experience_years_value),
                 "experience_years": float(experience_years_value),
                 "experience_level": experience_level_value,
-                "business_name": (tp.get("business_name") or "").strip(),
-                "company_name": tp.get("company_name", ""),
+                "business_name": (tp.get("business_name") or tp.get("company_name") or "").strip(),
+                "company_name": tp.get("company_name", "") or tp.get("business_name", ""),
                 "profile_image": tp.get("profile_image", ""),
                 "average_rating": avg_rating,
                 "total_reviews": reviews_count,

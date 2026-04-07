@@ -67,11 +67,15 @@ const BrowseTradespeopleePage = () => {
   const [tradeCategories, setTradeCategories] = useState([]);
 
   const normalizeValue = (value) => String(value || '').trim().toLowerCase();
+  const normalizeTradeKey = (value) => normalizeValue(value).replace(/\s+services?$/, '');
+  const hasCompanyName = (tradesperson) =>
+    Boolean(String(tradesperson?.company_name || tradesperson?.business_name || '').trim());
 
   const tradespersonMatchesTrade = (tradesperson, trade) => {
     if (!trade) return true;
 
     const normalizedTrade = normalizeValue(trade);
+    const normalizedTradeKey = normalizeTradeKey(trade);
     const categories = Array.isArray(tradesperson?.trade_categories)
       ? tradesperson.trade_categories
       : [];
@@ -84,7 +88,12 @@ const BrowseTradespeopleePage = () => {
       .map(normalizeValue)
       .filter(Boolean);
 
-    return candidates.includes(normalizedTrade);
+    const candidateKeys = candidates.map(normalizeTradeKey);
+    return (
+      candidates.includes(normalizedTrade) ||
+      candidates.includes(`${normalizedTrade} services`) ||
+      candidateKeys.includes(normalizedTradeKey)
+    );
   };
 
   const FALLBACK_TRADES = [
@@ -160,7 +169,7 @@ const BrowseTradespeopleePage = () => {
       const response = await tradespeopleAPI.getAllTradespeople(params);
       const rows = response.tradespeople || response.data || [];
       const visibleRows = Array.isArray(rows)
-        ? rows.filter((item) => item?.business_name?.trim() && tradespersonMatchesTrade(item, selectedTrade))
+        ? rows.filter((item) => hasCompanyName(item) && tradespersonMatchesTrade(item, selectedTrade))
         : [];
       setTradespeople(visibleRows);
       setTotalPages(response.total_pages || 1);

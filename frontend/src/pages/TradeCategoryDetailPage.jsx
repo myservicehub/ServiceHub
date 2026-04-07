@@ -4,7 +4,7 @@ import { ArrowLeft, Users, Clock, Star, MapPin, Phone, Mail, CheckCircle, AlertC
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import FinalCTA from '../components/FinalCTA';
-import { statsAPI } from '../api/services';
+import { statsAPI, authAPI } from '../api/services';
 import { Button } from '../components/ui/button';
 
 const TradeCategoryDetailPage = () => {
@@ -893,27 +893,45 @@ const TradeCategoryDetailPage = () => {
     const fetchCategory = async () => {
       try {
         setLoading(true);
-        // First check hardcoded data
-        let categoryData = tradeCategories[categorySlug];
-        
-        if (!categoryData) {
-          // If not found, fetch from API to see if it's a dynamic category
-          const categories = await statsAPI.getCategories();
-          
         const toSlug = (str) => String(str || '')
           .toLowerCase()
           .replace(/&/g, '')
           .replace(/\//g, '-')
           .replace(/\s+/g, '-')
           .replace(/[^a-z0-9-]/g, '');
+        const normalizeSlugKey = (str) => toSlug(str).replace(/-services?$/, '');
 
-        const dynamicCategory = categories.find(cat => toSlug(cat.name || cat.title) === categorySlug);
+        // First check hardcoded data
+        let categoryData = tradeCategories[categorySlug] || tradeCategories[normalizeSlugKey(categorySlug)];
+        
+        if (!categoryData) {
+          // If not found, resolve from effective categories first, then stats categories.
+          const [effectiveTradesResponse, statsCategories] = await Promise.all([
+            authAPI.getTradeCategories().catch(() => ({ categories: [] })),
+            statsAPI.getCategories().catch(() => [])
+          ]);
+
+          const effectiveTradeNames = Array.isArray(effectiveTradesResponse?.categories)
+            ? effectiveTradesResponse.categories
+            : [];
+          const statsTradeNames = Array.isArray(statsCategories)
+            ? statsCategories.map((cat) => cat?.name || cat?.title).filter(Boolean)
+            : [];
+          const candidateNames = [...new Set([...effectiveTradeNames, ...statsTradeNames])];
+
+          const matchedName = candidateNames.find((name) => {
+            const nameSlug = toSlug(name);
+            const normalizedNameSlug = normalizeSlugKey(nameSlug);
+            const normalizedRouteSlug = normalizeSlugKey(categorySlug);
+            return nameSlug === categorySlug || normalizedNameSlug === normalizedRouteSlug;
+          });
+          const dynamicCategory = matchedName ? { name: matchedName } : null;
         
         if (dynamicCategory) {
           const name = dynamicCategory.name || dynamicCategory.title;
           
           // Use hardcoded data if available, otherwise use dynamic data from backend
-          const hardcodedData = tradeCategories[categorySlug];
+          const hardcodedData = tradeCategories[categorySlug] || tradeCategories[normalizeSlugKey(name)];
           
           categoryData = {
             name: name,
