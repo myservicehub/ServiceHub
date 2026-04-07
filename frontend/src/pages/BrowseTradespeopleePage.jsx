@@ -40,12 +40,23 @@ const BrowseTradespeopleePage = () => {
   const { toast } = useToast();
   const { states: locations } = useStates();
 
+  const getSearchState = () => {
+    const searchParams = new URLSearchParams(location.search);
+    return {
+      trade: searchParams.get('trade') || searchParams.get('category') || location.state?.trade || location.state?.category || '',
+      locationParam: searchParams.get('location') || location.state?.location || '',
+      query: searchParams.get('q') || location.state?.query || ''
+    };
+  };
+
+  const initialSearchState = getSearchState();
+
   const [tradespeople, setTradespeople] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingCategories, setLoadingCategories] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTrade, setSelectedTrade] = useState('');
-  const [selectedLocation, setSelectedLocation] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialSearchState.query);
+  const [selectedTrade, setSelectedTrade] = useState(initialSearchState.trade);
+  const [selectedLocation, setSelectedLocation] = useState(initialSearchState.locationParam);
   const [minRating, setMinRating] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState('grid');
@@ -123,11 +134,7 @@ const BrowseTradespeopleePage = () => {
 
   useEffect(() => {
     // Get initial search params from URL or location state
-    const searchParams = new URLSearchParams(location.search);
-    const trade = searchParams.get('trade') || searchParams.get('category') || location.state?.trade || location.state?.category || '';
-    const locationParam = searchParams.get('location') || location.state?.location || '';
-    const query = searchParams.get('q') || location.state?.query || '';
-
+    const { trade, locationParam, query } = getSearchState();
     setSelectedTrade(trade);
     setSelectedLocation(locationParam);
     setSearchQuery(query);
@@ -153,11 +160,11 @@ const BrowseTradespeopleePage = () => {
       const response = await tradespeopleAPI.getAllTradespeople(params);
       const rows = response.tradespeople || response.data || [];
       const visibleRows = Array.isArray(rows)
-        ? rows.filter((item) => item?.status !== 'deleted' && tradespersonMatchesTrade(item, selectedTrade))
+        ? rows.filter((item) => item?.business_name?.trim() && tradespersonMatchesTrade(item, selectedTrade))
         : [];
       setTradespeople(visibleRows);
       setTotalPages(response.total_pages || 1);
-      setTotalTradespeople(selectedTrade ? visibleRows.length : (response.total || visibleRows.length));
+      setTotalTradespeople(response.total || visibleRows.length);
     } catch (error) {
       console.error('Failed to load tradespeople:', error);
       toast({
@@ -279,7 +286,7 @@ const BrowseTradespeopleePage = () => {
   };
 
   const getDisplayName = (tradesperson) => {
-    return tradesperson?.company_name?.trim() || tradesperson?.business_name?.trim() || tradesperson?.name || 'Unknown';
+    return tradesperson?.business_name?.trim() || tradesperson?.company_name?.trim() || tradesperson?.name || 'Unknown';
   };
 
   const getExperienceLevel = (tradesperson) => {

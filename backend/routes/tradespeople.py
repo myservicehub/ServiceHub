@@ -144,7 +144,11 @@ async def get_tradespeople(
 
         skip = (page - 1) * limit
         
-        filters = {"role": "tradesperson"}
+        filters = {
+            "role": "tradesperson",
+            "status": {"$ne": "deleted"},
+            "business_name": {"$regex": r"\S", "$options": "i"},
+        }
         and_filters = []
 
         if search:
@@ -155,7 +159,9 @@ async def get_tradespeople(
                     {"business_name": search_pattern},
                     {"bio": search_pattern},
                     {"profession": search_pattern},
-                    {"trade_categories": search_pattern}
+                    {"main_trade": search_pattern},
+                    {"trade_categories": search_pattern},
+                    {"professional_information.trade_categories": search_pattern},
                 ]
             })
 
@@ -283,7 +289,7 @@ async def get_tradespeople(
                 "years_experience": float(experience_years_value),
                 "experience_years": float(experience_years_value),
                 "experience_level": experience_level_value,
-                "business_name": tp.get("business_name", ""),
+                "business_name": (tp.get("business_name") or "").strip(),
                 "company_name": tp.get("company_name", ""),
                 "profile_image": tp.get("profile_image", ""),
                 "average_rating": avg_rating,
