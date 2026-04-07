@@ -94,8 +94,17 @@ export const reviewsAPI = {
 
   // Invite an external client for a review
   inviteExternalReview: async (inviteData) => {
+    // Filter out empty values to avoid sending empty strings as params
+    const params = {};
+    if (inviteData.client_name) params.client_name = inviteData.client_name;
+    if (inviteData.client_email) params.client_email = inviteData.client_email;
+    if (inviteData.job_title) params.job_title = inviteData.job_title;
+    if (inviteData.client_phone && inviteData.client_phone.trim()) {
+      params.client_phone = inviteData.client_phone.trim();
+    }
+    
     const response = await apiClient.post('/reviews/invite-external', null, {
-      params: inviteData
+      params
     });
     return response.data;
   },
