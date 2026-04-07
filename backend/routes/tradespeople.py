@@ -221,6 +221,27 @@ async def get_tradespeople(
         # Transform data to match frontend expectations
         tradespeople = []
         for tp in tradespeople_raw:
+            stored_trade_categories = tp.get("trade_categories")
+            if not isinstance(stored_trade_categories, list):
+                stored_trade_categories = []
+
+            professional_info = tp.get("professional_information") or tp.get("professionalInformation") or {}
+            professional_trade_categories = professional_info.get("trade_categories") if isinstance(professional_info, dict) else []
+            if not isinstance(professional_trade_categories, list):
+                professional_trade_categories = []
+
+            resolved_trade_categories = []
+            for category in [
+                *stored_trade_categories,
+                *professional_trade_categories,
+                tp.get("main_trade"),
+                tp.get("profession"),
+            ]:
+                if isinstance(category, str):
+                    cleaned_category = category.strip()
+                    if cleaned_category and cleaned_category not in resolved_trade_categories:
+                        resolved_trade_categories.append(cleaned_category)
+
             # Calculate additional stats if needed
             portfolio_count = await database.portfolio_collection.count_documents({"tradesperson_id": tp.get("id", "")})
             reviews_count = await database.reviews_collection.count_documents({"reviewee_id": tp.get("id", "")})
@@ -252,8 +273,8 @@ async def get_tradespeople(
                 "name": tp.get("name", ""),
                 "email": tp.get("email", ""),
                 "phone": tp.get("phone", ""),
-                "main_trade": tp.get("profession", ""),  # Map profession to main_trade
-                "trade_categories": [tp.get("profession", "")] if tp.get("profession") else [],
+                "main_trade": tp.get("main_trade") or tp.get("profession") or (resolved_trade_categories[0] if resolved_trade_categories else ""),
+                "trade_categories": resolved_trade_categories,
                 "bio": tp.get("bio", ""),
                 "location": tp.get("location", ""),
                 "city": tp.get("city", ""),

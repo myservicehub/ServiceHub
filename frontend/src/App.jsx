@@ -67,6 +67,7 @@ import SessionTimeoutManager from "./components/auth/SessionTimeoutManager";
 import ErrorBoundary from "./components/ErrorBoundary";
 import OfflineIndicator from "./components/OfflineIndicator";
 import { setupGlobalErrorHandling } from "./utils/errorHandler";
+import SupportWidgetManager from "./components/SupportWidgetManager";
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
@@ -109,6 +110,7 @@ function App() {
           <SessionTimeoutManager />
           <BrowserRouter>
             <ScrollToTop smooth={true} />
+            <SupportWidgetManager />
 
             <Suspense fallback={
               <div className="flex justify-center items-center min-h-screen">

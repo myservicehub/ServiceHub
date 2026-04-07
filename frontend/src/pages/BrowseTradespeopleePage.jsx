@@ -55,6 +55,27 @@ const BrowseTradespeopleePage = () => {
   const [totalTradespeople, setTotalTradespeople] = useState(0);
   const [tradeCategories, setTradeCategories] = useState([]);
 
+  const normalizeValue = (value) => String(value || '').trim().toLowerCase();
+
+  const tradespersonMatchesTrade = (tradesperson, trade) => {
+    if (!trade) return true;
+
+    const normalizedTrade = normalizeValue(trade);
+    const categories = Array.isArray(tradesperson?.trade_categories)
+      ? tradesperson.trade_categories
+      : [];
+
+    const candidates = [
+      tradesperson?.main_trade,
+      tradesperson?.profession,
+      ...(categories || [])
+    ]
+      .map(normalizeValue)
+      .filter(Boolean);
+
+    return candidates.includes(normalizedTrade);
+  };
+
   const FALLBACK_TRADES = [
     'Building', 'Concrete Works', 'Tiling', 'Door & Window Installation',
     'Air Conditioning & Refrigeration', 'Plumbing', 'Home Extensions',
@@ -131,10 +152,12 @@ const BrowseTradespeopleePage = () => {
 
       const response = await tradespeopleAPI.getAllTradespeople(params);
       const rows = response.tradespeople || response.data || [];
-      const visibleRows = Array.isArray(rows) ? rows.filter((item) => item?.status !== 'deleted') : [];
+      const visibleRows = Array.isArray(rows)
+        ? rows.filter((item) => item?.status !== 'deleted' && tradespersonMatchesTrade(item, selectedTrade))
+        : [];
       setTradespeople(visibleRows);
       setTotalPages(response.total_pages || 1);
-      setTotalTradespeople(visibleRows.length);
+      setTotalTradespeople(selectedTrade ? visibleRows.length : (response.total || visibleRows.length));
     } catch (error) {
       console.error('Failed to load tradespeople:', error);
       toast({
