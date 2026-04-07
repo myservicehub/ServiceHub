@@ -406,7 +406,7 @@ const NotificationsPage = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => navigate('/notifications/preferences')}
+            onClick={() => navigate('preferences')}
             className="flex items-center gap-1.5"
           >
             <Settings size={14} />

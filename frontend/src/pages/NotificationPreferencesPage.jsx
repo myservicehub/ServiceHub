@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { Badge } from '../components/ui/badge';
 import { 
   Bell, 
   Mail, 
@@ -16,9 +12,11 @@ import {
   Briefcase,
   DollarSign,
   Clock,
-  ArrowLeft
+  ArrowLeft,
+  Check,
+  Info
 } from 'lucide-react';
-import { notificationsAPI, NotificationChannels, NotificationTypes, getChannelDisplayName, getChannelIcon } from '../api/notifications';
+import { notificationsAPI, NotificationChannels, NotificationTypes } from '../api/notifications';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
 
@@ -26,17 +24,13 @@ const NotificationPreferencesPage = () => {
   const [preferences, setPreferences] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const { user, isAuthenticated } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isAuthenticated()) {
-      navigate('/');
-      return;
-    }
     loadPreferences();
-  }, [isAuthenticated, navigate]);
+  }, []);
 
   const loadPreferences = async () => {
     try {
@@ -46,8 +40,8 @@ const NotificationPreferencesPage = () => {
     } catch (error) {
       console.error('Failed to load notification preferences:', error);
       toast({
-        title: "Failed to load preferences",
-        description: "There was an error loading your notification preferences.",
+        title: "Error",
+        description: "Failed to load notification preferences",
         variant: "destructive",
       });
     } finally {
@@ -77,14 +71,14 @@ const NotificationPreferencesPage = () => {
       await notificationsAPI.updatePreferences(updateData);
       
       toast({
-        title: "Preferences saved!",
-        description: "Your notification preferences have been updated successfully.",
+        title: "Saved",
+        description: "Your notification preferences have been updated",
       });
     } catch (error) {
       console.error('Failed to save preferences:', error);
       toast({
-        title: "Failed to save preferences",
-        description: "There was an error saving your notification preferences.",
+        title: "Error",
+        description: "Failed to save preferences",
         variant: "destructive",
       });
     } finally {
@@ -95,56 +89,64 @@ const NotificationPreferencesPage = () => {
   const notificationTypeConfig = {
     [NotificationTypes.NEW_INTEREST]: {
       icon: Heart,
-      color: 'text-red-600',
+      bgColor: 'bg-red-50',
+      iconColor: 'text-red-500',
       title: 'New Interest Received',
       description: 'When a tradesperson shows interest in your job',
       userType: 'homeowner'
     },
     [NotificationTypes.CONTACT_SHARED]: {
       icon: Phone,
-      color: 'text-blue-600', 
+      bgColor: 'bg-blue-50',
+      iconColor: 'text-blue-500',
       title: 'Contact Details Shared',
       description: 'When homeowner shares contact details with you',
       userType: 'tradesperson'
     },
     [NotificationTypes.JOB_POSTED]: {
       icon: Briefcase,
-      color: 'text-green-600',
+      bgColor: 'bg-green-50',
+      iconColor: 'text-green-500',
       title: 'Job Posted Successfully',
       description: 'Confirmation when your job is posted',
       userType: 'homeowner'
     },
     [NotificationTypes.PAYMENT_CONFIRMATION]: {
       icon: DollarSign,
-      color: 'text-green-600',
+      bgColor: 'bg-emerald-50',
+      iconColor: 'text-emerald-500',
       title: 'Payment Confirmed',
       description: 'When payment is processed for contact access',
       userType: 'tradesperson'
     },
     [NotificationTypes.JOB_EXPIRING]: {
       icon: Clock,
-      color: 'text-yellow-600',
+      bgColor: 'bg-amber-50',
+      iconColor: 'text-amber-500',
       title: 'Job Expiring Soon',
       description: 'Reminder when your job is about to expire',
       userType: 'homeowner'
     },
     [NotificationTypes.NEW_MATCHING_JOB]: {
       icon: Bell,
-      color: 'text-purple-600',
+      bgColor: 'bg-purple-50',
+      iconColor: 'text-purple-500',
       title: 'New Matching Jobs',
       description: 'Jobs that match your skills and location',
       userType: 'tradesperson'
     },
     [NotificationTypes.JOB_APPROVED]: {
-      icon: Briefcase,
-      color: 'text-green-600',
+      icon: Check,
+      bgColor: 'bg-green-50',
+      iconColor: 'text-green-500',
       title: 'Job Approved',
       description: 'When your posted job is approved and goes live',
       userType: 'homeowner'
     },
     [NotificationTypes.JOB_REJECTED]: {
-      icon: Briefcase,
-      color: 'text-red-600',
+      icon: Info,
+      bgColor: 'bg-orange-50',
+      iconColor: 'text-orange-500',
       title: 'Job Requires Updates',
       description: 'When your posted job needs changes before approval',
       userType: 'homeowner'
@@ -152,196 +154,148 @@ const NotificationPreferencesPage = () => {
   };
 
   const channelOptions = [
-    { value: NotificationChannels.EMAIL, label: 'Email Only', icon: Mail },
-    { value: NotificationChannels.SMS, label: 'SMS Only', icon: MessageSquare },
-    { value: NotificationChannels.BOTH, label: 'Email & SMS', icon: Bell }
+    { value: NotificationChannels.EMAIL, label: 'Email', icon: Mail },
+    { value: NotificationChannels.SMS, label: 'SMS', icon: MessageSquare },
+    { value: NotificationChannels.BOTH, label: 'Both', icon: Bell }
   ];
-
-  if (!isAuthenticated()) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <div className="container mx-auto px-4 py-16">
-          <div className="max-w-md mx-auto text-center">
-            <h1 className="text-2xl font-bold font-montserrat mb-4" style={{color: '#121E3C'}}>
-              Sign In Required
-            </h1>
-            <p className="text-gray-600 font-lato mb-6">
-              Please sign in to manage your notification preferences.
-            </p>
-            <Button 
-              onClick={() => navigate('/')}
-              className="text-white font-lato"
-              style={{backgroundColor: '#34D164'}}
-            >
-              Go to Homepage
-            </Button>
-          </div>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{borderColor: '#34D164'}}></div>
-              <p className="text-gray-600 font-lato">Loading notification preferences...</p>
-            </div>
-          </div>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
 
   // Filter notification types based on user role
   const relevantNotifications = Object.entries(notificationTypeConfig).filter(([type, config]) => {
-    if (!user?.role) return true; // Show all if role is unclear
+    if (!user?.role) return true;
     return config.userType === user.role || config.userType === 'both';
   });
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <div className="mb-6">
-            <Button
-              variant="outline"
-              onClick={() => navigate(-1)}
-              className="mb-4 font-lato"
-            >
-              <ArrowLeft size={16} className="mr-2" />
-              Back
-            </Button>
-            
-            <div className="flex items-center space-x-3 mb-2">
-              <Settings size={28} style={{color: '#121E3C'}} />
-              <h1 className="text-3xl font-bold font-montserrat" style={{color: '#121E3C'}}>
-                Notification Preferences
-              </h1>
-            </div>
-            <p className="text-lg text-gray-600 font-lato">
-              Choose how you want to receive notifications about your serviceHub activity.
-            </p>
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-[#121E3C]">Notification Preferences</h1>
+            <p className="text-sm text-gray-500 mt-1">Choose how you want to be notified</p>
           </div>
-
-          {/* Preferences Cards */}
-          <div className="space-y-4 mb-6">
-            {relevantNotifications.map(([type, config]) => {
-              const IconComponent = config.icon;
-              const currentPreference = preferences?.[type] || NotificationChannels.BOTH;
-              
-              return (
-                <Card key={type} className="hover:shadow-lg transition-shadow duration-300">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start space-x-4 flex-1">
-                        <div className={`p-3 rounded-full bg-gray-100 ${config.color}`}>
-                          <IconComponent size={24} />
-                        </div>
-                        
-                        <div className="flex-1">
-                          <h3 className="text-lg font-bold font-montserrat mb-2" style={{color: '#121E3C'}}>
-                            {config.title}
-                          </h3>
-                          <p className="text-gray-600 font-lato mb-4">
-                            {config.description}
-                          </p>
-                          
-                          <div className="flex items-center space-x-2">
-                            <span className="text-sm font-medium text-gray-700 font-lato">Current: </span>
-                            <Badge variant="secondary" className="flex items-center space-x-1">
-                              <span>{getChannelIcon(currentPreference)}</span>
-                              <span>{getChannelDisplayName(currentPreference)}</span>
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex flex-col space-y-2 min-w-[120px]">
-                        {channelOptions.map((option) => {
-                          const OptionIcon = option.icon;
-                          const isSelected = currentPreference === option.value;
-                          
-                          return (
-                            <Button
-                              key={option.value}
-                              variant={isSelected ? "default" : "outline"}
-                              size="sm"
-                              onClick={() => handlePreferenceChange(type, option.value)}
-                              className={`justify-start font-lato ${
-                                isSelected ? 'text-white' : ''
-                              }`}
-                              style={isSelected ? {backgroundColor: '#34D164'} : {}}
-                            >
-                              <OptionIcon size={14} className="mr-2" />
-                              {option.value === NotificationChannels.BOTH ? 'Both' : 
-                               option.value === NotificationChannels.EMAIL ? 'Email' : 'SMS'}
-                            </Button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-
-          {/* Save Button */}
-          <div className="flex justify-end">
-            <Button
-              onClick={handleSavePreferences}
-              disabled={saving}
-              className="text-white font-lato px-8"
-              style={{backgroundColor: '#34D164'}}
-            >
-              {saving ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save size={16} className="mr-2" />
-                  Save Preferences
-                </>
-              )}
-            </Button>
-          </div>
-
-          {/* Info Card */}
-          <Card className="mt-8 border-blue-200 bg-blue-50">
-            <CardContent className="p-6">
-              <div className="flex items-start space-x-3">
-                <Bell size={20} className="text-blue-600 mt-1" />
-                <div>
-                  <h4 className="font-bold font-montserrat text-blue-900 mb-2">
-                    About Notifications
-                  </h4>
-                  <ul className="text-sm text-blue-800 font-lato space-y-1">
-                    <li>• <strong>Email</strong>: Detailed notifications with full information</li>
-                    <li>• <strong>SMS</strong>: Quick alerts to your Nigerian phone number</li>
-                    <li>• <strong>Both</strong>: Get notifications via email and SMS</li>
-                    <li>• You can change these preferences anytime</li>
-                  </ul>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <div className="w-8 h-8 border-2 border-[#34D164] border-t-transparent rounded-full animate-spin" />
         </div>
       </div>
-      
-      <Footer />
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="w-9 h-9 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+          >
+            <ArrowLeft size={18} className="text-gray-600" />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-[#121E3C]">Notification Preferences</h1>
+            <p className="text-sm text-gray-500 mt-0.5">Choose how you want to be notified</p>
+          </div>
+        </div>
+        <Button
+          onClick={handleSavePreferences}
+          disabled={saving}
+          className="bg-[#34D164] hover:bg-[#2ab854] text-white h-10 px-5"
+        >
+          {saving ? (
+            <>
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+              Saving...
+            </>
+          ) : (
+            <>
+              <Save size={16} className="mr-2" />
+              Save Changes
+            </>
+          )}
+        </Button>
+      </div>
+
+      {/* Info Banner */}
+      <div className="bg-[#121E3C]/5 rounded-2xl p-4 flex items-start gap-3">
+        <div className="w-8 h-8 rounded-lg bg-[#121E3C]/10 flex items-center justify-center flex-shrink-0">
+          <Settings size={16} className="text-[#121E3C]" />
+        </div>
+        <div>
+          <p className="text-sm text-[#121E3C] font-medium">How notifications work</p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            <strong>Email</strong> for detailed information, <strong>SMS</strong> for quick alerts, or <strong>Both</strong> to never miss an update.
+          </p>
+        </div>
+      </div>
+
+      {/* Preferences List */}
+      <div className="space-y-3">
+        {relevantNotifications.map(([type, config]) => {
+          const IconComponent = config.icon;
+          const currentPreference = preferences?.[type] || NotificationChannels.BOTH;
+          
+          return (
+            <div 
+              key={type} 
+              className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5 hover:shadow-sm transition-shadow"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                {/* Icon & Info */}
+                <div className="flex items-start gap-3 flex-1 min-w-0">
+                  <div className={`w-10 h-10 rounded-xl ${config.bgColor} flex items-center justify-center flex-shrink-0`}>
+                    <IconComponent size={20} className={config.iconColor} />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-semibold text-[#121E3C] truncate">
+                      {config.title}
+                    </h3>
+                    <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">
+                      {config.description}
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Channel Options */}
+                <div className="flex gap-2 flex-shrink-0">
+                  {channelOptions.map((option) => {
+                    const OptionIcon = option.icon;
+                    const isSelected = currentPreference === option.value;
+                    
+                    return (
+                      <button
+                        key={option.value}
+                        onClick={() => handlePreferenceChange(type, option.value)}
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                          isSelected 
+                            ? 'bg-[#34D164] text-white shadow-sm' 
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        <OptionIcon size={14} />
+                        <span className="hidden sm:inline">{option.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Bottom Info */}
+      <div className="bg-amber-50 rounded-2xl p-4 border border-amber-100">
+        <div className="flex items-start gap-3">
+          <Bell size={18} className="text-amber-600 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-amber-800">Important</p>
+            <p className="text-xs text-amber-700 mt-0.5">
+              Critical notifications like security alerts will always be sent regardless of your preferences.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

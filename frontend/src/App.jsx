@@ -143,7 +143,6 @@ function App() {
                 <Route path="/signup" element={<Navigate to="/?promo=tradesperson" replace />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/verify-account" element={<VerifyAccountPage />} />
-                <Route path="/notifications/preferences" element={<NotificationPreferencesPage />} />
                 <Route path="/dashboard/verify-account" element={<Navigate to="/verify-account" replace />} />
                 
                 {/* Legal Pages */}
@@ -185,6 +184,7 @@ function App() {
                 <Route path="messages" element={<DashboardMessages />} />
                 <Route path="reviews" element={<MyReviewsPage />} />
                 <Route path="notifications" element={<NotificationsPage />} />
+                <Route path="notifications/preferences" element={<NotificationPreferencesPage />} />
                 <Route path="wallet" element={<WalletPage />} />
                 <Route path="referrals" element={<ReferralsPage />} />
                 <Route path="settings" element={<ProfilePage />} />
@@ -202,6 +202,7 @@ function App() {
                 <Route path="wallet" element={<WalletPage />} />
                 <Route path="reviews" element={<MyReceivedReviewsPage />} />
                 <Route path="notifications" element={<NotificationsPage />} />
+                <Route path="notifications/preferences" element={<NotificationPreferencesPage />} />
                 <Route path="referrals" element={<ReferralsPage />} />
                 <Route path="profile" element={<ProfilePage />} />
                 <Route path="settings" element={<ProfilePage />} />
