@@ -476,6 +476,14 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
                     onChange={(e) => setCompanyAddress(e.target.value)}
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Proof of Address</label>
+                  <label className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                    <Upload className="w-5 h-5 text-gray-400 mb-1" />
+                    <p className="text-xs text-gray-500 font-lato">{proofOfAddress ? proofOfAddress.name : 'Utility bill or bank statement'}</p>
+                    <input type="file" className="hidden" accept="image/*,.pdf" onChange={(e) => setProofOfAddress(e.target.files?.[0] || null)} />
+                  </label>
+                </div>
               </div>
             )}
 
