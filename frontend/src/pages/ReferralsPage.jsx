@@ -26,13 +26,16 @@ const ReferralsPage = () => {
   const fetchReferralData = async () => {
     try {
       setLoading(true);
-      const [statsData, historyData] = await Promise.all([
-        referralsAPI.getMyStats(),
-        referralsAPI.getHistory(0, 10)
-      ]);
-      
+      const statsData = await referralsAPI.getMyStats();
       setStats(statsData);
-      setHistory(historyData.history || []);
+      
+      // Try to get wallet transactions for history (optional)
+      try {
+        const walletData = await referralsAPI.getWalletWithReferrals();
+        setHistory(walletData.transactions || []);
+      } catch {
+        setHistory([]);
+      }
     } catch (error) {
       console.error('Failed to fetch referral data:', error);
       toast({
