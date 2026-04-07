@@ -1627,9 +1627,11 @@ const ProfilePage = () => {
                           {isTradesperson() && (
                             <div className="flex items-center space-x-2">
                               <Award size={14} />
-                              <span className="text-sm font-lato">Tradesperson: </span>
-                              {profileData.verified_tradesperson ? (
+                              <span className="text-sm font-lato">Business: </span>
+                              {profileData.verified_tradesperson || profileData.business_verified ? (
                                 <Badge className="bg-green-100 text-green-800 text-xs">Verified</Badge>
+                              ) : profileData.business_verification_submitted ? (
+                                <Badge className="bg-amber-100 text-amber-800 text-xs">Pending Review</Badge>
                               ) : (
                                 <Badge className="bg-yellow-100 text-yellow-800 text-xs">Unverified</Badge>
                               )}

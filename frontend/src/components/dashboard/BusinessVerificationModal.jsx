@@ -30,6 +30,8 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
   
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState(null); // null, 'pending', 'approved', 'rejected', 'not_submitted'
+  const [statusLoading, setStatusLoading] = useState(false);
   const [businessType, setBusinessType] = useState(normalizeBusinessType(user?.business_type || ''));
   
   // Self-Employed fields
@@ -72,6 +74,20 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
       setSubmitted(false);
       setSelfErrors({});
       setRefErrors({});
+      // Fetch current verification status when modal opens
+      const fetchStatus = async () => {
+        setStatusLoading(true);
+        try {
+          const status = await authAPI.getTradespersonVerificationStatus();
+          setVerificationStatus(status?.status || 'not_submitted');
+        } catch (error) {
+          // If error, assume not submitted
+          setVerificationStatus('not_submitted');
+        } finally {
+          setStatusLoading(false);
+        }
+      };
+      fetchStatus();
     }
   }, [isOpen]);
 
@@ -240,7 +256,65 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
 
   if (!isOpen) return null;
 
-  if (submitted) {
+  // Loading state while fetching verification status
+  if (statusLoading) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+        <div className="relative w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden">
+          <div className="p-6 sm:p-8 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-5 animate-pulse">
+              <Clock className="w-8 h-8 text-gray-400" />
+            </div>
+            <p className="text-gray-500 text-sm font-lato">Checking verification status...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Pending state - verification already submitted and awaiting review
+  if (verificationStatus === 'pending' || submitted) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleClose} />
+        <div className="relative w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden">
+          <div className="p-6 sm:p-8 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-amber-100 flex items-center justify-center mx-auto mb-5">
+              <Clock className="w-8 h-8 text-amber-500" />
+            </div>
+            <h2 className="text-xl font-bold font-montserrat text-[#121E3C] mb-2">Verification Pending</h2>
+            <p className="text-gray-500 text-sm font-lato mb-6">
+              Your business verification is currently under review. Our team will process it within 2-3 business days.
+            </p>
+            <div className="bg-amber-50 rounded-xl p-4 mb-6 text-left border border-amber-100">
+              <h3 className="font-semibold text-amber-800 text-sm mb-2 font-montserrat">What happens next?</h3>
+              <ul className="text-xs text-amber-700 space-y-1.5 font-lato">
+                <li className="flex items-start gap-2">
+                  <span className="w-1 h-1 rounded-full bg-amber-500 mt-1.5 flex-shrink-0" />
+                  Our verification team is reviewing your documents
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="w-1 h-1 rounded-full bg-amber-500 mt-1.5 flex-shrink-0" />
+                  You'll receive an email notification with the result
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="w-1 h-1 rounded-full bg-amber-500 mt-1.5 flex-shrink-0" />
+                  Once approved, you'll unlock all platform features
+                </li>
+              </ul>
+            </div>
+            <Button onClick={handleClose} className="w-full h-12 rounded-xl bg-[#121E3C] hover:bg-[#1a2d52] text-white font-lato">
+              Got it
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Approved state - already verified
+  if (verificationStatus === 'approved') {
     return (
       <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
         <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleClose} />
@@ -249,27 +323,10 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
             <div className="w-16 h-16 rounded-2xl bg-[#34D164]/10 flex items-center justify-center mx-auto mb-5">
               <CheckCircle className="w-8 h-8 text-[#34D164]" />
             </div>
-            <h2 className="text-xl font-bold font-montserrat text-[#121E3C] mb-2">Verification Submitted</h2>
+            <h2 className="text-xl font-bold font-montserrat text-[#121E3C] mb-2">Already Verified</h2>
             <p className="text-gray-500 text-sm font-lato mb-6">
-              Your business verification has been submitted. Our team will review it within 2-3 business days.
+              Your business has been verified. You have full access to all platform features.
             </p>
-            <div className="bg-[#121E3C]/5 rounded-xl p-4 mb-6 text-left">
-              <h3 className="font-semibold text-[#121E3C] text-sm mb-2 font-montserrat">What happens next?</h3>
-              <ul className="text-xs text-gray-600 space-y-1.5 font-lato">
-                <li className="flex items-start gap-2">
-                  <span className="w-1 h-1 rounded-full bg-[#34D164] mt-1.5 flex-shrink-0" />
-                  Our verification team will review your documents
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="w-1 h-1 rounded-full bg-[#34D164] mt-1.5 flex-shrink-0" />
-                  You'll receive an email notification with the result
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="w-1 h-1 rounded-full bg-[#34D164] mt-1.5 flex-shrink-0" />
-                  Once verified, you'll unlock all platform features
-                </li>
-              </ul>
-            </div>
             <Button onClick={handleClose} className="w-full h-12 rounded-xl bg-[#34D164] hover:bg-[#2ab854] text-white font-lato">
               Done
             </Button>
