@@ -201,6 +201,11 @@ const BrowseTradespeopleePage = () => {
   };
 
   const handleViewProfile = (tradesperson) => {
+    if (!isAuthenticated()) {
+      window.dispatchEvent(new CustomEvent('open-auth-modal', { detail: { mode: 'login' } }));
+      return;
+    }
+
     const tradespersonId =
       tradesperson?.id ||
       tradesperson?.tradesperson_id ||
@@ -218,20 +223,11 @@ const BrowseTradespeopleePage = () => {
   };
 
   const handleContactTradesperson = (tradesperson) => {
-    if (!isAuthenticated()) {
-      toast({
-        title: "Sign In Required",
-        description: "Please sign in to contact tradespeople.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    navigate('/post-job', { 
-      state: { 
+    navigate('/post-job', {
+      state: {
         preferredTradesperson: tradesperson,
-        category: tradesperson.main_trade 
-      } 
+        initialCategory: tradesperson?.main_trade || selectedTrade || '',
+      }
     });
   };
 

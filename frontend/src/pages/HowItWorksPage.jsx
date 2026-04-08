@@ -24,8 +24,12 @@ import { statsAPI } from '../api/services';
 
 const HowItWorksPage = () => {
   const [activeTab, setActiveTab] = useState('homeowner');
-  const { isTradesperson, isAuthenticated } = useAuth();
+  const { isTradesperson, isHomeowner, isAuthenticated } = useAuth();
   const [platformStats, setPlatformStats] = useState(null);
+  const isLoggedIn = isAuthenticated();
+  const roleLockedTab = isLoggedIn
+    ? (isTradesperson() ? 'tradesperson' : isHomeowner() ? 'homeowner' : null)
+    : null;
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -49,6 +53,12 @@ const HowItWorksPage = () => {
       }
     }
   }, []);
+
+  useEffect(() => {
+    if (roleLockedTab && activeTab !== roleLockedTab) {
+      setActiveTab(roleLockedTab);
+    }
+  }, [roleLockedTab, activeTab]);
 
   const homeownerSteps = [
     {
@@ -244,29 +254,31 @@ const HowItWorksPage = () => {
               Connecting Nigerian homeowners with trusted professionals in 5 simple steps
             </p>
             
-            {/* Tab Selector */}
-            <div className="inline-flex bg-white/10 backdrop-blur-sm rounded-full p-1 border border-white/10">
-              <button
-                onClick={() => setActiveTab('homeowner')}
-                className={`px-6 py-2.5 rounded-full font-lato font-medium text-sm transition-all ${
-                  activeTab === 'homeowner'
-                    ? 'bg-[#34D164] text-white shadow-lg'
-                    : 'text-white/70 hover:text-white'
-                }`}
-              >
-                For Homeowners
-              </button>
-              <button
-                onClick={() => setActiveTab('tradesperson')}
-                className={`px-6 py-2.5 rounded-full font-lato font-medium text-sm transition-all ${
-                  activeTab === 'tradesperson'
-                    ? 'bg-[#34D164] text-white shadow-lg'
-                    : 'text-white/70 hover:text-white'
-                }`}
-              >
-                For Tradespeople
-              </button>
-            </div>
+            {/* Tab Selector for guests only */}
+            {!roleLockedTab && (
+              <div className="inline-flex bg-white/10 backdrop-blur-sm rounded-full p-1 border border-white/10">
+                <button
+                  onClick={() => setActiveTab('homeowner')}
+                  className={`px-6 py-2.5 rounded-full font-lato font-medium text-sm transition-all ${
+                    activeTab === 'homeowner'
+                      ? 'bg-[#34D164] text-white shadow-lg'
+                      : 'text-white/70 hover:text-white'
+                  }`}
+                >
+                  For Homeowners
+                </button>
+                <button
+                  onClick={() => setActiveTab('tradesperson')}
+                  className={`px-6 py-2.5 rounded-full font-lato font-medium text-sm transition-all ${
+                    activeTab === 'tradesperson'
+                      ? 'bg-[#34D164] text-white shadow-lg'
+                      : 'text-white/70 hover:text-white'
+                  }`}
+                >
+                  For Tradespeople
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -423,8 +435,8 @@ const HowItWorksPage = () => {
         </div>
       </section>
 
-      {/* How The Coin System Works - Only visible to tradespeople */}
-      {isTradesperson() && (
+      {/* Role-specific value section for logged-in users */}
+      {roleLockedTab && (
         <section className="relative py-16 lg:py-20 overflow-hidden">
           <div className="absolute inset-0">
             <img 
@@ -440,57 +452,45 @@ const HowItWorksPage = () => {
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-10">
                 <h2 className="text-xl sm:text-2xl font-semibold font-montserrat text-white mb-2">
-                  Understanding Our Coin System
+                  {roleLockedTab === 'tradesperson' ? 'Understanding Our Coin System' : 'How ServiceHub Works for Homeowners'}
                 </h2>
                 <p className="text-white/60 font-lato text-sm">
-                  Fair and transparent pricing for quality connections
+                  {roleLockedTab === 'tradesperson'
+                    ? 'Fair and transparent pricing for quality connections'
+                    : 'Everything you need to hire the right professional'}
                 </p>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-6">
+              <div className="grid md:grid-cols-1 gap-6">
                 <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
                   <div className="flex items-center gap-3 mb-5">
-                    <div className="w-10 h-10 bg-yellow-500/20 rounded-xl flex items-center justify-center">
-                      <Coins size={20} className="text-yellow-400" />
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                      roleLockedTab === 'tradesperson' ? 'bg-yellow-500/20' : 'bg-blue-500/20'
+                    }`}>
+                      {roleLockedTab === 'tradesperson' ? (
+                        <Coins size={20} className="text-yellow-400" />
+                      ) : (
+                        <Users size={20} className="text-blue-400" />
+                      )}
                     </div>
                     <h3 className="text-lg font-semibold font-montserrat text-white">
-                      For Tradespeople
+                      {roleLockedTab === 'tradesperson' ? 'For Tradespeople' : 'For Homeowners'}
                     </h3>
                   </div>
-                  
-                  <div className="space-y-3">
-                    {[
-                      { title: 'Fund Your Wallet', desc: 'Add coins securely with Paystack' },
-                      { title: 'Show Interest', desc: 'Pay for jobs you\'re serious about' },
-                      { title: 'Earn Through Referrals', desc: 'Get coins for verified referrals' }
-                    ].map((item, idx) => (
-                      <div key={idx} className="flex items-start gap-3">
-                        <div className="w-1.5 h-1.5 bg-[#34D164] rounded-full mt-2 shrink-0" />
-                        <div>
-                          <span className="text-white text-sm font-medium">{item.title}</span>
-                          <p className="text-white/50 text-xs">{item.desc}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
 
-                <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
-                  <div className="flex items-center gap-3 mb-5">
-                    <div className="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center">
-                      <Users size={20} className="text-blue-400" />
-                    </div>
-                    <h3 className="text-lg font-semibold font-montserrat text-white">
-                      For Homeowners
-                    </h3>
-                  </div>
-                  
                   <div className="space-y-3">
-                    {[
-                      { title: 'Free Job Posting', desc: 'Post unlimited jobs at no cost' },
-                      { title: 'Quality Applications', desc: 'Only serious professionals apply' },
-                      { title: 'You Choose', desc: 'Control who gets your details' }
-                    ].map((item, idx) => (
+                    {(roleLockedTab === 'tradesperson'
+                      ? [
+                          { title: 'Fund Your Wallet', desc: 'Add coins securely with Paystack' },
+                          { title: 'Show Interest', desc: 'Pay for jobs you\'re serious about' },
+                          { title: 'Earn Through Referrals', desc: 'Get coins for verified referrals' }
+                        ]
+                      : [
+                          { title: 'Free Job Posting', desc: 'Post unlimited jobs at no cost' },
+                          { title: 'Quality Applications', desc: 'Only serious professionals apply' },
+                          { title: 'You Choose', desc: 'Control who gets your details' }
+                        ]
+                    ).map((item, idx) => (
                       <div key={idx} className="flex items-start gap-3">
                         <div className="w-1.5 h-1.5 bg-[#34D164] rounded-full mt-2 shrink-0" />
                         <div>

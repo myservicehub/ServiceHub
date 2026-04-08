@@ -206,7 +206,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
     if (initialCategory && !formData.category) {
       setFormData(prev => ({ ...prev, category: initialCategory }));
     }
-  }, [initialCategory]);
+  }, [initialCategory, formData.category]);
   // Prefill state if provided via navigation
   useEffect(() => {
     if (initialState && !formData.state) {
@@ -217,7 +217,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
       setMapCenterAddress(`${initialState}, Nigeria`);
       setMapCenterZoom(10);
     }
-  }, [initialState]);
+  }, [initialState, formData.state]);
 
   useEffect(() => {
     if (loading || hasRestoredDraft.current) return;

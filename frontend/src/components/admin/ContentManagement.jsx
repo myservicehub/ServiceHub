@@ -296,6 +296,7 @@ const ContentManagement = () => {
   // Content Creation/Edit Modal
   const ContentModal = ({ isEdit = false, content = null, onClose, onSave }) => {
     const editorRef = useRef(null);
+    const FONT_SIZE_OPTIONS = ['9', '10', '10.5', '11', '12', '14', '16', '18', '20', '22', '24', '26', '28', '32', '36', '48', '56'];
     const BLOG_CATEGORIES = ['getting_started', 'payments_earnings', 'account_management', 'job_management', 'safety_policies'];
     const DEFAULT_CATEGORIES = ['marketing', 'support', 'product', 'tutorial', 'news', 'general'];
     const normalizeCategoryForSubmit = (contentType, value) => {
@@ -330,17 +331,36 @@ const ContentManagement = () => {
       }
     }, [formData.content]);
 
-    const applyEditorCommand = (command, value = null) => {
-      if (!editorRef.current) return;
-      editorRef.current.focus();
+    const applyEditorCommand = (field, ref, command, value = null) => {
+      if (!ref.current) return;
+      ref.current.focus();
       document.execCommand(command, false, value);
-      setFormData({ ...formData, content: editorRef.current.innerHTML });
+      setFormData((prev) => ({ ...prev, [field]: ref.current?.innerHTML || '' }));
     };
 
-    const handleEditorKeyDown = (e) => {
+    const applyEditorFontSize = (field, ref, fontSize) => {
+      if (!ref.current || !fontSize) return;
+      ref.current.focus();
+
+      // Use native formatting command and normalize to px-based inline styles.
+      document.execCommand('styleWithCSS', false, false);
+      document.execCommand('fontSize', false, '7');
+
+      const fontNodes = ref.current.querySelectorAll('font[size="7"]');
+      fontNodes.forEach((fontNode) => {
+        const span = document.createElement('span');
+        span.style.fontSize = `${fontSize}px`;
+        span.innerHTML = fontNode.innerHTML;
+        fontNode.replaceWith(span);
+      });
+
+      setFormData((prev) => ({ ...prev, [field]: ref.current?.innerHTML || '' }));
+    };
+
+    const handleEditorKeyDown = (e, field, ref) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        applyEditorCommand('insertParagraph');
+        applyEditorCommand(field, ref, 'insertParagraph');
       }
     };
 
@@ -538,7 +558,7 @@ const ContentManagement = () => {
                   <select
                     onChange={(e) => {
                       const v = e.target.value;
-                      if (v) applyEditorCommand('formatBlock', v);
+                      if (v) applyEditorCommand('content', editorRef, 'formatBlock', v);
                       e.target.value = '';
                     }}
                     className="px-2 py-1 text-sm border border-gray-300 rounded"
@@ -550,43 +570,59 @@ const ContentManagement = () => {
                     <option value="H2">Heading 2</option>
                     <option value="H3">Heading 3</option>
                   </select>
-                  <button type="button" onClick={() => applyEditorCommand('bold')} className="px-2 py-1 border border-gray-300 rounded text-sm font-bold">B</button>
-                  <button type="button" onClick={() => applyEditorCommand('italic')} className="px-2 py-1 border border-gray-300 rounded text-sm italic">I</button>
-                  <button type="button" onClick={() => applyEditorCommand('underline')} className="px-2 py-1 border border-gray-300 rounded text-sm underline">U</button>
-                  <button type="button" onClick={() => applyEditorCommand('insertUnorderedList')} className="px-2 py-1 border border-gray-300 rounded text-sm">• List</button>
-                  <button type="button" onClick={() => applyEditorCommand('insertOrderedList')} className="px-2 py-1 border border-gray-300 rounded text-sm">1. List</button>
-                  <button type="button" onClick={() => applyEditorCommand('formatBlock', 'P')} className="px-2 py-1 border border-gray-300 rounded text-sm flex items-center justify-center" title="Paragraph">
+                  <button type="button" onClick={() => applyEditorCommand('content', editorRef, 'bold')} className="px-2 py-1 border border-gray-300 rounded text-sm font-bold">B</button>
+                  <button type="button" onClick={() => applyEditorCommand('content', editorRef, 'italic')} className="px-2 py-1 border border-gray-300 rounded text-sm italic">I</button>
+                  <button type="button" onClick={() => applyEditorCommand('content', editorRef, 'underline')} className="px-2 py-1 border border-gray-300 rounded text-sm underline">U</button>
+                  <select
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value) applyEditorFontSize('content', editorRef, value);
+                      e.target.value = '';
+                    }}
+                    className="px-2 py-1 text-sm border border-gray-300 rounded"
+                    defaultValue=""
+                  >
+                    <option value="" disabled>Text Size</option>
+                    {FONT_SIZE_OPTIONS.map((sizeOption) => (
+                      <option key={sizeOption} value={sizeOption}>
+                        {sizeOption}
+                      </option>
+                    ))}
+                  </select>
+                  <button type="button" onClick={() => applyEditorCommand('content', editorRef, 'insertUnorderedList')} className="px-2 py-1 border border-gray-300 rounded text-sm">Bulleted List</button>
+                  <button type="button" onClick={() => applyEditorCommand('content', editorRef, 'insertOrderedList')} className="px-2 py-1 border border-gray-300 rounded text-sm">1. List</button>
+                  <button type="button" onClick={() => applyEditorCommand('content', editorRef, 'formatBlock', 'P')} className="px-2 py-1 border border-gray-300 rounded text-sm flex items-center justify-center" title="Paragraph">
                     <Pilcrow size={14} />
                   </button>
-                  <button type="button" onClick={() => applyEditorCommand('justifyLeft')} className="px-2 py-1 border border-gray-300 rounded text-sm flex items-center justify-center" title="Align left">
+                  <button type="button" onClick={() => applyEditorCommand('content', editorRef, 'justifyLeft')} className="px-2 py-1 border border-gray-300 rounded text-sm flex items-center justify-center" title="Align left">
                     <AlignLeft size={14} />
                   </button>
-                  <button type="button" onClick={() => applyEditorCommand('justifyCenter')} className="px-2 py-1 border border-gray-300 rounded text-sm flex items-center justify-center" title="Align center">
+                  <button type="button" onClick={() => applyEditorCommand('content', editorRef, 'justifyCenter')} className="px-2 py-1 border border-gray-300 rounded text-sm flex items-center justify-center" title="Align center">
                     <AlignCenter size={14} />
                   </button>
-                  <button type="button" onClick={() => applyEditorCommand('justifyRight')} className="px-2 py-1 border border-gray-300 rounded text-sm flex items-center justify-center" title="Align right">
+                  <button type="button" onClick={() => applyEditorCommand('content', editorRef, 'justifyRight')} className="px-2 py-1 border border-gray-300 rounded text-sm flex items-center justify-center" title="Align right">
                     <AlignRight size={14} />
                   </button>
-                  <button type="button" onClick={() => applyEditorCommand('justifyFull')} className="px-2 py-1 border border-gray-300 rounded text-sm flex items-center justify-center" title="Justify">
+                  <button type="button" onClick={() => applyEditorCommand('content', editorRef, 'justifyFull')} className="px-2 py-1 border border-gray-300 rounded text-sm flex items-center justify-center" title="Justify">
                     <AlignJustify size={14} />
                   </button>
                   <button
                     type="button"
                     onClick={() => {
                       const url = window.prompt('Enter link URL');
-                      if (url) applyEditorCommand('createLink', url);
+                      if (url) applyEditorCommand('content', editorRef, 'createLink', url);
                     }}
                     className="px-2 py-1 border border-gray-300 rounded text-sm"
                   >
                     Link
                   </button>
-                  <button type="button" onClick={() => applyEditorCommand('removeFormat')} className="px-2 py-1 border border-gray-300 rounded text-sm">Clear</button>
+                  <button type="button" onClick={() => applyEditorCommand('content', editorRef, 'removeFormat')} className="px-2 py-1 border border-gray-300 rounded text-sm">Clear</button>
                 </div>
                 <div
                   ref={editorRef}
                   contentEditable
-                  onInput={() => setFormData({ ...formData, content: editorRef.current?.innerHTML || '' })}
-                  onKeyDown={handleEditorKeyDown}
+                  onInput={() => setFormData((prev) => ({ ...prev, content: editorRef.current?.innerHTML || '' }))}
+                  onKeyDown={(e) => handleEditorKeyDown(e, 'content', editorRef)}
                   className="w-full px-3 py-2 min-h-[260px] focus:outline-none"
                   style={{ whiteSpace: 'pre-wrap' }}
                 />

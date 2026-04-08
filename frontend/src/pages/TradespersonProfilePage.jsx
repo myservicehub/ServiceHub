@@ -44,13 +44,11 @@ import {
 import AuthenticatedImage from '../components/common/AuthenticatedImage';
 import { tradespeopleAPI, portfolioAPI } from '../api/services';
 import { reviewsAPI } from '../api/reviews';
-import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
 
 const TradespersonProfilePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
 
   const [tradesperson, setTradesperson] = useState(null);
@@ -139,35 +137,7 @@ const TradespersonProfilePage = () => {
     }
   };
 
-  const handleContactTradesperson = () => {
-    if (!isAuthenticated()) {
-      toast({
-        title: "Sign In Required",
-        description: "Please sign in to contact tradespeople.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Navigate to job posting with pre-filled tradesperson
-    navigate('/post-job', { 
-      state: { 
-        preferredTradesperson: tradesperson,
-        category: tradesperson?.main_trade 
-      } 
-    });
-  };
-
   const handleHireTradesperson = () => {
-    if (!isAuthenticated()) {
-      toast({
-        title: "Sign In Required",
-        description: "Please sign in to hire tradespeople.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     navigate('/post-job', { 
       state: { 
         preferredTradesperson: tradesperson,
@@ -337,14 +307,6 @@ const TradespersonProfilePage = () => {
 
                   {/* Action Buttons */}
                   <div className="flex flex-col sm:flex-row gap-3 mt-4 lg:mt-0">
-                    <Button
-                      variant="outline"
-                      onClick={handleContactTradesperson}
-                      className="flex items-center gap-2"
-                    >
-                      <MessageCircle size={18} />
-                      Contact
-                    </Button>
                     <Button
                       onClick={handleHireTradesperson}
                       className="text-white flex items-center gap-2"
