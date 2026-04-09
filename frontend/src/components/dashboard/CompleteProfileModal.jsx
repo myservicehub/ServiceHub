@@ -194,11 +194,14 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
         }
         break;
       case 3:
-        // ID verification is optional but if started, all required uploads must be provided
-        if (formData.idType && !formData.idDocument) {
+        // ID verification is mandatory during account update flow
+        if (!formData.idType) {
+          newErrors.idType = 'Please select an ID type';
+        }
+        if (!formData.idDocument) {
           newErrors.idDocument = 'Please upload your ID document';
         }
-        if (formData.idType && !formData.selfieDocument) {
+        if (!formData.selfieDocument) {
           newErrors.selfieDocument = 'Please upload your selfie';
         }
         break;
@@ -293,20 +296,14 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
         console.warn('Failed to update location:', locErr);
       }
 
-      // Upload ID documents if provided
-      if (formData.idDocumentFile && formData.idType) {
-        try {
-          await referralsAPI.submitVerificationDocuments(
-            formData.idType === 'nin' ? 'national_id' : formData.idType === 'drivers_licence' ? 'drivers_license' : 'passport',
-            user?.name || '',
-            '',
-            formData.idDocumentFile,
-            formData.selfieDocumentFile
-          );
-        } catch (docErr) {
-          console.warn('Failed to upload documents:', docErr);
-        }
-      }
+      // Upload ID documents (mandatory)
+      await referralsAPI.submitVerificationDocuments(
+        formData.idType === 'nin' ? 'national_id' : formData.idType === 'drivers_licence' ? 'drivers_license' : 'passport',
+        user?.name || '',
+        '',
+        formData.idDocumentFile,
+        formData.selfieDocumentFile
+      );
 
       // Refresh user data
       if (refreshUser) await refreshUser();
@@ -682,7 +679,7 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
         {/* ID Type Selection */}
         <div>
           <label className="block text-sm font-medium font-lato mb-3 text-[#121E3C]">
-            Select ID Type
+            Select ID Type <span className="text-red-500 font-normal">*</span>
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
@@ -720,6 +717,7 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
               </label>
             ))}
           </div>
+          {errors.idType && <p className="text-red-500 text-xs mt-1 font-lato">{errors.idType}</p>}
         </div>
 
         {/* Upload Section */}
@@ -727,7 +725,7 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
           <div ref={uploadSectionRef} className="space-y-4 mt-6">
             <div>
               <label className="block text-sm font-medium font-lato mb-2 text-[#121E3C]">
-                Upload ID Document
+                Upload ID Document <span className="text-red-500 font-normal">*</span>
               </label>
               <div
                 onDragEnter={handleDrag}
@@ -825,7 +823,7 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
               <ImageIcon className="w-8 h-8 text-gray-400" />
             </div>
             <p className="text-sm text-gray-500 font-lato">Select an ID type above to continue</p>
-            <p className="text-xs text-gray-400 font-lato mt-1">You can skip this step if you prefer</p>
+            <p className="text-xs text-gray-400 font-lato mt-1">This step is required to complete your account update</p>
           </div>
         )}
       </div>
