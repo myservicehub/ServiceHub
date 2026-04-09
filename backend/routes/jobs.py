@@ -1076,6 +1076,18 @@ async def notify_matching_tradespeople_new_job(job: dict):
             except Exception:
                 return None
 
+        async def _resolve_coord(entity: dict):
+            direct = _to_coord((entity or {}).get("latitude"), (entity or {}).get("longitude"))
+            if direct:
+                return direct
+            try:
+                resolved = await database.resolve_coordinates_from_entity(entity or {})
+                if not resolved:
+                    return None
+                return _to_coord(resolved.get("latitude"), resolved.get("longitude"))
+            except Exception:
+                return None
+
         normalized_cat = category.strip().lower()
         synonyms_map = {
             "plumbing": ["plumber", "plumbing", "pipe", "leak", "sanitary"],
@@ -1128,7 +1140,7 @@ async def notify_matching_tradespeople_new_job(job: dict):
             ", ".join(sorted(synonyms)),
         )
         frontend_url = os.environ.get("FRONTEND_URL", "https://myservicehub.co")
-        job_coords = _to_coord(job.get("latitude"), job.get("longitude"))
+        job_coords = await _resolve_coord(job)
         job_state_norm = _norm_text(job.get("state") or job.get("location"))
         job_lga_norm = _norm_text(job.get("lga"))
         for tp in tradespeople:
@@ -1142,13 +1154,14 @@ async def notify_matching_tradespeople_new_job(job: dict):
                 preferences = await database.get_user_notification_preferences(tp_id)
                 miles = None
                 km = None
-                # Attempt to compute distance using explicit coordinates only
+                # Attempt to compute distance using explicit coordinates first,
+                # then text-location coordinate resolution as fallback.
                 try:
-                    tp_coords = _to_coord(tp.get("latitude"), tp.get("longitude"))
+                    tp_coords = await _resolve_coord(tp)
 
                     if job_coords and tp_coords:
                         km = database.calculate_distance(tp_coords["latitude"], tp_coords["longitude"], job_coords["latitude"], job_coords["longitude"])
-                        max_km = tp.get("travel_distance_km", 25)
+                        max_km = tp.get("travel_distance_km", 25) or 25
                         if km > float(max_km):
                             logger.info(
                                 "NEW_MATCHING_JOB: skipped tradesperson %s due to distance %.1f km > max %.1f km",
@@ -1180,6 +1193,13 @@ async def notify_matching_tradespeople_new_job(job: dict):
                                 job.get("lga"),
                             )
                             continue
+                        if km is None:
+                            logger.info(
+                                "NEW_MATCHING_JOB: no precise distance for tradesperson %s (job_coords=%s, tp_coords=%s); area fallback used",
+                                tp_id,
+                                bool(job_coords),
+                                bool(tp_coords),
+                            )
                 except Exception:
                     miles = None
                 # Determine available contact methods (do not override preferences here)
@@ -1191,7 +1211,7 @@ async def notify_matching_tradespeople_new_job(job: dict):
                     "name": name,
                     "job_id": job.get("id"),
                     "distance_km": round(km, 2) if km is not None else None,
-                    "distance": (f"{round(km, 1)} km away" if km is not None else "Near your selected area"),
+                    "distance": (f"{round(km, 1)} km away" if km is not None else "Distance unavailable"),
                     "trade_title": job.get("title", "Job"),
                     "trade_category": job.get("category", ""),
                     "Location": job.get("location", ""),

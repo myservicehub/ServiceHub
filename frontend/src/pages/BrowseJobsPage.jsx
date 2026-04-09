@@ -332,8 +332,14 @@ const BrowseJobsPage = () => {
           if (filters.category) params.append('category', filters.category);
           response = await jobsAPI.apiClient.get(`/jobs/search?${params.toString()}`);
         } else {
-          const skip = (page - 1) * 50;
-          response = await jobsAPI.apiClient.get(`/jobs/for-tradesperson?limit=50&skip=${skip}`);
+          const params = new URLSearchParams({
+            latitude: userLocation.lat.toString(),
+            longitude: userLocation.lng.toString(),
+            max_distance_km: filters.maxDistance.toString(),
+            limit: '50',
+            skip: ((page - 1) * 50).toString()
+          });
+          response = await jobsAPI.apiClient.get(`/jobs/for-tradesperson?${params.toString()}`);
         }
       } else {
         // Use regular job fetching for tradespeople
@@ -1138,7 +1144,14 @@ const BrowseJobsPage = () => {
                             <MapPin size={13} className="shrink-0" />
                             <span className="text-sm truncate">{job.location || 'Location TBD'}</span>
                             {job.distance_km !== undefined && job.distance_km !== null && (
-                              <span className="text-xs text-[#34D164] font-medium ml-auto whitespace-nowrap">{Number(job.distance_km).toFixed(0)}km</span>
+                              <span className="text-xs text-[#34D164] font-medium ml-auto whitespace-nowrap">
+                                {(() => {
+                                  const d = Number(job.distance_km);
+                                  if (Number.isNaN(d)) return '';
+                                  if (d < 1) return '<1km';
+                                  return `${d.toFixed(1)}km`;
+                                })()}
+                              </span>
                             )}
                           </div>
                           
