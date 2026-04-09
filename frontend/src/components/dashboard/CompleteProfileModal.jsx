@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, ArrowLeft, ArrowRight, CheckCircle, Upload, Image as ImageIcon, BookOpen, CreditCard, Car, Edit3, Briefcase, Crosshair } from 'lucide-react';
+import { X, ArrowLeft, ArrowRight, CheckCircle, Upload, Image as ImageIcon, BookOpen, CreditCard, Car, Edit3, Briefcase } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { useAuth } from '../../contexts/AuthContext';
@@ -8,6 +8,7 @@ import useStates from '../../hooks/useStates';
 import { jobsAPI } from '../../api/jobs';
 import { referralsAPI } from '../../api/referrals';
 import { DEFAULT_TRAVEL_DISTANCE_KM } from '../../utils/locationCoordinates';
+import LocationPicker from '../maps/LocationPicker';
 
 // Fallback trade categories (alphabetically sorted)
 const FALLBACK_TRADE_CATEGORIES = [
@@ -43,7 +44,8 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete, initialStep = 1 }) 
   const [tradeCategories, setTradeCategories] = useState(FALLBACK_TRADE_CATEGORIES);
   const [dragActive, setDragActive] = useState(false);
   const [showTradeSelector, setShowTradeSelector] = useState(false);
-  const [capturingLocation, setCapturingLocation] = useState(false);
+  const [mapCenterAddress, setMapCenterAddress] = useState('');
+  const [mapCenterZoom, setMapCenterZoom] = useState(12);
   const { user, refreshUser } = useAuth();
   const { toast } = useToast();
   const { states: nigerianStates, lgas: stateLGAs, loading: statesLoading, loadLGAs } = useStates();
@@ -134,38 +136,24 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete, initialStep = 1 }) 
     }
   };
 
-  const captureCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      setErrors(prev => ({ ...prev, locationCoords: 'Your browser does not support location services' }));
-      return;
+  // Keep map centered to entered address (same pattern as job posting flow)
+  useEffect(() => {
+    const parts = [];
+    if (formData.businessAddress && formData.businessAddress.trim().length > 0) {
+      parts.push(formData.businessAddress.trim());
     }
+    if (formData.lga) parts.push(formData.lga);
+    if (formData.state) parts.push(formData.state);
+    parts.push('Nigeria');
+    const addr = parts.filter(Boolean).join(', ');
 
-    setCapturingLocation(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const coords = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
-        };
-        setLocationCoords(coords);
-        setErrors(prev => {
-          const next = { ...prev };
-          delete next.locationCoords;
-          return next;
-        });
-        toast({
-          title: 'Location captured',
-          description: 'Your precise coordinates are ready for accurate nearby job matching.'
-        });
-        setCapturingLocation(false);
-      },
-      () => {
-        setErrors(prev => ({ ...prev, locationCoords: 'Please allow location access to continue' }));
-        setCapturingLocation(false);
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 300000 }
-    );
-  };
+    if (!addr) return;
+    const handle = setTimeout(() => {
+      setMapCenterAddress(addr);
+      setMapCenterZoom(15);
+    }, 350);
+    return () => clearTimeout(handle);
+  }, [formData.businessAddress, formData.lga, formData.state]);
 
   const getStateDistanceSuggestion = (state) => {
     if (!state) return { label: 'Typical', min: 15, max: 30, value: 20 };
@@ -191,7 +179,7 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete, initialStep = 1 }) 
         if (!formData.lga) newErrors.lga = 'LGA is required';
         if (!formData.businessAddress?.trim()) newErrors.businessAddress = 'Address is required';
         if (!locationCoords?.lat || !locationCoords?.lng) {
-          newErrors.locationCoords = 'Tap "Use current location" to capture your precise coordinates';
+          newErrors.locationCoords = 'Please pin your exact location on the map';
         }
         break;
       case 3:
@@ -620,21 +608,28 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete, initialStep = 1 }) 
             Precise location <span className="text-red-500">*</span>
           </label>
           <p className="text-xs text-gray-400 mb-3 font-lato">
-            Use your current location to enable accurate distance-based job matching.
+            Pin your exact work location on the map. You can also use current location if you prefer.
           </p>
-          <div className="flex items-center gap-3">
-            <Button
-              type="button"
-              onClick={captureCurrentLocation}
-              disabled={capturingLocation}
-              className="bg-[#121E3C] hover:bg-[#0d1629] text-white"
-            >
-              <Crosshair className="w-4 h-4 mr-2" />
-              {capturingLocation ? 'Capturing...' : 'Use Current Location'}
-            </Button>
-            <span className={`text-xs font-lato ${locationCoords ? 'text-green-600' : 'text-gray-500'}`}>
-              {locationCoords ? 'Precise location captured' : 'Not captured yet'}
-            </span>
+          <div className="rounded-xl border border-gray-200 overflow-hidden">
+            <LocationPicker
+              height="280px"
+              placeholder="Search for your work address..."
+              showSearch={true}
+              showCurrentLocation={true}
+              centerAddress={mapCenterAddress}
+              centerZoom={mapCenterZoom}
+              initialLocation={locationCoords || undefined}
+              onLocationSelect={(loc) => {
+                if (loc?.lat && loc?.lng) {
+                  setLocationCoords({ lat: loc.lat, lng: loc.lng });
+                  setErrors(prev => {
+                    const next = { ...prev };
+                    delete next.locationCoords;
+                    return next;
+                  });
+                }
+              }}
+            />
           </div>
           {errors.locationCoords && <p className="text-red-500 text-xs mt-1 font-lato">{errors.locationCoords}</p>}
         </div>
