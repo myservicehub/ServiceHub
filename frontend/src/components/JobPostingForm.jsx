@@ -2119,7 +2119,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState, s
                           </div>
                           <div>
                             <p className={`font-medium font-lato ${errors.questions ? 'text-red-600' : 'text-[#121E3C]'}`}>
-                              {questionsCompleted ? 'Job details completed' : `Answer ${tradeQuestions.length} questions`}
+                              {questionsCompleted ? 'Job details completed' : 'Answer job questions'}
                             </p>
                             <p className={`text-xs font-lato ${errors.questions ? 'text-red-500' : 'text-gray-500'}`}>
                               {errors.questions ? 'Required - tap to complete' : questionsCompleted ? 'Tap to edit your answers' : 'Tell us more about your job requirements'}
