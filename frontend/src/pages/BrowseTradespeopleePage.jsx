@@ -201,16 +201,28 @@ const BrowseTradespeopleePage = () => {
   };
 
   const handleViewProfile = (tradesperson) => {
-    if (!isAuthenticated()) {
-      window.dispatchEvent(new CustomEvent('open-auth-modal', { detail: { mode: 'login' } }));
-      return;
-    }
-
     const tradespersonId =
       tradesperson?.id ||
       tradesperson?.tradesperson_id ||
       tradesperson?.user_id ||
       tradesperson?._id;
+
+    if (!isAuthenticated()) {
+      if (tradespersonId) {
+        try {
+          sessionStorage.setItem('post_login_redirect', `/tradesperson/${tradespersonId}`);
+        } catch {}
+      }
+      toast({
+        title: "Login required",
+        description: "You need to login to view this profile.",
+      });
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('open-auth-modal', { detail: { mode: 'login' } }));
+      }, 150);
+      return;
+    }
+
     if (!tradespersonId) {
       toast({
         title: "Profile unavailable",

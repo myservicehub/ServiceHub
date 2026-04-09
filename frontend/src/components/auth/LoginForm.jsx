@@ -30,6 +30,20 @@ const LoginForm = ({ onClose, onSwitchToSignup, onSwitchToForgotPassword }) => {
       if (result.success) {
         toast({ title: 'Welcome back!', description: `Successfully logged in as ${result.user.name}` });
         if (onClose) onClose();
+        const pendingRedirect = (() => {
+          try {
+            return sessionStorage.getItem('post_login_redirect');
+          } catch {
+            return null;
+          }
+        })();
+        if (pendingRedirect) {
+          try {
+            sessionStorage.removeItem('post_login_redirect');
+          } catch {}
+          navigate(pendingRedirect);
+          return;
+        }
         if (result.user.role === 'tradesperson') {
           navigate('/trades/overview');
         } else if (result.user.role === 'homeowner') {
