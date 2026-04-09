@@ -2114,7 +2114,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState, s
                             {questionsCompleted ? (
                               <Check size={20} className="text-white" />
                             ) : (
-                              <span className={`font-bold ${errors.questions ? 'text-red-500' : 'text-gray-500'}`}>{tradeQuestions.length}</span>
+                              <span className={`font-bold ${errors.questions ? 'text-red-500' : 'text-gray-500'}`}>?</span>
                             )}
                           </div>
                           <div>
