@@ -3134,7 +3134,6 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState, s
                     setQuestionAnswers({});
                     resetQuestionNavigation();
                     setQuestionsCompleted(false);
-                    updateFormData('category', '');
                   }}
                   className="flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
                 >
@@ -3225,7 +3224,6 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState, s
                   setQuestionAnswers({});
                   resetQuestionNavigation();
                   setQuestionsCompleted(false);
-                  updateFormData('category', '');
                 }}
                 disabled={!quizFeedbackOption}
                 className="w-full h-12 rounded-xl text-white font-lato disabled:opacity-50"
@@ -3243,7 +3241,6 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState, s
                   setQuestionAnswers({});
                   resetQuestionNavigation();
                   setQuestionsCompleted(false);
-                  updateFormData('category', '');
                 }}
                 className="w-full text-center text-[#34D164] font-medium font-lato py-2"
               >
