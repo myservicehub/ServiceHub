@@ -1440,11 +1440,12 @@ const AdminDashboard = () => {
       
       // Show test result in a modal or alert
       alert(`Template Test Result:\n\nSubject: ${result.rendered_subject}\n\nContent:\n${result.rendered_content}`);
-    } catch (error) {
-      console.error('Failed to test template:', error);
+    } catch (error)
+     {
+      console.error ('Failed to tet template:', error);
       toast({
         title: "Error",
-        description: "Failed to test template",
+        description: "Failed to tet template",
         variant: "destructive"
       });
     }
@@ -1479,7 +1480,7 @@ const AdminDashboard = () => {
     }
   };
 
-  // Enhanced CRUD Operations
+  
   const handleInlineEdit = async (item, formData, entityType) => {
     setIsProcessing(true);
     try {
@@ -1567,7 +1568,7 @@ const AdminDashboard = () => {
           title: "Success",
           description: `${entityType} deleted successfully`
         });
-        fetchData(); // Refresh the data
+        fetchData(); 
       }
     } catch (error) {
       console.error(`Failed to delete ${entityType}:`, error);
