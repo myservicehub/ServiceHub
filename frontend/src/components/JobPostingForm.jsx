@@ -145,7 +145,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState, s
   const lgaAbortRef = useRef(null);
   const hasRestoredDraft = useRef(false);
 
-  const { loginWithToken, isAuthenticated, user: currentUser, loading } = useAuth();
+  const { loginWithToken, isAuthenticated, user: currentUser, loading, refreshAccessToken, logout } = useAuth();
   const { toast } = useToast();
   const { states: nigerianStates, loading: statesLoading, error: statesError } = useStates();
 
@@ -644,7 +644,28 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState, s
         jobData.longitude = formData.jobLocation.lng;
       }
 
-      const jobResponse = await jobsAPI.createJob(jobData);
+      const isAuthError = (error) => {
+        const status = error?.response?.status;
+        const detail = (error?.response?.data?.detail || '').toString().toLowerCase();
+        return status === 401 || (status === 403 && detail.includes('not authenticated'));
+      };
+
+      let jobResponse;
+      try {
+        jobResponse = await jobsAPI.createJob(jobData);
+      } catch (error) {
+        if (isAuthError(error)) {
+          const refreshed = await refreshAccessToken();
+          if (refreshed) {
+            jobResponse = await jobsAPI.createJob(jobData);
+          } else {
+            logout();
+            throw new Error('Your session has expired. Please sign in again to post your job.');
+          }
+        } else {
+          throw error;
+        }
+      }
 
       const jobId = resolveJobId(jobResponse);
 
