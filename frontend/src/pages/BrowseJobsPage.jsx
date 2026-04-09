@@ -33,7 +33,7 @@ import JobsMap from '../components/maps/JobsMap';
 import LocationSettingsModal from '../components/LocationSettingsModal';
 import { authAPI } from '../api/services';
 import { notificationsAPI } from '../api/notifications';
-import { resolveCoordinatesFromLocationText, DEFAULT_TRAVEL_DISTANCE_KM, nearestStateFromCoordinates, computeDistanceKm } from '../utils/locationCoordinates';
+import { resolveCoordinatesFromLocationText, resolveCoordinatesFromStructuredLocation, DEFAULT_TRAVEL_DISTANCE_KM, nearestStateFromCoordinates, computeDistanceKm } from '../utils/locationCoordinates';
 import { getTradespersonCompletionStatus } from '../utils/tradespersonCompletion';
 
 import AuthenticatedImage from '../components/common/AuthenticatedImage';
@@ -370,8 +370,13 @@ const BrowseJobsPage = () => {
             // Try job coordinates first
             if (typeof job?.latitude === 'number' && typeof job?.longitude === 'number') {
               d = computeDistanceKm(userLocation.lat, userLocation.lng, job.latitude, job.longitude);
-            } else if (job?.location) {
-              const jc = resolveCoordinatesFromLocationText(job.location);
+            } else {
+              const jc = resolveCoordinatesFromStructuredLocation({
+                state: job?.state || null,
+                lga: job?.lga || null,
+                town: job?.town || null,
+                addressText: job?.home_address || job?.address || job?.location || null,
+              }) || (job?.location ? resolveCoordinatesFromLocationText(job.location) : null);
               const isCoarseTextLocation = jc?.source === 'state' || jc?.source === 'text-state';
               if (!isCoarseTextLocation && jc && typeof jc.latitude === 'number' && typeof jc.longitude === 'number') {
                 d = computeDistanceKm(userLocation.lat, userLocation.lng, jc.latitude, jc.longitude);

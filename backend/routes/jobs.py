@@ -108,6 +108,46 @@ def _validate_or_warn_job_coords(job_like: dict, source: str) -> None:
             ),
         )
 
+
+async def _hydrate_job_coords_if_missing(job_like: dict) -> None:
+    """Best-effort coordinate enrichment from structured location fields."""
+    if not isinstance(job_like, dict):
+        return
+    if _extract_valid_coords(job_like):
+        return
+    try:
+        probe = {
+            "latitude": job_like.get("latitude"),
+            "longitude": job_like.get("longitude"),
+            "home_address": job_like.get("home_address"),
+            "address": job_like.get("home_address") or job_like.get("address"),
+            "address_text": ", ".join(
+                [
+                    p
+                    for p in [
+                        job_like.get("home_address"),
+                        job_like.get("town") or job_like.get("lga"),
+                        job_like.get("state"),
+                        "Nigeria",
+                    ]
+                    if p
+                ]
+            ),
+            "town": job_like.get("town"),
+            "lga": job_like.get("lga"),
+            "state": job_like.get("state"),
+            "location": job_like.get("location") or job_like.get("state"),
+        }
+        resolved = await database.resolve_coordinates_from_entity(probe)
+        if not resolved:
+            return
+        coords = _extract_valid_coords(resolved)
+        if coords:
+            job_like["latitude"] = coords[0]
+            job_like["longitude"] = coords[1]
+    except Exception:
+        return
+
 # Public endpoints for location data
 @router.get("/locations/states")
 async def get_states_public():
@@ -128,6 +168,7 @@ async def create_job(
         
         # Convert to dict and prepare for database
         job_dict = job_data.dict()
+        await _hydrate_job_coords_if_missing(job_dict)
         _validate_or_warn_job_coords(job_dict, source="create_job")
         
         # Validate LGA belongs to the specified state (using unified dynamic fetcher)
@@ -1927,7 +1968,9 @@ async def register_and_post(payload: PublicJobPostRequest, background_tasks: Bac
         from ..models.nigerian_lgas import validate_lga_for_state, validate_zip_code
 
         job_data = payload.job
-        _validate_or_warn_job_coords(job_data.dict(), source="register_and_post")
+        incoming_job = job_data.dict()
+        await _hydrate_job_coords_if_missing(incoming_job)
+        _validate_or_warn_job_coords(incoming_job, source="register_and_post")
         
         # Extract urgency/timeline from answers if available
         if payload.question_answers and payload.question_answers.get("answers"):
@@ -2053,7 +2096,7 @@ async def register_and_post(payload: PublicJobPostRequest, background_tasks: Bac
                 )
                 
                 # Store job data in pending_jobs to be created after verification
-                pending_data = job_data.dict()
+                pending_data = incoming_job.copy()
                 if payload.question_answers:
                     pending_data["question_answers"] = payload.question_answers
                 
@@ -2165,7 +2208,8 @@ async def register_and_post(payload: PublicJobPostRequest, background_tasks: Bac
             except Exception as e:
                 logger.error(f"Failed to send verification email during register-and-post: {e}")
 
-        job_dict = job_data.dict()
+        job_dict = incoming_job.copy()
+        await _hydrate_job_coords_if_missing(job_dict)
         job_dict["location"] = job_data.state
         job_dict["postcode"] = job_data.zip_code
         job_dict["homeowner"] = {

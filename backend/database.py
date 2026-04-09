@@ -3792,10 +3792,49 @@ class Database:
             jlat = entity.get("latitude")
             jlng = entity.get("longitude")
             if jlat is not None and jlng is not None:
-                return {"latitude": float(jlat), "longitude": float(jlng)}
-            for field in ("location", "city", "state", "address", "address_text"):
-                v = entity.get(field)
-                coords = await self.resolve_coordinates_from_text(v)
+                lat = float(jlat)
+                lng = float(jlng)
+                if (-90 <= lat <= 90) and (-180 <= lng <= 180):
+                    if not (abs(lat) < 0.0001 and abs(lng) < 0.0001):
+                        return {"latitude": lat, "longitude": lng}
+
+            # Prefer precise job/user address context before coarse state/location.
+            parts = {
+                "home_address": (entity.get("home_address") or "").strip(),
+                "address": (entity.get("address") or "").strip(),
+                "address_text": (entity.get("address_text") or "").strip(),
+                "town": (entity.get("town") or "").strip(),
+                "city": (entity.get("city") or "").strip(),
+                "lga": (entity.get("lga") or "").strip(),
+                "state": (entity.get("state") or "").strip(),
+                "location": (entity.get("location") or "").strip(),
+            }
+
+            candidate_texts: List[str] = []
+            if parts["home_address"]:
+                candidate_texts.append(", ".join([p for p in [parts["home_address"], parts["town"] or parts["lga"], parts["state"], "Nigeria"] if p]))
+            if parts["address"]:
+                candidate_texts.append(", ".join([p for p in [parts["address"], parts["town"] or parts["lga"], parts["state"], "Nigeria"] if p]))
+            if parts["address_text"]:
+                candidate_texts.append(parts["address_text"])
+            if parts["town"]:
+                candidate_texts.append(", ".join([p for p in [parts["town"], parts["lga"], parts["state"], "Nigeria"] if p]))
+            if parts["city"]:
+                candidate_texts.append(", ".join([p for p in [parts["city"], parts["state"], "Nigeria"] if p]))
+            if parts["lga"]:
+                candidate_texts.append(", ".join([p for p in [parts["lga"], parts["state"], "Nigeria"] if p]))
+            if parts["location"]:
+                candidate_texts.append(parts["location"])
+            if parts["state"]:
+                candidate_texts.append(parts["state"])
+
+            seen = set()
+            for text in candidate_texts:
+                key = self._normalize_text(text)
+                if not key or key in seen:
+                    continue
+                seen.add(key)
+                coords = await self.resolve_coordinates_from_text(text)
                 if coords:
                     return coords
         except Exception:
