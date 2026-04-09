@@ -211,6 +211,7 @@ const HeroSection = () => {
       state: {
         initialCategory: job,
         initialState: location,
+        startFresh: true,
       },
     });
   };

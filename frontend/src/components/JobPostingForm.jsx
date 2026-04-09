@@ -69,7 +69,7 @@ const FALLBACK_TRADE_CATEGORIES = [
   "Recycling"
 ];
 
-function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState }) {
+function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState, skipDraftRestore = false }) {
   const JOB_POST_DRAFT_KEY = 'job_posting_draft_v2';
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
@@ -221,6 +221,11 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
 
   useEffect(() => {
     if (loading || hasRestoredDraft.current) return;
+    if (skipDraftRestore) {
+      clearDraft();
+      hasRestoredDraft.current = true;
+      return;
+    }
     try {
       const pendingJobId = localStorage.getItem('pending_job_id');
       setHasPendingJob(!!pendingJobId);
@@ -263,7 +268,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState })
     } catch {
       hasRestoredDraft.current = true;
     }
-  }, [loading]);
+  }, [loading, skipDraftRestore]);
 
   useEffect(() => {
     if (!hasRestoredDraft.current) return;

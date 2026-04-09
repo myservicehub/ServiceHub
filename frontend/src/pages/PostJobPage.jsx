@@ -16,6 +16,7 @@ const PostJobPage = () => {
   const location = useLocation();
   const initialCategory = location?.state?.initialCategory || null;
   const initialState = location?.state?.initialState || null;
+  const skipDraftRestore = Boolean(location?.state?.startFresh || location?.state?.skipDraftRestore);
   const { user, isAuthenticated } = useAuth();
   
   // Check if we're inside the dashboard layout
@@ -158,7 +159,7 @@ const PostJobPage = () => {
             <p className="text-gray-500 font-lato text-sm mt-1">Tell us what you need done and get quotes from qualified tradespeople</p>
           </div>
         </div>
-        <JobPostingForm onJobPosted={handleJobComplete} initialCategory={initialCategory} initialState={initialState} />
+        <JobPostingForm onJobPosted={handleJobComplete} initialCategory={initialCategory} initialState={initialState} skipDraftRestore={skipDraftRestore} />
       </div>
     );
   }
@@ -219,7 +220,7 @@ const PostJobPage = () => {
         >
           <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12">
             {/* Job Posting Form */}
-            <JobPostingForm onJobPosted={handleJobComplete} initialCategory={initialCategory} initialState={initialState} />
+            <JobPostingForm onJobPosted={handleJobComplete} initialCategory={initialCategory} initialState={initialState} skipDraftRestore={skipDraftRestore} />
           </div>
         </section>
 
