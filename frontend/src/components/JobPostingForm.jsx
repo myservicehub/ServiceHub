@@ -144,6 +144,8 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState, s
   const [quizFeedbackOption, setQuizFeedbackOption] = useState('');
   const lgaAbortRef = useRef(null);
   const hasRestoredDraft = useRef(false);
+  const hasAppliedInitialCategory = useRef(false);
+  const hasAppliedInitialState = useRef(false);
 
   const { loginWithToken, isAuthenticated, user: currentUser, loading, refreshAccessToken, logout } = useAuth();
   const { toast } = useToast();
@@ -203,19 +205,21 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState, s
   }, [currentUser, loading]);
   // Prefill category if provided via navigation
   useEffect(() => {
-    if (initialCategory && !formData.category) {
+    if (!hasAppliedInitialCategory.current && initialCategory && !formData.category) {
       setFormData(prev => ({ ...prev, category: initialCategory }));
+      hasAppliedInitialCategory.current = true;
     }
   }, [initialCategory, formData.category]);
   // Prefill state if provided via navigation
   useEffect(() => {
-    if (initialState && !formData.state) {
+    if (!hasAppliedInitialState.current && initialState && !formData.state) {
       setFormData(prev => ({ ...prev, state: initialState }));
       // Load LGAs for the initial state
       fetchLGAsForState(initialState);
       // Center the map to the initial state
       setMapCenterAddress(`${initialState}, Nigeria`);
       setMapCenterZoom(10);
+      hasAppliedInitialState.current = true;
     }
   }, [initialState, formData.state]);
 
@@ -2933,9 +2937,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState, s
                   type="button"
                   onClick={() => {
                     setShowQuestionsModal(false);
-                    if (!questionsCompleted) {
-                      setShowQuizFeedbackModal(true);
-                    }
+                    setShowQuizFeedbackModal(true);
                   }}
                   className="flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
                 >
@@ -3002,9 +3004,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState, s
                   onClick={() => {
                     if (currentQuestionIndex === 0) {
                       setShowQuestionsModal(false);
-                      if (!questionsCompleted) {
-                        setShowQuizFeedbackModal(true);
-                      }
+                      setShowQuizFeedbackModal(true);
                     } else {
                       goToPreviousQuestion();
                     }
