@@ -2227,8 +2227,7 @@ async def reject_verification(
             content = (
                 "Your ID verification was rejected.\n\n"
                 f"Reason: {reason}\n\n"
-                "Please retake your ID verification and upload clearer/correct documents to continue.\n"
-                f"Retake here: {retake_url}"
+                "Please retake your ID verification and upload clearer/correct documents to continue."
             )
             notification = Notification(
                 id=str(uuid.uuid4()),
