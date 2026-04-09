@@ -265,14 +265,21 @@ async def delete_content_item(
         if not existing_item:
             raise HTTPException(status_code=404, detail="Content item not found")
         
-        # Soft delete by archiving
-        success = await database.update_content_item(content_id, {
-            "status": ContentStatus.ARCHIVED.value,
-            "updated_at": datetime.utcnow(),
-            "updated_by": admin["id"]
-        })
-        
-        if not success:
+        # Hard delete: remove the content record entirely.
+        result = await database.database.content_items.delete_one({"id": content_id})
+        deleted_count = result.deleted_count if result else 0
+
+        # Fallback for legacy records where callers may pass Mongo _id string.
+        if deleted_count == 0:
+            try:
+                from bson import ObjectId
+                if ObjectId.is_valid(content_id):
+                    fallback_result = await database.database.content_items.delete_one({"_id": ObjectId(content_id)})
+                    deleted_count = fallback_result.deleted_count if fallback_result else 0
+            except Exception:
+                pass
+
+        if deleted_count == 0:
             raise HTTPException(status_code=500, detail="Failed to delete content item")
         
         # Log activity
