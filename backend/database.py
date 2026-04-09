@@ -5142,6 +5142,31 @@ class Database:
             "verification_id": (doc or {}).get("id"),
             "submitted_at": (doc or {}).get("submitted_at"),
             "updated_at": (doc or {}).get("updated_at"),
+            "rejection_reason": (doc or {}).get("admin_notes"),
+        }
+
+    async def get_user_identity_verification_status(self, user_id: str) -> dict:
+        """Return latest identity verification status for a user.
+        Status values: not_submitted | pending | verified | rejected
+        """
+        if self.database is None:
+            raise RuntimeError("Database unavailable: cannot query identity verifications")
+        try:
+            cursor = self.user_verifications_collection.find({
+                "user_id": user_id
+            }).sort("submitted_at", -1).limit(1)
+            docs = await cursor.to_list(length=1)
+            doc = docs[0] if docs else None
+        except Exception:
+            doc = None
+
+        status = (doc or {}).get("status") or "not_submitted"
+        return {
+            "status": status,
+            "verification_id": (doc or {}).get("id"),
+            "submitted_at": (doc or {}).get("submitted_at"),
+            "updated_at": (doc or {}).get("updated_at"),
+            "rejection_reason": (doc or {}).get("admin_notes"),
         }
 
     async def approve_tradesperson_verification(self, verification_id: str, admin_id: str, admin_notes: str = "") -> bool:

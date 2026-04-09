@@ -2380,6 +2380,7 @@ async def get_tradesperson_verification_status(current_user=Depends(get_current_
     """Return the current user's tradesperson verification status."""
     try:
         status_info = await database.get_user_tradesperson_verification_status(current_user.id)
+        identity_status_info = await database.get_user_identity_verification_status(current_user.id)
         user_doc = await database.get_user_by_id(current_user.id)
         # Combine flags for clarity
         combined = {
@@ -2391,6 +2392,12 @@ async def get_tradesperson_verification_status(current_user=Depends(get_current_
             "verification_id": status_info.get("verification_id"),
             "submitted_at": status_info.get("submitted_at"),
             "updated_at": status_info.get("updated_at"),
+            "rejection_reason": status_info.get("rejection_reason"),
+            "identity_verification_status": identity_status_info.get("status", "not_submitted"),
+            "identity_verification_id": identity_status_info.get("verification_id"),
+            "identity_submitted_at": identity_status_info.get("submitted_at"),
+            "identity_updated_at": identity_status_info.get("updated_at"),
+            "identity_rejection_reason": identity_status_info.get("rejection_reason"),
         }
         return combined
     except Exception as e:

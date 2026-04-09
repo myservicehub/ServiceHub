@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { cn } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { jobsAPI } from '../../../api/jobs';
+import { authAPI } from '../../../api/services';
 import {
   Search,
   Heart,
@@ -17,6 +18,7 @@ import {
   Briefcase,
   ArrowUpRight,
   Eye,
+  AlertTriangle,
 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import ProfileCompletionBanner from '../../../components/dashboard/ProfileCompletionBanner';
@@ -40,6 +42,9 @@ const TradespersonOverview = () => {
   const [showVerifyContactModal, setShowVerifyContactModal] = useState(false);
   const [showSkillsModal, setShowSkillsModal] = useState(false);
   const [showBusinessModal, setShowBusinessModal] = useState(false);
+  const [profileModalInitialStep, setProfileModalInitialStep] = useState(1);
+  const [identityVerificationStatus, setIdentityVerificationStatus] = useState('not_submitted');
+  const [identityVerificationRejectionReason, setIdentityVerificationRejectionReason] = useState('');
   const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
 
@@ -60,6 +65,7 @@ const TradespersonOverview = () => {
   useEffect(() => {
     if (loading) return;
     if (isProfileIncomplete) {
+      setProfileModalInitialStep(1);
       setShowCompleteProfileModal(true);
       return;
     }
@@ -124,6 +130,16 @@ const TradespersonOverview = () => {
 
       // Get recent jobs
       setRecentJobs(interests.slice(0, 5));
+
+      // Get latest tradesperson verification status to show retake prompt on overview
+      try {
+        const statusResp = await authAPI.getTradespersonVerificationStatus();
+        setIdentityVerificationStatus(statusResp?.identity_verification_status || 'not_submitted');
+        setIdentityVerificationRejectionReason((statusResp?.identity_rejection_reason || '').trim());
+      } catch {
+        setIdentityVerificationStatus('not_submitted');
+        setIdentityVerificationRejectionReason('');
+      }
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
     } finally {
@@ -233,10 +249,43 @@ const TradespersonOverview = () => {
         </Button>
       </div>
 
+      {identityVerificationStatus === 'rejected' && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 sm:p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="flex items-center gap-2 text-amber-900 font-semibold font-montserrat text-sm sm:text-base">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                ID verification rejected
+              </p>
+              <p className="text-amber-800 text-sm mt-1 font-lato">
+                Please retake your ID verification to continue using all tradesperson features.
+              </p>
+              {identityVerificationRejectionReason && (
+                <p className="text-amber-900 text-sm mt-2 font-lato">
+                  Reason: {identityVerificationRejectionReason}
+                </p>
+              )}
+            </div>
+            <Button
+              onClick={() => {
+                setProfileModalInitialStep(3);
+                setShowCompleteProfileModal(true);
+              }}
+              className="bg-[#34D164] hover:bg-[#2ab854] text-white px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap"
+            >
+              Retake now
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Profile Completion Banner - Shows only for incomplete profiles */}
       {(isProfileIncomplete || !isContactVerified || !isSkillsTestPassed || !isBusinessVerified) && (
         <ProfileCompletionBanner
-          onCompleteProfile={() => setShowCompleteProfileModal(true)}
+          onCompleteProfile={() => {
+            setProfileModalInitialStep(1);
+            setShowCompleteProfileModal(true);
+          }}
           onVerifyContact={() => setShowVerifyContactModal(true)}
           onTakeSkillsTest={() => setShowSkillsModal(true)}
           onBusinessVerification={handleBusinessVerification}
@@ -414,6 +463,7 @@ const TradespersonOverview = () => {
         isOpen={showCompleteProfileModal}
         onClose={handleCloseProfileModal}
         onComplete={handleProfileComplete}
+        initialStep={profileModalInitialStep}
       />
 
       {/* Verify Contact Modal */}

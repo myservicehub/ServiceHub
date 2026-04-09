@@ -36,7 +36,7 @@ const mapExperienceYearsToRange = (years) => {
   return '10+';
 };
 
-const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
+const CompleteProfileModal = ({ isOpen, onClose, onComplete, initialStep = 1 }) => {
   const uploadSectionRef = useRef(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -80,7 +80,8 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
 
   useEffect(() => {
     if (!isOpen) return;
-    setCurrentStep(1);
+    const safeInitialStep = Number.isInteger(initialStep) && initialStep >= 1 && initialStep <= 4 ? initialStep : 1;
+    setCurrentStep(safeInitialStep);
     setErrors({});
     setShowTradeSelector(false);
     setDragActive(false);
@@ -102,7 +103,7 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete }) => {
       profileDescription: user?.description || '',
     });
     setLocationCoords((user?.latitude && user?.longitude) ? { lat: user.latitude, lng: user.longitude } : null);
-  }, [isOpen, user]);
+  }, [isOpen, user, initialStep]);
 
   // Load trade categories from API
   useEffect(() => {
