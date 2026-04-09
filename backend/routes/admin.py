@@ -449,6 +449,7 @@ async def approve_job(
                     prefs = await database.get_user_notification_preferences(homeowner["id"])
                     template_data = {
                         "homeowner_name": homeowner.get("name", "Homeowner"),
+                        "job_id": job.get("id") or job_id,
                         "job_title": job["title"],
                         "approved_at": datetime.now(timezone.utc).strftime("%B %d, %Y"),
                         "admin_notes": notes
@@ -487,6 +488,7 @@ async def approve_job(
                     prefs = await database.get_user_notification_preferences(homeowner["id"])
                     template_data = {
                         "homeowner_name": homeowner.get("name", "Homeowner"),
+                        "job_id": job.get("id") or job_id,
                         "job_title": job["title"],
                         "reviewed_at": datetime.now(timezone.utc).strftime("%B %d, %Y"),
                         "rejection_reason": notes

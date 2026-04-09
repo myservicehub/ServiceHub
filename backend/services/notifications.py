@@ -1608,6 +1608,15 @@ class NotificationService:
             parts = s.split('_')
             return parts[0] + ''.join(p.capitalize() for p in parts[1:])
         values = dict(template_data or {})
+        # Normalize null-like values so templates never render "None".
+        for key in list(values.keys()):
+            if values[key] is None:
+                values[key] = ""
+        # Support both Name/name placeholders used across email template versions.
+        if "Name" in values and "name" not in values:
+            values["name"] = values["Name"]
+        if "name" in values and "Name" not in values:
+            values["Name"] = values["name"]
         for k, v in list(values.items()):
             if isinstance(k, str) and "_" in k:
                 camel = to_camel(k)

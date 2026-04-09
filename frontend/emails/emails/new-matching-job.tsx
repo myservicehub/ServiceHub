@@ -91,9 +91,11 @@ export const NewMatchingJob = ({
           <table cellPadding="0" cellSpacing="0" style={jobCard}>
             <tr>
               <td style={jobCardInner}>
-                <Text style={jobTitle}>{tradeTitle} <span style={{ color: '#6b7280', fontWeight: '400', fontSize: '14px' }}>#{jobId}</span></Text>
+                <Text style={jobTitle}>{tradeTitle}</Text>
                 <Text style={jobCategory}>{tradeCategory}</Text>
-                <Text style={jobLocation}>📍 {location} • {distance}</Text>
+                <Text style={jobIdText}>Job ID: #{jobId}</Text>
+                <Text style={jobLocation}>📍 {location}</Text>
+                <Text style={jobDistance}>Distance: {distance}</Text>
               </td>
             </tr>
           </table>
@@ -233,7 +235,9 @@ const jobCard = { width: '100%', marginBottom: '24px' };
 const jobCardInner = { backgroundColor: '#f0fdf4', border: '1px solid #dcfce7', borderRadius: '10px', padding: '20px', textAlign: 'center' as const };
 const jobTitle = { color: '#0a1b3d', fontSize: '18px', fontWeight: '700', margin: '0 0 8px' };
 const jobCategory = { color: '#16a34a', fontSize: '14px', fontWeight: '600', margin: '0 0 12px' };
-const jobLocation = { color: '#6b7280', fontSize: '14px', margin: '0' };
+const jobIdText = { color: '#374151', fontSize: '13px', fontWeight: '600', margin: '0 0 10px' };
+const jobLocation = { color: '#6b7280', fontSize: '14px', margin: '0 0 6px' };
+const jobDistance = { color: '#6b7280', fontSize: '13px', margin: '0' };
 const buttonContainer = { textAlign: 'center' as const, margin: '28px 0' };
 const primaryButton = { backgroundColor: '#34D164', borderRadius: '8px', color: '#ffffff', fontSize: '15px', fontWeight: '600', textDecoration: 'none', textAlign: 'center' as const, display: 'inline-block', padding: '14px 32px' };
 const sectionTitle = { color: '#0a1b3d', fontSize: '16px', fontWeight: '700', margin: '0 0 16px' };

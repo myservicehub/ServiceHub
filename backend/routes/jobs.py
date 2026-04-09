@@ -1188,8 +1188,10 @@ async def notify_matching_tradespeople_new_job(job: dict):
                     continue
                 template_data = {
                     "Name": name,
+                    "name": name,
                     "job_id": job.get("id"),
                     "distance_km": round(km, 2) if km is not None else None,
+                    "distance": (f"{round(km, 1)} km away" if km is not None else "Near your selected area"),
                     "trade_title": job.get("title", "Job"),
                     "trade_category": job.get("category", ""),
                     "Location": job.get("location", ""),
