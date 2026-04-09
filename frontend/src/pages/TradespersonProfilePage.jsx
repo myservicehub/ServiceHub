@@ -225,6 +225,18 @@ const TradespersonProfilePage = () => {
   const experienceLevel = getExperienceLevel(tradesperson.years_experience || 0);
   const verificationStatus = getVerificationStatus(tradesperson.is_verified);
   const VerificationIcon = verificationStatus.icon;
+  const displaySkills = Array.isArray(tradesperson.skills) && tradesperson.skills.length > 0
+    ? tradesperson.skills
+    : (Array.isArray(tradesperson.trade_categories) && tradesperson.trade_categories.length > 0
+      ? tradesperson.trade_categories
+      : (tradesperson.main_trade ? [tradesperson.main_trade] : []));
+  const displayServiceAreas = Array.isArray(tradesperson.service_areas) && tradesperson.service_areas.length > 0
+    ? tradesperson.service_areas
+    : (tradesperson.location
+      ? [tradesperson.location]
+      : ((tradesperson.city || tradesperson.state)
+        ? [`${[tradesperson.city, tradesperson.state].filter(Boolean).join(', ')}`]
+        : []));
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -397,8 +409,8 @@ const TradespersonProfilePage = () => {
                   <div>
                     <h3 className="text-lg font-semibold mb-3 font-montserrat">Skills & Specializations</h3>
                     <div className="flex flex-wrap gap-2">
-                      {tradesperson.skills && tradesperson.skills.length > 0 ? (
-                        tradesperson.skills.map((skill, index) => (
+                      {displaySkills.length > 0 ? (
+                        displaySkills.map((skill, index) => (
                           <Badge key={index} variant="outline" className="px-3 py-1">
                             {skill}
                           </Badge>
@@ -415,9 +427,9 @@ const TradespersonProfilePage = () => {
                     <div className="flex items-center gap-2 text-gray-600">
                       <MapPin size={18} />
                       <span>
-                        {tradesperson.service_areas && tradesperson.service_areas.length > 0 
-                          ? tradesperson.service_areas.join(', ')
-                          : `${tradesperson.city}, ${tradesperson.state} and surrounding areas`
+                        {displayServiceAreas.length > 0
+                          ? `${displayServiceAreas.join(', ')} and surrounding areas`
+                          : 'Service area not set'
                         }
                       </span>
                     </div>

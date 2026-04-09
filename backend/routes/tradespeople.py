@@ -390,6 +390,47 @@ async def get_tradesperson(tradesperson_id: str):
                 "created_at": review.get("created_at")
             })
         
+        # Resolve categories from both top-level and nested professional info.
+        stored_trade_categories = user.get("trade_categories")
+        if not isinstance(stored_trade_categories, list):
+            stored_trade_categories = []
+        professional_info = user.get("professional_information") or user.get("professionalInformation") or {}
+        professional_trade_categories = professional_info.get("trade_categories") if isinstance(professional_info, dict) else []
+        if not isinstance(professional_trade_categories, list):
+            professional_trade_categories = []
+        resolved_trade_categories = []
+        for category in [
+            *stored_trade_categories,
+            *professional_trade_categories,
+            user.get("main_trade"),
+            user.get("profession"),
+        ]:
+            cleaned_category = str(category or "").strip()
+            if cleaned_category and cleaned_category not in resolved_trade_categories:
+                resolved_trade_categories.append(cleaned_category)
+
+        raw_service_areas = user.get("service_areas")
+        if not isinstance(raw_service_areas, list):
+            raw_service_areas = []
+        resolved_service_areas = [str(area).strip() for area in raw_service_areas if str(area or "").strip()]
+        if not resolved_service_areas:
+            location_fallback = str(user.get("location") or "").strip()
+            city = str(user.get("city") or "").strip()
+            state = str(user.get("state") or "").strip()
+            if location_fallback:
+                resolved_service_areas = [location_fallback]
+            elif city and state:
+                resolved_service_areas = [f"{city}, {state}"]
+            elif state:
+                resolved_service_areas = [state]
+
+        raw_skills = user.get("skills")
+        if not isinstance(raw_skills, list):
+            raw_skills = []
+        resolved_skills = [str(skill).strip() for skill in raw_skills if str(skill or "").strip()]
+        if not resolved_skills:
+            resolved_skills = resolved_trade_categories.copy()
+
         # Transform to expected format
         experience_years_value, experience_level_value = _normalized_experience(user)
         if experience_years_value is None:
@@ -400,8 +441,8 @@ async def get_tradesperson(tradesperson_id: str):
             "name": user.get("name", ""),
             "email": user.get("email", ""),
             "phone": user.get("phone", ""),
-            "main_trade": user.get("profession", ""),
-            "trade_categories": [user.get("profession", "")] if user.get("profession") else [],
+            "main_trade": user.get("main_trade") or user.get("profession") or (resolved_trade_categories[0] if resolved_trade_categories else ""),
+            "trade_categories": resolved_trade_categories,
             "bio": user.get("bio", ""),
             "location": user.get("location", ""),
             "city": user.get("city", ""),
@@ -426,7 +467,8 @@ async def get_tradesperson(tradesperson_id: str):
             "portfolio_preview": portfolio_preview,
             "reviews_preview": reviews_preview,
             "certifications": user.get("certifications", []),
-            "skills": user.get("skills", []),
+            "skills": resolved_skills,
+            "service_areas": resolved_service_areas,
             "availability": user.get("availability", "available")
         }
         
