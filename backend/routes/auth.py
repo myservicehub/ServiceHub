@@ -119,6 +119,27 @@ async def _validate_active_state(state_name: str) -> bool:
     active_states = await _get_active_states()
     return state_name in active_states
 
+
+def _coords_enforcement_phase() -> str:
+    return (os.environ.get("JOB_COORDS_ENFORCEMENT_PHASE", "warn") or "warn").strip().lower()
+
+
+def _extract_valid_coords(job_like: Dict[str, Any]):
+    try:
+        lat = (job_like or {}).get("latitude")
+        lng = (job_like or {}).get("longitude")
+        if lat is None or lng is None:
+            return None
+        lat_val = float(lat)
+        lng_val = float(lng)
+        if not (-90 <= lat_val <= 90 and -180 <= lng_val <= 180):
+            return None
+        if abs(lat_val) < 0.0001 and abs(lng_val) < 0.0001:
+            return None
+        return lat_val, lng_val
+    except Exception:
+        return None
+
 @router.post("/register/homeowner")
 @limiter.limit("5/minute")
 async def register_homeowner(request: Request, registration_data: HomeownerRegistration):
@@ -2054,8 +2075,34 @@ async def confirm_email_verification(token: str):
             pass
         user_response = {k: v for k, v in user_data.items() if k != "password_hash"}
         auto_job = None
+        auto_post_blocked_reason = None
         try:
             pending = await database.get_pending_job_by_user_id(user_id)
+            if pending:
+                jd = dict(pending.get("job_data", {}))
+                coords = _extract_valid_coords(jd)
+                phase = _coords_enforcement_phase()
+                if not coords:
+                    logger.warning(
+                        "PENDING_JOB_COORDS_MISSING [confirm_email phase=%s] pending_id=%s state=%s lga=%s",
+                        phase,
+                        pending.get("id"),
+                        jd.get("state"),
+                        jd.get("lga"),
+                    )
+                    if phase == "enforce":
+                        auto_post_blocked_reason = (
+                            "Your pending job was not posted because exact map coordinates are now required. "
+                            "Please post again and pin your job location using the map picker."
+                        )
+                        pending_id = pending.get("id")
+                        if pending_id:
+                            try:
+                                await database.mark_pending_job_used(pending_id)
+                            except Exception:
+                                pass
+                        pending = None
+
             if pending:
                 jd = dict(pending.get("job_data", {}))
                 job_dict = dict(jd)
@@ -2124,6 +2171,10 @@ async def confirm_email_verification(token: str):
         if auto_job is not None:
             resp["job"] = auto_job
             resp["auto_posted"] = True
+        if auto_post_blocked_reason:
+            resp["auto_posted"] = False
+            resp["job_posting_required"] = True
+            resp["job_posting_message"] = auto_post_blocked_reason
         return resp
     except HTTPException:
         raise

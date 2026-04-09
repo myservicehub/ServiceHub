@@ -56,6 +56,58 @@ class JobPostingExitFeedbackRequest(BaseModel):
     homeowner_email: Optional[str] = Field(None, max_length=120)
     homeowner_phone: Optional[str] = Field(None, max_length=40)
 
+
+def _coords_enforcement_phase() -> str:
+    # "warn" (default): allow posting but log missing/invalid coordinates.
+    # "enforce": block posting until coordinates are supplied from the location picker.
+    return (os.environ.get("JOB_COORDS_ENFORCEMENT_PHASE", "warn") or "warn").strip().lower()
+
+
+def _extract_valid_coords(job_like: dict):
+    try:
+        lat = job_like.get("latitude")
+        lng = job_like.get("longitude")
+        if lat is None or lng is None:
+            return None
+        lat_val = float(lat)
+        lng_val = float(lng)
+        if not (-90 <= lat_val <= 90 and -180 <= lng_val <= 180):
+            return None
+        if abs(lat_val) < 0.0001 and abs(lng_val) < 0.0001:
+            return None
+        return lat_val, lng_val
+    except Exception:
+        return None
+
+
+def _validate_or_warn_job_coords(job_like: dict, source: str) -> None:
+    coords = _extract_valid_coords(job_like or {})
+    if coords:
+        return
+
+    phase = _coords_enforcement_phase()
+    state = (job_like or {}).get("state")
+    lga = (job_like or {}).get("lga")
+    job_id = (job_like or {}).get("id")
+
+    logger.warning(
+        "JOB_COORDS_MISSING [%s phase=%s] job_id=%s state=%s lga=%s",
+        source,
+        phase,
+        job_id,
+        state,
+        lga,
+    )
+
+    if phase == "enforce":
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "Exact map location is required before posting this job. "
+                "Please use the location picker and pin your job location on the map."
+            ),
+        )
+
 # Public endpoints for location data
 @router.get("/locations/states")
 async def get_states_public():
@@ -76,6 +128,7 @@ async def create_job(
         
         # Convert to dict and prepare for database
         job_dict = job_data.dict()
+        _validate_or_warn_job_coords(job_dict, source="create_job")
         
         # Validate LGA belongs to the specified state (using unified dynamic fetcher)
         all_lgas = await database.get_lgas_for_state_dynamic(job_data.state)
@@ -1004,6 +1057,25 @@ async def notify_matching_tradespeople_new_job(job: dict):
         category = job.get("category", "")
         if not category:
             return
+
+        def _norm_text(value: str) -> str:
+            return str(value or "").strip().lower()
+
+        def _to_coord(lat_raw, lng_raw):
+            try:
+                if lat_raw is None or lng_raw is None:
+                    return None
+                lat_val = float(lat_raw)
+                lng_val = float(lng_raw)
+                if not (-90 <= lat_val <= 90 and -180 <= lng_val <= 180):
+                    return None
+                # Treat null-island style defaults as missing coordinates.
+                if abs(lat_val) < 0.0001 and abs(lng_val) < 0.0001:
+                    return None
+                return {"latitude": lat_val, "longitude": lng_val}
+            except Exception:
+                return None
+
         normalized_cat = category.strip().lower()
         synonyms_map = {
             "plumbing": ["plumber", "plumbing", "pipe", "leak", "sanitary"],
@@ -1033,6 +1105,8 @@ async def notify_matching_tradespeople_new_job(job: dict):
         }
         synonyms = set([category])
         synonyms.update(synonyms_map.get(normalized_cat, []))
+        if normalized_cat.endswith(" services"):
+            synonyms.add(category[: -len(" services")].strip())
         alternation = "|".join(sorted({re.escape(s) for s in synonyms}))
         pattern = f"({alternation})"
         filters = {
@@ -1041,6 +1115,8 @@ async def notify_matching_tradespeople_new_job(job: dict):
             "$or": [
                 {"trade_categories": {"$regex": pattern, "$options": "i"}},
                 {"profession": {"$regex": pattern, "$options": "i"}},
+                {"main_trade": {"$regex": pattern, "$options": "i"}},
+                {"professional_information.trade_categories": {"$regex": pattern, "$options": "i"}},
             ],
         }
         cursor = database.users_collection.find(filters)
@@ -1052,30 +1128,24 @@ async def notify_matching_tradespeople_new_job(job: dict):
             ", ".join(sorted(synonyms)),
         )
         frontend_url = os.environ.get("FRONTEND_URL", "https://myservicehub.co")
+        job_coords = _to_coord(job.get("latitude"), job.get("longitude"))
+        job_state_norm = _norm_text(job.get("state") or job.get("location"))
+        job_lga_norm = _norm_text(job.get("lga"))
         for tp in tradespeople:
             try:
                 tp_id = tp.get("id")
                 if not tp_id:
                     continue
-                preferences = await database.get_user_notification_preferences(tp_id)
                 name = tp.get("business_name") or tp.get("name", "Tradesperson")
+                recipient_email = tp.get("email")
+                recipient_phone = tp.get("phone")
+                preferences = await database.get_user_notification_preferences(tp_id)
                 miles = None
-                jlat = job.get("latitude")
-                jlng = job.get("longitude")
-                tlat = tp.get("latitude")
-                tlng = tp.get("longitude")
+                km = None
                 # Attempt to compute distance using explicit coordinates only
                 try:
-                    job_coords = None
-                    tp_coords = None
-                    if jlat is not None and jlng is not None:
-                        job_coords = {"latitude": float(jlat), "longitude": float(jlng)}
-                    # No fallback to geocoding here to prevent timeouts
-                    
-                    if tlat is not None and tlng is not None:
-                        tlng_val = float(tlng)
-                        tp_coords = {"latitude": float(tlat), "longitude": tlng_val}
-                    # No fallback to geocoding here to prevent timeouts
+                    tp_coords = _to_coord(tp.get("latitude"), tp.get("longitude"))
+
                     if job_coords and tp_coords:
                         km = database.calculate_distance(tp_coords["latitude"], tp_coords["longitude"], job_coords["latitude"], job_coords["longitude"])
                         max_km = tp.get("travel_distance_km", 25)
@@ -1088,11 +1158,31 @@ async def notify_matching_tradespeople_new_job(job: dict):
                             )
                             continue
                         miles = round(km * 0.621, 1)
+                    elif job_state_norm:
+                        # If coordinates are unavailable for either side, use state/LGA fallback matching.
+                        tp_areas = [
+                            _norm_text(tp.get("state")),
+                            _norm_text(tp.get("location")),
+                            _norm_text(tp.get("lga")),
+                            _norm_text(tp.get("town")),
+                            _norm_text(tp.get("city")),
+                        ]
+                        tp_areas = [area for area in tp_areas if area]
+
+                        state_match = any(area == job_state_norm for area in tp_areas)
+                        lga_match = bool(job_lga_norm) and any(area == job_lga_norm for area in tp_areas)
+
+                        if not (state_match or lga_match):
+                            logger.info(
+                                "NEW_MATCHING_JOB: skipped tradesperson %s due to area mismatch (job state=%s, job lga=%s)",
+                                tp_id,
+                                job.get("state"),
+                                job.get("lga"),
+                            )
+                            continue
                 except Exception:
                     miles = None
                 # Determine available contact methods (do not override preferences here)
-                recipient_email = tp.get("email")
-                recipient_phone = tp.get("phone")
                 if not recipient_email and not recipient_phone:
                     logger.info("Skipping tradesperson %s: no contact info for NEW_MATCHING_JOB", tp_id)
                     continue
@@ -1126,9 +1216,9 @@ async def notify_matching_tradespeople_new_job(job: dict):
                 import traceback
                 error_details = {
                     "tradesperson_id": tp.get("id"),
-                    "tradesperson_name": name,
-                    "tradesperson_email": recipient_email,
-                    "tradesperson_phone": recipient_phone,
+                    "tradesperson_name": tp.get("business_name") or tp.get("name", "Tradesperson"),
+                    "tradesperson_email": tp.get("email"),
+                    "tradesperson_phone": tp.get("phone"),
                     "job_id": job.get("id"),
                     "job_title": job.get("title"),
                     "preference_channel": getattr(preferences, "new_matching_job", "unknown") if 'preferences' in locals() else "unknown",
@@ -1815,6 +1905,7 @@ async def register_and_post(payload: PublicJobPostRequest, background_tasks: Bac
         from ..models.nigerian_lgas import validate_lga_for_state, validate_zip_code
 
         job_data = payload.job
+        _validate_or_warn_job_coords(job_data.dict(), source="register_and_post")
         
         # Extract urgency/timeline from answers if available
         if payload.question_answers and payload.question_answers.get("answers"):
