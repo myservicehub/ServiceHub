@@ -33,7 +33,7 @@ import JobsMap from '../components/maps/JobsMap';
 import LocationSettingsModal from '../components/LocationSettingsModal';
 import { authAPI } from '../api/services';
 import { notificationsAPI } from '../api/notifications';
-import { resolveCoordinatesFromLocationText, resolveCoordinatesFromStructuredLocation, DEFAULT_TRAVEL_DISTANCE_KM, nearestStateFromCoordinates, computeDistanceKm } from '../utils/locationCoordinates';
+import { resolveCoordinatesFromLocationText, resolveCoordinatesFromStructuredLocation, DEFAULT_TRAVEL_DISTANCE_KM, nearestStateFromCoordinates, computeDistanceKm, STATE_CAPITAL_COORDS, STATE_ALIASES } from '../utils/locationCoordinates';
 import { getTradespersonCompletionStatus } from '../utils/tradespersonCompletion';
 
 import AuthenticatedImage from '../components/common/AuthenticatedImage';
@@ -363,23 +363,50 @@ const BrowseJobsPage = () => {
       if (!Array.isArray(jobsData)) jobsData = [];
 
       if (filters.useLocation && userLocation && typeof userLocation.lat === 'number' && typeof userLocation.lng === 'number') {
-        // Compute fallback distances for jobs without distance_km using text location or coords
+        const normalizeStateKey = (value) => {
+          const raw = (value || '').toString().trim().toLowerCase();
+          if (!raw) return '';
+          return STATE_ALIASES[raw] || raw;
+        };
+        const userStateKey = normalizeStateKey(user?.state || user?.location);
+        const almostEqual = (a, b, eps = 0.01) => Math.abs(Number(a) - Number(b)) <= eps;
+
+        // Compute fallback distances for jobs where backend distance is missing or likely coarse (state centroid only)
         jobsData = jobsData.map((job) => {
           let d = job?.distance_km;
+          const jobLat = Number(job?.latitude);
+          const jobLng = Number(job?.longitude);
+          const hasCoords = Number.isFinite(jobLat) && Number.isFinite(jobLng);
+          const jobStateKey = normalizeStateKey(job?.state || job?.location);
+          const stateCenter = STATE_CAPITAL_COORDS[jobStateKey];
+          const hasStateCentroidCoords = !!(hasCoords && stateCenter && almostEqual(jobLat, stateCenter.lat) && almostEqual(jobLng, stateCenter.lng));
+          const trustedBackendDistance = typeof d === 'number' && !Number.isNaN(d) && !hasStateCentroidCoords;
+
+          if (!trustedBackendDistance) d = null;
+
           if (d === undefined || d === null) {
-            // Try job coordinates first
-            if (typeof job?.latitude === 'number' && typeof job?.longitude === 'number') {
-              d = computeDistanceKm(userLocation.lat, userLocation.lng, job.latitude, job.longitude);
+            // Try job coordinates first, but avoid using known coarse state-centroid coordinates.
+            if (hasCoords && !hasStateCentroidCoords) {
+              d = computeDistanceKm(userLocation.lat, userLocation.lng, jobLat, jobLng);
             } else {
+              // Prefer detailed address/town/LGA without state fallback first.
+              const preciseFirst = resolveCoordinatesFromStructuredLocation({
+                state: null,
+                lga: job?.lga || null,
+                town: job?.town || null,
+                addressText: job?.home_address || job?.address || job?.location || null,
+              });
               const jc = resolveCoordinatesFromStructuredLocation({
                 state: job?.state || null,
                 lga: job?.lga || null,
                 town: job?.town || null,
                 addressText: job?.home_address || job?.address || job?.location || null,
               }) || (job?.location ? resolveCoordinatesFromLocationText(job.location) : null);
-              const isCoarseTextLocation = jc?.source === 'state' || jc?.source === 'text-state';
-              if (!isCoarseTextLocation && jc && typeof jc.latitude === 'number' && typeof jc.longitude === 'number') {
-                d = computeDistanceKm(userLocation.lat, userLocation.lng, jc.latitude, jc.longitude);
+
+              const bestCoords = preciseFirst || jc;
+              const isCoarseTextLocation = bestCoords?.source === 'state' || bestCoords?.source === 'text-state';
+              if (!isCoarseTextLocation && bestCoords && typeof bestCoords.latitude === 'number' && typeof bestCoords.longitude === 'number') {
+                d = computeDistanceKm(userLocation.lat, userLocation.lng, bestCoords.latitude, bestCoords.longitude);
               }
             }
           }
@@ -398,7 +425,10 @@ const BrowseJobsPage = () => {
         // When location filtering is enabled, exclude jobs outside the user's max distance
         if (filters.useLocation && typeof filters.maxDistance === 'number') {
           jobsData = jobsData.filter(job => {
-            if (job.distance_km === undefined || job.distance_km === null) return false;
+            if (job.distance_km === undefined || job.distance_km === null) {
+              const jobStateKey = normalizeStateKey(job?.state || job?.location);
+              return !!(userStateKey && jobStateKey && userStateKey === jobStateKey);
+            }
             return Number(job.distance_km) <= Number(filters.maxDistance);
           });
         }
