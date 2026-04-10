@@ -5,6 +5,7 @@ const getBackendUrl = () => {
   const isBrowser = typeof window !== 'undefined';
   const hostname = isBrowser ? window.location.hostname : '';
   const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+  const isServiceHubHost = !!hostname && (hostname === 'myservicehub.co' || hostname === 'www.myservicehub.co' || hostname.endsWith('.myservicehub.co'));
   const buildEnvUrl =
     (import.meta && import.meta.env && import.meta.env.VITE_BACKEND_URL) ||
     (typeof process !== 'undefined' && process.env && process.env.REACT_APP_BACKEND_URL) ||
@@ -13,6 +14,11 @@ const getBackendUrl = () => {
     ? (window.BACKEND_URL_OVERRIDE || localStorage.getItem('BACKEND_URL_OVERRIDE') || '')
     : '';
   let url = runtimeOverride || buildEnvUrl;
+  // In production on ServiceHub domains, prefer same-origin /api to avoid cross-origin
+  // browser blocking/noise from api subdomain edge issues.
+  if (!runtimeOverride && isServiceHubHost) {
+    url = '';
+  }
   if (!url && isLocalhost) {
     url = '';
   }

@@ -119,6 +119,7 @@ const BrowseJobsPage = () => {
   const [userInterests, setUserInterests] = useState(null);
   const [userInterestsLoading, setUserInterestsLoading] = useState(false);
   const [loadErrorCount, setLoadErrorCount] = useState(0);
+  const stateMismatchWarnedRef = useRef(false);
 
   // Load user interests for tradespeople
   const loadUserInterests = async () => {
@@ -175,6 +176,24 @@ const BrowseJobsPage = () => {
       }
     }
   }, [user?.latitude, user?.longitude]);
+
+  // One-time warning when profile state and saved coordinates appear to be in different states.
+  useEffect(() => {
+    if (stateMismatchWarnedRef.current) return;
+    const profileState = String(user?.state || user?.location || '').trim();
+    if (!profileState) return;
+    if (!userLocation || typeof userLocation.lat !== 'number' || typeof userLocation.lng !== 'number') return;
+    const inferredState = nearestStateFromCoordinates(userLocation.lat, userLocation.lng);
+    if (!inferredState) return;
+    if (inferredState.toLowerCase() !== profileState.toLowerCase()) {
+      stateMismatchWarnedRef.current = true;
+      toast({
+        title: "Check your saved location",
+        description: `Your profile state is ${profileState}, but your saved coordinates are near ${inferredState}. Update Location Settings for accurate distance.`,
+        duration: 9000,
+      });
+    }
+  }, [user?.state, user?.location, userLocation?.lat, userLocation?.lng, toast]);
 
   // If the user received a recent job notification (e.g. NEW_MATCHING_JOB / JOB_POSTED)
   // check the referenced job. If the job exists but is pending approval, surface
@@ -930,8 +949,23 @@ const BrowseJobsPage = () => {
     }
   };
 
+  const parseApiDate = (dateValue) => {
+    if (!dateValue) return null;
+    if (dateValue instanceof Date) return dateValue;
+    if (typeof dateValue === 'number') return new Date(dateValue);
+    let raw = String(dateValue).trim();
+    // Backend often emits UTC-naive timestamps (no timezone). Treat them as UTC.
+    if (/^\d{4}-\d{2}-\d{2}T/.test(raw) && !/(Z|[+\-]\d{2}:\d{2})$/i.test(raw)) {
+      raw = `${raw}Z`;
+    }
+    const parsed = new Date(raw);
+    if (Number.isNaN(parsed.getTime())) return null;
+    return parsed;
+  };
+
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
+    const date = parseApiDate(dateString);
+    if (!date) return 'just now';
     const diffMs = Date.now() - date.getTime();
     const seconds = Math.floor(diffMs / 1000);
     if (seconds < 60) return 'just now';
