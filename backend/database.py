@@ -3729,10 +3729,37 @@ class Database:
             "bayelsa": (4.9247, 6.2649)
         }
 
-        # Check for matches in text
+        # Prefer specific locality keys over broad state keys when both are present
+        state_level_keys = {
+            "lagos", "abuja", "fct", "oyo", "edo", "benin", "enugu", "cross river",
+            "delta", "rivers", "plateau", "kaduna", "kano", "kwara", "imo",
+            "abia", "anambra", "bayelsa"
+        }
+        candidates: List[Dict[str, Any]] = []
         for key, (lat, lng) in location_map.items():
-            if key in t:
-                return {"latitude": lat, "longitude": lng}
+            pos = t.find(key)
+            if pos >= 0:
+                candidates.append({
+                    "key": key,
+                    "latitude": lat,
+                    "longitude": lng,
+                    "is_state_level": key in state_level_keys,
+                    "word_count": len(key.split()),
+                    "length": len(key),
+                    "position": pos,
+                })
+
+        if candidates:
+            candidates.sort(
+                key=lambda item: (
+                    item["is_state_level"],     # non-state keys first
+                    -item["word_count"],        # more words first
+                    -item["length"],            # longer keys first
+                    item["position"],           # earlier occurrence first
+                )
+            )
+            best = candidates[0]
+            return {"latitude": best["latitude"], "longitude": best["longitude"]}
                 
         # If no hardcoded match, use geocoding service
         return await self.geocode_location_text(text)
