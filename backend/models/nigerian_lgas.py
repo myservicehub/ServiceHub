@@ -84,7 +84,7 @@ NIGERIAN_LGAS = {
         "Port Harcourt",
         "Tai"
     ],
-    "Benin": [  # Edo State LGAs (Benin is the capital)
+    "Edo": [  # Edo State LGAs (Benin is the capital)
         "Akoko-Edo",
         "Egor",
         "Esan Central",
@@ -155,14 +155,25 @@ NIGERIAN_LGAS = {
     ]
 }
 
+STATE_ALIASES = {
+    "Benin": "Edo",
+}
+
+
+def canonical_state_name(state: str) -> str:
+    return STATE_ALIASES.get((state or "").strip(), (state or "").strip())
+
+
 def validate_lga_for_state(state: str, lga: str) -> bool:
     """Validate if an LGA belongs to the specified state"""
+    state = canonical_state_name(state)
     if state not in NIGERIAN_LGAS:
         return False
     return lga in NIGERIAN_LGAS[state]
 
 def get_lgas_for_state(state: str) -> list:
     """Get all LGAs for a specific state"""
+    state = canonical_state_name(state)
     return NIGERIAN_LGAS.get(state, [])
 
 def get_all_lgas() -> dict:
@@ -215,7 +226,7 @@ LGA_ZIP_CODES = {
         "Ikwerre": ["503101"],
         "Oyigbo": ["504101"]
     },
-    "Benin": {
+    "Edo": {
         "Oredo": ["300001", "300211", "300283"],
         "Egor": ["300102"],
         "Ikpoba-Okha": ["300213"],
@@ -248,6 +259,7 @@ LGA_ZIP_CODES = {
 
 def get_zip_codes_for_lga(state: str, lga: str) -> list:
     """Get sample zip codes for an LGA"""
+    state = canonical_state_name(state)
     if state in LGA_ZIP_CODES and lga in LGA_ZIP_CODES[state]:
         return LGA_ZIP_CODES[state][lga]
     return []

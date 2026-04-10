@@ -271,19 +271,19 @@ export const adminAPI = {
     formData.append('region', region);
     formData.append('postcode_samples', postcodes);
     
-    const response = await apiClient.put(`/admin/locations/states/${oldName}`, formData);
+    const response = await apiClient.put(`/admin/locations/states/${encodeURIComponent(oldName)}`, formData);
     return response.data;
   },
 
   async deleteState(stateName) {
-    const response = await apiClient.delete(`/admin/locations/states/${stateName}`);
+    const response = await apiClient.delete(`/admin/locations/states/${encodeURIComponent(stateName)}`);
     return response.data;
   },
 
   async setStateActivation(stateName, active) {
     const formData = new FormData();
     formData.append('active', String(Boolean(active)));
-    const response = await apiClient.put(`/admin/locations/states/${stateName}/activation`, formData, {
+    const response = await apiClient.put(`/admin/locations/states/${encodeURIComponent(stateName)}/activation`, formData, {
       headers: {
         'Content-Type': undefined,
       },

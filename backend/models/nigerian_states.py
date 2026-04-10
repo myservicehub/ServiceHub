@@ -6,15 +6,24 @@ NIGERIAN_STATES = [
     "Lagos", 
     "Delta",
     "Rivers State",
-    "Benin",
+    "Edo",
     "Bayelsa",
     "Enugu",
     "Cross Rivers"
 ]
 
+STATE_ALIASES = {
+    "Benin": "Edo",
+}
+
+
+def canonical_state_name(state: str) -> str:
+    state_name = (state or "").strip()
+    return STATE_ALIASES.get(state_name, state_name)
+
 def validate_nigerian_state(state: str) -> bool:
     """Validate if a state is in the approved service coverage list"""
-    return state in NIGERIAN_STATES
+    return canonical_state_name(state) in NIGERIAN_STATES
 
 def get_all_states() -> list:
     """Get all available Nigerian states"""
@@ -38,7 +47,7 @@ STATE_REGIONS = {
         "Enugu"
     ],
     "South South (Edo)": [
-        "Benin"
+        "Edo"
     ]
 }
 
@@ -48,7 +57,7 @@ STATE_POSTCODES = {
     "Lagos": ["100001", "101001", "102001", "103001"],
     "Delta": ["320001", "321001", "322001"],
     "Rivers State": ["500001", "501001", "502001"],
-    "Benin": ["300001", "301001"],
+    "Edo": ["300001", "301001"],
     "Bayelsa": ["560001", "561001"],
     "Enugu": ["400001", "401001", "402001"],
     "Cross Rivers": ["540001", "541001", "542001"]

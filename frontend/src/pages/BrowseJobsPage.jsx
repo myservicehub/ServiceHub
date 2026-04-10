@@ -1103,7 +1103,7 @@ const BrowseJobsPage = () => {
                   <input
                     type="range"
                     min="5"
-                    max="100"
+                    max="200"
                     value={filters.maxDistance}
                     onChange={(e) => setFilters(prev => ({ ...prev, maxDistance: parseInt(e.target.value) }))}
                     onMouseUp={(e) => commitTravelDistanceChange(parseInt(e.currentTarget.value))}

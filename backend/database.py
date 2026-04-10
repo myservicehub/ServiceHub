@@ -5957,26 +5957,115 @@ class Database:
     async def update_state(self, old_name: str, new_name: str, region: str = "", postcode_samples: str = ""):
         """Update an existing state"""
         try:
+            from models.nigerian_states import NIGERIAN_STATES
+
+            old_name = (old_name or "").strip()
+            new_name = (new_name or "").strip()
+            if not old_name or not new_name:
+                return False
+
             update_data = {
                 "name": new_name,
                 "region": region,
                 "postcode_samples": postcode_samples.split(",") if postcode_samples else [],
                 "updated_at": datetime.now()
             }
-            
-            result = await self.database.system_locations.update_one(
-                {"name": old_name, "type": "state"},
-                {"$set": update_data}
-            )
-            
-            # Also update LGAs that reference this state
-            if result.modified_count > 0:
-                await self.database.system_locations.update_many(
-                    {"state": old_name, "type": "lga"},
-                    {"$set": {"state": new_name}}
+
+            existing_target = await self.database.system_locations.find_one({"name": new_name, "type": "state"})
+            if existing_target and old_name.lower() != new_name.lower():
+                # Avoid duplicate state names
+                return False
+
+            existing_source = await self.database.system_locations.find_one({"name": old_name, "type": "state"})
+            source_is_static = old_name in NIGERIAN_STATES
+            updated = False
+
+            if existing_source:
+                result = await self.database.system_locations.update_one(
+                    {"_id": existing_source["_id"]},
+                    {"$set": update_data}
                 )
-            
-            return result.modified_count > 0
+                updated = result.modified_count > 0
+            elif source_is_static:
+                # Static state cannot be renamed in source file at runtime.
+                # Create a system override to deactivate old static state and add/update new state in DB.
+                await self.database.system_locations.update_one(
+                    {"name": old_name, "type": "state"},
+                    {
+                        "$set": {
+                            "name": old_name,
+                            "type": "state",
+                            "active": False,
+                            "is_system_override": True,
+                            "updated_at": datetime.now(),
+                        },
+                        "$setOnInsert": {
+                            "created_at": datetime.now(),
+                            "region": "",
+                            "postcode_samples": [],
+                        },
+                    },
+                    upsert=True,
+                )
+                await self.database.system_locations.update_one(
+                    {"name": new_name, "type": "state"},
+                    {
+                        "$set": {
+                            "name": new_name,
+                            "type": "state",
+                            "active": True,
+                            "region": region,
+                            "postcode_samples": postcode_samples.split(",") if postcode_samples else [],
+                            "updated_at": datetime.now(),
+                        },
+                        "$setOnInsert": {
+                            "created_at": datetime.now(),
+                        },
+                    },
+                    upsert=True,
+                )
+                updated = True
+            else:
+                return False
+
+            if not updated:
+                return False
+
+            # Cascade rename so change reflects across the platform
+            await self.database.system_locations.update_many(
+                {"state": old_name, "type": {"$in": ["lga", "town"]}},
+                {"$set": {"state": new_name, "updated_at": datetime.now()}},
+            )
+            await self.database.users.update_many(
+                {"state": old_name},
+                {"$set": {"state": new_name, "updated_at": datetime.utcnow()}},
+            )
+            await self.database.users.update_many(
+                {"location": old_name},
+                {"$set": {"location": new_name, "updated_at": datetime.utcnow()}},
+            )
+            await self.database.jobs.update_many(
+                {"state": old_name},
+                {"$set": {"state": new_name, "updated_at": datetime.utcnow()}},
+            )
+            await self.database.jobs.update_many(
+                {"location": old_name},
+                {"$set": {"location": new_name, "updated_at": datetime.utcnow()}},
+            )
+            await self.database.jobs.update_many(
+                {"homeowner.location": old_name},
+                {"$set": {"homeowner.location": new_name, "updated_at": datetime.utcnow()}},
+            )
+            await self.database.pending_jobs.update_many(
+                {"job_data.state": old_name},
+                {"$set": {"job_data.state": new_name}},
+            )
+            await self.database.pending_jobs.update_many(
+                {"job_data.location": old_name},
+                {"$set": {"job_data.location": new_name}},
+            )
+
+            return True
         except Exception as e:
             print(f"Error updating state: {e}")
             return False
