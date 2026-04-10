@@ -538,7 +538,10 @@ const BrowseJobsPage = () => {
         useLocation: true 
       }));
       
-      const stateName = nearestStateFromCoordinates(latitude, longitude);
+      const profileState = String(user?.state || user?.location || '').trim();
+      const stateName = profileState
+        ? profileState.replace(/\b\w/g, (c) => c.toUpperCase())
+        : nearestStateFromCoordinates(latitude, longitude);
       const miles = Math.round(Number(travelDistance) * 0.621371);
       toast({
         title: "Location settings saved",
