@@ -778,6 +778,21 @@ async def get_job_details_admin(job_id: str):
         
         if qa:
             job_details["question_answers"] = qa
+            try:
+                from .jobs import _extract_timeline_from_answers, _is_placeholder_timeline
+                derived_timeline = _extract_timeline_from_answers((qa or {}).get("answers") or [])
+                if derived_timeline and _is_placeholder_timeline(job_details.get("timeline")):
+                    job_details["timeline"] = derived_timeline
+                    try:
+                        canonical_job_id = str(job_details.get("id") or job_id)
+                        await database.update_job(
+                            canonical_job_id,
+                            {"timeline": derived_timeline, "updated_at": datetime.utcnow()},
+                        )
+                    except Exception:
+                        pass
+            except Exception:
+                pass
             if not job_details.get("description"):
                 try:
                     summary = database.compose_job_description_from_answers(qa)

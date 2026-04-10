@@ -37,7 +37,14 @@ class MockEmailService:
         self.service_name = "MockEmailService"
         logger.info(f"🔧 {self.service_name} initialized - Development Mode")
     
-    async def send_email(self, to: str, subject: str, content: str, metadata: Dict[str, Any] = None) -> bool:
+    async def send_email(
+        self,
+        to: str,
+        subject: str,
+        content: str,
+        metadata: Dict[str, Any] = None,
+        raise_on_error: bool = False
+    ) -> bool:
         """Mock email sending - logs instead of sending"""
         logger.info(f"📧 MOCK EMAIL: to={to}, subject={subject[:50]}...")
         logger.debug(f"📧 MOCK EMAIL CONTENT: {content[:100]}...")
@@ -70,7 +77,14 @@ class SendGridEmailService:
         self.client = SendGridAPIClient(api_key=self.api_key)
         logger.info(f"🔧 {self.service_name} initialized - Production Mode")
     
-    async def send_email(self, to: str, subject: str, content: str, metadata: Dict[str, Any] = None) -> bool:
+    async def send_email(
+        self,
+        to: str,
+        subject: str,
+        content: str,
+        metadata: Dict[str, Any] = None,
+        raise_on_error: bool = False
+    ) -> bool:
         """Send real email using SendGrid"""
         try:
             # Preserve HTML as-is; avoid injecting <br> into <style> blocks
@@ -155,6 +169,9 @@ class SendGridEmailService:
                     logger.error("❌ SendGrid 401 Unauthorized - Check your API key and sender email verification")
                     logger.error(f"   Sender email: {self.sender_email}")
                     logger.error("   Ensure: 1) API key is valid, 2) Sender email is verified in SendGrid, 3) API key has Mail Send permissions")
+                if raise_on_error:
+                    provider_detail = error_body or "No response body"
+                    raise RuntimeError(f"SendGrid delivery failed (HTTP {response.status_code}): {provider_detail}")
                 return False
                 
         except Exception as e:
@@ -165,6 +182,8 @@ class SendGridEmailService:
                 logger.error(f"   1. SENDGRID_API_KEY is correct and has Mail Send permissions")
                 logger.error(f"   2. SENDER_EMAIL ({self.sender_email}) is verified in SendGrid")
                 logger.error(f"   3. API key hasn't been revoked or expired")
+            if raise_on_error:
+                raise RuntimeError(f"SendGrid email send error: {error_msg}") from e
             # Avoid raising; allow caller to fallback to mock
             return False
 
@@ -180,7 +199,14 @@ class ResendEmailService:
         self.endpoint = "https://api.resend.com/emails"
         logger.info(f"🔧 {self.service_name} initialized - Production Mode")
 
-    async def send_email(self, to: str, subject: str, content: str, metadata: Dict[str, Any] = None) -> bool:
+    async def send_email(
+        self,
+        to: str,
+        subject: str,
+        content: str,
+        metadata: Dict[str, Any] = None,
+        raise_on_error: bool = False
+    ) -> bool:
         """Send real email using Resend REST API"""
         try:
             payload = {
@@ -198,9 +224,13 @@ class ResendEmailService:
                 logger.info(f"📧 EMAIL SENT via Resend: to={to}, subject={subject[:50]}...")
                 return True
             logger.error(f"❌ Resend failed: HTTP {resp.status_code} - {resp.text}")
+            if raise_on_error:
+                raise RuntimeError(f"Resend delivery failed (HTTP {resp.status_code}): {resp.text}")
             return False
         except Exception as e:
             logger.error(f"❌ Resend send failed: {e}")
+            if raise_on_error:
+                raise RuntimeError(f"Resend email send error: {str(e)}") from e
             return False
 
 class TermiiSMSService:

@@ -293,9 +293,12 @@ const ContentManagement = () => {
     archived: { icon: Archive, label: 'Archived', color: 'bg-red-100 text-red-800' }
   };
 
+  const stripHtml = (value) => String(value || '').replace(/<[^>]*>/g, '').trim();
+
   // Content Creation/Edit Modal
   const ContentModal = ({ isEdit = false, content = null, onClose, onSave }) => {
     const editorRef = useRef(null);
+    const excerptEditorRef = useRef(null);
     const FONT_SIZE_OPTIONS = ['9', '10', '10.5', '11', '12', '14', '16', '18', '20', '22', '24', '26', '28', '32', '36', '48', '56'];
     const BLOG_CATEGORIES = ['getting_started', 'payments_earnings', 'account_management', 'job_management', 'safety_policies'];
     const DEFAULT_CATEGORIES = ['marketing', 'support', 'product', 'tutorial', 'news', 'general'];
@@ -330,6 +333,12 @@ const ContentManagement = () => {
         editorRef.current.innerHTML = formData.content || '';
       }
     }, [formData.content]);
+
+    useEffect(() => {
+      if (excerptEditorRef.current && excerptEditorRef.current.innerHTML !== formData.excerpt) {
+        excerptEditorRef.current.innerHTML = formData.excerpt || '';
+      }
+    }, [formData.excerpt]);
 
     const applyEditorCommand = (field, ref, command, value = null) => {
       if (!ref.current) return;
@@ -632,14 +641,80 @@ const ContentManagement = () => {
             {/* Excerpt */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Excerpt</label>
-              <textarea
-                value={formData.excerpt}
-                onChange={(e) => setFormData({...formData, excerpt: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                rows="3"
-                maxLength="500"
-                placeholder="Brief description (500 chars max)"
-              />
+              <div className="border border-gray-300 rounded-lg">
+                <div className="sticky top-0 z-20 flex flex-wrap items-center gap-2 p-2 border-b bg-gray-50">
+                  <select
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v) applyEditorCommand('excerpt', excerptEditorRef, 'formatBlock', v);
+                      e.target.value = '';
+                    }}
+                    className="px-2 py-1 text-sm border border-gray-300 rounded"
+                    defaultValue=""
+                  >
+                    <option value="" disabled>Size</option>
+                    <option value="P">Normal</option>
+                    <option value="H1">Heading 1</option>
+                    <option value="H2">Heading 2</option>
+                    <option value="H3">Heading 3</option>
+                  </select>
+                  <button type="button" onClick={() => applyEditorCommand('excerpt', excerptEditorRef, 'bold')} className="px-2 py-1 border border-gray-300 rounded text-sm font-bold">B</button>
+                  <button type="button" onClick={() => applyEditorCommand('excerpt', excerptEditorRef, 'italic')} className="px-2 py-1 border border-gray-300 rounded text-sm italic">I</button>
+                  <button type="button" onClick={() => applyEditorCommand('excerpt', excerptEditorRef, 'underline')} className="px-2 py-1 border border-gray-300 rounded text-sm underline">U</button>
+                  <select
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value) applyEditorFontSize('excerpt', excerptEditorRef, value);
+                      e.target.value = '';
+                    }}
+                    className="px-2 py-1 text-sm border border-gray-300 rounded"
+                    defaultValue=""
+                  >
+                    <option value="" disabled>Text Size</option>
+                    {FONT_SIZE_OPTIONS.map((sizeOption) => (
+                      <option key={sizeOption} value={sizeOption}>
+                        {sizeOption}
+                      </option>
+                    ))}
+                  </select>
+                  <button type="button" onClick={() => applyEditorCommand('excerpt', excerptEditorRef, 'insertUnorderedList')} className="px-2 py-1 border border-gray-300 rounded text-sm">Bulleted List</button>
+                  <button type="button" onClick={() => applyEditorCommand('excerpt', excerptEditorRef, 'insertOrderedList')} className="px-2 py-1 border border-gray-300 rounded text-sm">1. List</button>
+                  <button type="button" onClick={() => applyEditorCommand('excerpt', excerptEditorRef, 'formatBlock', 'P')} className="px-2 py-1 border border-gray-300 rounded text-sm flex items-center justify-center" title="Paragraph">
+                    <Pilcrow size={14} />
+                  </button>
+                  <button type="button" onClick={() => applyEditorCommand('excerpt', excerptEditorRef, 'justifyLeft')} className="px-2 py-1 border border-gray-300 rounded text-sm flex items-center justify-center" title="Align left">
+                    <AlignLeft size={14} />
+                  </button>
+                  <button type="button" onClick={() => applyEditorCommand('excerpt', excerptEditorRef, 'justifyCenter')} className="px-2 py-1 border border-gray-300 rounded text-sm flex items-center justify-center" title="Align center">
+                    <AlignCenter size={14} />
+                  </button>
+                  <button type="button" onClick={() => applyEditorCommand('excerpt', excerptEditorRef, 'justifyRight')} className="px-2 py-1 border border-gray-300 rounded text-sm flex items-center justify-center" title="Align right">
+                    <AlignRight size={14} />
+                  </button>
+                  <button type="button" onClick={() => applyEditorCommand('excerpt', excerptEditorRef, 'justifyFull')} className="px-2 py-1 border border-gray-300 rounded text-sm flex items-center justify-center" title="Justify">
+                    <AlignJustify size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const url = window.prompt('Enter link URL');
+                      if (url) applyEditorCommand('excerpt', excerptEditorRef, 'createLink', url);
+                    }}
+                    className="px-2 py-1 border border-gray-300 rounded text-sm"
+                  >
+                    Link
+                  </button>
+                  <button type="button" onClick={() => applyEditorCommand('excerpt', excerptEditorRef, 'removeFormat')} className="px-2 py-1 border border-gray-300 rounded text-sm">Clear</button>
+                </div>
+                <div
+                  ref={excerptEditorRef}
+                  contentEditable
+                  onInput={() => setFormData((prev) => ({ ...prev, excerpt: excerptEditorRef.current?.innerHTML || '' }))}
+                  onKeyDown={(e) => handleEditorKeyDown(e, 'excerpt', excerptEditorRef)}
+                  className="w-full px-3 py-2 min-h-[120px] focus:outline-none"
+                  style={{ whiteSpace: 'pre-wrap' }}
+                />
+              </div>
             </div>
 
             {/* Options */}
@@ -1198,7 +1273,7 @@ const ContentManagement = () => {
                             </div>
 
                             {item.excerpt && (
-                              <p className="text-gray-600 text-sm mb-3">{item.excerpt}</p>
+                              <p className="text-gray-600 text-sm mb-3">{stripHtml(item.excerpt)}</p>
                             )}
 
                             {item.tags && item.tags.length > 0 && (
@@ -1862,7 +1937,7 @@ const PreviewContent = ({ item }) => {
         <img src={data.featured_image} alt={data.title} className="w-full h-64 object-cover rounded mb-4" />
       )}
       {data.excerpt && (
-        <div className="text-gray-600 mb-4">{data.excerpt}</div>
+        <div className="text-gray-600 mb-4">{stripHtml(data.excerpt)}</div>
       )}
       <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: data.content || '' }} />
       {loading && (

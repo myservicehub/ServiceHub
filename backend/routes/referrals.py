@@ -14,11 +14,36 @@ from ..models.base import (
     DocumentType, WithdrawalRequest, WalletResponseWithReferrals
 )
 try:
-    from ..services.notifications import SendGridEmailService, MockEmailService
+    from ..services.notifications import notification_service
 except ImportError:
-    from services.notifications import SendGridEmailService, MockEmailService
+    from services.notifications import notification_service
 
 router = APIRouter(prefix="/api/referrals", tags=["referrals"])
+
+
+async def _send_reference_email_or_raise(
+    to_email: str,
+    subject: str,
+    html_content: str,
+    metadata: dict,
+) -> None:
+    """Send reference email via the shared notification provider and raise on delivery failure."""
+    notification_service._ensure_services_initialized()
+    email_service = notification_service.email_service
+    provider_name = getattr(email_service, "service_name", email_service.__class__.__name__)
+    try:
+        await email_service.send_email(
+            to=to_email,
+            subject=subject,
+            content=html_content,
+            metadata=metadata,
+            raise_on_error=True,
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Failed to send {metadata.get('purpose', 'reference')} email via {provider_name}: {str(e)}",
+        )
 
 @router.get("/my-stats", response_model=ReferralStats)
 async def get_my_referral_stats(current_user = Depends(get_current_user)):
@@ -234,18 +259,9 @@ async def submit_tradesperson_references(
         or getattr(current_user, "business_name", None)
         or "Tradesperson"
     )
-    email_service = None
-    try:
-        email_service = SendGridEmailService()
-    except Exception:
-        try:
-            email_service = MockEmailService()
-        except Exception:
-            email_service = None
-    if email_service:
-        work_subject = "Request for Work Reference"
-        work_link = "https://forms.gle/p3SdDzHoT5eN7oTv6"
-        work_html = f"""
+    work_subject = "Request for Work Reference"
+    work_link = "https://forms.gle/p3SdDzHoT5eN7oTv6"
+    work_html = f"""
         <!DOCTYPE html>
         <html>
         <head>
@@ -272,19 +288,19 @@ async def submit_tradesperson_references(
         </body>
         </html>
         """
-        await email_service.send_email(
-            to=work_referrer["company_email"],
-            subject=work_subject,
-            content=work_html,
-            metadata={
-                "purpose": "work_reference_request",
-                "user_id": current_user.id,
-                "tradesperson_name": tradesperson_name,
-            },
-        )
-        char_subject = "Request for Character Reference"
-        char_link = "https://forms.gle/LpmqGmtv8Awzf7ix5"
-        char_html = f"""
+    await _send_reference_email_or_raise(
+        to_email=work_referrer["company_email"],
+        subject=work_subject,
+        html_content=work_html,
+        metadata={
+            "purpose": "work_reference_request",
+            "user_id": current_user.id,
+            "tradesperson_name": tradesperson_name,
+        },
+    )
+    char_subject = "Request for Character Reference"
+    char_link = "https://forms.gle/LpmqGmtv8Awzf7ix5"
+    char_html = f"""
         <!DOCTYPE html>
         <html>
         <head>
@@ -311,16 +327,16 @@ async def submit_tradesperson_references(
         </body>
         </html>
         """
-        await email_service.send_email(
-            to=character_referrer["email"],
-            subject=char_subject,
-            content=char_html,
-            metadata={
-                "purpose": "character_reference_request",
-                "user_id": current_user.id,
-                "tradesperson_name": tradesperson_name,
-            },
-        )
+    await _send_reference_email_or_raise(
+        to_email=character_referrer["email"],
+        subject=char_subject,
+        html_content=char_html,
+        metadata={
+            "purpose": "character_reference_request",
+            "user_id": current_user.id,
+            "tradesperson_name": tradesperson_name,
+        },
+    )
     return {
         "message": "References submitted successfully and pending admin review.",
         "verification_id": verification_id,

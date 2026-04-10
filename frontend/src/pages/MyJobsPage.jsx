@@ -523,6 +523,43 @@ const MyJobsPage = () => {
     });
   };
 
+  const TIMELINE_PLACEHOLDERS = new Set(['', 'flexible', 'not specified', 'n/a', 'na', 'none']);
+  const timelineKeywords = [
+    'urgent',
+    'timeline',
+    'when do you need',
+    'how soon',
+    'when do you want',
+    'when should',
+    'job done',
+    'start date'
+  ];
+
+  const deriveTimelineFromAnswers = (answersDoc) => {
+    const answers = Array.isArray(answersDoc?.answers) ? answersDoc.answers : [];
+    for (const ans of answers) {
+      const questionText = String(ans?.question_text || ans?.question || '').toLowerCase();
+      if (!timelineKeywords.some((key) => questionText.includes(key))) continue;
+      const rawValue = ans?.answer_text ?? ans?.answer_value;
+      if (Array.isArray(rawValue)) {
+        const joined = rawValue.map((item) => String(item || '').trim()).filter(Boolean).join(', ');
+        if (joined) return joined;
+        continue;
+      }
+      const value = String(rawValue || '').trim();
+      if (value) return value;
+    }
+    return '';
+  };
+
+  const resolveTimelineDisplay = (job, fallback = 'Not specified') => {
+    const raw = String(job?.timeline || '').trim();
+    if (raw && !TIMELINE_PLACEHOLDERS.has(raw.toLowerCase())) return raw;
+    const derived = deriveTimelineFromAnswers(job?.question_answers);
+    if (derived) return derived;
+    return raw || fallback;
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'active':
@@ -946,10 +983,10 @@ const MyJobsPage = () => {
                             {expandedJobs.has(job.id) && (
                               <div className="mb-3 p-3 bg-gray-50 rounded-lg space-y-2 text-sm animate-in fade-in duration-200">
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-gray-600">
-                                  {job.timeline && (
+                                  {resolveTimelineDisplay(job, '') && (
                                     <div className="flex items-center">
                                       <Clock size={13} className="mr-1.5 text-gray-400" />
-                                      <span className="font-lato">{job.timeline}</span>
+                                      <span className="font-lato">{resolveTimelineDisplay(job)}</span>
                                     </div>
                                   )}
                                   {job.category && (

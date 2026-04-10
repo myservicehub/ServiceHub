@@ -293,6 +293,43 @@ const AdminDashboard = () => {
     return message || fallback;
   };
 
+  const TIMELINE_PLACEHOLDERS = new Set(['', 'flexible', 'not specified', 'n/a', 'na', 'none']);
+  const timelineKeywords = [
+    'urgent',
+    'timeline',
+    'when do you need',
+    'how soon',
+    'when do you want',
+    'when should',
+    'job done',
+    'start date'
+  ];
+
+  const deriveTimelineFromAnswers = (answersDoc) => {
+    const answers = Array.isArray(answersDoc?.answers) ? answersDoc.answers : [];
+    for (const ans of answers) {
+      const questionText = String(ans?.question_text || ans?.question || '').toLowerCase();
+      if (!timelineKeywords.some((key) => questionText.includes(key))) continue;
+      const rawValue = ans?.answer_text ?? ans?.answer_value;
+      if (Array.isArray(rawValue)) {
+        const joined = rawValue.map((item) => String(item || '').trim()).filter(Boolean).join(', ');
+        if (joined) return joined;
+        continue;
+      }
+      const value = String(rawValue || '').trim();
+      if (value) return value;
+    }
+    return '';
+  };
+
+  const resolveTimelineDisplay = (jobLike, answersDoc = null, fallback = 'Not specified') => {
+    const raw = String(jobLike?.timeline || '').trim();
+    if (raw && !TIMELINE_PLACEHOLDERS.has(raw.toLowerCase())) return raw;
+    const derived = deriveTimelineFromAnswers(answersDoc || jobLike?.question_answers);
+    if (derived) return derived;
+    return raw || fallback;
+  };
+
   useEffect(() => {
     if (isLoggedIn) {
       fetchData();
@@ -2358,7 +2395,7 @@ const AdminDashboard = () => {
                                       <div className="text-sm text-gray-600">
                                         {job.state && job.lga ? `${job.lga}, ${job.state}` : job.location}
                                       </div>
-                                      <div className="text-xs text-gray-500">{job.timeline}</div>
+                                      <div className="text-xs text-gray-500">{resolveTimelineDisplay(job, job?.question_answers)}</div>
                                     </div>
                                   </td>
                                   <td className="px-6 py-4">
@@ -5637,7 +5674,7 @@ const AdminDashboard = () => {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-500">Timeline:</span>
-                          <span className="font-medium">{selectedJobDetails.timeline || 'Not specified'}</span>
+                          <span className="font-medium">{resolveTimelineDisplay(selectedJobDetails, selectedJobAnswers)}</span>
                         </div>
                       </div>
                     </div>
@@ -6204,7 +6241,7 @@ const AdminDashboard = () => {
                         {selectedJob.status}
                       </span>
                     </div>
-                    <div><strong>Timeline:</strong> {selectedJob.timeline || 'Not specified'}</div>
+                    <div><strong>Timeline:</strong> {resolveTimelineDisplay(selectedJob, selectedJob?.question_answers)}</div>
                     <div><strong>Budget:</strong> {selectedJob.budget_min && selectedJob.budget_max ? 
                       `₦${selectedJob.budget_min?.toLocaleString()} - ₦${selectedJob.budget_max?.toLocaleString()}` : 
                       'Budget not specified'

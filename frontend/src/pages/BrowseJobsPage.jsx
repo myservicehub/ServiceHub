@@ -754,6 +754,57 @@ const BrowseJobsPage = () => {
     return 1000;
   };
 
+  const TIMELINE_PLACEHOLDERS = new Set(['', 'flexible', 'not specified', 'n/a', 'na', 'none']);
+  const timelineKeywords = [
+    'urgent',
+    'timeline',
+    'when do you need',
+    'how soon',
+    'when do you want',
+    'when should',
+    'job done',
+    'start date'
+  ];
+
+  const deriveTimelineFromAnswers = (answersDoc) => {
+    const answers = Array.isArray(answersDoc?.answers) ? answersDoc.answers : [];
+    for (const ans of answers) {
+      const questionText = String(ans?.question_text || ans?.question || '').toLowerCase();
+      if (!timelineKeywords.some((key) => questionText.includes(key))) continue;
+      const rawValue = ans?.answer_text ?? ans?.answer_value;
+      if (Array.isArray(rawValue)) {
+        const joined = rawValue.map((item) => String(item || '').trim()).filter(Boolean).join(', ');
+        if (joined) return joined;
+        continue;
+      }
+      const value = String(rawValue || '').trim();
+      if (value) return value;
+    }
+    return '';
+  };
+
+  const getCachedAnswersForJob = (job) => {
+    const ids = [job?.id, job?._id, job?.job_id]
+      .filter(Boolean)
+      .map((id) => String(id));
+    for (const id of ids) {
+      if (jobAnswersCache.current[id]) return jobAnswersCache.current[id];
+      const trimmed = id.replace(/^0+/, '') || id;
+      if (jobAnswersCache.current[trimmed]) return jobAnswersCache.current[trimmed];
+    }
+    return null;
+  };
+
+  const resolveJobTimeline = (job, answersDoc = null) => {
+    const raw = String(job?.timeline || '').trim();
+    if (raw && !TIMELINE_PLACEHOLDERS.has(raw.toLowerCase())) {
+      return raw;
+    }
+    const derived = deriveTimelineFromAnswers(answersDoc || getCachedAnswersForJob(job));
+    if (derived) return derived;
+    return raw || 'Flexible';
+  };
+
   const handleViewJobDetails = async (job) => {
     let freshJob = job;
     try {
@@ -1256,7 +1307,7 @@ const BrowseJobsPage = () => {
                 <div className="bg-gray-50 rounded-xl p-3">
                   <Clock size={16} className="text-gray-400 mb-1" />
                   <p className="text-xs text-gray-500">Timeline</p>
-                  <p className="text-sm font-medium text-[#121E3C]">{selectedJobDetails.timeline || 'Flexible'}</p>
+                  <p className="text-sm font-medium text-[#121E3C]">{resolveJobTimeline(selectedJobDetails, selectedJobAnswers)}</p>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-3">
                   <Briefcase size={16} className="text-gray-400 mb-1" />

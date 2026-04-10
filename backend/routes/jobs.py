@@ -908,6 +908,9 @@ async def get_job(job_id: str):
             qa = await database.get_job_question_answers(job_id)
             if qa:
                 job["question_answers"] = qa
+                derived_timeline = await _sync_job_timeline_from_answers(job_id, qa)
+                if derived_timeline and _is_placeholder_timeline(job.get("timeline")):
+                    job["timeline"] = derived_timeline
         except Exception as e:
             logger.warning(f"Failed to fetch question answers for job {job_id}: {e}")
 
@@ -1557,23 +1560,76 @@ async def get_trade_category_questions(trade_category: str):
         logger.error(f"Error getting questions for trade category {trade_category}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to retrieve trade category questions")
 
+_TIMELINE_PLACEHOLDERS = {"", "flexible", "not specified", "n/a", "na", "none"}
+
+
+def _is_placeholder_timeline(value: Optional[str]) -> bool:
+    normalized = str(value or "").strip().lower()
+    return normalized in _TIMELINE_PLACEHOLDERS
+
+
 def _extract_timeline_from_answers(answers: list) -> Optional[str]:
-    """Extract urgency/timeline from job question answers"""
+    """Extract urgency/timeline from job question answers."""
     if not answers:
         return None
-        
+
+    keywords = [
+        "urgent",
+        "timeline",
+        "when do you need",
+        "how soon",
+        "when do you want",
+        "when should",
+        "job done",
+        "start date",
+    ]
+
     for answer in answers:
-        q_text = str(answer.get('question_text', '')).lower()
-        # Look for urgency related questions
-        if 'urgent' in q_text or 'timeline' in q_text or 'when do you need' in q_text or 'how soon' in q_text:
-            # Return the human-readable answer text if available, else the value
-            val = answer.get('answer_text') or answer.get('answer_value')
-            # If value is a list (multiple choice), join it
-            if isinstance(val, list):
-                return ", ".join(str(v) for v in val)
-            return str(val) if val else None
-            
+        question_text = str(
+            answer.get("question_text")
+            or answer.get("question")
+            or ""
+        ).lower()
+
+        if not any(keyword in question_text for keyword in keywords):
+            continue
+
+        value = answer.get("answer_text") or answer.get("answer_value")
+        if isinstance(value, list):
+            value = ", ".join(str(item).strip() for item in value if str(item).strip())
+        if value is None:
+            continue
+
+        timeline = str(value).strip()
+        if timeline:
+            return timeline
+
     return None
+
+
+async def _sync_job_timeline_from_answers(job_id: str, answers_doc: Optional[dict]) -> Optional[str]:
+    """Best effort: derive timeline from answers and persist when current timeline is placeholder."""
+    try:
+        answers = (answers_doc or {}).get("answers") or []
+        derived_timeline = _extract_timeline_from_answers(answers)
+        if not derived_timeline:
+            return None
+
+        job = await database.get_job_by_id(job_id)
+        if not job:
+            return derived_timeline
+
+        current_timeline = job.get("timeline")
+        if _is_placeholder_timeline(current_timeline):
+            canonical_job_id = str(job.get("id") or job_id)
+            await database.update_job(
+                canonical_job_id,
+                {"timeline": derived_timeline, "updated_at": datetime.utcnow()},
+            )
+        return derived_timeline
+    except Exception as e:
+        logger.warning("Timeline sync from answers failed for job %s: %s", job_id, e)
+        return None
 
 @router.post("/trade-questions/answers")
 async def save_job_question_answers(
@@ -1659,6 +1715,7 @@ async def get_job_question_answers(job_id: str):
     try:
         answers = await database.get_job_question_answers(job_id)
         if answers and answers.get("answers"):
+            await _sync_job_timeline_from_answers(job_id, answers)
             return answers
 
         # Fallback: some legacy jobs may have answers embedded on the job document
@@ -1669,6 +1726,7 @@ async def get_job_question_answers(job_id: str):
                 qa = job.get("question_answers") or (job.get("job_details") or {}).get("question_answers")
                 # Normalize to the same shape used by job_question_answers
                 if isinstance(qa, dict) and qa.get("answers"):
+                    await _sync_job_timeline_from_answers(job_id, qa)
                     qa_doc = {
                         "job_id": job.get("id") or job_id,
                         "trade_category": qa.get("trade_category") or job.get("category") or "",
