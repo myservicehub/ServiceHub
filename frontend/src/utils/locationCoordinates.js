@@ -87,6 +87,8 @@ export const STATE_ALIASES = {
   "cross rivers": "cross river",
 };
 
+const BORDERLINE_STATE_MARGIN_KM = 20;
+
 // Selected LGA coordinates for high-traffic areas (approximate)
 export const LGA_HINTS = {
   // Lagos LGAs
@@ -111,6 +113,37 @@ export const LGA_HINTS = {
 };
 
 const normalizeText = (s) => (s || "").toLowerCase().replace(/\s+/g, " ").trim();
+const toTitleCase = (s) => s.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+export const normalizeStateKey = (value) => {
+  const normalized = normalizeText(value);
+  return STATE_ALIASES[normalized] || normalized;
+};
+
+// Multiple representative points per state for better coordinate-to-state inference.
+// Most states use capital as fallback; Delta/Edo/Bayelsa include extra points to reduce false mismatches.
+const STATE_REFERENCE_POINTS = Object.fromEntries(
+  Object.entries(STATE_CAPITAL_COORDS).map(([stateKey, coords]) => [stateKey, [coords]])
+);
+
+STATE_REFERENCE_POINTS.delta = [
+  { lat: 6.198, lng: 6.732 },   // Asaba
+  { lat: 5.523, lng: 5.761 },   // Warri
+  { lat: 5.894, lng: 5.676 },   // Sapele
+  { lat: 5.489, lng: 5.987 },   // Ughelli
+];
+
+STATE_REFERENCE_POINTS.edo = [
+  { lat: 6.335, lng: 5.6037 },  // Benin City
+  { lat: 7.067, lng: 6.266 },   // Auchi
+  { lat: 6.743, lng: 6.14 },    // Ekpoma
+];
+
+STATE_REFERENCE_POINTS.bayelsa = [
+  { lat: 4.9248, lng: 6.2643 }, // Yenagoa
+  { lat: 5.159, lng: 6.196 },   // Sagbama
+  { lat: 4.662, lng: 6.272 },   // Ogbia axis
+];
 
 const findStateFromText = (text) => {
   const normalized = normalizeText(text);
@@ -198,26 +231,62 @@ function haversineKm(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
+const minDistanceToState = (lat, lng, stateKey) => {
+  const points = STATE_REFERENCE_POINTS[stateKey] || [];
+  if (!points.length) return null;
+  let best = Infinity;
+  for (const point of points) {
+    const d = haversineKm(lat, lng, point.lat, point.lng);
+    if (d < best) best = d;
+  }
+  return Number.isFinite(best) ? best : null;
+};
+
 // Exported util for computing distance (km)
 export function computeDistanceKm(lat1, lon1, lat2, lon2) {
   if ([lat1, lon1, lat2, lon2].some(v => typeof v !== 'number')) return null;
   return haversineKm(lat1, lon1, lat2, lon2);
 }
 
-// Infer the nearest Nigerian state from coordinates using STATE_CAPITAL_COORDS
-export function nearestStateFromCoordinates(lat, lng) {
+export function inferStateFromCoordinates(lat, lng) {
   if (typeof lat !== 'number' || typeof lng !== 'number') return null;
-  let bestKey = null;
-  let bestDist = Infinity;
-  for (const [stateKey, coords] of Object.entries(STATE_CAPITAL_COORDS)) {
-    const d = haversineKm(lat, lng, coords.lat, coords.lng);
-    if (d < bestDist) {
-      bestDist = d;
-      bestKey = stateKey;
-    }
-  }
-  if (!bestKey) return null;
-  // Convert normalized key (e.g., "cross river") to Title Case for display
-  const toTitle = (s) => s.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-  return toTitle(bestKey);
+
+  const ranked = Object.keys(STATE_REFERENCE_POINTS)
+    .map((stateKey) => ({
+      stateKey,
+      distanceKm: minDistanceToState(lat, lng, stateKey)
+    }))
+    .filter((row) => typeof row.distanceKm === 'number')
+    .sort((a, b) => a.distanceKm - b.distanceKm);
+
+  if (!ranked.length) return null;
+
+  const best = ranked[0];
+  const second = ranked[1] || null;
+  const isAmbiguous = !!(
+    second &&
+    (second.distanceKm - best.distanceKm) <= BORDERLINE_STATE_MARGIN_KM
+  );
+
+  return {
+    stateKey: best.stateKey,
+    stateName: toTitleCase(best.stateKey),
+    distanceKm: best.distanceKm,
+    secondStateKey: second?.stateKey || null,
+    secondStateName: second ? toTitleCase(second.stateKey) : null,
+    secondDistanceKm: second?.distanceKm ?? null,
+    isAmbiguous,
+  };
+}
+
+export function distanceToStateFromCoordinates(lat, lng, stateValue) {
+  if (typeof lat !== 'number' || typeof lng !== 'number') return null;
+  const normalizedState = normalizeStateKey(stateValue);
+  return minDistanceToState(lat, lng, normalizedState);
+}
+
+// Infer the nearest Nigerian state from coordinates using multi-point state references.
+export function nearestStateFromCoordinates(lat, lng) {
+  const inferred = inferStateFromCoordinates(lat, lng);
+  return inferred?.stateName || null;
 }

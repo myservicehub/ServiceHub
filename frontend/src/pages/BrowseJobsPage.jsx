@@ -33,7 +33,17 @@ import JobsMap from '../components/maps/JobsMap';
 import LocationSettingsModal from '../components/LocationSettingsModal';
 import { authAPI } from '../api/services';
 import { notificationsAPI } from '../api/notifications';
-import { resolveCoordinatesFromLocationText, resolveCoordinatesFromStructuredLocation, DEFAULT_TRAVEL_DISTANCE_KM, nearestStateFromCoordinates, computeDistanceKm, STATE_CAPITAL_COORDS, STATE_ALIASES } from '../utils/locationCoordinates';
+import {
+  resolveCoordinatesFromLocationText,
+  resolveCoordinatesFromStructuredLocation,
+  DEFAULT_TRAVEL_DISTANCE_KM,
+  nearestStateFromCoordinates,
+  computeDistanceKm,
+  STATE_CAPITAL_COORDS,
+  inferStateFromCoordinates,
+  distanceToStateFromCoordinates,
+  normalizeStateKey
+} from '../utils/locationCoordinates';
 import { getTradespersonCompletionStatus } from '../utils/tradespersonCompletion';
 
 import AuthenticatedImage from '../components/common/AuthenticatedImage';
@@ -183,13 +193,28 @@ const BrowseJobsPage = () => {
     const profileState = String(user?.state || user?.location || '').trim();
     if (!profileState) return;
     if (!userLocation || typeof userLocation.lat !== 'number' || typeof userLocation.lng !== 'number') return;
-    const inferredState = nearestStateFromCoordinates(userLocation.lat, userLocation.lng);
-    if (!inferredState) return;
-    if (inferredState.toLowerCase() !== profileState.toLowerCase()) {
+    const inferred = inferStateFromCoordinates(userLocation.lat, userLocation.lng);
+    if (!inferred) return;
+
+    const normalizedProfile = normalizeStateKey(profileState);
+    if (!normalizedProfile) return;
+
+    const profileDistanceKm = distanceToStateFromCoordinates(
+      userLocation.lat,
+      userLocation.lng,
+      normalizedProfile
+    );
+    const mismatchGapKm =
+      typeof profileDistanceKm === 'number'
+        ? profileDistanceKm - inferred.distanceKm
+        : Number.POSITIVE_INFINITY;
+
+    // Warn only on confident mismatch. This avoids false positives around border states.
+    if (inferred.stateKey !== normalizedProfile && !inferred.isAmbiguous && mismatchGapKm > 35) {
       stateMismatchWarnedRef.current = true;
       toast({
         title: "Check your saved location",
-        description: `Your profile state is ${profileState}, but your saved coordinates are near ${inferredState}. Update Location Settings for accurate distance.`,
+        description: `Your profile state is ${profileState}, but your saved coordinates are near ${inferred.stateName}. Update Location Settings for accurate distance.`,
         duration: 9000,
       });
     }
@@ -382,11 +407,6 @@ const BrowseJobsPage = () => {
       if (!Array.isArray(jobsData)) jobsData = [];
 
       if (filters.useLocation && userLocation && typeof userLocation.lat === 'number' && typeof userLocation.lng === 'number') {
-        const normalizeStateKey = (value) => {
-          const raw = (value || '').toString().trim().toLowerCase();
-          if (!raw) return '';
-          return STATE_ALIASES[raw] || raw;
-        };
         const userStateKey = normalizeStateKey(user?.state || user?.location);
         const almostEqual = (a, b, eps = 0.01) => Math.abs(Number(a) - Number(b)) <= eps;
 
