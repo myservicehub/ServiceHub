@@ -8900,7 +8900,9 @@ We may update this Cookie Policy to reflect changes in technology or regulations
             {"id": content_id},
             {"$set": update_data}
         )
-        return result.modified_count > 0
+        # Treat "matched but unchanged" as success so admin updates don't fail
+        # when payload resolves to the same stored values.
+        return result.modified_count > 0 or result.matched_count > 0
 
     async def bulk_update_content_items(self, content_ids: List[str], update_data: dict) -> int:
         """Bulk update content items"""

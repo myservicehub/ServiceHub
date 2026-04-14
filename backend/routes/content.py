@@ -3,6 +3,7 @@ from fastapi.security import HTTPBearer
 from typing import List, Optional
 from datetime import datetime
 import logging
+from datetime import timezone
 
 from ..database import database
 from ..models.content import (
@@ -18,6 +19,22 @@ logger = logging.getLogger(__name__)
 security = HTTPBearer()
 
 router = APIRouter(prefix="/api/admin/content", tags=["content_management"])
+
+
+def _coerce_datetime(value):
+    if isinstance(value, datetime):
+        return value
+    if isinstance(value, str):
+        try:
+            # Accept trailing Z and naive ISO strings
+            normalized = value.replace("Z", "+00:00")
+            parsed = datetime.fromisoformat(normalized)
+            if parsed.tzinfo is not None:
+                return parsed.astimezone(timezone.utc).replace(tzinfo=None)
+            return parsed
+        except Exception:
+            return None
+    return None
 
 # Content CRUD Operations
 
@@ -182,13 +199,13 @@ async def update_content_item(
         
         # Auto-set publish_date if publishing (and avoid leaving a future date)
         if update_data.status == ContentStatus.PUBLISHED:
+            existing_publish_date = _coerce_datetime(existing_item.get("publish_date"))
             # if client didn't supply a date but the existing item has a future
             # publish_date we overwrite it with `now` so the post isn't hidden.
             if not update_data.publish_date:
                 if (existing_item.get("status") != ContentStatus.PUBLISHED.value
-                        or not existing_item.get("publish_date")
-                        or (existing_item.get("publish_date") and
-                            existing_item.get("publish_date") > datetime.utcnow())):
+                        or not existing_publish_date
+                        or existing_publish_date > datetime.utcnow()):
                     update_dict["publish_date"] = datetime.utcnow()
             else:
                 # if client explicitly set a publish_date in the past/future we
