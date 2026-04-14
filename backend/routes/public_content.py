@@ -586,6 +586,8 @@ async def get_job_posting_by_slug(slug: str):
     try:
         # Get the job posting
         job_posting = await database.get_content_item_by_slug(slug)
+        if not job_posting:
+            job_posting = await database.get_content_item_by_id(slug)
         
         if not job_posting:
             raise HTTPException(status_code=404, detail="Job posting not found")

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Briefcase, MapPin, Clock, Users, Heart, TrendingUp, 
   Award, Coffee, Laptop, Globe, Mail, Phone, Send,
@@ -11,6 +12,7 @@ import careersAPI from '../api/careers';
 import { statsAPI } from '../api/services';
 
 const CareersPage = () => {
+  const navigate = useNavigate();
   const [openPositions, setOpenPositions] = useState([]);
   const [selectedDepartment, setSelectedDepartment] = useState('all');
   const [departments, setDepartments] = useState(['all']);
@@ -192,8 +194,22 @@ const CareersPage = () => {
     }
   };
 
-  const JobCard = ({ job }) => (
-    <div className="group bg-white rounded-2xl border border-gray-100 p-5 hover:shadow-lg hover:border-[#34D164]/20 transition-all duration-300">
+  const JobCard = ({ job }) => {
+    const jobPath = `/careers/${encodeURIComponent(job.slug || job.id)}`;
+
+    return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => navigate(jobPath)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          navigate(jobPath);
+        }
+      }}
+      className="group bg-white rounded-2xl border border-gray-100 p-5 hover:shadow-lg hover:border-[#34D164]/20 transition-all duration-300 cursor-pointer"
+    >
       <div className="flex justify-between items-start mb-3">
         <div className="flex-1">
           <h3 className="text-base font-semibold font-montserrat text-[#121E3C] mb-2 group-hover:text-[#34D164] transition-colors">{job.title}</h3>
@@ -250,8 +266,19 @@ const CareersPage = () => {
           <Calendar className="w-3 h-3 inline mr-1" />
           {new Date(job.created_at).toLocaleDateString()}
         </span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(jobPath);
+            }}
+            className="border border-[#34D164] text-[#34D164] hover:bg-[#34D164]/10 px-4 py-1.5 rounded-full text-xs font-medium transition-colors"
+          >
+            View details
+          </button>
         <button 
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation();
             setApplicationForm({...applicationForm, position: job.title});
             document.getElementById('application-form').scrollIntoView({ behavior: 'smooth' });
           }}
@@ -260,9 +287,11 @@ const CareersPage = () => {
           Apply
           <ArrowRight className="w-3 h-3 ml-1" />
         </button>
+        </div>
       </div>
     </div>
   );
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">

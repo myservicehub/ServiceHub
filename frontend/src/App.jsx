@@ -37,6 +37,7 @@ const CookiePolicyPage = lazy(() => import("./pages/CookiePolicyPage"));
 // Blog & Careers
 const BlogPage = lazy(() => import("./pages/BlogPage"));
 const CareersPage = lazy(() => import("./pages/CareersPage"));
+const CareerJobDetailPage = lazy(() => import("./pages/CareerJobDetailPage"));
 
 // External/Misc
 const ExternalReviewPage = lazy(() => import("./pages/ExternalReviewPage"));
@@ -156,6 +157,7 @@ function App() {
                 <Route path="/blog" element={<BlogPage />} />
                 <Route path="/blog/:slug" element={<BlogPage />} />
                 <Route path="/careers" element={<CareersPage />} />
+                <Route path="/careers/:slug" element={<CareerJobDetailPage />} />
                 <Route path="/coming-soon" element={<ComingSoonPage />} />
                 
                 {/* External Review (for email links) */}

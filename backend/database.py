@@ -8883,6 +8883,15 @@ We may update this Cookie Policy to reflect changes in technology or regulations
     async def get_content_item_by_id(self, content_id: str) -> Optional[dict]:
         """Get content item by ID"""
         item = await self.database.content_items.find_one({"id": content_id})
+        if not item:
+            # Backward compatibility: allow Mongo ObjectId lookup when callers
+            # pass list/grid IDs derived from _id.
+            try:
+                from bson import ObjectId
+                if ObjectId.is_valid(content_id):
+                    item = await self.database.content_items.find_one({"_id": ObjectId(content_id)})
+            except Exception:
+                pass
         if item:
             item['_id'] = str(item['_id'])
         return item
@@ -8900,6 +8909,17 @@ We may update this Cookie Policy to reflect changes in technology or regulations
             {"id": content_id},
             {"$set": update_data}
         )
+        if result.matched_count == 0:
+            # Fallback for Mongo ObjectId-based identifiers.
+            try:
+                from bson import ObjectId
+                if ObjectId.is_valid(content_id):
+                    result = await self.database.content_items.update_one(
+                        {"_id": ObjectId(content_id)},
+                        {"$set": update_data}
+                    )
+            except Exception:
+                pass
         # Treat "matched but unchanged" as success so admin updates don't fail
         # when payload resolves to the same stored values.
         return result.modified_count > 0 or result.matched_count > 0
@@ -9134,9 +9154,10 @@ We may update this Cookie Policy to reflect changes in technology or regulations
         job_postings = await cursor.to_list(length=limit)
         
         for job in job_postings:
-            job_id_str = str(job['_id'])
-            job['_id'] = job_id_str
-            job['id'] = job_id_str
+            job['_id'] = str(job['_id'])
+            # Preserve application-level id if present; fallback to _id only when missing.
+            if not job.get('id'):
+                job['id'] = job['_id']
         return job_postings
 
     async def get_job_postings_count(self, filters: dict = None) -> int:
@@ -9148,9 +9169,9 @@ We may update this Cookie Policy to reflect changes in technology or regulations
         """Get job posting by slug"""
         job = await self.database.content_items.find_one({"slug": slug, "content_type": "job_posting"})
         if job:
-            job_id_str = str(job['_id'])
-            job['_id'] = job_id_str
-            job['id'] = job_id_str
+            job['_id'] = str(job['_id'])
+            if not job.get('id'):
+                job['id'] = job['_id']
         return job
 
     async def create_job_application(self, application_data: dict) -> str:
