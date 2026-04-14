@@ -35,7 +35,6 @@ import { authAPI } from '../api/services';
 import { notificationsAPI } from '../api/notifications';
 import {
   resolveCoordinatesFromLocationText,
-  resolveCoordinatesFromStructuredLocation,
   DEFAULT_TRAVEL_DISTANCE_KM,
   nearestStateFromCoordinates,
   computeDistanceKm,
@@ -423,31 +422,8 @@ const BrowseJobsPage = () => {
 
           if (!trustedBackendDistance) d = null;
 
-          if (d === undefined || d === null) {
-            // Try job coordinates first, but avoid using known coarse state-centroid coordinates.
-            if (hasCoords && !hasStateCentroidCoords) {
-              d = computeDistanceKm(userLocation.lat, userLocation.lng, jobLat, jobLng);
-            } else {
-              // Prefer detailed address/town/LGA without state fallback first.
-              const preciseFirst = resolveCoordinatesFromStructuredLocation({
-                state: null,
-                lga: job?.lga || null,
-                town: job?.town || null,
-                addressText: job?.home_address || job?.address || job?.location || null,
-              });
-              const jc = resolveCoordinatesFromStructuredLocation({
-                state: job?.state || null,
-                lga: job?.lga || null,
-                town: job?.town || null,
-                addressText: job?.home_address || job?.address || job?.location || null,
-              }) || (job?.location ? resolveCoordinatesFromLocationText(job.location) : null);
-
-              const bestCoords = preciseFirst || jc;
-              const isCoarseTextLocation = bestCoords?.source === 'state' || bestCoords?.source === 'text-state';
-              if (!isCoarseTextLocation && bestCoords && typeof bestCoords.latitude === 'number' && typeof bestCoords.longitude === 'number') {
-                d = computeDistanceKm(userLocation.lat, userLocation.lng, bestCoords.latitude, bestCoords.longitude);
-              }
-            }
+          if ((d === undefined || d === null) && hasCoords && !hasStateCentroidCoords) {
+            d = computeDistanceKm(userLocation.lat, userLocation.lng, jobLat, jobLng);
           }
           if (typeof d === 'number' && !Number.isNaN(d)) {
             return { ...job, distance_km: Number(d.toFixed(2)) };
@@ -575,7 +551,7 @@ const BrowseJobsPage = () => {
         };
         
         // Persist GPS location immediately so backend uses correct coordinates
-        updateLocationSettings(location.lat, location.lng, filters.maxDistance)
+        updateLocationSettings(location.lat, location.lng, filters.maxDistance, 'gps')
           .finally(() => setLocationLoading(false));
       },
       (error) => {
@@ -590,12 +566,13 @@ const BrowseJobsPage = () => {
     );
   };
 
-  const updateLocationSettings = async (latitude, longitude, travelDistance) => {
+  const updateLocationSettings = async (latitude, longitude, travelDistance, source = 'map') => {
     try {
       const params = new URLSearchParams({
         latitude: latitude.toString(),
         longitude: longitude.toString(),
-        travel_distance_km: travelDistance.toString()
+        travel_distance_km: travelDistance.toString(),
+        source
       });
 
       await jobsAPI.apiClient.put(`/auth/profile/location?${params.toString()}`);
@@ -662,7 +639,7 @@ const BrowseJobsPage = () => {
         return;
       }
 
-      await updateLocationSettings(lat, lng, distanceKm);
+      await updateLocationSettings(lat, lng, distanceKm, 'map');
     } catch (err) {
       console.error('Failed to persist travel distance:', err);
     }

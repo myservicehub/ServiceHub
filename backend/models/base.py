@@ -77,6 +77,8 @@ class JobCreate(BaseModel):
     # Legacy fields (keep for compatibility)
     location: Optional[str] = None  # Will be auto-populated from state
     postcode: Optional[str] = None  # Will be auto-populated from zip_code
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     
     budget_min: Optional[int] = Field(None, ge=0)
     budget_max: Optional[int] = Field(None, ge=0)
@@ -96,6 +98,8 @@ class JobUpdate(BaseModel):
     town: Optional[str] = None   # Town/area name
     zip_code: Optional[str] = Field(None, min_length=6, max_length=6)  # Nigerian 6-digit postal code
     home_address: Optional[str] = Field(None, min_length=10, max_length=500)  # Full home address
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     
     budget_min: Optional[int] = Field(None, ge=0)
     budget_max: Optional[int] = Field(None, ge=0)

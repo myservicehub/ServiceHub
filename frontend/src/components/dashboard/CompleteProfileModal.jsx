@@ -28,6 +28,8 @@ const businessTypes = [
   'Partnership'
 ];
 
+const isPreciseLocationSource = (source) => ['gps', 'map-pin', 'places'].includes(source);
+
 const mapExperienceYearsToRange = (years) => {
   const value = Number(years || 0);
   if (value <= 1) return '';
@@ -50,7 +52,9 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete, initialStep = 1 }) 
   const { toast } = useToast();
   const { states: nigerianStates, lgas: stateLGAs, loading: statesLoading, loadLGAs } = useStates();
   const [locationCoords, setLocationCoords] = useState(() =>
-    (user?.latitude && user?.longitude) ? { lat: user.latitude, lng: user.longitude } : null
+    (user?.latitude && user?.longitude)
+      ? { lat: user.latitude, lng: user.longitude, source: user?.location_source || 'initial' }
+      : null
   );
 
   const [formData, setFormData] = useState({
@@ -104,7 +108,11 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete, initialStep = 1 }) 
       selfieDocumentFile: null,
       profileDescription: user?.description || '',
     });
-    setLocationCoords((user?.latitude && user?.longitude) ? { lat: user.latitude, lng: user.longitude } : null);
+    setLocationCoords(
+      (user?.latitude && user?.longitude)
+        ? { lat: user.latitude, lng: user.longitude, source: user?.location_source || 'initial' }
+        : null
+    );
   }, [isOpen, user, initialStep]);
 
   // Load trade categories from API
@@ -179,6 +187,8 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete, initialStep = 1 }) 
         if (!formData.lga) newErrors.lga = 'LGA is required';
         if (!formData.businessAddress?.trim()) newErrors.businessAddress = 'Address is required';
         if (!locationCoords?.lat || !locationCoords?.lng) {
+          newErrors.locationCoords = 'Please pin your exact location on the map';
+        } else if (!isPreciseLocationSource(locationCoords?.source)) {
           newErrors.locationCoords = 'Please pin your exact location on the map';
         }
         break;
@@ -273,11 +283,13 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete, initialStep = 1 }) 
       // Update location coordinates using precise GPS coordinates only
       try {
         if (locationCoords?.lat && locationCoords?.lng) {
+          const source = locationCoords?.source === 'gps' ? 'gps' : 'map';
           await jobsAPI.apiClient.put('/auth/profile/location', null, {
             params: {
               latitude: locationCoords.lat,
               longitude: locationCoords.lng,
               travel_distance_km: formData.travelDistance || DEFAULT_TRAVEL_DISTANCE_KM,
+              source,
             },
           });
         }
@@ -621,10 +633,14 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete, initialStep = 1 }) 
               initialLocation={locationCoords || undefined}
               onLocationSelect={(loc) => {
                 if (loc?.lat && loc?.lng) {
-                  setLocationCoords({ lat: loc.lat, lng: loc.lng });
+                  setLocationCoords({ lat: loc.lat, lng: loc.lng, source: loc?.source || 'initial' });
                   setErrors(prev => {
                     const next = { ...prev };
-                    delete next.locationCoords;
+                    if (isPreciseLocationSource(loc?.source)) {
+                      delete next.locationCoords;
+                    } else {
+                      next.locationCoords = 'Please pin your exact location on the map';
+                    }
                     return next;
                   });
                 }

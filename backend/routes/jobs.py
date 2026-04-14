@@ -58,9 +58,9 @@ class JobPostingExitFeedbackRequest(BaseModel):
 
 
 def _coords_enforcement_phase() -> str:
-    # "warn" (default): allow posting but log missing/invalid coordinates.
-    # "enforce": block posting until coordinates are supplied from the location picker.
-    return (os.environ.get("JOB_COORDS_ENFORCEMENT_PHASE", "warn") or "warn").strip().lower()
+    # "enforce" (default): block posting until coordinates are supplied from the location picker.
+    # Set JOB_COORDS_ENFORCEMENT_PHASE=warn only for temporary backward-compatibility windows.
+    return (os.environ.get("JOB_COORDS_ENFORCEMENT_PHASE", "enforce") or "enforce").strip().lower()
 
 
 def _extract_valid_coords(job_like: dict):

@@ -121,7 +121,7 @@ async def _validate_active_state(state_name: str) -> bool:
 
 
 def _coords_enforcement_phase() -> str:
-    return (os.environ.get("JOB_COORDS_ENFORCEMENT_PHASE", "warn") or "warn").strip().lower()
+    return (os.environ.get("JOB_COORDS_ENFORCEMENT_PHASE", "enforce") or "enforce").strip().lower()
 
 
 def _extract_valid_coords(job_like: Dict[str, Any]):

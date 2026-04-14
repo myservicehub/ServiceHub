@@ -400,6 +400,21 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState, s
     }
   };
 
+  const hasCoarseJobLocation = (location) => {
+    const coarseSources = new Set([
+      'state',
+      'text-state',
+      'town',
+      'lga',
+      'text-city',
+      'text-fallback',
+      'geocode',
+      'center-coordinates',
+      'initial',
+    ]);
+    return !!(location && location.source && coarseSources.has(location.source));
+  };
+
   const validateStep = (step) => {
     const newErrors = {};
 
@@ -479,6 +494,8 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState, s
           newErrors.home_address = 'Home address must be at least 10 characters';
         }
         if (!formData.jobLocation || typeof formData.jobLocation.lat !== 'number' || typeof formData.jobLocation.lng !== 'number') {
+          newErrors.jobLocation = 'Please pin your exact job location on the map';
+        } else if (hasCoarseJobLocation(formData.jobLocation)) {
           newErrors.jobLocation = 'Please pin your exact job location on the map';
         }
         break;

@@ -131,7 +131,9 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
   const { registerTradesperson, user, isAuthenticated } = useAuth();
   const [capturingLocation, setCapturingLocation] = useState(false);
   const [locationCoords, setLocationCoords] = useState(() =>
-    (user?.latitude && user?.longitude) ? { lat: user.latitude, lng: user.longitude } : null
+    (user?.latitude && user?.longitude)
+      ? { lat: user.latitude, lng: user.longitude, source: user?.location_source || 'initial' }
+      : null
   );
   const { toast } = useToast();
   const { states: nigerianStates, lgas: stateLGAs, loading: statesLoading, loadLGAs } = useStates();
@@ -296,7 +298,8 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
       (position) => {
         const coords = {
           lat: position.coords.latitude,
-          lng: position.coords.longitude
+          lng: position.coords.longitude,
+          source: 'gps'
         };
         setLocationCoords(coords);
         setErrors(prev => {
@@ -530,17 +533,20 @@ const TradespersonRegistration = ({ onClose, onComplete, referralCode, onSwitchT
         // Update profile location and travel distance post-registration (GPS-only)
         try {
           if (locationCoords?.lat && locationCoords?.lng) {
+            const source = locationCoords?.source === 'gps' ? 'gps' : 'map';
             await jobsAPI.apiClient.put('/auth/profile/location', null, {
               params: {
                 latitude: locationCoords.lat,
                 longitude: locationCoords.lng,
                 travel_distance_km: formData.travelDistance || DEFAULT_TRAVEL_DISTANCE_KM,
+                source,
               },
             });
             console.log('📍 Profile location updated:', {
               latitude: locationCoords.lat,
               longitude: locationCoords.lng,
               travel_distance_km: formData.travelDistance || DEFAULT_TRAVEL_DISTANCE_KM,
+              source,
             });
           } else {
             console.warn('⚠️ No precise coordinates captured for new tradesperson');

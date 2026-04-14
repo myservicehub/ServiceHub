@@ -9,20 +9,27 @@ const LocationSettingsModal = ({
   currentLocation = null, 
   currentTravelDistance = 25 
 }) => {
+  const isPreciseLocationSource = (source) => ['gps', 'map-pin', 'places'].includes(source);
   const kmToMiles = (km) => Math.round(km * 0.621371);
   const [location, setLocation] = useState(currentLocation);
   const [travelDistance, setTravelDistance] = useState(currentTravelDistance);
   const [loading, setLoading] = useState(false);
 
   const handleSave = async () => {
-    if (!location) {
+    if (!location || typeof location.lat !== 'number' || typeof location.lng !== 'number') {
       alert('Please select a location first');
+      return;
+    }
+
+    if (!isPreciseLocationSource(location.source)) {
+      alert('Please pin your exact location on the map or use current location.');
       return;
     }
 
     setLoading(true);
     try {
-      await onSave(location.lat, location.lng, travelDistance);
+      const source = location.source === 'gps' ? 'gps' : 'map';
+      await onSave(location.lat, location.lng, travelDistance, source);
     } catch (error) {
       console.error('Error saving location settings:', error);
     } finally {

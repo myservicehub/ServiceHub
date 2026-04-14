@@ -90,7 +90,10 @@ const LocationPicker = ({
       if (initialLocation) {
         setSelectedLocation(initialLocation);
         if (onLocationSelect) {
-          onLocationSelect(initialLocation);
+          onLocationSelect({
+            ...initialLocation,
+            source: initialLocation?.source || 'initial'
+          });
         }
       }
 
@@ -108,7 +111,7 @@ const LocationPicker = ({
         reverseGeocode(google, location);
         
         if (onLocationSelect) {
-          onLocationSelect(location);
+          onLocationSelect({ ...location, source: 'map-pin' });
         }
       });
 
@@ -123,7 +126,7 @@ const LocationPicker = ({
         reverseGeocode(google, location);
         
         if (onLocationSelect) {
-          onLocationSelect(location);
+          onLocationSelect({ ...location, source: 'map-pin' });
         }
       });
 
@@ -152,7 +155,8 @@ const LocationPicker = ({
               onLocationSelect({
                 ...location,
                 address: place.formatted_address,
-                placeId: place.place_id
+                placeId: place.place_id,
+                source: 'places'
               });
             }
           });
@@ -169,7 +173,11 @@ const LocationPicker = ({
                 markerInstance.setPosition(location);
                 setSelectedLocation({ ...location, address: query });
                 if (onLocationSelect) {
-                  onLocationSelect({ ...location, address: query });
+                  onLocationSelect({
+                    ...location,
+                    address: query,
+                    source: coords.source || 'text-fallback'
+                  });
                 }
               }
             }
@@ -221,7 +229,7 @@ const LocationPicker = ({
           const formatted = res.formatted_address;
           setSelectedLocation({ ...location, address: formatted });
           if (onLocationSelect) {
-            onLocationSelect({ ...location, address: formatted });
+            onLocationSelect({ ...location, address: formatted, source: 'geocode' });
           }
         }
       } catch (err) {
@@ -234,7 +242,11 @@ const LocationPicker = ({
           marker.setPosition(location);
           setSelectedLocation({ ...location, address });
           if (onLocationSelect) {
-            onLocationSelect({ ...location, address });
+            onLocationSelect({
+              ...location,
+              address,
+              source: coords.source || 'text-fallback'
+            });
           }
         }
       }
@@ -252,7 +264,7 @@ const LocationPicker = ({
     marker.setPosition(centerLatLng);
     setSelectedLocation(centerLatLng);
     if (onLocationSelect) {
-      onLocationSelect(centerLatLng);
+      onLocationSelect({ ...centerLatLng, source: 'center-coordinates' });
     }
   }, [centerLatLng, centerZoom, map, marker]);
 
@@ -268,7 +280,8 @@ const LocationPicker = ({
         if (onLocationSelect) {
           onLocationSelect({
             ...location,
-            address
+            address,
+            source: 'map-pin'
           });
         }
       }
@@ -278,7 +291,7 @@ const LocationPicker = ({
       const address = stateName || `Lat: ${location.lat.toFixed(6)}, Lng: ${location.lng.toFixed(6)}`;
       setSelectedLocation(prev => ({ ...prev, address }));
       if (onLocationSelect) {
-        onLocationSelect({ ...location, address });
+        onLocationSelect({ ...location, address, source: 'map-pin' });
       }
     }
   };
@@ -311,7 +324,7 @@ const LocationPicker = ({
           }
           
           if (onLocationSelect) {
-            onLocationSelect(location);
+            onLocationSelect({ ...location, source: 'gps' });
           }
         }
         
