@@ -73,6 +73,37 @@ def _normalize_public_blog_category(category: Optional[str]) -> str:
         return "getting_started"
     return value
 
+def _coerce_datetime(value):
+    """Best-effort conversion for Mongo datetimes or ISO datetime strings."""
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip()
+        if not normalized:
+            return None
+        try:
+            return datetime.fromisoformat(normalized.replace('Z', '+00:00'))
+        except ValueError:
+            return None
+    return None
+
+def _is_job_expired(job: dict, reference_time: Optional[datetime] = None) -> bool:
+    """Treat only truly expired jobs as unavailable on public careers pages."""
+    now = reference_time or datetime.utcnow()
+    expires_at = _coerce_datetime(job.get("settings", {}).get("expires_at"))
+    if not expires_at:
+        return False
+
+    # Compare naive-to-naive or aware-to-aware to avoid runtime type errors.
+    if expires_at.tzinfo is not None and now.tzinfo is None:
+        now = now.replace(tzinfo=expires_at.tzinfo)
+    elif expires_at.tzinfo is None and now.tzinfo is not None:
+        expires_at = expires_at.replace(tzinfo=now.tzinfo)
+
+    return expires_at < now
+
 @router.get("/blog")
 async def get_public_blog_posts(
     skip: int = Query(0, ge=0),
@@ -429,15 +460,13 @@ async def get_public_job_postings(
     """Get published job postings for public consumption"""
     
     try:
-        # Build filters for public job postings
+        # Public visibility should be controlled by published status.
+        # Older logic also compared publish_date/published_at against ISO
+        # strings, which failed for Mongo Date values and caused valid
+        # published jobs to disappear from the careers page.
         filters = {
             "content_type": "job_posting",
-            "status": ContentStatus.PUBLISHED.value,
-            "$or": [
-                {"publish_date": {"$lte": datetime.utcnow().isoformat()}},
-                {"published_at": {"$lte": datetime.utcnow().isoformat()}},
-                {"publish_date": {"$exists": False}, "published_at": {"$exists": False}}
-            ]
+            "status": {"$regex": "^published$", "$options": "i"}
         }
         
         # Add optional filters based on job settings
@@ -461,6 +490,8 @@ async def get_public_job_postings(
         # Format for public consumption
         public_jobs = []
         for job in job_postings:
+            if _is_job_expired(job):
+                continue
             settings = job.get("settings", {})
             public_job = {
                 "id": job["id"],
@@ -512,7 +543,7 @@ async def get_job_departments():
             {
                 "$match": {
                     "content_type": "job_posting",
-                    "status": ContentStatus.PUBLISHED.value
+                    "status": {"$regex": "^published$", "$options": "i"}
                 }
             },
             {
@@ -547,7 +578,7 @@ async def get_featured_job_postings(limit: int = Query(3, ge=1, le=10)):
     try:
         filters = {
             "content_type": "job_posting",
-            "status": ContentStatus.PUBLISHED.value,
+            "status": {"$regex": "^published$", "$options": "i"},
             "settings.is_featured": True
         }
         
@@ -556,6 +587,8 @@ async def get_featured_job_postings(limit: int = Query(3, ge=1, le=10)):
         # Format for public consumption
         public_jobs = []
         for job in featured_jobs:
+            if _is_job_expired(job):
+                continue
             settings = job.get("settings", {})
             public_job = {
                 "id": job["id"],
@@ -593,20 +626,16 @@ async def get_job_posting_by_slug(slug: str):
             raise HTTPException(status_code=404, detail="Job posting not found")
         
         # Check if it's a published job posting
+        status = str(job_posting.get("status", "")).strip().lower()
         if (job_posting["content_type"] != "job_posting" or 
-            job_posting["status"] != ContentStatus.PUBLISHED.value):
+            status != ContentStatus.PUBLISHED.value):
             raise HTTPException(status_code=404, detail="Job posting not found")
         
-        # Check if job has expired
-        settings = job_posting.get("settings", {})
-        expires_at = settings.get("expires_at")
-        if expires_at:
-            if isinstance(expires_at, str):
-                expires_at = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
-            if expires_at < datetime.utcnow():
-                raise HTTPException(status_code=404, detail="Job posting has expired")
+        if _is_job_expired(job_posting):
+            raise HTTPException(status_code=404, detail="Job posting has expired")
         
         # Format for public consumption
+        settings = job_posting.get("settings", {})
         public_job = {
             "id": job_posting["id"],
             "title": job_posting["title"],
@@ -656,18 +685,13 @@ async def apply_to_job(
             raise HTTPException(status_code=404, detail="Job posting not found")
         
         # Check if it's a published job posting
+        status = str(job_posting.get("status", "")).strip().lower()
         if (job_posting["content_type"] != "job_posting" or 
-            job_posting["status"] != ContentStatus.PUBLISHED.value):
+            status != ContentStatus.PUBLISHED.value):
             raise HTTPException(status_code=404, detail="Job posting not found")
         
-        # Check if job has expired
-        settings = job_posting.get("settings", {})
-        expires_at = settings.get("expires_at")
-        if expires_at:
-            if isinstance(expires_at, str):
-                expires_at = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
-            if expires_at < datetime.utcnow():
-                raise HTTPException(status_code=400, detail="Job posting has expired")
+        if _is_job_expired(job_posting):
+            raise HTTPException(status_code=400, detail="Job posting has expired")
         
         # Create job application
         application = {
