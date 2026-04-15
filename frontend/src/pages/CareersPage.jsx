@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Briefcase, MapPin, Clock, Users, Heart, TrendingUp, 
   Award, Coffee, Laptop, Globe, Mail, Phone, Send,
@@ -13,6 +13,7 @@ import { statsAPI } from '../api/services';
 
 const CareersPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [openPositions, setOpenPositions] = useState([]);
   const [selectedDepartment, setSelectedDepartment] = useState('all');
   const [departments, setDepartments] = useState(['all']);
@@ -138,6 +139,39 @@ const CareersPage = () => {
     loadJobPositions();
     loadPlatformStats();
   }, []);
+
+  useEffect(() => {
+    if (!openPositions.length) return;
+
+    const params = new URLSearchParams(location.search);
+    const requestedPosition = params.get('position');
+    const targetHash = location.hash;
+
+    if (requestedPosition) {
+      const decodedPosition = decodeURIComponent(requestedPosition);
+      const matchingJob = openPositions.find(
+        (job) =>
+          job.slug === decodedPosition ||
+          job.id === decodedPosition ||
+          job.title?.toLowerCase() === decodedPosition.toLowerCase()
+      );
+
+      if (matchingJob) {
+        setApplicationForm((prev) => ({
+          ...prev,
+          position: matchingJob.title
+        }));
+      }
+    }
+
+    if (targetHash === '#application-form') {
+      const scrollToForm = () => {
+        const formSection = document.getElementById('application-form');
+        formSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      };
+      requestAnimationFrame(() => requestAnimationFrame(scrollToForm));
+    }
+  }, [location.hash, location.search, openPositions]);
 
   const filteredPositions = selectedDepartment === 'all' 
     ? openPositions 
@@ -543,7 +577,7 @@ const CareersPage = () => {
       {/* Application Form */}
       <section 
         id="application-form" 
-        className="py-14 lg:py-16"
+        className="py-14 lg:py-16 scroll-mt-28"
         style={{
           backgroundImage: `linear-gradient(rgba(255,255,255,0.97), rgba(255,255,255,0.97)), 
             linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px),

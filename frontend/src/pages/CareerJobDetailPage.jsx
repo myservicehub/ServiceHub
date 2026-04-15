@@ -187,7 +187,7 @@ const CareerJobDetailPage = () => {
                   Back to positions
                 </button>
                 <button
-                  onClick={() => navigate('/careers#application-form')}
+                  onClick={() => navigate(`/careers?position=${encodeURIComponent(job.slug || job.id)}#application-form`)}
                   className="bg-[#34D164] hover:bg-[#2ab854] text-white px-5 py-2 rounded-full text-sm font-medium transition-colors"
                 >
                   Apply for this role
