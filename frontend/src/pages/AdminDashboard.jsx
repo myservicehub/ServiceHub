@@ -38,6 +38,7 @@ const AdminDashboard = () => {
   const [usersSearch, setUsersSearch] = useState('');
   const [usersTradeFilter, setUsersTradeFilter] = useState('');
   const [usersTotal, setUsersTotal] = useState(0);
+  const [usersPages, setUsersPages] = useState(1);
   const visibleUsers = useMemo(() => {
     let filtered = users;
 
@@ -70,15 +71,9 @@ const AdminDashboard = () => {
     return filtered;
   }, [users, usersSearch, usersTradeFilter]);
 
-  // Paginate visible (filtered) users
-  const paginatedUsers = useMemo(() => {
-    const start = (usersPage - 1) * usersLimit;
-    const end = start + usersLimit;
-    return visibleUsers.slice(start, end);
-  }, [visibleUsers, usersPage, usersLimit]);
-
-  const totalFilteredUsers = visibleUsers.length;
-  const totalPages = Math.max(1, Math.ceil(totalFilteredUsers / usersLimit));
+  // Users are already paginated by backend; only apply local filters to loaded page
+  const paginatedUsers = useMemo(() => visibleUsers, [visibleUsers]);
+  const totalPages = Math.max(1, usersPages || Math.ceil((usersTotal || 0) / usersLimit));
   const [userStats, setUserStats] = useState(null);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -511,6 +506,7 @@ const AdminDashboard = () => {
         setUsers(userData.users || []);
         setUserStats(userData.stats || {});
         setUsersTotal((userData.pagination && (userData.pagination.total ?? 0)) || (userData.users ? userData.users.length : 0));
+        setUsersPages((userData.pagination && (userData.pagination.pages ?? 1)) || 1);
         setTrades(tradesData.trades || []);
       } else if (activeTab === 'locations') {
         // Load location and trade data based on active sub-tab
