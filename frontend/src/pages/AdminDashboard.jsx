@@ -203,6 +203,10 @@ const AdminDashboard = () => {
   const [statusEditModal, setStatusEditModal] = useState({ open: false, notification: null, status: '', notes: '' });
   const [editingTemplate, setEditingTemplate] = useState(null);
   
+  // Wallet Transactions Date Filter state
+  const [walletDateFilter, setWalletDateFilter] = useState({ from: '', to: '' });
+  const [walletTransactions, setWalletTransactions] = useState([]);
+  
   // Debug modal state changes
   useEffect(() => {
     console.log('statusEditModal state changed:', statusEditModal);
@@ -427,6 +431,8 @@ const AdminDashboard = () => {
       if (activeTab === 'wallet-transactions') {
         const data = await adminAPI.getDashboardStats();
         setStats(data);
+        const transactions = data?.wallet_stats?.recent_transactions || [];
+        setWalletTransactions(transactions);
       } else if (activeTab === 'jobs') {
         const data = await adminAPI.getAllJobsAdmin(0, 100, jobsFilter || null);
         setJobs(data.jobs || []);
@@ -1814,6 +1820,22 @@ const AdminDashboard = () => {
                   <div className="flex justify-between items-center">
                     <h2 className="text-xl font-semibold">Recent Wallet Transactions</h2>
                     <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="date"
+                          value={walletDateFilter.from}
+                          onChange={(e) => setWalletDateFilter(prev => ({ ...prev, from: e.target.value }))}
+                          className="px-3 py-1 border rounded text-sm"
+                          placeholder="From Date"
+                        />
+                        <input
+                          type="date"
+                          value={walletDateFilter.to}
+                          onChange={(e) => setWalletDateFilter(prev => ({ ...prev, to: e.target.value }))}
+                          className="px-3 py-1 border rounded text-sm"
+                          placeholder="To Date"
+                        />
+                      </div>
                       <button
                         onClick={handleResetWalletView}
                         className="text-red-600 hover:text-red-700"
@@ -1859,7 +1881,7 @@ const AdminDashboard = () => {
                     </div>
                   )}
 
-                  {!loading && Array.isArray(stats?.wallet_stats?.recent_transactions) && stats.wallet_stats.recent_transactions.length > 0 && (
+                  {!loading && Array.isArray(walletTransactions) && walletTransactions.length > 0 && (
                     <div className="bg-white border rounded-lg overflow-hidden">
                       <div className="px-4 py-3 border-b bg-gray-50">
                         <h3 className="font-medium text-gray-800">Transaction History</h3>
@@ -1878,7 +1900,25 @@ const AdminDashboard = () => {
                             </tr>
                           </thead>
                           <tbody>
-                            {stats.wallet_stats.recent_transactions.map((tx, idx) => (
+                            {walletTransactions.filter(tx => {
+                              if (!walletDateFilter.from && !walletDateFilter.to) return true;
+                              const txDate = new Date(tx.created_at || '');
+                              if (walletDateFilter.from && walletDateFilter.to) {
+                                const from = new Date(walletDateFilter.from);
+                                const to = new Date(walletDateFilter.to);
+                                to.setHours(23, 59, 59, 999);
+                                return txDate >= from && txDate <= to;
+                              }
+                              if (walletDateFilter.from) {
+                                return txDate >= new Date(walletDateFilter.from);
+                              }
+                              if (walletDateFilter.to) {
+                                const to = new Date(walletDateFilter.to);
+                                to.setHours(23, 59, 59, 999);
+                                return txDate <= to;
+                              }
+                              return true;
+                            }).map((tx, idx) => (
                               <tr key={tx.id || tx.reference || idx} className="border-t">
                                 <td className="px-4 py-3 text-gray-600">
                                   {tx.created_at ? new Date(tx.created_at).toLocaleString() : '—'}
