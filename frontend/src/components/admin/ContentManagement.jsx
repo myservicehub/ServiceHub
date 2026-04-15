@@ -296,19 +296,58 @@ const ContentManagement = () => {
   const stripHtml = (value) => String(value || '').replace(/<[^>]*>/g, '').trim();
   const openApplicationResume = (application) => {
     const resumeDataUrl = application?.resume_data_url || application?.resume_url;
+    const resumeFilename = application?.resume_filename || 'resume';
+    
     if (!resumeDataUrl) {
       alert('No resume/CV attached for this application.');
       return;
     }
 
-    const anchor = document.createElement('a');
-    anchor.href = resumeDataUrl;
-    anchor.target = '_blank';
-    anchor.rel = 'noopener noreferrer';
-    anchor.download = application?.resume_filename || 'resume';
-    document.body.appendChild(anchor);
-    anchor.click();
-    document.body.removeChild(anchor);
+    // Check if it's an image file
+    const isImage = typeof resumeDataUrl === 'string' && (
+      resumeDataUrl.match(/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i) || 
+      resumeDataUrl.startsWith('data:image/') ||
+      resumeFilename.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+    );
+
+    if (isImage) {
+      // Display image inline in a new window
+      const win = window.open('', '_blank', 'width=800,height=600');
+      if (win) {
+        win.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Resume - ${resumeFilename}</title>
+            <style>
+              body { margin: 0; padding: 20px; background: #f5f5f5; display: flex; flex-direction: column; align-items: center; font-family: Arial, sans-serif; }
+              img { max-width: 100%; max-height: 80vh; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+              h1 { color: #333; margin-bottom: 20px; }
+              .close { margin-top: 20px; padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; }
+              .close:hover { background: #c82333; }
+            </style>
+          </head>
+          <body>
+            <h1>Resume: ${resumeFilename}</h1>
+            <img src="${resumeDataUrl}" alt="Resume" />
+            <button class="close" onclick="window.close()">Close</button>
+          </body>
+          </html>
+        `);
+        win.document.close();
+      } else {
+        alert('Please allow pop-ups to view the resume.');
+      }
+    } else {
+      // For non-image files (PDF, DOC, etc.), open in new tab
+      const anchor = document.createElement('a');
+      anchor.href = resumeDataUrl;
+      anchor.target = '_blank';
+      anchor.rel = 'noopener noreferrer';
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+    }
   };
 
   // Content Creation/Edit Modal
