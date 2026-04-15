@@ -104,6 +104,36 @@ def _is_job_expired(job: dict, reference_time: Optional[datetime] = None) -> boo
 
     return expires_at < now
 
+def _build_application_record(
+    application_data: dict,
+    request: Request,
+    job_id: Optional[str],
+    job_title: str,
+    is_general_application: bool = False
+) -> dict:
+    """Build a normalized job application payload for storage."""
+    return {
+        "id": str(uuid.uuid4()),
+        "job_id": job_id,
+        "job_title": job_title,
+        "position_of_interest": application_data.get("position_of_interest") or job_title,
+        "is_general_application": is_general_application,
+        "name": application_data["name"],
+        "email": application_data["email"],
+        "phone": application_data.get("phone"),
+        "experience_level": application_data.get("experience_level"),
+        "message": application_data["message"],
+        "resume_filename": application_data.get("resume_filename"),
+        "resume_data_url": application_data.get("resume_data_url"),
+        "resume_mime_type": application_data.get("resume_mime_type"),
+        "resume_size_bytes": application_data.get("resume_size_bytes"),
+        "status": "new",
+        "applied_at": datetime.utcnow(),
+        "source": "website",
+        "ip_address": request.client.host if request else None,
+        "user_agent": request.headers.get("user-agent") if request else None
+    }
+
 @router.get("/blog")
 async def get_public_blog_posts(
     skip: int = Query(0, ge=0),
@@ -693,23 +723,12 @@ async def apply_to_job(
         if _is_job_expired(job_posting):
             raise HTTPException(status_code=400, detail="Job posting has expired")
         
-        # Create job application
-        application = {
-            "id": str(uuid.uuid4()),
-            "job_id": job_id,
-            "job_title": job_posting["title"],
-            "name": application_data["name"],
-            "email": application_data["email"],
-            "phone": application_data.get("phone"),
-            "experience_level": application_data.get("experience_level"),
-            "message": application_data["message"],
-            "resume_filename": application_data.get("resume_filename"),
-            "status": "new",
-            "applied_at": datetime.utcnow(),
-            "source": "website",
-            "ip_address": request.client.host if request else None,
-            "user_agent": request.headers.get("user-agent") if request else None
-        }
+        application = _build_application_record(
+            application_data=application_data,
+            request=request,
+            job_id=job_id,
+            job_title=job_posting["title"]
+        )
         
         # Store application
         application_id = await database.create_job_application(application)
@@ -734,6 +753,50 @@ async def apply_to_job(
     except Exception as e:
         logger.error(f"Error applying to job: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to submit job application")
+
+@router.post("/jobs/apply-general")
+async def apply_general_to_careers(
+    application_data: dict,
+    request: Request
+):
+    """Submit a general careers application without a specific job posting."""
+
+    try:
+        position_of_interest = (
+            application_data.get("position_of_interest")
+            or application_data.get("job_title")
+            or "General Application"
+        )
+
+        application = _build_application_record(
+            application_data=application_data,
+            request=request,
+            job_id=None,
+            job_title="General Application",
+            is_general_application=True
+        )
+        application["position_of_interest"] = position_of_interest
+
+        application_id = await database.create_job_application(application)
+
+        try:
+            await _send_application_notification(
+                application,
+                {"title": position_of_interest}
+            )
+        except Exception as e:
+            logger.error(f"Failed to send general application notification: {str(e)}")
+
+        return {
+            "message": "General application submitted successfully",
+            "application_id": application_id
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error submitting general application: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to submit general application")
 
 # Helper function for notifications
 

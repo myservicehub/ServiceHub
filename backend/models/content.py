@@ -345,8 +345,10 @@ class JobPosting(BaseModel):
 
 class JobApplication(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    job_id: str
+    job_id: Optional[str] = None
     job_title: str
+    position_of_interest: Optional[str] = None
+    is_general_application: bool = False
     
     # Applicant information
     name: str = Field(..., min_length=1, max_length=100)
@@ -358,6 +360,9 @@ class JobApplication(BaseModel):
     message: str = Field(..., min_length=10)  # Cover letter/motivation
     resume_url: Optional[str] = None  # URL to uploaded resume
     resume_filename: Optional[str] = None
+    resume_data_url: Optional[str] = None
+    resume_mime_type: Optional[str] = None
+    resume_size_bytes: Optional[int] = None
     
     # Application status
     status: str = "new"  # new, reviewed, shortlisted, interviewed, hired, rejected
@@ -380,13 +385,17 @@ class JobApplication(BaseModel):
         return d
 
 class JobApplicationCreate(BaseModel):
-    job_id: str
+    job_id: Optional[str] = None
     name: str = Field(..., min_length=1, max_length=100)
     email: EmailStr
     phone: Optional[str] = None
     experience_level: Optional[str] = None
     message: str = Field(..., min_length=10)
+    position_of_interest: Optional[str] = None
     resume_filename: Optional[str] = None
+    resume_data_url: Optional[str] = None
+    resume_mime_type: Optional[str] = None
+    resume_size_bytes: Optional[int] = None
 
 class JobApplicationUpdate(BaseModel):
     status: Optional[str] = None

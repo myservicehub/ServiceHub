@@ -294,6 +294,22 @@ const ContentManagement = () => {
   };
 
   const stripHtml = (value) => String(value || '').replace(/<[^>]*>/g, '').trim();
+  const openApplicationResume = (application) => {
+    const resumeDataUrl = application?.resume_data_url || application?.resume_url;
+    if (!resumeDataUrl) {
+      alert('No resume/CV attached for this application.');
+      return;
+    }
+
+    const anchor = document.createElement('a');
+    anchor.href = resumeDataUrl;
+    anchor.target = '_blank';
+    anchor.rel = 'noopener noreferrer';
+    anchor.download = application?.resume_filename || 'resume';
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+  };
 
   // Content Creation/Edit Modal
   const ContentModal = ({ isEdit = false, content = null, onClose, onSave }) => {
@@ -1704,12 +1720,28 @@ const ContentManagement = () => {
                             
                             <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-3">
                               <span>{application.job_title}</span>
+                              {application.position_of_interest && application.position_of_interest !== application.job_title && (
+                                <span>Interest: {application.position_of_interest}</span>
+                              )}
                               <span>{application.email}</span>
                               {application.phone && <span>{application.phone}</span>}
                               {application.experience_level && <span>{application.experience_level}</span>}
+                              {application.is_general_application && <span>General application</span>}
                             </div>
                             
                             <p className="text-gray-700 text-sm mb-3 line-clamp-2">{application.message}</p>
+
+                            {(application.resume_filename || application.resume_data_url || application.resume_url) && (
+                              <div className="mb-3">
+                                <button
+                                  onClick={() => openApplicationResume(application)}
+                                  className="inline-flex items-center text-sm text-green-700 hover:text-green-800 hover:underline"
+                                >
+                                  <FileText className="w-4 h-4 mr-1" />
+                                  {application.resume_filename || 'Open CV / Resume'}
+                                </button>
+                              </div>
+                            )}
                             
                             <div className="flex items-center space-x-4 text-sm text-gray-500">
                               <span>Applied {new Date(application.applied_at).toLocaleDateString()}</span>

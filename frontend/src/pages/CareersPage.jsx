@@ -11,6 +11,15 @@ import Footer from '../components/Footer';
 import careersAPI from '../api/careers';
 import { statsAPI } from '../api/services';
 
+const MAX_RESUME_SIZE_BYTES = 5 * 1024 * 1024;
+
+const fileToDataUrl = (file) => new Promise((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = () => resolve(reader.result);
+  reader.onerror = () => reject(new Error('Failed to read selected file.'));
+  reader.readAsDataURL(file);
+});
+
 const CareersPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -187,24 +196,35 @@ const CareersPage = () => {
 
     try {
       setSubmitting(true);
-      
-      // For general applications, we'll use a placeholder job ID
-      // In a real implementation, you might have a specific endpoint for general applications
+      const selectedJob = applicationForm.position && applicationForm.position !== 'General Application'
+        ? openPositions.find(job => job.title === applicationForm.position)
+        : null;
+
+      let resumeDataUrl;
+      if (applicationForm.resume) {
+        if (applicationForm.resume.size > MAX_RESUME_SIZE_BYTES) {
+          throw new Error('Resume/CV must be 5MB or smaller.');
+        }
+        resumeDataUrl = await fileToDataUrl(applicationForm.resume);
+      }
+
       const applicationData = {
         name: applicationForm.name,
         email: applicationForm.email,
         phone: applicationForm.phone || undefined,
+        position_of_interest: applicationForm.position || 'General Application',
         experience_level: applicationForm.experience || undefined,
         message: applicationForm.message,
-        resume_filename: applicationForm.resume?.name || undefined
+        resume_filename: applicationForm.resume?.name || undefined,
+        resume_data_url: resumeDataUrl || undefined,
+        resume_mime_type: applicationForm.resume?.type || undefined,
+        resume_size_bytes: applicationForm.resume?.size || undefined
       };
 
-      // If a specific position is selected, find that job and apply
-      if (applicationForm.position && applicationForm.position !== 'General Application') {
-        const selectedJob = openPositions.find(job => job.title === applicationForm.position);
-        if (selectedJob) {
-          await careersAPI.applyToJob(selectedJob.id, applicationData);
-        }
+      if (selectedJob) {
+        await careersAPI.applyToJob(selectedJob.id, applicationData);
+      } else {
+        await careersAPI.applyGeneral(applicationData);
       }
       
       alert('Thank you for your application! We\'ll be in touch soon.');
@@ -222,7 +242,7 @@ const CareersPage = () => {
       
     } catch (err) {
       console.error('Error submitting application:', err);
-      alert('Failed to submit application. Please try again or contact us directly.');
+      alert(err?.message || 'Failed to submit application. Please try again or contact us directly.');
     } finally {
       setSubmitting(false);
     }
@@ -676,11 +696,11 @@ const CareersPage = () => {
                 <label className="block text-xs font-medium text-[#121E3C] mb-1.5">Resume/CV</label>
                 <input
                   type="file"
-                  accept=".pdf,.doc,.docx"
-                  onChange={(e) => setApplicationForm({...applicationForm, resume: e.target.files[0]})}
+                  accept=".pdf,.doc,.docx,image/*"
+                  onChange={(e) => setApplicationForm({...applicationForm, resume: e.target.files?.[0] || null})}
                   className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/20 focus:border-[#34D164] file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-gray-100 file:text-gray-600"
                 />
-                <p className="text-[10px] text-gray-400 mt-1">PDF, DOC, or DOCX (max 5MB)</p>
+                <p className="text-[10px] text-gray-400 mt-1">PDF, DOC, DOCX, or image file (max 5MB)</p>
               </div>
               
               <button

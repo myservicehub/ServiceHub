@@ -36,6 +36,11 @@ const careersAPI = {
     return response.data;
   },
 
+  applyGeneral: async (applicationData) => {
+    const response = await apiClient.post('/public/content/jobs/apply-general', applicationData);
+    return response.data;
+  },
+
   // Admin APIs for job management (requires admin authentication)
   admin: {
     getJobPostings: async (params = {}) => {
