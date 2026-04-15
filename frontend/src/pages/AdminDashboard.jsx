@@ -108,7 +108,31 @@ const AdminDashboard = () => {
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [questionsPage, setQuestionsPage] = useState(1);
   const [questionsPerPage, setQuestionsPerPage] = useState(10);
-  const selectedTradeQuestions = useMemo(() => (skillsQuestions[selectedTrade] || []), [skillsQuestions, selectedTrade]);
+  const selectedTradeQuestions = useMemo(() => {
+    if (!selectedTrade) return [];
+    if (skillsQuestions[selectedTrade]) return skillsQuestions[selectedTrade] || [];
+
+    const lowerSelectedTrade = selectedTrade.toLowerCase();
+    const caseInsensitiveMatch = Object.keys(skillsQuestions).find(
+      (key) => key.toLowerCase() === lowerSelectedTrade
+    );
+    if (caseInsensitiveMatch) return skillsQuestions[caseInsensitiveMatch] || [];
+
+    const tradeAliases = {
+      'cleaning services': ['cleaning service', 'cleaning work', 'cleaning'],
+      'cleaning service': ['cleaning services', 'cleaning work', 'cleaning'],
+      'cleaning work': ['cleaning services', 'cleaning service', 'cleaning'],
+      cleaning: ['cleaning services', 'cleaning service', 'cleaning work'],
+    };
+
+    const aliases = tradeAliases[lowerSelectedTrade] || [];
+    for (const alias of aliases) {
+      const aliasMatch = Object.keys(skillsQuestions).find((key) => key.toLowerCase() === alias);
+      if (aliasMatch) return skillsQuestions[aliasMatch] || [];
+    }
+
+    return [];
+  }, [skillsQuestions, selectedTrade]);
   const paginatedQuestions = useMemo(() => {
     const start = (questionsPage - 1) * questionsPerPage;
     return selectedTradeQuestions.slice(start, start + questionsPerPage);
@@ -1820,21 +1844,27 @@ const AdminDashboard = () => {
                   <div className="flex justify-between items-center">
                     <h2 className="text-xl font-semibold">Recent Wallet Transactions</h2>
                     <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="date"
-                          value={walletDateFilter.from}
-                          onChange={(e) => setWalletDateFilter(prev => ({ ...prev, from: e.target.value }))}
-                          className="px-3 py-1 border rounded text-sm"
-                          placeholder="From Date"
-                        />
-                        <input
-                          type="date"
-                          value={walletDateFilter.to}
-                          onChange={(e) => setWalletDateFilter(prev => ({ ...prev, to: e.target.value }))}
-                          className="px-3 py-1 border rounded text-sm"
-                          placeholder="To Date"
-                        />
+                      <div className="flex items-end gap-2">
+                        <label className="flex flex-col text-xs text-gray-600">
+                          <span className="mb-1">From</span>
+                          <input
+                            type="date"
+                            value={walletDateFilter.from}
+                            onChange={(e) => setWalletDateFilter(prev => ({ ...prev, from: e.target.value }))}
+                            className="px-3 py-1 border rounded text-sm"
+                            aria-label="From"
+                          />
+                        </label>
+                        <label className="flex flex-col text-xs text-gray-600">
+                          <span className="mb-1">To</span>
+                          <input
+                            type="date"
+                            value={walletDateFilter.to}
+                            onChange={(e) => setWalletDateFilter(prev => ({ ...prev, to: e.target.value }))}
+                            className="px-3 py-1 border rounded text-sm"
+                            aria-label="To"
+                          />
+                        </label>
                       </div>
                       <button
                         onClick={handleResetWalletView}
@@ -3581,7 +3611,7 @@ const AdminDashboard = () => {
                       <div className="bg-white p-4 rounded-lg border">
                         <h3 className="text-lg font-semibold text-gray-800">Selected Trade</h3>
                         <p className="text-lg font-semibold text-purple-600">
-                          {selectedTrade ? `${skillsQuestions[selectedTrade]?.length || 0} questions` : 'None selected'}
+                          {selectedTrade ? `${selectedTradeQuestions.length || 0} questions` : 'None selected'}
                         </p>
                       </div>
                     </div>

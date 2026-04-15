@@ -122,7 +122,16 @@ export const adminAPI = {
   // Check if current admin has a permission
   hasPermission(permission) {
     const perms = this.getPermissions();
-    return Array.isArray(perms) && perms.includes(permission);
+    if (!Array.isArray(perms) || !permission) return false;
+
+    const target = String(permission).trim().toLowerCase();
+    return perms.some((perm) => {
+      const raw =
+        typeof perm === 'string'
+          ? perm
+          : perm?.value || perm?.permission || perm?.name || '';
+      return String(raw).trim().toLowerCase() === target;
+    });
   },
 
   // Get all jobs with access fees
