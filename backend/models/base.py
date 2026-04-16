@@ -71,7 +71,7 @@ class JobCreate(BaseModel):
     state: str  # Nigerian state
     lga: str    # Local Government Area
     town: str   # Town/area name
-    zip_code: str = Field(..., min_length=6, max_length=6)  # Nigerian 6-digit postal code
+    zip_code: Optional[str] = Field(None, min_length=6, max_length=6)  # Nigerian 6-digit postal code (optional)
     home_address: str = Field(..., min_length=10, max_length=500)  # Full home address
     
     # Legacy fields (keep for compatibility)
@@ -286,6 +286,7 @@ class StatsResponse(BaseModel):
     total_homeowners: int
     total_categories: int
     total_states: int
+    total_cities: int = 0
     total_reviews: int
     average_rating: float
     total_jobs: int

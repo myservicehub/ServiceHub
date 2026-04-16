@@ -76,7 +76,10 @@ const SupportWidgetManager = () => {
     const onDashboardRoute =
       location.pathname.startsWith('/dashboard') ||
       location.pathname.startsWith('/trades');
-    const shouldHideWidget = isAuthenticated() && onDashboardRoute;
+    const onJobPostingRoute =
+      location.pathname.startsWith('/post-job') ||
+      location.pathname.startsWith('/dashboard/post-job');
+    const shouldHideWidget = onJobPostingRoute || (isAuthenticated() && onDashboardRoute);
 
     if (shouldHideWidget) {
       ensureHideStyle();

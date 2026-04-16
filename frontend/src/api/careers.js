@@ -98,6 +98,11 @@ const careersAPI = {
       return response.data;
     },
 
+    deleteJobApplication: async (applicationId) => {
+      const response = await apiClient.delete(`/admin/jobs/applications/${applicationId}`);
+      return response.data;
+    },
+
     getJobStatistics: async () => {
       const response = await apiClient.get('/admin/jobs/statistics');
       return response.data;

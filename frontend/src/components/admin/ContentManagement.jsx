@@ -214,8 +214,17 @@ const ContentManagement = () => {
           setJobApplications(applicationsData.applications || []);
           break;
         case 'statistics':
-          const jobStatsData = await careersAPI.admin.getJobStatistics();
-          setJobStatistics(jobStatsData.statistics || {});
+          try {
+            const jobStatsData = await careersAPI.admin.getJobStatistics();
+            setJobStatistics(jobStatsData.statistics || {});
+          } catch (statsErr) {
+            // Fallback to applications endpoint so totals don't silently show zero.
+            const applicationsCountData = await careersAPI.admin.getJobApplications({ limit: 1 });
+            setJobStatistics((prev) => ({
+              ...(prev || {}),
+              total_applications: applicationsCountData?.pagination?.total || 0
+            }));
+          }
           break;
       }
     } catch (error) {
@@ -347,6 +356,27 @@ const ContentManagement = () => {
       document.body.appendChild(anchor);
       anchor.click();
       document.body.removeChild(anchor);
+    }
+  };
+
+  const handleDeleteApplication = async (applicationId) => {
+    if (!window.confirm('Are you sure you want to delete this job application?')) {
+      return;
+    }
+    try {
+      await careersAPI.admin.deleteJobApplication(applicationId);
+      await loadJobsData();
+      if (jobsSubTab === 'statistics') {
+        // Keep statistics fresh if user deleted from another tab then switched.
+        const jobStatsData = await careersAPI.admin.getJobStatistics().catch(() => null);
+        if (jobStatsData?.statistics) {
+          setJobStatistics(jobStatsData.statistics);
+        }
+      }
+      alert('Job application deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting job application:', error);
+      alert('Failed to delete job application.');
     }
   };
 
@@ -1794,6 +1824,13 @@ const ContentManagement = () => {
                             </button>
                             <button className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded">
                               <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteApplication(application.id)}
+                              className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded"
+                              title="Delete application"
+                            >
+                              <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
                         </div>

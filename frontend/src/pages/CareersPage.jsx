@@ -12,6 +12,12 @@ import careersAPI from '../api/careers';
 import { statsAPI } from '../api/services';
 
 const MAX_RESUME_SIZE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_RESUME_MIME_TYPES = new Set([
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+]);
+const ALLOWED_RESUME_EXTENSIONS = ['.pdf', '.doc', '.docx'];
 
 const fileToDataUrl = (file) => new Promise((resolve, reject) => {
   const reader = new FileReader();
@@ -30,7 +36,8 @@ const CareersPage = () => {
   const [error, setError] = useState(null);
   const [platformStats, setPlatformStats] = useState({
     total_tradespeople: 0,
-    total_jobs_completed: 0
+    total_jobs_completed: 0,
+    total_cities: 0
   });
   const [submitting, setSubmitting] = useState(false);
   const [applicationForm, setApplicationForm] = useState({
@@ -71,13 +78,15 @@ const CareersPage = () => {
       const stats = await statsAPI.getStats();
       setPlatformStats({
         total_tradespeople: Number(stats?.total_tradespeople ?? 0),
-        total_jobs_completed: Number(stats?.total_jobs_completed ?? stats?.total_jobs ?? 0)
+        total_jobs_completed: Number(stats?.total_jobs_completed ?? stats?.total_jobs ?? 0),
+        total_cities: Number(stats?.total_cities ?? stats?.total_states ?? 0)
       });
     } catch (err) {
       console.error('Error loading platform stats for careers page:', err);
       setPlatformStats({
         total_tradespeople: 0,
-        total_jobs_completed: 0
+        total_jobs_completed: 0,
+        total_cities: 0
       });
     }
   };
@@ -204,6 +213,12 @@ const CareersPage = () => {
       if (applicationForm.resume) {
         if (applicationForm.resume.size > MAX_RESUME_SIZE_BYTES) {
           throw new Error('Resume/CV must be 5MB or smaller.');
+        }
+        const fileName = String(applicationForm.resume.name || '').toLowerCase();
+        const hasAllowedExtension = ALLOWED_RESUME_EXTENSIONS.some((ext) => fileName.endsWith(ext));
+        const hasAllowedMime = ALLOWED_RESUME_MIME_TYPES.has(String(applicationForm.resume.type || '').toLowerCase());
+        if (!hasAllowedExtension && !hasAllowedMime) {
+          throw new Error('Resume/CV must be a PDF, DOC, or DOCX file.');
         }
         resumeDataUrl = await fileToDataUrl(applicationForm.resume);
       }
@@ -404,7 +419,7 @@ const CareersPage = () => {
                 { value: '10+', label: 'Team Members' },
                 { value: platformStats.total_tradespeople.toLocaleString(), label: 'Active Tradespeople' },
                 { value: platformStats.total_jobs_completed.toLocaleString(), label: 'Completed Jobs' },
-                { value: '15+', label: 'Cities Covered' }
+                { value: platformStats.total_cities.toLocaleString(), label: 'Cities Covered' }
               ].map((stat, idx) => (
                 <div key={idx} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4 text-center">
                   <div className="text-xl font-bold font-montserrat text-[#34D164] mb-1">{stat.value}</div>
@@ -696,11 +711,11 @@ const CareersPage = () => {
                 <label className="block text-xs font-medium text-[#121E3C] mb-1.5">Resume/CV</label>
                 <input
                   type="file"
-                  accept=".pdf,.doc,.docx,image/*"
+                  accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                   onChange={(e) => setApplicationForm({...applicationForm, resume: e.target.files?.[0] || null})}
                   className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/20 focus:border-[#34D164] file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-gray-100 file:text-gray-600"
                 />
-                <p className="text-[10px] text-gray-400 mt-1">PDF, DOC, DOCX, or image file (max 5MB)</p>
+                <p className="text-[10px] text-gray-400 mt-1">PDF, DOC, or DOCX only (max 5MB)</p>
               </div>
               
               <button

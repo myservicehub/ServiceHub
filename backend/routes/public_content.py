@@ -15,6 +15,13 @@ from ..services.notifications import notification_service
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/public/content", tags=["public_content"])
+MAX_RESUME_SIZE_BYTES = 5 * 1024 * 1024
+ALLOWED_RESUME_MIME_TYPES = {
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+}
+ALLOWED_RESUME_EXTENSIONS = {".pdf", ".doc", ".docx"}
 
 class ContactFormRequest(BaseModel):
     name: str
@@ -133,6 +140,48 @@ def _build_application_record(
         "ip_address": request.client.host if request else None,
         "user_agent": request.headers.get("user-agent") if request else None
     }
+
+def _validate_resume_payload(application_data: dict) -> None:
+    """Validate resume upload payload (PDF/DOC/DOCX only)."""
+    resume_filename = str(application_data.get("resume_filename") or "").strip()
+    resume_mime_type = str(application_data.get("resume_mime_type") or "").strip().lower()
+    resume_data_url = str(application_data.get("resume_data_url") or "").strip()
+    resume_size_bytes = application_data.get("resume_size_bytes")
+
+    has_resume = bool(resume_filename or resume_mime_type or resume_data_url)
+    if not has_resume:
+        return
+
+    if resume_size_bytes is not None:
+        try:
+            size = int(resume_size_bytes)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid resume size.")
+        if size <= 0 or size > MAX_RESUME_SIZE_BYTES:
+            raise HTTPException(status_code=400, detail="Resume/CV must be 5MB or smaller.")
+
+    ext = ""
+    if resume_filename:
+        ext = os.path.splitext(resume_filename)[1].lower()
+        if ext not in ALLOWED_RESUME_EXTENSIONS:
+            raise HTTPException(status_code=400, detail="Resume/CV must be a PDF, DOC, or DOCX file.")
+
+    data_url_mime = ""
+    if resume_data_url:
+        if not resume_data_url.startswith("data:"):
+            raise HTTPException(status_code=400, detail="Invalid resume data format.")
+        mime_part = resume_data_url.split(";", 1)[0]
+        data_url_mime = mime_part.replace("data:", "").strip().lower()
+        if data_url_mime and data_url_mime not in ALLOWED_RESUME_MIME_TYPES:
+            raise HTTPException(status_code=400, detail="Resume/CV must be a PDF, DOC, or DOCX file.")
+
+    candidate_mime = resume_mime_type or data_url_mime
+    if candidate_mime and candidate_mime not in ALLOWED_RESUME_MIME_TYPES:
+        raise HTTPException(status_code=400, detail="Resume/CV must be a PDF, DOC, or DOCX file.")
+
+    # If no MIME is provided, extension must still be valid when filename exists.
+    if not candidate_mime and not ext:
+        raise HTTPException(status_code=400, detail="Resume/CV file type could not be determined.")
 
 @router.get("/blog")
 async def get_public_blog_posts(
@@ -708,6 +757,8 @@ async def apply_to_job(
     """Apply to a job posting"""
     
     try:
+        _validate_resume_payload(application_data)
+
         # Get the job posting
         job_posting = await database.get_content_item_by_id(job_id)
         
@@ -762,6 +813,8 @@ async def apply_general_to_careers(
     """Submit a general careers application without a specific job posting."""
 
     try:
+        _validate_resume_payload(application_data)
+
         position_of_interest = (
             application_data.get("position_of_interest")
             or application_data.get("job_title")

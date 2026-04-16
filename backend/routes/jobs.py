@@ -180,8 +180,8 @@ async def create_job(
                 detail=f"LGA '{job_data.lga}' does not belong to state '{job_data.state}'",
             )
         
-        # Validate zip code format
-        if not validate_zip_code(job_data.zip_code, job_data.state, job_data.lga):
+        # Validate zip code format only when provided
+        if job_data.zip_code and not validate_zip_code(job_data.zip_code, job_data.state, job_data.lga):
             raise HTTPException(
                 status_code=400,
                 detail="Invalid zip code format. Nigerian zip codes must be 6 digits.",
@@ -189,7 +189,7 @@ async def create_job(
         
         # Auto-populate legacy fields for compatibility
         job_dict['location'] = job_data.state  # Use state as location
-        job_dict['postcode'] = job_data.zip_code  # Use zip_code as postcode
+        job_dict['postcode'] = job_data.zip_code or None  # Use zip_code as postcode
         
         # Create homeowner object using current user data
         job_dict['homeowner'] = {
@@ -2058,7 +2058,7 @@ async def register_and_post(payload: PublicJobPostRequest, background_tasks: Bac
                 ),
             )
 
-        if not validate_zip_code(job_data.zip_code, job_data.state, job_data.lga):
+        if job_data.zip_code and not validate_zip_code(job_data.zip_code, job_data.state, job_data.lga):
             raise HTTPException(status_code=400, detail="Invalid zip code format. Nigerian zip codes must be 6 digits.")
 
         if not validate_password_strength(payload.password):
@@ -2118,7 +2118,7 @@ async def register_and_post(payload: PublicJobPostRequest, background_tasks: Bac
                 "role": UserRole.HOMEOWNER,
                 "status": UserStatus.ACTIVE,
                 "location": job_data.state,
-                "postcode": job_data.zip_code,
+                "postcode": job_data.zip_code or None,
                 "email_verified": False,
                 "phone_verified": False,
                 "is_verified": False,
@@ -2269,7 +2269,7 @@ async def register_and_post(payload: PublicJobPostRequest, background_tasks: Bac
         job_dict = incoming_job.copy()
         await _hydrate_job_coords_if_missing(job_dict)
         job_dict["location"] = job_data.state
-        job_dict["postcode"] = job_data.zip_code
+        job_dict["postcode"] = job_data.zip_code or None
         job_dict["homeowner"] = {
             "id": user_obj.id,
             "name": user_obj.name,

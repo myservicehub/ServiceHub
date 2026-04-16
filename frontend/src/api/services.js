@@ -146,6 +146,8 @@ export const statsAPI = {
       total_tradespeople: Number(d.total_tradespeople ?? d.totalTradespeople ?? 0),
       total_homeowners: Number(d.total_homeowners ?? d.totalHomeowners ?? 0),
       total_categories: Number(d.total_categories ?? d.totalCategories ?? d.categories_count ?? 0),
+      total_states: Number(d.total_states ?? d.totalStates ?? 0),
+      total_cities: Number(d.total_cities ?? d.totalCities ?? 0),
       total_reviews: Number(d.total_reviews ?? d.totalReviews ?? 0),
     };
   },

@@ -483,9 +483,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState, s
         if (!formData.state.trim()) newErrors.state = 'State is required';
         if (!formData.lga.trim()) newErrors.lga = 'Local Government Area (LGA) is required';
         if (!formData.town.trim()) newErrors.town = 'Town/Area is required';
-        if (!formData.zip_code.trim()) {
-          newErrors.zip_code = 'Zip code is required';
-        } else if (!/^\d{6}$/.test(formData.zip_code.trim())) {
+        if (formData.zip_code.trim() && !/^\d{6}$/.test(formData.zip_code.trim())) {
           newErrors.zip_code = 'Zip code must be 6 digits';
         }
         if (!formData.home_address.trim()) {
@@ -649,7 +647,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState, s
         state: formData.state,
         lga: formData.lga,
         town: formData.town,
-        zip_code: formData.zip_code,
+        zip_code: formData.zip_code.trim() || null,
         home_address: formData.home_address,
         budget_min: formData.budgetType === 'range' ? parseInt(formData.budget_min) : null,
         budget_max: formData.budgetType === 'range' ? parseInt(formData.budget_max) : null,
@@ -1880,7 +1878,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState, s
         state: formData.state,
         lga: formData.lga,
         town: formData.town,
-        zip_code: formData.zip_code,
+        zip_code: formData.zip_code.trim() || null,
         home_address: formData.home_address,
         budget_min: formData.budgetType === 'range' ? parseInt(formData.budget_min) : null,
         budget_max: formData.budgetType === 'range' ? parseInt(formData.budget_max) : null,
@@ -2228,7 +2226,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState, s
 
               <div>
                 <label className="block text-sm font-medium font-lato mb-1.5 text-[#121E3C]">
-                  Zip Code *
+                  Zip Code (Optional)
                 </label>
                 <input
                   type="text"
@@ -2242,7 +2240,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState, s
                   }`}
                 />
                 {errors.zip_code && <p className="text-red-500 text-xs mt-1 font-lato">{errors.zip_code}</p>}
-                <p className="text-xs text-gray-400 mt-1 font-lato">Nigerian postal code (6 digits)</p>
+                <p className="text-xs text-gray-400 mt-1 font-lato">Nigerian postal code (6 digits, optional)</p>
               </div>
             </div>
 

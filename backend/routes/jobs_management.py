@@ -341,9 +341,37 @@ async def update_job_application(
         logger.error(f"Error updating job application: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to update job application")
 
+@router.delete("/applications/{application_id}")
+async def delete_job_application(
+    application_id: str,
+    admin: dict = Depends(require_permission(AdminPermission.MANAGE_JOBS))
+):
+    """Delete a job application (Admin only)."""
+    try:
+        existing_app = await database.get_job_application_by_id(application_id)
+        if not existing_app:
+            raise HTTPException(status_code=404, detail="Job application not found")
+
+        success = await database.delete_job_application(application_id)
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to delete job application")
+
+        await database.log_admin_activity(
+            admin["id"], admin["username"], "delete_application",
+            f"Deleted application from {existing_app.get('name', 'Unknown')} for {existing_app.get('job_title', 'General Application')}",
+            target_id=application_id, target_type="application"
+        )
+
+        return {"message": "Job application deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting job application: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to delete job application")
+
 @router.get("/statistics")
 async def get_job_statistics(
-    admin: dict = Depends(require_permission(AdminPermission.VIEW_SYSTEM_STATS))
+    admin: dict = Depends(require_permission(AdminPermission.MANAGE_JOBS))
 ):
     """Get job and application statistics (Admin only)"""
     

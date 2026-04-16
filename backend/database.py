@@ -2054,6 +2054,7 @@ class Database:
                 "total_homeowners": 0,
                 "total_categories": total_categories,
                 "total_states": 0,
+                "total_cities": 0,
                 "total_reviews": 0,
                 "average_rating": 0.0,
                 "total_jobs": 0,
@@ -2095,6 +2096,36 @@ class Database:
             total_states = len(all_states or [])
         except Exception:
             total_states = 0
+
+        # Cities covered (derived from tradespeople service locations)
+        try:
+            total_cities = 0
+            tradespeople_locations = await self.database.users.find(
+                {"role": "tradesperson"},
+                {"city": 1, "town": 1, "lga": 1, "state": 1, "location": 1}
+            ).to_list(length=None)
+
+            covered_locations = set()
+            for user in tradespeople_locations:
+                location_value = (
+                    user.get("city")
+                    or user.get("town")
+                    or user.get("lga")
+                    or user.get("state")
+                    or user.get("location")
+                    or ""
+                )
+                normalized = str(location_value).strip().lower()
+                if normalized:
+                    covered_locations.add(normalized)
+
+            total_cities = len(covered_locations)
+
+            # Fallback to admin-managed towns when user profile locations are unavailable
+            if total_cities == 0:
+                total_cities = await self.database.system_locations.count_documents({"type": "town"})
+        except Exception:
+            total_cities = 0
         
         # Get total available categories from static trade categories
         try:
@@ -2122,6 +2153,7 @@ class Database:
             "total_homeowners": total_homeowners,
             "total_categories": total_categories,
             "total_states": total_states,
+            "total_cities": total_cities,
             "total_reviews": total_reviews,
             "average_rating": average_rating,
             "total_jobs": total_jobs_completed,
@@ -9188,7 +9220,9 @@ We may update this Cookie Policy to reflect changes in technology or regulations
         for app in applications:
             app_id_str = str(app['_id'])
             app['_id'] = app_id_str
-            app['id'] = app_id_str
+            # Preserve application id when present (UUID); fallback to Mongo _id for legacy records.
+            if not app.get('id'):
+                app['id'] = app_id_str
         return applications
 
     async def get_job_applications_count(self, filters: dict = None) -> int:
@@ -9198,19 +9232,65 @@ We may update this Cookie Policy to reflect changes in technology or regulations
 
     async def get_job_application_by_id(self, application_id: str) -> Optional[dict]:
         """Get job application by ID"""
-        application = await self.database.job_applications.find_one({"id": application_id})
+        from bson import ObjectId
+
+        or_filters = [{"id": application_id}]
+        if ObjectId.is_valid(application_id):
+            or_filters.append({"_id": ObjectId(application_id)})
+
+        application = await self.database.job_applications.find_one({"$or": or_filters})
         if application:
             application['_id'] = str(application['_id'])
+            if not application.get('id'):
+                application['id'] = application['_id']
         return application
 
     async def update_job_application(self, application_id: str, update_data: dict) -> bool:
         """Update job application"""
+        from bson import ObjectId
+
         update_data['updated_at'] = datetime.utcnow()
+        or_filters = [{"id": application_id}]
+        if ObjectId.is_valid(application_id):
+            or_filters.append({"_id": ObjectId(application_id)})
         result = await self.database.job_applications.update_one(
-            {"id": application_id},
+            {"$or": or_filters},
             {"$set": update_data}
         )
         return result.modified_count > 0
+
+    async def delete_job_application(self, application_id: str) -> bool:
+        """Delete job application and reconcile per-job application count."""
+        from bson import ObjectId
+
+        or_filters = [{"id": application_id}]
+        if ObjectId.is_valid(application_id):
+            or_filters.append({"_id": ObjectId(application_id)})
+
+        app = await self.database.job_applications.find_one({"$or": or_filters})
+        if not app:
+            return False
+
+        delete_result = await self.database.job_applications.delete_one({"_id": app["_id"]})
+        if delete_result.deleted_count <= 0:
+            return False
+
+        # Keep posting-level counter in sync for non-general applications tied to a job.
+        job_id = app.get("job_id")
+        if job_id and not app.get("is_general_application"):
+            try:
+                await self.database.content_items.update_one(
+                    {"id": job_id, "content_type": "job_posting"},
+                    {"$inc": {"settings.applications_count": -1}}
+                )
+                await self.database.content_items.update_one(
+                    {"id": job_id, "content_type": "job_posting", "settings.applications_count": {"$lt": 0}},
+                    {"$set": {"settings.applications_count": 0}}
+                )
+            except Exception as e:
+                logger.warning(f"Failed to reconcile applications_count for job {job_id}: {e}")
+
+        return True
 
     async def increment_job_applications_count(self, job_id: str):
         """Increment applications count for a job posting"""
@@ -9226,11 +9306,11 @@ We may update this Cookie Policy to reflect changes in technology or regulations
             total_jobs = await self.database.content_items.count_documents({"content_type": "job_posting"})
             active_jobs = await self.database.content_items.count_documents({
                 "content_type": "job_posting", 
-                "status": "published"
+                "status": {"$regex": "^published$", "$options": "i"}
             })
             draft_jobs = await self.database.content_items.count_documents({
                 "content_type": "job_posting", 
-                "status": "draft"
+                "status": {"$regex": "^draft$", "$options": "i"}
             })
             
             # Application statistics
