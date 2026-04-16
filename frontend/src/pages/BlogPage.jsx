@@ -426,9 +426,35 @@ const BlogPage = () => {
     if (!content) return 1;
 
     const wordsPerMinute = 200;
-    const text = String(content).replace(/<[^>]*>/g, ' ');
+    const text = normalizeBlogHtml(content).replace(/<[^>]*>/g, ' ');
     const wordCount = text.trim().split(/\s+/).length;
     return Math.ceil(wordCount / wordsPerMinute);
+  };
+
+  const decodeHtmlEntities = (value) => {
+    const input = String(value || '');
+    if (typeof document === 'undefined') return input;
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = input;
+    return textarea.value;
+  };
+
+  const normalizeBlogHtml = (value) => {
+    let html = String(value || '');
+    if (!html.trim()) return '';
+
+    // Some editor/tool updates persist escaped markup (e.g. &lt;div ...&gt;),
+    // which causes raw tags to show publicly.
+    if (html.includes('&lt;') || html.includes('&gt;') || html.includes('&amp;')) {
+      html = decodeHtmlEntities(html);
+    }
+
+    // Remove container div wrappers from legacy rich-text output.
+    html = html
+      .replace(/<\s*div\b[^>]*>/gi, '')
+      .replace(/<\s*\/\s*div\s*>/gi, '');
+
+    return html;
   };
 
   const handleNewsletterSubscribe = async () => {
@@ -561,6 +587,7 @@ const BlogPage = () => {
 
   // Single Blog Post View
   if (selectedPost) {
+    const renderedPostContent = normalizeBlogHtml(selectedPost.content);
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
@@ -636,7 +663,7 @@ const BlogPage = () => {
                 {/* Content */}
                 <div 
                   className="prose prose-sm max-w-none mb-8 font-lato whitespace-pre-wrap"
-                  dangerouslySetInnerHTML={{ __html: selectedPost.content }}
+                  dangerouslySetInnerHTML={{ __html: renderedPostContent }}
                 />
                 
                 {/* Tags */}

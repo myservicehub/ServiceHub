@@ -583,7 +583,9 @@ async def get_all_jobs_admin(
 async def get_job_statistics_admin():
     """Get comprehensive job statistics for admin dashboard"""
     
-    stats = await database.get_jobs_statistics_admin()
+    # This endpoint powers the CMS Jobs & Careers tab, which reads from
+    # content_items/job_applications (not the legacy jobs collection).
+    stats = await database.get_job_statistics()
     
     return {
         "statistics": stats

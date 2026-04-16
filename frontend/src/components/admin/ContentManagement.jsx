@@ -2010,6 +2010,20 @@ const ContentManagement = () => {
 const PreviewContent = ({ item }) => {
   const [data, setData] = useState(item);
   const [loading, setLoading] = useState(false);
+  const renderHtml = (value) => {
+    let html = String(value || '');
+    if (!html.trim()) return '';
+
+    if (html.includes('&lt;') || html.includes('&gt;') || html.includes('&amp;')) {
+      const textarea = document.createElement('textarea');
+      textarea.innerHTML = html;
+      html = textarea.value;
+    }
+
+    return html
+      .replace(/<\s*div\b[^>]*>/gi, '')
+      .replace(/<\s*\/\s*div\s*>/gi, '');
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -2047,7 +2061,7 @@ const PreviewContent = ({ item }) => {
       {data.excerpt && (
         <div className="text-gray-600 mb-4">{stripHtml(data.excerpt)}</div>
       )}
-      <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: data.content || '' }} />
+      <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: renderHtml(data.content) }} />
       {loading && (
         <div className="mt-4 text-sm text-gray-500">Loading preview...</div>
       )}
