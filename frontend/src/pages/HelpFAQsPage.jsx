@@ -568,7 +568,7 @@ const HelpFAQsPage = () => {
                     )}
                     
                     <button
-                      onClick={() => navigate(isTradesperson() ? '/trades/profile' : '/dashboard/profile')}
+                      onClick={() => navigate(isTradesperson() ? '/trades/profile' : '/dashboard/settings')}
                       className="group p-4 border border-gray-100 rounded-xl hover:border-[#34D164]/30 hover:bg-[#34D164]/5 transition-all duration-200 text-left"
                     >
                       <h4 className="text-sm font-medium text-[#121E3C] group-hover:text-[#34D164]">Update Profile</h4>

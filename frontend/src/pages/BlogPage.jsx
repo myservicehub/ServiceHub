@@ -445,16 +445,23 @@ const BlogPage = () => {
 
     // Some editor/tool updates persist escaped markup (e.g. &lt;div ...&gt;),
     // which causes raw tags to show publicly.
-    if (html.includes('&lt;') || html.includes('&gt;') || html.includes('&amp;')) {
+    // We decode recursively to handle potential double-encoding.
+    let previousHtml;
+    let iterations = 0;
+    while (html.includes('&lt;') || html.includes('&gt;') || html.includes('&amp;')) {
+      previousHtml = html;
       html = decodeHtmlEntities(html);
+      iterations++;
+      // Safety break to prevent infinite loops if something is weird
+      if (html === previousHtml || iterations > 5) break;
     }
 
-    // Remove container div wrappers from legacy rich-text output.
-    html = html
-      .replace(/<\s*div\b[^>]*>/gi, '')
-      .replace(/<\s*\/\s*div\s*>/gi, '');
-
     return html;
+  };
+
+  const stripHtml = (value) => {
+    const html = normalizeBlogHtml(value);
+    return html.replace(/<[^>]*>/g, '').trim();
   };
 
   const handleNewsletterSubscribe = async () => {
@@ -557,7 +564,7 @@ const BlogPage = () => {
         
         {post.excerpt && (
           <p className="text-gray-500 text-sm font-lato mb-4 line-clamp-2">
-            {post.excerpt}
+            {stripHtml(post.excerpt)}
           </p>
         )}
         
@@ -588,6 +595,7 @@ const BlogPage = () => {
   // Single Blog Post View
   if (selectedPost) {
     const renderedPostContent = normalizeBlogHtml(selectedPost.content);
+    const renderedExcerpt = normalizeBlogHtml(selectedPost.excerpt);
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
@@ -654,15 +662,16 @@ const BlogPage = () => {
             <div className="max-w-3xl mx-auto">
               <article className="bg-white rounded-2xl border border-gray-100 p-6 md:p-8">
                 {/* Excerpt */}
-                {selectedPost.excerpt && (
-                  <div className="text-gray-700 font-lato font-semibold mb-6 pb-6 border-b border-gray-100 text-base leading-relaxed">
-                    {selectedPost.excerpt}
-                  </div>
+                {renderedExcerpt && (
+                  <div 
+                    className="text-gray-700 font-lato font-semibold mb-6 pb-6 border-b border-gray-100 text-base leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: renderedExcerpt }}
+                  />
                 )}
                 
                 {/* Content */}
                 <div 
-                  className="prose prose-sm max-w-none mb-8 font-lato whitespace-pre-wrap"
+                  className="prose prose-sm max-w-none mb-8 font-lato"
                   dangerouslySetInnerHTML={{ __html: renderedPostContent }}
                 />
                 
@@ -790,7 +799,7 @@ const BlogPage = () => {
                     <h3 className="text-base font-semibold font-montserrat text-white mb-2 group-hover:text-[#34D164] transition-colors">
                       {post.title}
                     </h3>
-                    <p className="text-white/60 text-xs font-lato line-clamp-2">{post.excerpt}</p>
+                    <p className="text-white/60 text-xs font-lato line-clamp-2">{stripHtml(post.excerpt)}</p>
                   </article>
                 ))}
               </div>

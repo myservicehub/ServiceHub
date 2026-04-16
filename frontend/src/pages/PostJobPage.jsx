@@ -133,13 +133,25 @@ const PostJobPage = () => {
                   <AlertCircle size={32} className="text-amber-500" />
                 </div>
                 <h1 className="text-2xl font-bold font-montserrat text-[#121E3C] mb-3">Verification Required</h1>
-                <p className="text-gray-500 font-lato text-sm mb-6">Please verify your email to post a job.</p>
-                <Button 
-                  onClick={() => navigate('/verify-account?next=%2Fpost-job')} 
-                  className="bg-[#34D164] hover:bg-[#2ab854] text-white px-8 py-2.5 text-sm font-medium rounded-full"
-                >
-                  Go to Verification
-                </Button>
+                <p className="text-gray-500 font-lato text-sm mb-6">
+                  We sent a verification link to <strong>{user.email}</strong>. 
+                  Please check your inbox (and spam folder) and click the link to verify your email and complete your job posting.
+                </p>
+                <div className="flex flex-col gap-3">
+                  <Button 
+                    onClick={() => navigate('/verify-account?next=%2Fpost-job')} 
+                    className="bg-[#34D164] hover:bg-[#2ab854] text-white px-8 py-2.5 text-sm font-medium rounded-full"
+                  >
+                    Check Verification Status
+                  </Button>
+                  <Button 
+                    variant="ghost"
+                    onClick={() => window.location.reload()}
+                    className="text-gray-400 hover:text-gray-600 text-xs"
+                  >
+                    Already verified? Refresh page
+                  </Button>
+                </div>
               </div>
             </div>
           </section>

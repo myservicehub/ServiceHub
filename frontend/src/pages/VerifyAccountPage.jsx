@@ -161,8 +161,9 @@ const VerifyAccountPage = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const hasToken = !!params.get('token');
-    if (!hasToken && isAuthenticated() && user?.role === 'homeowner') {
-      navigate('/dashboard/profile', { replace: true });
+    // Only redirect verified homeowners away from this page
+    if (!hasToken && isAuthenticated() && user?.role === 'homeowner' && user?.email_verified) {
+      navigate('/dashboard/settings', { replace: true });
     }
   }, [isAuthenticated, user, location.search]);
 
@@ -883,8 +884,43 @@ const VerifyAccountPage = () => {
               <Shield className="w-8 h-8 text-[#34D164]" />
             </div>
             <h1 className="text-3xl font-bold font-montserrat mb-2" style={{color: '#121E3C'}}>Verify Your Account</h1>
-            <p className="text-gray-600 font-lato">Verify your email and phone. Tradespeople complete business verification and references.</p>
+            <p className="text-gray-600 font-lato">Verify your email and phone to unlock all platform features.</p>
           </div>
+
+          {/* Email Verification Status for Homeowners */}
+          {isAuthenticated() && user?.role === 'homeowner' && !user?.email_verified && (
+            <div className="bg-white rounded-2xl p-8 mb-8 border-2 border-amber-200 shadow-sm text-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-50 mb-6">
+                <Clock className="w-8 h-8 text-amber-500" />
+              </div>
+              <h3 className="text-xl font-bold font-montserrat text-[#121E3C] mb-3">Email Verification Pending</h3>
+              <p className="text-gray-600 font-lato mb-6 max-w-md mx-auto">
+                We sent a verification link to <strong>{user.email}</strong>. 
+                Please check your inbox (and spam folder) and click the link to verify your account.
+              </p>
+              <div className="flex flex-col sm:flex-row justify-center gap-4">
+                <Button 
+                  onClick={() => window.location.reload()}
+                  className="bg-[#34D164] hover:bg-[#2ab854] text-white px-8"
+                >
+                  I've Clicked the Link
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={async () => {
+                    try {
+                      await authAPI.resendVerificationEmail(user.email);
+                      toast({ title: "Email Sent", description: "Verification link has been resent to your inbox." });
+                    } catch (e) {
+                      toast({ title: "Failed to Resend", description: "Please try again in a few minutes.", variant: "destructive" });
+                    }
+                  }}
+                >
+                  Resend Email
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Current Verification Status for Tradespeople */}
           {user?.role === 'tradesperson' && (
