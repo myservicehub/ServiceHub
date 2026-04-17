@@ -1258,9 +1258,9 @@ async def get_all_users(
             search=search
         )
         
-        # Normalize user data to ensure LGA and other fields are resolved for the list view
+        # Normalize user data but skip slow geocoding to keep it fast for the list view
         if users:
-            users = await asyncio.gather(*[_normalize_user_profile_payload(u) for u in users])
+            users = await asyncio.gather(*[_normalize_user_profile_payload(u, skip_geocoding=True) for u in users])
         else:
             users = []
         
@@ -1295,26 +1295,30 @@ async def get_all_users(
 
 @router.get("/users/{user_id}")
 async def get_user_details(user_id: str):
-    """Get detailed information about a specific user"""
+    """Get detailed information about a specific user (optimized)"""
     
-    user = await database.get_user_by_id(user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    # Get additional user activity data
-    user_activity = await database.get_user_activity_stats(user_id)
-    
-    # Remove password hash for security
-    user.pop("password_hash", None)
-    user["_id"] = str(user.get("_id", ""))
-    
-    # Normalize user data to ensure LGA and other fields are resolved
-    normalized_user = await _normalize_user_profile_payload(user)
-    
-    return {
-        "user": normalized_user,
-        "activity_stats": user_activity
-    }
+    try:
+        user = await database.get_user_by_id(user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Normalize user data but skip slow geocoding to keep modal opening fast
+        normalized_user = await _normalize_user_profile_payload(user, skip_geocoding=True)
+        
+        # Get additional user activity data (uses asyncio.gather internally for speed)
+        user_activity = await database.get_user_activity_stats(user_id)
+        
+        # Remove password hash for security
+        normalized_user.pop("password_hash", None)
+        normalized_user["_id"] = str(normalized_user.get("_id", ""))
+        
+        return {
+            "user": normalized_user,
+            "activity_stats": user_activity
+        }
+    except Exception as e:
+        logger.error(f"Error getting user details: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to get user details")
 
 @router.put("/users/{user_id}/status")
 async def update_user_status(

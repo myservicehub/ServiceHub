@@ -47,12 +47,12 @@ BASE_UPLOADS = Path(os.environ.get("UPLOADS_DIR", os.path.join(os.getcwd(), "upl
 CERT_UPLOAD_DIR = BASE_UPLOADS / "certifications"
 CERT_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-async def _normalize_user_profile_payload(user_data: Dict[str, Any]) -> Dict[str, Any]:
+async def _normalize_user_profile_payload(user_data: Dict[str, Any], skip_geocoding: bool = False) -> Dict[str, Any]:
     try:
         payload = dict(user_data or {})
         if payload.get("location") in (None, ""):
             payload["location"] = "Not specified"
-        if payload.get("lga") in (None, "", "Not specified"):
+        if not skip_geocoding and payload.get("lga") in (None, "", "Not specified"):
             # Try to resolve LGA from coordinates if missing
             try:
                 lat = payload.get("latitude")
@@ -76,6 +76,8 @@ async def _normalize_user_profile_payload(user_data: Dict[str, Any]) -> Dict[str
             except Exception as e:
                 logger.warning(f"Error resolving LGA during normalization: {e}")
                 payload["lga"] = "Not specified"
+        elif payload.get("lga") in (None, "", "Not specified"):
+            payload["lga"] = "Not specified"
                 
         if payload.get("postcode") in (None, ""):
             payload["postcode"] = "000000"
