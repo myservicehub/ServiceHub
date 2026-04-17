@@ -1820,8 +1820,8 @@ async def request_password_reset(request_data: PasswordResetRequest):
         return {"message": "If an account with this email exists, you will receive a password reset link."}
 
 @router.post("/password-reset")
-async def reset_password(reset_data: PasswordReset):
-    """Reset password using a valid reset token"""
+async def reset_password(reset_data: PasswordReset, account_type: Optional[str] = Query(None, alias="type")):
+    """Reset password using a valid reset token (handles both users and admins)"""
     try:
         # Verify token
         try:
@@ -1856,51 +1856,63 @@ async def reset_password(reset_data: PasswordReset):
                 detail="Token does not match user"
             )
         
-        # Get user to verify they still exist
-        user_data = await database.get_user_by_id(user_id)
-        if not user_data:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found"
+        # Check if it's an admin reset
+        is_admin = account_type == "admin"
+        
+        if is_admin:
+            # Handle Admin Password Reset
+            admin_data = await database.get_admin_by_id(user_id)
+            if not admin_data:
+                raise HTTPException(status_code=404, detail="Admin not found")
+            
+            if admin_data.get("email") != email:
+                raise HTTPException(status_code=400, detail="Token email does not match admin email")
+            
+            # Validate password
+            if not validate_password_strength(reset_data.new_password):
+                raise HTTPException(status_code=400, detail="Password too weak")
+                
+            # Update admin password
+            success = await database.update_admin(user_id, {
+                "password_hash": get_password_hash(reset_data.new_password),
+                "must_change_password": False,
+                "status": "active", # Ensure account is active
+                "updated_at": datetime.utcnow()
+            })
+            
+            if not success:
+                raise HTTPException(status_code=500, detail="Failed to update admin password")
+                
+            logger.info(f"Password set successful for admin {user_id}")
+        else:
+            # Handle Regular User Password Reset
+            user_data = await database.get_user_by_id(user_id)
+            if not user_data:
+                raise HTTPException(status_code=404, detail="User not found")
+            
+            if user_data.get("email") != email:
+                raise HTTPException(status_code=400, detail="Token email does not match user email")
+            
+            if not validate_password_strength(reset_data.new_password):
+                raise HTTPException(status_code=400, detail="Password too weak")
+            
+            hashed_password = get_password_hash(reset_data.new_password)
+            password_updated = await database.update_user(
+                user_id=user_id,
+                update_data={"password_hash": hashed_password}
             )
+            
+            if not password_updated:
+                raise HTTPException(status_code=500, detail="Failed to update password")
+            
+            logger.info(f"Password reset successful for user {user_id}")
         
-        # Verify email matches
-        if user_data.get("email") != email:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Token email does not match user email"
-            )
-        
-        # Validate new password strength
-        if not validate_password_strength(reset_data.new_password):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Password must be at least 8 characters long and contain uppercase, lowercase, numeric, and special characters"
-            )
-        
-        # Update user password
-        hashed_password = get_password_hash(reset_data.new_password)
-        password_updated = await database.update_user(
-            user_id=user_id,
-            update_data={"password_hash": hashed_password}
-        )
-        
-        if not password_updated:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to update password"
-            )
-        
-        # Mark token as used
+        # Common post-reset actions
         await database.mark_password_reset_token_as_used(reset_data.token)
-        
-        # Invalidate all other password reset tokens for this user
         await database.invalidate_user_password_reset_tokens(user_id)
         
-        logger.info(f"Password reset successful for user {user_id}")
-        
         return {
-            "message": "Password reset successfully. You can now login with your new password."
+            "message": "Password updated successfully. You can now login with your new password."
         }
         
     except HTTPException:

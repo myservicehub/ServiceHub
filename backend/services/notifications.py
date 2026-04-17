@@ -1388,6 +1388,92 @@ serviceHub Team
             )
         }
 
+        # Admin Invitation templates
+        templates[NotificationType.ADMIN_INVITATION] = {
+            NotificationChannel.EMAIL: NotificationTemplate(
+                id=str(uuid.uuid4()),
+                type=NotificationType.ADMIN_INVITATION,
+                channel=NotificationChannel.EMAIL,
+                subject_template="Welcome to ServiceHub! You've been invited as an Administrator",
+                content_template="""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1a202c; margin: 0; padding: 0; background-color: #f7fafc; }
+        .wrapper { width: 100%; table-layout: fixed; background-color: #f7fafc; padding: 40px 0; }
+        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05); }
+        .header { background: linear-gradient(135deg, #165DFF 0%, #0045E6 100%); padding: 40px 30px; text-align: center; }
+        .logo { margin-bottom: 20px; }
+        .logo img { height: 45px; }
+        .header h1 { color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
+        .content { padding: 40px 30px; }
+        .greeting { font-size: 18px; font-weight: 600; margin-bottom: 16px; color: #111827; }
+        .message { color: #4b5563; font-size: 16px; margin-bottom: 24px; }
+        .admin-info { background-color: #f8faff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 30px; }
+        .info-row { display: flex; margin-bottom: 10px; }
+        .info-row:last-child { margin-bottom: 0; }
+        .info-label { width: 100px; color: #718096; font-size: 14px; font-weight: 500; }
+        .info-value { color: #2d3748; font-size: 15px; font-weight: 600; }
+        .cta-container { text-align: center; margin-bottom: 30px; }
+        .cta-button { display: inline-block; background-color: #165DFF; color: #ffffff !important; font-weight: 600; font-size: 16px; padding: 16px 32px; text-decoration: none; border-radius: 10px; transition: background-color 0.2s; box-shadow: 0 4px 12px rgba(22, 93, 255, 0.25); }
+        .security-note { font-size: 13px; color: #94a3b8; text-align: center; padding: 0 20px; }
+        .footer { background-color: #f8fafc; padding: 30px; text-align: center; border-top: 1px solid #edf2f7; }
+        .footer p { margin: 0; color: #64748b; font-size: 14px; }
+        .footer .socials { margin-top: 15px; }
+        .footer .socials a { color: #165DFF; text-decoration: none; margin: 0 10px; font-weight: 500; }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="container">
+            <div class="header">
+                <div class="logo">
+                    <img src="https://www.myservicehub.co/logo-white.png" alt="ServiceHub Logo" onerror="this.style.display='none'">
+                </div>
+                <h1>Welcome to the Team</h1>
+            </div>
+            <div class="content">
+                <p class="greeting">Hello {full_name},</p>
+                <p class="message">You have been invited to join the <strong>ServiceHub Admin Panel</strong> as a {role_name}. We're excited to have you on board!</p>
+                
+                <div class="admin-info">
+                    <div class="info-row">
+                        <span class="info-label">Username:</span>
+                        <span class="info-value">@{username}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Role:</span>
+                        <span class="info-value">{role_name}</span>
+                    </div>
+                </div>
+
+                <p class="message">To get started, please click the button below to set up your secure password. This link will expire in 24 hours.</p>
+
+                <div class="cta-container">
+                    <a href="{setup_link}" class="cta-button">Set Up Your Account</a>
+                </div>
+
+                <p class="security-note">If you did not expect this invitation, please ignore this email or contact our security team.</p>
+            </div>
+            <div class="footer">
+                <p>&copy; 2024 ServiceHub Team. Nigeria's Trusted Service Marketplace.</p>
+                <div class="socials">
+                    <a href="https://www.myservicehub.co">Website</a>
+                    <a href="https://www.myservicehub.co/help">Support</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+                """,
+                variables=["full_name", "username", "role_name", "setup_link"]
+            )
+        }
+
         return templates
     
     def get_template(self, notification_type: NotificationType, channel: NotificationChannel) -> Optional[NotificationTemplate]:

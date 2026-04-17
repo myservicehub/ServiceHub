@@ -136,11 +136,11 @@ const AdminManagement = () => {
       e.preventDefault();
       try {
         const result = await adminManagementAPI.createAdmin(formData);
-        alert(`Admin created successfully! Temporary password: ${result.temporary_password}`);
+        alert(result.message || 'Admin created successfully! An invitation email has been sent.');
         setShowCreateModal(false);
         loadData();
       } catch (error) {
-        alert('Error creating admin: ' + error.message);
+        alert('Error creating admin: ' + (error.response?.data?.detail || error.message));
       }
     };
 

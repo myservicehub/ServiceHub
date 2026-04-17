@@ -7,6 +7,7 @@ import bcrypt
 import jwt
 import secrets
 import string
+import os
 
 from ..database import database
 from ..models.admin import (
@@ -14,6 +15,9 @@ from ..models.admin import (
     AdminPasswordChange, AdminPasswordReset, AdminActivity, AdminActivityType,
     AdminRole, AdminStatus, AdminPermission, get_admin_permissions, has_permission, can_manage_role
 )
+from ..models.notifications import NotificationType
+from ..services.notifications import notification_service
+from ..auth.security import create_password_reset_token, get_password_hash
 
 logger = logging.getLogger(__name__)
 security = HTTPBearer()
@@ -360,8 +364,8 @@ async def create_admin(
     if existing_admin:
         raise HTTPException(status_code=400, detail="Email already exists")
     
-    # Generate temporary password
-    temp_password = generate_password()
+    # Generate a random initial password (won't be shown to user)
+    initial_password = secrets.token_urlsafe(16)
     
     # Create admin
     new_admin = Admin(
@@ -371,7 +375,7 @@ async def create_admin(
         role=admin_data.role,
         phone=admin_data.phone,
         notes=admin_data.notes,
-        password_hash=hash_password(temp_password),
+        password_hash=hash_password(initial_password),
         permissions=[perm.value for perm in get_admin_permissions(admin_data.role)],
         created_by=admin["id"],
         must_change_password=True
@@ -386,15 +390,40 @@ async def create_admin(
         target_id=admin_id, target_type="admin", request=request
     )
     
-    # TODO: Send email with temporary password
-    # await send_admin_welcome_email(admin_data.email, admin_data.username, temp_password)
+    # Generate setup token
+    setup_token = create_password_reset_token(admin_id, admin_data.email, expires_delta=timedelta(hours=24))
+    
+    # Store token in database
+    await database.create_password_reset_token(
+        user_id=admin_id,
+        token=setup_token,
+        expires_at=datetime.utcnow() + timedelta(hours=24)
+    )
+    
+    # Send invitation email
+    frontend_url = os.environ.get("FRONTEND_URL", "https://www.myservicehub.co").rstrip("/")
+    setup_link = f"{frontend_url}/reset-password?token={setup_token}&type=admin"
+    
+    try:
+        await notification_service.send_notification(
+            user_id=admin_id,
+            notification_type=NotificationType.ADMIN_INVITATION,
+            template_data={
+                "full_name": admin_data.full_name,
+                "username": admin_data.username,
+                "role_name": admin_data.role.value.replace("_", " ").title(),
+                "setup_link": setup_link
+            },
+            recipient_email=admin_data.email
+        )
+    except Exception as e:
+        logger.error(f"Failed to send admin invitation email: {e}")
+        # We don't fail the whole request if email fails, but we should log it
     
     return {
-        "message": "Admin created successfully",
+        "message": "Admin created successfully. An invitation email has been sent to set up their password.",
         "admin_id": admin_id,
-        "username": admin_data.username,
-        "temporary_password": temp_password,  # In production, this should be sent via email only
-        "must_change_password": True
+        "username": admin_data.username
     }
 
 @router.put("/admins/{admin_id}")

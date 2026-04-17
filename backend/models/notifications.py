@@ -24,6 +24,7 @@ class NotificationType(str, Enum):
     NEW_REVIEW_RECEIVED = "new_review_received"
     CONTACT_FORM = "contact_form"
     TRADESPERSON_WELCOME = "tradesperson_welcome"
+    ADMIN_INVITATION = "admin_invitation"
 
 class NotificationChannel(str, Enum):
     EMAIL = "email"

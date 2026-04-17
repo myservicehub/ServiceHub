@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import apiClient from "../api/client";
 
@@ -6,6 +6,7 @@ function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const token = searchParams.get("token") || "";
+  const accountType = searchParams.get("type") || "";
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
@@ -42,7 +43,8 @@ function ResetPasswordPage() {
 
     try {
       setLoading(true);
-      await apiClient.post("/auth/password-reset", {
+      const url = accountType ? `/auth/password-reset?type=${accountType}` : "/auth/password-reset";
+      await apiClient.post(url, {
         token,
         new_password: password,
       });
