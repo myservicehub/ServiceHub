@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Users, UserPlus, Shield, Activity, Settings, Eye, Trash2, Edit, Key, AlertTriangle } from 'lucide-react';
+import { toast } from 'sonner';
 import apiClient from '../../api/client';
 
 const AdminManagement = () => {
@@ -136,11 +137,11 @@ const AdminManagement = () => {
       e.preventDefault();
       try {
         const result = await adminManagementAPI.createAdmin(formData);
-        alert(result.message || 'Admin created successfully! An invitation email has been sent.');
+        toast.success(result.message || 'Admin created successfully! An invitation email has been sent.');
         setShowCreateModal(false);
         loadData();
       } catch (error) {
-        alert('Error creating admin: ' + (error.response?.data?.detail || error.message));
+        toast.error('Error creating admin: ' + (error.response?.data?.detail || error.message));
       }
     };
 
@@ -258,12 +259,12 @@ const AdminManagement = () => {
           phone: formData.phone || undefined,
           notes: formData.notes || undefined
         });
-        alert('Admin updated successfully');
+        toast.success('Admin updated successfully');
         setShowEditModal(false);
         setSelectedAdmin(null);
         loadData();
       } catch (error) {
-        alert('Error updating admin: ' + error.message);
+        toast.error('Error updating admin: ' + (error.response?.data?.detail || error.message));
       }
     };
 
@@ -675,11 +676,12 @@ const AdminManagement = () => {
                 onClick={async () => {
                   try {
                     await adminManagementAPI.deleteAdmin(selectedAdmin.id);
+                    toast.success('Admin deactivated successfully');
                     setShowDeleteConfirm(false);
                     setSelectedAdmin(null);
                     loadData();
                   } catch (error) {
-                    alert('Error deleting admin: ' + error.message);
+                    toast.error('Error deleting admin: ' + (error.response?.data?.detail || error.message));
                   }
                 }}
                 className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg"
@@ -713,11 +715,11 @@ const AdminManagement = () => {
               const newPassword = e.target.password.value;
               try {
                 const result = await adminManagementAPI.resetPassword(selectedAdmin.id, newPassword);
-                alert('Password reset successfully!');
+                toast.success('Password reset successfully!');
                 setShowPasswordReset(false);
                 setSelectedAdmin(null);
               } catch (error) {
-                alert('Error resetting password: ' + error.message);
+                toast.error('Error resetting password: ' + (error.response?.data?.detail || error.message));
               }
             }}>
               <div className="mb-4">

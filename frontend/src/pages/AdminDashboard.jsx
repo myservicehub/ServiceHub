@@ -20,6 +20,8 @@ import AuthenticatedImage from '../components/common/AuthenticatedImage';
 import { Dialog, DialogContent } from '../components/ui/dialog';
 
 const AdminDashboard = () => {
+  const { toast } = useToast();
+
   const [isLoggedIn, setIsLoggedIn] = useState(adminAPI.isLoggedIn());
   const [activeTab, setActiveTab] = useState('fees');
   const usersTabRef = useRef(null);
@@ -6432,7 +6434,11 @@ const AdminDashboard = () => {
                                           a.remove();
                                        } catch (err) {
                                          console.error('Download failed', err);
-                                         alert('Failed to download file');
+                                         toast({
+                                           title: "Error",
+                                           description: "Failed to download file",
+                                           variant: "destructive",
+                                         });
                                        }
                                      }}
                                      className="flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-blue-600 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer"

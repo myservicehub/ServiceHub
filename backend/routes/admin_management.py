@@ -422,7 +422,7 @@ async def create_admin(
             notification_type=NotificationType.ADMIN_INVITATION,
             template_data={
                 "full_name": admin_data.full_name,
-                "username": admin_data.username,
+                "username": effective_username,
                 "role_name": admin_data.role.value.replace("_", " ").title(),
                 "setup_link": setup_link
             },

@@ -1734,66 +1734,62 @@ class NotificationService:
             "tradesperson_welcome": "tradesperson-welcome.html",
         }
         filename = filename_map.get(notification.type.value)
-        if not filename:
-            raise ValueError(f"No rendered HTML template mapping found for {notification.type.value}")
-
-        project_root = Path(__file__).resolve().parents[1].parent
-        candidate_dirs = [
-            os.environ.get("BACKEND_EMAILS_HTML_DIR"),
-            os.environ.get("FRONTEND_EMAILS_HTML_DIR"),
-            str(project_root / "backend" / "email_templates" / "html"),
-            str(project_root / "frontend" / "emails" / "html"),
-        ]
-        path = None
-        for html_dir in candidate_dirs:
-            if not html_dir:
-                continue
-            candidate_path = os.path.join(html_dir, filename)
-            if os.path.exists(candidate_path):
-                path = candidate_path
-                break
-        if not path:
-            raise FileNotFoundError(f"Rendered HTML template not found for {notification.type.value}: {filename}")
-
-        with open(path, "r", encoding="utf-8") as f:
-            override_html = f.read()
-        def to_camel(s: str) -> str:
-            parts = s.split('_')
-            return parts[0] + ''.join(p.capitalize() for p in parts[1:])
-        values = dict(template_data or {})
-        # Normalize null-like values so templates never render "None".
-        for key in list(values.keys()):
-            if values[key] is None:
-                values[key] = ""
-        # Support both Name/name placeholders used across email template versions.
-        if "Name" in values and "name" not in values:
-            values["name"] = values["Name"]
-        if "name" in values and "Name" not in values:
-            values["Name"] = values["name"]
-        for k, v in list(values.items()):
-            if isinstance(k, str) and "_" in k:
-                camel = to_camel(k)
-                values[camel] = v
-                if camel:
-                    values[camel[0].upper() + camel[1:]] = v
-        if "admin_notes" in values:
-            values["adminNotes"] = values["admin_notes"]
-        if "admin_notes_html" in values:
-            values["adminNotesHTML"] = values["admin_notes_html"]
-        if "job_url" in values:
-            values["jobUrl"] = values["job_url"]
-        if "see_more_url" in values:
-            values["seeMoreUrl"] = values["see_more_url"]
-        if "review_url" in values:
-            values["reviewUrl"] = values["review_url"]
-        if "conversation_url" in values:
-            values["conversationUrl"] = values["conversation_url"]
-        if "distance_km" in values and "distance" not in values:
-            values["distance"] = values["distance_km"]
-        override_html = re.sub(r"\{\{\s*([a-zA-Z0-9_]+)\s*\}\}", lambda m: str(values.get(m.group(1), "")), override_html)
-        if not override_html:
-            raise ValueError(f"Rendered HTML template is empty for {notification.type.value}: {filename}")
-        content = override_html
+        if filename:
+            project_root = Path(__file__).resolve().parents[1].parent
+            candidate_dirs = [
+                os.environ.get("BACKEND_EMAILS_HTML_DIR"),
+                os.environ.get("FRONTEND_EMAILS_HTML_DIR"),
+                str(project_root / "backend" / "email_templates" / "html"),
+                str(project_root / "frontend" / "emails" / "html"),
+            ]
+            path = None
+            for html_dir in candidate_dirs:
+                if not html_dir:
+                    continue
+                candidate_path = os.path.join(html_dir, filename)
+                if os.path.exists(candidate_path):
+                    path = candidate_path
+                    break
+            
+            if path:
+                with open(path, "r", encoding="utf-8") as f:
+                    override_html = f.read()
+                def to_camel(s: str) -> str:
+                    parts = s.split('_')
+                    return parts[0] + ''.join(p.capitalize() for p in parts[1:])
+                values = dict(template_data or {})
+                # Normalize null-like values so templates never render "None".
+                for key in list(values.keys()):
+                    if values[key] is None:
+                        values[key] = ""
+                # Support both Name/name placeholders used across email template versions.
+                if "Name" in values and "name" not in values:
+                    values["name"] = values["Name"]
+                if "name" in values and "Name" not in values:
+                    values["Name"] = values["name"]
+                for k, v in list(values.items()):
+                    if isinstance(k, str) and "_" in k:
+                        camel = to_camel(k)
+                        values[camel] = v
+                        if camel:
+                            values[camel[0].upper() + camel[1:]] = v
+                if "admin_notes" in values:
+                    values["adminNotes"] = values["admin_notes"]
+                if "admin_notes_html" in values:
+                    values["adminNotesHTML"] = values["admin_notes_html"]
+                if "job_url" in values:
+                    values["jobUrl"] = values["job_url"]
+                if "see_more_url" in values:
+                    values["seeMoreUrl"] = values["see_more_url"]
+                if "review_url" in values:
+                    values["reviewUrl"] = values["review_url"]
+                if "conversation_url" in values:
+                    values["conversationUrl"] = values["conversation_url"]
+                if "distance_km" in values and "distance" not in values:
+                    values["distance"] = values["distance_km"]
+                override_html = re.sub(r"\{\{\s*([a-zA-Z0-9_]+)\s*\}\}", lambda m: str(values.get(m.group(1), "")), override_html)
+                if override_html:
+                    content = override_html
         
         success = await self.email_service.send_email(
             to=notification.recipient_email,
