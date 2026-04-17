@@ -51,7 +51,7 @@ async def _normalize_user_profile_payload(user_data: Dict[str, Any]) -> Dict[str
     payload = dict(user_data or {})
     if payload.get("location") in (None, ""):
         payload["location"] = "Not specified"
-    if payload.get("lga") in (None, ""):
+    if payload.get("lga") in (None, "", "Not specified"):
         # Try to resolve LGA from coordinates if missing
         lat = payload.get("latitude")
         lng = payload.get("longitude")

@@ -6964,17 +6964,17 @@ const AdminDashboard = () => {
               {/* Verification Progress for Tradespeople */}
               {selectedUser.role === 'tradesperson' && (
                 <div className="pt-4 border-t border-gray-100">
-                  <h4 className="text-lg font-medium mb-3 text-gray-800">Verification Progress</h4>
+                  <h4 className="text-lg font-medium mb-3 text-gray-800">Profile Completion Steps</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                     {[
-                      { label: 'Email', verified: selectedUser.email_verified },
-                      { label: 'Phone', verified: selectedUser.phone_verified },
-                      { label: 'Identity', verified: selectedUser.identity_verified },
-                      { label: 'Business', verified: selectedUser.business_verified }
+                      { label: 'Update Details', verified: !!(selectedUser.trade_categories?.length > 0 && selectedUser.location) },
+                      { label: 'Verify Contact', verified: !!(selectedUser.email_verified && selectedUser.phone_verified) },
+                      { label: 'Skills Test', verified: !!selectedUser.skills_test_passed },
+                      { label: 'Business Verification', verified: !!selectedUser.business_verified }
                     ].map((step, idx) => (
                       <div key={idx} className="flex flex-col gap-1 bg-gray-50 p-3 rounded-xl border border-gray-100">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{step.label}</span>
+                          <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">{step.label}</span>
                           <div className={`w-2 h-2 rounded-full ${step.verified ? 'bg-[#34D164]' : 'bg-amber-400'}`} />
                         </div>
                         <div className={`text-[11px] font-bold text-center py-1 rounded-lg ${
@@ -6982,7 +6982,7 @@ const AdminDashboard = () => {
                             ? 'bg-[#34D164]/10 text-[#34D164]' 
                             : 'bg-amber-100 text-amber-600'
                         }`}>
-                          {step.verified ? 'VERIFIED' : 'PENDING'}
+                          {step.verified ? 'COMPLETED' : 'PENDING'}
                         </div>
                       </div>
                     ))}
