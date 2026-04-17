@@ -356,9 +356,21 @@ async def create_admin(
         )
     
     # Check if username or email already exists
-    existing_admin = await database.get_admin_by_username(admin_data.username)
+    effective_username = admin_data.username
+    if not effective_username:
+        # Generate username from email if not provided
+        effective_username = admin_data.email.split('@')[0]
+        # Ensure it meets min length
+        if len(effective_username) < 3:
+            effective_username = f"{effective_username}{secrets.token_hex(2)}"
+    
+    existing_admin = await database.get_admin_by_username(effective_username)
     if existing_admin:
-        raise HTTPException(status_code=400, detail="Username already exists")
+        # If auto-generated username exists, append random suffix
+        if not admin_data.username:
+            effective_username = f"{effective_username}{secrets.token_hex(2)}"
+        else:
+            raise HTTPException(status_code=400, detail="Username already exists")
     
     existing_admin = await database.get_admin_by_email(admin_data.email)
     if existing_admin:
@@ -369,7 +381,7 @@ async def create_admin(
     
     # Create admin
     new_admin = Admin(
-        username=admin_data.username,
+        username=effective_username,
         email=admin_data.email,
         full_name=admin_data.full_name,
         role=admin_data.role,
@@ -421,9 +433,9 @@ async def create_admin(
         # We don't fail the whole request if email fails, but we should log it
     
     return {
-        "message": "Admin created successfully. An invitation email has been sent to set up their password.",
+        "message": f"Admin created successfully with username @{effective_username}. An invitation email has been sent to set up their password.",
         "admin_id": admin_id,
-        "username": admin_data.username
+        "username": effective_username
     }
 
 @router.put("/admins/{admin_id}")

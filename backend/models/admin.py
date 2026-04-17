@@ -139,7 +139,7 @@ class Admin(BaseModel):
         return d
 
 class AdminCreate(BaseModel):
-    username: str = Field(..., min_length=3, max_length=50)
+    username: Optional[str] = Field(None, min_length=3, max_length=50)
     email: EmailStr
     full_name: str = Field(..., min_length=2, max_length=100)
     role: AdminRole
