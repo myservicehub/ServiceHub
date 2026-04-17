@@ -193,11 +193,48 @@ class ResendEmailService:
         self.service_name = "ResendEmailService"
         self.api_key = os.environ.get("RESEND_API_KEY")
         self.from_email = os.environ.get("RESEND_FROM_EMAIL") or os.environ.get("SENDER_EMAIL")
+        self.audience_id = os.environ.get("RESEND_AUDIENCE_ID")
         if not self.api_key or not self.from_email:
             logger.error("❌ Resend configuration missing: RESEND_API_KEY or RESEND_FROM_EMAIL/SENDER_EMAIL")
             raise ValueError("Missing Resend configuration")
         self.endpoint = "https://api.resend.com/emails"
         logger.info(f"🔧 {self.service_name} initialized - Production Mode")
+
+    async def add_to_audience(self, email: str, first_name: str = "", last_name: str = "") -> bool:
+        """Add a contact to a Resend audience"""
+        if not self.audience_id:
+            logger.warning("⚠️ RESEND_AUDIENCE_ID not configured - skipping audience addition")
+            return False
+            
+        try:
+            url = f"https://api.resend.com/audiences/{self.audience_id}/contacts"
+            payload = {
+                "email": email,
+                "unsubscribed": False
+            }
+            if first_name: payload["first_name"] = first_name
+            if last_name: payload["last_name"] = last_name
+            
+            headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json"
+            }
+            
+            resp = requests.post(url, json=payload, headers=headers, timeout=15)
+            if 200 <= resp.status_code < 300:
+                logger.info(f"✅ CONTACT ADDED to Resend Audience: {email}")
+                return True
+            
+            # 422 usually means already exists, which is fine
+            if resp.status_code == 422:
+                logger.info(f"ℹ️ Contact {email} already exists in Resend Audience")
+                return True
+                
+            logger.error(f"❌ Resend Audience failed: HTTP {resp.status_code} - {resp.text}")
+            return False
+        except Exception as e:
+            logger.error(f"❌ Resend Audience add failed: {e}")
+            return False
 
     async def send_email(
         self,
@@ -1745,6 +1782,13 @@ class NotificationService:
         except Exception as e:
             logger.error(f"Error sending custom SMS (with result) to {phone}: {e}")
             return {"ok": False, "error": str(e)}
+
+    async def add_to_newsletter_audience(self, email: str, first_name: str = "", last_name: str = "") -> bool:
+        """Add a contact to the configured newsletter audience (if using Resend)"""
+        self._ensure_services_initialized()
+        if hasattr(self.email_service, 'add_to_audience'):
+            return await self.email_service.add_to_audience(email, first_name, last_name)
+        return False
 
 # Global notification service instance
 notification_service = NotificationService()

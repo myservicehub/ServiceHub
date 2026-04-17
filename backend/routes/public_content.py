@@ -900,6 +900,9 @@ async def subscribe_newsletter(payload: NewsletterSubscribeRequest, request: Req
         # Check if already subscribed
         existing = await database.get_newsletter_subscriber_by_email(payload.email)
         if existing and existing.get("subscribed"):
+            # Even if already in local DB, try to ensure they are in Resend audience
+            # in case they were added manually or before integration
+            await notification_service.add_to_newsletter_audience(payload.email)
             return {"message": "Already subscribed", "status": "ok"}
 
         # Create subscription record
@@ -909,6 +912,9 @@ async def subscribe_newsletter(payload: NewsletterSubscribeRequest, request: Req
             ip_address=request.client.host if request else None,
             user_agent=request.headers.get("user-agent") if request else None
         )
+
+        # Sync to Resend Audience
+        await notification_service.add_to_newsletter_audience(payload.email)
 
         return {"message": "Subscribed successfully", "status": "ok", "subscription": {"id": record.get("id"), "email": record.get("email")}}
     except HTTPException:

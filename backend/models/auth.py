@@ -34,6 +34,7 @@ class User(BaseModel):
     role: UserRole
     status: UserStatus = UserStatus.ACTIVE
     location: str
+    lga: Optional[str] = None
     postcode: str
     email_verified: bool = False
     phone_verified: bool = False
@@ -133,6 +134,7 @@ class UserProfile(BaseModel):
     role: UserRole
     status: UserStatus
     location: str
+    lga: Optional[str] = None
     postcode: str
     email_verified: bool
     phone_verified: bool
@@ -163,11 +165,13 @@ class UserProfile(BaseModel):
     skills_test_score: Optional[int] = None
     skills_test_completed_at: Optional[datetime] = None
     business_verified: bool = False
+    business_verification_submitted: bool = False
 
 class UserProfileUpdate(BaseModel):
     name: Optional[str] = None
     phone: Optional[str] = None
     location: Optional[str] = None
+    lga: Optional[str] = None
     postcode: Optional[str] = None
     trade_categories: Optional[List[str]] = None
     experience_years: Optional[int] = None

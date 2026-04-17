@@ -6953,10 +6953,39 @@ const AdminDashboard = () => {
               {(selectedUser.state || selectedUser.lga || selectedUser.location) && (
                 <div>
                   <h4 className="text-lg font-medium mb-3 text-gray-800">Location Details</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {selectedUser.state && <div><strong>State:</strong> {selectedUser.state}</div>}
                     {selectedUser.lga && <div><strong>LGA:</strong> {selectedUser.lga}</div>}
                     {selectedUser.location && <div><strong>Location:</strong> {selectedUser.location}</div>}
+                  </div>
+                </div>
+              )}
+
+              {/* Verification Progress for Tradespeople */}
+              {selectedUser.role === 'tradesperson' && (
+                <div className="pt-4 border-t border-gray-100">
+                  <h4 className="text-lg font-medium mb-3 text-gray-800">Verification Progress</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                    {[
+                      { label: 'Email', verified: selectedUser.email_verified },
+                      { label: 'Phone', verified: selectedUser.phone_verified },
+                      { label: 'Identity', verified: selectedUser.identity_verified },
+                      { label: 'Business', verified: selectedUser.business_verified }
+                    ].map((step, idx) => (
+                      <div key={idx} className="flex flex-col gap-1 bg-gray-50 p-3 rounded-xl border border-gray-100">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{step.label}</span>
+                          <div className={`w-2 h-2 rounded-full ${step.verified ? 'bg-[#34D164]' : 'bg-amber-400'}`} />
+                        </div>
+                        <div className={`text-[11px] font-bold text-center py-1 rounded-lg ${
+                          step.verified 
+                            ? 'bg-[#34D164]/10 text-[#34D164]' 
+                            : 'bg-amber-100 text-amber-600'
+                        }`}>
+                          {step.verified ? 'VERIFIED' : 'PENDING'}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}

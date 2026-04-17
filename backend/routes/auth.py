@@ -47,10 +47,22 @@ BASE_UPLOADS = Path(os.environ.get("UPLOADS_DIR", os.path.join(os.getcwd(), "upl
 CERT_UPLOAD_DIR = BASE_UPLOADS / "certifications"
 CERT_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-def _normalize_user_profile_payload(user_data: Dict[str, Any]) -> Dict[str, Any]:
+async def _normalize_user_profile_payload(user_data: Dict[str, Any]) -> Dict[str, Any]:
     payload = dict(user_data or {})
     if payload.get("location") in (None, ""):
         payload["location"] = "Not specified"
+    if payload.get("lga") in (None, ""):
+        # Try to resolve LGA from coordinates if missing
+        lat = payload.get("latitude")
+        lng = payload.get("longitude")
+        if lat and lng:
+            resolved_lga = await database.reverse_geocode_lga(lat, lng)
+            if resolved_lga:
+                payload["lga"] = resolved_lga
+            else:
+                payload["lga"] = "Not specified"
+        else:
+            payload["lga"] = "Not specified"
     if payload.get("postcode") in (None, ""):
         payload["postcode"] = "000000"
     has_coords = payload.get("latitude") is not None and payload.get("longitude") is not None
@@ -952,7 +964,7 @@ async def get_current_user_profile(current_user: User = Depends(get_current_user
             # Keep original values if calculation fails
             pass
     
-    return UserProfile(**_normalize_user_profile_payload(user_data))
+    return UserProfile(**(await _normalize_user_profile_payload(user_data)))
 
 @router.put("/profile", response_model=UserProfile)
 async def update_profile(
@@ -985,6 +997,9 @@ async def update_profile(
         
         if profile_data.location is not None:
             update_data["location"] = profile_data.location
+        
+        if profile_data.lga is not None:
+            update_data["lga"] = profile_data.lga
         
         if profile_data.postcode is not None:
             update_data["postcode"] = profile_data.postcode
@@ -1041,9 +1056,9 @@ async def update_profile(
             
             # Get updated user data
             updated_user_data = await database.get_user_by_id(current_user.id)
-            return UserProfile(**_normalize_user_profile_payload(updated_user_data))
+            return UserProfile(**(await _normalize_user_profile_payload(updated_user_data)))
         
-        return UserProfile(**_normalize_user_profile_payload(current_user.dict()))
+        return UserProfile(**(await _normalize_user_profile_payload(current_user.dict())))
 
     except HTTPException:
         raise
@@ -1130,6 +1145,9 @@ async def update_tradesperson_profile(
         if profile_data.location is not None:
             update_data["location"] = profile_data.location
         
+        if profile_data.lga is not None:
+            update_data["lga"] = profile_data.lga
+        
         if profile_data.postcode is not None:
             update_data["postcode"] = profile_data.postcode
 
@@ -1157,9 +1175,9 @@ async def update_tradesperson_profile(
             
             # Get updated user data
             updated_user_data = await database.get_user_by_id(current_user.id)
-            return UserProfile(**_normalize_user_profile_payload(updated_user_data))
+            return UserProfile(**(await _normalize_user_profile_payload(updated_user_data)))
         
-        return UserProfile(**_normalize_user_profile_payload(current_user.dict()))
+        return UserProfile(**(await _normalize_user_profile_payload(current_user.dict())))
 
     except HTTPException:
         raise

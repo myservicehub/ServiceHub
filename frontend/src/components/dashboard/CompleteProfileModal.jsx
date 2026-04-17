@@ -272,6 +272,7 @@ const CompleteProfileModal = ({ isOpen, onClose, onComplete, initialStep = 1 }) 
         business_type: formData.businessType || null,
         company_name: formData.tradingName || null,
         location: formData.state || user?.location || null,
+        lga: formData.lga || null,
         description: formData.profileDescription,
         postcode: formData.postcode || '000000',
         travel_distance_km: formData.travelDistance,

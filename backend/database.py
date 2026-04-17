@@ -3846,6 +3846,62 @@ class Database:
             return None
         return None
 
+    async def reverse_geocode_lga(self, lat: float, lng: float) -> Optional[str]:
+        """Resolve LGA from coordinates using reverse geocoding"""
+        if not lat or not lng:
+            return None
+        
+        # Check cache first
+        cache_key = f"rev_{lat:.4f}_{lng:.4f}"
+        now = datetime.utcnow()
+        cached = self._geo_cache.get(cache_key)
+        if cached:
+            ts = cached.get("ts")
+            if ts and now - ts < timedelta(days=7):
+                return cached.get("lga")
+
+        # Rate limiting check
+        win_start = self._geo_rate.get("window_start")
+        window_seconds = int(self._geo_rate.get("window_seconds", 60))
+        limit = int(self._geo_rate.get("limit", 30))
+        if not win_start or (now - win_start).total_seconds() >= window_seconds:
+            self._geo_rate["window_start"] = now
+            self._geo_rate["count"] = 0
+        if int(self._geo_rate.get("count", 0)) >= limit:
+            return None
+        self._geo_rate["count"] = int(self._geo_rate.get("count", 0)) + 1
+
+        try:
+            import httpx
+            params = {
+                "lat": lat,
+                "lon": lng,
+                "format": "json",
+                "zoom": 10,  # Zoom level for city/LGA level
+                "addressdetails": 1,
+                "accept-language": "en"
+            }
+            headers = {"User-Agent": os.getenv("GEOCODER_UA", "ServiceHub/1.0")}
+            async with httpx.AsyncClient(timeout=10) as client:
+                r = await client.get(
+                    "https://nominatim.openstreetmap.org/reverse",
+                    params=params,
+                    headers=headers,
+                )
+                if r.status_code == 200:
+                    data = r.json()
+                    addr = data.get("address", {})
+                    # In Nigeria, LGA is typically 'county', 'city_district', or 'suburb'
+                    lga = addr.get("county") or addr.get("city_district") or addr.get("suburb") or addr.get("city")
+                    if lga:
+                        # Normalize LGA name (remove common suffixes like 'LGA' if present)
+                        lga = re.sub(r'\s+(LGA|Local Government Area)$', '', lga, flags=re.IGNORECASE)
+                        self._geo_cache[cache_key] = {"lga": lga, "ts": now}
+                        return lga
+        except Exception as e:
+            logger.error(f"Reverse geocoding error: {e}")
+        return None
+
     async def resolve_coordinates_from_entity(self, entity: Dict[str, Any]) -> Optional[Dict[str, float]]:
         try:
             jlat = entity.get("latitude")
