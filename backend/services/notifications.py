@@ -1431,7 +1431,7 @@ serviceHub Team
         <div class="container">
             <div class="header">
                 <div class="logo">
-                    <img src="https://www.myservicehub.co/logo-white.png" alt="ServiceHub Logo" onerror="this.style.display='none'">
+                    <img src="https://myservicehub.co/logo-white.png" alt="ServiceHub Logo" style="height: 45px; width: auto; display: block; margin: 0 auto;">
                 </div>
                 <h1>Welcome to the Team</h1>
             </div>

@@ -510,7 +510,7 @@ async def delete_admin(
     admin: dict = Depends(require_permission(AdminPermission.MANAGE_ADMINS)),
     request: Request = None
 ):
-    """Delete admin (Super Admin only)"""
+    """Permanently delete an admin from the database"""
     
     # Degraded mode: reject writes when database is unavailable
     if not getattr(database, "connected", True):
@@ -532,24 +532,20 @@ async def delete_admin(
     if not can_manage_role(current_admin_role, target_admin_role):
         raise HTTPException(status_code=403, detail="Cannot delete this admin")
     
-    # Soft delete admin (set status to inactive)
-    success = await database.update_admin(admin_id, {
-        "status": AdminStatus.INACTIVE.value,
-        "updated_at": datetime.utcnow()
-    })
-    
-    if not success:
+    # Perform hard delete from database
+    success = await database.database.admins.delete_one({"id": admin_id})
+    if not success.deleted_count:
         raise HTTPException(status_code=500, detail="Failed to delete admin")
     
     # Log activity
     await log_admin_activity(
         admin["id"], admin["username"], AdminActivityType.DELETE_ADMIN,
-        f"Deleted admin {target_admin['username']}",
+        f"Permanently deleted admin {target_admin['username']}",
         target_id=admin_id, target_type="admin", request=request
     )
     
     return {
-        "message": "Admin deleted successfully",
+        "message": "Admin permanently deleted from the database",
         "admin_id": admin_id
     }
 
