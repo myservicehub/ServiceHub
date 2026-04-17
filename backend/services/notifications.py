@@ -1405,7 +1405,7 @@ serviceHub Team
         body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1a202c; margin: 0; padding: 0; background-color: #f7fafc; }
         .wrapper { width: 100%; table-layout: fixed; background-color: #f7fafc; padding: 40px 0; }
         .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05); }
-        .header { background: linear-gradient(135deg, #165DFF 0%, #0045E6 100%); padding: 40px 30px; text-align: center; }
+        .header { background: linear-gradient(135deg, #34D164 0%, #28A745 100%); padding: 40px 30px; text-align: center; }
         .logo { margin-bottom: 20px; }
         .logo img { height: 45px; }
         .header h1 { color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
@@ -1418,12 +1418,12 @@ serviceHub Team
         .info-label { width: 100px; color: #718096; font-size: 14px; font-weight: 500; }
         .info-value { color: #2d3748; font-size: 15px; font-weight: 600; }
         .cta-container { text-align: center; margin-bottom: 30px; }
-        .cta-button { display: inline-block; background-color: #165DFF; color: #ffffff !important; font-weight: 600; font-size: 16px; padding: 16px 32px; text-decoration: none; border-radius: 10px; transition: background-color 0.2s; box-shadow: 0 4px 12px rgba(22, 93, 255, 0.25); }
+        .cta-button { display: inline-block; background-color: #34D164; color: #ffffff !important; font-weight: 600; font-size: 16px; padding: 16px 32px; text-decoration: none; border-radius: 10px; transition: background-color 0.2s; box-shadow: 0 4px 12px rgba(52, 209, 100, 0.25); }
         .security-note { font-size: 13px; color: #94a3b8; text-align: center; padding: 0 20px; }
         .footer { background-color: #f8fafc; padding: 30px; text-align: center; border-top: 1px solid #edf2f7; }
         .footer p { margin: 0; color: #64748b; font-size: 14px; }
         .footer .socials { margin-top: 15px; }
-        .footer .socials a { color: #165DFF; text-decoration: none; margin: 0 10px; font-weight: 500; }
+        .footer .socials a { color: #34D164; text-decoration: none; margin: 0 10px; font-weight: 500; }
     </style>
 </head>
 <body>

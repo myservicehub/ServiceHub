@@ -373,8 +373,13 @@ async def create_admin(
             raise HTTPException(status_code=400, detail="Username already exists")
     
     existing_admin = await database.get_admin_by_email(admin_data.email)
+    if existing_admin and existing_admin.get("status") == AdminStatus.ACTIVE.value:
+        raise HTTPException(status_code=400, detail="Email already exists and account is active")
+    
+    # If account exists but is inactive, we'll delete the old one to allow recreation
     if existing_admin:
-        raise HTTPException(status_code=400, detail="Email already exists")
+        # Actually delete the inactive admin to avoid unique constraint issues in DB
+        await database.database.admins.delete_one({"id": existing_admin["id"]})
     
     # Generate a random initial password (won't be shown to user)
     initial_password = secrets.token_urlsafe(16)
