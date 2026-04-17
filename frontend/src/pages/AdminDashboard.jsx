@@ -294,8 +294,6 @@ const AdminDashboard = () => {
   const [editingJobData, setEditingJobData] = useState(null);
   const [editJobLoading, setEditJobLoading] = useState(false);
   
-  const { toast } = useToast();
-
   // Helpers for homeowner contact fallbacks
   const getHomeownerEmail = (details) => {
     return (details?.homeowner_details?.email && details.homeowner_details.email !== 'Unknown')

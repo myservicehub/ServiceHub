@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Users, UserPlus, Shield, Activity, Settings, Eye, Trash2, Edit, Key, AlertTriangle } from 'lucide-react';
-import { toast } from 'sonner';
+import { useToast } from '../../hooks/use-toast';
 import apiClient from '../../api/client';
 
 const AdminManagement = () => {
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('admins');
   const [admins, setAdmins] = useState([]);
   const [activities, setActivities] = useState([]);
