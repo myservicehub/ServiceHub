@@ -6980,10 +6980,15 @@ const AdminDashboard = () => {
                 <div>
                   <h4 className="text-lg font-medium mb-3 text-gray-800">Location Details</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {selectedUser.state && <div><strong>State:</strong> {selectedUser.state}</div>}
-                    {selectedUser.lga && selectedUser.lga !== 'Not specified' && <div><strong>LGA:</strong> {selectedUser.lga}</div>}
-                    {selectedUser.location && <div><strong>Location:</strong> {selectedUser.location}</div>}
-                    {selectedUser.postcode && selectedUser.postcode !== '000000' && <div><strong>Postcode:</strong> {selectedUser.postcode}</div>}
+                    {(selectedUser.state || selectedUser.location) && (
+                      <div><strong>State:</strong> {selectedUser.state || selectedUser.location}</div>
+                    )}
+                    {selectedUser.lga && selectedUser.lga !== 'Not specified' && (
+                      <div><strong>LGA:</strong> {selectedUser.lga}</div>
+                    )}
+                    {selectedUser.postcode && selectedUser.postcode !== '000000' && (
+                      <div><strong>Postcode:</strong> {selectedUser.postcode}</div>
+                    )}
                   </div>
                 </div>
               )}

@@ -50,6 +50,11 @@ CERT_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 async def _normalize_user_profile_payload(user_data: Dict[str, Any], skip_geocoding: bool = False) -> Dict[str, Any]:
     try:
         payload = dict(user_data or {})
+        
+        # Ensure 'state' is present if 'location' is provided (common in our DB)
+        if payload.get("location") and not payload.get("state"):
+            payload["state"] = payload["location"]
+            
         if payload.get("location") in (None, ""):
             payload["location"] = "Not specified"
         if not skip_geocoding and payload.get("lga") in (None, "", "Not specified"):
