@@ -48,31 +48,49 @@ CERT_UPLOAD_DIR = BASE_UPLOADS / "certifications"
 CERT_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 async def _normalize_user_profile_payload(user_data: Dict[str, Any]) -> Dict[str, Any]:
-    payload = dict(user_data or {})
-    if payload.get("location") in (None, ""):
-        payload["location"] = "Not specified"
-    if payload.get("lga") in (None, "", "Not specified"):
-        # Try to resolve LGA from coordinates if missing
-        lat = payload.get("latitude")
-        lng = payload.get("longitude")
-        if lat and lng:
-            resolved_lga = await database.reverse_geocode_lga(lat, lng)
-            if resolved_lga:
-                payload["lga"] = resolved_lga
-            else:
+    try:
+        payload = dict(user_data or {})
+        if payload.get("location") in (None, ""):
+            payload["location"] = "Not specified"
+        if payload.get("lga") in (None, "", "Not specified"):
+            # Try to resolve LGA from coordinates if missing
+            try:
+                lat = payload.get("latitude")
+                lng = payload.get("longitude")
+                if lat is not None and lng is not None:
+                    # Cast to float to avoid format string errors in reverse_geocode_lga
+                    f_lat = float(lat)
+                    f_lng = float(lng)
+                    if abs(f_lat) > 0.0001 or abs(f_lng) > 0.0001:
+                        resolved_lga = await database.reverse_geocode_lga(f_lat, f_lng)
+                        if resolved_lga:
+                            payload["lga"] = resolved_lga
+                        else:
+                            payload["lga"] = "Not specified"
+                    else:
+                        payload["lga"] = "Not specified"
+                else:
+                    payload["lga"] = "Not specified"
+            except (ValueError, TypeError):
                 payload["lga"] = "Not specified"
+            except Exception as e:
+                logger.warning(f"Error resolving LGA during normalization: {e}")
+                payload["lga"] = "Not specified"
+                
+        if payload.get("postcode") in (None, ""):
+            payload["postcode"] = "000000"
+        
+        has_coords = payload.get("latitude") is not None and payload.get("longitude") is not None
+        explicit_confirmation_flag = payload.get("location_needs_confirmation")
+        if explicit_confirmation_flag is None:
+            # Legacy users may already have approximate coordinates but no confirmation metadata.
+            payload["location_needs_confirmation"] = bool(has_coords and not payload.get("location_confirmed_at"))
         else:
-            payload["lga"] = "Not specified"
-    if payload.get("postcode") in (None, ""):
-        payload["postcode"] = "000000"
-    has_coords = payload.get("latitude") is not None and payload.get("longitude") is not None
-    explicit_confirmation_flag = payload.get("location_needs_confirmation")
-    if explicit_confirmation_flag is None:
-        # Legacy users may already have approximate coordinates but no confirmation metadata.
-        payload["location_needs_confirmation"] = bool(has_coords and not payload.get("location_confirmed_at"))
-    else:
-        payload["location_needs_confirmation"] = bool(explicit_confirmation_flag)
-    return payload
+            payload["location_needs_confirmation"] = bool(explicit_confirmation_flag)
+        return payload
+    except Exception as e:
+        logger.error(f"Error in _normalize_user_profile_payload: {e}")
+        return user_data or {}
 
 async def _find_existing_user_by_phone(phone: str) -> Optional[dict]:
     if not (getattr(database, "connected", False) and getattr(database, "database", None) is not None):

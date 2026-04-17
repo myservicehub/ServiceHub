@@ -503,11 +503,17 @@ const AdminDashboard = () => {
           adminAPI.getAllUsers(skip, usersLimit, null, null, usersSearch || null),
           adminAPI.getAllTrades().catch(() => ({ trades: [] }))
         ]);
-        setUsers(userData.users || []);
-        setUserStats(userData.stats || {});
-        setUsersTotal((userData.pagination && (userData.pagination.total ?? 0)) || (userData.users ? userData.users.length : 0));
-        setUsersPages((userData.pagination && (userData.pagination.pages ?? 1)) || 1);
-        setTrades(tradesData.trades || []);
+        
+        if (userData) {
+          setUsers(userData.users || []);
+          setUserStats(userData.stats || {});
+          setUsersTotal((userData.pagination && (userData.pagination.total ?? 0)) || (userData.users ? userData.users.length : 0));
+          setUsersPages((userData.pagination && (userData.pagination.pages ?? 1)) || 1);
+        }
+        
+        if (tradesData) {
+          setTrades(tradesData.trades || []);
+        }
       } else if (activeTab === 'locations') {
         // Load location and trade data based on active sub-tab
         if (activeLocationTab === 'states') {

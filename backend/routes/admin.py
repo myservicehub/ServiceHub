@@ -1249,42 +1249,49 @@ async def get_all_users(
     search: Optional[str] = None
 ):
     """Get all registered users with filtering options"""
-    
-    users = await database.get_all_users_for_admin(
-        skip=skip, 
-        limit=limit, 
-        role=role, 
-        status=status,
-        search=search
-    )
-    
-    # Normalize user data to ensure LGA and other fields are resolved for the list view
-    users = await asyncio.gather(*[_normalize_user_profile_payload(u) for u in users])
-    
-    # Get user statistics
-    total_users = await database.get_total_users_count()
-    active_users = await database.get_active_users_count()
-    homeowners_count = await database.get_users_count_by_role("homeowner")
-    tradespeople_count = await database.get_users_count_by_role("tradesperson")
-    
-    filtered_total = await database.get_users_total_count_filtered(role=role, status=status, search=search)
-    pages = (filtered_total + limit - 1) // limit
-    return {
-        "users": users,
-        "pagination": {
-            "skip": skip,
-            "limit": limit,
-            "total": filtered_total,
-            "pages": pages
-        },
-        "stats": {
-            "total_users": total_users,
-            "active_users": active_users,
-            "homeowners": homeowners_count,
-            "tradespeople": tradespeople_count,
-            "verified_users": await database.get_verified_users_count()
+    try:
+        users = await database.get_all_users_for_admin(
+            skip=skip, 
+            limit=limit, 
+            role=role, 
+            status=status,
+            search=search
+        )
+        
+        # Normalize user data to ensure LGA and other fields are resolved for the list view
+        if users:
+            users = await asyncio.gather(*[_normalize_user_profile_payload(u) for u in users])
+        else:
+            users = []
+        
+        # Get user statistics
+        total_users = await database.get_total_users_count()
+        active_users = await database.get_active_users_count()
+        homeowners_count = await database.get_users_count_by_role("homeowner")
+        tradespeople_count = await database.get_users_count_by_role("tradesperson")
+        
+        filtered_total = await database.get_users_total_count_filtered(role=role, status=status, search=search)
+        pages = (filtered_total + limit - 1) // limit if limit > 0 else 1
+        
+        return {
+            "users": users,
+            "pagination": {
+                "skip": skip,
+                "limit": limit,
+                "total": filtered_total,
+                "pages": pages
+            },
+            "stats": {
+                "total_users": total_users,
+                "active_users": active_users,
+                "homeowners": homeowners_count,
+                "tradespeople": tradespeople_count,
+                "verified_users": await database.get_verified_users_count()
+            }
         }
-    }
+    except Exception as e:
+        logger.error(f"Error in get_all_users: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch users: {str(e)}")
 
 @router.get("/users/{user_id}")
 async def get_user_details(user_id: str):
