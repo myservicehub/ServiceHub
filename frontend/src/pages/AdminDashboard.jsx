@@ -6906,6 +6906,20 @@ const AdminDashboard = () => {
                             {selectedUser.wallet_balance || 0} coins
                           </div>
                         </div>
+                        {selectedUser.company_name && (
+                          <div><strong>Company Name:</strong> {selectedUser.company_name}</div>
+                        )}
+                        {selectedUser.experience_years !== undefined && (
+                          <div><strong>Experience:</strong> {selectedUser.experience_years} years</div>
+                        )}
+                        {selectedUser.description && (
+                          <div className="md:col-span-2 mt-2">
+                            <strong>Description:</strong>
+                            <p className="text-sm text-gray-600 mt-1 line-clamp-3 bg-gray-50 p-3 rounded-lg border border-gray-100 italic">
+                              "{selectedUser.description}"
+                            </p>
+                          </div>
+                        )}
                         {selectedUser.trade_categories && selectedUser.trade_categories.length > 0 && (
                           <div>
                             <strong>Trade Categories:</strong>
@@ -6950,13 +6964,14 @@ const AdminDashboard = () => {
               </div>
 
               {/* Location Information */}
-              {(selectedUser.state || selectedUser.lga || selectedUser.location) && (
+              {(selectedUser.state || (selectedUser.lga && selectedUser.lga !== 'Not specified') || selectedUser.location) && (
                 <div>
                   <h4 className="text-lg font-medium mb-3 text-gray-800">Location Details</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {selectedUser.state && <div><strong>State:</strong> {selectedUser.state}</div>}
-                    {selectedUser.lga && <div><strong>LGA:</strong> {selectedUser.lga}</div>}
+                    {selectedUser.lga && selectedUser.lga !== 'Not specified' && <div><strong>LGA:</strong> {selectedUser.lga}</div>}
                     {selectedUser.location && <div><strong>Location:</strong> {selectedUser.location}</div>}
+                    {selectedUser.postcode && selectedUser.postcode !== '000000' && <div><strong>Postcode:</strong> {selectedUser.postcode}</div>}
                   </div>
                 </div>
               )}
@@ -6967,10 +6982,19 @@ const AdminDashboard = () => {
                   <h4 className="text-lg font-medium mb-3 text-gray-800">Profile Completion Steps</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                     {[
-                      { label: 'Update Details', verified: !!(selectedUser.trade_categories?.length > 0 && selectedUser.location) },
+                      { 
+                        label: 'Update Details', 
+                        verified: !!(
+                          selectedUser.trade_categories?.length > 0 && 
+                          Number(selectedUser.experience_years || 0) > 0 && 
+                          String(selectedUser.company_name || '').trim() && 
+                          String(selectedUser.location || '').trim() && 
+                          (String(selectedUser.description || '').trim().length || 0) >= 50
+                        ) 
+                      },
                       { label: 'Verify Contact', verified: !!(selectedUser.email_verified && selectedUser.phone_verified) },
                       { label: 'Skills Test', verified: !!selectedUser.skills_test_passed },
-                      { label: 'Business Verification', verified: !!selectedUser.business_verified }
+                      { label: 'Business Verification', verified: !!(selectedUser.business_verified || selectedUser.verified_tradesperson || selectedUser.is_verified) }
                     ].map((step, idx) => (
                       <div key={idx} className="flex flex-col gap-1 bg-gray-50 p-3 rounded-xl border border-gray-100">
                         <div className="flex items-center justify-between">

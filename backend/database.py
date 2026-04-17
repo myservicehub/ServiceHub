@@ -5329,7 +5329,13 @@ class Database:
         # Update user flags
         await self.users_collection.update_one(
             {"id": user_id},
-            {"$set": {"verified_tradesperson": True, "business_verification_submitted": True, "is_verified": True, "updated_at": datetime.utcnow()}}
+            {"$set": {
+                "verified_tradesperson": True, 
+                "business_verification_submitted": True, 
+                "business_verified": True,
+                "is_verified": True, 
+                "updated_at": datetime.utcnow()
+            }}
         )
         try:
             # Process referral reward upon full business verification
@@ -5382,7 +5388,13 @@ class Database:
         try:
             await self.users_collection.update_one(
                 {"id": user_id},
-                {"$set": {"verified_tradesperson": False, "business_verification_submitted": False, "is_verified": False, "updated_at": datetime.utcnow()}}
+                {"$set": {
+                    "verified_tradesperson": False, 
+                    "business_verification_submitted": False, 
+                    "business_verified": False,
+                    "is_verified": False, 
+                    "updated_at": datetime.utcnow()
+                }}
             )
         except Exception:
             pass

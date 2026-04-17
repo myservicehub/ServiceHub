@@ -11,6 +11,7 @@ from ..models.base import JobAccessFeeUpdate, TransactionStatus
 from ..models.admin import AdminPermission
 from ..auth.dependencies import require_permission, get_current_admin_account
 from ..models.reviews import ReviewStatus
+from .auth import _normalize_user_profile_payload
 
 logger = logging.getLogger(__name__)
 
@@ -849,7 +850,10 @@ async def get_user_details(user_id: str):
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         
-        return user
+        # Normalize user data to ensure LGA and other fields are resolved
+        normalized_user = await _normalize_user_profile_payload(user)
+        
+        return normalized_user
         
     except HTTPException:
         raise
@@ -1254,6 +1258,9 @@ async def get_all_users(
         search=search
     )
     
+    # Normalize user data to ensure LGA and other fields are resolved for the list view
+    users = await asyncio.gather(*[_normalize_user_profile_payload(u) for u in users])
+    
     # Get user statistics
     total_users = await database.get_total_users_count()
     active_users = await database.get_active_users_count()
@@ -1294,8 +1301,11 @@ async def get_user_details(user_id: str):
     user.pop("password_hash", None)
     user["_id"] = str(user.get("_id", ""))
     
+    # Normalize user data to ensure LGA and other fields are resolved
+    normalized_user = await _normalize_user_profile_payload(user)
+    
     return {
-        "user": user,
+        "user": normalized_user,
         "activity_stats": user_activity
     }
 
