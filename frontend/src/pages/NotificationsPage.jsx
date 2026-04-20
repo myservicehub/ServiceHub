@@ -316,10 +316,19 @@ const NotificationsPage = () => {
       .replace(/&quot;/g, '"')
       .trim();
   };
-
-  const formatNotificationContent = (content) => {
+5
+  const formatNotificationContent = (content, type = null) => {
     if (!content) return '';
     const cleanContent = stripHtml(content);
+    
+    // For new matching job notifications, truncate after "miles"
+    if (type === 'new_matching_job') {
+      const milesIndex = cleanContent.toLowerCase().indexOf('miles');
+      if (milesIndex !== -1) {
+        return cleanContent.substring(0, milesIndex + 5);
+      }
+    }
+    
     if (cleanContent.length <= 120) return cleanContent;
     return cleanContent.substring(0, 120) + '...';
   };
@@ -557,12 +566,17 @@ const NotificationsPage = () => {
 
                       <div className="text-sm text-gray-600 mb-3 whitespace-pre-wrap break-words">
                         {expandedNotifications.has(notification.id) 
-                          ? stripHtml(notification.content) 
-                          : formatNotificationContent(notification.content)
+                          ? (notification.type === 'new_matching_job' 
+                              ? formatNotificationContent(notification.content, notification.type)
+                              : stripHtml(notification.content))
+                          : formatNotificationContent(notification.content, notification.type)
                         }
                       </div>
 
-                      {notification.content && notification.content.length > 120 && (
+                      {notification.content && 
+                       (notification.type === 'new_matching_job' 
+                          ? false 
+                          : notification.content.length > 120) && (
                         <Button
                           variant="ghost"
                           size="sm"

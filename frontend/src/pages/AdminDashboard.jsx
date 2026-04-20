@@ -6922,14 +6922,7 @@ const AdminDashboard = () => {
                         {selectedUser.experience_years !== undefined && (
                           <div><strong>Experience:</strong> {selectedUser.experience_years} years</div>
                         )}
-                        {selectedUser.description && (
-                          <div className="md:col-span-2 mt-2">
-                            <strong>Description:</strong>
-                            <p className="text-sm text-gray-600 mt-1 line-clamp-3 bg-gray-50 p-3 rounded-lg border border-gray-100 italic">
-                              "{selectedUser.description}"
-                            </p>
-                          </div>
-                        )}
+
                         {selectedUser.trade_categories && selectedUser.trade_categories.length > 0 && (
                           <div>
                             <strong>Trade Categories:</strong>

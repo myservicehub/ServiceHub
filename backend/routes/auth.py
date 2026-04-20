@@ -2261,6 +2261,16 @@ async def submit_tradesperson_verification(
     llp_certificate: UploadFile = File(None),
     llp_agreement: UploadFile = File(None),
     designated_partners: str = Form(None),
+    # Optional referrers (to support consolidated submission)
+    work_referrer_name: Optional[str] = Form(None),
+    work_referrer_phone: Optional[str] = Form(None),
+    work_referrer_company_email: Optional[str] = Form(None),
+    work_referrer_company_name: Optional[str] = Form(None),
+    work_referrer_relationship: Optional[str] = Form(None),
+    character_referrer_name: Optional[str] = Form(None),
+    character_referrer_phone: Optional[str] = Form(None),
+    character_referrer_email: Optional[str] = Form(None),
+    character_referrer_relationship: Optional[str] = Form(None),
     current_user=Depends(get_current_tradesperson)
 ):
     base_dir = os.environ.get("UPLOADS_DIR", os.path.join(os.getcwd(), "uploads"))
@@ -2372,6 +2382,27 @@ async def submit_tradesperson_verification(
             partner_files.append(saved["filename"])
             if saved.get("base64"):
                 partner_id_documents_base64.append(saved)
+    
+    # Process referrers if provided
+    work_referrer = None
+    if work_referrer_name and work_referrer_company_email:
+        work_referrer = {
+            "name": work_referrer_name.strip(),
+            "phone": (work_referrer_phone or "").strip(),
+            "company_email": work_referrer_company_email.strip().lower(),
+            "company_name": (work_referrer_company_name or "").strip(),
+            "relationship": (work_referrer_relationship or "").strip(),
+        }
+    
+    character_referrer = None
+    if character_referrer_name and character_referrer_email:
+        character_referrer = {
+            "name": character_referrer_name.strip(),
+            "phone": (character_referrer_phone or "").strip(),
+            "email": character_referrer_email.strip().lower(),
+            "relationship": (character_referrer_relationship or "").strip(),
+        }
+
     payload = {
         "user_id": current_user.id,
         "business_type": (business_type or "").strip(),
@@ -2389,11 +2420,13 @@ async def submit_tradesperson_verification(
         "work_photos_base64": work_photos_base64,
         "partner_id_documents": partner_files,
         "partner_id_documents_base64": partner_id_documents_base64,
+        "work_referrer": work_referrer,
+        "character_referrer": character_referrer,
     }
     bt = payload["business_type"].lower()
     if bt.startswith("self") or bt.startswith("sole"):
-        if not residential_address or len(work_files) < 2:
-            raise HTTPException(status_code=400, detail="Required fields missing for self-employed")
+        if not residential_address or not docs.get("proof_of_address") or len(work_files) < 2:
+            raise HTTPException(status_code=400, detail="Required fields missing for self-employed (address, proof of address, and work photos)")
         has_refs = await database.has_tradesperson_references(current_user.id)
         if not has_refs:
             raise HTTPException(status_code=400, detail="Self-employed requires work and character references")

@@ -249,11 +249,19 @@ async def submit_tradesperson_references(
         "relationship": character_referrer_relationship.strip(),
     }
 
-    verification_id = await database.submit_tradesperson_references(
+    verification_id, changed = await database.submit_tradesperson_references(
         user_id=current_user.id,
         work_referrer=work_referrer,
         character_referrer=character_referrer,
     )
+    
+    if not changed:
+        return {
+            "message": "References already submitted and unchanged. No new emails sent.",
+            "verification_id": verification_id,
+            "status": "pending"
+        }
+
     tradesperson_name = (
         getattr(current_user, "name", None)
         or getattr(current_user, "business_name", None)

@@ -227,6 +227,7 @@ const VerifyAccountPage = () => {
   const validateSelfEmployed = () => {
     const errs = {};
     if (!residentialAddress || !residentialAddress.trim()) errs.residential_address = 'Residential address is required';
+    if (!proofOfAddress) errs.proof_of_address = 'Proof of address document is required';
     if (!Array.isArray(workPhotos) || workPhotos.length < 2) errs.work_photos = 'At least 2 recent work photos are required';
     return errs;
   };
@@ -1163,14 +1164,15 @@ const VerifyAccountPage = () => {
                           {selfErrors.residential_address && (<p className="text-xs text-red-600 mt-2 font-lato">{selfErrors.residential_address}</p>)}
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Proof of address (utility bill, bank statement)</label>
-                          <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Proof of address (utility bill, bank statement) <span className="text-red-500">*</span></label>
+                          <label className={`flex flex-col items-center justify-center w-full h-28 border-2 border-dashed rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors ${selfErrors.proof_of_address ? 'border-red-300' : 'border-gray-200'}`}>
                             <div className="flex flex-col items-center justify-center pt-5 pb-6">
                               <Upload className="w-6 h-6 text-gray-400 mb-2" />
                               <p className="text-sm text-gray-500 font-lato">{proofOfAddress ? proofOfAddress.name : 'Click to upload or drag and drop'}</p>
                             </div>
                             <input type="file" className="hidden" accept="image/*,application/pdf" onChange={(e)=>setProofOfAddress(e.target.files[0])} />
                           </label>
+                          {selfErrors.proof_of_address && (<p className="text-xs text-red-600 mt-2 font-lato">{selfErrors.proof_of_address}</p>)}
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Recent work photos (min 2) <span className="text-red-500">*</span></label>

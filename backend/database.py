@@ -5013,11 +5013,11 @@ class Database:
     # ==========================================
     # TRADESPEOPLE REFERENCES VERIFICATION METHODS
     # ==========================================
-    async def submit_tradesperson_references(self, user_id: str, work_referrer: Dict[str, Any], character_referrer: Dict[str, Any]) -> str:
+    async def submit_tradesperson_references(self, user_id: str, work_referrer: Dict[str, Any], character_referrer: Dict[str, Any]) -> tuple[str, bool]:
         """Submit tradesperson references for verification.
         Ensures there is only ONE pending verification record per user by upserting.
-        If a pending record already exists, merge the references into that record and
-        return its ID instead of creating a duplicate.
+        Returns (verification_id, changed_flag). changed_flag is true if a new record
+        was created or if the referrer details changed from existing ones.
         """
         if self.database is None:
             raise RuntimeError("Database unavailable: cannot submit tradesperson references")
@@ -5029,17 +5029,28 @@ class Database:
         })
 
         if existing:
-            # Merge references into the existing record
+            # Check if references actually changed to avoid duplicate emails
+            old_work = existing.get("work_referrer") or {}
+            old_char = existing.get("character_referrer") or {}
+            
+            # Compare relevant fields
+            def refs_equal(r1, r2):
+                keys = ["name", "phone", "company_email", "email", "company_name", "relationship"]
+                return all(str(r1.get(k, "")).strip().lower() == str(r2.get(k, "")).strip().lower() for k in keys)
+            
+            changed = not (refs_equal(old_work, work_referrer) and refs_equal(old_char, character_referrer))
+            
             v_id = existing.get("id") or str(existing.get("_id"))
-            await self.tradespeople_verifications_collection.update_one(
-                {"id": v_id} if existing.get("id") else {"_id": existing.get("_id")},
-                {"$set": {
-                    "work_referrer": work_referrer,
-                    "character_referrer": character_referrer,
-                    "updated_at": datetime.utcnow(),
-                }}
-            )
-            return v_id
+            if changed:
+                await self.tradespeople_verifications_collection.update_one(
+                    {"id": v_id} if existing.get("id") else {"_id": existing.get("_id")},
+                    {"$set": {
+                        "work_referrer": work_referrer,
+                        "character_referrer": character_referrer,
+                        "updated_at": datetime.utcnow(),
+                    }}
+                )
+            return v_id, changed
 
         # Otherwise create a new pending record for this user
         record = {
@@ -5052,7 +5063,7 @@ class Database:
             "updated_at": datetime.utcnow(),
         }
         await self.tradespeople_verifications_collection.insert_one(record)
-        return record["id"]
+        return record["id"], True
 
     @time_it
     async def get_pending_tradespeople_verifications(self, skip: int = 0, limit: int = 20) -> List[dict]:
@@ -5159,6 +5170,8 @@ class Database:
                 "company_account_name": payload.get("company_account_name") or existing.get("company_account_name"),
                 "tin": payload.get("tin") or existing.get("tin"),
                 "designated_partners": payload.get("designated_partners") or existing.get("designated_partners"),
+                "work_referrer": payload.get("work_referrer") or existing.get("work_referrer"),
+                "character_referrer": payload.get("character_referrer") or existing.get("character_referrer"),
                 "documents": merged_docs,
                 "documents_base64": payload.get("documents_base64") or existing.get("documents_base64") or [],
                 "work_photos": merged_work_photos,
@@ -5194,6 +5207,8 @@ class Database:
             "company_account_name": payload.get("company_account_name"),
             "tin": payload.get("tin"),
             "designated_partners": payload.get("designated_partners"),
+            "work_referrer": payload.get("work_referrer"),
+            "character_referrer": payload.get("character_referrer"),
             "documents": payload.get("documents", {}),
             "documents_base64": payload.get("documents_base64", []),
             "work_photos": payload.get("work_photos", []),

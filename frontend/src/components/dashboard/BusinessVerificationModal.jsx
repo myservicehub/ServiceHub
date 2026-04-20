@@ -121,6 +121,7 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
   const validateSelfEmployed = () => {
     const errs = {};
     if (!residentialAddress || !residentialAddress.trim()) errs.residential_address = 'Residential address is required';
+    if (!proofOfAddress) errs.proof_of_address = 'Proof of address is required';
     if (!Array.isArray(workPhotos) || workPhotos.length < 2) errs.work_photos = 'At least 2 recent work photos are required';
     return errs;
   };
@@ -167,6 +168,7 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
           setRefErrors(rfErrs);
           const missingLabels = [
             seErrs.residential_address && 'Residential address',
+            seErrs.proof_of_address && 'Proof of address',
             seErrs.work_photos && 'Recent work photos (min 2)',
             rfErrs.work_referrer_name && 'Work referee name',
             rfErrs.work_referrer_company_email && 'Work referee company email',
@@ -204,20 +206,38 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
         llp_certificate: llpCertificate,
         llp_agreement: llpAgreement,
         designated_partners: designatedPartners,
+        // Referrers
+        work_referrer_name: workRef.name,
+        work_referrer_phone: workRef.phone,
+        work_referrer_company_email: workRef.company_email,
+        work_referrer_company_name: workRef.company_name,
+        work_referrer_relationship: workRef.relationship,
+        character_referrer_name: charRef.name,
+        character_referrer_phone: charRef.phone,
+        character_referrer_email: charRef.email,
+        character_referrer_relationship: charRef.relationship,
       };
 
+      // For Self-Employed, we still call the references endpoint to trigger emails,
+      // but the full verification endpoint will now also save the data.
       if (businessType === 'Self-Employed / Sole Trader') {
-        await verificationAPI.submitTradespersonReferences({
-          work_referrer_name: workRef.name,
-          work_referrer_phone: workRef.phone,
-          work_referrer_company_email: workRef.company_email,
-          work_referrer_company_name: workRef.company_name,
-          work_referrer_relationship: workRef.relationship,
-          character_referrer_name: charRef.name,
-          character_referrer_phone: charRef.phone,
-          character_referrer_email: charRef.email,
-          character_referrer_relationship: charRef.relationship,
-        });
+        try {
+          await verificationAPI.submitTradespersonReferences({
+            work_referrer_name: workRef.name,
+            work_referrer_phone: workRef.phone,
+            work_referrer_company_email: workRef.company_email,
+            work_referrer_company_name: workRef.company_name,
+            work_referrer_relationship: workRef.relationship,
+            character_referrer_name: charRef.name,
+            character_referrer_phone: charRef.phone,
+            character_referrer_email: charRef.email,
+            character_referrer_relationship: charRef.relationship,
+          });
+        } catch (e) {
+          console.warn('Reference submission (emails) failed, continuing with full verification:', e);
+          // If references changed, this might fail (e.g. email provider error), 
+          // but we still want to submit the full verification data.
+        }
       }
 
       await authAPI.submitTradespersonVerification(payload);
@@ -415,12 +435,17 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Proof of Address</label>
-                  <label className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                  <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">
+                    Proof of Address <span className="text-red-500">*</span>
+                  </label>
+                  <label className={`flex flex-col items-center justify-center w-full h-20 border-2 border-dashed rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors ${selfErrors.proof_of_address ? 'border-red-300' : 'border-gray-200'}`}>
                     <Upload className="w-5 h-5 text-gray-400 mb-1" />
                     <p className="text-xs text-gray-500 font-lato">{proofOfAddress ? proofOfAddress.name : 'Utility bill or bank statement'}</p>
                     <input type="file" className="hidden" accept="image/*,.pdf" onChange={(e) => setProofOfAddress(e.target.files?.[0] || null)} />
                   </label>
+                  {selfErrors.proof_of_address && (
+                    <p className="text-xs text-red-500 mt-1 font-lato">{selfErrors.proof_of_address}</p>
+                  )}
                 </div>
 
                 <div>
@@ -591,12 +616,17 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Proof of Address</label>
-                  <label className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                  <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">
+                    Proof of Address <span className="text-red-500">*</span>
+                  </label>
+                  <label className={`flex flex-col items-center justify-center w-full h-20 border-2 border-dashed rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors ${selfErrors.proof_of_address ? 'border-red-300' : 'border-gray-200'}`}>
                     <Upload className="w-5 h-5 text-gray-400 mb-1" />
                     <p className="text-xs text-gray-500 font-lato">{proofOfAddress ? proofOfAddress.name : 'Utility bill or bank statement'}</p>
                     <input type="file" className="hidden" accept="image/*,.pdf" onChange={(e) => setProofOfAddress(e.target.files?.[0] || null)} />
                   </label>
+                  {selfErrors.proof_of_address && (
+                    <p className="text-xs text-red-500 mt-1 font-lato">{selfErrors.proof_of_address}</p>
+                  )}
                 </div>
               </div>
             )}

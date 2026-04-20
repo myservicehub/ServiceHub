@@ -122,6 +122,16 @@ export const authAPI = {
     if (payload.llp_certificate) formData.append('llp_certificate', payload.llp_certificate);
     if (payload.llp_agreement) formData.append('llp_agreement', payload.llp_agreement);
     if (payload.designated_partners) formData.append('designated_partners', payload.designated_partners);
+    // Add optional referrers
+    if (payload.work_referrer_name) formData.append('work_referrer_name', payload.work_referrer_name);
+    if (payload.work_referrer_phone) formData.append('work_referrer_phone', payload.work_referrer_phone);
+    if (payload.work_referrer_company_email) formData.append('work_referrer_company_email', payload.work_referrer_company_email);
+    if (payload.work_referrer_company_name) formData.append('work_referrer_company_name', payload.work_referrer_company_name);
+    if (payload.work_referrer_relationship) formData.append('work_referrer_relationship', payload.work_referrer_relationship);
+    if (payload.character_referrer_name) formData.append('character_referrer_name', payload.character_referrer_name);
+    if (payload.character_referrer_phone) formData.append('character_referrer_phone', payload.character_referrer_phone);
+    if (payload.character_referrer_email) formData.append('character_referrer_email', payload.character_referrer_email);
+    if (payload.character_referrer_relationship) formData.append('character_referrer_relationship', payload.character_referrer_relationship);
     const response = await apiClient.post('/auth/tradesperson-verification', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
