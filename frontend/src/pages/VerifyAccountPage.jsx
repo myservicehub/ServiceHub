@@ -273,10 +273,12 @@ const VerifyAccountPage = () => {
       setSelfErrors({});
       setRefErrors({});
 
+      // Always validate references
+      const rfErrs = validateReferences();
+
       // Pre-validate Self-Employed required fields and references
       if (businessType === 'Self-Employed / Sole Trader') {
         const seErrs = validateSelfEmployed();
-        const rfErrs = validateReferences();
         if (Object.keys(seErrs).length || Object.keys(rfErrs).length) {
           setSelfErrors(seErrs);
           setRefErrors(rfErrs);
@@ -294,6 +296,13 @@ const VerifyAccountPage = () => {
             rfErrs.character_referrer_relationship && 'Character referee relationship',
           ].filter(Boolean);
           toast({ title: 'Missing Required Fields', description: `Please complete: ${missingLabels.join(', ')}`, variant: 'destructive' });
+          return;
+        }
+      } else {
+        // For other business types, check if references are missing
+        if (Object.keys(rfErrs).length > 0) {
+          setRefErrors(rfErrs);
+          toast({ title: 'Missing References', description: 'Please complete all required reference fields', variant: 'destructive' });
           return;
         }
       }
@@ -319,20 +328,34 @@ const VerifyAccountPage = () => {
         llp_certificate: llpCertificate,
         llp_agreement: llpAgreement,
         designated_partners: designatedPartners,
+        // Referrers
+        work_referrer_name: workRef.name,
+        work_referrer_phone: workRef.phone,
+        work_referrer_company_email: workRef.company_email,
+        work_referrer_company_name: workRef.company_name,
+        work_referrer_relationship: workRef.relationship,
+        character_referrer_name: charRef.name,
+        character_referrer_phone: charRef.phone,
+        character_referrer_email: charRef.email,
+        character_referrer_relationship: charRef.relationship,
       };
-      // For Self-Employed, submit references first so backend check passes
+      // For Self-Employed, submit references first so backend check passes (emails)
       if (businessType === 'Self-Employed / Sole Trader') {
-        await verificationAPI.submitTradespersonReferences({
-          work_referrer_name: workRef.name,
-          work_referrer_phone: workRef.phone,
-          work_referrer_company_email: workRef.company_email,
-          work_referrer_company_name: workRef.company_name,
-          work_referrer_relationship: workRef.relationship,
-          character_referrer_name: charRef.name,
-          character_referrer_phone: charRef.phone,
-          character_referrer_email: charRef.email,
-          character_referrer_relationship: charRef.relationship,
-        });
+        try {
+          await verificationAPI.submitTradespersonReferences({
+            work_referrer_name: workRef.name,
+            work_referrer_phone: workRef.phone,
+            work_referrer_company_email: workRef.company_email,
+            work_referrer_company_name: workRef.company_name,
+            work_referrer_relationship: workRef.relationship,
+            character_referrer_name: charRef.name,
+            character_referrer_phone: charRef.phone,
+            character_referrer_email: charRef.email,
+            character_referrer_relationship: charRef.relationship,
+          });
+        } catch (e) {
+          console.warn('Reference submission (emails) failed, continuing with full verification:', e);
+        }
       }
 
       // Then submit business verification

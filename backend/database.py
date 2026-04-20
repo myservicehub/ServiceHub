@@ -5523,12 +5523,14 @@ class Database:
             user["last_login"] = user.get("last_login", user.get("created_at"))
             user["is_verified"] = user.get("is_verified", False)
             user["wallet_balance"] = 0
+            user["points_balance"] = 0
             
             # Get wallet balance if tradesperson
             if user.get("role") == UserRole.TRADESPERSON.value:
                 wallet = wallets_map.get(uid)
                 if wallet:
                     user["wallet_balance"] = wallet.get("balance_coins", 0)
+                    user["points_balance"] = wallet.get("referral_points", 0)
                 user["interests_shown"] = interests_count_map.get(uid, 0)
             
             # Count jobs based on role
@@ -5637,6 +5639,7 @@ class Database:
                 "total_interests_shown": results[1],
                 "wallet_balance_coins": wallet.get("balance_coins", 0) if wallet else 0,
                 "wallet_balance_naira": wallet.get("balance_naira", 0) if wallet else 0,
+                "points_balance": wallet.get("referral_points", 0) if wallet else 0,
                 "successful_referrals": results[2],
                 "portfolio_items": results[3],
                 "average_rating": results[4],
@@ -5816,6 +5819,7 @@ class Database:
                 user.update({
                     "wallet_balance_coins": wallet.get("balance_coins", 0) if wallet else 0,
                     "wallet_balance_naira": wallet.get("balance_naira", 0) if wallet else 0,
+                    "points_balance": wallet.get("referral_points", 0) if wallet else 0,
                     "interests_shown": results.get("interests_shown", 0) if not isinstance(results.get("interests_shown"), Exception) else 0,
                     "paid_interests": results.get("paid_interests", 0) if not isinstance(results.get("paid_interests"), Exception) else 0,
                     "portfolio_items": results.get("portfolio_items", 0) if not isinstance(results.get("portfolio_items"), Exception) else 0,

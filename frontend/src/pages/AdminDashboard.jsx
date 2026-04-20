@@ -5226,6 +5226,7 @@ const AdminDashboard = () => {
                                     <div className="space-y-1">
                                       <div>Interests: {user.interests_shown || 0}</div>
                                       <div>Wallet: {user.wallet_balance || 0} coins</div>
+                                      <div className="text-xs text-purple-600">Points: {user.points_balance || 0}</div>
                                     </div>
                                   ) : (
                                     <div className="space-y-1">
@@ -6913,7 +6914,13 @@ const AdminDashboard = () => {
                         <div className="bg-green-50 p-3 rounded-lg">
                           <div className="text-sm text-gray-600">Wallet Balance</div>
                           <div className="text-lg font-semibold text-green-600">
-                            {selectedUser.wallet_balance || 0} coins
+                            {(selectedUser.wallet_balance_coins ?? selectedUser.wallet_balance ?? 0)} coins
+                          </div>
+                        </div>
+                        <div className="bg-purple-50 p-3 rounded-lg">
+                          <div className="text-sm text-gray-600">Points Balance</div>
+                          <div className="text-lg font-semibold text-purple-600">
+                            {(selectedUser.points_balance ?? 0)} points
                           </div>
                         </div>
                         {selectedUser.company_name && (

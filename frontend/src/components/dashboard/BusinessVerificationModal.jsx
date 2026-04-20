@@ -160,9 +160,11 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
       setSelfErrors({});
       setRefErrors({});
 
+      // Always validate references
+      const rfErrs = validateReferences();
+      
       if (businessType === 'Self-Employed / Sole Trader') {
         const seErrs = validateSelfEmployed();
-        const rfErrs = validateReferences();
         if (Object.keys(seErrs).length || Object.keys(rfErrs).length) {
           setSelfErrors(seErrs);
           setRefErrors(rfErrs);
@@ -179,6 +181,13 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
             rfErrs.character_referrer_relationship && 'Character referee relationship',
           ].filter(Boolean);
           toast({ title: 'Missing Required Fields', description: `Please complete: ${missingLabels.slice(0, 3).join(', ')}${missingLabels.length > 3 ? '...' : ''}`, variant: 'destructive' });
+          return;
+        }
+      } else {
+        // For other business types, check if references are missing
+        if (Object.keys(rfErrs).length > 0) {
+          setRefErrors(rfErrs);
+          toast({ title: 'Missing References', description: 'Please complete all required reference fields', variant: 'destructive' });
           return;
         }
       }
