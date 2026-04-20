@@ -366,19 +366,12 @@ async def create_admin(
     
     existing_admin = await database.get_admin_by_username(effective_username)
     if existing_admin:
-        # If auto-generated username exists, append random suffix
-        if not admin_data.username:
-            effective_username = f"{effective_username}{secrets.token_hex(2)}"
-        else:
-            raise HTTPException(status_code=400, detail="Username already exists")
+        # If username exists, we delete it to allow recreation with the same username
+        await database.database.admins.delete_one({"id": existing_admin["id"]})
     
     existing_admin = await database.get_admin_by_email(admin_data.email)
-    if existing_admin and existing_admin.get("status") == AdminStatus.ACTIVE.value:
-        raise HTTPException(status_code=400, detail="Email already exists and account is active")
-    
-    # If account exists but is inactive, we'll delete the old one to allow recreation
     if existing_admin:
-        # Actually delete the inactive admin to avoid unique constraint issues in DB
+        # If email exists, we delete it to allow recreation with the same email
         await database.database.admins.delete_one({"id": existing_admin["id"]})
     
     # Generate a random initial password (won't be shown to user)
@@ -507,14 +500,18 @@ async def update_admin(
 @router.delete("/admins/{admin_id}")
 async def delete_admin(
     admin_id: str,
-    admin: dict = Depends(require_permission(AdminPermission.MANAGE_ADMINS)),
+    admin: dict = Depends(get_current_admin),
     request: Request = None
 ):
-    """Permanently delete an admin from the database"""
+    """Permanently delete an admin from the database (Super Admin only)"""
     
     # Degraded mode: reject writes when database is unavailable
     if not getattr(database, "connected", True):
         raise HTTPException(status_code=503, detail="Database unavailable; write operations are disabled in degraded mode")
+    
+    # Strictly require Super Admin role for deletion
+    if admin["role"] != AdminRole.SUPER_ADMIN.value:
+        raise HTTPException(status_code=403, detail="Only Super Administrators can delete admin accounts")
     
     # Prevent self-deletion
     if admin_id == admin["id"]:
@@ -524,13 +521,6 @@ async def delete_admin(
     target_admin = await database.get_admin_by_id(admin_id)
     if not target_admin:
         raise HTTPException(status_code=404, detail="Admin not found")
-    
-    # Check permissions
-    current_admin_role = AdminRole(admin["role"])
-    target_admin_role = AdminRole(target_admin["role"])
-    
-    if not can_manage_role(current_admin_role, target_admin_role):
-        raise HTTPException(status_code=403, detail="Cannot delete this admin")
     
     # Perform hard delete from database
     success = await database.database.admins.delete_one({"id": admin_id})

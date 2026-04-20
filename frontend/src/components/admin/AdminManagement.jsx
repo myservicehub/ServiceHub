@@ -21,6 +21,25 @@ const AdminManagement = () => {
   const [activitiesPage, setActivitiesPage] = useState(1);
   const [activitiesLimit, setActivitiesLimit] = useState(20);
 
+  const [adminPermissions, setAdminPermissions] = useState([]);
+  const [currentAdmin, setCurrentAdmin] = useState(null);
+
+  // Load current admin info
+  useEffect(() => {
+    const fetchMe = async () => {
+      try {
+        const data = await adminAPI.getMe();
+        setAdminPermissions(data.permissions || []);
+        setCurrentAdmin(data.admin || null);
+      } catch (error) {
+        console.error('Error fetching admin info:', error);
+      }
+    };
+    fetchMe();
+  }, []);
+
+  const isSuperAdmin = currentAdmin?.role === 'super_admin';
+
   // API functions
   const adminManagementAPI = {
     getAdmins: async (status = 'active') => {
@@ -529,8 +548,9 @@ const AdminManagement = () => {
                                 setSelectedAdmin(admin);
                                 setShowDeleteConfirm(true);
                               }}
-                              className="text-red-600 hover:text-red-900"
-                              disabled={admin.role === 'super_admin'}
+                              className={`${isSuperAdmin ? 'text-red-600 hover:text-red-900' : 'text-gray-300 cursor-not-allowed'}`}
+                              disabled={!isSuperAdmin || admin.role === 'super_admin'}
+                              title={!isSuperAdmin ? "Only Super Admins can delete" : ""}
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -691,12 +711,19 @@ const AdminManagement = () => {
                 onClick={async () => {
                   try {
                     await adminManagementAPI.deleteAdmin(selectedAdmin.id);
-                    toast.success('Admin deactivated successfully');
+                    toast({
+                      title: "Success",
+                      description: "Admin deactivated successfully",
+                    });
                     setShowDeleteConfirm(false);
                     setSelectedAdmin(null);
                     loadData();
                   } catch (error) {
-                    toast.error('Error deleting admin: ' + (error.response?.data?.detail || error.message));
+                    toast({
+                      title: "Error",
+                      description: error.response?.data?.detail || error.message,
+                      variant: "destructive"
+                    });
                   }
                 }}
                 className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg"
@@ -730,11 +757,18 @@ const AdminManagement = () => {
               const newPassword = e.target.password.value;
               try {
                 const result = await adminManagementAPI.resetPassword(selectedAdmin.id, newPassword);
-                toast.success('Password reset successfully!');
+                toast({
+                  title: "Success",
+                  description: "Password reset successfully!",
+                });
                 setShowPasswordReset(false);
                 setSelectedAdmin(null);
               } catch (error) {
-                toast.error('Error resetting password: ' + (error.response?.data?.detail || error.message));
+                toast({
+                  title: "Error",
+                  description: error.response?.data?.detail || error.message,
+                  variant: "destructive"
+                });
               }
             }}>
               <div className="mb-4">
