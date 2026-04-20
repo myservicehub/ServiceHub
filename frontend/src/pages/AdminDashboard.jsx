@@ -6963,6 +6963,12 @@ const AdminDashboard = () => {
                             {selectedUser.jobs_posted || 0}
                           </div>
                         </div>
+                        <div className="bg-purple-50 p-3 rounded-lg">
+                          <div className="text-sm text-gray-600">Points Balance</div>
+                          <div className="text-lg font-semibold text-purple-600">
+                            {(selectedUser.points_balance ?? 0)} points
+                          </div>
+                        </div>
                       </>
                     )}
                     <div><strong>Last Login:</strong> {selectedUser.last_login ? new Date(selectedUser.last_login).toLocaleDateString() : 'Never'}</div>

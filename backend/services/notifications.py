@@ -1453,7 +1453,7 @@ serviceHub Team
                 <p class="message">To get started, please click the button below to set up your secure password. This link will expire in 24 hours.</p>
 
                 <div class="cta-container">
-                    <a href="{setup_link}" class="cta-button">Set Up Your Account</a>
+                    <a href="{setup_link}" class="cta-button">Set Up Your Password</a>
                 </div>
 
                 <p class="security-note">If you did not expect this invitation, please ignore this email or contact our security team.</p>

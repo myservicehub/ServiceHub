@@ -64,12 +64,12 @@ function ResetPasswordPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
         <div className="w-full max-w-md bg-white shadow rounded p-6">
-          <h1 className="text-xl font-semibold mb-2">Password Reset Successful</h1>
+          <h1 className="text-xl font-semibold mb-2">Password {accountType === 'admin' ? 'Set' : 'Reset'} Successful</h1>
           <p className="text-gray-600 mb-6">
             Your password has been updated. You can now sign in.
           </p>
           <button
-            onClick={() => navigate("/join-for-free")}
+            onClick={() => navigate(accountType === 'admin' ? '/admin' : '/join-for-free')}
             className="w-full py-2.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
           >
             Go to Sign In
@@ -82,14 +82,14 @@ function ResetPasswordPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md bg-white shadow rounded p-6">
-        <h1 className="text-xl font-semibold mb-2">Reset your password</h1>
+        <h1 className="text-xl font-semibold mb-2">{accountType === 'admin' ? 'Set' : 'Reset'} your password</h1>
         <p className="text-gray-600 mb-6">
-          Enter a new password to complete your reset. {policy}
+          Enter a new password to complete your {accountType === 'admin' ? 'setup' : 'reset'}. {policy}
         </p>
 
         {!token && (
           <div className="mb-4 text-red-600">
-            Invalid or missing reset link token. Request a new link.
+            {accountType === 'admin' ? 'Setup' : 'Reset'} link is invalid or missing a token. Request a new link.
           </div>
         )}
 
@@ -138,12 +138,12 @@ function ResetPasswordPage() {
             disabled={loading || !token}
             className="w-full py-2.5 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 transition"
           >
-            {loading ? "Updating" : "Reset Password"}
+            {loading ? "Updating" : (accountType === 'admin' ? "Set Password" : "Reset Password")}
           </button>
         </form>
 
         <div className="mt-4 text-center">
-          <Link to="/join-for-free" className="text-blue-600 hover:underline">
+          <Link to={accountType === 'admin' ? '/admin' : '/join-for-free'} className="text-blue-600 hover:underline">
             Back to sign in
           </Link>
         </div>

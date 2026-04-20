@@ -138,11 +138,18 @@ const AdminManagement = () => {
       e.preventDefault();
       try {
         const result = await adminManagementAPI.createAdmin(formData);
-        toast.success(result.message || 'Admin created successfully! An invitation email has been sent.');
+        toast({
+          title: "Success",
+          description: result.message || 'Admin created successfully! An invitation email has been sent.',
+        });
         setShowCreateModal(false);
         loadData();
       } catch (error) {
-        toast.error('Error creating admin: ' + (error.response?.data?.detail || error.message));
+        toast({
+          title: "Error",
+          description: error.response?.data?.detail || error.message,
+          variant: "destructive"
+        });
       }
     };
 
@@ -260,12 +267,19 @@ const AdminManagement = () => {
           phone: formData.phone || undefined,
           notes: formData.notes || undefined
         });
-        toast.success('Admin updated successfully');
+        toast({
+          title: "Success",
+          description: "Admin updated successfully",
+        });
         setShowEditModal(false);
         setSelectedAdmin(null);
         loadData();
       } catch (error) {
-        toast.error('Error updating admin: ' + (error.response?.data?.detail || error.message));
+        toast({
+          title: "Error",
+          description: error.response?.data?.detail || error.message,
+          variant: "destructive"
+        });
       }
     };
 
