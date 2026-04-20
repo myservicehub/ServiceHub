@@ -126,6 +126,30 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
     return errs;
   };
 
+  const validateBusinessEntity = () => {
+    const errs = {};
+    if (!companyAddress || !companyAddress.trim()) errs.company_address = 'Company/Business address is required';
+    if (!proofOfAddress) errs.proof_of_address = 'Company proof of address is required';
+    
+    if (businessType === 'Limited Company (LTD)') {
+      if (!cacCertificate) errs.cac_certificate = 'CAC Certificate is required';
+      if (!cacStatusReport) errs.cac_status_report = 'CAC Status Report is required';
+      if (!directorName || !directorName.trim()) errs.director_name = 'Director name is required';
+      if (!directorIdDocument) errs.director_id_document = 'Director ID is required';
+    } else if (businessType === 'Ordinary Partnership') {
+      if (!bnCertificate) errs.bn_certificate = 'BN Certificate is required';
+      if (!partnershipAgreement) errs.partnership_agreement = 'Partnership Agreement is required';
+      if (partnerIdDocuments.length < 1) errs.partner_ids = 'At least 1 partner ID is required';
+    } else if (businessType === 'Limited Liability Partnership (LLP)') {
+      if (!llpCertificate) errs.llp_certificate = 'LLP Certificate is required';
+      if (!llpAgreement) errs.llp_agreement = 'LLP Agreement is required';
+      if (!designatedPartners?.trim()) errs.designated_partners = 'Designated partners are required';
+      if (partnerIdDocuments.length < 1) errs.partner_ids = 'At least 1 partner ID is required';
+    }
+    
+    return errs;
+  };
+
   const validateReferences = () => {
     const errs = {};
     if (!workRef.name?.trim()) errs.work_referrer_name = 'Work referee name is required';
@@ -184,10 +208,11 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
           return;
         }
       } else {
-        // For other business types, check if references are missing
-        if (Object.keys(rfErrs).length > 0) {
+        const beErrs = validateBusinessEntity();
+        if (Object.keys(beErrs).length || Object.keys(rfErrs).length) {
+          setSelfErrors(beErrs); // Reuse selfErrors state for display
           setRefErrors(rfErrs);
-          toast({ title: 'Missing References', description: 'Please complete all required reference fields', variant: 'destructive' });
+          toast({ title: 'Missing Required Fields', description: 'Please complete all required fields and references', variant: 'destructive' });
           return;
         }
       }
@@ -585,6 +610,19 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
                   />
                 </div>
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">
+                    Company Proof of Address <span className="text-red-500">*</span>
+                  </label>
+                  <label className={`flex flex-col items-center justify-center w-full h-20 border-2 border-dashed rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors ${selfErrors.proof_of_address ? 'border-red-300' : 'border-gray-200'}`}>
+                    <Upload className="w-5 h-5 text-gray-400 mb-1" />
+                    <p className="text-xs text-gray-500 font-lato">{proofOfAddress ? proofOfAddress.name : 'Utility bill or bank statement'}</p>
+                    <input type="file" className="hidden" accept="image/*,.pdf" onChange={(e) => setProofOfAddress(e.target.files?.[0] || null)} />
+                  </label>
+                  {selfErrors.proof_of_address && (
+                    <p className="text-xs text-red-500 mt-1 font-lato">{selfErrors.proof_of_address}</p>
+                  )}
+                </div>
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Director Name <span className="text-red-500">*</span></label>
                   <input
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] transition-all font-lato text-sm"
@@ -624,19 +662,6 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
                     />
                   </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">
-                    Proof of Address <span className="text-red-500">*</span>
-                  </label>
-                  <label className={`flex flex-col items-center justify-center w-full h-20 border-2 border-dashed rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors ${selfErrors.proof_of_address ? 'border-red-300' : 'border-gray-200'}`}>
-                    <Upload className="w-5 h-5 text-gray-400 mb-1" />
-                    <p className="text-xs text-gray-500 font-lato">{proofOfAddress ? proofOfAddress.name : 'Utility bill or bank statement'}</p>
-                    <input type="file" className="hidden" accept="image/*,.pdf" onChange={(e) => setProofOfAddress(e.target.files?.[0] || null)} />
-                  </label>
-                  {selfErrors.proof_of_address && (
-                    <p className="text-xs text-red-500 mt-1 font-lato">{selfErrors.proof_of_address}</p>
-                  )}
-                </div>
               </div>
             )}
 
@@ -667,6 +692,32 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
                     value={companyAddress}
                     onChange={(e) => setCompanyAddress(e.target.value)}
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">
+                    Company Proof of Address <span className="text-red-500">*</span>
+                  </label>
+                  <label className={`flex flex-col items-center justify-center w-full h-20 border-2 border-dashed rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors ${selfErrors.proof_of_address ? 'border-red-300' : 'border-gray-200'}`}>
+                    <Upload className="w-5 h-5 text-gray-400 mb-1" />
+                    <p className="text-xs text-gray-500 font-lato">{proofOfAddress ? proofOfAddress.name : 'Utility bill or bank statement'}</p>
+                    <input type="file" className="hidden" accept="image/*,.pdf" onChange={(e) => setProofOfAddress(e.target.files?.[0] || null)} />
+                  </label>
+                  {selfErrors.proof_of_address && (
+                    <p className="text-xs text-red-500 mt-1 font-lato">{selfErrors.proof_of_address}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">
+                    Company Proof of Address <span className="text-red-500">*</span>
+                  </label>
+                  <label className={`flex flex-col items-center justify-center w-full h-20 border-2 border-dashed rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors ${selfErrors.proof_of_address ? 'border-red-300' : 'border-gray-200'}`}>
+                    <Upload className="w-5 h-5 text-gray-400 mb-1" />
+                    <p className="text-xs text-gray-500 font-lato">{proofOfAddress ? proofOfAddress.name : 'Utility bill or bank statement'}</p>
+                    <input type="file" className="hidden" accept="image/*,.pdf" onChange={(e) => setProofOfAddress(e.target.files?.[0] || null)} />
+                  </label>
+                  {selfErrors.proof_of_address && (
+                    <p className="text-xs text-red-500 mt-1 font-lato">{selfErrors.proof_of_address}</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2 font-lato">Partner ID Documents <span className="text-red-500">*</span></label>

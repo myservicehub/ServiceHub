@@ -2434,6 +2434,7 @@ async def submit_tradesperson_verification(
         req_ok = all([
             docs.get("cac_certificate"),
             docs.get("cac_status_report"),
+            docs.get("proof_of_address"),
             company_address,
             director_name,
             docs.get("director_id_document"),
@@ -2446,7 +2447,8 @@ async def submit_tradesperson_verification(
     elif "partnership" in bt and "limited liability" not in bt:
         req_ok = all([
             docs.get("bn_certificate"),
-            partnership_agreement,
+            docs.get("partnership_agreement"),
+            docs.get("proof_of_address"),
             company_address,
         ]) and len(partner_files) >= 1
         if not req_ok:
@@ -2454,7 +2456,8 @@ async def submit_tradesperson_verification(
     elif "limited liability partnership" in bt or bt == "llp":
         req_ok = all([
             docs.get("llp_certificate"),
-            llp_agreement,
+            docs.get("llp_agreement"),
+            docs.get("proof_of_address"),
             company_address,
             designated_partners,
         ]) and len(partner_files) >= 1
