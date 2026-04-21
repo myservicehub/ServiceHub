@@ -45,6 +45,7 @@ const TradespersonOverview = () => {
   const [profileModalInitialStep, setProfileModalInitialStep] = useState(1);
   const [identityVerificationStatus, setIdentityVerificationStatus] = useState('not_submitted');
   const [identityVerificationRejectionReason, setIdentityVerificationRejectionReason] = useState('');
+  const [businessVerificationStatus, setBusinessVerificationStatus] = useState(null);
   const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
 
@@ -55,10 +56,34 @@ const TradespersonOverview = () => {
     businessVerified: isBusinessVerified,
     businessPending: isBusinessPending,
   } = getTradespersonCompletionStatus(user);
+
+  const isBusinessVerifiedLive = businessVerificationStatus === 'approved' || isBusinessVerified;
+  const isBusinessPendingLive = businessVerificationStatus == null
+    ? isBusinessPending
+    : businessVerificationStatus === 'pending';
+
   const isProfileIncomplete = !profileCompleted;
 
   useEffect(() => {
     loadDashboardData();
+    fetchVerificationStatuses();
+
+    const intervalId = window.setInterval(() => {
+      fetchVerificationStatuses();
+    }, 30000);
+
+    const handleVisibility = () => {
+      if (!document.hidden) {
+        fetchVerificationStatuses();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   }, []);
 
   // Auto-show the next incomplete step modal on load
@@ -73,10 +98,10 @@ const TradespersonOverview = () => {
       setShowVerifyContactModal(true);
     } else if (!isSkillsTestPassed) {
       setShowSkillsModal(true);
-    } else if (!isBusinessVerified && !isBusinessPending) {
+    } else if (!isBusinessVerifiedLive && !isBusinessPendingLive) {
       setShowBusinessModal(true);
     }
-  }, [loading, isProfileIncomplete, isContactVerified, isSkillsTestPassed, isBusinessVerified, isBusinessPending]);
+  }, [loading, isProfileIncomplete, isContactVerified, isSkillsTestPassed, isBusinessVerifiedLive, isBusinessPendingLive]);
 
   const handleCloseProfileModal = () => {
     setShowCompleteProfileModal(false);
@@ -106,7 +131,21 @@ const TradespersonOverview = () => {
 
   const handleBusinessComplete = async () => {
     if (refreshUser) await refreshUser();
+    fetchVerificationStatuses();
     setShowBusinessModal(false);
+  };
+
+  const fetchVerificationStatuses = async () => {
+    try {
+      const statusResp = await authAPI.getTradespersonVerificationStatus();
+      setIdentityVerificationStatus(statusResp?.identity_verification_status || 'not_submitted');
+      setIdentityVerificationRejectionReason((statusResp?.identity_rejection_reason || '').trim());
+      setBusinessVerificationStatus(statusResp?.status || 'not_submitted');
+    } catch {
+      setIdentityVerificationStatus('not_submitted');
+      setIdentityVerificationRejectionReason('');
+      setBusinessVerificationStatus(null);
+    }
   };
 
   const loadDashboardData = async () => {
@@ -131,15 +170,6 @@ const TradespersonOverview = () => {
       // Get recent jobs
       setRecentJobs(interests.slice(0, 5));
 
-      // Get latest tradesperson verification status to show retake prompt on overview
-      try {
-        const statusResp = await authAPI.getTradespersonVerificationStatus();
-        setIdentityVerificationStatus(statusResp?.identity_verification_status || 'not_submitted');
-        setIdentityVerificationRejectionReason((statusResp?.identity_rejection_reason || '').trim());
-      } catch {
-        setIdentityVerificationStatus('not_submitted');
-        setIdentityVerificationRejectionReason('');
-      }
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
     } finally {
@@ -280,7 +310,7 @@ const TradespersonOverview = () => {
       )}
 
       {/* Profile Completion Banner - Shows only for incomplete profiles */}
-      {(isProfileIncomplete || !isContactVerified || !isSkillsTestPassed || !isBusinessVerified) && (
+      {(isProfileIncomplete || !isContactVerified || !isSkillsTestPassed || !isBusinessVerifiedLive) && (
         <ProfileCompletionBanner
           onCompleteProfile={() => {
             setProfileModalInitialStep(1);
@@ -292,8 +322,8 @@ const TradespersonOverview = () => {
           profileCompleted={profileCompleted}
           contactVerified={isContactVerified}
           skillsTestPassed={isSkillsTestPassed}
-          businessVerified={isBusinessVerified}
-          businessPending={isBusinessPending}
+          businessVerified={isBusinessVerifiedLive}
+          businessPending={isBusinessPendingLive}
         />
       )}
 
