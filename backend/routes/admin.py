@@ -2484,6 +2484,44 @@ async def reject_tradespeople_verification(verification_id: str, admin_notes: st
     ok = await database.reject_tradesperson_verification(verification_id, admin_id=admin["id"], admin_notes=admin_notes)
     if not ok:
         raise HTTPException(status_code=404, detail="Verification not found or already processed")
+
+    # Send rejection reason to the tradesperson's in-app notifications
+    try:
+        verification = await database.tradespeople_verifications_collection.find_one({"id": verification_id})
+        user = await database.get_user_by_id(verification.get("user_id")) if verification else None
+        if user:
+            from ..models.notifications import Notification, NotificationType, NotificationChannel, NotificationStatus
+            frontend_url = os.getenv("FRONTEND_URL", "https://www.myservicehub.co").rstrip("/")
+            resubmit_url = f"{frontend_url}/verify-account"
+            reason = admin_notes.strip()
+            content = (
+                "Your business verification was rejected.\n\n"
+                f"Reason: {reason}\n\n"
+                "Please update your documents/details and submit verification again."
+            )
+            notification = Notification(
+                id=str(uuid.uuid4()),
+                user_id=user["id"],
+                type=NotificationType.JOB_REJECTED,
+                channel=NotificationChannel.BOTH,
+                recipient_email=user.get("email"),
+                recipient_phone=user.get("phone"),
+                subject="Business Verification Rejected - Action Required",
+                content=content,
+                status=NotificationStatus.PENDING,
+                metadata={
+                    "verification_id": verification_id,
+                    "rejection_reason": reason,
+                    "action_required": "resubmit_business_verification",
+                    "resubmit_url": resubmit_url,
+                },
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc),
+            )
+            await database.create_notification(notification)
+    except Exception as e:
+        logger.warning(f"Failed to create tradesperson rejection notification for verification {verification_id}: {e}")
+
     return {"message": "Tradesperson verification rejected", "verification_id": verification_id, "status": "rejected", "notes": admin_notes}
 
 # ==========================================
