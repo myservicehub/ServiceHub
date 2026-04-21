@@ -13,6 +13,20 @@ const BUSINESS_TYPES = [
   'Limited Liability Partnership (LLP)'
 ];
 
+const GENERIC_EMAIL_DOMAINS = new Set([
+  'gmail.com',
+  'yahoo.com',
+  'outlook.com',
+  'hotmail.com',
+  'icloud.com',
+  'aol.com',
+  'yandex.com',
+  'protonmail.com',
+  'zoho.com',
+  'gmx.com',
+  'mail.com'
+]);
+
 const normalizeBusinessType = (value) => {
   const raw = String(value || '').trim();
   if (!raw) return '';
@@ -22,6 +36,15 @@ const normalizeBusinessType = (value) => {
   if (normalized.includes('ordinary') && normalized.includes('partnership')) return 'Ordinary Partnership';
   if (normalized.includes('limited liability') || normalized.includes('(llp)')) return 'Limited Liability Partnership (LLP)';
   return raw;
+};
+
+const isValidEmailFormat = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim());
+
+const isWorkEmailDomain = (email) => {
+  const normalized = String(email || '').trim().toLowerCase();
+  if (!isValidEmailFormat(normalized)) return false;
+  const domain = normalized.split('@')[1] || '';
+  return domain && !GENERIC_EMAIL_DOMAINS.has(domain);
 };
 
 const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
@@ -64,6 +87,50 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
   
   const [selfErrors, setSelfErrors] = useState({});
   const [refErrors, setRefErrors] = useState({});
+
+  const focusFirstErrorField = (errors = {}) => {
+    const [firstErrorKey] = Object.keys(errors || {});
+    if (!firstErrorKey) return;
+    const element = document.querySelector(`[data-field="${firstErrorKey}"]`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element.focus();
+    }
+  };
+
+  const mapServerValidationErrors = (detail) => {
+    const mappedRefErrors = {};
+    let message = 'Failed to submit business verification';
+
+    if (typeof detail === 'string') {
+      message = detail;
+      const detailLc = detail.toLowerCase();
+      if (detailLc.includes('company email must be a work domain') || detailLc.includes('invalid company email format')) {
+        mappedRefErrors.work_referrer_company_email = 'Use a valid work email (company domain), not a generic provider';
+      }
+      if (detailLc.includes('invalid work referee phone')) {
+        mappedRefErrors.work_referrer_phone = 'Enter a valid phone (+234XXXXXXXXXX or 0XXXXXXXXXX)';
+      }
+      if (detailLc.includes('invalid character referee phone')) {
+        mappedRefErrors.character_referrer_phone = 'Enter a valid phone (+234XXXXXXXXXX or 0XXXXXXXXXX)';
+      }
+    } else if (Array.isArray(detail)) {
+      message = detail.map((err) => err?.msg || err?.message || 'Validation error').join(', ');
+      detail.forEach((err) => {
+        const loc = Array.isArray(err?.loc) ? err.loc.join('.') : '';
+        const fieldName = String(loc || '').split('.').pop();
+        if (!fieldName) return;
+        if (fieldName === 'work_referrer_company_email') mappedRefErrors.work_referrer_company_email = err?.msg || 'Invalid company email';
+        if (fieldName === 'work_referrer_phone') mappedRefErrors.work_referrer_phone = err?.msg || 'Invalid work referee phone';
+        if (fieldName === 'character_referrer_phone') mappedRefErrors.character_referrer_phone = err?.msg || 'Invalid character referee phone';
+        if (fieldName === 'character_referrer_email') mappedRefErrors.character_referrer_email = err?.msg || 'Invalid character referee email';
+      });
+    } else if (detail && typeof detail === 'object') {
+      message = detail.msg || detail.message || message;
+    }
+
+    return { mappedRefErrors, message };
+  };
 
   useEffect(() => {
     setBusinessType(normalizeBusinessType(user?.business_type || ''));
@@ -163,6 +230,8 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
       errs.work_referrer_phone = 'Enter a valid phone (+234XXXXXXXXXX or 0XXXXXXXXXX)';
     }
     if (!workRef.company_email?.trim()) errs.work_referrer_company_email = 'Company email is required';
+    else if (!isValidEmailFormat(workRef.company_email)) errs.work_referrer_company_email = 'Enter a valid company email';
+    else if (!isWorkEmailDomain(workRef.company_email)) errs.work_referrer_company_email = 'Use a work email (company domain), not Gmail/Yahoo/etc';
     if (!workRef.company_name?.trim()) errs.work_referrer_company_name = 'Company name is required';
     if (!workRef.relationship?.trim()) errs.work_referrer_relationship = 'Relationship is required';
     if (!charRef.name?.trim()) errs.character_referrer_name = 'Character referee name is required';
@@ -170,6 +239,7 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
       errs.character_referrer_phone = 'Enter a valid phone (+234XXXXXXXXXX or 0XXXXXXXXXX)';
     }
     if (!charRef.email?.trim()) errs.character_referrer_email = 'Character referee email is required';
+    else if (!isValidEmailFormat(charRef.email)) errs.character_referrer_email = 'Enter a valid email address';
     if (!charRef.relationship?.trim()) errs.character_referrer_relationship = 'Relationship is required';
     return errs;
   };
@@ -192,6 +262,7 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
         if (Object.keys(seErrs).length || Object.keys(rfErrs).length) {
           setSelfErrors(seErrs);
           setRefErrors(rfErrs);
+          focusFirstErrorField({ ...seErrs, ...rfErrs });
           const missingLabels = [
             seErrs.residential_address && 'Residential address',
             seErrs.proof_of_address && 'Proof of address',
@@ -204,7 +275,7 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
             rfErrs.character_referrer_email && 'Character referee email',
             rfErrs.character_referrer_relationship && 'Character referee relationship',
           ].filter(Boolean);
-          toast({ title: 'Missing Required Fields', description: `Please complete: ${missingLabels.slice(0, 3).join(', ')}${missingLabels.length > 3 ? '...' : ''}`, variant: 'destructive' });
+          toast({ title: 'Fix Highlighted Fields', description: `Please correct: ${missingLabels.slice(0, 3).join(', ')}${missingLabels.length > 3 ? '...' : ''}`, variant: 'destructive' });
           return;
         }
       } else {
@@ -212,7 +283,8 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
         if (Object.keys(beErrs).length || Object.keys(rfErrs).length) {
           setSelfErrors(beErrs); // Reuse selfErrors state for display
           setRefErrors(rfErrs);
-          toast({ title: 'Missing Required Fields', description: 'Please complete all required fields and references', variant: 'destructive' });
+          focusFirstErrorField({ ...beErrs, ...rfErrs });
+          toast({ title: 'Fix Highlighted Fields', description: 'Please correct the highlighted fields before submitting', variant: 'destructive' });
           return;
         }
       }
@@ -289,11 +361,12 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
     } catch (error) {
       let errorMessage = 'Failed to submit business verification';
       if (error.response?.data?.detail) {
-        if (typeof error.response.data.detail === 'string') {
-          errorMessage = error.response.data.detail;
-        } else if (Array.isArray(error.response.data.detail)) {
-          errorMessage = error.response.data.detail.map(err => err.msg || err.message || 'Validation error').join(', ');
+        const { mappedRefErrors, message } = mapServerValidationErrors(error.response.data.detail);
+        if (Object.keys(mappedRefErrors).length) {
+          setRefErrors((prev) => ({ ...prev, ...mappedRefErrors }));
+          focusFirstErrorField(mappedRefErrors);
         }
+        errorMessage = message;
       }
       toast({ title: 'Submission Failed', description: errorMessage, variant: 'destructive' });
     } finally {
@@ -518,33 +591,93 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
                       <input 
                         placeholder="Name *" 
                         value={workRef.name} 
-                        onChange={(e) => setWorkRef({...workRef, name: e.target.value})}
-                        className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-lato focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164]"
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setWorkRef({ ...workRef, name: value });
+                          setRefErrors((prev) => {
+                            const next = { ...prev };
+                            if (value.trim()) delete next.work_referrer_name;
+                            return next;
+                          });
+                        }}
+                        data-field="work_referrer_name"
+                        className={`w-full px-3 py-2.5 border rounded-lg text-sm font-lato focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] ${refErrors.work_referrer_name ? 'border-red-300' : 'border-gray-200'}`}
                       />
+                      {refErrors.work_referrer_name && <p className="text-xs text-red-500 mt-0.5 font-lato">{refErrors.work_referrer_name}</p>}
                       <input 
                         placeholder="Phone" 
                         value={workRef.phone} 
-                        onChange={(e) => setWorkRef({...workRef, phone: e.target.value})}
-                        className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-lato focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164]"
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setWorkRef({ ...workRef, phone: value });
+                          setRefErrors((prev) => {
+                            const next = { ...prev };
+                            if (!value.trim() || /^\+234\d{10}$/.test(value.trim()) || /^0\d{10}$/.test(value.trim())) {
+                              delete next.work_referrer_phone;
+                            }
+                            return next;
+                          });
+                        }}
+                        data-field="work_referrer_phone"
+                        className={`w-full px-3 py-2.5 border rounded-lg text-sm font-lato focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] ${refErrors.work_referrer_phone ? 'border-red-300' : 'border-gray-200'}`}
                       />
+                      {refErrors.work_referrer_phone && <p className="text-xs text-red-500 mt-0.5 font-lato">{refErrors.work_referrer_phone}</p>}
                       <input 
                         placeholder="Company Email *" 
                         value={workRef.company_email} 
-                        onChange={(e) => setWorkRef({...workRef, company_email: e.target.value})}
-                        className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-lato focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164]"
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setWorkRef({ ...workRef, company_email: value });
+                          setRefErrors((prev) => {
+                            const next = { ...prev };
+                            if (!value.trim()) {
+                              next.work_referrer_company_email = 'Company email is required';
+                            } else if (!isValidEmailFormat(value)) {
+                              next.work_referrer_company_email = 'Enter a valid company email';
+                            } else if (!isWorkEmailDomain(value)) {
+                              next.work_referrer_company_email = 'Use a work email (company domain), not Gmail/Yahoo/etc';
+                            } else {
+                              delete next.work_referrer_company_email;
+                            }
+                            return next;
+                          });
+                        }}
+                        data-field="work_referrer_company_email"
+                        className={`w-full px-3 py-2.5 border rounded-lg text-sm font-lato focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] ${refErrors.work_referrer_company_email ? 'border-red-300' : 'border-gray-200'}`}
                       />
+                      {refErrors.work_referrer_company_email && <p className="text-xs text-red-500 mt-0.5 font-lato">{refErrors.work_referrer_company_email}</p>}
                       <input 
                         placeholder="Company Name *" 
                         value={workRef.company_name} 
-                        onChange={(e) => setWorkRef({...workRef, company_name: e.target.value})}
-                        className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-lato focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164]"
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setWorkRef({ ...workRef, company_name: value });
+                          setRefErrors((prev) => {
+                            const next = { ...prev };
+                            if (value.trim()) delete next.work_referrer_company_name;
+                            return next;
+                          });
+                        }}
+                        data-field="work_referrer_company_name"
+                        className={`w-full px-3 py-2.5 border rounded-lg text-sm font-lato focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] ${refErrors.work_referrer_company_name ? 'border-red-300' : 'border-gray-200'}`}
                       />
+                      {refErrors.work_referrer_company_name && <p className="text-xs text-red-500 mt-0.5 font-lato">{refErrors.work_referrer_company_name}</p>}
                       <input 
                         placeholder="Relationship *" 
                         value={workRef.relationship} 
-                        onChange={(e) => setWorkRef({...workRef, relationship: e.target.value})}
-                        className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-lato focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164]"
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setWorkRef({ ...workRef, relationship: value });
+                          setRefErrors((prev) => {
+                            const next = { ...prev };
+                            if (value.trim()) delete next.work_referrer_relationship;
+                            return next;
+                          });
+                        }}
+                        data-field="work_referrer_relationship"
+                        className={`w-full px-3 py-2.5 border rounded-lg text-sm font-lato focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] ${refErrors.work_referrer_relationship ? 'border-red-300' : 'border-gray-200'}`}
                       />
+                      {refErrors.work_referrer_relationship && <p className="text-xs text-red-500 mt-0.5 font-lato">{refErrors.work_referrer_relationship}</p>}
                     </div>
                   </div>
 
@@ -554,27 +687,75 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
                       <input 
                         placeholder="Name *" 
                         value={charRef.name} 
-                        onChange={(e) => setCharRef({...charRef, name: e.target.value})}
-                        className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-lato focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164]"
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setCharRef({ ...charRef, name: value });
+                          setRefErrors((prev) => {
+                            const next = { ...prev };
+                            if (value.trim()) delete next.character_referrer_name;
+                            return next;
+                          });
+                        }}
+                        data-field="character_referrer_name"
+                        className={`w-full px-3 py-2.5 border rounded-lg text-sm font-lato focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] ${refErrors.character_referrer_name ? 'border-red-300' : 'border-gray-200'}`}
                       />
+                      {refErrors.character_referrer_name && <p className="text-xs text-red-500 mt-0.5 font-lato">{refErrors.character_referrer_name}</p>}
                       <input 
                         placeholder="Phone" 
                         value={charRef.phone} 
-                        onChange={(e) => setCharRef({...charRef, phone: e.target.value})}
-                        className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-lato focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164]"
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setCharRef({ ...charRef, phone: value });
+                          setRefErrors((prev) => {
+                            const next = { ...prev };
+                            if (!value.trim() || /^\+234\d{10}$/.test(value.trim()) || /^0\d{10}$/.test(value.trim())) {
+                              delete next.character_referrer_phone;
+                            }
+                            return next;
+                          });
+                        }}
+                        data-field="character_referrer_phone"
+                        className={`w-full px-3 py-2.5 border rounded-lg text-sm font-lato focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] ${refErrors.character_referrer_phone ? 'border-red-300' : 'border-gray-200'}`}
                       />
+                      {refErrors.character_referrer_phone && <p className="text-xs text-red-500 mt-0.5 font-lato">{refErrors.character_referrer_phone}</p>}
                       <input 
                         placeholder="Email *" 
                         value={charRef.email} 
-                        onChange={(e) => setCharRef({...charRef, email: e.target.value})}
-                        className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-lato focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164]"
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setCharRef({ ...charRef, email: value });
+                          setRefErrors((prev) => {
+                            const next = { ...prev };
+                            if (!value.trim()) {
+                              next.character_referrer_email = 'Character referee email is required';
+                            } else if (!isValidEmailFormat(value)) {
+                              next.character_referrer_email = 'Enter a valid email address';
+                            } else {
+                              delete next.character_referrer_email;
+                            }
+                            return next;
+                          });
+                        }}
+                        data-field="character_referrer_email"
+                        className={`w-full px-3 py-2.5 border rounded-lg text-sm font-lato focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] ${refErrors.character_referrer_email ? 'border-red-300' : 'border-gray-200'}`}
                       />
+                      {refErrors.character_referrer_email && <p className="text-xs text-red-500 mt-0.5 font-lato">{refErrors.character_referrer_email}</p>}
                       <input 
                         placeholder="Relationship *" 
                         value={charRef.relationship} 
-                        onChange={(e) => setCharRef({...charRef, relationship: e.target.value})}
-                        className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-lato focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164]"
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setCharRef({ ...charRef, relationship: value });
+                          setRefErrors((prev) => {
+                            const next = { ...prev };
+                            if (value.trim()) delete next.character_referrer_relationship;
+                            return next;
+                          });
+                        }}
+                        data-field="character_referrer_relationship"
+                        className={`w-full px-3 py-2.5 border rounded-lg text-sm font-lato focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164] ${refErrors.character_referrer_relationship ? 'border-red-300' : 'border-gray-200'}`}
                       />
+                      {refErrors.character_referrer_relationship && <p className="text-xs text-red-500 mt-0.5 font-lato">{refErrors.character_referrer_relationship}</p>}
                     </div>
                   </div>
                 </div>
