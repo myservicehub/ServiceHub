@@ -152,6 +152,12 @@ export const adminVerificationAPI = {
     });
     return response.data;
   },
+  async getRejectedTradespeopleVerifications(skip = 0, limit = 20) {
+    const response = await apiClient.get(`/admin/tradespeople-verifications/rejected?skip=${skip}&limit=${limit}`, {
+      timeout: 45000
+    });
+    return response.data;
+  },
   async approveTradespeopleVerification(verificationId, adminNotes = '') {
     const formData = new FormData();
     formData.append('admin_notes', adminNotes);

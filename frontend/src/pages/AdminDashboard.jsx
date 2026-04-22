@@ -33,6 +33,7 @@ const AdminDashboard = () => {
   const [jobs, setJobs] = useState([]);
   const [verifications, setVerifications] = useState([]);
   const [tradespeopleVerifications, setTradespeopleVerifications] = useState([]);
+  const [rejectedTradespeopleVerifications, setRejectedTradespeopleVerifications] = useState([]);
   const [verificationDocBase64, setVerificationDocBase64] = useState({});
   const [users, setUsers] = useState([]);
   const [usersPage, setUsersPage] = useState(1);
@@ -495,8 +496,12 @@ const AdminDashboard = () => {
           setActiveTab('stats');
           return;
         }
-        const data = await adminVerificationAPI.getPendingTradespeopleVerifications();
-        setTradespeopleVerifications(data.verifications || []);
+        const [pendingData, rejectedData] = await Promise.all([
+          adminVerificationAPI.getPendingTradespeopleVerifications(),
+          adminVerificationAPI.getRejectedTradespeopleVerifications(),
+        ]);
+        setTradespeopleVerifications(pendingData.verifications || []);
+        setRejectedTradespeopleVerifications(rejectedData.verifications || []);
       } else if (activeTab === 'users') {
         const skip = (usersPage - 1) * usersLimit;
         const [userData, tradesData] = await Promise.all([
@@ -632,7 +637,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (!isLoggedIn || activeTab !== 'tradespeople_verification') return;
     const filenames = new Set();
-    tradespeopleVerifications.forEach((v) => {
+    [...tradespeopleVerifications, ...rejectedTradespeopleVerifications].forEach((v) => {
       if (Array.isArray(v.work_photos)) v.work_photos.forEach((f) => f && filenames.add(f));
       if (v.documents) Object.values(v.documents).forEach((f) => f && filenames.add(f));
     });
@@ -659,7 +664,7 @@ const AdminDashboard = () => {
     };
 
     fetchFiles();
-  }, [isLoggedIn, activeTab, tradespeopleVerifications]); // Removed verificationFileBase64 to avoid loops
+  }, [isLoggedIn, activeTab, tradespeopleVerifications, rejectedTradespeopleVerifications]); // Removed verificationFileBase64 to avoid loops
 
   const openVerificationFileInNewTab = async (filename) => {
     try {
@@ -2662,10 +2667,18 @@ const AdminDashboard = () => {
                         </div>
                       ))}
                     </div>
-                  ) : tradespeopleVerifications.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">No pending tradespeople verifications</div>
+                  ) : (tradespeopleVerifications.length === 0 && rejectedTradespeopleVerifications.length === 0) ? (
+                    <div className="text-center py-8 text-gray-500">No tradespeople verifications found</div>
                   ) : (
                     <div className="space-y-4">
+                      <h3 className="text-base font-semibold text-gray-800">
+                        Pending Verifications ({tradespeopleVerifications.length})
+                      </h3>
+                      {tradespeopleVerifications.length === 0 && (
+                        <div className="text-sm text-gray-500 bg-gray-50 border border-gray-100 rounded-lg p-4">
+                          No pending tradespeople verifications.
+                        </div>
+                      )}
                       {tradespeopleVerifications.map((v) => (
                         <div key={v.id} className="bg-gray-50 p-6 rounded-lg">
                           <div className="grid md:grid-cols-2 gap-6">
@@ -2786,6 +2799,111 @@ const AdminDashboard = () => {
                           </div>
                         </div>
                       ))}
+
+                      <div className="pt-2" />
+                      <h3 className="text-base font-semibold text-red-700">
+                        Rejected Verifications ({rejectedTradespeopleVerifications.length})
+                      </h3>
+                      {rejectedTradespeopleVerifications.length === 0 ? (
+                        <div className="text-sm text-gray-500 bg-gray-50 border border-gray-100 rounded-lg p-4">
+                          No rejected tradespeople verifications.
+                        </div>
+                      ) : (
+                        rejectedTradespeopleVerifications.map((v) => {
+                          const rejectedBy = v.rejected_by_admin || {};
+                          const rejectedByLabel =
+                            rejectedBy.full_name ||
+                            rejectedBy.username ||
+                            rejectedBy.email ||
+                            rejectedBy.id ||
+                            'Unknown admin';
+                          return (
+                            <div key={`rejected-${v.id}`} className="bg-red-50 p-6 rounded-lg border border-red-100">
+                              <div className="grid md:grid-cols-2 gap-6">
+                                <div>
+                                  <h3 className="font-semibold text-gray-800 mb-2">
+                                    {v.user_name} ({v.user_email})
+                                  </h3>
+                                  <div className="text-xs text-gray-400 mb-2">ID: {v.user_short_id || v.user_public_id || v.user_id}</div>
+                                  <div className="text-sm text-gray-700 space-y-1">
+                                    <p><strong>Submitted:</strong> {formatDate(v.submitted_at)}</p>
+                                    <p><strong>Rejected At:</strong> {formatDate(v.rejected_at || v.updated_at)}</p>
+                                    <p><strong>Rejected By:</strong> {rejectedByLabel}</p>
+                                    {rejectedBy.email && <p><strong>Admin Email:</strong> {rejectedBy.email}</p>}
+                                    <div className="mt-3 p-3 rounded bg-white border border-red-100">
+                                      <p className="text-xs font-semibold text-red-700 mb-1">Rejection Reason</p>
+                                      <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                                        {v.rejection_reason || v.admin_notes || 'No rejection note provided'}
+                                      </p>
+                                    </div>
+                                    <div className="mt-3">
+                                      <h4 className="font-semibold">Work Referrer</h4>
+                                      <p>Name: {v.work_referrer?.name}</p>
+                                      <p>Phone: {v.work_referrer?.phone}</p>
+                                      <p>Company Email: {v.work_referrer?.company_email}</p>
+                                      <p>Company: {v.work_referrer?.company_name}</p>
+                                      <p>Relationship: {v.work_referrer?.relationship}</p>
+                                    </div>
+                                    <div className="mt-3">
+                                      <h4 className="font-semibold">Character Referrer</h4>
+                                      <p>Name: {v.character_referrer?.name}</p>
+                                      <p>Phone: {v.character_referrer?.phone}</p>
+                                      <p>Email: {v.character_referrer?.email}</p>
+                                      <p>Relationship: {v.character_referrer?.relationship}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div>
+                                  {Array.isArray(v.work_photos) && v.work_photos.length > 0 && (
+                                    <div className="mb-4">
+                                      <p className="text-sm text-gray-600 mb-2">Recent Work Photos:</p>
+                                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                        {v.work_photos.map((photo, idx) => (
+                                          verificationFileBase64[photo] ? (
+                                            <img
+                                              key={`${photo}-${idx}`}
+                                              src={verificationFileBase64[photo]}
+                                              alt={`Work photo ${idx + 1}`}
+                                              className="h-28 w-full object-cover rounded border cursor-pointer hover:shadow-lg transition-shadow"
+                                              onClick={() => openVerificationFileInNewTab(photo)}
+                                            />
+                                          ) : (
+                                            <div
+                                              key={`${photo}-${idx}`}
+                                              className="h-28 w-full bg-gray-100 rounded border flex items-center justify-center text-xs text-gray-500"
+                                            >
+                                              Loading…
+                                            </div>
+                                          )
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                  {v.documents && Object.keys(v.documents).length > 0 && (
+                                    <div className="mb-4">
+                                      <p className="text-sm text-gray-600 mb-2">Submitted Documents:</p>
+                                      <div className="flex flex-wrap gap-2">
+                                        {Object.entries(v.documents).map(([label, filename]) => (
+                                          filename ? (
+                                            <button
+                                              key={label}
+                                              type="button"
+                                              onClick={() => openVerificationFileInNewTab(filename)}
+                                              className="text-blue-600 hover:text-blue-700 text-sm underline"
+                                            >
+                                              {label.replace(/_/g, ' ')}
+                                            </button>
+                                          ) : null
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
                     </div>
                   )}
                 </div>
