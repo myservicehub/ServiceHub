@@ -158,6 +158,12 @@ export const adminVerificationAPI = {
     });
     return response.data;
   },
+  async getApprovedTradespeopleVerifications(skip = 0, limit = 20) {
+    const response = await apiClient.get(`/admin/tradespeople-verifications/approved?skip=${skip}&limit=${limit}`, {
+      timeout: 45000
+    });
+    return response.data;
+  },
   async approveTradespeopleVerification(verificationId, adminNotes = '') {
     const formData = new FormData();
     formData.append('admin_notes', adminNotes);

@@ -2474,6 +2474,12 @@ async def get_rejected_tradespeople_verifications(skip: int = 0, limit: int = 20
     items = await database.get_rejected_tradespeople_verifications(skip=skip, limit=limit)
     return {"verifications": items, "pagination": {"skip": skip, "limit": limit, "total": len(items)}}
 
+@router.get("/tradespeople-verifications/approved")
+async def get_approved_tradespeople_verifications(skip: int = 0, limit: int = 20, admin: dict = Depends(require_permission(AdminPermission.VERIFY_USERS))):
+    """List approved tradespeople references verifications with approval metadata."""
+    items = await database.get_approved_tradespeople_verifications(skip=skip, limit=limit)
+    return {"verifications": items, "pagination": {"skip": skip, "limit": limit, "total": len(items)}}
+
 @router.post("/tradespeople-verifications/{verification_id}/approve")
 async def approve_tradespeople_verification(verification_id: str, admin_notes: str = Form(""), admin: dict = Depends(require_permission(AdminPermission.VERIFY_USERS))):
     """Approve tradesperson references verification"""

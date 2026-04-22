@@ -34,6 +34,8 @@ const AdminDashboard = () => {
   const [verifications, setVerifications] = useState([]);
   const [tradespeopleVerifications, setTradespeopleVerifications] = useState([]);
   const [rejectedTradespeopleVerifications, setRejectedTradespeopleVerifications] = useState([]);
+  const [approvedTradespeopleVerifications, setApprovedTradespeopleVerifications] = useState([]);
+  const [tradespeopleVerificationSubTab, setTradespeopleVerificationSubTab] = useState('pending');
   const [verificationDocBase64, setVerificationDocBase64] = useState({});
   const [users, setUsers] = useState([]);
   const [usersPage, setUsersPage] = useState(1);
@@ -496,12 +498,14 @@ const AdminDashboard = () => {
           setActiveTab('stats');
           return;
         }
-        const [pendingData, rejectedData] = await Promise.all([
+        const [pendingData, rejectedData, approvedData] = await Promise.all([
           adminVerificationAPI.getPendingTradespeopleVerifications(),
           adminVerificationAPI.getRejectedTradespeopleVerifications(),
+          adminVerificationAPI.getApprovedTradespeopleVerifications(),
         ]);
         setTradespeopleVerifications(pendingData.verifications || []);
         setRejectedTradespeopleVerifications(rejectedData.verifications || []);
+        setApprovedTradespeopleVerifications(approvedData.verifications || []);
       } else if (activeTab === 'users') {
         const skip = (usersPage - 1) * usersLimit;
         const [userData, tradesData] = await Promise.all([
@@ -637,7 +641,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (!isLoggedIn || activeTab !== 'tradespeople_verification') return;
     const filenames = new Set();
-    [...tradespeopleVerifications, ...rejectedTradespeopleVerifications].forEach((v) => {
+    tradespeopleVerifications.forEach((v) => {
       if (Array.isArray(v.work_photos)) v.work_photos.forEach((f) => f && filenames.add(f));
       if (v.documents) Object.values(v.documents).forEach((f) => f && filenames.add(f));
     });
@@ -664,7 +668,7 @@ const AdminDashboard = () => {
     };
 
     fetchFiles();
-  }, [isLoggedIn, activeTab, tradespeopleVerifications, rejectedTradespeopleVerifications]); // Removed verificationFileBase64 to avoid loops
+  }, [isLoggedIn, activeTab, tradespeopleVerifications]); // Removed verificationFileBase64 to avoid loops
 
   const openVerificationFileInNewTab = async (filename) => {
     try {
@@ -2657,185 +2661,51 @@ const AdminDashboard = () => {
                     <h2 className="text-xl font-semibold">Tradespeople account verification</h2>
                     <button onClick={fetchData} className="text-blue-600 hover:text-blue-700">Refresh</button>
                   </div>
-
-                  {loading ? (
-                    <div className="space-y-4">
-                      {[...Array(3)].map((_, i) => (
-                        <div key={i} className="bg-gray-50 p-4 rounded-lg animate-pulse">
-                          <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
-                          <div className="h-3 bg-gray-200 rounded w-1/4"></div>
-                        </div>
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="flex gap-3 mb-5">
+                      {[
+                        { id: 'pending', label: `Pending (${tradespeopleVerifications.length})` },
+                        { id: 'rejected', label: `Rejected (${rejectedTradespeopleVerifications.length})` },
+                        { id: 'approved', label: `Approved (${approvedTradespeopleVerifications.length})` },
+                      ].map((subTab) => (
+                        <button
+                          key={subTab.id}
+                          onClick={() => setTradespeopleVerificationSubTab(subTab.id)}
+                          className={`py-2 px-4 rounded-lg font-medium text-sm transition-colors ${
+                            tradespeopleVerificationSubTab === subTab.id
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-white text-gray-600 hover:bg-gray-100'
+                          }`}
+                        >
+                          {subTab.label}
+                        </button>
                       ))}
                     </div>
-                  ) : (tradespeopleVerifications.length === 0 && rejectedTradespeopleVerifications.length === 0) ? (
-                    <div className="text-center py-8 text-gray-500">No tradespeople verifications found</div>
-                  ) : (
-                    <div className="space-y-4">
-                      <h3 className="text-base font-semibold text-gray-800">
-                        Pending Verifications ({tradespeopleVerifications.length})
-                      </h3>
-                      {tradespeopleVerifications.length === 0 && (
-                        <div className="text-sm text-gray-500 bg-gray-50 border border-gray-100 rounded-lg p-4">
-                          No pending tradespeople verifications.
-                        </div>
-                      )}
-                      {tradespeopleVerifications.map((v) => (
-                        <div key={v.id} className="bg-gray-50 p-6 rounded-lg">
-                          <div className="grid md:grid-cols-2 gap-6">
-                            <div>
-                              <h3 className="font-semibold text-gray-800 mb-2">
-                                {v.user_name} ({v.user_email})
-                              </h3>
-                              <div className="text-xs text-gray-400 mb-2">ID: {v.user_short_id || v.user_public_id || v.user_id}</div>
-                              <div className="text-sm text-gray-600 space-y-1">
-                                <p><strong>Submitted:</strong> {formatDate(v.submitted_at)}</p>
-                                <div className="mt-3">
-                                  <h4 className="font-semibold">Work Referrer</h4>
-                                  <p>Name: {v.work_referrer?.name}</p>
-                                  <p>Phone: {v.work_referrer?.phone}</p>
-                                  <p>Company Email: {v.work_referrer?.company_email}</p>
-                                  <p>Company: {v.work_referrer?.company_name}</p>
-                                  <p>Relationship: {v.work_referrer?.relationship}</p>
-                                </div>
-                                <div className="mt-3">
-                                  <h4 className="font-semibold">Character Referrer</h4>
-                                  <p>Name: {v.character_referrer?.name}</p>
-                                  <p>Phone: {v.character_referrer?.phone}</p>
-                                  <p>Email: {v.character_referrer?.email}</p>
-                                  <p>Relationship: {v.character_referrer?.relationship}</p>
-                                </div>
-                                {(v.business_type || v.residential_address || v.company_address) && (
-                                  <div className="mt-3">
-                                    <h4 className="font-semibold">Business Details</h4>
-                                    {v.business_type && (<p>Type: {v.business_type}</p>)}
-                                    {v.residential_address && (<p>Residential Address: {v.residential_address}</p>)}
-                                    {v.company_address && (<p>Company Address: {v.company_address}</p>)}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                            <div>
-                              {/* Uploaded work photos */}
-                              {Array.isArray(v.work_photos) && v.work_photos.length > 0 && (
-                                <div className="mb-4">
-                                  <p className="text-sm text-gray-600 mb-2">Recent Work Photos:</p>
-                                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                    {v.work_photos.map((photo, idx) => (
-                                      verificationFileBase64[photo] ? (
-                                        <img
-                                          key={`${photo}-${idx}`}
-                                          src={verificationFileBase64[photo]}
-                                          alt={`Work photo ${idx + 1}`}
-                                          className="h-28 w-full object-cover rounded border cursor-pointer hover:shadow-lg transition-shadow"
-                                          onClick={() => openVerificationFileInNewTab(photo)}
-                                        />
-                                      ) : (
-                                        <div
-                                          key={`${photo}-${idx}`}
-                                          className="h-28 w-full bg-gray-100 rounded border flex items-center justify-center text-xs text-gray-500"
-                                        >
-                                          Loading…
-                                        </div>
-                                      )
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
 
-                              {/* Submitted documents */}
-                              {v.documents && Object.keys(v.documents).length > 0 && (
-                                <div className="mb-4">
-                                  <p className="text-sm text-gray-600 mb-2">Submitted Documents:</p>
-                                  <div className="flex flex-wrap gap-2">
-                                    {Object.entries(v.documents).map(([label, filename]) => (
-                                      filename ? (
-                                        <button
-                                          key={label}
-                                          type="button"
-                                          onClick={() => openVerificationFileInNewTab(filename)}
-                                          className="text-blue-600 hover:text-blue-700 text-sm underline"
-                                        >
-                                          {label.replace(/_/g, ' ')}
-                                        </button>
-                                      ) : null
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-
-                              <div className="flex space-x-2">
-                                <button
-                                  onClick={async () => {
-                                    try {
-                                      await adminVerificationAPI.approveTradespeopleVerification(v.id);
-                                      toast({ title: 'Verification approved' });
-                                      fetchData();
-                                    } catch (e) {
-                                      toast({ title: 'Approve failed', variant: 'destructive' });
-                                    }
-                                  }}
-                                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm"
-                                >
-                                  Approve
-                                </button>
-                                <button
-                                  onClick={async () => {
-                                    const notes = prompt('Enter rejection notes');
-                                    if (!notes) return;
-                                    try {
-                                      await adminVerificationAPI.rejectTradespeopleVerification(v.id, notes);
-                                      toast({ title: 'Verification rejected' });
-                                      fetchData();
-                                    } catch (e) {
-                                      toast({ title: 'Reject failed', variant: 'destructive' });
-                                    }
-                                  }}
-                                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm"
-                                >
-                                  Reject
-                                </button>
-                              </div>
-                            </div>
+                    {loading ? (
+                      <div className="space-y-4">
+                        {[...Array(3)].map((_, i) => (
+                          <div key={i} className="bg-white p-4 rounded-lg animate-pulse">
+                            <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
+                            <div className="h-3 bg-gray-200 rounded w-1/4"></div>
                           </div>
-                        </div>
-                      ))}
-
-                      <div className="pt-2" />
-                      <h3 className="text-base font-semibold text-red-700">
-                        Rejected Verifications ({rejectedTradespeopleVerifications.length})
-                      </h3>
-                      {rejectedTradespeopleVerifications.length === 0 ? (
-                        <div className="text-sm text-gray-500 bg-gray-50 border border-gray-100 rounded-lg p-4">
-                          No rejected tradespeople verifications.
-                        </div>
+                        ))}
+                      </div>
+                    ) : tradespeopleVerificationSubTab === 'pending' ? (
+                      tradespeopleVerifications.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500">No pending tradespeople verifications</div>
                       ) : (
-                        rejectedTradespeopleVerifications.map((v) => {
-                          const rejectedBy = v.rejected_by_admin || {};
-                          const rejectedByLabel =
-                            rejectedBy.full_name ||
-                            rejectedBy.username ||
-                            rejectedBy.email ||
-                            rejectedBy.id ||
-                            'Unknown admin';
-                          return (
-                            <div key={`rejected-${v.id}`} className="bg-red-50 p-6 rounded-lg border border-red-100">
+                        <div className="space-y-4">
+                          {tradespeopleVerifications.map((v) => (
+                            <div key={v.id} className="bg-white p-6 rounded-lg">
                               <div className="grid md:grid-cols-2 gap-6">
                                 <div>
                                   <h3 className="font-semibold text-gray-800 mb-2">
                                     {v.user_name} ({v.user_email})
                                   </h3>
                                   <div className="text-xs text-gray-400 mb-2">ID: {v.user_short_id || v.user_public_id || v.user_id}</div>
-                                  <div className="text-sm text-gray-700 space-y-1">
+                                  <div className="text-sm text-gray-600 space-y-1">
                                     <p><strong>Submitted:</strong> {formatDate(v.submitted_at)}</p>
-                                    <p><strong>Rejected At:</strong> {formatDate(v.rejected_at || v.updated_at)}</p>
-                                    <p><strong>Rejected By:</strong> {rejectedByLabel}</p>
-                                    {rejectedBy.email && <p><strong>Admin Email:</strong> {rejectedBy.email}</p>}
-                                    <div className="mt-3 p-3 rounded bg-white border border-red-100">
-                                      <p className="text-xs font-semibold text-red-700 mb-1">Rejection Reason</p>
-                                      <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                                        {v.rejection_reason || v.admin_notes || 'No rejection note provided'}
-                                      </p>
-                                    </div>
                                     <div className="mt-3">
                                       <h4 className="font-semibold">Work Referrer</h4>
                                       <p>Name: {v.work_referrer?.name}</p>
@@ -2851,6 +2721,14 @@ const AdminDashboard = () => {
                                       <p>Email: {v.character_referrer?.email}</p>
                                       <p>Relationship: {v.character_referrer?.relationship}</p>
                                     </div>
+                                    {(v.business_type || v.residential_address || v.company_address) && (
+                                      <div className="mt-3">
+                                        <h4 className="font-semibold">Business Details</h4>
+                                        {v.business_type && (<p>Type: {v.business_type}</p>)}
+                                        {v.residential_address && (<p>Residential Address: {v.residential_address}</p>)}
+                                        {v.company_address && (<p>Company Address: {v.company_address}</p>)}
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                                 <div>
@@ -2879,6 +2757,7 @@ const AdminDashboard = () => {
                                       </div>
                                     </div>
                                   )}
+
                                   {v.documents && Object.keys(v.documents).length > 0 && (
                                     <div className="mb-4">
                                       <p className="text-sm text-gray-600 mb-2">Submitted Documents:</p>
@@ -2898,14 +2777,107 @@ const AdminDashboard = () => {
                                       </div>
                                     </div>
                                   )}
+
+                                  <div className="flex space-x-2">
+                                    <button
+                                      onClick={async () => {
+                                        try {
+                                          await adminVerificationAPI.approveTradespeopleVerification(v.id);
+                                          toast({ title: 'Verification approved' });
+                                          fetchData();
+                                        } catch (e) {
+                                          toast({ title: 'Approve failed', variant: 'destructive' });
+                                        }
+                                      }}
+                                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm"
+                                    >
+                                      Approve
+                                    </button>
+                                    <button
+                                      onClick={async () => {
+                                        const notes = prompt('Enter rejection notes');
+                                        if (!notes) return;
+                                        try {
+                                          await adminVerificationAPI.rejectTradespeopleVerification(v.id, notes);
+                                          toast({ title: 'Verification rejected' });
+                                          fetchData();
+                                        } catch (e) {
+                                          toast({ title: 'Reject failed', variant: 'destructive' });
+                                        }
+                                      }}
+                                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm"
+                                    >
+                                      Reject
+                                    </button>
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          );
-                        })
-                      )}
-                    </div>
-                  )}
+                          ))}
+                        </div>
+                      )
+                    ) : tradespeopleVerificationSubTab === 'rejected' ? (
+                      rejectedTradespeopleVerifications.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500">No rejected tradespeople verifications</div>
+                      ) : (
+                        <div className="space-y-4">
+                          {rejectedTradespeopleVerifications.map((v) => {
+                            const rejectedBy = v.rejected_by_admin || {};
+                            const rejectedByLabel = rejectedBy.full_name || rejectedBy.username || rejectedBy.email || rejectedBy.id || 'Unknown admin';
+                            return (
+                              <div key={`rejected-${v.id}`} className="bg-white border border-red-100 p-6 rounded-lg">
+                                <h3 className="font-semibold text-gray-800 mb-1">{v.user_name} ({v.user_email})</h3>
+                                <div className="text-xs text-gray-400 mb-3">ID: {v.user_short_id || v.user_public_id || v.user_id}</div>
+                                <div className="text-sm text-gray-700 space-y-1">
+                                  <p><strong>Submitted:</strong> {formatDate(v.submitted_at)}</p>
+                                  <p><strong>Rejected At:</strong> {formatDate(v.rejected_at || v.updated_at)}</p>
+                                  <p><strong>Rejected By:</strong> {rejectedByLabel}</p>
+                                  {rejectedBy.email && <p><strong>Admin Email:</strong> {rejectedBy.email}</p>}
+                                </div>
+                                <div className="mt-3 p-3 rounded bg-red-50 border border-red-100">
+                                  <p className="text-xs font-semibold text-red-700 mb-1">Rejection Reason</p>
+                                  <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                                    {v.rejection_reason || v.admin_notes || 'No rejection note provided'}
+                                  </p>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )
+                    ) : (
+                      approvedTradespeopleVerifications.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500">No approved tradespeople verifications</div>
+                      ) : (
+                        <div className="space-y-4">
+                          {approvedTradespeopleVerifications.map((v) => {
+                            const approvedBy = v.approved_by_admin || {};
+                            const approvedByLabel = approvedBy.full_name || approvedBy.username || approvedBy.email || approvedBy.id || 'Unknown admin';
+                            return (
+                              <div key={`approved-${v.id}`} className="bg-white border border-green-100 p-6 rounded-lg">
+                                <h3 className="font-semibold text-gray-800 mb-1">{v.user_name} ({v.user_email})</h3>
+                                <div className="text-xs text-gray-400 mb-3">ID: {v.user_short_id || v.user_public_id || v.user_id}</div>
+                                <div className="text-sm text-gray-700 space-y-1">
+                                  <p><strong>Submitted:</strong> {formatDate(v.submitted_at)}</p>
+                                  <p><strong>Approved At:</strong> {formatDate(v.approved_at || v.updated_at)}</p>
+                                  <p><strong>Approved By:</strong> {approvedByLabel}</p>
+                                  {approvedBy.email && <p><strong>Admin Email:</strong> {approvedBy.email}</p>}
+                                </div>
+                                {!!(v.approval_note || v.admin_notes) && (
+                                  <div className="mt-3 p-3 rounded bg-green-50 border border-green-100">
+                                    <p className="text-xs font-semibold text-green-700 mb-1">Approval Note</p>
+                                    <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                                      {v.approval_note || v.admin_notes}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )
+                    )}
+                  </div>
                 </div>
               )}
 

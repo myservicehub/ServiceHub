@@ -5184,6 +5184,78 @@ class Database:
 
         return verifications
 
+    @time_it
+    async def get_approved_tradespeople_verifications(self, skip: int = 0, limit: int = 20) -> List[dict]:
+        """Get approved tradespeople verifications for admin review.
+        Returns the latest approved verification per user with approving admin metadata.
+        """
+        pipeline = [
+            {"$match": {"status": "verified"}},
+            {"$sort": {"verified_at": -1, "updated_at": -1, "submitted_at": -1}},
+            {"$group": {
+                "_id": "$user_id",
+                "doc": {"$first": "$$ROOT"}
+            }},
+            {"$replaceRoot": {"newRoot": "$doc"}},
+            {"$sort": {"verified_at": -1, "updated_at": -1, "submitted_at": -1}},
+            {"$skip": skip},
+            {"$limit": limit}
+        ]
+
+        verifications = await self.tradespeople_verifications_collection.aggregate(pipeline).to_list(length=limit)
+        if not verifications:
+            return []
+
+        user_ids: List[str] = []
+        admin_ids: List[str] = []
+        for v in verifications:
+            v["_id"] = str(v["_id"])
+            if v.get("user_id"):
+                user_ids.append(v["user_id"])
+            if v.get("verified_by"):
+                admin_ids.append(v["verified_by"])
+
+        user_map = {}
+        if user_ids:
+            users_list = await self.database.users.find({"id": {"$in": user_ids}}).to_list(length=len(user_ids))
+            user_map = {u["id"]: u for u in users_list if "id" in u}
+
+        admin_map = {}
+        if admin_ids:
+            admins_list = await self.database.admins.find({"id": {"$in": admin_ids}}).to_list(length=len(admin_ids))
+            admin_map = {a["id"]: a for a in admins_list if "id" in a}
+
+        for v in verifications:
+            user = user_map.get(v.get("user_id"))
+            if user:
+                v["user_name"] = user.get("name")
+                v["user_email"] = user.get("email")
+                v["user_phone"] = user.get("phone")
+                v["user_public_id"] = user.get("public_id")
+                v["user_short_id"] = user.get("user_id")
+
+            verifier_id = v.get("verified_by")
+            verifier = admin_map.get(verifier_id)
+            if verifier:
+                v["approved_by_admin"] = {
+                    "id": verifier.get("id"),
+                    "username": verifier.get("username"),
+                    "full_name": verifier.get("full_name"),
+                    "email": verifier.get("email"),
+                }
+            else:
+                v["approved_by_admin"] = {
+                    "id": verifier_id,
+                    "username": None,
+                    "full_name": None,
+                    "email": None,
+                }
+
+            v["approval_note"] = (v.get("admin_notes") or "").strip()
+            v["approved_at"] = v.get("verified_at") or v.get("updated_at")
+
+        return verifications
+
     async def has_tradesperson_references(self, user_id: str) -> bool:
         if self.database is None:
             return False
