@@ -154,13 +154,13 @@ export const adminVerificationAPI = {
   },
   async getRejectedTradespeopleVerifications(skip = 0, limit = 20) {
     const response = await apiClient.get(`/admin/tradespeople-verifications/rejected?skip=${skip}&limit=${limit}`, {
-      timeout: 45000
+      timeout: 12000
     });
     return response.data;
   },
   async getApprovedTradespeopleVerifications(skip = 0, limit = 20) {
     const response = await apiClient.get(`/admin/tradespeople-verifications/approved?skip=${skip}&limit=${limit}`, {
-      timeout: 45000
+      timeout: 12000
     });
     return response.data;
   },

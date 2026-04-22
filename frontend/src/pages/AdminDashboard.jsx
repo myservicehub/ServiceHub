@@ -36,6 +36,7 @@ const AdminDashboard = () => {
   const [rejectedTradespeopleVerifications, setRejectedTradespeopleVerifications] = useState([]);
   const [approvedTradespeopleVerifications, setApprovedTradespeopleVerifications] = useState([]);
   const [tradespeopleVerificationSubTab, setTradespeopleVerificationSubTab] = useState('pending');
+  const [tradespeopleVerificationMetaLoading, setTradespeopleVerificationMetaLoading] = useState(false);
   const [verificationDocBase64, setVerificationDocBase64] = useState({});
   const [users, setUsers] = useState([]);
   const [usersPage, setUsersPage] = useState(1);
@@ -498,23 +499,27 @@ const AdminDashboard = () => {
           setActiveTab('stats');
           return;
         }
-        const [pendingResult, rejectedResult, approvedResult] = await Promise.allSettled([
-          adminVerificationAPI.getPendingTradespeopleVerifications(),
+        // Load pending first so the tab is responsive immediately.
+        const pendingData = await adminVerificationAPI.getPendingTradespeopleVerifications();
+        setTradespeopleVerifications(pendingData.verifications || []);
+
+        // Load rejected/approved in the background (non-blocking).
+        setTradespeopleVerificationMetaLoading(true);
+        Promise.allSettled([
           adminVerificationAPI.getRejectedTradespeopleVerifications(),
           adminVerificationAPI.getApprovedTradespeopleVerifications(),
-        ]);
-
-        const pendingData = pendingResult.status === 'fulfilled' ? pendingResult.value : { verifications: [] };
-        const rejectedData = rejectedResult.status === 'fulfilled' ? rejectedResult.value : { verifications: [] };
-        const approvedData = approvedResult.status === 'fulfilled' ? approvedResult.value : { verifications: [] };
-
-        setTradespeopleVerifications(pendingData.verifications || []);
-        setRejectedTradespeopleVerifications(rejectedData.verifications || []);
-        setApprovedTradespeopleVerifications(approvedData.verifications || []);
-
-        if (pendingResult.status === 'rejected') {
-          throw pendingResult.reason;
-        }
+        ])
+          .then(([rejectedResult, approvedResult]) => {
+            if (rejectedResult.status === 'fulfilled') {
+              setRejectedTradespeopleVerifications(rejectedResult.value?.verifications || []);
+            }
+            if (approvedResult.status === 'fulfilled') {
+              setApprovedTradespeopleVerifications(approvedResult.value?.verifications || []);
+            }
+          })
+          .finally(() => {
+            setTradespeopleVerificationMetaLoading(false);
+          });
       } else if (activeTab === 'users') {
         const skip = (usersPage - 1) * usersLimit;
         const [userData, tradesData] = await Promise.all([
@@ -2674,8 +2679,8 @@ const AdminDashboard = () => {
                     <div className="flex gap-3 mb-5">
                       {[
                         { id: 'pending', label: `Pending (${tradespeopleVerifications.length})` },
-                        { id: 'rejected', label: `Rejected (${rejectedTradespeopleVerifications.length})` },
-                        { id: 'approved', label: `Approved (${approvedTradespeopleVerifications.length})` },
+                        { id: 'rejected', label: `Rejected (${tradespeopleVerificationMetaLoading ? '...' : rejectedTradespeopleVerifications.length})` },
+                        { id: 'approved', label: `Approved (${tradespeopleVerificationMetaLoading ? '...' : approvedTradespeopleVerifications.length})` },
                       ].map((subTab) => (
                         <button
                           key={subTab.id}
