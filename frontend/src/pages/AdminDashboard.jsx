@@ -498,14 +498,23 @@ const AdminDashboard = () => {
           setActiveTab('stats');
           return;
         }
-        const [pendingData, rejectedData, approvedData] = await Promise.all([
+        const [pendingResult, rejectedResult, approvedResult] = await Promise.allSettled([
           adminVerificationAPI.getPendingTradespeopleVerifications(),
           adminVerificationAPI.getRejectedTradespeopleVerifications(),
           adminVerificationAPI.getApprovedTradespeopleVerifications(),
         ]);
+
+        const pendingData = pendingResult.status === 'fulfilled' ? pendingResult.value : { verifications: [] };
+        const rejectedData = rejectedResult.status === 'fulfilled' ? rejectedResult.value : { verifications: [] };
+        const approvedData = approvedResult.status === 'fulfilled' ? approvedResult.value : { verifications: [] };
+
         setTradespeopleVerifications(pendingData.verifications || []);
         setRejectedTradespeopleVerifications(rejectedData.verifications || []);
         setApprovedTradespeopleVerifications(approvedData.verifications || []);
+
+        if (pendingResult.status === 'rejected') {
+          throw pendingResult.reason;
+        }
       } else if (activeTab === 'users') {
         const skip = (usersPage - 1) * usersLimit;
         const [userData, tradesData] = await Promise.all([
