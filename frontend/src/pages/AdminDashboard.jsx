@@ -37,6 +37,8 @@ const AdminDashboard = () => {
   const [approvedTradespeopleVerifications, setApprovedTradespeopleVerifications] = useState([]);
   const [tradespeopleVerificationSubTab, setTradespeopleVerificationSubTab] = useState('pending');
   const [tradespeopleVerificationMetaLoading, setTradespeopleVerificationMetaLoading] = useState(false);
+  const [selectedTradespeopleVerification, setSelectedTradespeopleVerification] = useState(null);
+  const [tradespeopleVerificationModalOpen, setTradespeopleVerificationModalOpen] = useState(false);
   const [verificationDocBase64, setVerificationDocBase64] = useState({});
   const [users, setUsers] = useState([]);
   const [usersPage, setUsersPage] = useState(1);
@@ -699,6 +701,31 @@ const AdminDashboard = () => {
     }
   };
 
+  const openTradespeopleVerificationModal = async (verification) => {
+    setSelectedTradespeopleVerification(verification);
+    setTradespeopleVerificationModalOpen(true);
+
+    const filenames = [];
+    if (Array.isArray(verification?.work_photos)) {
+      filenames.push(...verification.work_photos.filter(Boolean));
+    }
+    if (verification?.documents && typeof verification.documents === 'object') {
+      filenames.push(...Object.values(verification.documents).filter(Boolean));
+    }
+    const uniqueFilenames = Array.from(new Set(filenames)).filter((filename) => !verificationFileBase64[filename]);
+    if (uniqueFilenames.length === 0) return;
+
+    await Promise.all(uniqueFilenames.map(async (filename) => {
+      try {
+        const dataUrl = await getTradespeopleVerificationFileBase64(filename);
+        setVerificationFileBase64((prev) => ({ ...prev, [filename]: dataUrl }));
+      } catch (err) {
+        console.error('Failed to fetch verification file', filename, err);
+        setVerificationFileBase64((prev) => ({ ...prev, [filename]: 'FAILED' }));
+      }
+    }));
+  };
+
   // User Management Handlers
   const handleViewUserDetails = async (user) => {
     try {
@@ -1029,6 +1056,19 @@ const AdminDashboard = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const getTradespeopleVerificationStatus = (item) => {
+    if (!item) return 'pending';
+    if (item.status === 'verified') return 'approved';
+    if (item.status === 'rejected') return 'rejected';
+    return 'pending';
+  };
+
+  const getStatusPillClass = (status) => {
+    if (status === 'approved') return 'bg-green-50 text-green-700 border border-green-200';
+    if (status === 'rejected') return 'bg-red-50 text-red-700 border border-red-200';
+    return 'bg-yellow-50 text-yellow-700 border border-yellow-200';
   };
 
   const handleLocationDataLoad = async () => {
@@ -2678,6 +2718,10 @@ const AdminDashboard = () => {
                   <div className="bg-gray-50 rounded-lg p-4">
                     <div className="flex gap-3 mb-5">
                       {[
+                        {
+                          id: 'all',
+                          label: `All (${tradespeopleVerifications.length + rejectedTradespeopleVerifications.length + approvedTradespeopleVerifications.length})`
+                        },
                         { id: 'pending', label: `Pending (${tradespeopleVerifications.length})` },
                         { id: 'rejected', label: `Rejected (${tradespeopleVerificationMetaLoading ? '...' : rejectedTradespeopleVerifications.length})` },
                         { id: 'approved', label: `Approved (${tradespeopleVerificationMetaLoading ? '...' : approvedTradespeopleVerifications.length})` },
@@ -2696,201 +2740,85 @@ const AdminDashboard = () => {
                       ))}
                     </div>
 
-                    {loading ? (
-                      <div className="space-y-4">
-                        {[...Array(3)].map((_, i) => (
-                          <div key={i} className="bg-white p-4 rounded-lg animate-pulse">
-                            <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
-                            <div className="h-3 bg-gray-200 rounded w-1/4"></div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : tradespeopleVerificationSubTab === 'pending' ? (
-                      tradespeopleVerifications.length === 0 ? (
-                        <div className="text-center py-8 text-gray-500">No pending tradespeople verifications</div>
-                      ) : (
+                    {(() => {
+                      const combinedRows = [
+                        ...tradespeopleVerifications,
+                        ...rejectedTradespeopleVerifications,
+                        ...approvedTradespeopleVerifications,
+                      ].sort((a, b) => new Date(b.submitted_at || b.updated_at || 0) - new Date(a.submitted_at || a.updated_at || 0));
+
+                      const rows = tradespeopleVerificationSubTab === 'all'
+                        ? combinedRows
+                        : tradespeopleVerificationSubTab === 'pending'
+                          ? tradespeopleVerifications
+                          : tradespeopleVerificationSubTab === 'rejected'
+                            ? rejectedTradespeopleVerifications
+                            : approvedTradespeopleVerifications;
+
+                      return loading ? (
                         <div className="space-y-4">
-                          {tradespeopleVerifications.map((v) => (
-                            <div key={v.id} className="bg-white p-6 rounded-lg">
-                              <div className="grid md:grid-cols-2 gap-6">
-                                <div>
-                                  <h3 className="font-semibold text-gray-800 mb-2">
-                                    {v.user_name} ({v.user_email})
-                                  </h3>
-                                  <div className="text-xs text-gray-400 mb-2">ID: {v.user_short_id || v.user_public_id || v.user_id}</div>
-                                  <div className="text-sm text-gray-600 space-y-1">
-                                    <p><strong>Submitted:</strong> {formatDate(v.submitted_at)}</p>
-                                    <div className="mt-3">
-                                      <h4 className="font-semibold">Work Referrer</h4>
-                                      <p>Name: {v.work_referrer?.name}</p>
-                                      <p>Phone: {v.work_referrer?.phone}</p>
-                                      <p>Company Email: {v.work_referrer?.company_email}</p>
-                                      <p>Company: {v.work_referrer?.company_name}</p>
-                                      <p>Relationship: {v.work_referrer?.relationship}</p>
-                                    </div>
-                                    <div className="mt-3">
-                                      <h4 className="font-semibold">Character Referrer</h4>
-                                      <p>Name: {v.character_referrer?.name}</p>
-                                      <p>Phone: {v.character_referrer?.phone}</p>
-                                      <p>Email: {v.character_referrer?.email}</p>
-                                      <p>Relationship: {v.character_referrer?.relationship}</p>
-                                    </div>
-                                    {(v.business_type || v.residential_address || v.company_address) && (
-                                      <div className="mt-3">
-                                        <h4 className="font-semibold">Business Details</h4>
-                                        {v.business_type && (<p>Type: {v.business_type}</p>)}
-                                        {v.residential_address && (<p>Residential Address: {v.residential_address}</p>)}
-                                        {v.company_address && (<p>Company Address: {v.company_address}</p>)}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                                <div>
-                                  {Array.isArray(v.work_photos) && v.work_photos.length > 0 && (
-                                    <div className="mb-4">
-                                      <p className="text-sm text-gray-600 mb-2">Recent Work Photos:</p>
-                                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                        {v.work_photos.map((photo, idx) => (
-                                          verificationFileBase64[photo] ? (
-                                            <img
-                                              key={`${photo}-${idx}`}
-                                              src={verificationFileBase64[photo]}
-                                              alt={`Work photo ${idx + 1}`}
-                                              className="h-28 w-full object-cover rounded border cursor-pointer hover:shadow-lg transition-shadow"
-                                              onClick={() => openVerificationFileInNewTab(photo)}
-                                            />
-                                          ) : (
-                                            <div
-                                              key={`${photo}-${idx}`}
-                                              className="h-28 w-full bg-gray-100 rounded border flex items-center justify-center text-xs text-gray-500"
-                                            >
-                                              Loading…
-                                            </div>
-                                          )
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {v.documents && Object.keys(v.documents).length > 0 && (
-                                    <div className="mb-4">
-                                      <p className="text-sm text-gray-600 mb-2">Submitted Documents:</p>
-                                      <div className="flex flex-wrap gap-2">
-                                        {Object.entries(v.documents).map(([label, filename]) => (
-                                          filename ? (
-                                            <button
-                                              key={label}
-                                              type="button"
-                                              onClick={() => openVerificationFileInNewTab(filename)}
-                                              className="text-blue-600 hover:text-blue-700 text-sm underline"
-                                            >
-                                              {label.replace(/_/g, ' ')}
-                                            </button>
-                                          ) : null
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  <div className="flex space-x-2">
-                                    <button
-                                      onClick={async () => {
-                                        try {
-                                          await adminVerificationAPI.approveTradespeopleVerification(v.id);
-                                          toast({ title: 'Verification approved' });
-                                          fetchData();
-                                        } catch (e) {
-                                          toast({ title: 'Approve failed', variant: 'destructive' });
-                                        }
-                                      }}
-                                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm"
-                                    >
-                                      Approve
-                                    </button>
-                                    <button
-                                      onClick={async () => {
-                                        const notes = prompt('Enter rejection notes');
-                                        if (!notes) return;
-                                        try {
-                                          await adminVerificationAPI.rejectTradespeopleVerification(v.id, notes);
-                                          toast({ title: 'Verification rejected' });
-                                          fetchData();
-                                        } catch (e) {
-                                          toast({ title: 'Reject failed', variant: 'destructive' });
-                                        }
-                                      }}
-                                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm"
-                                    >
-                                      Reject
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
+                          {[...Array(3)].map((_, i) => (
+                            <div key={i} className="bg-white p-4 rounded-lg animate-pulse">
+                              <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
+                              <div className="h-3 bg-gray-200 rounded w-1/4"></div>
                             </div>
                           ))}
                         </div>
-                      )
-                    ) : tradespeopleVerificationSubTab === 'rejected' ? (
-                      rejectedTradespeopleVerifications.length === 0 ? (
-                        <div className="text-center py-8 text-gray-500">No rejected tradespeople verifications</div>
+                      ) : rows.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500">No tradespeople verifications</div>
                       ) : (
-                        <div className="space-y-4">
-                          {rejectedTradespeopleVerifications.map((v) => {
-                            const rejectedBy = v.rejected_by_admin || {};
-                            const rejectedByLabel = rejectedBy.full_name || rejectedBy.username || rejectedBy.email || rejectedBy.id || 'Unknown admin';
-                            return (
-                              <div key={`rejected-${v.id}`} className="bg-white border border-red-100 p-6 rounded-lg">
-                                <h3 className="font-semibold text-gray-800 mb-1">{v.user_name} ({v.user_email})</h3>
-                                <div className="text-xs text-gray-400 mb-3">ID: {v.user_short_id || v.user_public_id || v.user_id}</div>
-                                <div className="text-sm text-gray-700 space-y-1">
-                                  <p><strong>Submitted:</strong> {formatDate(v.submitted_at)}</p>
-                                  <p><strong>Rejected At:</strong> {formatDate(v.rejected_at || v.updated_at)}</p>
-                                  <p><strong>Rejected By:</strong> {rejectedByLabel}</p>
-                                  {rejectedBy.email && <p><strong>Admin Email:</strong> {rejectedBy.email}</p>}
-                                </div>
-                                <div className="mt-3 p-3 rounded bg-red-50 border border-red-100">
-                                  <p className="text-xs font-semibold text-red-700 mb-1">Rejection Reason</p>
-                                  <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                                    {v.rejection_reason || v.admin_notes || 'No rejection note provided'}
-                                  </p>
-                                </div>
-                              </div>
-                            );
-                          })}
+                        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+                          <table className="min-w-full text-sm">
+                            <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+                              <tr>
+                                <th className="px-4 py-3 text-left">ID</th>
+                                <th className="px-4 py-3 text-left">Applicant</th>
+                                <th className="px-4 py-3 text-left">Email</th>
+                                <th className="px-4 py-3 text-left">Submitted</th>
+                                <th className="px-4 py-3 text-left">Reviewed By</th>
+                                <th className="px-4 py-3 text-left">Status</th>
+                                <th className="px-4 py-3 text-right">Action</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                              {rows.map((v) => {
+                                const status = getTradespeopleVerificationStatus(v);
+                                const reviewer = status === 'approved'
+                                  ? (v.approved_by_admin?.full_name || v.approved_by_admin?.username || v.approved_by_admin?.email || v.approved_by_admin?.id || '—')
+                                  : status === 'rejected'
+                                    ? (v.rejected_by_admin?.full_name || v.rejected_by_admin?.username || v.rejected_by_admin?.email || v.rejected_by_admin?.id || '—')
+                                    : '—';
+                                return (
+                                  <tr key={`${status}-${v.id}`} className="hover:bg-gray-50/70">
+                                    <td className="px-4 py-3 font-medium text-gray-700">#{v.user_short_id || v.user_public_id || v.id?.slice?.(0, 6) || 'N/A'}</td>
+                                    <td className="px-4 py-3">
+                                      <div className="font-medium text-gray-900 truncate max-w-[240px]">{v.user_name || 'Unknown user'}</div>
+                                    </td>
+                                    <td className="px-4 py-3 text-blue-600">{v.user_email || '—'}</td>
+                                    <td className="px-4 py-3 text-gray-700">{formatDate(v.submitted_at || v.updated_at)}</td>
+                                    <td className="px-4 py-3 text-gray-700">{reviewer}</td>
+                                    <td className="px-4 py-3">
+                                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${getStatusPillClass(status)}`}>
+                                        {status}
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-3 text-right">
+                                      <button
+                                        type="button"
+                                        onClick={() => openTradespeopleVerificationModal(v)}
+                                        className="bg-black hover:bg-gray-800 text-white px-3 py-1.5 rounded-lg text-xs font-semibold"
+                                      >
+                                        View
+                                      </button>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
                         </div>
-                      )
-                    ) : (
-                      approvedTradespeopleVerifications.length === 0 ? (
-                        <div className="text-center py-8 text-gray-500">No approved tradespeople verifications</div>
-                      ) : (
-                        <div className="space-y-4">
-                          {approvedTradespeopleVerifications.map((v) => {
-                            const approvedBy = v.approved_by_admin || {};
-                            const approvedByLabel = approvedBy.full_name || approvedBy.username || approvedBy.email || approvedBy.id || 'Unknown admin';
-                            return (
-                              <div key={`approved-${v.id}`} className="bg-white border border-green-100 p-6 rounded-lg">
-                                <h3 className="font-semibold text-gray-800 mb-1">{v.user_name} ({v.user_email})</h3>
-                                <div className="text-xs text-gray-400 mb-3">ID: {v.user_short_id || v.user_public_id || v.user_id}</div>
-                                <div className="text-sm text-gray-700 space-y-1">
-                                  <p><strong>Submitted:</strong> {formatDate(v.submitted_at)}</p>
-                                  <p><strong>Approved At:</strong> {formatDate(v.approved_at || v.updated_at)}</p>
-                                  <p><strong>Approved By:</strong> {approvedByLabel}</p>
-                                  {approvedBy.email && <p><strong>Admin Email:</strong> {approvedBy.email}</p>}
-                                </div>
-                                {!!(v.approval_note || v.admin_notes) && (
-                                  <div className="mt-3 p-3 rounded bg-green-50 border border-green-100">
-                                    <p className="text-xs font-semibold text-green-700 mb-1">Approval Note</p>
-                                    <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                                      {v.approval_note || v.admin_notes}
-                                    </p>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )
-                    )}
+                      );
+                    })()}
                   </div>
                 </div>
               )}
@@ -5475,6 +5403,170 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
+
+      <Dialog open={tradespeopleVerificationModalOpen} onOpenChange={setTradespeopleVerificationModalOpen}>
+        <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-y-auto">
+          {selectedTradespeopleVerification && (
+            <div className="space-y-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {selectedTradespeopleVerification.user_name || 'Unknown user'}
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    {selectedTradespeopleVerification.user_email || 'No email'}
+                  </p>
+                </div>
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${getStatusPillClass(getTradespeopleVerificationStatus(selectedTradespeopleVerification))}`}>
+                  {getTradespeopleVerificationStatus(selectedTradespeopleVerification)}
+                </span>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4 text-sm">
+                <div className="border rounded-lg p-3 bg-gray-50">
+                  <p className="text-xs uppercase tracking-wide text-gray-500 mb-2">Submission details</p>
+                  <p><strong>Applicant ID:</strong> #{selectedTradespeopleVerification.user_short_id || selectedTradespeopleVerification.user_public_id || selectedTradespeopleVerification.id?.slice?.(0, 6) || 'N/A'}</p>
+                  <p><strong>Submitted:</strong> {formatDate(selectedTradespeopleVerification.submitted_at || selectedTradespeopleVerification.updated_at)}</p>
+                </div>
+                <div className="border rounded-lg p-3 bg-gray-50">
+                  <p className="text-xs uppercase tracking-wide text-gray-500 mb-2">Review details</p>
+                  <p>
+                    <strong>Reviewed By:</strong> {
+                      getTradespeopleVerificationStatus(selectedTradespeopleVerification) === 'approved'
+                        ? (selectedTradespeopleVerification.approved_by_admin?.full_name || selectedTradespeopleVerification.approved_by_admin?.username || selectedTradespeopleVerification.approved_by_admin?.email || '—')
+                        : getTradespeopleVerificationStatus(selectedTradespeopleVerification) === 'rejected'
+                          ? (selectedTradespeopleVerification.rejected_by_admin?.full_name || selectedTradespeopleVerification.rejected_by_admin?.username || selectedTradespeopleVerification.rejected_by_admin?.email || '—')
+                          : '—'
+                    }
+                  </p>
+                  {getTradespeopleVerificationStatus(selectedTradespeopleVerification) === 'rejected' && (
+                    <p><strong>Reason:</strong> {selectedTradespeopleVerification.rejection_reason || selectedTradespeopleVerification.admin_notes || 'No rejection note'}</p>
+                  )}
+                  {getTradespeopleVerificationStatus(selectedTradespeopleVerification) === 'approved' && !!(selectedTradespeopleVerification.approval_note || selectedTradespeopleVerification.admin_notes) && (
+                    <p><strong>Note:</strong> {selectedTradespeopleVerification.approval_note || selectedTradespeopleVerification.admin_notes}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4 text-sm">
+                <div className="border rounded-lg p-3">
+                  <p className="text-xs uppercase tracking-wide text-gray-500 mb-2">Work Referrer</p>
+                  <p><strong>Name:</strong> {selectedTradespeopleVerification.work_referrer?.name || '—'}</p>
+                  <p><strong>Phone:</strong> {selectedTradespeopleVerification.work_referrer?.phone || '—'}</p>
+                  <p><strong>Email:</strong> {selectedTradespeopleVerification.work_referrer?.company_email || '—'}</p>
+                  <p><strong>Company:</strong> {selectedTradespeopleVerification.work_referrer?.company_name || '—'}</p>
+                  <p><strong>Relationship:</strong> {selectedTradespeopleVerification.work_referrer?.relationship || '—'}</p>
+                </div>
+                <div className="border rounded-lg p-3">
+                  <p className="text-xs uppercase tracking-wide text-gray-500 mb-2">Character Referrer</p>
+                  <p><strong>Name:</strong> {selectedTradespeopleVerification.character_referrer?.name || '—'}</p>
+                  <p><strong>Phone:</strong> {selectedTradespeopleVerification.character_referrer?.phone || '—'}</p>
+                  <p><strong>Email:</strong> {selectedTradespeopleVerification.character_referrer?.email || '—'}</p>
+                  <p><strong>Relationship:</strong> {selectedTradespeopleVerification.character_referrer?.relationship || '—'}</p>
+                </div>
+              </div>
+
+              {(selectedTradespeopleVerification.business_type || selectedTradespeopleVerification.residential_address || selectedTradespeopleVerification.company_address) && (
+                <div className="border rounded-lg p-3 text-sm">
+                  <p className="text-xs uppercase tracking-wide text-gray-500 mb-2">Business Details</p>
+                  {selectedTradespeopleVerification.business_type && <p><strong>Type:</strong> {selectedTradespeopleVerification.business_type}</p>}
+                  {selectedTradespeopleVerification.residential_address && <p><strong>Residential Address:</strong> {selectedTradespeopleVerification.residential_address}</p>}
+                  {selectedTradespeopleVerification.company_address && <p><strong>Company Address:</strong> {selectedTradespeopleVerification.company_address}</p>}
+                </div>
+              )}
+
+              {Array.isArray(selectedTradespeopleVerification.work_photos) && selectedTradespeopleVerification.work_photos.length > 0 && (
+                <div className="border rounded-lg p-3">
+                  <p className="text-xs uppercase tracking-wide text-gray-500 mb-2">Recent Work Photos</p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {selectedTradespeopleVerification.work_photos.map((photo, idx) => {
+                      const imageSrc = verificationFileBase64[photo];
+                      if (!imageSrc || imageSrc === 'FAILED') {
+                        return (
+                          <div
+                            key={`${photo}-${idx}`}
+                            className="h-28 w-full bg-gray-100 rounded border flex items-center justify-center text-xs text-gray-500"
+                          >
+                            {imageSrc === 'FAILED' ? 'Failed to load' : 'Loading...'}
+                          </div>
+                        );
+                      }
+                      return (
+                        <img
+                          key={`${photo}-${idx}`}
+                          src={imageSrc}
+                          alt={`Work photo ${idx + 1}`}
+                          className="h-28 w-full object-cover rounded border cursor-pointer hover:shadow-lg transition-shadow"
+                          onClick={() => openVerificationFileInNewTab(photo)}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {selectedTradespeopleVerification.documents && Object.keys(selectedTradespeopleVerification.documents).length > 0 && (
+                <div className="border rounded-lg p-3">
+                  <p className="text-xs uppercase tracking-wide text-gray-500 mb-2">Submitted Documents</p>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(selectedTradespeopleVerification.documents).map(([label, filename]) => (
+                      filename ? (
+                        <button
+                          key={label}
+                          type="button"
+                          onClick={() => openVerificationFileInNewTab(filename)}
+                          className="text-blue-600 hover:text-blue-700 text-sm underline"
+                        >
+                          {label.replace(/_/g, ' ')}
+                        </button>
+                      ) : null
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {getTradespeopleVerificationStatus(selectedTradespeopleVerification) === 'pending' && (
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        await adminVerificationAPI.approveTradespeopleVerification(selectedTradespeopleVerification.id);
+                        toast({ title: 'Verification approved' });
+                        setTradespeopleVerificationModalOpen(false);
+                        fetchData();
+                      } catch (e) {
+                        toast({ title: 'Approve failed', variant: 'destructive' });
+                      }
+                    }}
+                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm"
+                  >
+                    Approve
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const notes = prompt('Enter rejection notes');
+                      if (!notes) return;
+                      try {
+                        await adminVerificationAPI.rejectTradespeopleVerification(selectedTradespeopleVerification.id, notes);
+                        toast({ title: 'Verification rejected' });
+                        setTradespeopleVerificationModalOpen(false);
+                        fetchData();
+                      } catch (e) {
+                        toast({ title: 'Reject failed', variant: 'destructive' });
+                      }
+                    }}
+                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm"
+                  >
+                    Reject
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Edit Item Modal */}
       {editingItem && (
