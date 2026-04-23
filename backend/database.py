@@ -5100,17 +5100,20 @@ class Database:
             users_list = await self.database.users.find({"id": {"$in": user_ids}}).to_list(length=len(user_ids))
             user_map = {u["id"]: u for u in users_list if "id" in u}
 
-        # Attach user metadata
+        # Attach user metadata and hide orphaned/deleted accounts
+        visible_verifications: List[dict] = []
         for v in verifications:
             user = user_map.get(v.get("user_id"))
-            if user:
-                v["user_name"] = user.get("name")
-                v["user_email"] = user.get("email")
-                v["user_phone"] = user.get("phone")
-                v["user_public_id"] = user.get("public_id")
-                v["user_short_id"] = user.get("user_id")
-                
-        return verifications
+            if not user or str(user.get("status", "")).lower() == "deleted":
+                continue
+            v["user_name"] = user.get("name")
+            v["user_email"] = user.get("email")
+            v["user_phone"] = user.get("phone")
+            v["user_public_id"] = user.get("public_id")
+            v["user_short_id"] = user.get("user_id")
+            visible_verifications.append(v)
+
+        return visible_verifications
 
     @time_it
     async def get_rejected_tradespeople_verifications(self, skip: int = 0, limit: int = 20) -> List[dict]:
@@ -5153,14 +5156,16 @@ class Database:
             admins_list = await self.database.admins.find({"id": {"$in": admin_ids}}).to_list(length=len(admin_ids))
             admin_map = {a["id"]: a for a in admins_list if "id" in a}
 
+        visible_verifications: List[dict] = []
         for v in verifications:
             user = user_map.get(v.get("user_id"))
-            if user:
-                v["user_name"] = user.get("name")
-                v["user_email"] = user.get("email")
-                v["user_phone"] = user.get("phone")
-                v["user_public_id"] = user.get("public_id")
-                v["user_short_id"] = user.get("user_id")
+            if not user or str(user.get("status", "")).lower() == "deleted":
+                continue
+            v["user_name"] = user.get("name")
+            v["user_email"] = user.get("email")
+            v["user_phone"] = user.get("phone")
+            v["user_public_id"] = user.get("public_id")
+            v["user_short_id"] = user.get("user_id")
 
             verifier_id = v.get("verified_by")
             verifier = admin_map.get(verifier_id)
@@ -5181,8 +5186,9 @@ class Database:
 
             v["rejection_reason"] = (v.get("admin_notes") or "").strip()
             v["rejected_at"] = v.get("verified_at") or v.get("updated_at")
+            visible_verifications.append(v)
 
-        return verifications
+        return visible_verifications
 
     @time_it
     async def get_approved_tradespeople_verifications(self, skip: int = 0, limit: int = 20) -> List[dict]:
@@ -5225,14 +5231,16 @@ class Database:
             admins_list = await self.database.admins.find({"id": {"$in": admin_ids}}).to_list(length=len(admin_ids))
             admin_map = {a["id"]: a for a in admins_list if "id" in a}
 
+        visible_verifications: List[dict] = []
         for v in verifications:
             user = user_map.get(v.get("user_id"))
-            if user:
-                v["user_name"] = user.get("name")
-                v["user_email"] = user.get("email")
-                v["user_phone"] = user.get("phone")
-                v["user_public_id"] = user.get("public_id")
-                v["user_short_id"] = user.get("user_id")
+            if not user or str(user.get("status", "")).lower() == "deleted":
+                continue
+            v["user_name"] = user.get("name")
+            v["user_email"] = user.get("email")
+            v["user_phone"] = user.get("phone")
+            v["user_public_id"] = user.get("public_id")
+            v["user_short_id"] = user.get("user_id")
 
             verifier_id = v.get("verified_by")
             verifier = admin_map.get(verifier_id)
@@ -5253,8 +5261,9 @@ class Database:
 
             v["approval_note"] = (v.get("admin_notes") or "").strip()
             v["approved_at"] = v.get("verified_at") or v.get("updated_at")
+            visible_verifications.append(v)
 
-        return verifications
+        return visible_verifications
 
     async def has_tradesperson_references(self, user_id: str) -> bool:
         if self.database is None:
