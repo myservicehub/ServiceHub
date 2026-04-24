@@ -39,6 +39,8 @@ const AdminDashboard = () => {
   const [tradespeopleVerificationMetaLoading, setTradespeopleVerificationMetaLoading] = useState(false);
   const [selectedTradespeopleVerification, setSelectedTradespeopleVerification] = useState(null);
   const [tradespeopleVerificationModalOpen, setTradespeopleVerificationModalOpen] = useState(false);
+  const [selectedIdVerification, setSelectedIdVerification] = useState(null);
+  const [idVerificationModalOpen, setIdVerificationModalOpen] = useState(false);
   const [verificationDocBase64, setVerificationDocBase64] = useState({});
   const [users, setUsers] = useState([]);
   const [usersPage, setUsersPage] = useState(1);
@@ -86,7 +88,6 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [editingJob, setEditingJob] = useState(null);
-  const [selectedVerification, setSelectedVerification] = useState(null);
   const [verificationFileBase64, setVerificationFileBase64] = useState({});
   const [verificationViewerOpen, setVerificationViewerOpen] = useState(false);
   const [verificationViewerSrc, setVerificationViewerSrc] = useState('');
@@ -699,6 +700,26 @@ const AdminDashboard = () => {
       console.error('Failed to open verification file', filename, err);
       toast({ title: 'Failed to open file', variant: 'destructive' });
     }
+  };
+
+  const openIdVerificationModal = async (verification) => {
+    setSelectedIdVerification(verification);
+    setIdVerificationModalOpen(true);
+
+    const filenames = [verification?.document_url, verification?.selfie_url].filter(Boolean);
+    const pending = filenames.filter((fn) => !verificationDocBase64[fn]);
+    if (pending.length === 0) return;
+
+    await Promise.all(pending.map(async (filename) => {
+      try {
+        const dataUrl = await adminReferralsAPI.getVerificationDocumentBase64(filename);
+        if (dataUrl) {
+          setVerificationDocBase64((prev) => ({ ...prev, [filename]: dataUrl }));
+        }
+      } catch {
+        // keep modal usable even if one image fails
+      }
+    }));
   };
 
   const openTradespeopleVerificationModal = async (verification) => {
@@ -2611,7 +2632,7 @@ const AdminDashboard = () => {
                   {loading ? (
                     <div className="space-y-4">
                       {[...Array(3)].map((_, i) => (
-                        <div key={i} className="bg-gray-50 p-4 rounded-lg animate-pulse">
+                        <div key={i} className="bg-white p-4 rounded-lg animate-pulse">
                           <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
                           <div className="h-3 bg-gray-200 rounded w-1/4"></div>
                         </div>
@@ -2622,87 +2643,57 @@ const AdminDashboard = () => {
                       No pending verifications
                     </div>
                   ) : (
-                    <div className="space-y-4">
-                      {verifications.map((verification) => (
-                        <div key={verification.id} className="bg-gray-50 p-6 rounded-lg">
-                          <div className="grid md:grid-cols-2 gap-6">
-                            <div>
-                              <h3 className="font-semibold text-gray-800 mb-2">
-                                {verification.user_name} ({verification.user_email})
-                              </h3>
-                              <div className="text-xs text-gray-400 mb-2">ID: {verification.user_short_id || verification.user_public_id || verification.user_id}</div>
-                              <div className="space-y-1 text-sm text-gray-600">
-                                <p><strong>Role:</strong> {verification.user_role}</p>
-                                <p><strong>Document Type:</strong> {verification.document_type.replace('_', ' ').toUpperCase()}</p>
-                                <p><strong>Full Name:</strong> {verification.full_name}</p>
-                                {verification.document_number && (
-                                  <p><strong>Document Number:</strong> {verification.document_number}</p>
-                                )}
-                                <p><strong>Submitted:</strong> {formatDate(verification.submitted_at)}</p>
-                              </div>
-                            </div>
-                            
-                              <div>
-                              {verification.document_url && (
-                                <div className="mb-4">
-                                  <p className="text-sm text-gray-600 mb-2">Document Image:</p>
-                                  {verificationDocBase64[verification.document_url] ? (
-                                    <img
-                                      src={verificationDocBase64[verification.document_url]}
-                                      alt="Document"
-                                      className="h-32 w-auto rounded border cursor-pointer hover:shadow-lg transition-shadow"
-                                      onClick={() => {
-                                        setVerificationViewerSrc(verificationDocBase64[verification.document_url]);
-                                        setVerificationViewerOpen(true);
-                                      }}
-                                    />
-                                  ) : (
-                                    <div className="h-32 w-full bg-gray-100 rounded border flex items-center justify-center text-xs text-gray-500">
-                                      Loading…
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-
-                              {verification.selfie_url && (
-                                <div className="mb-4">
-                                  <p className="text-sm text-gray-600 mb-2">Selfie Image:</p>
-                                  {verificationDocBase64[verification.selfie_url] ? (
-                                    <img
-                                      src={verificationDocBase64[verification.selfie_url]}
-                                      alt="Selfie"
-                                      className="h-32 w-auto rounded border cursor-pointer hover:shadow-lg transition-shadow"
-                                      onClick={() => {
-                                        setVerificationViewerSrc(verificationDocBase64[verification.selfie_url]);
-                                        setVerificationViewerOpen(true);
-                                      }}
-                                    />
-                                  ) : (
-                                    <div className="h-32 w-full bg-gray-100 rounded border flex items-center justify-center text-xs text-gray-500">
-                                      Loading…
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                              
-                              <div className="flex space-x-2">
+                    <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+                      <table className="min-w-full text-sm">
+                        <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+                          <tr>
+                            <th className="px-4 py-3 text-left">ID</th>
+                            <th className="px-4 py-3 text-left">Applicant</th>
+                            <th className="px-4 py-3 text-left">Email</th>
+                            <th className="px-4 py-3 text-left">Role</th>
+                            <th className="px-4 py-3 text-left">Doc Type</th>
+                            <th className="px-4 py-3 text-left">Submitted</th>
+                            <th className="px-4 py-3 text-left">Status</th>
+                            <th className="px-4 py-3 text-right">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {verifications.map((verification) => (
+                            <tr key={verification.id} className="hover:bg-gray-50/70">
+                              <td className="px-4 py-3 font-medium text-gray-700">#{verification.user_short_id || verification.user_public_id || verification.user_id || verification.id?.slice?.(0, 6) || 'N/A'}</td>
+                              <td className="px-4 py-3">
+                                <div className="font-medium text-gray-900 truncate max-w-[220px]">{verification.user_name || 'Unknown user'}</div>
+                              </td>
+                              <td className="px-4 py-3 text-blue-600">{verification.user_email || '—'}</td>
+                              <td className="px-4 py-3">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                  {verification.user_role || 'user'}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
+                                  {String(verification.document_type || 'document').replace('_', ' ')}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-gray-700">{formatDate(verification.submitted_at)}</td>
+                              <td className="px-4 py-3">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-50 text-yellow-700 border border-yellow-200">
+                                  Pending
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-right">
                                 <button
-                                  onClick={() => handleApproveVerification(verification.id)}
-                                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm"
+                                  type="button"
+                                  onClick={() => openIdVerificationModal(verification)}
+                                  className="bg-black hover:bg-gray-800 text-white px-3 py-1.5 rounded-lg text-xs font-semibold"
                                 >
-                                  Approve
+                                  View
                                 </button>
-                                <button
-                                  onClick={() => setSelectedVerification(verification)}
-                                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm"
-                                >
-                                  Reject
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   )}
                 </div>
@@ -5366,43 +5357,129 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Reject Verification Modal */}
-      {selectedVerification && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4">Reject ID Verification</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              User: {selectedVerification.user_name} ({selectedVerification.user_email})
-              <br />
-              Document: {selectedVerification.document_type.replace('_', ' ').toUpperCase()}
-            </p>
-            <textarea
-              placeholder="Reason for rejection (required)"
-              className="w-full p-3 border rounded-lg mb-4"
-              rows="3"
-              id="verification-rejection-notes"
-            />
-            <div className="flex space-x-3">
-              <button
-                onClick={() => setSelectedVerification(null)}
-                className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  const notes = document.getElementById('verification-rejection-notes').value;
-                  handleRejectVerification(selectedVerification.id, notes);
-                  setSelectedVerification(null);
-                }}
-                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
-              >
-                Reject
-              </button>
+      <Dialog open={idVerificationModalOpen} onOpenChange={setIdVerificationModalOpen}>
+        <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-y-auto">
+          {selectedIdVerification && (
+            <div className="space-y-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {selectedIdVerification.user_name || 'Unknown user'}
+                  </h3>
+                  <p className="text-sm text-blue-600">{selectedIdVerification.user_email || 'No email'}</p>
+                </div>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-50 text-yellow-700 border border-yellow-200">
+                  Pending
+                </span>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">Applicant ID</p>
+                  <p className="font-medium">#{selectedIdVerification.user_short_id || selectedIdVerification.user_public_id || selectedIdVerification.user_id || selectedIdVerification.id?.slice?.(0, 6) || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">Role</p>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">
+                    {selectedIdVerification.user_role || 'user'}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">Document Type</p>
+                  <p className="font-medium">{String(selectedIdVerification.document_type || 'document').replace('_', ' ')}</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">Full Name On Document</p>
+                  <p className="font-medium">{selectedIdVerification.full_name || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">Submitted</p>
+                  <p className="font-medium">{formatDate(selectedIdVerification.submitted_at)}</p>
+                </div>
+                {selectedIdVerification.document_number && (
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">Document Number</p>
+                    <p className="font-medium">{selectedIdVerification.document_number}</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t pt-4">
+                <p className="text-xs uppercase tracking-wide text-gray-500 mb-3">Submitted Images</p>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="border rounded-lg p-3 bg-gray-50">
+                    <p className="text-xs uppercase tracking-wide text-gray-500 mb-2">Document Image</p>
+                    {selectedIdVerification.document_url ? (
+                      verificationDocBase64[selectedIdVerification.document_url] ? (
+                        <img
+                          src={verificationDocBase64[selectedIdVerification.document_url]}
+                          alt="Document"
+                          className="h-56 w-full object-contain rounded border bg-white cursor-pointer"
+                          onClick={() => {
+                            setVerificationViewerSrc(verificationDocBase64[selectedIdVerification.document_url]);
+                            setVerificationViewerOpen(true);
+                          }}
+                        />
+                      ) : (
+                        <div className="h-56 w-full bg-white rounded border flex items-center justify-center text-xs text-gray-500">Loading image...</div>
+                      )
+                    ) : (
+                      <div className="h-56 w-full bg-white rounded border flex items-center justify-center text-xs text-gray-400">No image uploaded</div>
+                    )}
+                  </div>
+                  <div className="border rounded-lg p-3 bg-gray-50">
+                    <p className="text-xs uppercase tracking-wide text-gray-500 mb-2">Selfie Image</p>
+                    {selectedIdVerification.selfie_url ? (
+                      verificationDocBase64[selectedIdVerification.selfie_url] ? (
+                        <img
+                          src={verificationDocBase64[selectedIdVerification.selfie_url]}
+                          alt="Selfie"
+                          className="h-56 w-full object-contain rounded border bg-white cursor-pointer"
+                          onClick={() => {
+                            setVerificationViewerSrc(verificationDocBase64[selectedIdVerification.selfie_url]);
+                            setVerificationViewerOpen(true);
+                          }}
+                        />
+                      ) : (
+                        <div className="h-56 w-full bg-white rounded border flex items-center justify-center text-xs text-gray-500">Loading image...</div>
+                      )
+                    ) : (
+                      <div className="h-56 w-full bg-white rounded border flex items-center justify-center text-xs text-gray-400">No image uploaded</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-4 flex gap-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await handleApproveVerification(selectedIdVerification.id);
+                    setIdVerificationModalOpen(false);
+                    setSelectedIdVerification(null);
+                  }}
+                  className="flex-1 px-4 py-2 rounded-lg border border-green-200 bg-green-50 text-green-700 font-medium hover:bg-green-100"
+                >
+                  Approve
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const notes = prompt('Reason for rejection (required):');
+                    if (!notes || !notes.trim()) return;
+                    await handleRejectVerification(selectedIdVerification.id, notes.trim());
+                    setIdVerificationModalOpen(false);
+                    setSelectedIdVerification(null);
+                  }}
+                  className="flex-1 px-4 py-2 rounded-lg border border-red-200 bg-red-50 text-red-700 font-medium hover:bg-red-100"
+                >
+                  Reject
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={tradespeopleVerificationModalOpen} onOpenChange={setTradespeopleVerificationModalOpen}>
         <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-y-auto">
