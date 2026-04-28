@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import TradespersonLayout from '../layouts/TradespersonLayout';
@@ -1327,7 +1328,7 @@ const BrowseJobsPage = () => {
       </section>
 
       {/* Job Details Modal */}
-      {showJobModal && selectedJobDetails && (
+      {showJobModal && selectedJobDetails && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-[100] p-0 sm:p-4">
           <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-4xl w-full h-[100svh] max-h-[100svh] sm:h-auto sm:max-h-[85vh] overflow-hidden flex flex-col shadow-2xl">
             {/* Modal Header - Fixed */}
@@ -1786,7 +1787,7 @@ const BrowseJobsPage = () => {
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
 
       {/* Location Settings Modal */}
       <LocationSettingsModal
