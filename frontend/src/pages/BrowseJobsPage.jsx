@@ -869,7 +869,7 @@ const BrowseJobsPage = () => {
     } catch (_) {}
     setSelectedJobDetails(freshJob);
     
-    // First, check for embedded answers in the job object (fastest, no API call)
+    // First, check for embedded answers in the job object 
     let answers = null;
     const embedded = freshJob.question_answers || 
                      (freshJob.job_details && freshJob.job_details.question_answers) ||
