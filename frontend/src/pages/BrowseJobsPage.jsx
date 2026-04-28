@@ -694,14 +694,14 @@ const BrowseJobsPage = () => {
     }
 
     // Check wallet balance for potential access fee
-    const accessFeeCoins = job.access_fee_coins || 15;
+    const accessFeeCoins = resolveAccessFeeCoins(job);
     if (walletBalance && walletBalance.balance_coins < accessFeeCoins) {
       toast({
         title: "Insufficient wallet balance",
         description: `You need at least ${accessFeeCoins} coins (₦${(accessFeeCoins * 100).toLocaleString()}) to pay for contact details. Please fund your wallet.`,
         variant: "destructive",
       });
-      navigate('/wallet');
+      navigate('/trades/wallet');
       return;
     }
 
@@ -801,6 +801,10 @@ const BrowseJobsPage = () => {
     const nestedCoins = Number(job?.access_fees?.coins);
     if (Number.isFinite(nestedCoins) && nestedCoins > 0) return nestedCoins * 100;
     return 1000;
+  };
+  const resolveAccessFeeCoins = (job) => {
+    const { totalCoins } = computeVatInclusive(resolveAccessFeeNaira(job));
+    return totalCoins;
   };
 
   const TIMELINE_PLACEHOLDERS = new Set(['', 'flexible', 'not specified', 'n/a', 'na', 'none']);
@@ -1325,7 +1329,7 @@ const BrowseJobsPage = () => {
       {/* Job Details Modal */}
       {showJobModal && selectedJobDetails && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-[100] p-0 sm:p-4">
-          <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-4xl w-full h-[90dvh] sm:h-auto sm:max-h-[85vh] overflow-hidden flex flex-col shadow-2xl">
+          <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-4xl w-full h-[100svh] max-h-[100svh] sm:h-auto sm:max-h-[85vh] overflow-hidden flex flex-col shadow-2xl">
             {/* Modal Header - Fixed */}
             <div className="flex-shrink-0 bg-white border-b border-gray-100 p-4 sm:p-6">
               <div className="flex justify-between items-start gap-4">
@@ -1724,7 +1728,7 @@ const BrowseJobsPage = () => {
             </div>
 
             {/* Modal Footer - Fixed */}
-            <div className="flex-shrink-0 border-t border-gray-100 bg-white p-4 sm:p-6 pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-6">
+            <div className="flex-shrink-0 sticky bottom-0 z-10 border-t border-gray-100 bg-white p-4 sm:p-6 pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-6">
               <div className="flex justify-between items-center">
                 <div className="text-sm text-gray-500 font-lato hidden sm:block">
                   Posted {getTimeAgo(selectedJobDetails.created_at)}

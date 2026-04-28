@@ -116,7 +116,7 @@ const MyInterestsPage = () => {
         description: `You need ${feeAmount} coins to access contact details. Please fund your wallet.`,
         variant: "destructive",
       });
-      navigate('/wallet');
+      navigate('/trades/wallet');
       return;
     }
 
