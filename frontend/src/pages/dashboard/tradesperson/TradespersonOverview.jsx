@@ -4,6 +4,7 @@ import { cn } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { jobsAPI } from '../../../api/jobs';
 import { authAPI } from '../../../api/services';
+import { walletAPI } from '../../../api/wallet';
 import {
   Search,
   Heart,
@@ -151,9 +152,17 @@ const TradespersonOverview = () => {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      // Fetch interests/jobs data
-      const response = await jobsAPI.getMyInterests({ limit: 50 });
-      const interests = response?.interests || [];
+      // Fetch interests/jobs data and live wallet balance in parallel
+      const [interestsResponse, walletResponse] = await Promise.all([
+        jobsAPI.getMyInterests({ limit: 50 }),
+        walletAPI.getBalance().catch(() => null),
+      ]);
+      const interests = interestsResponse?.interests || [];
+      const liveWalletNaira = Number(walletResponse?.balance_naira);
+      const liveWalletCoins = Number(walletResponse?.balance_coins);
+      const totalEarnings = Number.isFinite(liveWalletNaira)
+        ? liveWalletNaira
+        : (Number.isFinite(liveWalletCoins) ? liveWalletCoins * 100 : (user?.wallet_balance || 0));
 
       // Calculate stats
       const activeInterests = interests.filter(i => i.status === 'pending' || i.status === 'accepted').length;
@@ -162,7 +171,7 @@ const TradespersonOverview = () => {
       setStats({
         activeInterests,
         completedJobs,
-        totalEarnings: user?.wallet_balance || 0,
+        totalEarnings,
         averageRating: user?.average_rating || 0,
         reviewCount: user?.review_count || 0,
       });
