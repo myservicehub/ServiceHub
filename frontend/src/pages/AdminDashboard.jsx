@@ -6120,6 +6120,16 @@ const AdminDashboard = () => {
                           <span className="text-gray-500">Location:</span>
                           <span className="font-medium">{selectedJobDetails.location}</span>
                         </div>
+                        {(selectedJobDetails.lga || selectedJobDetails.town) && (
+                          <div className="flex justify-between border-b border-gray-200 pb-2">
+                            <span className="text-gray-500">LGA/Town:</span>
+                            <span className="font-medium">
+                              {selectedJobDetails.lga || ''} 
+                              {selectedJobDetails.lga && selectedJobDetails.town ? ' / ' : ''}
+                              {selectedJobDetails.town || ''}
+                            </span>
+                          </div>
+                        )}
                         <div className="flex justify-between border-b border-gray-200 pb-2">
                           <span className="text-gray-500">Status:</span>
                           <span className={`px-2 py-0.5 rounded text-xs font-medium ${getJobStatusColor(selectedJobDetails.status)}`}>
@@ -7361,7 +7371,7 @@ const AdminDashboard = () => {
               </div>
 
               {/* Location Information */}
-              {(selectedUser.state || (selectedUser.lga && selectedUser.lga !== 'Not specified') || selectedUser.location) && (
+              {(selectedUser.state || (selectedUser.lga && selectedUser.lga !== 'Not specified') || selectedUser.location || selectedUser.town) && (
                 <div>
                   <h4 className="text-lg font-medium mb-3 text-gray-800">Location Details</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -7370,6 +7380,9 @@ const AdminDashboard = () => {
                     )}
                     {selectedUser.lga && selectedUser.lga !== 'Not specified' && (
                       <div><strong>LGA:</strong> {selectedUser.lga}</div>
+                    )}
+                    {selectedUser.town && selectedUser.town !== 'Not specified' && (
+                      <div><strong>Town:</strong> {selectedUser.town}</div>
                     )}
                     {selectedUser.postcode && selectedUser.postcode !== '000000' && (
                       <div><strong>Postcode:</strong> {selectedUser.postcode}</div>
