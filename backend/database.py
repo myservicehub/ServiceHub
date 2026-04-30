@@ -5984,6 +5984,10 @@ class Database:
                             "title": job.get("title", ""),
                             "category": job.get("category", ""),
                             "status": job.get("status", ""),
+                            "state": job.get("state", ""),
+                            "lga": job.get("lga", ""),
+                            "town": job.get("town", ""),
+                            "home_address": job.get("home_address", ""),
                             "created_at": job.get("created_at"),
                             "interests_count": counts_map.get(job.get("id"), 0)
                         } for job in recent_jobs_raw

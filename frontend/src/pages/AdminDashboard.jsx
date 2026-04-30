@@ -7371,18 +7371,39 @@ const AdminDashboard = () => {
               </div>
 
               {/* Location Information */}
-              {(selectedUser.state || (selectedUser.lga && selectedUser.lga !== 'Not specified') || selectedUser.location || selectedUser.town) && (
+              {(selectedUser.state || 
+                selectedUser.location || 
+                (selectedUser.lga && selectedUser.lga !== 'Not specified') || 
+                (selectedUser.recent_jobs?.[0]?.lga) ||
+                (selectedUser.town && selectedUser.town !== 'Not specified') ||
+                (selectedUser.recent_jobs?.[0]?.town) ||
+                (selectedUser.address) ||
+                (selectedUser.recent_jobs?.[0]?.home_address)
+              ) && (
                 <div>
                   <h4 className="text-lg font-medium mb-3 text-gray-800">Location Details</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {(selectedUser.state || selectedUser.location) && (
-                      <div><strong>State:</strong> {selectedUser.state || selectedUser.location}</div>
+                    {(selectedUser.state || selectedUser.location || selectedUser.recent_jobs?.[0]?.state) && (
+                      <div><strong>State:</strong> {selectedUser.state || selectedUser.location || selectedUser.recent_jobs?.[0]?.state}</div>
                     )}
-                    {selectedUser.lga && selectedUser.lga !== 'Not specified' && (
-                      <div><strong>LGA:</strong> {selectedUser.lga}</div>
-                    )}
-                    {selectedUser.town && selectedUser.town !== 'Not specified' && (
-                      <div><strong>Town:</strong> {selectedUser.town}</div>
+                    {(() => {
+                      const lga = (selectedUser.lga && selectedUser.lga !== 'Not specified') 
+                        ? selectedUser.lga 
+                        : (selectedUser.recent_jobs?.[0]?.lga);
+                      return lga && lga !== 'Not specified' ? (
+                        <div><strong>LGA:</strong> {lga}</div>
+                      ) : null;
+                    })()}
+                    {(() => {
+                      const town = (selectedUser.town && selectedUser.town !== 'Not specified') 
+                        ? selectedUser.town 
+                        : (selectedUser.recent_jobs?.[0]?.town);
+                      return town && town !== 'Not specified' ? (
+                        <div><strong>Town:</strong> {town}</div>
+                      ) : null;
+                    })()}
+                    {(selectedUser.address || selectedUser.recent_jobs?.[0]?.home_address) && (
+                      <div className="md:col-span-2"><strong>Address:</strong> {selectedUser.address || selectedUser.recent_jobs?.[0]?.home_address}</div>
                     )}
                     {selectedUser.postcode && selectedUser.postcode !== '000000' && (
                       <div><strong>Postcode:</strong> {selectedUser.postcode}</div>
