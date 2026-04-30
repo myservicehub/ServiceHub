@@ -318,6 +318,23 @@ const InterestedTradespeopleePage = () => {
     }
   };
 
+  const handleContactTradesperson = (tradesperson) => {
+    // If contact is already shared or access is paid, start chat
+    if (tradesperson.status === 'contact_shared' || tradesperson.status === 'paid_access') {
+      handleStartChat(tradesperson);
+    } 
+    // If just interested, check if chat is allowed or if they need to share contact
+    else if (tradesperson.status === 'interested') {
+      // Logic from card buttons: homeowners can chat even if just interested 
+      // as long as job is not cancelled/completed
+      if (!isChatDisabled(tradesperson)) {
+        handleStartChat(tradesperson);
+      } else {
+        handleShareContact(tradesperson.interest_id);
+      }
+    }
+  };
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
@@ -382,12 +399,12 @@ const InterestedTradespeopleePage = () => {
     const experienceLevel = getExperienceLevel(tradesperson.experience_years || 0);
     
     return (
-      <Card key={tradesperson.interest_id} className="hover:shadow-lg transition-shadow">
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-6">
-            {/* Profile Image */}
-            <div className="flex-shrink-0">
-              <div className="w-20 h-20 rounded-full bg-gray-200 overflow-hidden">
+      <Card key={tradesperson.interest_id} className="hover:shadow-lg transition-shadow bg-white rounded-2xl border border-gray-100 overflow-hidden">
+        <CardContent className="p-5">
+          <div className="flex items-start gap-4">
+            {/* Initials Avatar */}
+            <div className="relative shrink-0">
+              <div className="w-16 h-16 rounded-2xl bg-[#34D164] flex items-center justify-center overflow-hidden">
                 {tradesperson.profile_image ? (
                   <img
                     src={tradesperson.profile_image}
@@ -395,189 +412,116 @@ const InterestedTradespeopleePage = () => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-400 to-blue-600">
-                    <User size={32} className="text-white" />
-                  </div>
+                  <span className="text-white text-xl font-bold font-montserrat">
+                    {tradesperson.tradesperson_name?.split(' ').map(n => n[0]).join('').toUpperCase()}
+                  </span>
                 )}
+              </div>
+              {/* Conditional Verified Badge */}
+              {(tradesperson.is_verified || tradesperson.verified_tradesperson) && (
+                <div className="absolute -top-1 -right-1 w-5 h-5 bg-[#34D164] rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+                  <CheckCircle size={10} className="text-white" fill="white" />
+                </div>
+              )}
+            </div>
+
+            {/* Basic Info */}
+            <div className="flex-1 min-w-0">
+              <div className="flex justify-between items-start gap-2 mb-1">
+                <div>
+                  <h3 className="text-lg font-bold font-montserrat text-[#121E3C] truncate">
+                    {tradesperson.tradesperson_name}
+                  </h3>
+                  <p className="text-xs text-[#34D164] font-bold font-lato">
+                    {tradesperson.company_name || 'Individual'}
+                  </p>
+                </div>
+                {getStatusBadge(tradesperson.status)}
+              </div>
+
+              {/* Info Icons Row */}
+              <div className="flex flex-wrap items-center gap-3 text-gray-500 mt-3">
+                <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded-lg">
+                  <Briefcase size={14} className="text-gray-400" />
+                  <span className="text-xs font-medium">{tradesperson.trade_categories?.[0] || 'N/A'}</span>
+                </div>
+                <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded-lg">
+                  <MapPin size={14} className="text-gray-400" />
+                  <span className="text-xs font-medium">{tradesperson.location || 'N/A'}</span>
+                </div>
+                <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded-lg">
+                  <Clock size={14} className="text-gray-400" />
+                  <span className="text-xs font-medium">{tradesperson.experience_years || 0} years exp.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Rating & Description */}
+          <div className="mt-4 pt-4 border-t border-gray-50">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="flex">{getStarRating(tradesperson.average_rating || 0)}</div>
+              <span className="text-xs font-bold text-[#121E3C]">
+                {(tradesperson.average_rating || 0).toFixed(1)} · {tradesperson.average_rating > 0 ? 'Tradesperson' : 'New tradesperson'}
+              </span>
+            </div>
+
+            {tradesperson.description && (
+              <p className="text-sm text-gray-600 font-lato leading-relaxed line-clamp-3 mb-4 bg-gray-50/50 p-3 rounded-xl">
+                {tradesperson.description}
+              </p>
+            )}
+
+            {/* Footer Stats */}
+            <div className="flex items-center justify-between text-[11px] text-gray-400 font-medium mb-4">
+              <div className="flex items-center gap-1.5">
+                <Camera size={13} />
+                <span>{tradesperson.portfolio_count || 0} portfolio items</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Calendar size={13} />
+                <span>Applied: {formatDate(tradesperson.created_at)}</span>
               </div>
             </div>
 
-            {/* Tradesperson Info */}
-            <div className="flex-1">
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-lg font-semibold font-montserrat">
-                      {tradesperson.tradesperson_name}
-                    </h3>
-                    {getStatusBadge(tradesperson.status)}
-                  </div>
-                  
-                  <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-2">
-                    <div className="flex items-center gap-1">
-                      <Briefcase size={14} />
-                      <span>{tradesperson.trade_categories?.join(', ') || 'No categories listed'}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <MapPin size={14} />
-                      <span>{tradesperson.location || 'Location not specified'}</span>
-                    </div>
-                    <Badge className={experienceLevel.color}>
-                      {experienceLevel.label} ({tradesperson.experience_years} years)
-                    </Badge>
-                  </div>
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                variant="outline"
+                onClick={() => handleViewFullProfile(tradesperson)}
+                className="rounded-xl border-gray-200 text-[#121E3C] font-bold text-sm h-11 flex items-center justify-center gap-2 hover:bg-gray-50"
+              >
+                View Profile
+                <ArrowUpRight size={16} />
+              </Button>
 
-                  {/* Rating */}
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="flex">{getStarRating(tradesperson.average_rating || 0)}</div>
-                    <span className="text-sm font-medium">
-                      {(tradesperson.average_rating || 0).toFixed(1)}
-                    </span>
-                    <span className="text-sm text-gray-600">
-                      ({tradesperson.total_reviews || 0} reviews)
-                    </span>
-                  </div>
-
-                  {/* Company */}
-                  {tradesperson.company_name && (
-                    <div className="flex items-center gap-1 text-sm text-gray-600 mb-2">
-                      <Building size={14} />
-                      <span>{tradesperson.company_name}</span>
-                    </div>
+              {tradesperson.status === 'interested' && (
+                <Button
+                  onClick={() => handleShareContact(tradesperson.interest_id)}
+                  disabled={actionLoading[tradesperson.interest_id]}
+                  className="rounded-xl bg-[#34D164] hover:bg-[#2ab854] text-[#121E3C] font-bold text-sm h-11 flex items-center justify-center gap-2 border-none"
+                >
+                  {actionLoading[tradesperson.interest_id] ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      Share Contact
+                      <ArrowUpRight size={16} />
+                    </>
                   )}
-                </div>
-              </div>
-
-              {/* Description */}
-              {tradesperson.description && (
-                <p className="text-sm text-gray-700 line-clamp-3 mb-4">
-                  {tradesperson.description}
-                </p>
+                </Button>
               )}
 
-              {/* Stats */}
-              <div className="flex items-center gap-6 text-xs text-gray-600 mb-4">
-                <div className="flex items-center gap-1">
-                  <Calendar size={12} />
-                  <span>Applied: {formatDate(tradesperson.created_at)}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <TrendingUp size={12} />
-                  <span>{tradesperson.portfolio_count || 0} portfolio items</span>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3">
+              {(tradesperson.status === 'contact_shared' || tradesperson.status === 'paid_access') && (
                 <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleViewFullProfile(tradesperson)}
-                  className="flex items-center gap-2 w-full sm:w-auto"
+                  onClick={() => handleStartChat(tradesperson)}
+                  disabled={isChatDisabled(tradesperson)}
+                  className="rounded-xl bg-[#121E3C] hover:bg-[#1a2d54] text-white font-bold text-sm h-11 flex items-center justify-center gap-2"
                 >
-                  <Eye size={16} />
-                  View Full Profile
+                  <MessageCircle size={16} />
+                  Start Chat
                 </Button>
-
-                {tradesperson.status === 'interested' && (
-                  <Button
-                    onClick={() => handleShareContact(tradesperson.interest_id)}
-                    disabled={actionLoading[tradesperson.interest_id]}
-                    className="text-white flex items-center gap-2 w-full sm:w-auto"
-                    style={{backgroundColor: '#34D164'}}
-                  >
-                    {actionLoading[tradesperson.interest_id] ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Sharing...
-                      </>
-                    ) : (
-                      <>
-                        <Contact size={16} />
-                        Share Contact Details
-                      </>
-                    )}
-                  </Button>
-                )}
-
-                {tradesperson.status === 'contact_shared' && (
-                  <div className="space-y-2">
-                    <Badge className="bg-green-50 text-green-700 border-green-200">
-                      Contact details shared, waiting for feedback
-                    </Badge>
-                  </div>
-                )}
-
-                {tradesperson.status === 'paid_access' && (
-                  <div className="space-y-2">
-                    <Badge className="bg-purple-50 text-purple-700 border-purple-200">
-                      Access granted - Tradesperson can contact you
-                    </Badge>
-                    {isChatDisabled(tradesperson) ? (
-                      <div className="space-y-1">
-                        <Button
-                          disabled
-                          className="text-gray-400 bg-gray-100 cursor-not-allowed w-full sm:w-auto"
-                        >
-                          <MessageCircle size={16} className="mr-2" />
-                          Start Chat
-                        </Button>
-                        <p className="text-xs text-gray-500 text-center">{getChatDisabledMessage(tradesperson)}</p>
-                      </div>
-                    ) : (
-                      <Button
-                        onClick={() => {
-                          console.log('🔥 HOMEOWNER START CHAT BUTTON CLICKED!');
-                          console.log('Button click event for tradesperson:', tradesperson);
-                          console.log('Job data for chat:', job);
-                          
-                          // Safety check for job object
-                          if (!job) {
-                            console.error('Job object is null:', job);
-                            toast({
-                              title: "Loading...",
-                              description: "Please wait for job details to load before starting chat",
-                              variant: "default",
-                            });
-                            return;
-                          }
-                          
-                          // Start chat
-                          handleStartChat(tradesperson);
-                        }}
-                        className="text-white font-lato bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
-                      >
-                        <MessageCircle size={16} className="mr-2" />
-                        Start Chat
-                      </Button>
-                    )}
-                  </div>
-                )}
-
-                {tradesperson.status === 'interested' && (
-                  isChatDisabled(tradesperson) ? (
-                    <></>
-                  ) : (
-                    <Button
-                      onClick={() => {
-                        if (!job) {
-                          toast({
-                            title: "Loading...",
-                            description: "Please wait for job details to load before starting chat",
-                            variant: "default",
-                          });
-                          return;
-                        }
-                        handleStartChat(tradesperson);
-                      }}
-                      className="text-white font-lato bg-green-600 hover:bg-green-700 w-full sm:w-auto"
-                    >
-                      <MessageCircle size={16} className="mr-2" />
-                      Chat with Tradesperson
-                    </Button>
-                  )
-                )}
-              </div>
+              )}
             </div>
           </div>
         </CardContent>
@@ -623,28 +567,34 @@ const InterestedTradespeopleePage = () => {
                 </p>
                 
                 {job && (
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h3 className="font-semibold mb-2">Job Details:</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-600">ID:</span>
-                        <span className="ml-2 font-medium">{job.id || job._id || job.job_id}</span>
+                  <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="p-1.5 bg-[#34D164]/10 rounded-lg">
+                        <FileText size={18} className="text-[#34D164]" />
                       </div>
-                      <div>
-                        <span className="text-gray-600">Title:</span>
-                        <span className="ml-2 font-medium">{job.title}</span>
+                      <h3 className="font-bold text-[#121E3C] font-montserrat">Job Details</h3>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center py-2 border-b border-gray-200/50">
+                        <span className="text-sm text-gray-500 font-medium">Job ID</span>
+                        <span className="text-sm font-bold text-[#121E3C]">#{job.id || job._id || job.job_id}</span>
                       </div>
-                      <div>
-                        <span className="text-gray-600">Category:</span>
-                        <span className="ml-2 font-medium">{job.category}</span>
+                      <div className="flex justify-between items-center py-2 border-b border-gray-200/50">
+                        <span className="text-sm text-gray-500 font-medium">Title</span>
+                        <span className="text-sm font-bold text-[#121E3C]">{job.title}</span>
                       </div>
-                      <div>
-                        <span className="text-gray-600">Location:</span>
-                        <span className="ml-2 font-medium">{job.location}</span>
+                      <div className="flex justify-between items-center py-2 border-b border-gray-200/50">
+                        <span className="text-sm text-gray-500 font-medium">Category</span>
+                        <span className="text-sm font-bold text-[#121E3C]">{job.category}</span>
                       </div>
-                      <div>
-                        <span className="text-gray-600">Budget:</span>
-                        <span className="ml-2 font-medium">
+                      <div className="flex justify-between items-center py-2 border-b border-gray-200/50">
+                        <span className="text-sm text-gray-500 font-medium">Location</span>
+                        <span className="text-sm font-bold text-[#121E3C]">{job.location}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-2">
+                        <span className="text-sm text-gray-500 font-medium">Budget</span>
+                        <span className="text-sm font-bold text-[#34D164]">
                           {job.budget_min && job.budget_max 
                             ? `${formatCurrency(job.budget_min)} - ${formatCurrency(job.budget_max)}`
                             : 'Budget negotiable'
@@ -660,117 +610,119 @@ const InterestedTradespeopleePage = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <Users className="w-8 h-8 text-blue-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Interested</p>
-                  <p className="text-2xl font-bold">{interestedTradespeople.length}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-2 gap-3 mb-8">
+          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+            <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">Total Interested</p>
+            <p className="text-xl font-bold text-[#121E3C]">{interestedTradespeople.length}</p>
+          </div>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <Heart className="w-8 h-8 text-red-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">New Applications</p>
-                  <p className="text-2xl font-bold">
-                    {interestedTradespeople.filter(tp => tp.status === 'interested').length}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+            <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">New Applications</p>
+            <p className="text-xl font-bold text-[#34D164]">
+              {interestedTradespeople.filter(tp => tp.status === 'interested').length}
+            </p>
+          </div>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <UserCheck className="w-8 h-8 text-green-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Contact Shared</p>
-                  <p className="text-2xl font-bold">
-                    {interestedTradespeople.filter(tp => tp.status === 'contact_shared').length}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Paid Access card hidden from homeowners but functionality preserved */}
+          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm col-span-2">
+            <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">Contact Shared</p>
+            <p className="text-xl font-bold text-[#121E3C]">
+              {interestedTradespeople.filter(tp => tp.status === 'contact_shared').length}
+            </p>
+          </div>
         </div>
 
         {/* Interested Tradespeople List */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-montserrat">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between px-2">
+            <h2 className="text-xl font-bold font-montserrat text-[#121E3C]">
               Interested Tradespeople ({interestedTradespeople.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {interestedTradespeople.length === 0 ? (
-              <div className="text-center py-12">
-                <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-600 mb-2">
-                  No interested tradespeople yet
-                </h3>
-                <p className="text-gray-500 mb-6">
-                  When tradespeople show interest in your job, they'll appear here.
-                </p>
-                <Button 
-                  onClick={() => navigate('/dashboard/jobs')}
-                  className="text-white"
-                  style={{backgroundColor: '#34D164'}}
-                >
-                  Back to My Jobs
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {interestedTradespeople.map((tradesperson) => getTradespersonCard(tradesperson))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            </h2>
+            <div className="w-6 h-6 rounded-full bg-[#34D164] text-white text-[10px] font-bold flex items-center justify-center">
+              {interestedTradespeople.length}
+            </div>
+          </div>
+
+          {interestedTradespeople.length === 0 ? (
+            <div className="bg-white rounded-3xl p-12 text-center border border-gray-100">
+              <Users className="w-16 h-16 text-gray-200 mx-auto mb-4" />
+              <h3 className="text-lg font-bold text-gray-600 mb-2">
+                No interested tradespeople yet
+              </h3>
+              <p className="text-sm text-gray-400 mb-6">
+                When tradespeople show interest in your job, they'll appear here.
+              </p>
+              <Button 
+                onClick={() => navigate('/dashboard/jobs')}
+                className="rounded-xl bg-[#34D164] hover:bg-[#2ab854] text-[#121E3C] font-bold"
+              >
+                Back to My Jobs
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {interestedTradespeople.map((tradesperson) => getTradespersonCard(tradesperson))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Full Profile Modal */}
       {showProfileModal && selectedTradesperson && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 sm:p-4">
-          <div className="bg-white rounded-t-3xl sm:rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-[100] sm:p-4">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
             {/* Modal Header */}
             <div className="sticky top-0 bg-white border-b border-gray-100 p-5 sm:p-6 z-10">
               <div className="flex justify-between items-start gap-4">
                 <div className="flex items-center gap-4 min-w-0">
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gray-200 overflow-hidden flex-shrink-0">
-                    {selectedTradesperson.profile_image ? (
-                      <img
-                        src={selectedTradesperson.profile_image}
-                        alt={selectedTradesperson.tradesperson_name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#121E3C] to-[#1a2d54]">
-                        <User size={28} className="text-white" />
+                  <div className="relative">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-[#34D164] overflow-hidden flex-shrink-0 flex items-center justify-center">
+                      {selectedTradesperson.profile_image ? (
+                        <img
+                          src={selectedTradesperson.profile_image}
+                          alt={selectedTradesperson.tradesperson_name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-white text-2xl font-bold font-montserrat">
+                          {selectedTradesperson.tradesperson_name?.split(' ').map(n => n[0]).join('').toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    {/* Verified Badge */}
+                    {(selectedTradesperson.is_verified || selectedTradesperson.verified_tradesperson) && (
+                      <div className="absolute -top-2 -right-2 bg-[#34D164] text-white text-[10px] font-bold px-2 py-0.5 rounded-full border-2 border-white flex items-center gap-1">
+                        <CheckCircle size={10} fill="white" className="text-[#34D164]" />
+                        <span>Verified</span>
                       </div>
                     )}
                   </div>
                   <div className="min-w-0">
-                    <h2 className="text-lg sm:text-xl font-bold font-montserrat text-[#121E3C] truncate">
+                    <h2 className="text-xl sm:text-2xl font-bold font-montserrat text-[#121E3C] truncate">
                       {selectedTradesperson.tradesperson_name}
                     </h2>
-                    <div className="flex items-center gap-2 mt-1">
-                      <div className="flex">{getStarRating(selectedTradesperson.average_rating || 0)}</div>
-                      <span className="text-sm font-medium text-[#121E3C]">
-                        {(selectedTradesperson.average_rating || 0).toFixed(1)}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        ({selectedTradesperson.total_reviews || 0})
-                      </span>
+                    <p className="text-sm text-gray-500 font-lato truncate mt-0.5">
+                      {selectedTradesperson.company_name ? `${selectedTradesperson.company_name} · ` : ''}
+                      {selectedTradesperson.trade_categories?.[0] || 'Tradesperson'}
+                    </p>
+                    
+                    <div className="flex flex-wrap items-center gap-3 mt-3">
+                      <div className="flex items-center gap-1">
+                        <div className="flex">{getStarRating(selectedTradesperson.average_rating || 0)}</div>
+                        <span className="text-sm font-bold text-[#121E3C] ml-1">
+                          {selectedTradesperson.average_rating > 0 ? selectedTradesperson.average_rating.toFixed(1) : 'New'}
+                        </span>
+                      </div>
+                      <div className="h-4 w-px bg-gray-200" />
+                      {selectedTradesperson.total_reviews > 0 ? (
+                        <span className="text-xs text-gray-500 font-medium">
+                          {selectedTradesperson.total_reviews} reviews
+                        </span>
+                      ) : (
+                        <button className="text-xs text-[#34D164] font-semibold hover:underline flex items-center gap-1">
+                          Be the first to review
+                          <ArrowUpRight size={12} />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -784,47 +736,45 @@ const InterestedTradespeopleePage = () => {
             </div>
 
             {/* Modal Body */}
-            <div className="flex-1 overflow-y-auto p-5 sm:p-6">
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6 pb-32 sm:pb-6">
               {/* Quick Info Cards */}
               <div className="grid grid-cols-2 gap-3 mb-6">
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl">
-                  <div className="w-10 h-10 rounded-xl bg-[#34D164]/10 flex items-center justify-center">
+                <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-2xl border border-gray-100/50">
+                  <div className="w-10 h-10 rounded-xl bg-[#34D164]/10 flex items-center justify-center shrink-0">
                     <Briefcase size={18} className="text-[#34D164]" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs text-gray-500 font-lato">Trade</p>
-                    <p className="text-sm font-medium text-[#121E3C] font-lato truncate">{selectedTradesperson.trade_categories?.join(', ') || 'N/A'}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-0.5">Trade</p>
+                    <p className="text-sm font-bold text-[#121E3C] font-lato truncate">{selectedTradesperson.trade_categories?.[0] || 'N/A'}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl">
-                  <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
-                    <MapPin size={18} className="text-blue-600" />
+                <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-2xl border border-gray-100/50">
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+                    <MapPin size={18} className="text-blue-500" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs text-gray-500 font-lato">Location</p>
-                    <p className="text-sm font-medium text-[#121E3C] font-lato truncate">{selectedTradesperson.location || 'N/A'}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-0.5">Location</p>
+                    <p className="text-sm font-bold text-[#121E3C] font-lato truncate">{selectedTradesperson.location || 'N/A'}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl">
-                  <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
-                    <Clock size={18} className="text-purple-600" />
+                <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-2xl border border-gray-100/50">
+                  <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center shrink-0">
+                    <Clock size={18} className="text-purple-500" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs text-gray-500 font-lato">Experience</p>
-                    <p className="text-sm font-medium text-[#121E3C] font-lato">{selectedTradesperson.experience_years || 0} years</p>
+                    <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-0.5">Experience</p>
+                    <p className="text-sm font-bold text-[#121E3C] font-lato">{selectedTradesperson.experience_years || 0} years</p>
                   </div>
                 </div>
-                {selectedTradesperson.company_name && (
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl">
-                    <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
-                      <Building size={18} className="text-amber-600" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs text-gray-500 font-lato">Company</p>
-                      <p className="text-sm font-medium text-[#121E3C] font-lato truncate">{selectedTradesperson.company_name}</p>
-                    </div>
+                <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-2xl border border-gray-100/50">
+                  <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
+                    <Building size={18} className="text-amber-500" />
                   </div>
-                )}
+                  <div className="min-w-0">
+                    <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-0.5">Company</p>
+                    <p className="text-sm font-bold text-[#121E3C] font-lato truncate">{selectedTradesperson.company_name || 'N/A'}</p>
+                  </div>
+                </div>
               </div>
 
               {/* Tabs */}
@@ -994,13 +944,22 @@ const InterestedTradespeopleePage = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-5 sm:p-6 border-t border-gray-100 bg-gray-50/50">
-              <Button
-                onClick={() => setShowProfileModal(false)}
-                className="w-full h-12 rounded-xl bg-[#121E3C] hover:bg-[#1a2d54] text-white font-lato"
-              >
-                Close
-              </Button>
+            <div className="p-5 sm:p-6 border-t border-gray-100 bg-white sticky bottom-0 z-20 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:pb-6">
+              <div className="flex flex-col gap-3">
+                <Button
+                  onClick={() => handleContactTradesperson(selectedTradesperson)}
+                  className="w-full h-12 rounded-xl bg-[#34D164] hover:bg-[#2ab854] text-[#121E3C] font-bold flex items-center justify-center gap-2 group border-none"
+                >
+                  Contact Tradesperson
+                  <ArrowUpRight size={18} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                </Button>
+                <button
+                  onClick={() => setShowProfileModal(false)}
+                  className="w-full py-2 text-sm text-gray-500 font-medium hover:text-gray-700 transition-colors sm:hidden"
+                >
+                  Close Profile
+                </button>
+              </div>
             </div>
           </div>
         </div>
