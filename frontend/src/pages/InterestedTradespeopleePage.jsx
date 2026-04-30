@@ -6,6 +6,7 @@ import { Badge } from '../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { 
   ArrowLeft,
+  ArrowUpRight,
   MapPin, 
   Star, 
   Calendar,
@@ -111,6 +112,10 @@ const InterestedTradespeopleePage = () => {
       
       const response = await interestsAPI.getJobInterestedTradespeople(jobId);
       console.log('API response:', response);
+      
+      if (!response) {
+        throw new Error('No response from API');
+      }
       
       setInterestedTradespeople(response.interested_tradespeople || []);
       
@@ -228,8 +233,10 @@ const InterestedTradespeopleePage = () => {
       return true;
     }
     
-    // Check if tradesperson has paid access fee
-    if (tradesperson && tradesperson.status !== 'paid_access') {
+    // Check if tradesperson has paid access fee or contact is shared
+    if (tradesperson && 
+        tradesperson.status !== 'paid_access' && 
+        tradesperson.status !== 'contact_shared') {
       return true;
     }
     
@@ -336,11 +343,17 @@ const InterestedTradespeopleePage = () => {
   };
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
-      minimumFractionDigits: 0
-    }).format(amount);
+    try {
+      const num = Number(amount);
+      if (isNaN(num)) return '₦0';
+      return new Intl.NumberFormat('en-NG', {
+        style: 'currency',
+        currency: 'NGN',
+        minimumFractionDigits: 0
+      }).format(num);
+    } catch (e) {
+      return '₦0';
+    }
   };
 
   const formatDate = (dateString) => {
@@ -413,14 +426,17 @@ const InterestedTradespeopleePage = () => {
                   />
                 ) : (
                   <span className="text-white text-xl font-bold font-montserrat">
-                    {tradesperson.tradesperson_name?.split(' ').map(n => n[0]).join('').toUpperCase()}
+                    {tradesperson.tradesperson_name ? 
+                      tradesperson.tradesperson_name.split(' ').map(n => n[0]).join('').toUpperCase() : 
+                      'TP'
+                    }
                   </span>
                 )}
               </div>
               {/* Conditional Verified Badge */}
               {(tradesperson.is_verified || tradesperson.verified_tradesperson) && (
                 <div className="absolute -top-1 -right-1 w-5 h-5 bg-[#34D164] rounded-full flex items-center justify-center border-2 border-white shadow-sm">
-                  <CheckCircle size={10} className="text-white" fill="white" />
+                  <CheckCircle size={10} className="text-white" />
                 </div>
               )}
             </div>
@@ -613,20 +629,20 @@ const InterestedTradespeopleePage = () => {
         <div className="grid grid-cols-2 gap-3 mb-8">
           <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
             <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">Total Interested</p>
-            <p className="text-xl font-bold text-[#121E3C]">{interestedTradespeople.length}</p>
+            <p className="text-xl font-bold text-[#121E3C]">{(interestedTradespeople || []).length}</p>
           </div>
 
           <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
             <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">New Applications</p>
             <p className="text-xl font-bold text-[#34D164]">
-              {interestedTradespeople.filter(tp => tp.status === 'interested').length}
+              {(interestedTradespeople || []).filter(tp => tp && tp.status === 'interested').length}
             </p>
           </div>
 
           <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm col-span-2">
             <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">Contact Shared</p>
             <p className="text-xl font-bold text-[#121E3C]">
-              {interestedTradespeople.filter(tp => tp.status === 'contact_shared').length}
+              {(interestedTradespeople || []).filter(tp => tp && tp.status === 'contact_shared').length}
             </p>
           </div>
         </div>
@@ -635,14 +651,14 @@ const InterestedTradespeopleePage = () => {
         <div className="space-y-4">
           <div className="flex items-center justify-between px-2">
             <h2 className="text-xl font-bold font-montserrat text-[#121E3C]">
-              Interested Tradespeople ({interestedTradespeople.length})
+              Interested Tradespeople ({(interestedTradespeople || []).length})
             </h2>
             <div className="w-6 h-6 rounded-full bg-[#34D164] text-white text-[10px] font-bold flex items-center justify-center">
-              {interestedTradespeople.length}
+              {(interestedTradespeople || []).length}
             </div>
           </div>
 
-          {interestedTradespeople.length === 0 ? (
+          {(!interestedTradespeople || interestedTradespeople.length === 0) ? (
             <div className="bg-white rounded-3xl p-12 text-center border border-gray-100">
               <Users className="w-16 h-16 text-gray-200 mx-auto mb-4" />
               <h3 className="text-lg font-bold text-gray-600 mb-2">
@@ -684,7 +700,10 @@ const InterestedTradespeopleePage = () => {
                         />
                       ) : (
                         <span className="text-white text-2xl font-bold font-montserrat">
-                          {selectedTradesperson.tradesperson_name?.split(' ').map(n => n[0]).join('').toUpperCase()}
+                          {selectedTradesperson.tradesperson_name ? 
+                            selectedTradesperson.tradesperson_name.split(' ').map(n => n[0]).join('').toUpperCase() : 
+                            'TP'
+                          }
                         </span>
                       )}
                     </div>
