@@ -74,6 +74,11 @@ export const authAPI = {
     return response.data;
   },
 
+  resendVerificationEmail: async () => {
+    const response = await apiClient.post('/auth/email-verification/request');
+    return response.data;
+  },
+
   confirmEmailVerification: async (token) => {
     const response = await apiClient.get(`/auth/email-verification/confirm?token=${encodeURIComponent(token)}`);
     return response.data;

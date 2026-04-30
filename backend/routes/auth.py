@@ -2032,6 +2032,8 @@ async def refresh_tokens(request: RefreshTokenRequest):
 @router.post("/email-verification/request")
 async def request_email_verification(current_user: User = Depends(get_current_active_user)):
     """Generate link token and send email to current user's email"""
+    if current_user.email_verified:
+        return {"message": "Email already verified"}
     try:
         token_expires = timedelta(hours=24)
         verification_token = create_email_verification_token(
@@ -2086,8 +2088,12 @@ async def request_email_verification(current_user: User = Depends(get_current_ac
                 to=current_user.email,
                 subject="Verify your email - serviceHub",
                 content=html,
-                metadata={"purpose": "email_verification", "user_id": current_user.id}
+                metadata={"purpose": "email_verification", "user_id": current_user.id},
+                raise_on_error=True
             )
+        else:
+            raise HTTPException(status_code=503, detail="Email service not configured")
+
         resp = {"message": "Verification email sent"}
         try:
             dev_flag = os.environ.get('OTP_DEV_MODE', '0')

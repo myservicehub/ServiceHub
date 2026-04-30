@@ -1009,10 +1009,11 @@ const VerifyAccountPage = () => {
                   variant="outline"
                   onClick={async () => {
                     try {
-                      await authAPI.resendVerificationEmail(user.email);
+                      await authAPI.resendVerificationEmail();
                       toast({ title: "Email Sent", description: "Verification link has been resent to your inbox." });
                     } catch (e) {
-                      toast({ title: "Failed to Resend", description: "Please try again in a few minutes.", variant: "destructive" });
+                      const msg = e?.response?.data?.detail || "Please try again in a few minutes.";
+                      toast({ title: "Failed to Resend", description: msg, variant: "destructive" });
                     }
                   }}
                 >
