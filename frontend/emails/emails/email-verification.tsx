@@ -83,7 +83,7 @@ export const EmailVerification = ({
           <Text style={paragraph}>
             Welcome to ServiceHub. Please verify your email address to complete 
             your registration and start connecting with quality tradespeople 
-            or finding jobs in your area.
+            or finding verified tradespeople in your area.
           </Text>
           
           <Section style={buttonContainer}>

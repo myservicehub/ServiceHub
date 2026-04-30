@@ -617,8 +617,15 @@ class Database:
         if self.database is None:
             raise RuntimeError("Database unavailable: cannot create email verification token")
         try:
+            # Only invalidate tokens that are older than 10 minutes to prevent race conditions 
+            # (e.g., registration flow + immediate job post flow both sending tokens)
+            ten_minutes_ago = datetime.utcnow() - timedelta(minutes=10)
             await self.database.email_verification_tokens.update_many(
-                {"user_id": user_id, "used": False},
+                {
+                    "user_id": user_id, 
+                    "used": False,
+                    "created_at": {"$lt": ten_minutes_ago}
+                },
                 {"$set": {"used": True, "invalidated_at": datetime.utcnow()}}
             )
         except Exception as e:
@@ -644,15 +651,33 @@ class Database:
         if self.database is None:
             return None
         try:
+            # First try to find an unused token
             token_data = await self.database.email_verification_tokens.find_one({
                 "token": token,
                 "used": False,
             })
+            
+            # If not found or used, still return it if it exists so the route can decide 
+            # (e.g., if user is already verified)
+            if not token_data:
+                token_data = await self.database.email_verification_tokens.find_one({
+                    "token": token
+                })
+                
             if not token_data:
                 return None
+                
             token_data["_id"] = str(token_data["_id"])
-            if token_data.get("expires_at") and token_data["expires_at"] < datetime.utcnow():
+            
+            # Use timezone-aware comparison for expiration if possible, 
+            # but keep it naive-compatible as per current codebase style.
+            now = datetime.utcnow()
+            expires_at = token_data.get("expires_at")
+            
+            # If it's already expired and unused, we can return None
+            if not token_data.get("used") and expires_at and expires_at < now:
                 return None
+                
             return token_data
         except Exception as e:
             logger.error(f"Error retrieving email verification token: {e}")

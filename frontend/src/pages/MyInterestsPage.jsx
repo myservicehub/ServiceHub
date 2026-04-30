@@ -108,7 +108,7 @@ const MyInterestsPage = () => {
   };
 
   const handlePayForAccess = async (interestId, accessFeeCoins) => {
-    const feeAmount = accessFeeCoins || 0;
+    const feeAmount = Number(accessFeeCoins) || 0;
     
     if (walletBalance < feeAmount) {
       toast({
@@ -265,6 +265,43 @@ const MyInterestsPage = () => {
       currency: 'NGN',
       minimumFractionDigits: 0
     }).format(amount);
+  };
+
+  // Keep access-fee math consistent with Browse Jobs: show/pay VAT-inclusive fee
+  const VAT_RATE = Number(process.env.REACT_APP_VAT_RATE ?? 0.075);
+  const computeVatInclusive = (amountNaira) => {
+    const base = Math.max(Number(amountNaira || 0), 0);
+    const vat = Math.round(base * VAT_RATE);
+    const total = base + vat;
+    const totalCoins = Math.ceil(total / 100);
+    return { vat, total, totalCoins };
+  };
+
+  const resolveInterestAccessFeeNaira = (interest) => {
+    const directNaira = Number(interest?.access_fee_naira);
+    if (Number.isFinite(directNaira) && directNaira > 0) return directNaira;
+
+    const jobNaira = Number(interest?.job_access_fee_naira);
+    if (Number.isFinite(jobNaira) && jobNaira > 0) return jobNaira;
+
+    const nestedNaira = Number(interest?.job?.access_fee_naira);
+    if (Number.isFinite(nestedNaira) && nestedNaira > 0) return nestedNaira;
+
+    const directCoins = Number(interest?.access_fee_coins);
+    if (Number.isFinite(directCoins) && directCoins > 0) return directCoins * 100;
+
+    const jobCoins = Number(interest?.job_access_fee_coins);
+    if (Number.isFinite(jobCoins) && jobCoins > 0) return jobCoins * 100;
+
+    const nestedCoins = Number(interest?.job?.access_fee_coins);
+    if (Number.isFinite(nestedCoins) && nestedCoins > 0) return nestedCoins * 100;
+
+    return 1000;
+  };
+
+  const resolveInterestAccessFeeCoins = (interest) => {
+    const { totalCoins } = computeVatInclusive(resolveInterestAccessFeeNaira(interest));
+    return totalCoins;
   };
 
   const handleManualRefresh = async () => {
@@ -636,7 +673,7 @@ const MyInterestsPage = () => {
                   <div className="px-5 py-3.5 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-gray-500">Access fee:</span>
-                      <span className="text-sm font-semibold text-[#121E3C]">{interest.access_fee_coins || 0} coins</span>
+                      <span className="text-sm font-semibold text-[#121E3C]">{resolveInterestAccessFeeCoins(interest)} coins</span>
                     </div>
                     
                     <div className="flex gap-2">
@@ -646,11 +683,11 @@ const MyInterestsPage = () => {
                       
                       {interest.status === 'contact_shared' && (
                         <Button
-                          onClick={(e) => { e.stopPropagation(); handlePayForAccess(interest.id, interest.access_fee_coins || 0); }}
+                          onClick={(e) => { e.stopPropagation(); handlePayForAccess(interest.id, resolveInterestAccessFeeCoins(interest)); }}
                           disabled={paymentLoading[interest.id]}
                           className="bg-[#34D164] hover:bg-[#2ab854] text-white text-sm px-4 py-2 h-auto rounded-xl font-medium shadow-sm"
                         >
-                          {paymentLoading[interest.id] ? 'Processing...' : `Pay ${interest.access_fee_coins || 0} coins`}
+                          {paymentLoading[interest.id] ? 'Processing...' : `Pay ${resolveInterestAccessFeeCoins(interest)} coins`}
                         </Button>
                       )}
                       

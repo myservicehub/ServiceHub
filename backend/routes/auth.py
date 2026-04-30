@@ -2043,12 +2043,15 @@ async def request_email_verification(current_user: User = Depends(get_current_ac
         )
         email_service = None
         try:
-            email_service = SendGridEmailService()
+            email_service = ResendEmailService()
         except Exception:
             try:
-                email_service = MockEmailService()
+                email_service = SendGridEmailService()
             except Exception:
-                email_service = None
+                try:
+                    email_service = MockEmailService()
+                except Exception:
+                    email_service = None
         frontend_url = os.environ.get('FRONTEND_URL', 'https://myservicehub.co')
         verify_link = f"{frontend_url.rstrip('/')}/verify-account?token={verification_token}"
         if email_service:
@@ -2102,19 +2105,46 @@ async def confirm_email_verification(token: str):
     try:
         token_str = (token or "").strip()
         token_data = await database.get_email_verification_token(token_str)
+        
         if not token_data:
             raise HTTPException(status_code=400, detail="Invalid or expired verification token")
-        if token_data.get("used"):
-            raise HTTPException(status_code=400, detail="Invalid or expired verification token")
-        expires_at = token_data.get("expires_at")
-        if expires_at and datetime.utcnow() > expires_at:
-            raise HTTPException(status_code=400, detail="Invalid or expired verification token")
+            
         user_id = token_data.get("user_id")
         if not user_id:
             raise HTTPException(status_code=400, detail="Invalid token payload")
+            
         user_data = await database.get_user_by_id(user_id)
         if not user_data:
             raise HTTPException(status_code=404, detail="User not found")
+
+        # If already verified, just return success (handles double-clicks/pre-fetches)
+        if user_data.get("email_verified"):
+            # Mark the token as used if it wasn't already
+            if not token_data.get("used"):
+                await database.mark_email_verification_token_used(token_str)
+            
+            # Generate new tokens for the user
+            access_token_expires = timedelta(minutes=60 * 24)
+            access_token = create_access_token(
+                data={"sub": user_data["id"], "email": user_data["email"]},
+                expires_delta=access_token_expires
+            )
+            refresh_token = create_refresh_token(data={"sub": user_data["id"], "email": user_data["email"]})
+            
+            return {
+                "message": "Email already verified",
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+                "user": {k: v for k, v in user_data.items() if k != "password_hash"}
+            }
+
+        if token_data.get("used"):
+            raise HTTPException(status_code=400, detail="Invalid or expired verification token")
+            
+        expires_at = token_data.get("expires_at")
+        if expires_at and datetime.utcnow() > expires_at:
+            raise HTTPException(status_code=400, detail="Invalid or expired verification token")
+            
         await database.verify_user_email(user_id)
         await database.mark_email_verification_token_used(token_str)
 
