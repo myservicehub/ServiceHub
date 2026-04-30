@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSEO } from '../hooks/useSEO';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { 
   Calendar, Clock, User, Tag, Share2, Heart, MessageCircle, 
@@ -10,6 +11,11 @@ import Footer from '../components/Footer';
 import { useToast } from '../hooks/use-toast';
 
 const BlogPage = () => {
+  useSEO({
+    title: 'Blog',
+    description: 'Tips, guides, and news from ServiceHub — helping Nigerian homeowners and tradespeople get the most out of home services and repairs.',
+    canonical: '/blog',
+  });
   const navigate = useNavigate();
   const location = useLocation();
   const { slug } = useParams(); // For individual blog post

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSEO } from '../hooks/useSEO';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -11,6 +12,11 @@ import { statsAPI } from '../api/services';
 const HERO_BG_IMAGE = '/stock/bg4.jpg';
 
 const JoinForFreePage = () => {
+  useSEO({
+    title: 'Join for Free',
+    description: 'Register as a tradesperson on ServiceHub for free. Get matched with homeowners in your area, grow your business, and get paid securely.',
+    canonical: '/join-for-free',
+  });
   const navigate = useNavigate();
   const location = useLocation();
   const [showRegistration, setShowRegistration] = useState(false);

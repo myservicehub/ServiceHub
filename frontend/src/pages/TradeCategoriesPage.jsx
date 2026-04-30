@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSEO } from '../hooks/useSEO';
 import { Search, Wrench, Users, Star, ArrowRight, CheckCircle, Building2, Snowflake, Pipette, Cog, Hammer, Paintbrush, Scissors, Sun, Home, Zap, Drill, Sofa, Shield, Droplets, PenTool, Layers, DoorOpen, Fence, Bath, Flame, Lock, Video, Bug, Truck, Leaf, Lightbulb, Brush } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
@@ -9,6 +10,11 @@ import FinalCTA from '../components/FinalCTA';
 import { statsAPI, authAPI } from '../api/services';
 
 const TradeCategoriesPage = () => {
+  useSEO({
+    title: 'Trade Categories',
+    description: 'Browse all trade categories on ServiceHub — electricians, plumbers, carpenters, painters, and 20+ other verified trades available across Nigeria.',
+    canonical: '/trade-categories',
+  });
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTradespeople, setActiveTradespeople] = useState(52);

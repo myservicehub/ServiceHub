@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useSEO } from '../hooks/useSEO';
 import Header from './Header';
 import HeroSection from './HeroSection';
 import StatsSection from './StatsSection';
@@ -14,6 +15,11 @@ import Footer from './Footer';
 import TradespersonPromoModal from './TradespersonPromoModal';
 
 const HomePage = () => {
+  useSEO({
+    title: "Find Trusted Local Tradespeople in Nigeria",
+    description: "ServiceHub connects Nigerian homeowners with verified, rated local tradespeople — electricians, plumbers, carpenters and more. Post a job free today.",
+    canonical: '/',
+  });
   const [showPromoModal, setShowPromoModal] = useState(false);
   const location = useLocation();
 

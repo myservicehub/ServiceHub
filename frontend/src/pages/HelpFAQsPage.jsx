@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSEO } from '../hooks/useSEO';
 import { ChevronDown, ChevronUp, Search, Phone, Mail, MessageCircle, HelpCircle, Users, Wallet, Briefcase, Shield, CreditCard, Settings, FileText, Star, ChevronRight, Zap } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -8,6 +9,11 @@ import { Button } from '../components/ui/button';
 import { contactsAPI } from '../api/wallet';
 
 const HelpFAQsPage = () => {
+  useSEO({
+    title: 'Help & FAQs',
+    description: 'Find answers to common questions about ServiceHub — hiring tradespeople, posting jobs, payments, reviews, and account management.',
+    canonical: '/help',
+  });
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated, isTradesperson } = useAuth();

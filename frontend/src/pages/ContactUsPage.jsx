@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSEO } from '../hooks/useSEO';
 import { Phone, Mail, MapPin, Clock, Send, MessageCircle, HelpCircle, Facebook, Instagram, Youtube, Twitter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../hooks/use-toast';
@@ -14,6 +15,11 @@ import { contactSchema, formatPhoneE164 } from '../utils/validation';
 import ValidationBanner from '../components/ValidationBanner';
 
 const ContactUsPage = () => {
+  useSEO({
+    title: 'Contact Us',
+    description: 'Get in touch with the ServiceHub team. We\'re here to help homeowners and tradespeople across Nigeria with any questions or support needs.',
+    canonical: '/contact',
+  });
   const navigate = useNavigate();
   const { toast } = useToast();
   const [globalErrorMessage, setGlobalErrorMessage] = useState('');

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSEO } from '../hooks/useSEO';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import FinalCTA from '../components/FinalCTA';
@@ -23,6 +24,11 @@ import {
 import { statsAPI } from '../api/services';
 
 const HowItWorksPage = () => {
+  useSEO({
+    title: 'How It Works',
+    description: 'See how ServiceHub makes it easy to find and hire trusted local tradespeople in Nigeria. Post a job, get matched, and get it done — in three simple steps.',
+    canonical: '/how-it-works',
+  });
   const [activeTab, setActiveTab] = useState('homeowner');
   const { isTradesperson, isHomeowner, isAuthenticated } = useAuth();
   const [platformStats, setPlatformStats] = useState(null);

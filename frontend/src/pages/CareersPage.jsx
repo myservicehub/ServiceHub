@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSEO } from '../hooks/useSEO';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Briefcase, MapPin, Clock, Users, Heart, TrendingUp, 
@@ -27,6 +28,11 @@ const fileToDataUrl = (file) => new Promise((resolve, reject) => {
 });
 
 const CareersPage = () => {
+  useSEO({
+    title: 'Careers',
+    description: 'Join the ServiceHub team and help transform the home services industry in Nigeria. View open positions and apply today.',
+    canonical: '/careers',
+  });
   const navigate = useNavigate();
   const location = useLocation();
   const [openPositions, setOpenPositions] = useState([]);

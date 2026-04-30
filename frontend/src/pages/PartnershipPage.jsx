@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSEO } from '../hooks/useSEO';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -32,6 +33,11 @@ import {
 } from 'lucide-react';
 
 const PartnershipPage = () => {
+  useSEO({
+    title: 'Partnerships',
+    description: 'Partner with ServiceHub to grow your network across Nigeria\'s home services industry. Explore opportunities for trade organisations and businesses.',
+    canonical: '/partnerships',
+  });
   const [selectedPartnership, setSelectedPartnership] = useState('trade-organizations');
   const [platformStats, setPlatformStats] = useState(null);
 

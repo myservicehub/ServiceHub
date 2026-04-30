@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useSEO } from '../hooks/useSEO';
 import { createPortal } from 'react-dom';
 import { X, ToggleLeft } from 'lucide-react';
 import { adminAPI, walletAPI, tradeCategoryQuestionsAPI } from '../api/wallet';
@@ -20,6 +21,7 @@ import AuthenticatedImage from '../components/common/AuthenticatedImage';
 import { Dialog, DialogContent } from '../components/ui/dialog';
 
 const AdminDashboard = () => {
+  useSEO({ noindex: true });
   const { toast } = useToast();
 
   const [isLoggedIn, setIsLoggedIn] = useState(adminAPI.isLoggedIn());

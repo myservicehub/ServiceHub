@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSEO } from '../hooks/useSEO';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import FinalCTA from '../components/FinalCTA';
@@ -15,6 +16,11 @@ import {
 import { statsAPI } from '../api/services';
 
 const AboutUsPage = () => {
+  useSEO({
+    title: 'About Us',
+    description: 'Learn about ServiceHub — Nigeria\'s trusted platform for connecting homeowners with verified, reliable local tradespeople across Delta State and beyond.',
+    canonical: '/about',
+  });
   const [platformStats, setPlatformStats] = useState(null);
 
   useEffect(() => {

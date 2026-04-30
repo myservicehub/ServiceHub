@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSEO } from '../hooks/useSEO';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -34,6 +35,11 @@ import { useToast } from '../hooks/use-toast';
 import { useStates } from '../hooks/useStates';
 
 const BrowseTradespeopleePage = () => {
+  useSEO({
+    title: 'Browse Tradespeople',
+    description: 'Find and compare verified local tradespeople near you in Nigeria. Read reviews, view profiles, and hire the right professional for your home job.',
+    canonical: '/browse-tradespeople',
+  });
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated } = useAuth();
