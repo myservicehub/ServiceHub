@@ -2468,6 +2468,8 @@ class Database:
                     },
                     "location": {"$ifNull": ["$tradesperson.location", None]},
                     "description": {"$ifNull": ["$tradesperson.description", None]},
+                    "is_verified": {"$ifNull": ["$tradesperson.is_verified", False]},
+                    "verified_tradesperson": {"$ifNull": ["$tradesperson.verified_tradesperson", False]},
                     "certifications": {"$ifNull": ["$tradesperson.certifications", []]},
                     "status": {"$ifNull": ["$status", "interested"]},
                     "created_at": "$created_at",

@@ -361,6 +361,8 @@ class InterestedTradesperson(BaseModel):
     total_reviews: int = 0
     location: Optional[str] = None
     description: Optional[str] = None
+    is_verified: bool = False
+    verified_tradesperson: bool = False
     certifications: List[str] = []
     portfolio_count: Optional[int] = 0
     status: InterestStatus = InterestStatus.INTERESTED
