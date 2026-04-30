@@ -433,21 +433,24 @@ const InterestedTradespeopleePage = () => {
                   </span>
                 )}
               </div>
-              {/* Conditional Verified Badge */}
-              {(tradesperson.is_verified || tradesperson.verified_tradesperson) && (
-                <div className="absolute -top-1 -right-1 w-5 h-5 bg-[#34D164] rounded-full flex items-center justify-center border-2 border-white shadow-sm">
-                  <CheckCircle size={10} className="text-white" />
-                </div>
-              )}
             </div>
 
             {/* Basic Info */}
             <div className="flex-1 min-w-0">
               <div className="flex justify-between items-start gap-2 mb-1">
                 <div>
-                  <h3 className="text-lg font-bold font-montserrat text-[#121E3C] truncate">
-                    {tradesperson.tradesperson_name}
-                  </h3>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <h3 className="text-lg font-bold font-montserrat text-[#121E3C] truncate">
+                      {tradesperson.tradesperson_name}
+                    </h3>
+                    {/* Conditional Verified Badge for List Card */}
+                    {(tradesperson.is_verified || tradesperson.verified_tradesperson) && (
+                      <div className="bg-[#34D164]/10 text-[#34D164] text-[9px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-0.5 border border-[#34D164]/20 shrink-0">
+                        <CheckCircle size={8} fill="currentColor" className="text-[#34D164]" />
+                        <span>VERIFIED</span>
+                      </div>
+                    )}
+                  </div>
                   <p className="text-xs text-[#34D164] font-bold font-lato">
                     {tradesperson.company_name || 'Individual'}
                   </p>
@@ -707,13 +710,6 @@ const InterestedTradespeopleePage = () => {
                         </span>
                       )}
                     </div>
-                    {/* Verified Badge */}
-                    {(selectedTradesperson.is_verified || selectedTradesperson.verified_tradesperson) && (
-                      <div className="absolute -top-2 -right-2 bg-[#34D164] text-white text-[10px] font-bold px-2 py-0.5 rounded-full border-2 border-white flex items-center gap-1">
-                        <CheckCircle size={10} fill="white" className="text-[#34D164]" />
-                        <span>Verified</span>
-                      </div>
-                    )}
                   </div>
                   <div className="min-w-0">
                     <h2 className="text-xl sm:text-2xl font-bold font-montserrat text-[#121E3C] truncate">
@@ -745,12 +741,21 @@ const InterestedTradespeopleePage = () => {
                     </div>
                   </div>
                 </div>
-                <button
-                  onClick={() => setShowProfileModal(false)}
-                  className="w-10 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors shrink-0"
-                >
-                  <span className="text-gray-500 text-xl">×</span>
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  {/* Verified Badge */}
+                  {(selectedTradesperson.is_verified || selectedTradesperson.verified_tradesperson) && (
+                    <div className="bg-[#34D164] text-white text-[10px] font-bold px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
+                      <CheckCircle size={10} fill="white" className="text-[#34D164]" />
+                      <span>Verified</span>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => setShowProfileModal(false)}
+                    className="w-10 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+                  >
+                    <span className="text-gray-500 text-xl">×</span>
+                  </button>
+                </div>
               </div>
             </div>
 
