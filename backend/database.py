@@ -5788,10 +5788,10 @@ class Database:
         # Homeowner-specific statistics
         if user.get("role") == UserRole.HOMEOWNER.value:
             tasks = [
-                self.database.jobs.count_documents({"homeowner.id": user_id}),
-                self.database.jobs.count_documents({"homeowner.id": user_id, "status": "open"}),
-                self.database.jobs.count_documents({"homeowner.id": user_id, "status": "completed"}),
-                self.database.interests.count_documents({"job.homeowner.id": user_id}),
+                self.database.jobs.count_documents({"$or": [{"homeowner_id": user_id}, {"homeowner.id": user_id}]}),
+                self.database.jobs.count_documents({"$or": [{"homeowner_id": user_id}, {"homeowner.id": user_id}], "status": "open"}),
+                self.database.jobs.count_documents({"$or": [{"homeowner_id": user_id}, {"homeowner.id": user_id}], "status": "completed"}),
+                self.database.interests.count_documents({"$or": [{"homeowner_id": user_id}, {"job.homeowner.id": user_id}]}),
                 self._get_average_job_budget(user_id)
             ]
             results = await asyncio.gather(*tasks)
@@ -5892,20 +5892,20 @@ class Database:
             
             # Add role-specific tasks
             if user.get("role") == UserRole.HOMEOWNER.value:
-                tasks["jobs_posted"] = self.database.jobs.count_documents({"homeowner.id": user_id})
+                tasks["jobs_posted"] = self.database.jobs.count_documents({"$or": [{"homeowner_id": user_id}, {"homeowner.id": user_id}]})
                 tasks["active_jobs"] = self.database.jobs.count_documents({
-                    "homeowner.id": user_id,
+                    "$or": [{"homeowner_id": user_id}, {"homeowner.id": user_id}],
                     "status": {"$in": ["active", "open"]}
                 })
                 tasks["completed_jobs"] = self.database.jobs.count_documents({
-                    "homeowner.id": user_id,
+                    "$or": [{"homeowner_id": user_id}, {"homeowner.id": user_id}],
                     "status": "completed"
                 })
                 tasks["total_interests_received"] = self.database.interests.count_documents({
-                    "homeowner_id": user_id
+                    "$or": [{"homeowner_id": user_id}, {"job.homeowner.id": user_id}]
                 })
                 tasks["recent_jobs"] = self.database.jobs.find(
-                    {"homeowner.id": user_id}
+                    {"$or": [{"homeowner_id": user_id}, {"homeowner.id": user_id}]}
                 ).sort("created_at", -1).limit(5).to_list(length=5)
                 
             elif user.get("role") == UserRole.TRADESPERSON.value:

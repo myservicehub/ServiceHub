@@ -209,6 +209,11 @@ const CareersPage = () => {
       return;
     }
 
+    if (!applicationForm.resume) {
+      alert('Please upload your Resume/CV to continue.');
+      return;
+    }
+
     try {
       setSubmitting(true);
       const selectedJob = applicationForm.position && applicationForm.position !== 'General Application'
@@ -714,12 +719,13 @@ const CareersPage = () => {
               </div>
               
               <div className="mb-6">
-                <label className="block text-xs font-medium text-[#121E3C] mb-1.5">Resume/CV</label>
+                <label className="block text-xs font-medium text-[#121E3C] mb-1.5">Resume/CV *</label>
                 <input
                   type="file"
                   accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                   onChange={(e) => setApplicationForm({...applicationForm, resume: e.target.files?.[0] || null})}
                   className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#34D164]/20 focus:border-[#34D164] file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-gray-100 file:text-gray-600"
+                  required
                 />
                 <p className="text-[10px] text-gray-400 mt-1">PDF, DOC, or DOCX only (max 5MB)</p>
               </div>
