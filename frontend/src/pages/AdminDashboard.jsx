@@ -7390,16 +7390,17 @@ const AdminDashboard = () => {
                       const lga = (selectedUser.lga && selectedUser.lga !== 'Not specified') 
                         ? selectedUser.lga 
                         : (selectedUser.recent_jobs?.[0]?.lga);
-                      const town = (selectedUser.town && selectedUser.town !== 'Not specified') 
-                        ? selectedUser.town 
-                        : (selectedUser.recent_jobs?.[0]?.town || selectedUser.recent_jobs?.[0]?.home_address);
                       
-                      if ((lga && lga !== 'Not specified') || (town && town !== 'Not specified')) {
+                      const address = (selectedUser.address && selectedUser.address !== 'Not specified')
+                        ? selectedUser.address
+                        : (selectedUser.home_address || selectedUser.recent_jobs?.[0]?.home_address || selectedUser.town || selectedUser.recent_jobs?.[0]?.town);
+
+                      if ((lga && lga !== 'Not specified') || (address && address !== 'Not specified')) {
                         return (
                           <div className="md:col-span-2">
-                            <strong>LGA/Town:</strong> {lga || ''} 
-                            {lga && town ? ' / ' : ''}
-                            {town || ''}
+                            <strong>LGA/Address:</strong> {lga || ''} 
+                            {lga && address ? ' / ' : ''}
+                            {address || ''}
                           </div>
                         );
                       }

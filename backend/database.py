@@ -5987,7 +5987,7 @@ class Database:
                             "state": job.get("state", "") or job.get("location", ""),
                             "lga": job.get("lga", ""),
                             "town": job.get("town", ""),
-                            "home_address": job.get("home_address", "") or job.get("address", ""),
+                            "home_address": job.get("home_address", "") or job.get("address", "") or job.get("town", ""),
                             "created_at": job.get("created_at"),
                             "interests_count": counts_map.get(job.get("id"), 0)
                         } for job in recent_jobs_raw
