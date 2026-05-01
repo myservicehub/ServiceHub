@@ -7390,21 +7390,21 @@ const AdminDashboard = () => {
                       const lga = (selectedUser.lga && selectedUser.lga !== 'Not specified') 
                         ? selectedUser.lga 
                         : (selectedUser.recent_jobs?.[0]?.lga);
-                      return lga && lga !== 'Not specified' ? (
-                        <div><strong>LGA:</strong> {lga}</div>
-                      ) : null;
-                    })()}
-                    {(() => {
                       const town = (selectedUser.town && selectedUser.town !== 'Not specified') 
                         ? selectedUser.town 
-                        : (selectedUser.recent_jobs?.[0]?.town);
-                      return town && town !== 'Not specified' ? (
-                        <div><strong>Town:</strong> {town}</div>
-                      ) : null;
+                        : (selectedUser.recent_jobs?.[0]?.town || selectedUser.recent_jobs?.[0]?.home_address);
+                      
+                      if ((lga && lga !== 'Not specified') || (town && town !== 'Not specified')) {
+                        return (
+                          <div className="md:col-span-2">
+                            <strong>LGA/Town:</strong> {lga || ''} 
+                            {lga && town ? ' / ' : ''}
+                            {town || ''}
+                          </div>
+                        );
+                      }
+                      return null;
                     })()}
-                    {(selectedUser.address || selectedUser.recent_jobs?.[0]?.home_address) && (
-                      <div className="md:col-span-2"><strong>Address:</strong> {selectedUser.address || selectedUser.recent_jobs?.[0]?.home_address}</div>
-                    )}
                     {selectedUser.postcode && selectedUser.postcode !== '000000' && (
                       <div><strong>Postcode:</strong> {selectedUser.postcode}</div>
                     )}
