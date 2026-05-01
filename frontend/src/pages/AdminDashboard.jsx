@@ -7417,10 +7417,13 @@ const AdminDashboard = () => {
 
                       if ((lga && lga !== 'Not specified') || (address && address !== 'Not specified')) {
                         return (
-                          <div className="md:col-span-2">
-                            <strong>LGA/Address:</strong> {lga || ''} 
-                            {lga && address ? ' / ' : ''}
-                            {address || ''}
+                          <div className="md:col-span-2 py-2 border-b border-gray-200/50 flex items-center justify-between">
+                            <span className="text-gray-500 text-sm">LGA/Town:</span>
+                            <span className="font-bold text-[#121E3C] text-sm text-right max-w-[70%]">
+                              {lga || ''} 
+                              {lga && address ? ' / ' : ''}
+                              {address || ''}
+                            </span>
                           </div>
                         );
                       }

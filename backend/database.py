@@ -5992,6 +5992,16 @@ class Database:
                             "interests_count": counts_map.get(job.get("id"), 0)
                         } for job in recent_jobs_raw
                     ]
+                    
+                    # Lift location info from the most recent job if missing from profile
+                    if recent_jobs_raw:
+                        latest_job = recent_jobs_raw[0]
+                        if not user.get("lga") or user.get("lga") == "Not specified":
+                            user["lga"] = latest_job.get("lga")
+                        if not user.get("town") or user.get("town") == "Not specified":
+                            user["town"] = latest_job.get("town")
+                        if not user.get("address") or user.get("address") == "Not specified":
+                            user["address"] = latest_job.get("home_address") or latest_job.get("address") or latest_job.get("town")
                 else:
                     user["recent_jobs"] = []
                     
