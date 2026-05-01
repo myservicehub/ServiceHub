@@ -809,7 +809,17 @@ const AdminDashboard = () => {
       // Fetch detailed user information from API
       const detailedUser = await adminAPI.getUserDetails(user.id);
       if (detailedUser) {
-        setSelectedUser({...user, ...detailedUser});
+        const mergedUser = {
+          ...user,
+          ...(detailedUser.user || {}),
+          ...(detailedUser.activity_stats || {}),
+          ...(
+            (!detailedUser.user && !detailedUser.activity_stats && typeof detailedUser === 'object')
+              ? detailedUser
+              : {}
+          )
+        };
+        setSelectedUser(mergedUser);
       }
       
       setShowUserDetailsModal(true);
@@ -7377,6 +7387,9 @@ const AdminDashboard = () => {
                 (selectedUser.recent_jobs?.[0]?.lga) ||
                 (selectedUser.town && selectedUser.town !== 'Not specified') ||
                 (selectedUser.recent_jobs?.[0]?.town) ||
+                (selectedUser.home_address) ||
+                (selectedUser.residential_address) ||
+                (selectedUser.company_address) ||
                 (selectedUser.address) ||
                 (selectedUser.recent_jobs?.[0]?.home_address)
               ) && (
@@ -7393,7 +7406,14 @@ const AdminDashboard = () => {
                       
                       const address = (selectedUser.address && selectedUser.address !== 'Not specified')
                         ? selectedUser.address
-                        : (selectedUser.home_address || selectedUser.recent_jobs?.[0]?.home_address || selectedUser.town || selectedUser.recent_jobs?.[0]?.town);
+                        : (
+                          selectedUser.home_address ||
+                          selectedUser.residential_address ||
+                          selectedUser.company_address ||
+                          selectedUser.recent_jobs?.[0]?.home_address ||
+                          selectedUser.town ||
+                          selectedUser.recent_jobs?.[0]?.town
+                        );
 
                       if ((lga && lga !== 'Not specified') || (address && address !== 'Not specified')) {
                         return (
