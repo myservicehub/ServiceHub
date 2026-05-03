@@ -413,92 +413,93 @@ const InterestedTradespeopleePage = () => {
     
     return (
       <Card key={tradesperson.interest_id} className="hover:shadow-lg transition-shadow bg-white rounded-2xl border border-gray-100 overflow-hidden">
-        <CardContent className="p-5">
-          <div className="flex items-start gap-4">
-            {/* Initials Avatar */}
-            <div className="relative shrink-0">
-              <div className="w-16 h-16 rounded-2xl bg-[#34D164] flex items-center justify-center overflow-hidden">
-                {tradesperson.profile_image ? (
-                  <img
-                    src={tradesperson.profile_image}
-                    alt={tradesperson.tradesperson_name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-white text-xl font-bold font-montserrat">
-                    {tradesperson.tradesperson_name ? 
-                      tradesperson.tradesperson_name.split(' ').map(n => n[0]).join('').toUpperCase() : 
-                      'TP'
-                    }
-                  </span>
-                )}
+        <CardContent className="p-0">
+          {/* Card Header Area */}
+          <div className="p-5 pb-4">
+            <div className="flex items-start gap-4">
+              {/* Initials Avatar */}
+              <div className="shrink-0">
+                <div className="w-14 h-14 rounded-xl bg-[#34D164] flex items-center justify-center overflow-hidden">
+                  {tradesperson.profile_image ? (
+                    <img
+                      src={tradesperson.profile_image}
+                      alt={tradesperson.tradesperson_name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-white text-lg font-bold font-montserrat">
+                      {tradesperson.tradesperson_name ? 
+                        tradesperson.tradesperson_name.split(' ').map(n => n[0]).join('').toUpperCase() : 
+                        'TP'
+                      }
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Name & Company */}
+              <div className="flex-1 min-w-0">
+                <div className="flex justify-between items-start gap-2">
+                  <div>
+                    <h3 className="text-lg font-bold font-montserrat text-[#121E3C] truncate leading-tight">
+                      {tradesperson.tradesperson_name}
+                    </h3>
+                    <p className="text-xs text-[#34D164] font-bold font-lato mt-0.5">
+                      {tradesperson.company_name || 'Individual'}
+                    </p>
+                  </div>
+                  <div className="shrink-0">
+                    {getStatusBadge(tradesperson.status)}
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Basic Info */}
-            <div className="flex-1 min-w-0">
-              <div className="flex justify-between items-start gap-2 mb-1">
-                <div>
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <h3 className="text-lg font-bold font-montserrat text-[#121E3C] truncate">
-                      {tradesperson.tradesperson_name}
-                    </h3>
-                    {/* Conditional Verified Badge for List Card */}
-                    {(tradesperson.is_verified || tradesperson.verified_tradesperson) && (
-                      <div className="bg-[#34D164]/10 text-[#34D164] text-[9px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-0.5 border border-[#34D164]/20 shrink-0">
-                        <CheckCircle size={8} fill="currentColor" className="text-[#34D164]" />
-                        <span>VERIFIED</span>
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-xs text-[#34D164] font-bold font-lato">
-                    {tradesperson.company_name || 'Individual'}
-                  </p>
-                </div>
-                {getStatusBadge(tradesperson.status)}
+            {/* Info Icons Row - Moved below avatar/name */}
+            <div className="flex flex-wrap items-center gap-2 text-gray-500 mt-4">
+              <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-full border border-gray-100">
+                <Briefcase size={12} className="text-gray-400" />
+                <span className="text-[10px] font-bold uppercase tracking-wide">{tradesperson.trade_categories?.[0] || 'N/A'}</span>
               </div>
-
-              {/* Info Icons Row */}
-              <div className="flex flex-wrap items-center gap-3 text-gray-500 mt-3">
-                <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded-lg">
-                  <Briefcase size={14} className="text-gray-400" />
-                  <span className="text-xs font-medium">{tradesperson.trade_categories?.[0] || 'N/A'}</span>
-                </div>
-                <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded-lg">
-                  <MapPin size={14} className="text-gray-400" />
-                  <span className="text-xs font-medium">{tradesperson.location || 'N/A'}</span>
-                </div>
-                <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded-lg">
-                  <Clock size={14} className="text-gray-400" />
-                  <span className="text-xs font-medium">{tradesperson.experience_years || 0} years exp.</span>
-                </div>
+              <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-full border border-gray-100">
+                <MapPin size={12} className="text-gray-400" />
+                <span className="text-[10px] font-bold uppercase tracking-wide">{tradesperson.location || 'N/A'}</span>
+              </div>
+              <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-full border border-gray-100">
+                <Clock size={12} className="text-gray-400" />
+                <span className="text-[10px] font-bold uppercase tracking-wide">{tradesperson.experience_years || 0} years exp.</span>
               </div>
             </div>
           </div>
 
-          {/* Rating & Description */}
-          <div className="mt-4 pt-4 border-t border-gray-50">
-            <div className="flex items-center gap-2 mb-3">
+          {/* Rating Section */}
+          <div className="px-5 pb-4">
+            <div className="flex items-center gap-2">
               <div className="flex">{getStarRating(tradesperson.average_rating || 0)}</div>
-              <span className="text-xs font-bold text-[#121E3C]">
+              <span className="text-[11px] font-bold text-[#121E3C]">
                 {(tradesperson.average_rating || 0).toFixed(1)} · {tradesperson.average_rating > 0 ? 'Tradesperson' : 'New tradesperson'}
               </span>
             </div>
+          </div>
 
+          {/* Description & Footer */}
+          <div className="px-5 pb-5">
             {tradesperson.description && (
-              <p className="text-sm text-gray-600 font-lato leading-relaxed line-clamp-3 mb-4 bg-gray-50/50 p-3 rounded-xl">
-                {tradesperson.description}
-              </p>
+              <div className="bg-gray-50/80 p-4 rounded-2xl mb-4">
+                <p className="text-sm text-gray-600 font-lato leading-relaxed line-clamp-3">
+                  {tradesperson.description}
+                </p>
+              </div>
             )}
 
             {/* Footer Stats */}
-            <div className="flex items-center justify-between text-[11px] text-gray-400 font-medium mb-4">
+            <div className="flex items-center justify-between text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-5">
               <div className="flex items-center gap-1.5">
-                <Camera size={13} />
+                <Camera size={12} />
                 <span>{tradesperson.portfolio_count || 0} portfolio items</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <Calendar size={13} />
+                <Calendar size={12} />
                 <span>Applied: {formatDate(tradesperson.created_at)}</span>
               </div>
             </div>
@@ -508,24 +509,24 @@ const InterestedTradespeopleePage = () => {
               <Button
                 variant="outline"
                 onClick={() => handleViewFullProfile(tradesperson)}
-                className="rounded-xl border-gray-200 text-[#121E3C] font-bold text-sm h-11 flex items-center justify-center gap-2 hover:bg-gray-50"
+                className="rounded-xl border-gray-200 text-[#121E3C] font-bold text-xs h-10 flex items-center justify-center gap-2 hover:bg-gray-50"
               >
                 View Profile
-                <ArrowUpRight size={16} />
+                <ArrowUpRight size={14} />
               </Button>
 
               {tradesperson.status === 'interested' && (
                 <Button
                   onClick={() => handleShareContact(tradesperson.interest_id)}
                   disabled={actionLoading[tradesperson.interest_id]}
-                  className="rounded-xl bg-[#34D164] hover:bg-[#2ab854] text-[#121E3C] font-bold text-sm h-11 flex items-center justify-center gap-2 border-none"
+                  className="rounded-xl bg-[#34D164] hover:bg-[#2ab854] text-[#121E3C] font-bold text-xs h-10 flex items-center justify-center gap-2 border-none"
                 >
                   {actionLoading[tradesperson.interest_id] ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader2 className="w-3 h-3 animate-spin" />
                   ) : (
                     <>
                       Share Contact
-                      <ArrowUpRight size={16} />
+                      <ArrowUpRight size={14} />
                     </>
                   )}
                 </Button>
@@ -535,9 +536,9 @@ const InterestedTradespeopleePage = () => {
                 <Button
                   onClick={() => handleStartChat(tradesperson)}
                   disabled={isChatDisabled(tradesperson)}
-                  className="rounded-xl bg-[#121E3C] hover:bg-[#1a2d54] text-white font-bold text-sm h-11 flex items-center justify-center gap-2"
+                  className="rounded-xl bg-[#121E3C] hover:bg-[#1a2d54] text-white font-bold text-xs h-10 flex items-center justify-center gap-2"
                 >
-                  <MessageCircle size={16} />
+                  <MessageCircle size={14} />
                   Start Chat
                 </Button>
               )}
@@ -654,8 +655,8 @@ const InterestedTradespeopleePage = () => {
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center justify-between px-2 mb-2">
               <h2 className="text-xl font-bold font-montserrat text-[#121E3C]">
-                Interested Tradespeople ({(interestedTradespeople || []).length})
-              </h2>
+              Interested Tradespeople
+            </h2>
               <div className="w-6 h-6 rounded-full bg-[#34D164] text-white text-[10px] font-bold flex items-center justify-center">
                 {(interestedTradespeople || []).length}
               </div>
