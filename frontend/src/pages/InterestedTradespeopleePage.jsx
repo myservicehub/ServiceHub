@@ -691,57 +691,9 @@ const InterestedTradespeopleePage = () => {
           <div className="bg-white rounded-t-3xl sm:rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
             {/* Modal Header */}
             <div className="sticky top-0 bg-white border-b border-gray-100 p-5 sm:p-6 z-10">
-              <div className="flex justify-between items-start gap-4">
-                <div className="flex items-center gap-4 min-w-0">
-                  <div className="relative">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-[#34D164] overflow-hidden flex-shrink-0 flex items-center justify-center">
-                      {selectedTradesperson.profile_image ? (
-                        <img
-                          src={selectedTradesperson.profile_image}
-                          alt={selectedTradesperson.tradesperson_name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <span className="text-white text-2xl font-bold font-montserrat">
-                          {selectedTradesperson.tradesperson_name ? 
-                            selectedTradesperson.tradesperson_name.split(' ').map(n => n[0]).join('').toUpperCase() : 
-                            'TP'
-                          }
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="min-w-0">
-                    <h2 className="text-xl sm:text-2xl font-bold font-montserrat text-[#121E3C] truncate">
-                      {selectedTradesperson.tradesperson_name}
-                    </h2>
-                    <p className="text-sm text-gray-500 font-lato truncate mt-0.5">
-                      {selectedTradesperson.company_name ? `${selectedTradesperson.company_name} · ` : ''}
-                      {selectedTradesperson.trade_categories?.[0] || 'Tradesperson'}
-                    </p>
-                    
-                    <div className="flex flex-wrap items-center gap-3 mt-3">
-                      <div className="flex items-center gap-1">
-                        <div className="flex">{getStarRating(selectedTradesperson.average_rating || 0)}</div>
-                        <span className="text-sm font-bold text-[#121E3C] ml-1">
-                          {selectedTradesperson.average_rating > 0 ? selectedTradesperson.average_rating.toFixed(1) : 'New'}
-                        </span>
-                      </div>
-                      <div className="h-4 w-px bg-gray-200" />
-                      {selectedTradesperson.total_reviews > 0 ? (
-                        <span className="text-xs text-gray-500 font-medium">
-                          {selectedTradesperson.total_reviews} reviews
-                        </span>
-                      ) : (
-                        <button className="text-xs text-[#34D164] font-semibold hover:underline flex items-center gap-1">
-                          Be the first to review
-                          <ArrowUpRight size={12} />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
+              <div className="flex justify-between items-center mb-5">
+                <span className="text-[#34D164] text-[10px] font-bold tracking-widest uppercase">myservicehub.co</span>
+                <div className="flex items-center gap-2">
                   {/* Verified Badge */}
                   {(selectedTradesperson.is_verified || selectedTradesperson.verified_tradesperson) && (
                     <div className="bg-[#34D164] text-white text-[10px] font-bold px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
@@ -751,11 +703,64 @@ const InterestedTradespeopleePage = () => {
                   )}
                   <button
                     onClick={() => setShowProfileModal(false)}
-                    className="w-10 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+                    className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
                   >
-                    <span className="text-gray-500 text-xl">×</span>
+                    <span className="text-gray-500 text-lg">×</span>
                   </button>
                 </div>
+              </div>
+
+              <div className="flex items-center gap-4 min-w-0">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-[#34D164] overflow-hidden flex-shrink-0 flex items-center justify-center">
+                  {selectedTradesperson.profile_image ? (
+                    <img
+                      src={selectedTradesperson.profile_image}
+                      alt={selectedTradesperson.tradesperson_name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-white text-lg font-bold font-montserrat">
+                      {selectedTradesperson.tradesperson_name ? 
+                        selectedTradesperson.tradesperson_name.split(' ').map(n => n[0]).join('').toUpperCase() : 
+                        'TP'
+                      }
+                    </span>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-xl sm:text-2xl font-bold font-montserrat text-[#121E3C] leading-tight break-words">
+                    {selectedTradesperson.tradesperson_name}
+                  </h2>
+                  <p className="text-sm text-gray-500 font-lato truncate mt-0.5">
+                    {selectedTradesperson.company_name ? `${selectedTradesperson.company_name} · ` : ''}
+                    {selectedTradesperson.trade_categories?.[0] || 'Tradesperson'}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex flex-wrap items-center gap-3 mt-4">
+                <div className="flex items-center gap-1">
+                  <div className="flex">{getStarRating(selectedTradesperson.average_rating || 0)}</div>
+                  <span className="text-sm font-bold text-[#121E3C] ml-1">
+                    {selectedTradesperson.average_rating > 0 ? (
+                      <>
+                        {selectedTradesperson.average_rating.toFixed(1)}
+                        <span className="text-xs text-gray-400 font-medium ml-1">Tradesperson</span>
+                      </>
+                    ) : 'New tradesperson'}
+                  </span>
+                </div>
+                <div className="h-4 w-px bg-gray-200" />
+                {selectedTradesperson.total_reviews > 0 ? (
+                  <span className="text-xs text-gray-500 font-medium">
+                    {selectedTradesperson.total_reviews} reviews
+                  </span>
+                ) : (
+                  <button className="text-xs text-[#34D164] font-semibold hover:underline flex items-center gap-1">
+                    Be the first to review
+                    <ArrowUpRight size={12} />
+                  </button>
+                )}
               </div>
             </div>
 
