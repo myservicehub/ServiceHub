@@ -738,19 +738,19 @@ const InterestedTradespeopleePage = () => {
                 </div>
               </div>
               
-              <div className="flex flex-wrap items-center gap-3 mt-4">
-                <div className="flex items-center gap-1">
+              <div className="flex items-center justify-between mt-4">
+                <div className="flex items-center gap-2">
                   <div className="flex">{getStarRating(selectedTradesperson.average_rating || 0)}</div>
-                  <span className="text-sm font-bold text-[#121E3C] ml-1">
+                  <span className="text-xs font-bold text-[#121E3C]">
                     {selectedTradesperson.average_rating > 0 ? (
                       <>
                         {selectedTradesperson.average_rating.toFixed(1)}
-                        <span className="text-xs text-gray-400 font-medium ml-1">Tradesperson</span>
+                        <span className="text-gray-400 font-medium ml-1">Tradesperson</span>
                       </>
                     ) : 'New tradesperson'}
                   </span>
                 </div>
-                <div className="h-4 w-px bg-gray-200" />
+                
                 {selectedTradesperson.total_reviews > 0 ? (
                   <span className="text-xs text-gray-500 font-medium">
                     {selectedTradesperson.total_reviews} reviews
