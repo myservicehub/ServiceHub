@@ -233,10 +233,9 @@ const InterestedTradespeopleePage = () => {
       return true;
     }
     
-    // Check if tradesperson has paid access fee or contact is shared
-    if (tradesperson && 
-        tradesperson.status !== 'paid_access' && 
-        tradesperson.status !== 'contact_shared') {
+    // Homeowners can only chat if the tradesperson has paid the access fee
+    // 'contact_shared' means the homeowner has shared but the tradesperson hasn't paid yet
+    if (tradesperson && tradesperson.status !== 'paid_access') {
       return true;
     }
     
@@ -326,19 +325,13 @@ const InterestedTradespeopleePage = () => {
   };
 
   const handleContactTradesperson = (tradesperson) => {
-    // If contact is already shared or access is paid, start chat
-    if (tradesperson.status === 'contact_shared' || tradesperson.status === 'paid_access') {
+    // Only allow starting chat if the tradesperson has paid the access fee
+    if (tradesperson.status === 'paid_access') {
       handleStartChat(tradesperson);
     } 
-    // If just interested, check if chat is allowed or if they need to share contact
+    // If just interested, homeowner needs to share contact details first
     else if (tradesperson.status === 'interested') {
-      // Logic from card buttons: homeowners can chat even if just interested 
-      // as long as job is not cancelled/completed
-      if (!isChatDisabled(tradesperson)) {
-        handleStartChat(tradesperson);
-      } else {
-        handleShareContact(tradesperson.interest_id);
-      }
+      handleShareContact(tradesperson.interest_id);
     }
   };
 
@@ -532,11 +525,21 @@ const InterestedTradespeopleePage = () => {
                 </Button>
               )}
 
-              {(tradesperson.status === 'contact_shared' || tradesperson.status === 'paid_access') && (
+              {tradesperson.status === 'contact_shared' && (
+                <Button
+                  disabled
+                  className="rounded-xl bg-gray-100 text-gray-400 font-bold text-[10px] h-10 flex items-center justify-center gap-1.5 border-none cursor-not-allowed"
+                >
+                  <Clock size={14} />
+                  Awaiting Response
+                </Button>
+              )}
+
+              {tradesperson.status === 'paid_access' && (
                 <Button
                   onClick={() => handleStartChat(tradesperson)}
                   disabled={isChatDisabled(tradesperson)}
-                  className="rounded-xl bg-[#121E3C] hover:bg-[#1a2d54] text-white font-bold text-xs h-10 flex items-center justify-center gap-2"
+                  className="rounded-xl bg-[#34D164] hover:bg-[#2ab854] text-[#121E3C] font-bold text-xs h-10 flex items-center justify-center gap-2 border-none"
                 >
                   <MessageCircle size={14} />
                   Start Chat
@@ -977,13 +980,23 @@ const InterestedTradespeopleePage = () => {
             {/* Modal Footer */}
             <div className="p-5 sm:p-6 border-t border-gray-100 bg-white sticky bottom-0 z-20 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:pb-6">
               <div className="flex flex-col gap-3">
-                <Button
-                  onClick={() => handleContactTradesperson(selectedTradesperson)}
-                  className="w-full h-12 rounded-xl bg-[#34D164] hover:bg-[#2ab854] text-[#121E3C] font-bold flex items-center justify-center gap-2 group border-none"
-                >
-                  Contact Tradesperson
-                  <ArrowUpRight size={18} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                </Button>
+                {selectedTradesperson.status === 'contact_shared' ? (
+                   <Button
+                     disabled
+                     className="w-full h-12 rounded-xl bg-gray-100 text-gray-400 font-bold flex items-center justify-center gap-2 border-none cursor-not-allowed"
+                   >
+                     <Clock size={18} />
+                     Awaiting Response
+                   </Button>
+                 ) : (
+                  <Button
+                    onClick={() => handleContactTradesperson(selectedTradesperson)}
+                    className="w-full h-12 rounded-xl bg-[#34D164] hover:bg-[#2ab854] text-[#121E3C] font-bold flex items-center justify-center gap-2 group border-none"
+                  >
+                    {selectedTradesperson.status === 'paid_access' ? 'Start Chat' : 'Contact Tradesperson'}
+                    <ArrowUpRight size={18} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                  </Button>
+                )}
                 <button
                   onClick={() => setShowProfileModal(false)}
                   className="w-full py-2 text-sm text-gray-500 font-medium hover:text-gray-700 transition-colors sm:hidden"
