@@ -401,9 +401,9 @@ const InterestedTradespeopleePage = () => {
     const IconComponent = config.icon;
 
     return (
-      <Badge className={`${config.color} flex items-center gap-1`}>
-        <IconComponent size={12} />
-        {config.label}
+      <Badge className={`${config.color} flex items-center gap-1 shrink-0 whitespace-nowrap`}>
+        <IconComponent size={12} className="shrink-0" />
+        <span className="shrink-0">{config.label}</span>
       </Badge>
     );
   };
@@ -415,11 +415,11 @@ const InterestedTradespeopleePage = () => {
       <Card key={tradesperson.interest_id} className="hover:shadow-lg transition-shadow bg-white rounded-2xl border border-gray-100 overflow-hidden">
         <CardContent className="p-0">
           {/* Card Header Area */}
-          <div className="p-5 pb-4">
-            <div className="flex items-start gap-4">
+          <div className="p-4 sm:p-5 pb-4">
+            <div className="flex items-start gap-3 sm:gap-4">
               {/* Initials Avatar */}
               <div className="shrink-0">
-                <div className="w-14 h-14 rounded-xl bg-[#34D164] flex items-center justify-center overflow-hidden">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-[#34D164] flex items-center justify-center overflow-hidden">
                   {tradesperson.profile_image ? (
                     <img
                       src={tradesperson.profile_image}
@@ -427,7 +427,7 @@ const InterestedTradespeopleePage = () => {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <span className="text-white text-lg font-bold font-montserrat">
+                    <span className="text-white text-base sm:text-lg font-bold font-montserrat">
                       {tradesperson.tradesperson_name ? 
                         tradesperson.tradesperson_name.split(' ').map(n => n[0]).join('').toUpperCase() : 
                         'TP'
@@ -440,11 +440,11 @@ const InterestedTradespeopleePage = () => {
               {/* Name & Company */}
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-start gap-2">
-                  <div>
-                    <h3 className="text-lg font-bold font-montserrat text-[#121E3C] truncate leading-tight">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-base sm:text-lg font-bold font-montserrat text-[#121E3C] truncate leading-tight">
                       {tradesperson.tradesperson_name}
                     </h3>
-                    <p className="text-xs text-[#34D164] font-bold font-lato mt-0.5">
+                    <p className="text-[10px] sm:text-xs text-[#34D164] font-bold font-lato mt-0.5 truncate">
                       {tradesperson.company_name || 'Individual'}
                     </p>
                   </div>
@@ -455,19 +455,19 @@ const InterestedTradespeopleePage = () => {
               </div>
             </div>
 
-            {/* Info Icons Row - Moved below avatar/name */}
-            <div className="flex flex-wrap items-center gap-2 text-gray-500 mt-4">
-              <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-full border border-gray-100">
-                <Briefcase size={12} className="text-gray-400" />
-                <span className="text-[10px] font-bold uppercase tracking-wide">{tradesperson.trade_categories?.[0] || 'N/A'}</span>
+            {/* Info Icons Row - Forced single line on larger mobile, compact on small */}
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-gray-500 mt-4">
+              <div className="flex items-center gap-1 sm:gap-1.5 bg-gray-50 px-2 sm:px-2.5 py-1 rounded-full border border-gray-100 shrink-0">
+                <Briefcase size={10} className="text-gray-400 sm:w-[12px] sm:h-[12px]" />
+                <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wide">{tradesperson.trade_categories?.[0] || 'N/A'}</span>
               </div>
-              <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-full border border-gray-100">
-                <MapPin size={12} className="text-gray-400" />
-                <span className="text-[10px] font-bold uppercase tracking-wide">{tradesperson.location || 'N/A'}</span>
+              <div className="flex items-center gap-1 sm:gap-1.5 bg-gray-50 px-2 sm:px-2.5 py-1 rounded-full border border-gray-100 shrink-0">
+                <MapPin size={10} className="text-gray-400 sm:w-[12px] sm:h-[12px]" />
+                <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wide">{tradesperson.location || 'N/A'}</span>
               </div>
-              <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-full border border-gray-100">
-                <Clock size={12} className="text-gray-400" />
-                <span className="text-[10px] font-bold uppercase tracking-wide">{tradesperson.experience_years || 0} years exp.</span>
+              <div className="flex items-center gap-1 sm:gap-1.5 bg-gray-50 px-2 sm:px-2.5 py-1 rounded-full border border-gray-100 shrink-0">
+                <Clock size={10} className="text-gray-400 sm:w-[12px] sm:h-[12px]" />
+                <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wide">{tradesperson.experience_years || 0} years exp.</span>
               </div>
             </div>
           </div>
