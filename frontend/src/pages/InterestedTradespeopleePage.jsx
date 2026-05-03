@@ -412,7 +412,7 @@ const InterestedTradespeopleePage = () => {
     const experienceLevel = getExperienceLevel(tradesperson.experience_years || 0);
     
     return (
-      <Card key={tradesperson.interest_id} className="hover:shadow-lg transition-shadow bg-white rounded-2xl border border-gray-100 overflow-hidden">
+      <Card key={tradesperson.interest_id} className="hover:shadow-lg transition-shadow bg-white rounded-2xl border border-gray-100 overflow-hidden w-full">
         <CardContent className="p-0">
           {/* Card Header Area */}
           <div className="p-4 sm:p-5 pb-4">
@@ -441,10 +441,10 @@ const InterestedTradespeopleePage = () => {
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-start gap-2">
                   <div className="min-w-0 flex-1">
-                    <h3 className="text-base sm:text-lg font-bold font-montserrat text-[#121E3C] truncate leading-tight">
+                    <h3 className="text-base sm:text-lg font-bold font-montserrat text-[#121E3C] leading-tight break-words">
                       {tradesperson.tradesperson_name}
                     </h3>
-                    <p className="text-[10px] sm:text-xs text-[#34D164] font-bold font-lato mt-0.5 truncate">
+                    <p className="text-[10px] sm:text-xs text-[#34D164] font-bold font-lato mt-0.5 break-words">
                       {tradesperson.company_name || 'Individual'}
                     </p>
                   </div>
@@ -561,8 +561,8 @@ const InterestedTradespeopleePage = () => {
   }
 
   return (
-    <div>
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="bg-[#F8F9FA] min-h-screen">
+      <div className="max-w-6xl mx-auto px-2 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Header Section */}
         <div className="mb-8">
           <div className="flex items-center gap-4 mb-6">
