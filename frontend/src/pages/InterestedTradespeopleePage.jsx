@@ -575,113 +575,114 @@ const InterestedTradespeopleePage = () => {
             </Button>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h1 className="text-2xl font-bold font-montserrat mb-2" style={{color: '#121E3C'}}>
-                  Interested Tradespeople
-                </h1>
-                <p className="text-gray-600 font-lato mb-4">
-                  Review profiles and portfolios of tradespeople interested in your job
-                </p>
-                
-                {job && (
-                  <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
-                    <div className="flex items-center gap-2 mb-4">
-                      <div className="p-1.5 bg-[#34D164]/10 rounded-lg">
-                        <FileText size={18} className="text-[#34D164]" />
-                      </div>
-                      <h3 className="font-bold text-[#121E3C] font-montserrat">Job Details</h3>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center py-2 border-b border-gray-200/50">
-                        <span className="text-sm text-gray-500 font-medium">Job ID</span>
-                        <span className="text-sm font-bold text-[#121E3C]">#{job.id || job._id || job.job_id}</span>
-                      </div>
-                      <div className="flex justify-between items-center py-2 border-b border-gray-200/50">
-                        <span className="text-sm text-gray-500 font-medium">Title</span>
-                        <span className="text-sm font-bold text-[#121E3C]">{job.title}</span>
-                      </div>
-                      <div className="flex justify-between items-center py-2 border-b border-gray-200/50">
-                        <span className="text-sm text-gray-500 font-medium">Category</span>
-                        <span className="text-sm font-bold text-[#121E3C]">{job.category}</span>
-                      </div>
-                      <div className="flex justify-between items-center py-2 border-b border-gray-200/50">
-                        <span className="text-sm text-gray-500 font-medium">Location</span>
-                        <span className="text-sm font-bold text-[#121E3C]">{job.location}</span>
-                      </div>
-                      <div className="flex justify-between items-center py-2">
-                        <span className="text-sm text-gray-500 font-medium">Budget</span>
-                        <span className="text-sm font-bold text-[#34D164]">
-                          {job.budget_min && job.budget_max 
-                            ? `${formatCurrency(job.budget_min)} - ${formatCurrency(job.budget_max)}`
-                            : 'Budget negotiable'
-                          }
-                        </span>
-                      </div>
-                    </div>
+          <div className="mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold font-montserrat text-[#121E3C] mb-2">
+              Interested Tradespeople
+            </h1>
+            <p className="text-sm text-gray-500 font-lato">
+              Review profiles and portfolios of tradespeople interested in your job
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column: Job Details & Stats */}
+          <div className="lg:col-span-1 space-y-6">
+            {job && (
+              <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+                <div className="flex items-center gap-2 mb-6">
+                  <div className="p-1.5 bg-[#34D164]/10 rounded-lg">
+                    <FileText size={18} className="text-[#34D164]" />
                   </div>
-                )}
+                  <h3 className="font-bold text-[#121E3C] font-montserrat">Job Details</h3>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-400 font-medium">Job ID</span>
+                    <span className="font-bold text-[#121E3C]">#{job.id || job._id || job.job_id}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-400 font-medium">Title</span>
+                    <span className="font-bold text-[#121E3C] text-right ml-4">{job.title}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-400 font-medium">Category</span>
+                    <span className="font-bold text-[#121E3C] text-right ml-4">{job.category}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-400 font-medium">Location</span>
+                    <span className="font-bold text-[#121E3C] text-right ml-4">{job.location}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-400 font-medium">Budget</span>
+                    <span className="font-bold text-[#34D164] text-right ml-4">
+                      {job.budget_min && job.budget_max 
+                        ? `${formatCurrency(job.budget_min)} - ${formatCurrency(job.budget_max)}`
+                        : 'Budget negotiable'
+                      }
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+                <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">Total Interested</p>
+                <p className="text-xl font-bold text-[#121E3C]">{(interestedTradespeople || []).length}</p>
+              </div>
+
+              <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+                <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">New Applications</p>
+                <p className="text-xl font-bold text-[#34D164]">
+                  {(interestedTradespeople || []).filter(tp => tp && tp.status === 'interested').length}
+                </p>
+              </div>
+
+              <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm col-span-2">
+                <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">Contact Shared</p>
+                <p className="text-xl font-bold text-[#121E3C]">
+                  {(interestedTradespeople || []).filter(tp => tp && tp.status === 'contact_shared').length}
+                </p>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 gap-3 mb-8">
-          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
-            <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">Total Interested</p>
-            <p className="text-xl font-bold text-[#121E3C]">{(interestedTradespeople || []).length}</p>
-          </div>
-
-          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
-            <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">New Applications</p>
-            <p className="text-xl font-bold text-[#34D164]">
-              {(interestedTradespeople || []).filter(tp => tp && tp.status === 'interested').length}
-            </p>
-          </div>
-
-          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm col-span-2">
-            <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">Contact Shared</p>
-            <p className="text-xl font-bold text-[#121E3C]">
-              {(interestedTradespeople || []).filter(tp => tp && tp.status === 'contact_shared').length}
-            </p>
-          </div>
-        </div>
-
-        {/* Interested Tradespeople List */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between px-2">
-            <h2 className="text-xl font-bold font-montserrat text-[#121E3C]">
-              Interested Tradespeople ({(interestedTradespeople || []).length})
-            </h2>
-            <div className="w-6 h-6 rounded-full bg-[#34D164] text-white text-[10px] font-bold flex items-center justify-center">
-              {(interestedTradespeople || []).length}
+          {/* Right Column: Interested Tradespeople List */}
+          <div className="lg:col-span-2 space-y-4">
+            <div className="flex items-center justify-between px-2 mb-2">
+              <h2 className="text-xl font-bold font-montserrat text-[#121E3C]">
+                Interested Tradespeople ({(interestedTradespeople || []).length})
+              </h2>
+              <div className="w-6 h-6 rounded-full bg-[#34D164] text-white text-[10px] font-bold flex items-center justify-center">
+                {(interestedTradespeople || []).length}
+              </div>
             </div>
-          </div>
 
-          {(!interestedTradespeople || interestedTradespeople.length === 0) ? (
-            <div className="bg-white rounded-3xl p-12 text-center border border-gray-100">
-              <Users className="w-16 h-16 text-gray-200 mx-auto mb-4" />
-              <h3 className="text-lg font-bold text-gray-600 mb-2">
-                No interested tradespeople yet
-              </h3>
-              <p className="text-sm text-gray-400 mb-6">
-                When tradespeople show interest in your job, they'll appear here.
-              </p>
-              <Button 
-                onClick={() => navigate('/dashboard/jobs')}
-                className="rounded-xl bg-[#34D164] hover:bg-[#2ab854] text-[#121E3C] font-bold"
-              >
-                Back to My Jobs
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {interestedTradespeople.map((tradesperson) => getTradespersonCard(tradesperson))}
-            </div>
-          )}
+            {(!interestedTradespeople || interestedTradespeople.length === 0) ? (
+              <div className="bg-white rounded-3xl p-12 text-center border border-gray-100">
+                <Users className="w-16 h-16 text-gray-200 mx-auto mb-4" />
+                <h3 className="text-lg font-bold text-gray-600 mb-2">
+                  No interested tradespeople yet
+                </h3>
+                <p className="text-sm text-gray-400 mb-6">
+                  When tradespeople show interest in your job, they'll appear here.
+                </p>
+                <Button 
+                  onClick={() => navigate('/dashboard/jobs')}
+                  className="rounded-xl bg-[#34D164] hover:bg-[#2ab854] text-[#121E3C] font-bold"
+                >
+                  Back to My Jobs
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {interestedTradespeople.map((tradesperson) => getTradespersonCard(tradesperson))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
