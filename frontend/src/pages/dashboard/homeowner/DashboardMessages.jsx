@@ -34,6 +34,7 @@ const DashboardMessages = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
 
   useEffect(() => {
     loadConversations();
@@ -73,8 +74,12 @@ const DashboardMessages = () => {
   }, [location.state, handledIncomingChat, user?.id, conversations, navigate, location.pathname]);
 
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    const container = messagesContainerRef.current;
+    if (container) {
+      const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 100;
+      if (isAtBottom) {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
     }
   }, [messages, selectedConversation?.id]);
 
@@ -178,7 +183,7 @@ const DashboardMessages = () => {
   );
 
   return (
-    <div className="h-[calc(100vh-12rem)] flex flex-col">
+    <div className="h-[calc(100vh-120px)] flex flex-col">
       {/* Page Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -190,7 +195,7 @@ const DashboardMessages = () => {
       </div>
 
       {/* Messages Container */}
-      <div className="flex-1 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex">
+      <div className="flex-1 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex min-h-0">
         {/* Conversations List */}
         <div className={cn(
           "w-full md:w-80 lg:w-96 border-r border-gray-100 flex flex-col",
@@ -284,32 +289,13 @@ const DashboardMessages = () => {
                 </div>
                 <div className="flex items-center gap-2 text-xs text-gray-500">
                   {selectedConversation.job_location && (
-                    <>
-                      <div className="flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                        <span>{selectedConversation.job_location}</span>
-                      </div>
-                      <span className="text-gray-300">•</span>
-                    </>
-                  )}
-                  {selectedConversation.job_status && (
-                    <>
-                      <Badge
-                        variant="secondary"
-                        className={cn(
-                          "rounded-full text-[10px] font-bold uppercase tracking-wider",
-                          selectedConversation.job_status === 'completed' || selectedConversation.job_status === 'hired'
-                            ? "bg-green-100 text-green-700 hover:bg-green-100"
-                            : "bg-blue-100 text-blue-700 hover:bg-blue-100"
-                        )}
-                      >
-                        {selectedConversation.job_status}
-                      </Badge>
-                      <span className="text-gray-300">•</span>
-                    </>
+                    <div className="flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                      <span>{selectedConversation.job_location}</span>
+                    </div>
                   )}
                   <Badge variant="outline" className="rounded-full text-xs font-medium">
-                    Homeowner
+                    Job Owner
                   </Badge>
                 </div>
 
@@ -334,7 +320,7 @@ const DashboardMessages = () => {
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
                 {messages.length > 0 ? (
                   messages.map((message, index) => (
                     <MessageBubble
@@ -479,15 +465,15 @@ const MessageBubble = ({ message, isOwn }) => {
   return (
     <div className={cn("flex", isOwn ? "justify-end" : "justify-start")}>
       <div className={cn(
-        "max-w-[75%] px-4 py-2.5 rounded-2xl",
+        "max-w-[75%] p-4 rounded-2xl shadow-sm",
         isOwn
-          ? "bg-green-600 text-white rounded-br-md"
-          : "bg-gray-100 text-gray-900 rounded-bl-md"
+          ? "bg-[#34D164] text-white rounded-tr-sm"
+          : "bg-white text-gray-800 rounded-tl-sm"
       )}>
-        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+        <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
         <div className={cn(
-          "flex items-center justify-end gap-1 mt-1",
-          isOwn ? "text-green-100" : "text-gray-400"
+          "flex items-center justify-end gap-1 mt-2",
+          isOwn ? "text-white/70" : "text-gray-400"
         )}>
           <span className="text-[10px]">
             {message.created_at ? new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}

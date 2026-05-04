@@ -36,6 +36,7 @@ const TradespersonMessages = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
 
   useEffect(() => {
     loadConversations();
@@ -80,8 +81,12 @@ const TradespersonMessages = () => {
   }, [location.state, handledIncomingChat, user?.id, conversations, navigate, location.pathname]);
 
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    const container = messagesContainerRef.current;
+    if (container) {
+      const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 100;
+      if (isAtBottom) {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
     }
   }, [messages, selectedConversation?.id]);
 
@@ -366,8 +371,8 @@ const TradespersonMessages = () => {
                     </>
                   )}
                   <Badge variant="outline" className="rounded-full text-xs font-medium">
-                    Homeowner
-                  </Badge>
+                      Job Owner
+                    </Badge>
                 </div>
 
                 {detailsLoading && (
@@ -401,7 +406,7 @@ const TradespersonMessages = () => {
                 )}
               </div>
 
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+              <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
                 {messages.length > 0 ? (
                   messages.map((msg, index) => {
                     const isOwn = msg.sender_id === user?.id;
