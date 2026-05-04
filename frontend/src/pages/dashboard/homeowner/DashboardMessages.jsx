@@ -81,11 +81,14 @@ const DashboardMessages = () => {
   // Live updates: conversations/unread and active chat messages without page refresh
   useEffect(() => {
     const intervalId = window.setInterval(() => {
-      loadConversations(true);
-      if (selectedConversation?.id) {
-        loadMessages(selectedConversation.id);
+      // Only refresh if the tab is visible to optimize server load
+      if (document.visibilityState === 'visible') {
+        loadConversations(true);
+        if (selectedConversation?.id) {
+          loadMessages(selectedConversation.id);
+        }
       }
-    }, 5000);
+    }, 3000); // More aggressive refresh interval (3 seconds)
     return () => window.clearInterval(intervalId);
   }, [selectedConversation?.id]);
 
@@ -281,13 +284,32 @@ const DashboardMessages = () => {
                 </div>
                 <div className="flex items-center gap-2 text-xs text-gray-500">
                   {selectedConversation.job_location && (
-                    <div className="flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                      <span>{selectedConversation.job_location}</span>
-                    </div>
+                    <>
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                        <span>{selectedConversation.job_location}</span>
+                      </div>
+                      <span className="text-gray-300">•</span>
+                    </>
+                  )}
+                  {selectedConversation.job_status && (
+                    <>
+                      <Badge
+                        variant="secondary"
+                        className={cn(
+                          "rounded-full text-[10px] font-bold uppercase tracking-wider",
+                          selectedConversation.job_status === 'completed' || selectedConversation.job_status === 'hired'
+                            ? "bg-green-100 text-green-700 hover:bg-green-100"
+                            : "bg-blue-100 text-blue-700 hover:bg-blue-100"
+                        )}
+                      >
+                        {selectedConversation.job_status}
+                      </Badge>
+                      <span className="text-gray-300">•</span>
+                    </>
                   )}
                   <Badge variant="outline" className="rounded-full text-xs font-medium">
-                    Job Owner
+                    Homeowner
                   </Badge>
                 </div>
 
