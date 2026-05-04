@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { messagesAPI } from '../../../api/messages';
@@ -8,18 +8,16 @@ import {
   Search,
   Send,
   Paperclip,
-  MoreVertical,
   Phone,
-  Video,
   ArrowLeft,
-  User,
+  MapPin,
+  Briefcase,
+  HelpCircle,
   Clock,
   CheckCheck,
-  Image,
-  File,
-  Smile,
 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
+import { Badge } from '../../../components/ui/badge';
 
 const DashboardMessages = () => {
   const [conversations, setConversations] = useState([]);
@@ -29,22 +27,87 @@ const DashboardMessages = () => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [handledIncomingChat, setHandledIncomingChat] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const messagesEndRef = useRef(null);
 
   useEffect(() => {
     loadConversations();
   }, []);
 
-  const loadConversations = async () => {
+  useEffect(() => {
+    const openChat = location.state?.openChat;
+    if (!openChat || handledIncomingChat || !user?.id) return;
+
+    const bootstrapIncomingChat = async () => {
+      try {
+        const response = await messagesAPI.getOrCreateConversationForJob(openChat.jobId, openChat.tradespersonId);
+        const conversationId = response?.conversation_id;
+        if (!conversationId) return;
+
+        const matchedConversation = conversations.find((conv) => conv.id === conversationId) || {
+          id: conversationId,
+          job_id: openChat.jobId,
+          tradesperson_id: openChat.tradespersonId,
+          tradesperson_name: openChat.tradespersonName,
+          job_title: openChat.jobTitle,
+          job_location: openChat.jobLocation,
+          job_status: openChat.jobStatus,
+        };
+
+        setSelectedConversation(matchedConversation);
+        await loadMessages(conversationId);
+
+        setHandledIncomingChat(true);
+        navigate(location.pathname, { replace: true, state: null });
+      } catch (error) {
+        console.error('Failed to open incoming chat from interested tradespeople:', error);
+      }
+    };
+
+    bootstrapIncomingChat();
+  }, [location.state, handledIncomingChat, user?.id, conversations, navigate, location.pathname]);
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+  }, [messages, selectedConversation?.id]);
+
+  const parseServerDate = (value) => {
+    if (!value) return null;
+    if (value instanceof Date) return value;
+    if (typeof value === 'string' && !/[zZ]|[+\-]\d{2}:\d{2}$/.test(value)) {
+      return new Date(`${value}Z`);
+    }
+    return new Date(value);
+  };
+
+  const formatConversationTime = (value) => {
+    if (!value) return '';
+    const date = parseServerDate(value);
+    if (!date || Number.isNaN(date.getTime())) return '';
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(minutes / 60);
+    if (minutes < 1) return 'now';
+    if (minutes < 60) return `${minutes}m`;
+    if (hours < 24) return `${hours}h`;
+    return date.toLocaleDateString();
+  };
+
+  const loadConversations = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const response = await messagesAPI.getConversations();
       setConversations(response?.conversations || []);
     } catch (error) {
       console.error('Failed to load conversations:', error);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -52,14 +115,26 @@ const DashboardMessages = () => {
     try {
       const response = await messagesAPI.getConversationMessages(conversationId);
       setMessages(response?.messages || []);
+      await messagesAPI.markConversationAsRead(conversationId);
+      setConversations((prev) =>
+        prev.map((conv) =>
+          conv.id === conversationId ? { ...conv, unread_count_homeowner: 0 } : conv
+        )
+      );
+      await loadConversations(true);
     } catch (error) {
       console.error('Failed to load messages:', error);
     }
   };
 
-  const handleSelectConversation = (conversation) => {
+  const handleSelectConversation = async (conversation) => {
     setSelectedConversation(conversation);
-    loadMessages(conversation.id);
+    setConversations((prev) =>
+      prev.map((conv) =>
+        conv.id === conversation.id ? { ...conv, unread_count_homeowner: 0 } : conv
+      )
+    );
+    await loadMessages(conversation.id);
   };
 
   const handleSendMessage = async (e) => {
@@ -139,6 +214,7 @@ const DashboardMessages = () => {
                   <ConversationItem
                     key={conv.id}
                     conversation={conv}
+                    formatConversationTime={formatConversationTime}
                     isSelected={selectedConversation?.id === conv.id}
                     onClick={() => handleSelectConversation(conv)}
                   />
@@ -172,13 +248,56 @@ const DashboardMessages = () => {
                   <h3 className="font-semibold text-gray-900 truncate">
                     {selectedConversation.tradesperson_name || 'Tradesperson'}
                   </h3>
-                  <p className="text-sm text-gray-500 truncate">
-                    {selectedConversation.job_title || 'Job conversation'}
+                  <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#34D164] inline-block" />
+                    <span>Online</span>
+                  </div>
+                </div>
+                <button className="w-10 h-10 rounded-xl border border-gray-100 bg-white hover:bg-gray-50 transition-colors flex items-center justify-center">
+                  <Phone className="w-5 h-5 text-gray-600" />
+                </button>
+              </div>
+
+              <div className="px-4 pt-3 pb-3 bg-white border-b border-gray-100">
+                <div className="flex items-center justify-between gap-3 mb-1.5">
+                  <div className="flex items-center gap-2 min-w-0 text-sm text-gray-700">
+                    <Briefcase className="w-4 h-4 text-gray-400" />
+                    <span className="truncate">{selectedConversation.job_title || 'Job conversation'}</span>
+                  </div>
+                  <Badge className="rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+                    Contact Available
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  {selectedConversation.job_location && (
+                    <div className="flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                      <span>{selectedConversation.job_location}</span>
+                    </div>
+                  )}
+                  <Badge variant="outline" className="rounded-full text-xs font-medium">
+                    Job Owner
+                  </Badge>
+                </div>
+
+                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <HelpCircle className="w-4 h-4 text-blue-600" />
+                      <span className="text-sm font-semibold text-blue-800">Job Status Update</span>
+                    </div>
+                    <Button
+                      onClick={() => navigate('/dashboard/jobs')}
+                      size="sm"
+                      className="bg-blue-600 hover:bg-blue-700 text-white text-xs"
+                    >
+                      Update Status
+                    </Button>
+                  </div>
+                  <p className="text-xs text-blue-700 mt-1">
+                    Help us track your job progress and get review reminders.
                   </p>
                 </div>
-                <button className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
-                  <MoreVertical className="w-5 h-5" />
-                </button>
               </div>
 
               {/* Messages */}
@@ -200,6 +319,7 @@ const DashboardMessages = () => {
                     </div>
                   </div>
                 )}
+                <div ref={messagesEndRef} />
               </div>
 
               {/* Message Input */}
@@ -262,7 +382,8 @@ const DashboardMessages = () => {
   );
 };
 
-const ConversationItem = ({ conversation, isSelected, onClick }) => {
+const ConversationItem = ({ conversation, formatConversationTime, isSelected, onClick }) => {
+  const unreadCount = conversation.unread_count_homeowner || 0;
   return (
     <button
       onClick={onClick}
@@ -277,9 +398,9 @@ const ConversationItem = ({ conversation, isSelected, onClick }) => {
         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white font-semibold">
           {conversation.tradesperson_name?.charAt(0)?.toUpperCase() || 'T'}
         </div>
-        {conversation.unread_count > 0 && (
+        {unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-            {conversation.unread_count}
+            {unreadCount}
           </span>
         )}
       </div>
@@ -287,12 +408,12 @@ const ConversationItem = ({ conversation, isSelected, onClick }) => {
         <div className="flex items-center justify-between gap-2">
           <h4 className={cn(
             "font-semibold truncate",
-            conversation.unread_count > 0 ? "text-gray-900" : "text-gray-700"
+            unreadCount > 0 ? "text-gray-900" : "text-gray-700"
           )}>
             {conversation.tradesperson_name || 'Tradesperson'}
           </h4>
           <span className="text-xs text-gray-400 flex-shrink-0">
-            {conversation.last_message_time || ''}
+            {formatConversationTime(conversation.last_message_at || conversation.updated_at)}
           </span>
         </div>
         <p className="text-sm text-gray-500 truncate mt-0.5">
@@ -301,7 +422,7 @@ const ConversationItem = ({ conversation, isSelected, onClick }) => {
         {conversation.last_message && (
           <p className={cn(
             "text-sm truncate mt-1",
-            conversation.unread_count > 0 ? "text-gray-700 font-medium" : "text-gray-500"
+            unreadCount > 0 ? "text-gray-700 font-medium" : "text-gray-500"
           )}>
             {conversation.last_message}
           </p>

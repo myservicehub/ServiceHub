@@ -49,7 +49,6 @@ import { interestsAPI, portfolioAPI, tradespeopleAPI, jobsAPI } from '../api/ser
 import { reviewsAPI } from '../api/reviews';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
-import ChatModal from '../components/ChatModal';
 
 const InterestedTradespeopleePage = () => {
   const { jobId } = useParams();
@@ -68,8 +67,6 @@ const InterestedTradespeopleePage = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [showImageModal, setShowImageModal] = useState(false);
   const [activeProfileTab, setActiveProfileTab] = useState('overview');
-  const [showChatModal, setShowChatModal] = useState(false);
-  const [selectedTradespersonForChat, setSelectedTradespersonForChat] = useState(null);
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -259,69 +256,18 @@ const InterestedTradespeopleePage = () => {
   };
 
   const handleStartChat = async (tradesperson) => {
-    console.log('=== HOMEOWNER START CHAT DEBUG ===');
-    console.log('handleStartChat called with tradesperson:', tradesperson);
-    console.log('User data:', user);
-    console.log('Job data:', job);
-    
-    // Add immediate toast feedback for mobile users
-    toast({
-      title: "Opening Chat...",
-      description: `Starting conversation with ${tradesperson.tradesperson_name}`,
-    });
-    
-    try {
-      // Simplified chat data setup
-      const chatData = {
-        id: tradesperson.tradesperson_id,
-        name: tradesperson.tradesperson_name,
-        type: 'tradesperson',
-        email: tradesperson.email || '',
-        phone: tradesperson.phone || '',
-        location: tradesperson.location || '',
-        contactDetails: {
-          homeowner_name: user?.name || '',
-          homeowner_email: user?.email || '',
-          homeowner_phone: user?.phone || ''
+    navigate('/dashboard/messages', {
+      state: {
+        openChat: {
+          jobId: job?.id || jobId,
+          jobTitle: job?.title || 'Job conversation',
+          jobLocation: job?.location || tradesperson?.location || '',
+          jobStatus: job?.status || null,
+          tradespersonId: tradesperson.tradesperson_id,
+          tradespersonName: tradesperson.tradesperson_name,
         },
-        showContactDetails: true
-      };
-      
-      console.log('✅ Chat data prepared:', chatData);
-      
-      setSelectedTradespersonForChat(chatData);
-      setShowChatModal(true);
-      
-      console.log('✅ Homeowner chat setup complete');
-      
-      // Success feedback
-      toast({
-        title: "Chat Opened!",
-        description: "You can now message the tradesperson.",
-      });
-      
-    } catch (error) {
-      console.error('❌ Failed to prepare chat:', error);
-      
-      // Error feedback
-      toast({
-        title: "Error Opening Chat",
-        description: "Please try again in a moment.",
-        variant: "destructive",
-      });
-      
-      // Fallback attempt
-      try {
-        setSelectedTradespersonForChat({
-          id: tradesperson.tradesperson_id,
-          name: tradesperson.tradesperson_name,
-          type: 'tradesperson'
-        });
-        setShowChatModal(true);
-      } catch (fallbackError) {
-        console.error('❌ Fallback also failed:', fallbackError);
-      }
-    }
+      },
+    });
   };
 
   const handleContactTradesperson = (tradesperson) => {
@@ -1036,27 +982,6 @@ const InterestedTradespeopleePage = () => {
             </div>
           </div>
         </div>
-      )}
-
-      {/* Chat Modal - Fixed to work without full job object */}
-      {showChatModal && selectedTradespersonForChat && jobId && (
-        <>
-          {console.log('✅ RENDERING CHAT MODAL - All conditions met (removed job requirement)')}
-          <ChatModal
-            isOpen={showChatModal}
-            onClose={() => {
-              console.log('🔥 CHAT MODAL CLOSE CLICKED');
-              setShowChatModal(false);
-              setSelectedTradespersonForChat(null);
-            }}
-            jobId={jobId}
-            jobTitle={job?.title || 'Job Discussion'} 
-            otherParty={selectedTradespersonForChat}
-            contactDetails={selectedTradespersonForChat.contactDetails}
-            showContactDetails={selectedTradespersonForChat.showContactDetails}
-            jobStatus={job?.status} // Pass job status to chat modal
-          />
-        </>
       )}
 
     </div>
