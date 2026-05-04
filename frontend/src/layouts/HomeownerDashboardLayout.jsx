@@ -79,16 +79,6 @@ const HomeownerDashboardLayout = () => {
         </main>
 
         {/* Footer */}
-        <footer className="border-t border-gray-200/60 bg-white py-4 px-6">
-          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-sm text-gray-400">
-            <p>© {new Date().getFullYear()} ServiceHub. All rights reserved.</p>
-            <div className="flex items-center gap-4">
-              <a href="/help" className="hover:text-[#34D164] transition-colors">Help</a>
-              <a href="/privacy-policy" className="hover:text-[#34D164] transition-colors">Privacy</a>
-              <a href="/terms" className="hover:text-[#34D164] transition-colors">Terms</a>
-            </div>
-          </div>
-        </footer>
       </div>
 
       {/* Mobile bottom navigation */}
@@ -115,7 +105,7 @@ const MobileBottomNav = () => {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 lg:hidden safe-area-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#121E3C] border-t border-white/10 lg:hidden safe-area-bottom">
       <div className="flex items-center justify-around h-16 px-2">
         {navItems.map((item) => (
           <button
@@ -125,13 +115,13 @@ const MobileBottomNav = () => {
               "flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-all duration-200",
               isActive(item.path)
                 ? "text-[#34D164]"
-                : "text-gray-400 hover:text-[#121E3C]"
+                : "text-white/60 hover:text-white"
             )}
           >
             <NavIcon name={item.icon} active={isActive(item.path)} />
             <span className={cn(
               "text-[10px] font-medium transition-all",
-              isActive(item.path) ? "text-[#34D164]" : "text-gray-500"
+              isActive(item.path) ? "text-[#34D164]" : "text-white/50"
             )}>
               {item.label}
             </span>

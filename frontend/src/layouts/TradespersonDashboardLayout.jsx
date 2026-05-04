@@ -134,7 +134,7 @@ const MobileBottomNav = ({ allStepsCompleted, onShowVerificationModal }) => {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 lg:hidden safe-area-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#121E3C] border-t border-white/10 lg:hidden safe-area-bottom">
       <div className="flex items-center justify-around h-16 px-2">
         {navItems.map((item) => {
           const IconComponent = item.icon;
@@ -153,10 +153,10 @@ const MobileBottomNav = ({ allStepsCompleted, onShowVerificationModal }) => {
               className={cn(
                 "flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-all duration-200 relative",
                 isLocked
-                  ? "text-gray-300"
+                  ? "text-white/20"
                   : isActive(item.path)
                     ? "text-[#34D164]"
-                    : "text-gray-400 hover:text-[#121E3C]"
+                    : "text-white/60 hover:text-white"
               )}
             >
               <IconComponent className={cn(
@@ -166,10 +166,10 @@ const MobileBottomNav = ({ allStepsCompleted, onShowVerificationModal }) => {
               <span className={cn(
                 "text-[10px] font-medium transition-all",
                 isLocked
-                  ? "text-gray-300"
+                  ? "text-white/20"
                   : isActive(item.path) 
                     ? "text-[#34D164]" 
-                    : "text-gray-500"
+                    : "text-white/50"
               )}>
                 {item.label}
               </span>

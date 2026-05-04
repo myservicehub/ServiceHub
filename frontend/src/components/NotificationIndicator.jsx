@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, Settings, History, Eye } from 'lucide-react';
+import { cn } from '../lib/utils';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Card, CardContent } from './ui/card';
@@ -13,7 +14,7 @@ import {
 } from '../api/notifications';
 import { useAuth } from '../contexts/AuthContext';
 
-const NotificationIndicator = () => {
+const NotificationIndicator = ({ lightMode = false }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [recentNotifications, setRecentNotifications] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -171,11 +172,16 @@ const NotificationIndicator = () => {
         variant="ghost"
         size="icon"
         onClick={handleBellClick}
-        className="relative hover:bg-gray-100"
+        className={cn(
+          "relative",
+          lightMode 
+            ? "text-white/70 hover:text-white hover:bg-white/10" 
+            : "text-gray-600 hover:bg-gray-100"
+        )}
       >
-        <Bell size={20} className="text-gray-600" />
+        <Bell size={20} className="transition-colors" />
         {unreadCount > 0 && (
-          <Badge className="absolute -top-2 -right-2 bg-red-500 text-white text-xs min-w-[18px] h-[18px] flex items-center justify-center rounded-full p-0">
+          <Badge className="absolute -top-2 -right-2 bg-red-500 text-white text-xs min-w-[18px] h-[18px] flex items-center justify-center rounded-full p-0 border-2 border-transparent">
             {unreadCount > 99 ? '99+' : unreadCount}
           </Badge>
         )}

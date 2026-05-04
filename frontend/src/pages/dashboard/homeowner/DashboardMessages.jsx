@@ -269,9 +269,17 @@ const DashboardMessages = () => {
                   <h3 className="font-semibold text-gray-900 truncate">
                     {selectedConversation.tradesperson_name || 'Tradesperson'}
                   </h3>
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#34D164] inline-block" />
-                    <span>Online</span>
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    {selectedConversation.job_location && (
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-[#34D164]" />
+                        <span className="font-medium text-gray-700">{selectedConversation.job_location}</span>
+                      </div>
+                    )}
+                    <span className="text-gray-300">•</span>
+                    <Badge variant="outline" className="rounded-full text-[10px] font-medium py-0 h-4 border-gray-200">
+                      Job Owner
+                    </Badge>
                   </div>
                 </div>
                 <button className="w-10 h-10 rounded-xl border border-gray-100 bg-white hover:bg-gray-50 transition-colors flex items-center justify-center">
@@ -279,47 +287,7 @@ const DashboardMessages = () => {
                 </button>
               </div>
 
-              <div className="px-4 pt-3 pb-3 bg-white border-b border-gray-100">
-                <p className="text-[10px] uppercase tracking-wide font-semibold text-gray-400 mb-2">myservicehub.co</p>
-                <div className="flex items-center justify-between gap-3 mb-1.5">
-                  <div className="flex items-center gap-2 min-w-0 text-sm text-gray-700">
-                    <Briefcase className="w-4 h-4 text-gray-400" />
-                    <span className="truncate">{selectedConversation.job_title || 'Job conversation'}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-gray-500">
-                  {selectedConversation.job_location && (
-                    <div className="flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                      <span>{selectedConversation.job_location}</span>
-                    </div>
-                  )}
-                  <Badge variant="outline" className="rounded-full text-xs font-medium">
-                    Job Owner
-                  </Badge>
-                </div>
-
-                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <HelpCircle className="w-4 h-4 text-blue-600" />
-                      <span className="text-sm font-semibold text-blue-800">Job Status Update</span>
-                    </div>
-                    <Button
-                      onClick={() => setShowHiringStatusModal(true)}
-                      size="sm"
-                      className="bg-blue-600 hover:bg-blue-700 text-white text-xs"
-                    >
-                      Update Status
-                    </Button>
-                  </div>
-                  <p className="text-xs text-blue-700 mt-1">
-                    Help us track your job progress and get review reminders.
-                  </p>
-                </div>
-              </div>
-
-              {/* Messages */}
+              {/* Messages Area */}
               <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
                 {messages.length > 0 ? (
                   messages.map((message, index) => (
@@ -330,12 +298,9 @@ const DashboardMessages = () => {
                     />
                   ))
                 ) : (
-                  <div className="h-full flex items-center justify-center text-center text-gray-500">
-                    <div>
-                      <MessageSquare className="w-12 h-12 mx-auto text-gray-300 mb-3" />
-                      <p>No messages yet</p>
-                      <p className="text-sm mt-1">Send a message to start the conversation</p>
-                    </div>
+                  <div className="flex-1 flex flex-col items-center justify-center text-gray-400 h-full">
+                    <MessageSquare className="w-12 h-12 mb-2 opacity-20" />
+                    <p>No messages yet. Say hi!</p>
                   </div>
                 )}
                 <div ref={messagesEndRef} />

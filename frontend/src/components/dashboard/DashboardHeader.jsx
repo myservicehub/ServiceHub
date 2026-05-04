@@ -60,20 +60,20 @@ const DashboardHeader = ({ onMenuClick, sidebarCollapsed }) => {
   };
 
   return (
-    <header className="sticky top-0 z-30 bg-white border-b border-gray-200/60">
+    <header className="sticky top-0 z-30 bg-[#121E3C] border-b border-white/10">
       <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
         {/* Left section */}
         <div className="flex items-center gap-4">
           {/* Mobile menu button */}
           <button
             onClick={onMenuClick}
-            className="p-2 -ml-2 rounded-xl text-[#121E3C] hover:bg-gray-100 transition-all duration-200 lg:hidden"
+            className="p-2 -ml-2 rounded-xl text-white hover:bg-white/10 transition-all duration-200 lg:hidden"
           >
             <Menu className="w-5 h-5" />
           </button>
 
           {/* Page context - shows on desktop */}
-          <h1 className="hidden sm:block text-lg font-semibold text-[#121E3C]">
+          <h1 className="hidden sm:block text-lg font-semibold text-white">
             Dashboard
           </h1>
         </div>
@@ -108,7 +108,7 @@ const DashboardHeader = ({ onMenuClick, sidebarCollapsed }) => {
             ) : (
               <button
                 onClick={() => setSearchOpen(true)}
-                className="p-2.5 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-all duration-200"
+                className="p-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/10 transition-all duration-200"
               >
                 <Search className="w-5 h-5" />
               </button>
@@ -116,7 +116,7 @@ const DashboardHeader = ({ onMenuClick, sidebarCollapsed }) => {
           </div>
 
           {/* Notifications */}
-          <NotificationIndicator />
+          <NotificationIndicator lightMode={true} />
 
           {/* Profile dropdown */}
           <div className="relative" ref={profileRef}>
@@ -125,15 +125,15 @@ const DashboardHeader = ({ onMenuClick, sidebarCollapsed }) => {
               className={cn(
                 "flex items-center gap-2 p-1.5 pr-3 rounded-xl transition-all duration-200",
                 profileOpen
-                  ? "bg-gray-100"
-                  : "hover:bg-gray-100"
+                  ? "bg-white/10"
+                  : "hover:bg-white/10"
               )}
             >
-              <div className="w-8 h-8 rounded-lg bg-[#121E3C] flex items-center justify-center text-white font-semibold text-sm">
+              <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center text-white font-semibold text-sm">
                 {user?.name?.charAt(0)?.toUpperCase() || 'U'}
               </div>
               <ChevronDown className={cn(
-                "w-4 h-4 text-gray-400 transition-transform duration-200 hidden sm:block",
+                "w-4 h-4 text-white/50 transition-transform duration-200 hidden sm:block",
                 profileOpen && "rotate-180"
               )} />
             </button>

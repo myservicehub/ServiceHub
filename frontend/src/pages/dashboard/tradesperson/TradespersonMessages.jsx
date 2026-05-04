@@ -362,17 +362,15 @@ const TradespersonMessages = () => {
                 </div>
                 <div className="flex items-center gap-2 text-xs text-gray-500">
                   {(selectedConversation.job_location || selectedContactDetails?.job_location) && (
-                    <>
-                      <div className="flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                        <span>{selectedConversation.job_location || selectedContactDetails?.job_location}</span>
-                      </div>
-                      <span className="text-gray-300">•</span>
-                    </>
+                    <div className="flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-[#34D164]" />
+                      <span className="font-medium text-gray-700">{selectedConversation.job_location || selectedContactDetails?.job_location}</span>
+                    </div>
                   )}
-                  <Badge variant="outline" className="rounded-full text-xs font-medium">
-                      Job Owner
-                    </Badge>
+                  <span className="text-gray-300">•</span>
+                  <Badge variant="outline" className="rounded-full text-[10px] font-medium py-0 h-4 border-gray-200">
+                    Job Owner
+                  </Badge>
                 </div>
 
                 {detailsLoading && (
