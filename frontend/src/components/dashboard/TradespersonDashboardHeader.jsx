@@ -129,7 +129,7 @@ const TradespersonDashboardHeader = ({ onMenuClick, sidebarCollapsed }) => {
                   : "hover:bg-white/10"
               )}
             >
-              <div className="w-8 h-8 rounded-lg bg-[#34D164] flex items-center justify-center text-white font-semibold text-sm">
+              <div className="w-8 h-8 rounded-lg bg-[#34D164] flex items-center justify-center text-white font-semibold text-sm shadow-sm shadow-[#34D164]/20">
                 {user?.name?.charAt(0)?.toUpperCase() || 'T'}
               </div>
               <ChevronDown className={cn(

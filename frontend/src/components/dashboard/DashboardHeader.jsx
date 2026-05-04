@@ -129,8 +129,8 @@ const DashboardHeader = ({ onMenuClick, sidebarCollapsed }) => {
                   : "hover:bg-white/10"
               )}
             >
-              <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center text-white font-semibold text-sm">
-                {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+              <div className="w-8 h-8 rounded-lg bg-[#34D164] flex items-center justify-center text-white font-semibold text-sm shadow-sm shadow-[#34D164]/20">
+                {user?.full_name?.charAt(0)?.toUpperCase() || user?.name?.charAt(0)?.toUpperCase() || 'U'}
               </div>
               <ChevronDown className={cn(
                 "w-4 h-4 text-white/50 transition-transform duration-200 hidden sm:block",

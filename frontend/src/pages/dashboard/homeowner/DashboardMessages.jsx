@@ -254,37 +254,75 @@ const DashboardMessages = () => {
         )}>
           {selectedConversation ? (
             <>
-              {/* Chat Header */}
-              <div className="flex items-center gap-4 px-4 py-3 border-b border-gray-100">
+              {/* Conversation Header */}
+              <div className="px-4 py-3 border-b border-gray-100 bg-white flex items-center gap-3">
                 <button
                   onClick={() => setSelectedConversation(null)}
-                  className="p-2 -ml-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors md:hidden"
+                  className="lg:hidden p-2 -ml-2 text-gray-400 hover:text-gray-600"
                 >
                   <ArrowLeft className="w-5 h-5" />
                 </button>
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white font-semibold">
+                
+                <div className="w-10 h-10 rounded-full bg-[#34D164]/10 flex items-center justify-center text-[#34D164] font-bold text-lg flex-shrink-0">
                   {selectedConversation.tradesperson_name?.charAt(0)?.toUpperCase() || 'T'}
                 </div>
+                
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-gray-900 truncate">
-                    {selectedConversation.tradesperson_name || 'Tradesperson'}
-                  </h3>
-                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">
+                    MYSERVICEHUB.CO
+                  </div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Briefcase className="w-3.5 h-3.5 text-gray-400" />
+                    <h4 className="text-xs font-semibold text-gray-700 truncate">
+                      {selectedConversation.job_title || 'Untitled Job'}
+                    </h4>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-gray-900 text-sm">
+                      {selectedConversation.tradesperson_name || 'Tradesperson'}
+                    </h3>
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#34D164]" title="Online" />
+                  </div>
+                  <div className="flex items-center gap-2 mt-1">
                     {selectedConversation.job_location && (
-                      <div className="flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-[#34D164]" />
-                        <span className="font-medium text-gray-700">{selectedConversation.job_location}</span>
+                      <div className="flex items-center gap-1 text-[10px] text-gray-500">
+                        <MapPin className="w-3 h-3 text-[#34D164]" />
+                        <span>{selectedConversation.job_location}</span>
                       </div>
                     )}
-                    <span className="text-gray-300">•</span>
-                    <Badge variant="outline" className="rounded-full text-[10px] font-medium py-0 h-4 border-gray-200">
+                    <Badge variant="outline" className="rounded-full text-[9px] font-bold py-0 h-4 border-gray-200 uppercase tracking-tighter">
                       Job Owner
                     </Badge>
                   </div>
                 </div>
+                
                 <button className="w-10 h-10 rounded-xl border border-gray-100 bg-white hover:bg-gray-50 transition-colors flex items-center justify-center">
                   <Phone className="w-5 h-5 text-gray-600" />
                 </button>
+              </div>
+
+              {/* Job Status Banner */}
+              <div className="px-4 py-3 bg-blue-50 border-b border-blue-100">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex gap-3">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <HelpCircle className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-semibold text-blue-900">Job Status Update</h4>
+                      <p className="text-xs text-blue-700 mt-0.5">
+                        Help us track your job progress and get review reminders.
+                      </p>
+                    </div>
+                  </div>
+                  <Button 
+                    size="sm" 
+                    className="bg-[#34D164] hover:bg-[#2EB859] text-white text-xs h-8 rounded-lg px-3 flex-shrink-0"
+                    onClick={() => navigate('/dashboard/jobs')}
+                  >
+                    Update Status
+                  </Button>
+                </div>
               </div>
 
               {/* Messages Area */}

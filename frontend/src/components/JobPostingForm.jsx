@@ -2939,7 +2939,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState, s
       {/* Questions Modal */}
       {showQuestionsModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-[100] p-0 sm:p-4">
-          <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full sm:max-w-lg h-[90dvh] sm:h-auto sm:max-h-[85vh] overflow-hidden flex flex-col">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full sm:max-w-lg h-[90vh] sm:h-auto sm:max-h-[85vh] overflow-hidden flex flex-col relative">
             {/* Modal Header - Fixed */}
             <div className="flex-shrink-0 p-4 sm:p-6 border-b border-gray-100 bg-white">
               <div className="flex items-center justify-between gap-3">
@@ -2972,15 +2972,23 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState, s
             </div>
 
             {/* Modal Body - Scrollable */}
-            <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 min-h-0">
+            <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 min-h-0 bg-white">
               {(() => {
                 const visibleQuestions = getVisibleQuestions();
+                
+                // Safety check for index out of bounds during restoration
+                if (currentQuestionIndex >= visibleQuestions.length && visibleQuestions.length > 0) {
+                  setCurrentQuestionIndex(0);
+                  return null;
+                }
+
                 const currentQuestion = visibleQuestions[currentQuestionIndex];
                 
                 if (!currentQuestion) {
                   return (
                     <div className="text-center py-8 text-gray-500">
-                      <p>No questions available.</p>
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#34D164] mx-auto mb-4"></div>
+                      <p>Preparing questions...</p>
                     </div>
                   );
                 }
@@ -3011,7 +3019,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState, s
             </div>
 
             {/* Modal Footer - Fixed */}
-            <div className="flex-shrink-0 p-4 sm:p-6 border-t border-gray-100 bg-white pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-6">
+            <div className="flex-shrink-0 p-4 sm:p-6 border-t border-gray-100 bg-white pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-6 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
               <div className="flex gap-3">
                 <Button
                   type="button"
