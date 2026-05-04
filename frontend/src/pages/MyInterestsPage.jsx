@@ -34,7 +34,6 @@ import { walletAPI } from '../api/wallet';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
-import ChatModal from '../components/ChatModal';
 
 const MyInterestsPage = () => {
   const [interests, setInterests] = useState([]);
@@ -45,8 +44,6 @@ const MyInterestsPage = () => {
   const [showContactModal, setShowContactModal] = useState(false);
   const [selectedContact, setSelectedContact] = useState(null);
   const [activeTab, setActiveTab] = useState('all');
-  const [showChatModal, setShowChatModal] = useState(false);
-  const [selectedInterestForChat, setSelectedInterestForChat] = useState(null);
 
   const { user, isAuthenticated, isTradesperson } = useAuth();
   const { toast } = useToast();
@@ -377,20 +374,21 @@ const MyInterestsPage = () => {
     return '';
   };
 
-  const handleStartChat = (interest) => {
-    setSelectedInterestForChat({
-      jobId: interest.job_id,
-      jobTitle: interest.job_title,
-      homeowner: {
-        id: interest.homeowner_id,
-        name: interest.homeowner_name,
-        type: 'homeowner',
-        email: interest.homeowner_email,
-        phone: interest.homeowner_phone,
-        location: interest.job_location
+  const openChatInMessagesTab = (interest, options = {}) => {
+    navigate('/trades/messages', {
+      state: {
+        openChat: {
+          jobId: interest.job_id,
+          homeownerId: interest.homeowner_id,
+          homeownerName: interest.homeowner_name,
+          jobTitle: interest.job_title,
+          jobLocation: interest.job_location,
+          contactDetails: options.contactDetails || null,
+          showContactDetails: Boolean(options.showContactDetails),
+          source: 'interests'
+        }
       }
     });
-    setShowChatModal(true);
   };
 
   const handleStartChatAfterPayment = async (interest) => {
@@ -428,24 +426,12 @@ const MyInterestsPage = () => {
       const contactDetails = await interestsAPI.getContactDetails(interest.job_id);
       console.log('✅ Contact details loaded successfully');
       
-      // Set up chat with full contact details
-      setSelectedInterestForChat({
-        jobId: interest.job_id,
-        jobTitle: interest.job_title,
-        homeowner: {
-          id: interest.homeowner_id,
-          name: contactDetails.homeowner_name,
-          type: 'homeowner',
-          email: contactDetails.homeowner_email,
-          phone: contactDetails.homeowner_phone,
-          location: interest.job_location
-        },
-        contactDetails: contactDetails,
-        showContactDetails: true,
-        jobStatus: interest.job_status
+      // Open the unified messages tab with full homeowner details
+      openChatInMessagesTab(interest, {
+        contactDetails,
+        showContactDetails: true
       });
-      setShowChatModal(true);
-      console.log('✅ Chat modal opened successfully');
+      console.log('✅ Redirected to unified messages tab successfully');
       
     } catch (error) {
       console.error('❌ CHAT ERROR:', error);
@@ -827,23 +813,6 @@ const MyInterestsPage = () => {
             </div>
           </div>
         </div>
-      )}
-
-      {/* Chat Modal */}
-      {showChatModal && selectedInterestForChat && (
-        <ChatModal
-          isOpen={showChatModal}
-          onClose={() => {
-            setShowChatModal(false);
-            setSelectedInterestForChat(null);
-          }}
-          jobId={selectedInterestForChat.jobId}
-          jobTitle={selectedInterestForChat.jobTitle}
-          otherParty={selectedInterestForChat.homeowner}
-          contactDetails={selectedInterestForChat.contactDetails}
-          showContactDetails={selectedInterestForChat.showContactDetails}
-          jobStatus={selectedInterestForChat.jobStatus}
-        />
       )}
 
     </div>

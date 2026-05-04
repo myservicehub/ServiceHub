@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { messagesAPI } from '../../../api/messages';
+import { interestsAPI } from '../../../api/services';
 import {
   MessageSquare,
   Search,
@@ -14,8 +15,13 @@ import {
   Smile,
   ChevronLeft,
   User,
+  MapPin,
+  Briefcase,
+  Mail,
+  CheckCircle,
 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
+import { Badge } from '../../../components/ui/badge';
 
 const TradespersonMessages = () => {
   const [conversations, setConversations] = useState([]);
@@ -25,12 +31,54 @@ const TradespersonMessages = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [selectedContactDetails, setSelectedContactDetails] = useState(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [handledIncomingChat, setHandledIncomingChat] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     loadConversations();
   }, []);
+
+  useEffect(() => {
+    const openChat = location.state?.openChat;
+    if (!openChat || handledIncomingChat || !user?.id) return;
+
+    const bootstrapIncomingChat = async () => {
+      try {
+        const response = await messagesAPI.getOrCreateConversationForJob(openChat.jobId, user.id);
+        const conversationId = response?.conversation_id;
+        if (!conversationId) return;
+
+        const matchedConversation = conversations.find((conv) => conv.id === conversationId) || {
+          id: conversationId,
+          job_id: openChat.jobId,
+          homeowner_id: openChat.homeownerId,
+          homeowner_name: openChat.homeownerName,
+          job_title: openChat.jobTitle,
+          job_location: openChat.jobLocation,
+        };
+
+        setSelectedConversation(matchedConversation);
+        await loadMessages(conversationId);
+
+        if (openChat.contactDetails) {
+          setSelectedContactDetails(openChat.contactDetails);
+        } else if (openChat.jobId) {
+          await loadContactDetails(openChat.jobId);
+        }
+
+        setHandledIncomingChat(true);
+        navigate(location.pathname, { replace: true, state: null });
+      } catch (error) {
+        console.error('Failed to open incoming chat from interests:', error);
+      }
+    };
+
+    bootstrapIncomingChat();
+  }, [location.state, handledIncomingChat, user?.id, conversations, navigate, location.pathname]);
 
   const loadConversations = async () => {
     try {
@@ -53,9 +101,28 @@ const TradespersonMessages = () => {
     }
   };
 
-  const handleSelectConversation = (conversation) => {
+  const loadContactDetails = async (jobId) => {
+    if (!jobId) {
+      setSelectedContactDetails(null);
+      return;
+    }
+
+    try {
+      setDetailsLoading(true);
+      const response = await interestsAPI.getContactDetails(jobId);
+      setSelectedContactDetails(response || null);
+    } catch (error) {
+      // Keep UI clean if contact details are not yet available
+      setSelectedContactDetails(null);
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
+
+  const handleSelectConversation = async (conversation) => {
     setSelectedConversation(conversation);
-    loadMessages(conversation.id);
+    await loadMessages(conversation.id);
+    await loadContactDetails(conversation.job_id);
   };
 
   const handleSendMessage = async () => {
@@ -229,6 +296,51 @@ const TradespersonMessages = () => {
                     <MoreVertical className="w-5 h-5 text-gray-500" />
                   </button>
                 </div>
+              </div>
+
+              <div className="px-4 pt-3 pb-2 bg-white border-b border-gray-100">
+                <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600 mb-2">
+                  <div className="flex items-center gap-2">
+                    <Briefcase className="w-4 h-4 text-gray-400" />
+                    <span>{selectedConversation.job_title || 'Job conversation'}</span>
+                  </div>
+                  {selectedConversation.job_location && (
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-gray-400" />
+                      <span>{selectedConversation.job_location}</span>
+                    </div>
+                  )}
+                  <Badge variant="outline" className="rounded-full text-xs font-medium">
+                    Job Owner
+                  </Badge>
+                </div>
+
+                {detailsLoading && (
+                  <div className="text-xs text-gray-500 py-1">Loading contact details...</div>
+                )}
+
+                {!detailsLoading && selectedContactDetails && (
+                  <div className="bg-green-50 border border-green-200 rounded-xl p-3">
+                    <div className="flex items-center gap-2 text-green-700 font-semibold mb-2">
+                      <CheckCircle className="w-4 h-4" />
+                      <span>Contact Details Available</span>
+                    </div>
+                    <div className="space-y-1.5 text-sm text-[#121E3C]">
+                      {selectedContactDetails.homeowner_phone && (
+                        <div className="flex items-center gap-2">
+                          <Phone className="w-4 h-4 text-gray-500" />
+                          <span>{selectedContactDetails.homeowner_phone}</span>
+                        </div>
+                      )}
+                      {selectedContactDetails.homeowner_email && (
+                        <div className="flex items-center gap-2">
+                          <Mail className="w-4 h-4 text-gray-500" />
+                          <span>{selectedContactDetails.homeowner_email}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
