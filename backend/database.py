@@ -6949,7 +6949,8 @@ class Database:
     async def get_user_conversations(self, user_id: str, user_type: str, skip: int = 0, limit: int = 20) -> List[dict]:
         """Get all conversations for a user"""
         try:
-            if user_type == UserRole.HOMEOWNER.value:
+            normalized_user_type = user_type.value if hasattr(user_type, "value") else str(user_type)
+            if normalized_user_type == UserRole.HOMEOWNER.value:
                 query = {"homeowner_id": user_id}
             else:
                 query = {"tradesperson_id": user_id}
@@ -7014,8 +7015,9 @@ class Database:
     async def mark_messages_as_read(self, conversation_id: str, user_type: str) -> bool:
         """Mark all messages in a conversation as read for a user"""
         try:
+            normalized_user_type = user_type.value if hasattr(user_type, "value") else str(user_type)
             # Update message status to read for messages not sent by this user
-            other_type = "homeowner" if user_type == UserRole.TRADESPERSON.value else "tradesperson"
+            other_type = "homeowner" if normalized_user_type == UserRole.TRADESPERSON.value else "tradesperson"
             
             await self.database.messages.update_many(
                 {
@@ -7027,7 +7029,7 @@ class Database:
             )
             
             # Reset unread count for this user type
-            unread_field = f"unread_count_{user_type}"
+            unread_field = f"unread_count_{normalized_user_type}"
             await self.database.conversations.update_one(
                 {"id": conversation_id},
                 {"$set": {unread_field: 0}}
@@ -7057,8 +7059,9 @@ class Database:
     async def _update_conversation_last_message(self, conversation_id: str, message_content: str, sender_type: str):
         """Update conversation with last message info and increment unread count"""
         try:
+            normalized_sender_type = sender_type.value if hasattr(sender_type, "value") else str(sender_type)
             # Increment unread count for the recipient
-            recipient_unread_field = "unread_count_homeowner" if sender_type == UserRole.TRADESPERSON.value else "unread_count_tradesperson"
+            recipient_unread_field = "unread_count_homeowner" if normalized_sender_type == UserRole.TRADESPERSON.value else "unread_count_tradesperson"
             
             await self.database.conversations.update_one(
                 {"id": conversation_id},

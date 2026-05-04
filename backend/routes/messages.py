@@ -109,6 +109,7 @@ async def create_conversation(
             "id": str(uuid.uuid4()),
             "job_id": conversation_data.job_id,
             "job_title": job.get("title", "Untitled Job"),
+            "job_location": job.get("location", ""),
             "homeowner_id": conversation_data.homeowner_id,
             "homeowner_name": homeowner.get("name", "Homeowner"),
             "tradesperson_id": conversation_data.tradesperson_id,
@@ -223,7 +224,7 @@ async def send_message(
             "conversation_id": conversation_id,
             "sender_id": current_user.id,
             "sender_name": current_user.name or current_user.business_name or "User",
-            "sender_type": current_user.role,
+            "sender_type": current_user.role.value if hasattr(current_user.role, "value") else str(current_user.role),
             "message_type": message_data.message_type,
             "content": message_data.content,
             "attachment_url": message_data.attachment_url

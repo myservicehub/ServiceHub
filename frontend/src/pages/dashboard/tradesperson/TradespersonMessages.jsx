@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -31,9 +31,11 @@ const TradespersonMessages = () => {
   const [selectedContactDetails, setSelectedContactDetails] = useState(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [handledIncomingChat, setHandledIncomingChat] = useState(false);
+  const [contactDetailsCache, setContactDetailsCache] = useState({});
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const messagesEndRef = useRef(null);
 
   useEffect(() => {
     loadConversations();
@@ -77,15 +79,30 @@ const TradespersonMessages = () => {
     bootstrapIncomingChat();
   }, [location.state, handledIncomingChat, user?.id, conversations, navigate, location.pathname]);
 
-  const loadConversations = async () => {
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+  }, [messages, selectedConversation?.id]);
+
+  const parseServerDate = (value) => {
+    if (!value) return null;
+    if (value instanceof Date) return value;
+    if (typeof value === 'string' && !/[zZ]|[+\-]\d{2}:\d{2}$/.test(value)) {
+      return new Date(`${value}Z`);
+    }
+    return new Date(value);
+  };
+
+  const loadConversations = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const response = await messagesAPI.getConversations();
       setConversations(response?.conversations || []);
     } catch (error) {
       console.error('Failed to load conversations:', error);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -93,6 +110,15 @@ const TradespersonMessages = () => {
     try {
       const response = await messagesAPI.getConversationMessages(conversationId);
       setMessages(response?.messages || []);
+      await messagesAPI.markConversationAsRead(conversationId);
+      setConversations((prev) =>
+        prev.map((conv) =>
+          conv.id === conversationId
+            ? { ...conv, unread_count_tradesperson: 0 }
+            : conv
+        )
+      );
+      await loadConversations(true);
     } catch (error) {
       console.error('Failed to load messages:', error);
     }
@@ -104,10 +130,17 @@ const TradespersonMessages = () => {
       return;
     }
 
+    if (contactDetailsCache[jobId]) {
+      setSelectedContactDetails(contactDetailsCache[jobId]);
+      return;
+    }
+
     try {
       setDetailsLoading(true);
       const response = await interestsAPI.getContactDetails(jobId);
-      setSelectedContactDetails(response || null);
+      const details = response || null;
+      setSelectedContactDetails(details);
+      setContactDetailsCache((prev) => ({ ...prev, [jobId]: details }));
     } catch (error) {
       // Keep UI clean if contact details are not yet available
       setSelectedContactDetails(null);
@@ -118,6 +151,11 @@ const TradespersonMessages = () => {
 
   const handleSelectConversation = async (conversation) => {
     setSelectedConversation(conversation);
+    setConversations((prev) =>
+      prev.map((conv) =>
+        conv.id === conversation.id ? { ...conv, unread_count_tradesperson: 0 } : conv
+      )
+    );
     await loadMessages(conversation.id);
     await loadContactDetails(conversation.job_id);
   };
@@ -147,7 +185,8 @@ const TradespersonMessages = () => {
 
   const formatConversationTime = (value) => {
     if (!value) return '';
-    const date = new Date(value);
+    const date = parseServerDate(value);
+    if (!date || Number.isNaN(date.getTime())) return '';
     const now = new Date();
     const diff = now.getTime() - date.getTime();
     const minutes = Math.floor(diff / 60000);
@@ -303,15 +342,15 @@ const TradespersonMessages = () => {
                   )}
                 </div>
                 <div className="flex items-center gap-2 text-xs text-gray-500">
-                  {selectedConversation.job_location && (
-                    <div className="flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                      <span>{selectedConversation.job_location}</span>
-                    </div>
-                  )}
                   <Badge variant="outline" className="rounded-full text-xs font-medium">
                     Job Owner
                   </Badge>
+                  {(selectedConversation.job_location || selectedContactDetails?.job_location) && (
+                    <div className="flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                      <span>{selectedConversation.job_location || selectedContactDetails?.job_location}</span>
+                    </div>
+                  )}
                 </div>
 
                 {detailsLoading && (
@@ -376,6 +415,7 @@ const TradespersonMessages = () => {
                     </div>
                   </div>
                 )}
+                <div ref={messagesEndRef} />
               </div>
 
               <div className="p-4 border-t border-gray-100 bg-white">

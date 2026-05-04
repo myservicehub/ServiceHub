@@ -157,7 +157,9 @@ const TradespersonOverview = () => {
         jobsAPI.getMyInterests({ limit: 50 }),
         walletAPI.getBalance().catch(() => null),
       ]);
-      const interests = interestsResponse?.interests || [];
+      const interests = Array.isArray(interestsResponse)
+        ? interestsResponse
+        : (interestsResponse?.interests || []);
       const liveWalletNaira = Number(walletResponse?.balance_naira);
       const liveWalletCoins = Number(walletResponse?.balance_coins);
       const totalEarnings = Number.isFinite(liveWalletNaira)
@@ -177,7 +179,12 @@ const TradespersonOverview = () => {
       });
 
       // Get recent jobs
-      setRecentJobs(interests.slice(0, 5));
+      const sortedRecentInterests = [...interests].sort((a, b) => {
+        const aTime = new Date(a?.updated_at || a?.created_at || 0).getTime();
+        const bTime = new Date(b?.updated_at || b?.created_at || 0).getTime();
+        return bTime - aTime;
+      });
+      setRecentJobs(sortedRecentInterests.slice(0, 5));
 
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
@@ -400,7 +407,7 @@ const TradespersonOverview = () => {
               Recent Interests
             </h2>
             <button
-              onClick={() => navigate('/pro/interests')}
+              onClick={() => navigate('/trades/interests')}
               className="text-sm text-[#34D164] hover:text-[#2ab854] font-medium inline-flex items-center gap-1 transition-colors"
             >
               View all
