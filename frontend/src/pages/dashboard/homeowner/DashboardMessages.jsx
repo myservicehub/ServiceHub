@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { Badge } from '../../../components/ui/badge';
+import HiringStatusModal from '../../../components/HiringStatusModal';
 
 const DashboardMessages = () => {
   const [conversations, setConversations] = useState([]);
@@ -28,6 +29,7 @@ const DashboardMessages = () => {
   const [sending, setSending] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [handledIncomingChat, setHandledIncomingChat] = useState(false);
+  const [showHiringStatusModal, setShowHiringStatusModal] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -75,6 +77,17 @@ const DashboardMessages = () => {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
   }, [messages, selectedConversation?.id]);
+
+  // Live updates: conversations/unread and active chat messages without page refresh
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      loadConversations(true);
+      if (selectedConversation?.id) {
+        loadMessages(selectedConversation.id);
+      }
+    }, 5000);
+    return () => window.clearInterval(intervalId);
+  }, [selectedConversation?.id]);
 
   const parseServerDate = (value) => {
     if (!value) return null;
@@ -259,14 +272,12 @@ const DashboardMessages = () => {
               </div>
 
               <div className="px-4 pt-3 pb-3 bg-white border-b border-gray-100">
+                <p className="text-[10px] uppercase tracking-wide font-semibold text-gray-400 mb-2">myservicehub.co</p>
                 <div className="flex items-center justify-between gap-3 mb-1.5">
                   <div className="flex items-center gap-2 min-w-0 text-sm text-gray-700">
                     <Briefcase className="w-4 h-4 text-gray-400" />
                     <span className="truncate">{selectedConversation.job_title || 'Job conversation'}</span>
                   </div>
-                  <Badge className="rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
-                    Contact Available
-                  </Badge>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-gray-500">
                   {selectedConversation.job_location && (
@@ -287,7 +298,7 @@ const DashboardMessages = () => {
                       <span className="text-sm font-semibold text-blue-800">Job Status Update</span>
                     </div>
                     <Button
-                      onClick={() => navigate('/dashboard/jobs')}
+                      onClick={() => setShowHiringStatusModal(true)}
                       size="sm"
                       className="bg-blue-600 hover:bg-blue-700 text-white text-xs"
                     >
@@ -378,6 +389,16 @@ const DashboardMessages = () => {
           )}
         </div>
       </div>
+      <HiringStatusModal
+        isOpen={showHiringStatusModal}
+        onClose={() => setShowHiringStatusModal(false)}
+        jobId={selectedConversation?.job_id}
+        jobTitle={selectedConversation?.job_title}
+        tradespersonName={selectedConversation?.tradesperson_name}
+        tradespersonId={selectedConversation?.tradesperson_id}
+        onStatusUpdate={messagesAPI.updateHiringStatus}
+        onFeedbackSubmit={messagesAPI.submitHiringFeedback}
+      />
     </div>
   );
 };
