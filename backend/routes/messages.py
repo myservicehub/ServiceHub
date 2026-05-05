@@ -9,7 +9,8 @@ from ..models.notifications import NotificationType
 from ..auth.dependencies import get_current_active_user, get_current_homeowner
 from ..database import database
 from ..services.notifications import notification_service
-from datetime import datetime
+from datetime import datetime, timezone
+import asyncio
 import uuid
 import logging
 import os
@@ -238,13 +239,22 @@ async def send_message(
         recipient_id = (conversation["homeowner_id"] 
                        if current_user.id == conversation["tradesperson_id"] 
                        else conversation["tradesperson_id"])
+        recipient_role = (
+            UserRole.HOMEOWNER.value
+            if recipient_id == conversation["homeowner_id"]
+            else UserRole.TRADESPERSON.value
+        )
+        unread_email_delay_seconds = max(0, int(os.environ.get("CHAT_UNREAD_EMAIL_DELAY_SECONDS", "1800")))
         
         background_tasks.add_task(
             _notify_new_message,
-            sender=current_user,
+            sender_name=message["sender_name"],
             recipient_id=recipient_id,
-            conversation=conversation,
-            message_content=message_data.content
+            recipient_role=recipient_role,
+            conversation_id=conversation_id,
+            message_id=message["id"],
+            message_content=message_data.content,
+            delay_seconds=unread_email_delay_seconds
         )
         
         return Message(**result)
@@ -376,9 +386,67 @@ async def get_or_create_conversation_for_job(
         logger.error(f"Error getting/creating conversation: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to get or create conversation")
 
-async def _notify_new_message(sender: User, recipient_id: str, conversation: dict, message_content: str):
-    """Background task to notify recipient of new message"""
+def _parse_datetime(value):
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+    if isinstance(value, str):
+        try:
+            dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+        except ValueError:
+            return None
+    return None
+
+async def _notify_new_message(
+    sender_name: str,
+    recipient_id: str,
+    recipient_role: str,
+    conversation_id: str,
+    message_id: str,
+    message_content: str,
+    delay_seconds: int = 1800
+):
+    """Notify recipient only if message remains unread after configured delay."""
     try:
+        if delay_seconds > 0:
+            await asyncio.sleep(delay_seconds)
+
+        message = await database.get_message_by_id(message_id)
+        if not message:
+            return
+        if str(message.get("status", "")).lower() == "read":
+            return
+
+        conversation = await database.get_conversation_by_id(conversation_id)
+        if not conversation:
+            return
+
+        if recipient_id == conversation.get("homeowner_id"):
+            recipient_role = UserRole.HOMEOWNER.value
+        elif recipient_id == conversation.get("tradesperson_id"):
+            recipient_role = UserRole.TRADESPERSON.value
+        else:
+            return
+
+        unread_field = f"unread_count_{recipient_role}"
+        unread_count = int(conversation.get(unread_field, 0) or 0)
+        if unread_count <= 0:
+            return
+
+        last_read_at = _parse_datetime(conversation.get(f"last_read_at_{recipient_role}"))
+        last_unread_email_sent_at = _parse_datetime(conversation.get(f"last_unread_email_sent_at_{recipient_role}"))
+        message_created_at = _parse_datetime(message.get("created_at"))
+
+        # Recipient has already opened this unread batch.
+        if message_created_at and last_read_at and last_read_at >= message_created_at:
+            return
+
+        # Email was already sent for current unread session; avoid repeated sends.
+        if last_unread_email_sent_at and (last_read_at is None or last_unread_email_sent_at > last_read_at):
+            return
+
         # Get recipient details
         recipient = await database.get_user_by_id(recipient_id)
         if not recipient:
@@ -395,7 +463,7 @@ async def _notify_new_message(sender: User, recipient_id: str, conversation: dic
         # Prepare template data
         template_data = {
             "recipient_name": recipient.get("name") or recipient.get("business_name", "User"),
-            "sender_name": sender.name or sender.business_name or "User",
+            "sender_name": sender_name or "User",
             "job_title": conversation.get("job_title", "Job"),
             "message_preview": message_content[:100] + "..." if len(message_content) > 100 else message_content,
             "conversation_url": f"{base_url}{target_path}"
@@ -413,6 +481,7 @@ async def _notify_new_message(sender: User, recipient_id: str, conversation: dic
         
         # Save notification to database
         await database.create_notification(notification)
+        await database.mark_unread_message_email_sent(conversation_id, recipient_role)
         
         logger.info(f"✅ New message notification sent to {recipient_id}")
         

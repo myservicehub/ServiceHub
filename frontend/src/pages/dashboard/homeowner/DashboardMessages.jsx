@@ -294,7 +294,7 @@ const DashboardMessages = () => {
                       </div>
                     )}
                     <Badge variant="outline" className="rounded-full text-[9px] font-bold py-0 h-4 border-gray-200 uppercase tracking-tighter">
-                      Job Owner
+                      Tradeperson
                     </Badge>
                   </div>
                 </div>

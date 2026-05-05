@@ -6926,6 +6926,10 @@ class Database:
             conversation_data["updated_at"] = datetime.now(timezone.utc)
             conversation_data["unread_count_homeowner"] = 0
             conversation_data["unread_count_tradesperson"] = 0
+            conversation_data["last_read_at_homeowner"] = datetime.now(timezone.utc)
+            conversation_data["last_read_at_tradesperson"] = datetime.now(timezone.utc)
+            conversation_data["last_unread_email_sent_at_homeowner"] = None
+            conversation_data["last_unread_email_sent_at_tradesperson"] = None
             
             result = await self.database.conversations.insert_one(conversation_data)
             conversation_data['_id'] = str(result.inserted_id)
@@ -6994,6 +6998,17 @@ class Database:
         except Exception as e:
             print(f"Error creating message: {e}")
             return None
+
+    async def get_message_by_id(self, message_id: str) -> Optional[dict]:
+        """Get message by ID"""
+        try:
+            message = await self.database.messages.find_one({"id": message_id})
+            if message:
+                message["_id"] = str(message["_id"])
+            return message
+        except Exception as e:
+            print(f"Error getting message: {e}")
+            return None
     
     async def get_conversation_messages(self, conversation_id: str, skip: int = 0, limit: int = 50) -> List[dict]:
         """Get messages for a conversation"""
@@ -7030,14 +7045,32 @@ class Database:
             
             # Reset unread count for this user type
             unread_field = f"unread_count_{normalized_user_type}"
+            last_read_field = f"last_read_at_{normalized_user_type}"
             await self.database.conversations.update_one(
                 {"id": conversation_id},
-                {"$set": {unread_field: 0}}
+                {"$set": {unread_field: 0, last_read_field: datetime.now(timezone.utc)}}
             )
             
             return True
         except Exception as e:
             print(f"Error marking messages as read: {e}")
+            return False
+
+    async def mark_unread_message_email_sent(self, conversation_id: str, recipient_type: str) -> bool:
+        """Mark that an unread-message email alert has been sent for recipient side."""
+        try:
+            normalized_recipient_type = recipient_type.value if hasattr(recipient_type, "value") else str(recipient_type)
+            if normalized_recipient_type not in [UserRole.HOMEOWNER.value, UserRole.TRADESPERSON.value]:
+                return False
+
+            sent_field = f"last_unread_email_sent_at_{normalized_recipient_type}"
+            result = await self.database.conversations.update_one(
+                {"id": conversation_id},
+                {"$set": {sent_field: datetime.now(timezone.utc), "updated_at": datetime.now(timezone.utc)}}
+            )
+            return result.modified_count > 0
+        except Exception as e:
+            print(f"Error marking unread-message email sent: {e}")
             return False
     
     async def get_conversation_by_job_and_users(self, job_id: str, homeowner_id: str, tradesperson_id: str) -> Optional[dict]:
