@@ -2938,8 +2938,8 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState, s
       
       {/* Questions Modal */}
       {showQuestionsModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-[100] p-0 sm:p-4">
-          <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full sm:max-w-lg h-[90dvh] sm:h-auto sm:max-h-[85dvh] overflow-hidden flex flex-col relative">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-[1000] p-0 sm:p-4 pb-[calc(4rem+env(safe-area-inset-bottom))] sm:pb-4">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full sm:max-w-lg h-[calc(100vh-4rem-env(safe-area-inset-bottom))] max-h-[calc(100dvh-4rem-env(safe-area-inset-bottom))] sm:h-auto sm:max-h-[85dvh] overflow-hidden flex flex-col relative">
             {/* Modal Header - Fixed */}
             <div className="flex-shrink-0 p-4 sm:p-6 border-b border-gray-100 bg-white">
               <div className="flex items-center justify-between gap-3">
@@ -3018,7 +3018,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState, s
             </div>
 
             {/* Modal Footer - Fixed at bottom */}
-            <div className="flex-shrink-0 p-4 sm:p-6 border-t border-gray-100 bg-white pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-6 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] z-[110]">
+            <div className="sticky bottom-0 flex-shrink-0 p-4 sm:p-6 border-t border-gray-100 bg-white pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-6 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] z-[110]">
               <div className="flex gap-3">
                 <Button
                   type="button"
@@ -3293,4 +3293,3 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState, s
 };
 
 export default JobPostingForm;
-
