@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { 
@@ -132,9 +133,11 @@ const HiringStatusModal = ({
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-[100] p-0 sm:p-4">
-      <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full sm:max-w-lg max-h-[90dvh] sm:max-h-[85dvh] overflow-hidden flex flex-col shadow-2xl">
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[1000] p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <div className="bg-white rounded-3xl w-full max-w-lg max-h-[85dvh] overflow-hidden flex flex-col shadow-2xl">
         <div className="flex-shrink-0 p-4 sm:p-6 border-b border-gray-100 bg-white">
           <div className="flex justify-between items-start gap-3">
             <div className="min-w-0">
@@ -366,7 +369,7 @@ const HiringStatusModal = ({
         )}
       </div>
     </div>
-  );
+  , document.body);
 };
 
 export default HiringStatusModal;
