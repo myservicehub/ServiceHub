@@ -305,18 +305,34 @@ const NotificationsPage = () => {
       .replace(/https?:\/\/[^\s<>"']+/gi, '')
       .replace(/www\.[^\s<>"']+/gi, '')
       .replace(/myservicehub\.co[^\s<>"']*/gi, '');
+
+    // Remove inline emoji/icons from notification body text
+    result = result
+      .replace(/[\p{Extended_Pictographic}\uFE0F]/gu, '')
+      .replace(/[•·]+/g, ' ');
+
+    // Remove CTA fragments that should not appear inside in-app message previews
+    result = result
+      .replace(/\bReply\s*at\s*:?\s*[^\s]+/gi, '')
+      .replace(/\bReply\s*at\s*:?/gi, '')
+      .replace(/\bView\s*details\s*:?\s*[^\s]+/gi, '')
+      .replace(/\bView\s*details\s*:?/gi, '')
+      .replace(/\bCheck\s*:?\s*[^\s]+/gi, '')
+      .replace(/\bCheck\s*:/gi, '');
     
     // Clean up whitespace and HTML entities
     return result
       .replace(/\s+/g, ' ')
+      .replace(/\s+([,.;!?])/g, '$1')
       .replace(/&nbsp;/g, ' ')
       .replace(/&amp;/g, '&')
       .replace(/&lt;/g, '<')
       .replace(/&gt;/g, '>')
       .replace(/&quot;/g, '"')
+      .replace(/\s{2,}/g, ' ')
       .trim();
   };
-5
+
   const formatNotificationContent = (content, type = null) => {
     if (!content) return '';
     const cleanContent = stripHtml(content);
