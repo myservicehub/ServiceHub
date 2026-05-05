@@ -15,6 +15,7 @@ import {
   HelpCircle,
   Clock,
   CheckCheck,
+  MoreVertical,
 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { Badge } from '../../../components/ui/badge';
@@ -27,9 +28,11 @@ const DashboardMessages = () => {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [messagesLoading, setMessagesLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [handledIncomingChat, setHandledIncomingChat] = useState(false);
   const [showHiringStatusModal, setShowHiringStatusModal] = useState(false);
+  const [jobForHiringStatus, setJobForHiringStatus] = useState(null);
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -318,7 +321,7 @@ const DashboardMessages = () => {
                   <Button 
                     size="sm" 
                     className="bg-[#34D164] hover:bg-[#2EB859] text-white text-xs h-8 rounded-lg px-3 flex-shrink-0"
-                    onClick={() => navigate('/dashboard/jobs')}
+                    onClick={() => setShowHiringStatusModal(true)}
                   >
                     Update Status
                   </Button>
