@@ -1,13 +1,9 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
-import { Badge } from './ui/badge';
 import { Textarea } from './ui/textarea';
-import { RadioGroup, RadioGroupItem } from './ui/radio-group';
-import { Label } from './ui/label';
 import { 
   X, CheckCircle, Clock, AlertCircle, MessageSquare, 
-  ThumbsUp, ThumbsDown, Star, Send, User
+  ThumbsUp, ThumbsDown, Send, User
 } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
 
@@ -137,39 +133,36 @@ const HiringStatusModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg w-full max-w-md">
-        <CardHeader className="pb-4">
-          <div className="flex justify-between items-start">
-            <div>
-              <CardTitle className="text-lg font-semibold font-montserrat">
-                Job Status Update
-              </CardTitle>
-              <p className="text-sm text-gray-600 mt-1">
-                {jobTitle} • {tradespersonName}
-              </p>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-[100] p-0 sm:p-4">
+      <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full sm:max-w-lg max-h-[90dvh] sm:max-h-[85dvh] overflow-hidden flex flex-col shadow-2xl">
+        <div className="flex-shrink-0 p-4 sm:p-6 border-b border-gray-100 bg-white">
+          <div className="flex justify-between items-start gap-3">
+            <div className="min-w-0">
+              <h3 className="text-xl font-bold font-montserrat text-[#121E3C]">Job Status Update</h3>
+              <p className="text-sm text-gray-500 mt-1 font-lato truncate">{jobTitle} • {tradespersonName}</p>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
+            <button
+              type="button"
               onClick={handleClose}
-              className="text-gray-500 hover:text-gray-700"
+              className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center flex-shrink-0 transition-colors"
             >
-              <X className="w-5 h-5" />
-            </Button>    
+              <X className="w-5 h-5 text-gray-500" />
+            </button>
           </div>
-        </CardHeader>
+        </div>
 
-        <CardContent className="space-y-4">
+        <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-4">
           {/* Step 1: Hiring Status */}
           {step === 'hiring' && (
             <div className="space-y-4">
               <div className="text-center">
-                <User className="w-12 h-12 text-blue-500 mx-auto mb-3" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-3">
+                  <User className="w-6 h-6 text-blue-500" />
+                </div>
+                <h3 className="text-lg font-semibold text-[#121E3C] mb-2 font-montserrat">
                   Did you hire {tradespersonName}?
                 </h3>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 font-lato">
                   This helps us track job progress and improve our service.
                 </p>
               </div>
@@ -177,7 +170,7 @@ const HiringStatusModal = ({
               <div className="grid grid-cols-2 gap-3">
                 <Button
                   onClick={() => handleHiringStatusSelect('yes')}
-                  className="h-16 flex flex-col items-center justify-center space-y-1 bg-green-600 hover:bg-green-700 text-white"
+                  className="h-16 rounded-xl flex flex-col items-center justify-center space-y-1 bg-[#34D164] hover:bg-[#2ab854] text-white"
                 >
                   <ThumbsUp className="w-6 h-6" />
                   <span className="text-sm font-medium">Yes, I hired them</span>
@@ -186,7 +179,7 @@ const HiringStatusModal = ({
                 <Button
                   onClick={() => handleHiringStatusSelect('no')}
                   variant="outline"
-                  className="h-16 flex flex-col items-center justify-center space-y-1 border-red-200 hover:bg-red-50 text-red-600"
+                  className="h-16 rounded-xl flex flex-col items-center justify-center space-y-1 border-gray-200 hover:bg-gray-50 text-[#121E3C]"
                 >
                   <ThumbsDown className="w-6 h-6" />
                   <span className="text-sm font-medium">No, I didn't hire them</span>
@@ -199,11 +192,13 @@ const HiringStatusModal = ({
           {step === 'job-status' && (
             <div className="space-y-4">
               <div className="text-center">
-                <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-3" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                <div className="w-12 h-12 rounded-2xl bg-green-50 flex items-center justify-center mx-auto mb-3">
+                  <CheckCircle className="w-6 h-6 text-green-500" />
+                </div>
+                <h3 className="text-lg font-semibold text-[#121E3C] mb-2 font-montserrat">
                   What's the current job status?
                 </h3>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 font-lato">
                   We'll send you review reminders when the job is completed.
                 </p>
               </div>
@@ -212,12 +207,12 @@ const HiringStatusModal = ({
                 <Button
                   onClick={() => handleJobStatusSelect('not_started')}
                   variant="outline"
-                  className="w-full h-14 flex items-center justify-start space-x-3 text-left"
+                  className="w-full h-14 rounded-xl flex items-center justify-start space-x-3 text-left border-gray-200 hover:bg-gray-50"
                   disabled={submitting}
                 >
                   <AlertCircle className="w-5 h-5 text-yellow-500" />
                   <div>
-                    <div className="font-medium">Not Started Yet</div>
+                    <div className="font-medium text-[#121E3C]">Not Started Yet</div>
                     <div className="text-xs text-gray-500">Work hasn't begun</div>
                   </div>
                 </Button>
@@ -225,12 +220,12 @@ const HiringStatusModal = ({
                 <Button
                   onClick={() => handleJobStatusSelect('in_progress')}
                   variant="outline"
-                  className="w-full h-14 flex items-center justify-start space-x-3 text-left"
+                  className="w-full h-14 rounded-xl flex items-center justify-start space-x-3 text-left border-gray-200 hover:bg-gray-50"
                   disabled={submitting}
                 >
                   <Clock className="w-5 h-5 text-blue-500" />
                   <div>
-                    <div className="font-medium">In Progress</div>
+                    <div className="font-medium text-[#121E3C]">In Progress</div>
                     <div className="text-xs text-gray-500">Work is ongoing</div>
                   </div>
                 </Button>
@@ -238,25 +233,17 @@ const HiringStatusModal = ({
                 <Button
                   onClick={() => handleJobStatusSelect('completed')}
                   variant="outline"
-                  className="w-full h-14 flex items-center justify-start space-x-3 text-left"
+                  className="w-full h-14 rounded-xl flex items-center justify-start space-x-3 text-left border-gray-200 hover:bg-gray-50"
                   disabled={submitting}
                 >
                   <CheckCircle className="w-5 h-5 text-green-500" />
                   <div>
-                    <div className="font-medium">Completed</div>
+                    <div className="font-medium text-[#121E3C]">Completed</div>
                     <div className="text-xs text-gray-500">Work is finished</div>
                   </div>
                 </Button>
               </div>
 
-              <Button
-                onClick={() => setStep('hiring')}
-                variant="ghost"
-                className="w-full text-gray-600"
-                disabled={submitting}
-              >
-                ← Back
-              </Button>
             </div>
           )}
 
@@ -264,95 +251,60 @@ const HiringStatusModal = ({
           {step === 'feedback' && (
             <div className="space-y-4">
               <div className="text-center">
-                <MessageSquare className="w-12 h-12 text-orange-500 mx-auto mb-3" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center mx-auto mb-3">
+                  <MessageSquare className="w-6 h-6 text-amber-500" />
+                </div>
+                <h3 className="text-lg font-semibold text-[#121E3C] mb-2 font-montserrat">
                   Help us improve
                 </h3>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 font-lato">
                   Why didn't you hire {tradespersonName}? Your feedback helps us improve our platform.
                 </p>
               </div>
 
-              <RadioGroup value={feedbackType} onValueChange={setFeedbackType}>
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="too_expensive" id="too_expensive" />
-                    <Label htmlFor="too_expensive" className="text-sm">Too expensive</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="not_available" id="not_available" />
-                    <Label htmlFor="not_available" className="text-sm">Not available when needed</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="poor_communication" id="poor_communication" />
-                    <Label htmlFor="poor_communication" className="text-sm">Poor communication</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="lack_experience" id="lack_experience" />
-                    <Label htmlFor="lack_experience" className="text-sm">Lack of experience</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="found_someone_else" id="found_someone_else" />
-                    <Label htmlFor="found_someone_else" className="text-sm">Found someone else</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="changed_mind" id="changed_mind" />
-                    <Label htmlFor="changed_mind" className="text-sm">Changed my mind about the job</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="other" id="other" />
-                    <Label htmlFor="other" className="text-sm">Other reason</Label>
-                  </div>
-                </div>
-              </RadioGroup>
+              <div className="space-y-2.5">
+                {[
+                  { value: 'too_expensive', label: 'Too expensive' },
+                  { value: 'not_available', label: 'Not available when needed' },
+                  { value: 'poor_communication', label: 'Poor communication' },
+                  { value: 'lack_experience', label: 'Lack of experience' },
+                  { value: 'found_someone_else', label: 'Found someone else' },
+                  { value: 'changed_mind', label: 'Changed my mind about the job' },
+                  { value: 'other', label: 'Other reason' },
+                ].map((option) => {
+                  const selected = feedbackType === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setFeedbackType(option.value)}
+                      className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all ${
+                        selected
+                          ? 'border-[#34D164] bg-[#34D164]/5'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        selected ? 'border-[#34D164]' : 'border-gray-300'
+                      }`}>
+                        {selected && <span className="w-2.5 h-2.5 rounded-full bg-[#34D164]" />}
+                      </span>
+                      <span className="text-sm text-[#121E3C] font-medium">{option.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
 
               <div>
-                <Label htmlFor="comment" className="text-sm font-medium">
-                  Additional comments (optional)
-                </Label>
+                <p className="text-sm font-medium text-[#121E3C] mb-1">Additional comments (optional)</p>
                 <Textarea
                   id="comment"
                   value={feedbackComment}
                   onChange={(e) => setFeedbackComment(e.target.value)}
                   placeholder="Any additional feedback..."
-                  className="mt-1"
+                  className="mt-1 rounded-xl border-gray-200"
                   rows="3"
                 />
-              </div>
-
-              <div className="flex space-x-3">
-                <Button
-                  onClick={() => setStep('hiring')}
-                  variant="outline"
-                  className="flex-1"
-                  disabled={submitting}
-                >
-                  ← Back
-                </Button>
-                
-                <Button
-                  onClick={handleFeedbackSubmit}
-                  className="flex-1 bg-orange-600 hover:bg-orange-700 text-white"
-                  disabled={submitting || !feedbackType}
-                >
-                  {submitting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Submitting...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4 mr-2" />
-                      Submit Feedback
-                    </>
-                  )}
-                </Button>
               </div>
             </div>
           )}
@@ -360,23 +312,58 @@ const HiringStatusModal = ({
           {/* Step 4: Completion */}
           {step === 'completed' && (
             <div className="text-center py-6">
-              <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <div className="w-16 h-16 rounded-2xl bg-green-50 flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-8 h-8 text-green-500" />
+              </div>
+              <h3 className="text-lg font-semibold text-[#121E3C] mb-2 font-montserrat">
                 Thank you!
               </h3>
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="text-sm text-gray-600 mb-4 font-lato">
                 {hiringStatus === 'yes' 
                   ? "We've updated your job status. You'll receive review reminders when appropriate."
                   : "Your feedback has been submitted and will help us improve our platform."
                 }
               </p>
-              <Badge variant="outline" className="text-green-600 bg-green-50 border-green-200">
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold text-green-700 bg-green-100 border border-green-200">
                 <CheckCircle className="w-3 h-3 mr-1" />
                 Complete
-              </Badge>
+              </span>
             </div>
           )}
-        </CardContent>
+
+        </div>
+
+        {step === 'feedback' && (
+          <div className="flex-shrink-0 p-4 sm:p-6 border-t border-gray-100 bg-white pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-6">
+            <div className="flex gap-3">
+              <Button
+                onClick={() => setStep('hiring')}
+                variant="outline"
+                className="flex-1 h-12 rounded-xl"
+                disabled={submitting}
+              >
+                ← Back
+              </Button>
+              <Button
+                onClick={handleFeedbackSubmit}
+                className="flex-1 h-12 rounded-xl bg-[#34D164] hover:bg-[#2ab854] text-white"
+                disabled={submitting || !feedbackType}
+              >
+                {submitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 mr-2" />
+                    Submit Feedback
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import ValidationBanner from './ValidationBanner';
 import { Button } from './ui/button';
@@ -2937,7 +2938,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState, s
       {verificationGateModal}
       
       {/* Questions Modal */}
-      {showQuestionsModal && (
+      {showQuestionsModal && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-[1000] p-0 sm:p-4 pb-[calc(4rem+env(safe-area-inset-bottom))] sm:pb-4">
           <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full sm:max-w-lg h-[calc(100vh-4rem-env(safe-area-inset-bottom))] max-h-[calc(100dvh-4rem-env(safe-area-inset-bottom))] sm:h-auto sm:max-h-[85dvh] overflow-hidden flex flex-col relative">
             {/* Modal Header - Fixed */}
@@ -3119,7 +3120,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState, s
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
 
       {showReviewModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-[100] p-0 sm:p-4">
