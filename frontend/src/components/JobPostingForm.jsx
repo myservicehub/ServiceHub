@@ -2939,7 +2939,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState, s
       {/* Questions Modal */}
       {showQuestionsModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-[100] p-0 sm:p-4">
-          <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full sm:max-w-lg h-[90vh] sm:h-auto sm:max-h-[85vh] overflow-hidden flex flex-col relative">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full sm:max-w-lg h-[90dvh] sm:h-auto sm:max-h-[85dvh] overflow-hidden flex flex-col relative">
             {/* Modal Header - Fixed */}
             <div className="flex-shrink-0 p-4 sm:p-6 border-b border-gray-100 bg-white">
               <div className="flex items-center justify-between gap-3">
@@ -3151,7 +3151,7 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState, s
       {/* Quiz Feedback Modal */}
       {showQuizFeedbackModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-[100] p-0 sm:p-4">
-          <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full sm:max-w-md max-h-[85dvh] sm:max-h-[85vh] overflow-hidden flex flex-col">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full sm:max-w-md max-h-[85dvh] sm:max-h-[85dvh] overflow-hidden flex flex-col">
             <div className="flex-shrink-0 p-4 sm:p-6 border-b border-gray-100">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
