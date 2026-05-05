@@ -2972,26 +2972,25 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState, s
             </div>
 
             {/* Modal Body - Scrollable */}
-            <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 min-h-0 bg-white">
+            <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 bg-white" style={{ minHeight: '150px' }}>
               {(() => {
                 const visibleQuestions = getVisibleQuestions();
                 
-                // Safety check for index out of bounds during restoration
-                if (currentQuestionIndex >= visibleQuestions.length && visibleQuestions.length > 0) {
-                  setCurrentQuestionIndex(0);
-                  return null;
-                }
-
-                const currentQuestion = visibleQuestions[currentQuestionIndex];
-                
-                if (!currentQuestion) {
+                // If no questions yet, show loading
+                if (visibleQuestions.length === 0) {
                   return (
-                    <div className="text-center py-8 text-gray-500">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#34D164] mx-auto mb-4"></div>
-                      <p>Preparing questions...</p>
+                    <div className="flex flex-col items-center justify-center py-12 text-gray-500 h-full">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#34D164] mb-4"></div>
+                      <p className="font-lato text-sm">Syncing your job details...</p>
                     </div>
                   );
                 }
+
+                // Safety check for index out of bounds during restoration
+                const safeIndex = Math.max(0, Math.min(currentQuestionIndex, visibleQuestions.length - 1));
+                const currentQuestion = visibleQuestions[safeIndex];
+                
+                if (!currentQuestion) return null;
 
                 return (
                   <div className="space-y-4 pb-4">
@@ -3018,8 +3017,8 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState, s
               })()}
             </div>
 
-            {/* Modal Footer - Fixed */}
-            <div className="flex-shrink-0 p-4 sm:p-6 border-t border-gray-100 bg-white pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-6 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
+            {/* Modal Footer - Fixed at bottom */}
+            <div className="flex-shrink-0 p-4 sm:p-6 border-t border-gray-100 bg-white pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-6 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] z-[110]">
               <div className="flex gap-3">
                 <Button
                   type="button"
@@ -3039,8 +3038,23 @@ function JobPostingForm({ onClose, onJobPosted, initialCategory, initialState, s
                 
                 {(() => {
                   const visibleQuestions = getVisibleQuestions();
-                  const currentQuestion = visibleQuestions[currentQuestionIndex];
-                  const isLastQuestion = currentQuestionIndex >= visibleQuestions.length - 1;
+                  // If questions are still loading, show a loading button
+                  if (visibleQuestions.length === 0) {
+                    return (
+                      <Button
+                        type="button"
+                        disabled
+                        className="flex-1 h-12 rounded-xl text-white font-lato opacity-70"
+                        style={{ backgroundColor: '#34D164' }}
+                      >
+                        Loading...
+                      </Button>
+                    );
+                  }
+
+                  const safeIndex = Math.max(0, Math.min(currentQuestionIndex, visibleQuestions.length - 1));
+                  const currentQuestion = visibleQuestions[safeIndex];
+                  const isLastQuestion = safeIndex >= visibleQuestions.length - 1;
                   const finishHere = currentQuestion && isEndAfterThis(currentQuestion);
 
                   if (isLastQuestion || finishHere) {
