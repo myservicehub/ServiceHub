@@ -1240,6 +1240,34 @@ const AdminDashboard = () => {
     return (Date.now() - lastLoginTime) <= THIRTY_DAYS_MS ? 'active' : 'inactive';
   };
 
+  const getReviewerDisplayName = (adminLike) => {
+    if (!adminLike) return '—';
+    const fullName = String(adminLike.full_name || '').trim();
+    const username = String(adminLike.username || '').trim();
+    const email = String(adminLike.email || '').trim();
+    const id = String(adminLike.id || '').trim();
+
+    const genericRoleLabels = new Set([
+      'super administrator',
+      'super admin',
+      'administrator',
+      'read only admin',
+      'readonly admin',
+      'admin'
+    ]);
+    const normalizedName = fullName.toLowerCase();
+    const hasSpecificName = fullName && !genericRoleLabels.has(normalizedName);
+
+    if (hasSpecificName && username) return `${fullName} (${username})`;
+    if (hasSpecificName && email) return `${fullName} (${email})`;
+    if (hasSpecificName) return fullName;
+    if (username && email) return `${username} (${email})`;
+    if (username) return username;
+    if (email) return email;
+    if (id) return id;
+    return '—';
+  };
+
   const handleLocationDataLoad = async () => {
     try {
       // Load states data for dropdowns
@@ -3015,9 +3043,9 @@ const AdminDashboard = () => {
                               {rows.map((v) => {
                                 const status = getTradespeopleVerificationStatus(v);
                                 const reviewer = status === 'approved'
-                                  ? (v.approved_by_admin?.full_name || v.approved_by_admin?.username || v.approved_by_admin?.email || v.approved_by_admin?.id || '—')
+                                  ? getReviewerDisplayName(v.approved_by_admin)
                                   : status === 'rejected'
-                                    ? (v.rejected_by_admin?.full_name || v.rejected_by_admin?.username || v.rejected_by_admin?.email || v.rejected_by_admin?.id || '—')
+                                    ? getReviewerDisplayName(v.rejected_by_admin)
                                     : '—';
                                 return (
                                   <tr key={`${status}-${v.id}`} className="hover:bg-gray-50/70">
@@ -5773,9 +5801,9 @@ const AdminDashboard = () => {
                   <p>
                     <strong>Reviewed By:</strong> {
                       getTradespeopleVerificationStatus(selectedTradespeopleVerification) === 'approved'
-                        ? (selectedTradespeopleVerification.approved_by_admin?.full_name || selectedTradespeopleVerification.approved_by_admin?.username || selectedTradespeopleVerification.approved_by_admin?.email || '—')
+                        ? getReviewerDisplayName(selectedTradespeopleVerification.approved_by_admin)
                         : getTradespeopleVerificationStatus(selectedTradespeopleVerification) === 'rejected'
-                          ? (selectedTradespeopleVerification.rejected_by_admin?.full_name || selectedTradespeopleVerification.rejected_by_admin?.username || selectedTradespeopleVerification.rejected_by_admin?.email || '—')
+                          ? getReviewerDisplayName(selectedTradespeopleVerification.rejected_by_admin)
                           : '—'
                     }
                   </p>
