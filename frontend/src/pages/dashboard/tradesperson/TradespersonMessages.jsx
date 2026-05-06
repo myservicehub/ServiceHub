@@ -202,6 +202,11 @@ const TradespersonMessages = () => {
     conv.job_title?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const homeownerPresence = getPresenceInfo(
+    selectedConversation?.homeowner_online,
+    selectedConversation?.homeowner_last_login
+  );
+
   const formatConversationTime = (value) => {
     if (!value) return '';
     const date = parseServerDate(value);
@@ -214,6 +219,18 @@ const TradespersonMessages = () => {
     if (minutes < 60) return `${minutes}m`;
     if (hours < 24) return `${hours}h`;
     return date.toLocaleDateString();
+  };
+
+  const getPresenceInfo = (onlineFlag, lastLoginValue) => {
+    if (typeof onlineFlag === 'boolean') {
+      return { isOnline: onlineFlag, label: onlineFlag ? 'Online' : 'Offline' };
+    }
+    const lastLogin = parseServerDate(lastLoginValue);
+    if (!lastLogin || Number.isNaN(lastLogin.getTime())) {
+      return { isOnline: false, label: 'Offline' };
+    }
+    const isOnline = (Date.now() - lastLogin.getTime()) <= 5 * 60 * 1000;
+    return { isOnline, label: isOnline ? 'Online' : 'Offline' };
   };
 
   if (loading) {
@@ -335,9 +352,9 @@ const TradespersonMessages = () => {
                     <p className="font-semibold text-[#121E3C] text-sm truncate">
                       {selectedConversation.homeowner_name || 'Homeowner'}
                     </p>
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#34D164] inline-block" />
-                      <span>Online</span>
+                    <div className={`flex items-center gap-1.5 text-xs ${homeownerPresence.isOnline ? 'text-gray-500' : 'text-gray-400'}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full inline-block ${homeownerPresence.isOnline ? 'bg-[#34D164]' : 'bg-gray-400'}`} />
+                      <span>{homeownerPresence.label}</span>
                     </div>
                   </div>
                 </div>

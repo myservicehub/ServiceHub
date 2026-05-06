@@ -6961,6 +6961,34 @@ class Database:
             
             cursor = self.database.conversations.find(query).sort("last_message_at", -1).skip(skip).limit(limit)
             conversations = await cursor.to_list(length=limit)
+
+            # Batch load related user last_login fields so presence can be shown in chat headers
+            homeowner_ids = {conv.get("homeowner_id") for conv in conversations if conv.get("homeowner_id")}
+            tradesperson_ids = {conv.get("tradesperson_id") for conv in conversations if conv.get("tradesperson_id")}
+
+            all_user_ids = list(homeowner_ids | tradesperson_ids)
+            users_map = {}
+            if all_user_ids:
+                users = await self.database.users.find(
+                    {"id": {"$in": all_user_ids}},
+                    {"id": 1, "last_login": 1}
+                ).to_list(length=len(all_user_ids))
+                users_map = {user.get("id"): user for user in users if user.get("id")}
+
+            def is_online(last_login_value):
+                if not last_login_value:
+                    return False
+                try:
+                    now_utc = datetime.now(timezone.utc)
+                    if isinstance(last_login_value, datetime):
+                        last_login_dt = last_login_value
+                    else:
+                        return False
+                    if last_login_dt.tzinfo is None:
+                        last_login_dt = last_login_dt.replace(tzinfo=timezone.utc)
+                    return (now_utc - last_login_dt).total_seconds() <= 300  # 5 minutes
+                except Exception:
+                    return False
             
             for conv in conversations:
                 conv['_id'] = str(conv['_id'])
@@ -6970,6 +6998,13 @@ class Database:
                     job = await self.database.jobs.find_one({"id": conv["job_id"]}, {"status": 1})
                     if job:
                         conv["job_status"] = job.get("status")
+
+                homeowner = users_map.get(conv.get("homeowner_id"), {})
+                tradesperson = users_map.get(conv.get("tradesperson_id"), {})
+                conv["homeowner_last_login"] = homeowner.get("last_login")
+                conv["tradesperson_last_login"] = tradesperson.get("last_login")
+                conv["homeowner_online"] = is_online(homeowner.get("last_login"))
+                conv["tradesperson_online"] = is_online(tradesperson.get("last_login"))
             
             return conversations
         except Exception as e:

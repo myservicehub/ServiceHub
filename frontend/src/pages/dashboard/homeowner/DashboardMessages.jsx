@@ -123,6 +123,18 @@ const DashboardMessages = () => {
     return date.toLocaleDateString();
   };
 
+  const getPresenceInfo = (onlineFlag, lastLoginValue) => {
+    if (typeof onlineFlag === 'boolean') {
+      return { isOnline: onlineFlag, label: onlineFlag ? 'Online' : 'Offline' };
+    }
+    const lastLogin = parseServerDate(lastLoginValue);
+    if (!lastLogin || Number.isNaN(lastLogin.getTime())) {
+      return { isOnline: false, label: 'Offline' };
+    }
+    const isOnline = (Date.now() - lastLogin.getTime()) <= 5 * 60 * 1000;
+    return { isOnline, label: isOnline ? 'Online' : 'Offline' };
+  };
+
   const loadConversations = async (silent = false) => {
     try {
       if (!silent) setLoading(true);
@@ -183,6 +195,11 @@ const DashboardMessages = () => {
   const filteredConversations = conversations.filter((conv) =>
     conv.tradesperson_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     conv.job_title?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const tradespersonPresence = getPresenceInfo(
+    selectedConversation?.tradesperson_online,
+    selectedConversation?.tradesperson_last_login
   );
 
   return (
@@ -258,50 +275,53 @@ const DashboardMessages = () => {
           {selectedConversation ? (
             <>
               {/* Conversation Header */}
-              <div className="px-4 py-3 border-b border-gray-100 bg-white flex items-center gap-3">
-                <button
-                  onClick={() => setSelectedConversation(null)}
-                  className="lg:hidden p-2 -ml-2 text-gray-400 hover:text-gray-600"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                </button>
-                
-                <div className="w-10 h-10 rounded-full bg-[#34D164]/10 flex items-center justify-center text-[#34D164] font-bold text-lg flex-shrink-0">
-                  {selectedConversation.tradesperson_name?.charAt(0)?.toUpperCase() || 'T'}
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">
-                    MYSERVICEHUB.CO
+              <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-white">
+                <div className="flex items-center gap-3 min-w-0">
+                  <button
+                    onClick={() => setSelectedConversation(null)}
+                    className="lg:hidden p-2 -ml-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <ArrowLeft className="w-5 h-5 text-gray-500" />
+                  </button>
+                  <div className="relative">
+                    <div className="w-10 h-10 rounded-full bg-[#121E3C] flex items-center justify-center text-white font-semibold">
+                      {selectedConversation.tradesperson_name?.charAt(0)?.toUpperCase() || 'T'}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <Briefcase className="w-3.5 h-3.5 text-gray-400" />
-                    <h4 className="text-xs font-semibold text-gray-700 truncate">
-                      {selectedConversation.job_title || 'Untitled Job'}
-                    </h4>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-gray-900 text-sm">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-[#121E3C] text-sm truncate">
                       {selectedConversation.tradesperson_name || 'Tradesperson'}
-                    </h3>
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#34D164]" title="Online" />
-                  </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    {selectedConversation.job_location && (
-                      <div className="flex items-center gap-1 text-[10px] text-gray-500">
-                        <MapPin className="w-3 h-3 text-[#34D164]" />
-                        <span>{selectedConversation.job_location}</span>
-                      </div>
-                    )}
-                    <Badge variant="outline" className="rounded-full text-[9px] font-bold py-0 h-4 border-gray-200 uppercase tracking-tighter">
-                      Tradeperson
-                    </Badge>
+                    </p>
+                    <div className={`flex items-center gap-1.5 text-xs ${tradespersonPresence.isOnline ? 'text-gray-500' : 'text-gray-400'}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full inline-block ${tradespersonPresence.isOnline ? 'bg-[#34D164]' : 'bg-gray-400'}`} />
+                      <span>{tradespersonPresence.label}</span>
+                    </div>
                   </div>
                 </div>
-                
-                <button className="w-10 h-10 rounded-xl border border-gray-100 bg-white hover:bg-gray-50 transition-colors flex items-center justify-center">
-                  <Phone className="w-5 h-5 text-gray-600" />
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button className="w-10 h-10 rounded-xl border border-gray-100 bg-white hover:bg-gray-50 transition-colors flex items-center justify-center">
+                    <Phone className="w-5 h-5 text-gray-600" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="px-4 pt-3 pb-3 bg-white border-b border-gray-100">
+                <div className="flex items-center gap-2 min-w-0 text-sm text-gray-700">
+                  <Briefcase className="w-4 h-4 text-gray-400" />
+                  <span className="truncate">{selectedConversation.job_title || 'Job conversation'}</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-gray-500 mt-1.5">
+                  {selectedConversation.job_location && (
+                    <div className="flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-[#34D164]" />
+                      <span className="font-medium text-gray-700">{selectedConversation.job_location}</span>
+                    </div>
+                  )}
+                  <span className="text-gray-300">•</span>
+                  <Badge variant="outline" className="rounded-full text-[10px] font-medium py-0 h-4 border-gray-200">
+                    Tradeperson
+                  </Badge>
+                </div>
               </div>
 
               {/* Job Status Banner */}

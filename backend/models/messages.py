@@ -36,11 +36,16 @@ class Conversation(BaseModel):
     id: str
     job_id: str
     job_title: str
+    job_location: Optional[str] = None
     homeowner_id: str
     homeowner_name: str
     tradesperson_id: str
     tradesperson_name: str
     job_status: Optional[str] = None
+    homeowner_last_login: Optional[datetime] = None
+    tradesperson_last_login: Optional[datetime] = None
+    homeowner_online: bool = False
+    tradesperson_online: bool = False
     last_message: Optional[str] = None
     last_message_at: Optional[datetime] = None
     unread_count_homeowner: int = 0
