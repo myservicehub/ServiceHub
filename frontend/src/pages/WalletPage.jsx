@@ -15,6 +15,12 @@ const WalletPage = () => {
   const [showFundModal, setShowFundModal] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const hasVerifiedCallbackRef = useRef(false);
+  const formatCoins = (value) => {
+    const numeric = Number(value || 0);
+    return Number.isFinite(numeric)
+      ? numeric.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 4 })
+      : '0';
+  };
 
   if (!isAuthenticated()) {
     return (
@@ -49,7 +55,7 @@ const WalletPage = () => {
         const response = await walletAPI.verifyPaystackFunding(reference);
         toast({
           title: 'Wallet Funded',
-          description: `Your wallet was credited with ${response.amount_coins} coins.`,
+          description: `Your wallet was credited with ${formatCoins(response.amount_coins)} coins.`,
         });
         setRefreshTrigger(Date.now());
       } catch (error) {

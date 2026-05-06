@@ -366,9 +366,9 @@ async def get_wallet_with_referral_info(current_user = Depends(get_current_user)
     
     return WalletResponseWithReferrals(
         balance_coins=wallet["balance_coins"],
-        balance_naira=wallet["balance_coins"] * 100,
+        balance_naira=float(wallet["balance_coins"]) * 100,
         referral_coins=eligibility["referral_coins"],
-        referral_coins_naira=eligibility["referral_coins"] * 100,
+        referral_coins_naira=float(eligibility["referral_coins"]) * 100,
         can_withdraw_referrals=eligibility["can_withdraw_referrals"],
         transactions=transactions
     )
@@ -400,9 +400,9 @@ async def withdraw_referral_to_wallet(current_user = Depends(get_current_user)):
     transactions = await database.get_wallet_transactions(current_user.id, limit=10)
     return WalletResponseWithReferrals(
         balance_coins=wallet["balance_coins"],
-        balance_naira=wallet["balance_coins"] * 100,
+        balance_naira=float(wallet["balance_coins"]) * 100,
         referral_coins=eligibility["referral_coins"],
-        referral_coins_naira=eligibility["referral_coins"] * 100,
+        referral_coins_naira=float(eligibility["referral_coins"]) * 100,
         can_withdraw_referrals=eligibility["can_withdraw_referrals"],
         transactions=transactions
     )

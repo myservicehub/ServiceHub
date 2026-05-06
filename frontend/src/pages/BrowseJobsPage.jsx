@@ -699,7 +699,7 @@ const BrowseJobsPage = () => {
     if (walletBalance && walletBalance.balance_coins < accessFeeCoins) {
       toast({
         title: "Insufficient wallet balance",
-        description: `You need at least ${accessFeeCoins} coins (₦${(accessFeeCoins * 100).toLocaleString()}) to pay for contact details. Please fund your wallet.`,
+        description: `You need at least ${formatCoins(accessFeeCoins)} coins (₦${(accessFeeCoins * 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}) to pay for contact details. Please fund your wallet.`,
         variant: "destructive",
       });
       navigate('/trades/wallet');
@@ -783,13 +783,20 @@ const BrowseJobsPage = () => {
     }).format(value);
   };
 
+  const formatCoins = (value) => {
+    const numeric = Number(value || 0);
+    return Number.isFinite(numeric)
+      ? numeric.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 4 })
+      : '0';
+  };
+
   // VAT settings (defaults to Nigeria's 7.5% if not provided)
   const VAT_RATE = Number(process.env.REACT_APP_VAT_RATE ?? 0.075);
   const computeVatInclusive = (amountNaira) => {
     const base = Math.max(Number(amountNaira || 0), 0);
-    const vat = Math.round(base * VAT_RATE);
+    const vat = base * VAT_RATE;
     const total = base + vat;
-    const totalCoins = Math.ceil(total / 100); // 1 coin = ₦100
+    const totalCoins = total / 100; // 1 coin = ₦100
     return { vat, total, totalCoins };
   };
   const resolveAccessFeeNaira = (job) => {
@@ -1061,7 +1068,7 @@ const BrowseJobsPage = () => {
                 <div className="flex items-center gap-3 px-4 py-2 bg-[#121E3C]/5 rounded-xl">
                   <div className="text-right">
                     <p className="text-xs text-gray-500">Balance</p>
-                    <p className="text-sm font-semibold text-[#121E3C]">{walletBalance.balance_coins} coins</p>
+                    <p className="text-sm font-semibold text-[#121E3C]">{formatCoins(walletBalance.balance_coins)} coins</p>
                   </div>
                   <Button
                     onClick={() => navigate('/trades/wallet')}
@@ -1410,10 +1417,10 @@ const BrowseJobsPage = () => {
                       return (
                         <div className="flex-1 min-w-[200px] bg-amber-50 border border-amber-200 rounded-xl p-4">
                           <div className="text-lg font-bold text-amber-700">
-                            {totalCoins} coins
+                            {formatCoins(totalCoins)} coins
                           </div>
                           <div className="text-xs text-amber-600">
-                            Access fee (₦{total.toLocaleString()} incl. VAT)
+                            Access fee (₦{total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} incl. VAT; VAT ₦{vat.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
                           </div>
                         </div>
                       );

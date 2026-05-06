@@ -8,6 +8,20 @@ const WalletBalance = ({ showFundButton = true, onFundClick, refreshToken = 0 })
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
+  const formatCoins = (value) => {
+    const numeric = Number(value || 0);
+    return Number.isFinite(numeric)
+      ? numeric.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 4 })
+      : '0';
+  };
+
+  const formatNaira = (value) => {
+    const numeric = Number(value || 0);
+    return Number.isFinite(numeric)
+      ? numeric.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      : '0.00';
+  };
+
   useEffect(() => {
     fetchBalance();
   }, [refreshToken]);
@@ -65,10 +79,10 @@ const WalletBalance = ({ showFundButton = true, onFundClick, refreshToken = 0 })
           <h3 className="text-sm font-semibold text-[#121E3C] mb-2 font-montserrat">Wallet Balance</h3>
           <div className="space-y-1">
             <p className="text-2xl sm:text-3xl font-bold text-[#34D164]">
-              ₦{balance?.balance_naira?.toLocaleString() || '0'}
+              ₦{formatNaira(balance?.balance_naira)}
             </p>
             <p className="text-xs sm:text-sm text-gray-500 font-lato">
-              {balance?.balance_coins || 0} coins (1 coin = ₦100)
+              {formatCoins(balance?.balance_coins)} coins (1 coin = ₦100)
             </p>
           </div>
         </div>

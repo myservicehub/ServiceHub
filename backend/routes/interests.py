@@ -10,6 +10,7 @@ from ..auth.dependencies import get_current_tradesperson, get_current_homeowner,
 from ..database import database
 from ..services.notifications import notification_service
 from datetime import datetime
+from decimal import Decimal, InvalidOperation
 import uuid
 import logging
 import os
@@ -17,6 +18,25 @@ import os
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/interests", tags=["interests"])
+VAT_RATE = Decimal(str(os.environ.get("VAT_RATE", "0.075")))
+
+
+def _to_decimal(value, default="0"):
+    try:
+        if value is None:
+            return Decimal(default)
+        return Decimal(str(value))
+    except (InvalidOperation, TypeError, ValueError):
+        return Decimal(default)
+
+
+def _compute_vat_inclusive_access_fee(base_naira):
+    base = max(_to_decimal(base_naira, "0"), Decimal("0"))
+    vat = base * VAT_RATE
+    total = base + vat
+    # Keep precise VAT/total; no round-up to whole coins.
+    total_coins = total / Decimal("100")
+    return base, vat, total, total_coins
 
 @router.post("/show-interest", response_model=Interest)
 async def show_interest(
@@ -249,34 +269,41 @@ async def pay_for_access(
         if not job:
             raise HTTPException(status_code=404, detail="Job not found")
         
-        # Get access fee from job (default to ₦1500 if not set)
-        access_fee_naira = job.get("access_fee_naira", 1500)
-        access_fee_coins = job.get("access_fee_coins", 15)
+        # Get base access fee from job then apply exact VAT (no round-up)
+        raw_access_fee_naira = job.get("access_fee_naira")
+        if raw_access_fee_naira is None:
+            raw_access_fee_coins = _to_decimal(job.get("access_fee_coins"), "15")
+            raw_access_fee_naira = raw_access_fee_coins * Decimal("100")
+        base_fee_naira, vat_amount_naira, total_fee_naira, total_fee_coins = _compute_vat_inclusive_access_fee(raw_access_fee_naira)
         
         # Check wallet balance and deduct fee
         success = await database.deduct_access_fee(
             user_id=current_user.id,
             job_id=job["id"],
-            access_fee_coins=access_fee_coins
+            access_fee_coins=float(total_fee_coins),
+            access_fee_naira=float(total_fee_naira),
         )
         
         if not success:
             # Get current wallet balance for error message
             wallet = await database.get_wallet_by_user_id(current_user.id)
             current_balance = wallet.get("balance_coins", 0)
-            shortfall = access_fee_coins - current_balance
+            shortfall = float(total_fee_coins) - float(current_balance)
             
             raise HTTPException(
                 status_code=400, 
-                detail=f"Insufficient wallet balance. Required: {access_fee_coins} coins (₦{access_fee_naira:,}), "
-                       f"Current balance: {current_balance} coins (₦{current_balance * 100:,}), "
-                       f"Shortfall: {shortfall} coins (₦{shortfall * 100:,}). Please fund your wallet."
+                detail=f"Insufficient wallet balance. Required: {float(total_fee_coins):,.4f} coins (₦{float(total_fee_naira):,.2f}, VAT ₦{float(vat_amount_naira):,.2f}), "
+                       f"Current balance: {float(current_balance):,.4f} coins (₦{float(current_balance) * 100:,.2f}), "
+                       f"Shortfall: {float(shortfall):,.4f} coins (₦{float(shortfall) * 100:,.2f}). Please fund your wallet."
             )
         
         # Update interest status
         update_data = {
             "status": InterestStatus.PAID_ACCESS,
-            "access_fee": access_fee_naira,
+            "access_fee": float(base_fee_naira),
+            "access_fee_vat_naira": float(vat_amount_naira),
+            "access_fee_total_naira": float(total_fee_naira),
+            "access_fee_total_coins": float(total_fee_coins),
             "payment_made_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()
         }
@@ -295,7 +322,7 @@ async def pay_for_access(
             tradesperson=tradesperson_data,
             job=job,
             interest_id=interest_id,
-            access_fee=access_fee_naira
+            access_fee=float(total_fee_naira)
         )
         
         # Award points for paying access fee (5 points)
@@ -303,8 +330,10 @@ async def pay_for_access(
         
         return {
             "message": "Payment successful! Access granted to contact details.",
-            "access_fee_naira": access_fee_naira,
-            "access_fee_coins": access_fee_coins,
+            "access_fee_naira": float(base_fee_naira),
+            "vat_naira": float(vat_amount_naira),
+            "total_fee_naira": float(total_fee_naira),
+            "access_fee_coins": float(total_fee_coins),
             "payment_method": "wallet_coins"
         }
         
@@ -404,16 +433,17 @@ async def _notify_tradesperson_contact_shared(job: dict, tradesperson_id: str, i
         access_fee_naira = job.get("access_fee_naira")
         access_fee_coins = job.get("access_fee_coins")
         if access_fee_naira is None and access_fee_coins is not None:
-            access_fee_naira = int(access_fee_coins) * 100
+            access_fee_naira = _to_decimal(access_fee_coins, "10") * Decimal("100")
         if access_fee_naira is None:
-            access_fee_naira = 1000
+            access_fee_naira = Decimal("1000")
+        _, vat_amount_naira, total_fee_naira, _ = _compute_vat_inclusive_access_fee(access_fee_naira)
         template_data = {
             "job_id": job.get("id"),
             "tradesperson_name": tradesperson.get("business_name") or tradesperson.get("name", "Tradesperson"),
             "job_title": job.get("title", "Untitled Job"),
             "job_location": job.get("location", ""),
             "homeowner_name": job.get("homeowner", {}).get("name", "Homeowner"),
-            "access_fee": f"₦{float(access_fee_naira):,.2f}",
+            "access_fee": f"₦{float(total_fee_naira):,.2f} (VAT ₦{float(vat_amount_naira):,.2f})",
             "payment_url": f"{os.environ.get('FRONTEND_URL', 'https://myservicehub.co')}/trades/interests?pay={interest_id}",
             "view_url": f"{os.environ.get('FRONTEND_URL', 'https://myservicehub.co')}/trades/interests"
         }

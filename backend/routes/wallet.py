@@ -26,7 +26,7 @@ async def get_wallet_balance(current_user: User = Depends(get_current_user)):
     
     return WalletResponse(
         balance_coins=wallet["balance_coins"],
-        balance_naira=wallet["balance_coins"] * 100,  # Convert to naira
+        balance_naira=float(wallet["balance_coins"]) * 100,  # Convert to naira
         transactions=transactions
     )
 
@@ -114,7 +114,7 @@ async def verify_paystack_wallet_funding(
             "transaction_id": existing.get("id"),
             "already_confirmed": True,
             "balance_coins": wallet_existing["balance_coins"],
-            "balance_naira": wallet_existing["balance_coins"] * 100
+            "balance_naira": float(wallet_existing["balance_coins"]) * 100
         }
 
     headers = {"Authorization": f"Bearer {paystack_secret_key}"}
@@ -137,11 +137,11 @@ async def verify_paystack_wallet_funding(
         raise HTTPException(status_code=400, detail="Payment has not been completed")
 
     amount_kobo = int(verified_data.get("amount", 0))
-    amount_naira = amount_kobo // 100
+    amount_naira = amount_kobo / 100
     if amount_naira < 100:
         raise HTTPException(status_code=400, detail="Invalid payment amount")
 
-    amount_coins = amount_naira // 100
+    amount_coins = amount_naira / 100
     wallet = await database.get_wallet_by_user_id(current_user.id)
 
     if existing and existing.get("status") == TransactionStatus.PENDING:
@@ -171,7 +171,7 @@ async def verify_paystack_wallet_funding(
             "amount_coins": amount_coins,
             "amount_naira": amount_naira,
             "status": TransactionStatus.CONFIRMED,
-            "description": f"Wallet funded via Paystack - ₦{amount_naira:,} ({amount_coins} coins)",
+                    "description": f"Wallet funded via Paystack - ₦{amount_naira:,.2f} ({amount_coins:,.4f} coins)",
             "reference": reference,
             "processed_by": "paystack",
             "admin_notes": "Auto-confirmed via Paystack verification",
@@ -189,7 +189,7 @@ async def verify_paystack_wallet_funding(
         "amount_naira": amount_naira,
         "amount_coins": amount_coins,
         "balance_coins": wallet_after["balance_coins"],
-        "balance_naira": wallet_after["balance_coins"] * 100,
+        "balance_naira": float(wallet_after["balance_coins"]) * 100,
         "status": "confirmed"
     }
 
@@ -216,7 +216,7 @@ async def get_wallet_transactions(
 
 @router.post("/check-balance/{access_fee_coins}")
 async def check_sufficient_balance(
-    access_fee_coins: int,
+    access_fee_coins: float,
     current_user: User = Depends(get_current_tradesperson)
 ):
     """Check if tradesperson has sufficient balance for access fee"""
@@ -228,7 +228,7 @@ async def check_sufficient_balance(
     return {
         "sufficient_balance": sufficient,
         "current_balance_coins": wallet["balance_coins"],
-        "current_balance_naira": wallet["balance_coins"] * 100,
+        "current_balance_naira": float(wallet["balance_coins"]) * 100,
         "required_coins": access_fee_coins,
         "required_naira": access_fee_coins * 100,
         "shortfall_coins": max(0, access_fee_coins - wallet["balance_coins"]),

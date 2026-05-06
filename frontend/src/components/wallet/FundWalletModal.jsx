@@ -35,7 +35,7 @@ const FundWalletModal = ({ isOpen, onClose, onSuccess }) => {
       return;
     }
 
-    if (parseInt(formData.amount_naira) < 100) {
+    if (Number(formData.amount_naira) < 100) {
       toast({
         title: "Invalid Amount",
         description: "Minimum funding amount is ₦100",
@@ -47,7 +47,7 @@ const FundWalletModal = ({ isOpen, onClose, onSuccess }) => {
     try {
       setLoading(true);
       const redirectPath = window.location.pathname || '/trades/wallet';
-      const init = await walletAPI.initializePaystackFunding(parseInt(formData.amount_naira), redirectPath);
+      const init = await walletAPI.initializePaystackFunding(Number(formData.amount_naira), redirectPath);
       if (!init?.authorization_url) {
         throw new Error('Payment link not available');
       }
@@ -67,7 +67,13 @@ const FundWalletModal = ({ isOpen, onClose, onSuccess }) => {
 
   if (!isOpen) return null;
 
-  const calculateCoins = (naira) => Math.floor(naira / 100);
+  const calculateCoins = (naira) => Number(naira || 0) / 100;
+  const formatCoins = (value) => {
+    const numeric = Number(value || 0);
+    return Number.isFinite(numeric)
+      ? numeric.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 4 })
+      : '0';
+  };
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center z-50 p-4 overflow-y-auto">
@@ -104,7 +110,7 @@ const FundWalletModal = ({ isOpen, onClose, onSuccess }) => {
               />
               {formData.amount_naira && (
                 <p className="text-xs text-[#34D164] mt-1.5 font-medium font-lato">
-                  = {calculateCoins(parseInt(formData.amount_naira) || 0)} coins
+                  = {formatCoins(calculateCoins(formData.amount_naira))} coins
                 </p>
               )}
             </div>

@@ -322,6 +322,10 @@ class Database:
                             [("user_id", 1), ("status", 1)],
                             name="verifications_user_status"
                         )
+                        await self.database.tradespeople_verifications.create_index(
+                            [("status", 1), ("verified_at", -1), ("updated_at", -1), ("submitted_at", -1)],
+                            name="verifications_status_verified_sort"
+                        )
                         # Add index for nested filename searches
                         await self.database.tradespeople_verifications.create_index(
                             "documents_base64.filename",
@@ -3288,7 +3292,7 @@ class Database:
             wallet = await self.create_wallet(user_id)
         return wallet
 
-    async def update_wallet_balance(self, user_id: str, coins_change: int) -> bool:
+    async def update_wallet_balance(self, user_id: str, coins_change: float) -> bool:
         """Update wallet balance (positive to add, negative to deduct)"""
         result = await self.wallets_collection.update_one(
             {"user_id": user_id},
@@ -3521,7 +3525,7 @@ class Database:
         )
         return result.modified_count > 0
 
-    async def deduct_access_fee(self, user_id: str, job_id: str, access_fee_coins: int) -> bool:
+    async def deduct_access_fee(self, user_id: str, job_id: str, access_fee_coins: float, access_fee_naira: float = None) -> bool:
         """Deduct access fee from wallet and create transaction record"""
         # Check wallet balance
         wallet = await self.get_wallet_by_user_id(user_id)
@@ -3539,7 +3543,7 @@ class Database:
             "user_id": user_id,
             "transaction_type": "access_fee_deduction",
             "amount_coins": access_fee_coins,
-            "amount_naira": access_fee_coins * 100,  # Convert to naira
+            "amount_naira": access_fee_naira if access_fee_naira is not None else (access_fee_coins * 100),
             "status": "confirmed",
             "description": f"Access fee for job contact details",
             "reference": job_id,

@@ -10,6 +10,20 @@ const WalletTransactions = ({ refreshToken = 0 }) => {
   const [pagination, setPagination] = useState({ skip: 0, limit: 10 });
   const { toast } = useToast();
 
+  const formatCoins = (value) => {
+    const numeric = Number(value || 0);
+    return Number.isFinite(numeric)
+      ? numeric.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 4 })
+      : '0';
+  };
+
+  const formatNaira = (value) => {
+    const numeric = Number(value || 0);
+    return Number.isFinite(numeric)
+      ? numeric.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      : '0.00';
+  };
+
   useEffect(() => {
     fetchTransactions();
   }, [pagination.skip, refreshToken]);
@@ -141,7 +155,7 @@ const WalletTransactions = ({ refreshToken = 0 }) => {
                   <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
                     <div className="text-right">
                       <p className={`text-xs sm:text-sm font-semibold ${isFunding ? 'text-[#34D164]' : 'text-red-500'}`}>
-                        {isFunding ? '+' : '-'}{transaction.amount_coins}
+                        {isFunding ? '+' : '-'}{formatCoins(transaction.amount_coins)}
                       </p>
                       <p className={`text-[10px] sm:text-xs capitalize ${getStatusStyles(transaction.status)}`}>
                         {transaction.status}
@@ -161,7 +175,7 @@ const WalletTransactions = ({ refreshToken = 0 }) => {
                     <div className="pl-10 sm:pl-12 space-y-2">
                       <div className="flex justify-between text-[10px] sm:text-xs gap-2">
                         <span className="text-gray-500">Amount (₦)</span>
-                        <span className="text-[#121E3C] font-medium">₦{transaction.amount_naira?.toLocaleString()}</span>
+                        <span className="text-[#121E3C] font-medium">₦{formatNaira(transaction.amount_naira)}</span>
                       </div>
                       <div className="flex justify-between text-[10px] sm:text-xs gap-2">
                         <span className="text-gray-500">Time</span>

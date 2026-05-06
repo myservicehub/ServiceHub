@@ -110,7 +110,7 @@ const MyInterestsPage = () => {
     if (walletBalance < feeAmount) {
       toast({
         title: "Insufficient Balance",
-        description: `You need ${feeAmount} coins to access contact details. Please fund your wallet.`,
+        description: `You need ${formatCoins(feeAmount)} coins to access contact details. Please fund your wallet.`,
         variant: "destructive",
       });
       navigate('/trades/wallet');
@@ -264,13 +264,20 @@ const MyInterestsPage = () => {
     }).format(amount);
   };
 
+  const formatCoins = (value) => {
+    const numeric = Number(value || 0);
+    return Number.isFinite(numeric)
+      ? numeric.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 4 })
+      : '0';
+  };
+
   // Keep access-fee math consistent with Browse Jobs: show/pay VAT-inclusive fee
   const VAT_RATE = Number(process.env.REACT_APP_VAT_RATE ?? 0.075);
   const computeVatInclusive = (amountNaira) => {
     const base = Math.max(Number(amountNaira || 0), 0);
-    const vat = Math.round(base * VAT_RATE);
+    const vat = base * VAT_RATE;
     const total = base + vat;
-    const totalCoins = Math.ceil(total / 100);
+    const totalCoins = total / 100;
     return { vat, total, totalCoins };
   };
 
@@ -500,7 +507,7 @@ const MyInterestsPage = () => {
           <div className="flex items-center gap-3 px-4 py-2 bg-[#121E3C]/5 rounded-xl">
             <div className="text-right">
               <p className="text-xs text-gray-500">Balance</p>
-              <p className="text-sm font-semibold text-[#121E3C]">{walletBalance} coins</p>
+              <p className="text-sm font-semibold text-[#121E3C]">{formatCoins(walletBalance)} coins</p>
             </div>
             <Button
               onClick={() => navigate('/trades/wallet')}
@@ -659,7 +666,7 @@ const MyInterestsPage = () => {
                   <div className="px-5 py-3.5 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-gray-500">Access fee:</span>
-                      <span className="text-sm font-semibold text-[#121E3C]">{resolveInterestAccessFeeCoins(interest)} coins</span>
+                      <span className="text-sm font-semibold text-[#121E3C]">{formatCoins(resolveInterestAccessFeeCoins(interest))} coins</span>
                     </div>
                     
                     <div className="flex gap-2">
@@ -673,7 +680,7 @@ const MyInterestsPage = () => {
                           disabled={paymentLoading[interest.id]}
                           className="bg-[#34D164] hover:bg-[#2ab854] text-white text-sm px-4 py-2 h-auto rounded-xl font-medium shadow-sm"
                         >
-                          {paymentLoading[interest.id] ? 'Processing...' : `Pay ${resolveInterestAccessFeeCoins(interest)} coins`}
+                          {paymentLoading[interest.id] ? 'Processing...' : `Pay ${formatCoins(resolveInterestAccessFeeCoins(interest))} coins`}
                         </Button>
                       )}
                       
