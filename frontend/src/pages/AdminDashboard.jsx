@@ -421,17 +421,6 @@ const AdminDashboard = () => {
   }, [isLoggedIn, activeTab, verificationsPage, verificationsLimit, verificationSubTab, verificationAppliedIdFilter]);
 
   useEffect(() => {
-    if (!isLoggedIn || activeTab !== 'verifications') return;
-    const nextQuery = verificationIdFilter.trim();
-    const timeoutId = setTimeout(() => {
-      setVerificationsPage(1);
-      setVerificationAppliedIdFilter((prev) => (prev === nextQuery ? prev : nextQuery));
-    }, 250);
-
-    return () => clearTimeout(timeoutId);
-  }, [isLoggedIn, activeTab, verificationIdFilter]);
-
-  useEffect(() => {
     if (!isLoggedIn || activeTab !== 'tradespeople_verification') return;
     fetchData();
   }, [isLoggedIn, activeTab, tradespeoplePage, tradespeopleLimit, tradespeopleVerificationSubTab]);
@@ -768,39 +757,6 @@ const AdminDashboard = () => {
       });
     }
   };
-
-  // Preload tradespeople verification files (photos/documents) as Base64 for display
-  useEffect(() => {
-    if (!isLoggedIn || activeTab !== 'tradespeople_verification') return;
-    const filenames = new Set();
-    tradespeopleVerifications.forEach((v) => {
-      if (Array.isArray(v.work_photos)) v.work_photos.forEach((f) => f && filenames.add(f));
-      if (v.documents) Object.values(v.documents).forEach((f) => f && filenames.add(f));
-    });
-    
-    const fetchFiles = async () => {
-      const pendingFilenames = Array.from(filenames).filter(f => !verificationFileBase64[f]);
-      if (pendingFilenames.length === 0) return;
-
-      // Limit concurrency to avoid overloading the server
-      const chunk = (arr, size) => Array.from({ length: Math.ceil(arr.length / size) }, (v, i) => arr.slice(i * size, i * size + size));
-      const chunks = chunk(pendingFilenames, 5);
-
-      for (const batch of chunks) {
-        await Promise.all(batch.map(async (f) => {
-          try {
-            const dataUrl = await getTradespeopleVerificationFileBase64(f);
-            setVerificationFileBase64((prev) => ({ ...prev, [f]: dataUrl }));
-          } catch (err) {
-            console.error('Failed to fetch verification file', f, err);
-            setVerificationFileBase64((prev) => ({ ...prev, [f]: 'FAILED' })); // Mark as failed to avoid re-trying
-          }
-        }));
-      }
-    };
-
-    fetchFiles();
-  }, [isLoggedIn, activeTab, tradespeopleVerifications]); // Removed verificationFileBase64 to avoid loops
 
   useEffect(() => {
     if (!isLoggedIn || activeTab !== 'verifications') return;
