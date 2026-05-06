@@ -105,6 +105,34 @@ const AdminDashboard = () => {
   // Users are already paginated by backend; only apply local filters to loaded page
   const paginatedUsers = useMemo(() => visibleUsers, [visibleUsers]);
   const totalPages = Math.max(1, usersPages || Math.ceil((usersTotal || 0) / usersLimit));
+  const verificationRowsByTab = useMemo(() => (
+    verificationSubTab === 'all'
+      ? allVerifications
+      : verificationSubTab === 'rejected'
+        ? rejectedVerifications
+        : verificationSubTab === 'approved'
+          ? approvedVerifications
+          : verifications
+  ), [verificationSubTab, allVerifications, rejectedVerifications, approvedVerifications, verifications]);
+  const liveVerificationRows = useMemo(() => {
+    const query = verificationIdFilter.trim().toLowerCase();
+    if (!query) return verificationRowsByTab;
+    const normalizedQuery = query.replace(/^#/, '');
+
+    // Keep the table responsive while the backend filter request is still in-flight.
+    return verificationRowsByTab.filter((verification) => {
+      const idCandidates = [
+        verification?.user_short_id,
+        verification?.user_public_id,
+        verification?.user_id,
+        verification?.id
+      ]
+        .map((value) => String(value || '').toLowerCase().replace(/^#/, ''))
+        .filter(Boolean);
+
+      return idCandidates.some((value) => value.includes(normalizedQuery));
+    });
+  }, [verificationRowsByTab, verificationIdFilter]);
   const [userStats, setUserStats] = useState(null);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -382,15 +410,26 @@ const AdminDashboard = () => {
   };
 
   useEffect(() => {
-    if (isLoggedIn) {
-      fetchData();
-    }
+    if (!isLoggedIn) return;
+    if (['verifications', 'tradespeople_verification', 'users', 'reviews-management'].includes(activeTab)) return;
+    fetchData();
   }, [isLoggedIn, activeTab, activeLocationTab, jobPostingExitFeedbackSearch]);
 
   useEffect(() => {
     if (!isLoggedIn || activeTab !== 'verifications') return;
     fetchData();
   }, [isLoggedIn, activeTab, verificationsPage, verificationsLimit, verificationSubTab, verificationAppliedIdFilter]);
+
+  useEffect(() => {
+    if (!isLoggedIn || activeTab !== 'verifications') return;
+    const nextQuery = verificationIdFilter.trim();
+    const timeoutId = setTimeout(() => {
+      setVerificationsPage(1);
+      setVerificationAppliedIdFilter((prev) => (prev === nextQuery ? prev : nextQuery));
+    }, 250);
+
+    return () => clearTimeout(timeoutId);
+  }, [isLoggedIn, activeTab, verificationIdFilter]);
 
   useEffect(() => {
     if (!isLoggedIn || activeTab !== 'tradespeople_verification') return;
@@ -541,31 +580,7 @@ const AdminDashboard = () => {
           if (approvedResult.status === 'fulfilled') setVerificationCountApproved(approvedResult.value?.pagination?.total || 0);
         }).finally(() => setVerificationMetaLoading(false));
 
-        // Preload base64 images for ID verification documents (requires admin token via axios)
-        try {
-          for (const v of items) {
-            // Preload document image
-            const docFn = v?.document_url;
-            if (docFn && !verificationDocBase64[docFn]) {
-              try {
-                const dataUrl = await adminReferralsAPI.getVerificationDocumentBase64(docFn);
-                if (dataUrl) {
-                  setVerificationDocBase64(prev => ({ ...prev, [docFn]: dataUrl }));
-                }
-              } catch {}
-            }
-            // Preload selfie image
-            const selfieFn = v?.selfie_url;
-            if (selfieFn && !verificationDocBase64[selfieFn]) {
-              try {
-                const dataUrl = await adminReferralsAPI.getVerificationDocumentBase64(selfieFn);
-                if (dataUrl) {
-                  setVerificationDocBase64(prev => ({ ...prev, [selfieFn]: dataUrl }));
-                }
-              } catch {}
-            }
-          }
-        } catch {}
+        // ID documents are preloaded in a separate effect so table rows render immediately.
       } else if (activeTab === 'tradespeople_verification') {
         if (!adminAPI.hasPermission('verify_users')) {
           toast({ title: "Permission denied", description: "You do not have permission to view tradespeople verification.", variant: "destructive" });
@@ -786,6 +801,41 @@ const AdminDashboard = () => {
 
     fetchFiles();
   }, [isLoggedIn, activeTab, tradespeopleVerifications]); // Removed verificationFileBase64 to avoid loops
+
+  useEffect(() => {
+    if (!isLoggedIn || activeTab !== 'verifications') return;
+    const filenames = new Set();
+    verificationRowsByTab.forEach((verification) => {
+      const doc = verification?.document_url;
+      const selfie = verification?.selfie_url;
+      if (doc && !verificationDocBase64[doc]) filenames.add(doc);
+      if (selfie && !verificationDocBase64[selfie]) filenames.add(selfie);
+    });
+    const pendingFilenames = Array.from(filenames);
+    if (pendingFilenames.length === 0) return;
+
+    const fetchFiles = async () => {
+      const chunk = (arr, size) => Array.from({ length: Math.ceil(arr.length / size) }, (_, i) => arr.slice(i * size, i * size + size));
+      const batches = chunk(pendingFilenames, 5);
+
+      for (const batch of batches) {
+        await Promise.all(batch.map(async (filename) => {
+          try {
+            const dataUrl = await adminReferralsAPI.getVerificationDocumentBase64(filename);
+            if (dataUrl) {
+              setVerificationDocBase64((prev) => ({ ...prev, [filename]: dataUrl }));
+            } else {
+              setVerificationDocBase64((prev) => ({ ...prev, [filename]: 'FAILED' }));
+            }
+          } catch {
+            setVerificationDocBase64((prev) => ({ ...prev, [filename]: 'FAILED' }));
+          }
+        }));
+      }
+    };
+
+    fetchFiles();
+  }, [isLoggedIn, activeTab, verificationRowsByTab, verificationDocBase64]);
 
   const openVerificationFileInNewTab = async (filename) => {
     try {
@@ -2773,7 +2823,7 @@ const AdminDashboard = () => {
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
                             setVerificationsPage(1);
-                            setVerificationAppliedIdFilter(verificationIdFilter.trim());
+                            setVerificationAppliedIdFilter(e.currentTarget.value.trim());
                           }
                         }}
                         placeholder="Filter by ID (#0146, SH1234...)"
@@ -2803,13 +2853,7 @@ const AdminDashboard = () => {
                     </div>
 
                     {(() => {
-                      const rows = verificationSubTab === 'all'
-                        ? allVerifications
-                        : verificationSubTab === 'rejected'
-                          ? rejectedVerifications
-                          : verificationSubTab === 'approved'
-                            ? approvedVerifications
-                            : verifications;
+                      const rows = liveVerificationRows;
 
                       return loading ? (
                         <div className="space-y-4">
