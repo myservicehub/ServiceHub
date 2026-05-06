@@ -1231,6 +1231,15 @@ const AdminDashboard = () => {
     return 'bg-yellow-50 text-yellow-700 border border-yellow-200';
   };
 
+  const getUserActivityStatus = (userLike) => {
+    const lastLogin = userLike?.last_login;
+    if (!lastLogin) return 'inactive';
+    const lastLoginTime = new Date(lastLogin).getTime();
+    if (Number.isNaN(lastLoginTime)) return 'inactive';
+    const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+    return (Date.now() - lastLoginTime) <= THIRTY_DAYS_MS ? 'active' : 'inactive';
+  };
+
   const handleLocationDataLoad = async () => {
     try {
       // Load states data for dropdowns
@@ -5485,13 +5494,11 @@ const AdminDashboard = () => {
                                       {user.role}
                                     </span>
                                     <span className={`mt-1 inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                      user.status === 'active' 
-                                        ? 'bg-green-100 text-green-800' 
-                                        : user.status === 'suspended'
-                                        ? 'bg-yellow-100 text-yellow-800'
-                                        : 'bg-red-100 text-red-800'
+                                      getUserActivityStatus(user) === 'active'
+                                        ? 'bg-green-100 text-green-800'
+                                        : 'bg-gray-100 text-gray-700'
                                     }`}>
-                                      {user.status || 'active'}
+                                      {getUserActivityStatus(user)}
                                     </span>
                                     {user.is_verified && (
                                       <span className="mt-1 inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
@@ -7419,15 +7426,13 @@ const AdminDashboard = () => {
                         {selectedUser.role}
                       </span>
                     </div>
-                    <div><strong>Status:</strong> 
+                    <div><strong>Activity:</strong> 
                       <span className={`inline-flex px-2 py-1 ml-2 text-xs font-semibold rounded-full ${
-                        selectedUser.status === 'active' 
-                          ? 'bg-green-100 text-green-800' 
-                          : selectedUser.status === 'suspended'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-red-100 text-red-800'
+                        getUserActivityStatus(selectedUser) === 'active'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-gray-100 text-gray-700'
                       }`}>
-                        {selectedUser.status || 'active'}
+                        {getUserActivityStatus(selectedUser)}
                       </span>
                       {selectedUser.is_verified && (
                         <span className="inline-flex px-2 py-1 ml-2 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
