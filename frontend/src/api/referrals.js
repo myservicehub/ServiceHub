@@ -69,8 +69,33 @@ export const referralsAPI = {
 // Admin referral management API
 export const adminReferralsAPI = {
   // Get pending verifications
-  async getPendingVerifications(skip = 0, limit = 20) {
-    const response = await apiClient.get(`/admin/verifications/pending?skip=${skip}&limit=${limit}`, {
+  async getPendingVerifications(skip = 0, limit = 20, idQuery = '') {
+    const query = `skip=${skip}&limit=${limit}${idQuery ? `&id_query=${encodeURIComponent(idQuery)}` : ''}`;
+    const response = await apiClient.get(`/admin/verifications/pending?${query}`, {
+      timeout: 30000 // 30s timeout for admin list fetching
+    });
+    return response.data;
+  },
+
+  async getRejectedVerifications(skip = 0, limit = 20, idQuery = '') {
+    const query = `skip=${skip}&limit=${limit}${idQuery ? `&id_query=${encodeURIComponent(idQuery)}` : ''}`;
+    const response = await apiClient.get(`/admin/verifications/rejected?${query}`, {
+      timeout: 30000 // 30s timeout for admin list fetching
+    });
+    return response.data;
+  },
+
+  async getApprovedVerifications(skip = 0, limit = 20, idQuery = '') {
+    const query = `skip=${skip}&limit=${limit}${idQuery ? `&id_query=${encodeURIComponent(idQuery)}` : ''}`;
+    const response = await apiClient.get(`/admin/verifications/approved?${query}`, {
+      timeout: 30000 // 30s timeout for admin list fetching
+    });
+    return response.data;
+  },
+
+  async getAllVerifications(skip = 0, limit = 20, idQuery = '') {
+    const query = `skip=${skip}&limit=${limit}${idQuery ? `&id_query=${encodeURIComponent(idQuery)}` : ''}`;
+    const response = await apiClient.get(`/admin/verifications/all?${query}`, {
       timeout: 30000 // 30s timeout for admin list fetching
     });
     return response.data;

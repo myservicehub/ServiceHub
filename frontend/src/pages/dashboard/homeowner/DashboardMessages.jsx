@@ -206,6 +206,9 @@ const DashboardMessages = () => {
     selectedConversation?.job_state ||
     selectedConversation?.state ||
     selectedConversation?.location ||
+    user?.state ||
+    user?.location ||
+    user?.address_state ||
     'State not set';
 
   return (

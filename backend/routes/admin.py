@@ -2193,17 +2193,82 @@ async def get_transaction_details(transaction_id: str, admin: dict = Depends(req
 # ==========================================
 
 @router.get("/verifications/pending")
-async def get_pending_verifications(skip: int = 0, limit: int = 20):
+async def get_pending_verifications(
+    skip: int = 0,
+    limit: int = 20,
+    id_query: str = "",
+    admin: dict = Depends(require_permission(AdminPermission.VERIFY_USERS))
+):
     """Get pending identity verifications for admin review"""
-    
-    verifications = await database.get_pending_verifications(skip=skip, limit=limit)
-    
+    result = await database.get_id_verifications(status="pending", skip=skip, limit=limit, id_query=id_query)
+    verifications = result.get("verifications", [])
     return {
         "verifications": verifications,
         "pagination": {
             "skip": skip,
             "limit": limit,
-            "total": len(verifications)
+            "total": result.get("total", len(verifications)),
+            "pages": max(1, (result.get("total", 0) + limit - 1) // limit) if limit else 1
+        }
+    }
+
+@router.get("/verifications/rejected")
+async def get_rejected_verifications(
+    skip: int = 0,
+    limit: int = 20,
+    id_query: str = "",
+    admin: dict = Depends(require_permission(AdminPermission.VERIFY_USERS))
+):
+    """Get rejected identity verifications for admin review"""
+    result = await database.get_id_verifications(status="rejected", skip=skip, limit=limit, id_query=id_query)
+    verifications = result.get("verifications", [])
+    return {
+        "verifications": verifications,
+        "pagination": {
+            "skip": skip,
+            "limit": limit,
+            "total": result.get("total", len(verifications)),
+            "pages": max(1, (result.get("total", 0) + limit - 1) // limit) if limit else 1
+        }
+    }
+
+@router.get("/verifications/approved")
+async def get_approved_verifications(
+    skip: int = 0,
+    limit: int = 20,
+    id_query: str = "",
+    admin: dict = Depends(require_permission(AdminPermission.VERIFY_USERS))
+):
+    """Get approved identity verifications for admin review"""
+    result = await database.get_id_verifications(status="approved", skip=skip, limit=limit, id_query=id_query)
+    verifications = result.get("verifications", [])
+    return {
+        "verifications": verifications,
+        "pagination": {
+            "skip": skip,
+            "limit": limit,
+            "total": result.get("total", len(verifications)),
+            "pages": max(1, (result.get("total", 0) + limit - 1) // limit) if limit else 1
+        }
+    }
+
+@router.get("/verifications/all")
+async def get_all_verifications(
+    skip: int = 0,
+    limit: int = 20,
+    id_query: str = "",
+    admin: dict = Depends(require_permission(AdminPermission.VERIFY_USERS))
+):
+    """Get all identity verifications for admin review"""
+    result = await database.get_id_verifications(status="all", skip=skip, limit=limit, id_query=id_query)
+    verifications = result.get("verifications", [])
+    return {
+        "verifications": verifications,
+        "pagination": {
+            "skip": skip,
+            "limit": limit,
+            "total": result.get("total", len(verifications)),
+            "pages": max(1, (result.get("total", 0) + limit - 1) // limit) if limit else 1
         }
     }
 

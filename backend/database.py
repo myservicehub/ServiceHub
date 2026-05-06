@@ -4889,32 +4889,82 @@ class Database:
     @time_it
     async def get_pending_verifications(self, skip: int = 0, limit: int = 20) -> List[dict]:
         """Get pending document verifications for admin (optimized)"""
-        cursor = self.user_verifications_collection.find({
-            "status": "pending"
-        }).sort("submitted_at", -1).skip(skip).limit(limit)
-        
+        result = await self.get_id_verifications(status="pending", skip=skip, limit=limit)
+        return result.get("verifications", [])
+
+    @time_it
+    async def get_rejected_verifications(self, skip: int = 0, limit: int = 20, id_query: str = "") -> dict:
+        """Get rejected document verifications for admin review."""
+        return await self.get_id_verifications(status="rejected", skip=skip, limit=limit, id_query=id_query)
+
+    @time_it
+    async def get_approved_verifications(self, skip: int = 0, limit: int = 20, id_query: str = "") -> dict:
+        """Get approved (verified) document verifications for admin review."""
+        return await self.get_id_verifications(status="approved", skip=skip, limit=limit, id_query=id_query)
+
+    @time_it
+    async def get_all_verifications(self, skip: int = 0, limit: int = 20, id_query: str = "") -> dict:
+        """Get all document verifications (pending, rejected, approved)."""
+        return await self.get_id_verifications(status="all", skip=skip, limit=limit, id_query=id_query)
+
+    @time_it
+    async def get_id_verifications(self, status: str = "pending", skip: int = 0, limit: int = 20, id_query: str = "") -> dict:
+        """Get document verifications by status with optional ID search."""
+        query: Dict[str, Any] = {}
+        if status == "pending":
+            query["status"] = "pending"
+        elif status == "rejected":
+            query["status"] = "rejected"
+        elif status == "approved":
+            query["status"] = "verified"
+        else:
+            query["status"] = {"$in": ["pending", "rejected", "verified"]}
+
+        id_query = (id_query or "").strip()
+        if id_query:
+            safe = re.escape(id_query)
+            user_docs = await self.database.users.find(
+                {
+                    "$or": [
+                        {"id": {"$regex": safe, "$options": "i"}},
+                        {"user_id": {"$regex": safe, "$options": "i"}},
+                        {"public_id": {"$regex": safe, "$options": "i"}},
+                    ]
+                },
+                {"id": 1, "status": 1}
+            ).to_list(length=None)
+            active_ids = [u.get("id") for u in user_docs if u.get("id") and str(u.get("status", "")).lower() != "deleted"]
+            if not active_ids:
+                return {"verifications": [], "total": 0}
+            query["user_id"] = {"$in": active_ids}
+
+        total = await self.user_verifications_collection.count_documents(query)
+        cursor = self.user_verifications_collection.find(query).sort("submitted_at", -1).skip(skip).limit(limit)
         verifications = await cursor.to_list(length=limit)
         if not verifications:
-            return []
+            return {"verifications": [], "total": total}
 
-        # Batch fetch user details
-        user_ids = list(set(v["user_id"] for v in verifications if "user_id" in v))
-        users_list = await self.database.users.find({"id": {"$in": user_ids}}).to_list(length=len(user_ids))
+        user_ids = list(set(v.get("user_id") for v in verifications if v.get("user_id")))
+        users_list = await self.database.users.find(
+            {"id": {"$in": user_ids}},
+            {"id": 1, "name": 1, "email": 1, "role": 1, "public_id": 1, "user_id": 1, "status": 1}
+        ).to_list(length=len(user_ids))
         user_map = {u["id"]: u for u in users_list if "id" in u}
-        
+
+        visible_verifications: List[dict] = []
         for verification in verifications:
             verification["_id"] = str(verification["_id"])
-            
-            # Get user details from map
             user = user_map.get(verification.get("user_id"))
-            if user:
-                verification["user_name"] = user.get("name", "Unknown")
-                verification["user_email"] = user.get("email", "Unknown")
-                verification["user_role"] = user.get("role", "Unknown")
-                verification["user_public_id"] = user.get("public_id")
-                verification["user_short_id"] = user.get("user_id")
-            
-        return verifications
+            if not user or str(user.get("status", "")).lower() == "deleted":
+                continue
+            verification["user_name"] = user.get("name", "Unknown")
+            verification["user_email"] = user.get("email", "Unknown")
+            verification["user_role"] = user.get("role", "Unknown")
+            verification["user_public_id"] = user.get("public_id")
+            verification["user_short_id"] = user.get("user_id")
+            visible_verifications.append(verification)
+
+        return {"verifications": visible_verifications, "total": total}
 
     @time_it
     async def get_user_referrals(self, user_id: str, skip: int = 0, limit: int = 10) -> List[dict]:

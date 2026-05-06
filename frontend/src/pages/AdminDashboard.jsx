@@ -34,6 +34,17 @@ const AdminDashboard = () => {
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [jobs, setJobs] = useState([]);
   const [verifications, setVerifications] = useState([]);
+  const [rejectedVerifications, setRejectedVerifications] = useState([]);
+  const [approvedVerifications, setApprovedVerifications] = useState([]);
+  const [allVerifications, setAllVerifications] = useState([]);
+  const [verificationSubTab, setVerificationSubTab] = useState('pending');
+  const [verificationIdFilter, setVerificationIdFilter] = useState('');
+  const [verificationAppliedIdFilter, setVerificationAppliedIdFilter] = useState('');
+  const [verificationMetaLoading, setVerificationMetaLoading] = useState(false);
+  const [verificationCountAll, setVerificationCountAll] = useState(0);
+  const [verificationCountPending, setVerificationCountPending] = useState(0);
+  const [verificationCountRejected, setVerificationCountRejected] = useState(0);
+  const [verificationCountApproved, setVerificationCountApproved] = useState(0);
   const [verificationsPage, setVerificationsPage] = useState(1);
   const [verificationsLimit, setVerificationsLimit] = useState(20);
   const [verificationsTotal, setVerificationsTotal] = useState(0);
@@ -379,7 +390,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (!isLoggedIn || activeTab !== 'verifications') return;
     fetchData();
-  }, [isLoggedIn, activeTab, verificationsPage, verificationsLimit]);
+  }, [isLoggedIn, activeTab, verificationsPage, verificationsLimit, verificationSubTab, verificationAppliedIdFilter]);
 
   useEffect(() => {
     if (!isLoggedIn || activeTab !== 'tradespeople_verification') return;
@@ -489,14 +500,49 @@ const AdminDashboard = () => {
           return;
         }
         const skip = (verificationsPage - 1) * verificationsLimit;
-        const data = await adminReferralsAPI.getPendingVerifications(skip, verificationsLimit);
-        setVerifications(data.verifications || []);
-        setVerificationsTotal(data.pagination?.total || (data.verifications ? data.verifications.length : 0));
-        setVerificationsPages(data.pagination?.pages || 1);
+        const idQuery = verificationAppliedIdFilter.trim();
+        const fetchBySubTab =
+          verificationSubTab === 'all'
+            ? adminReferralsAPI.getAllVerifications
+            : verificationSubTab === 'rejected'
+              ? adminReferralsAPI.getRejectedVerifications
+              : verificationSubTab === 'approved'
+                ? adminReferralsAPI.getApprovedVerifications
+                : adminReferralsAPI.getPendingVerifications;
+
+        const data = await fetchBySubTab(skip, verificationsLimit, idQuery);
+        const items = data.verifications || [];
+
+        if (verificationSubTab === 'all') {
+          setAllVerifications(items);
+        } else if (verificationSubTab === 'rejected') {
+          setRejectedVerifications(items);
+        } else if (verificationSubTab === 'approved') {
+          setApprovedVerifications(items);
+        } else {
+          setVerifications(items);
+        }
+
+        const selectedTotal = data.pagination?.total || items.length;
+        setVerificationsTotal(selectedTotal);
+        setVerificationsPages(data.pagination?.pages || Math.max(1, Math.ceil(selectedTotal / verificationsLimit)));
+
+        // Fetch counts for tab badges in background.
+        setVerificationMetaLoading(true);
+        Promise.allSettled([
+          adminReferralsAPI.getAllVerifications(0, 1, idQuery),
+          adminReferralsAPI.getPendingVerifications(0, 1, idQuery),
+          adminReferralsAPI.getRejectedVerifications(0, 1, idQuery),
+          adminReferralsAPI.getApprovedVerifications(0, 1, idQuery),
+        ]).then(([allResult, pendingResult, rejectedResult, approvedResult]) => {
+          if (allResult.status === 'fulfilled') setVerificationCountAll(allResult.value?.pagination?.total || 0);
+          if (pendingResult.status === 'fulfilled') setVerificationCountPending(pendingResult.value?.pagination?.total || 0);
+          if (rejectedResult.status === 'fulfilled') setVerificationCountRejected(rejectedResult.value?.pagination?.total || 0);
+          if (approvedResult.status === 'fulfilled') setVerificationCountApproved(approvedResult.value?.pagination?.total || 0);
+        }).finally(() => setVerificationMetaLoading(false));
 
         // Preload base64 images for ID verification documents (requires admin token via axios)
         try {
-          const items = data.verifications || [];
           for (const v of items) {
             // Preload document image
             const docFn = v?.document_url;
@@ -2273,8 +2319,8 @@ const AdminDashboard = () => {
                         </tbody>
                       </table>
                     </div>
+                  )}
 
-                )}
               </div>
             )}
 
@@ -2694,97 +2740,170 @@ const AdminDashboard = () => {
                     </button>
                   </div>
 
-                  {loading ? (
-                    <div className="space-y-4">
-                      {[...Array(3)].map((_, i) => (
-                        <div key={i} className="bg-white p-4 rounded-lg animate-pulse">
-                          <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
-                          <div className="h-3 bg-gray-200 rounded w-1/4"></div>
-                        </div>
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="flex flex-wrap items-center gap-3 mb-4">
+                      {[
+                        { id: 'all', label: `All (${verificationMetaLoading ? '...' : verificationCountAll})` },
+                        { id: 'pending', label: `Pending (${verificationMetaLoading ? '...' : verificationCountPending})` },
+                        { id: 'rejected', label: `Rejected (${verificationMetaLoading ? '...' : verificationCountRejected})` },
+                        { id: 'approved', label: `Approved (${verificationMetaLoading ? '...' : verificationCountApproved})` },
+                      ].map((subTab) => (
+                        <button
+                          key={subTab.id}
+                          onClick={() => {
+                            setVerificationSubTab(subTab.id);
+                            setVerificationsPage(1);
+                          }}
+                          className={`py-2 px-4 rounded-lg font-medium text-sm transition-colors ${
+                            verificationSubTab === subTab.id
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-white text-gray-600 hover:bg-gray-100'
+                          }`}
+                        >
+                          {subTab.label}
+                        </button>
                       ))}
                     </div>
-                  ) : verifications.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      No pending verifications
+
+                    <div className="mb-4 flex gap-2">
+                      <input
+                        type="text"
+                        value={verificationIdFilter}
+                        onChange={(e) => setVerificationIdFilter(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            setVerificationsPage(1);
+                            setVerificationAppliedIdFilter(verificationIdFilter.trim());
+                          }
+                        }}
+                        placeholder="Filter by ID (#0146, SH1234...)"
+                        className="w-full md:w-80 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setVerificationsPage(1);
+                          setVerificationAppliedIdFilter(verificationIdFilter.trim());
+                        }}
+                        className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                      >
+                        Filter
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setVerificationIdFilter('');
+                          setVerificationAppliedIdFilter('');
+                          setVerificationsPage(1);
+                        }}
+                        className="px-4 py-2 text-sm rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-100"
+                      >
+                        Clear
+                      </button>
                     </div>
-                  ) : (
-                    <>
-                    <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-                      <table className="min-w-full text-sm">
-                        <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
-                          <tr>
-                            <th className="px-4 py-3 text-left">ID</th>
-                            <th className="px-4 py-3 text-left">Applicant</th>
-                            <th className="px-4 py-3 text-left">Email</th>
-                            <th className="px-4 py-3 text-left">Role</th>
-                            <th className="px-4 py-3 text-left">Doc Type</th>
-                            <th className="px-4 py-3 text-left">Submitted</th>
-                            <th className="px-4 py-3 text-left">Status</th>
-                            <th className="px-4 py-3 text-right">Action</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                          {verifications.map((verification) => (
-                            <tr key={verification.id} className="hover:bg-gray-50/70">
-                              <td className="px-4 py-3 font-medium text-gray-700">#{verification.user_short_id || verification.user_public_id || verification.user_id || verification.id?.slice?.(0, 6) || 'N/A'}</td>
-                              <td className="px-4 py-3">
-                                <div className="font-medium text-gray-900 truncate max-w-[220px]">{verification.user_name || 'Unknown user'}</div>
-                              </td>
-                              <td className="px-4 py-3 text-blue-600">{verification.user_email || '—'}</td>
-                              <td className="px-4 py-3">
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">
-                                  {verification.user_role || 'user'}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3">
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
-                                  {String(verification.document_type || 'document').replace('_', ' ')}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3 text-gray-700">{formatDate(verification.submitted_at)}</td>
-                              <td className="px-4 py-3">
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-50 text-yellow-700 border border-yellow-200">
-                                  Pending
-                                </span>
-                              </td>
-                              <td className="px-4 py-3 text-right">
-                                <button
-                                  type="button"
-                                  onClick={() => openIdVerificationModal(verification)}
-                                  className="bg-black hover:bg-gray-800 text-white px-3 py-1.5 rounded-lg text-xs font-semibold"
-                                >
-                                  View
-                                </button>
-                              </td>
-                            </tr>
+
+                    {(() => {
+                      const rows = verificationSubTab === 'all'
+                        ? allVerifications
+                        : verificationSubTab === 'rejected'
+                          ? rejectedVerifications
+                          : verificationSubTab === 'approved'
+                            ? approvedVerifications
+                            : verifications;
+
+                      return loading ? (
+                        <div className="space-y-4">
+                          {[...Array(3)].map((_, i) => (
+                            <div key={i} className="bg-white p-4 rounded-lg animate-pulse">
+                              <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
+                              <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+                            </div>
                           ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    {/* Pagination for ID Verifications */}
-                    <div className="mt-4 flex justify-between items-center bg-white px-4 py-3 border border-gray-200 rounded-lg shadow-sm">
-                      <div className="text-sm text-gray-500 font-medium">
-                        Showing {(verificationsPage - 1) * verificationsLimit + 1}–{Math.min(verificationsPage * verificationsLimit, verificationsTotal)} of {verificationsTotal}
-                      </div>
-                      <div className="flex space-x-2">
-                        <button
-                          disabled={verificationsPage === 1}
-                          onClick={() => setVerificationsPage(p => Math.max(1, p - 1))}
-                          className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:bg-gray-50 text-sm font-semibold transition-colors"
-                        >
-                          Previous
-                        </button>
-                        <button
-                          disabled={verificationsPage >= verificationsPages}
-                          onClick={() => setVerificationsPage(p => p + 1)}
-                          className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:bg-gray-50 text-sm font-semibold transition-colors"
-                        >
-                          Next
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                )}
+                        </div>
+                      ) : rows.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500">No ID verifications found</div>
+                      ) : (
+                        <>
+                          <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+                            <table className="min-w-full text-sm">
+                              <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+                                <tr>
+                                  <th className="px-4 py-3 text-left">ID</th>
+                                  <th className="px-4 py-3 text-left">Applicant</th>
+                                  <th className="px-4 py-3 text-left">Email</th>
+                                  <th className="px-4 py-3 text-left">Role</th>
+                                  <th className="px-4 py-3 text-left">Doc Type</th>
+                                  <th className="px-4 py-3 text-left">Submitted</th>
+                                  <th className="px-4 py-3 text-left">Status</th>
+                                  <th className="px-4 py-3 text-right">Action</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-100">
+                                {rows.map((verification) => {
+                                  const status = getTradespeopleVerificationStatus(verification);
+                                  return (
+                                    <tr key={verification.id} className="hover:bg-gray-50/70">
+                                      <td className="px-4 py-3 font-medium text-gray-700">#{verification.user_short_id || verification.user_public_id || verification.user_id || verification.id?.slice?.(0, 6) || 'N/A'}</td>
+                                      <td className="px-4 py-3">
+                                        <div className="font-medium text-gray-900 truncate max-w-[220px]">{verification.user_name || 'Unknown user'}</div>
+                                      </td>
+                                      <td className="px-4 py-3 text-blue-600">{verification.user_email || '—'}</td>
+                                      <td className="px-4 py-3">
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                          {verification.user_role || 'user'}
+                                        </span>
+                                      </td>
+                                      <td className="px-4 py-3">
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
+                                          {String(verification.document_type || 'document').replace('_', ' ')}
+                                        </span>
+                                      </td>
+                                      <td className="px-4 py-3 text-gray-700">{formatDate(verification.submitted_at)}</td>
+                                      <td className="px-4 py-3">
+                                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getStatusPillClass(status)}`}>
+                                          {status === 'approved' ? 'Approved' : status === 'rejected' ? 'Rejected' : 'Pending'}
+                                        </span>
+                                      </td>
+                                      <td className="px-4 py-3 text-right">
+                                        <button
+                                          type="button"
+                                          onClick={() => openIdVerificationModal(verification)}
+                                          className="bg-black hover:bg-gray-800 text-white px-3 py-1.5 rounded-lg text-xs font-semibold"
+                                        >
+                                          View
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                          <div className="mt-4 flex justify-between items-center bg-white px-4 py-3 border border-gray-200 rounded-lg shadow-sm">
+                            <div className="text-sm text-gray-500 font-medium">
+                              Showing {verificationsTotal === 0 ? 0 : (verificationsPage - 1) * verificationsLimit + 1}–{Math.min(verificationsPage * verificationsLimit, verificationsTotal)} of {verificationsTotal}
+                            </div>
+                            <div className="flex space-x-2">
+                              <button
+                                disabled={verificationsPage === 1}
+                                onClick={() => setVerificationsPage(p => Math.max(1, p - 1))}
+                                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:bg-gray-50 text-sm font-semibold transition-colors"
+                              >
+                                Previous
+                              </button>
+                              <button
+                                disabled={verificationsPage >= verificationsPages}
+                                onClick={() => setVerificationsPage(p => p + 1)}
+                                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:bg-gray-50 text-sm font-semibold transition-colors"
+                              >
+                                Next
+                              </button>
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
               </div>
             )}
 
