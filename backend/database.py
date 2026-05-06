@@ -21,6 +21,7 @@ try:
         ReviewStats, ReviewType, ReviewStatus
     )
     from .models.admin import AdminRole, AdminStatus, AdminActivityType
+    from .utils.pricing import naira_to_coins, coins_to_naira, to_float
 except ImportError:
     from models.notifications import (
         Notification, NotificationPreferences, NotificationChannel,
@@ -32,6 +33,7 @@ except ImportError:
         ReviewStats, ReviewType, ReviewStatus
     )
     from models.admin import AdminRole, AdminStatus, AdminActivityType
+    from utils.pricing import naira_to_coins, coins_to_naira, to_float
 
 logger = logging.getLogger(__name__)
 
@@ -3543,7 +3545,7 @@ class Database:
             "user_id": user_id,
             "transaction_type": "access_fee_deduction",
             "amount_coins": access_fee_coins,
-            "amount_naira": access_fee_naira if access_fee_naira is not None else (access_fee_coins * 100),
+            "amount_naira": access_fee_naira if access_fee_naira is not None else to_float(coins_to_naira(access_fee_coins)),
             "status": "confirmed",
             "description": f"Access fee for job contact details",
             "reference": job_id,
@@ -3559,7 +3561,7 @@ class Database:
     
     async def update_job_access_fee(self, job_id: str, access_fee_naira: int) -> bool:
         """Update job access fee (admin only)"""
-        access_fee_coins = access_fee_naira // 100  # Convert to coins
+        access_fee_coins = to_float(naira_to_coins(access_fee_naira))
         update_doc = {
             "$set": {
                 "access_fee_naira": access_fee_naira,

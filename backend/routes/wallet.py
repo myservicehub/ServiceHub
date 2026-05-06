@@ -11,6 +11,7 @@ from ..models.base import (
     WalletResponse, TransactionType, TransactionStatus
 )
 from ..models.auth import User
+from ..utils.pricing import naira_to_coins, coins_to_naira, to_float
 
 router = APIRouter(prefix="/api/wallet", tags=["wallet"])
 
@@ -26,7 +27,7 @@ async def get_wallet_balance(current_user: User = Depends(get_current_user)):
     
     return WalletResponse(
         balance_coins=wallet["balance_coins"],
-        balance_naira=float(wallet["balance_coins"]) * 100,  # Convert to naira
+        balance_naira=to_float(coins_to_naira(wallet["balance_coins"])),
         transactions=transactions
     )
 
@@ -114,7 +115,7 @@ async def verify_paystack_wallet_funding(
             "transaction_id": existing.get("id"),
             "already_confirmed": True,
             "balance_coins": wallet_existing["balance_coins"],
-            "balance_naira": float(wallet_existing["balance_coins"]) * 100
+            "balance_naira": to_float(coins_to_naira(wallet_existing["balance_coins"]))
         }
 
     headers = {"Authorization": f"Bearer {paystack_secret_key}"}
@@ -141,7 +142,7 @@ async def verify_paystack_wallet_funding(
     if amount_naira < 100:
         raise HTTPException(status_code=400, detail="Invalid payment amount")
 
-    amount_coins = amount_naira / 100
+    amount_coins = to_float(naira_to_coins(amount_naira))
     wallet = await database.get_wallet_by_user_id(current_user.id)
 
     if existing and existing.get("status") == TransactionStatus.PENDING:
@@ -189,7 +190,7 @@ async def verify_paystack_wallet_funding(
         "amount_naira": amount_naira,
         "amount_coins": amount_coins,
         "balance_coins": wallet_after["balance_coins"],
-        "balance_naira": float(wallet_after["balance_coins"]) * 100,
+        "balance_naira": to_float(coins_to_naira(wallet_after["balance_coins"])),
         "status": "confirmed"
     }
 
@@ -228,10 +229,10 @@ async def check_sufficient_balance(
     return {
         "sufficient_balance": sufficient,
         "current_balance_coins": wallet["balance_coins"],
-        "current_balance_naira": float(wallet["balance_coins"]) * 100,
+        "current_balance_naira": to_float(coins_to_naira(wallet["balance_coins"])),
         "required_coins": access_fee_coins,
-        "required_naira": access_fee_coins * 100,
+        "required_naira": to_float(coins_to_naira(access_fee_coins)),
         "shortfall_coins": max(0, access_fee_coins - wallet["balance_coins"]),
-        "shortfall_naira": max(0, (access_fee_coins - wallet["balance_coins"]) * 100)
+        "shortfall_naira": to_float(coins_to_naira(max(0, access_fee_coins - wallet["balance_coins"])))
     }
 
