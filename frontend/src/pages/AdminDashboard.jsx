@@ -31,6 +31,7 @@ const AdminDashboard = () => {
   const reviewsTabRef = useRef(null);
   const notificationsTabRef = useRef(null);
   const questionsTabRef = useRef(null);
+  const tabFetchSignatureRef = useRef({});
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [jobs, setJobs] = useState([]);
   const [verifications, setVerifications] = useState([]);
@@ -409,24 +410,44 @@ const AdminDashboard = () => {
     return raw || fallback;
   };
 
+  const shouldFetchForSignature = (tab, signature) => {
+    if (!tab) return true;
+    if (tabFetchSignatureRef.current[tab] === signature) return false;
+    tabFetchSignatureRef.current[tab] = signature;
+    return true;
+  };
+
   useEffect(() => {
     if (!isLoggedIn) return;
-    if (['verifications', 'tradespeople_verification', 'users', 'reviews-management'].includes(activeTab)) return;
+    if (['verifications', 'tradespeople_verification', 'users', 'reviews-management', 'approvals', 'fees', 'notifications'].includes(activeTab)) return;
+    const signature =
+      activeTab === 'locations'
+        ? `${activeTab}:${activeLocationTab}`
+        : activeTab === 'job-posting-feedback'
+          ? `${activeTab}:${jobPostingExitFeedbackSearch || ''}`
+          : String(activeTab || '');
+    if (!shouldFetchForSignature(activeTab, signature)) return;
     fetchData();
   }, [isLoggedIn, activeTab, activeLocationTab, jobPostingExitFeedbackSearch]);
 
   useEffect(() => {
     if (!isLoggedIn || activeTab !== 'verifications') return;
+    const signature = `${activeTab}:${verificationsPage}:${verificationsLimit}:${verificationSubTab}:${verificationAppliedIdFilter || ''}`;
+    if (!shouldFetchForSignature(activeTab, signature)) return;
     fetchData();
   }, [isLoggedIn, activeTab, verificationsPage, verificationsLimit, verificationSubTab, verificationAppliedIdFilter]);
 
   useEffect(() => {
     if (!isLoggedIn || activeTab !== 'tradespeople_verification') return;
+    const signature = `${activeTab}:${tradespeoplePage}:${tradespeopleLimit}:${tradespeopleVerificationSubTab}`;
+    if (!shouldFetchForSignature(activeTab, signature)) return;
     fetchData();
   }, [isLoggedIn, activeTab, tradespeoplePage, tradespeopleLimit, tradespeopleVerificationSubTab]);
 
   useEffect(() => {
     if (!isLoggedIn || activeTab !== 'users') return;
+    const signature = `${activeTab}:${usersPage}:${usersLimit}`;
+    if (!shouldFetchForSignature(activeTab, signature)) return;
     fetchData();
   }, [isLoggedIn, activeTab, usersPage, usersLimit]);
 
@@ -457,6 +478,8 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     if (!isLoggedIn || activeTab !== 'reviews-management') return;
+    const signature = `${activeTab}:${reviewsPage}:${reviewsLimit}:${reviewsMinRating}:${reviewsStatus}:${reviewsSearch || ''}`;
+    if (!shouldFetchForSignature(activeTab, signature)) return;
     fetchData();
   }, [isLoggedIn, activeTab, reviewsPage, reviewsLimit, reviewsMinRating, reviewsStatus, reviewsSearch]);
 
@@ -1220,17 +1243,9 @@ const AdminDashboard = () => {
 
   // Load states data when component mounts and when location tab is active
   useEffect(() => {
-    if (isLoggedIn && activeTab === 'locations') {
-      handleLocationDataLoad();
-    }
-    if (isLoggedIn && activeTab === 'notifications') {
-      handleNotificationDataLoad();
-    }
     if (isLoggedIn && activeTab === 'approvals') {
+      if (!shouldFetchForSignature('approvals', 'approvals')) return;
       handleJobApprovalsDataLoad();
-    }
-    if (isLoggedIn && activeTab === 'fees') {
-      handleJobAccessFeesDataLoad();
     }
   }, [isLoggedIn, activeTab]);
 
@@ -1495,9 +1510,11 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     if (activeTab === 'fees') {
+      const signature = `${activeTab}:${feesPage}:${feesLimit}:${feesSearch || ''}`;
+      if (!shouldFetchForSignature(activeTab, signature)) return;
       handleJobAccessFeesDataLoad();
     }
-  }, [feesPage, feesLimit, feesSearch]);
+  }, [activeTab, feesPage, feesLimit, feesSearch]);
 
   const handleUpdateJobAccessFee = async (jobId, newFee) => {
     if (!newFee || newFee < 500 || newFee > 10000) {
@@ -1594,6 +1611,8 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     if (activeTab === 'notifications' && activeNotificationTab === 'notifications') {
+      const signature = `${activeTab}:${activeNotificationTab}:${notificationPage}:${notificationPageSize}:${JSON.stringify(notificationFilters || {})}`;
+      if (!shouldFetchForSignature(activeTab, signature)) return;
       handleNotificationDataLoad();
     }
   }, [notificationPage, notificationPageSize, notificationFilters, activeNotificationTab, activeTab]);
