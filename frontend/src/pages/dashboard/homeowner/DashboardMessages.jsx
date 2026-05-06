@@ -201,6 +201,12 @@ const DashboardMessages = () => {
     selectedConversation?.tradesperson_online,
     selectedConversation?.tradesperson_last_login
   );
+  const tradespersonStateLabel =
+    selectedConversation?.job_location ||
+    selectedConversation?.job_state ||
+    selectedConversation?.state ||
+    selectedConversation?.location ||
+    'State not set';
 
   return (
     <div className="h-[calc(100vh-120px)] flex flex-col">
@@ -311,12 +317,10 @@ const DashboardMessages = () => {
                   <span className="truncate">{selectedConversation.job_title || 'Job conversation'}</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-gray-500 mt-1.5">
-                  {selectedConversation.job_location && (
-                    <div className="flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-[#34D164]" />
-                      <span className="font-medium text-gray-700">{selectedConversation.job_location}</span>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-[#34D164]" />
+                    <span className="font-medium text-gray-700">{tradespersonStateLabel}</span>
+                  </div>
                   <span className="text-gray-300">•</span>
                   <Badge variant="outline" className="rounded-full text-[10px] font-medium py-0 h-4 border-gray-200">
                     Tradeperson

@@ -202,6 +202,18 @@ const TradespersonMessages = () => {
     conv.job_title?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const getPresenceInfo = (onlineFlag, lastLoginValue) => {
+    if (typeof onlineFlag === 'boolean') {
+      return { isOnline: onlineFlag, label: onlineFlag ? 'Online' : 'Offline' };
+    }
+    const lastLogin = parseServerDate(lastLoginValue);
+    if (!lastLogin || Number.isNaN(lastLogin.getTime())) {
+      return { isOnline: false, label: 'Offline' };
+    }
+    const isOnline = (Date.now() - lastLogin.getTime()) <= 5 * 60 * 1000;
+    return { isOnline, label: isOnline ? 'Online' : 'Offline' };
+  };
+
   const homeownerPresence = getPresenceInfo(
     selectedConversation?.homeowner_online,
     selectedConversation?.homeowner_last_login
@@ -219,18 +231,6 @@ const TradespersonMessages = () => {
     if (minutes < 60) return `${minutes}m`;
     if (hours < 24) return `${hours}h`;
     return date.toLocaleDateString();
-  };
-
-  const getPresenceInfo = (onlineFlag, lastLoginValue) => {
-    if (typeof onlineFlag === 'boolean') {
-      return { isOnline: onlineFlag, label: onlineFlag ? 'Online' : 'Offline' };
-    }
-    const lastLogin = parseServerDate(lastLoginValue);
-    if (!lastLogin || Number.isNaN(lastLogin.getTime())) {
-      return { isOnline: false, label: 'Offline' };
-    }
-    const isOnline = (Date.now() - lastLogin.getTime()) <= 5 * 60 * 1000;
-    return { isOnline, label: isOnline ? 'Online' : 'Offline' };
   };
 
   if (loading) {
