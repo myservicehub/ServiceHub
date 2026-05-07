@@ -41,11 +41,6 @@ const AdminDashboard = () => {
   const [verificationSubTab, setVerificationSubTab] = useState('pending');
   const [verificationIdFilter, setVerificationIdFilter] = useState('');
   const [verificationAppliedIdFilter, setVerificationAppliedIdFilter] = useState('');
-  const [verificationMetaLoading, setVerificationMetaLoading] = useState(false);
-  const [verificationCountAll, setVerificationCountAll] = useState(0);
-  const [verificationCountPending, setVerificationCountPending] = useState(0);
-  const [verificationCountRejected, setVerificationCountRejected] = useState(0);
-  const [verificationCountApproved, setVerificationCountApproved] = useState(0);
   const [verificationsPage, setVerificationsPage] = useState(1);
   const [verificationsLimit, setVerificationsLimit] = useState(20);
   const [verificationsTotal, setVerificationsTotal] = useState(0);
@@ -69,6 +64,7 @@ const AdminDashboard = () => {
   const [usersLimit, setUsersLimit] = useState(20);
   const [usersSearch, setUsersSearch] = useState('');
   const [usersTradeFilter, setUsersTradeFilter] = useState('');
+  const [usersActivityFilter, setUsersActivityFilter] = useState('');
   const [usersTotal, setUsersTotal] = useState(0);
   const [usersPages, setUsersPages] = useState(1);
   const visibleUsers = useMemo(() => {
@@ -100,8 +96,21 @@ const AdminDashboard = () => {
       });
     }
 
+    // Apply activity status filter
+    if (usersActivityFilter) {
+      const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+      filtered = filtered.filter((user) => {
+        const lastLogin = user?.last_login;
+        if (!lastLogin) return usersActivityFilter === 'inactive';
+        const lastLoginTime = new Date(lastLogin).getTime();
+        if (Number.isNaN(lastLoginTime)) return usersActivityFilter === 'inactive';
+        const status = (Date.now() - lastLoginTime) <= THIRTY_DAYS_MS ? 'active' : 'inactive';
+        return status === usersActivityFilter;
+      });
+    }
+
     return filtered;
-  }, [users, usersSearch, usersTradeFilter]);
+  }, [users, usersSearch, usersTradeFilter, usersActivityFilter]);
 
   // Users are already paginated by backend; only apply local filters to loaded page
   const paginatedUsers = useMemo(() => visibleUsers, [visibleUsers]);
@@ -134,6 +143,30 @@ const AdminDashboard = () => {
       return idCandidates.some((value) => value.includes(normalizedQuery));
     });
   }, [verificationRowsByTab, verificationIdFilter]);
+  const verificationVisibleCounts = useMemo(() => {
+    const query = verificationIdFilter.trim().toLowerCase().replace(/^#/, '');
+    const applyIdFilter = (rows) => {
+      if (!query) return rows;
+      return rows.filter((verification) => {
+        const idCandidates = [
+          verification?.user_short_id,
+          verification?.user_public_id,
+          verification?.user_id,
+          verification?.id
+        ]
+          .map((value) => String(value || '').toLowerCase().replace(/^#/, ''))
+          .filter(Boolean);
+        return idCandidates.some((value) => value.includes(query));
+      });
+    };
+
+    return {
+      all: applyIdFilter(allVerifications).length,
+      pending: applyIdFilter(verifications).length,
+      rejected: applyIdFilter(rejectedVerifications).length,
+      approved: applyIdFilter(approvedVerifications).length,
+    };
+  }, [verificationIdFilter, allVerifications, verifications, rejectedVerifications, approvedVerifications]);
   const [userStats, setUserStats] = useState(null);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -577,20 +610,6 @@ const AdminDashboard = () => {
         const selectedTotal = data.pagination?.total || items.length;
         setVerificationsTotal(selectedTotal);
         setVerificationsPages(data.pagination?.pages || Math.max(1, Math.ceil(selectedTotal / verificationsLimit)));
-
-        // Fetch counts for tab badges in background.
-        setVerificationMetaLoading(true);
-        Promise.allSettled([
-          adminReferralsAPI.getAllVerifications(0, 1, idQuery),
-          adminReferralsAPI.getPendingVerifications(0, 1, idQuery),
-          adminReferralsAPI.getRejectedVerifications(0, 1, idQuery),
-          adminReferralsAPI.getApprovedVerifications(0, 1, idQuery),
-        ]).then(([allResult, pendingResult, rejectedResult, approvedResult]) => {
-          if (allResult.status === 'fulfilled') setVerificationCountAll(allResult.value?.pagination?.total || 0);
-          if (pendingResult.status === 'fulfilled') setVerificationCountPending(pendingResult.value?.pagination?.total || 0);
-          if (rejectedResult.status === 'fulfilled') setVerificationCountRejected(rejectedResult.value?.pagination?.total || 0);
-          if (approvedResult.status === 'fulfilled') setVerificationCountApproved(approvedResult.value?.pagination?.total || 0);
-        }).finally(() => setVerificationMetaLoading(false));
 
         // ID documents are preloaded in a separate effect so table rows render immediately.
       } else if (activeTab === 'tradespeople_verification') {
@@ -1203,6 +1222,38 @@ const AdminDashboard = () => {
       toast({
         title: "Error",
         description: "Failed to reject verification",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteVerification = async (verification) => {
+    if (!verification?.id) return;
+    const subject = verification.user_name || verification.user_email || `#${verification.id.slice(0, 6)}`;
+    const confirmed = window.confirm(
+      `Permanently delete verification for ${subject}? This action cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    try {
+      await adminReferralsAPI.deleteVerification(verification.id);
+      toast({
+        title: "Verification Deleted",
+        description: "The verification record has been permanently deleted."
+      });
+      if (selectedIdVerification?.id === verification.id) {
+        setIdVerificationModalOpen(false);
+        setSelectedIdVerification(null);
+      }
+      fetchData();
+    } catch (error) {
+      const message =
+        error?.response?.data?.detail ||
+        error?.response?.data?.message ||
+        "Failed to delete verification";
+      toast({
+        title: "Error",
+        description: message,
         variant: "destructive"
       });
     }
@@ -2805,10 +2856,10 @@ const AdminDashboard = () => {
                   <div className="bg-gray-50 rounded-lg p-4">
                     <div className="flex flex-wrap items-center gap-3 mb-4">
                       {[
-                        { id: 'all', label: `All (${verificationMetaLoading ? '...' : verificationCountAll})` },
-                        { id: 'pending', label: `Pending (${verificationMetaLoading ? '...' : verificationCountPending})` },
-                        { id: 'rejected', label: `Rejected (${verificationMetaLoading ? '...' : verificationCountRejected})` },
-                        { id: 'approved', label: `Approved (${verificationMetaLoading ? '...' : verificationCountApproved})` },
+                        { id: 'all', label: `All (${verificationVisibleCounts.all})` },
+                        { id: 'pending', label: `Pending (${verificationVisibleCounts.pending})` },
+                        { id: 'rejected', label: `Rejected (${verificationVisibleCounts.rejected})` },
+                        { id: 'approved', label: `Approved (${verificationVisibleCounts.approved})` },
                       ].map((subTab) => (
                         <button
                           key={subTab.id}
@@ -2921,13 +2972,22 @@ const AdminDashboard = () => {
                                         </span>
                                       </td>
                                       <td className="px-4 py-3 text-right">
-                                        <button
-                                          type="button"
-                                          onClick={() => openIdVerificationModal(verification)}
-                                          className="bg-black hover:bg-gray-800 text-white px-3 py-1.5 rounded-lg text-xs font-semibold"
-                                        >
-                                          View
-                                        </button>
+                                        <div className="flex justify-end items-center gap-2">
+                                          <button
+                                            type="button"
+                                            onClick={() => openIdVerificationModal(verification)}
+                                            className="bg-black hover:bg-gray-800 text-white px-3 py-1.5 rounded-lg text-xs font-semibold"
+                                          >
+                                            View
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleDeleteVerification(verification)}
+                                            className="text-red-600 hover:text-red-800 text-xs font-semibold"
+                                          >
+                                            Delete
+                                          </button>
+                                        </div>
                                       </td>
                                     </tr>
                                   );
@@ -5373,7 +5433,7 @@ const AdminDashboard = () => {
                   </div>
 
                   <div className="bg-gray-50 p-4 rounded-lg border">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Search Users</label>
                         <input
@@ -5392,7 +5452,7 @@ const AdminDashboard = () => {
                           Search
                         </button>
                         <button
-                          onClick={() => { setUsersSearch(''); setUsersTradeFilter(''); setUsersPage(1); fetchData(); usersTabRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
+                          onClick={() => { setUsersSearch(''); setUsersTradeFilter(''); setUsersActivityFilter(''); setUsersPage(1); fetchData(); usersTabRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
                           className="text-gray-600 hover:text-gray-800 px-4 py-2 border border-gray-300 rounded-lg text-sm"
                         >
                           Clear
@@ -5400,7 +5460,7 @@ const AdminDashboard = () => {
                       </div>
 
                       {/* Trade Category Filter */}
-                      <div className="mt-4">
+                      <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Filter by Trade Category:
                         </label>
@@ -5415,6 +5475,20 @@ const AdminDashboard = () => {
                               {trade}
                             </option>
                           ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Filter by Activity:
+                        </label>
+                        <select
+                          value={usersActivityFilter}
+                          onChange={(e) => setUsersActivityFilter(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        >
+                          <option value="">All Users</option>
+                          <option value="active">Active Only</option>
+                          <option value="inactive">Inactive Only</option>
                         </select>
                       </div>
                     </div>

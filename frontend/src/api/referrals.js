@@ -141,6 +141,12 @@ export const adminReferralsAPI = {
     return response.data;
   },
 
+  // Permanently delete a verification record
+  async deleteVerification(verificationId) {
+    const response = await apiClient.delete(`/admin/verifications/${verificationId}`);
+    return response.data;
+  },
+
   // Get verification document image URL (admin)
   getDocumentUrl(filename) {
     const base = (apiClient?.defaults?.baseURL || '/api');
