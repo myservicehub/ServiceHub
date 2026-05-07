@@ -536,7 +536,7 @@ async def submit_external_review(
         )
         
         # Save review
-        created_review = await database.create_review(review)
+        created_review = await database.create_advanced_review(review)
         
         # Update invitation status (Mark as used)
         await database.update_external_review_invitation(

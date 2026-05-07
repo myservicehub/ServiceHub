@@ -2654,7 +2654,7 @@ class Database:
         return self.database.hiring_status
 
     # Review Management Methods (Trust & Quality System)
-    async def create_review(self, review: Review) -> Review:
+    async def create_advanced_review(self, review: Review) -> Review:
         """Create a new review"""
         review_dict = review.dict()
         review_dict["_id"] = review_dict["id"]
