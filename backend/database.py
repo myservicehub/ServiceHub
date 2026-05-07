@@ -2946,6 +2946,12 @@ class Database:
         
         # Check if reviewer is the homeowner who posted the job
         if reviewer_id == job.get("homeowner", {}).get("id"):
+            # Direct assignment markers on the completed job itself
+            assigned_tradesperson_id = str(job.get("assigned_tradesperson_id") or "").strip()
+            hired_tradesperson_id = str((job.get("hired_tradesperson") or {}).get("id") or "").strip()
+            if reviewee_id in {assigned_tradesperson_id, hired_tradesperson_id}:
+                return True
+
             # Homeowner can review any tradesperson for their completed job
             # Check if there's hiring status indicating they hired this tradesperson
             hiring_status = await self.database.hiring_status.find_one({
@@ -2969,6 +2975,12 @@ class Database:
         
         # For tradesperson reviewing homeowner (less common case)
         if reviewee_id == job.get("homeowner", {}).get("id"):
+            # Direct assignment markers on the completed job itself
+            assigned_tradesperson_id = str(job.get("assigned_tradesperson_id") or "").strip()
+            hired_tradesperson_id = str((job.get("hired_tradesperson") or {}).get("id") or "").strip()
+            if reviewer_id in {assigned_tradesperson_id, hired_tradesperson_id}:
+                return True
+
             # Check if there's hiring status indicating homeowner hired this tradesperson
             hiring_status = await self.database.hiring_status.find_one({
                 "job_id": job_id,

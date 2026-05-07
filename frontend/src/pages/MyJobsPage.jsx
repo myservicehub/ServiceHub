@@ -486,16 +486,28 @@ const MyJobsPage = () => {
   const handleSubmitReview = async (reviewData) => {
     try {
       setSubmittingReview(true);
+
+      const resolvedRevieweeId = tradespersonToReview?.id || reviewData?.reviewee_id;
+      if (!resolvedRevieweeId) {
+        toast({
+          title: "Cannot Submit Review",
+          description: "No tradesperson selected for this review.",
+          variant: "destructive",
+        });
+        return;
+      }
       
       const reviewPayload = {
         job_id: jobToReview.id,
-        reviewee_id: tradespersonToReview?.id || 'placeholder-tradesperson-id', // This would come from selected tradesperson
+        reviewee_id: resolvedRevieweeId,
         rating: reviewData.rating,
         title: reviewData.title,
         content: reviewData.content,
-        category_ratings: reviewData.categoryRatings,
+        category_ratings: reviewData.category_ratings || reviewData.categoryRatings || {},
         photos: reviewData.photos || [],
-        would_recommend: reviewData.wouldRecommend
+        would_recommend: (typeof reviewData.would_recommend === 'boolean')
+          ? reviewData.would_recommend
+          : (typeof reviewData.wouldRecommend === 'boolean' ? reviewData.wouldRecommend : true)
       };
 
       await reviewsAPI.createReview(reviewPayload);
