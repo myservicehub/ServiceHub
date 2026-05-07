@@ -5669,9 +5669,18 @@ class Database:
     # ==========================================
     
     @time_it
-    async def get_all_users_for_admin(self, skip: int = 0, limit: int = 50, role: str = None, status: str = None, search: str = None):
+    async def get_all_users_for_admin(
+        self,
+        skip: int = 0,
+        limit: int = 50,
+        role: str = None,
+        status: str = None,
+        search: str = None,
+        activity_status: str = None
+    ):
         """Get all users with filtering for admin dashboard (optimized)"""
         import asyncio
+        from datetime import datetime, timedelta
         # Build query filter
         query = {}
         
@@ -5683,6 +5692,20 @@ class Database:
         else:
             # Default to active users if no status specified
             query["status"] = {"$ne": "deleted"}
+
+        if activity_status in {"active", "inactive"}:
+            thirty_days_ago = datetime.now() - timedelta(days=30)
+            if activity_status == "active":
+                query["last_login"] = {"$gte": thirty_days_ago}
+            else:
+                query["$and"] = query.get("$and", [])
+                query["$and"].append({
+                    "$or": [
+                        {"last_login": {"$exists": False}},
+                        {"last_login": None},
+                        {"last_login": {"$lt": thirty_days_ago}}
+                    ]
+                })
             
         if search:
             query["$or"] = [
@@ -5777,8 +5800,15 @@ class Database:
         
         return processed_users
 
-    async def get_users_total_count_filtered(self, role: str = None, status: str = None, search: str = None):
+    async def get_users_total_count_filtered(
+        self,
+        role: str = None,
+        status: str = None,
+        search: str = None,
+        activity_status: str = None
+    ):
         """Get total count of users matching filters for admin dashboard pagination"""
+        from datetime import datetime, timedelta
         query = {}
         if role:
             query["role"] = role
@@ -5786,6 +5816,19 @@ class Database:
             query["status"] = status
         else:
             query["status"] = {"$ne": "deleted"}
+        if activity_status in {"active", "inactive"}:
+            thirty_days_ago = datetime.now() - timedelta(days=30)
+            if activity_status == "active":
+                query["last_login"] = {"$gte": thirty_days_ago}
+            else:
+                query["$and"] = query.get("$and", [])
+                query["$and"].append({
+                    "$or": [
+                        {"last_login": {"$exists": False}},
+                        {"last_login": None},
+                        {"last_login": {"$lt": thirty_days_ago}}
+                    ]
+                })
         if search:
             query["$or"] = [
                 {"name": {"$regex": search, "$options": "i"}},

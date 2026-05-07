@@ -96,21 +96,8 @@ const AdminDashboard = () => {
       });
     }
 
-    // Apply activity status filter
-    if (usersActivityFilter) {
-      const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
-      filtered = filtered.filter((user) => {
-        const lastLogin = user?.last_login;
-        if (!lastLogin) return usersActivityFilter === 'inactive';
-        const lastLoginTime = new Date(lastLogin).getTime();
-        if (Number.isNaN(lastLoginTime)) return usersActivityFilter === 'inactive';
-        const status = (Date.now() - lastLoginTime) <= THIRTY_DAYS_MS ? 'active' : 'inactive';
-        return status === usersActivityFilter;
-      });
-    }
-
     return filtered;
-  }, [users, usersSearch, usersTradeFilter, usersActivityFilter]);
+  }, [users, usersSearch, usersTradeFilter]);
 
   // Users are already paginated by backend; only apply local filters to loaded page
   const paginatedUsers = useMemo(() => visibleUsers, [visibleUsers]);
@@ -161,7 +148,6 @@ const AdminDashboard = () => {
     };
 
     return {
-      all: applyIdFilter(allVerifications).length,
       pending: applyIdFilter(verifications).length,
       rejected: applyIdFilter(rejectedVerifications).length,
       approved: applyIdFilter(approvedVerifications).length,
@@ -479,10 +465,10 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     if (!isLoggedIn || activeTab !== 'users') return;
-    const signature = `${activeTab}:${usersPage}:${usersLimit}`;
+    const signature = `${activeTab}:${usersPage}:${usersLimit}:${usersActivityFilter || ''}`;
     if (!shouldFetchForSignature(activeTab, signature)) return;
     fetchData();
-  }, [isLoggedIn, activeTab, usersPage, usersLimit]);
+  }, [isLoggedIn, activeTab, usersPage, usersLimit, usersActivityFilter]);
 
   useEffect(() => {
     if (!isLoggedIn || activeTab !== 'users') return;
@@ -672,7 +658,7 @@ const AdminDashboard = () => {
       } else if (activeTab === 'users') {
         const skip = (usersPage - 1) * usersLimit;
         const [userData, tradesData] = await Promise.all([
-          adminAPI.getAllUsers(skip, usersLimit, null, null, usersSearch || null),
+          adminAPI.getAllUsers(skip, usersLimit, null, null, usersSearch || null, usersActivityFilter || null),
           adminAPI.getAllTrades().catch(() => ({ trades: [] }))
         ]);
         
@@ -2856,7 +2842,7 @@ const AdminDashboard = () => {
                   <div className="bg-gray-50 rounded-lg p-4">
                     <div className="flex flex-wrap items-center gap-3 mb-4">
                       {[
-                        { id: 'all', label: `All (${verificationVisibleCounts.all})` },
+                        { id: 'all', label: `All (${verificationVisibleCounts.pending + verificationVisibleCounts.rejected + verificationVisibleCounts.approved})` },
                         { id: 'pending', label: `Pending (${verificationVisibleCounts.pending})` },
                         { id: 'rejected', label: `Rejected (${verificationVisibleCounts.rejected})` },
                         { id: 'approved', label: `Approved (${verificationVisibleCounts.approved})` },
@@ -5483,7 +5469,10 @@ const AdminDashboard = () => {
                         </label>
                         <select
                           value={usersActivityFilter}
-                          onChange={(e) => setUsersActivityFilter(e.target.value)}
+                          onChange={(e) => {
+                            setUsersActivityFilter(e.target.value);
+                            setUsersPage(1);
+                          }}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                         >
                           <option value="">All Users</option>

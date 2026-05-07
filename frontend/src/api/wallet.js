@@ -211,11 +211,12 @@ export const adminAPI = {
   },
 
   // User Management Methods
-  async getAllUsers(skip = 0, limit = 50, role = null, status = null, search = null) {
+  async getAllUsers(skip = 0, limit = 50, role = null, status = null, search = null, activityStatus = null) {
     const params = new URLSearchParams({ skip: skip.toString(), limit: limit.toString() });
     if (role) params.append('role', role);
     if (status) params.append('status', status);
     if (search) params.append('search', search);
+    if (activityStatus) params.append('activity_status', activityStatus);
     
     const response = await apiClient.get(`/admin/users?${params.toString()}`);
     return response.data;

@@ -1246,7 +1246,8 @@ async def get_all_users(
     limit: int = 50,
     role: Optional[str] = None,
     status: Optional[str] = None,
-    search: Optional[str] = None
+    search: Optional[str] = None,
+    activity_status: Optional[str] = None
 ):
     """Get all registered users with filtering options"""
     try:
@@ -1255,7 +1256,8 @@ async def get_all_users(
             limit=limit, 
             role=role, 
             status=status,
-            search=search
+            search=search,
+            activity_status=activity_status
         )
         
         # Normalize user data but skip slow geocoding to keep it fast for the list view
@@ -1270,7 +1272,12 @@ async def get_all_users(
         homeowners_count = await database.get_users_count_by_role("homeowner")
         tradespeople_count = await database.get_users_count_by_role("tradesperson")
         
-        filtered_total = await database.get_users_total_count_filtered(role=role, status=status, search=search)
+        filtered_total = await database.get_users_total_count_filtered(
+            role=role,
+            status=status,
+            search=search,
+            activity_status=activity_status
+        )
         pages = (filtered_total + limit - 1) // limit if limit > 0 else 1
         
         return {
@@ -2360,6 +2367,26 @@ async def reject_verification(
         "verification_id": verification_id,
         "status": "rejected",
         "notes": admin_notes
+    }
+
+@router.delete("/verifications/{verification_id}")
+async def delete_verification(
+    verification_id: str,
+    admin: dict = Depends(require_permission(AdminPermission.VERIFY_USERS))
+):
+    """Permanently delete an identity verification record"""
+    verification = await database.user_verifications_collection.find_one({"id": verification_id})
+    if not verification:
+        raise HTTPException(status_code=404, detail="Verification not found")
+
+    result = await database.user_verifications_collection.delete_one({"id": verification_id})
+    if not result.deleted_count:
+        raise HTTPException(status_code=500, detail="Failed to delete verification")
+
+    logger.info(f"Admin {admin['id']} deleted verification: {verification_id}")
+    return {
+        "message": "Verification deleted successfully",
+        "verification_id": verification_id
     }
 
 @router.get("/verifications/{verification_id}")
