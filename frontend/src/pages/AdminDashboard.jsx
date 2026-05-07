@@ -1157,6 +1157,10 @@ const AdminDashboard = () => {
     switch (status) {
       case 'active':
         return 'bg-green-100 text-green-800';
+      case 'not_started':
+        return 'bg-amber-100 text-amber-800';
+      case 'in_progress':
+        return 'bg-blue-100 text-blue-800';
       case 'completed':
         return 'bg-blue-100 text-blue-800';
       case 'cancelled':
@@ -2287,6 +2291,8 @@ const AdminDashboard = () => {
                       >
                         <option value="">All Jobs</option>
                         <option value="active">Active</option>
+                        <option value="not_started">Not Started</option>
+                        <option value="in_progress">In Progress</option>
                         <option value="completed">Completed</option>
                         <option value="cancelled">Cancelled</option>
                         <option value="expired">Expired</option>
@@ -2360,6 +2366,8 @@ const AdminDashboard = () => {
                                     className="text-sm border rounded px-2 py-1"
                                   >
                                     <option value="active">Active</option>
+                                    <option value="not_started">Not Started</option>
+                                    <option value="in_progress">In Progress</option>
                                     <option value="completed">Completed</option>
                                     <option value="cancelled">Cancelled</option>
                                     <option value="expired">Expired</option>
@@ -2957,19 +2965,19 @@ const AdminDashboard = () => {
                                           {status === 'approved' ? 'Approved' : status === 'rejected' ? 'Rejected' : 'Pending'}
                                         </span>
                                       </td>
-                                      <td className="px-4 py-3 text-right">
+                                      <td className="px-4 py-3 text-right whitespace-nowrap">
                                         <div className="flex justify-end items-center gap-2">
                                           <button
                                             type="button"
                                             onClick={() => openIdVerificationModal(verification)}
-                                            className="bg-black hover:bg-gray-800 text-white px-3 py-1.5 rounded-lg text-xs font-semibold"
+                                            className="inline-flex items-center justify-center bg-black hover:bg-gray-800 text-white px-3 py-1.5 rounded-lg text-xs font-semibold min-w-[56px]"
                                           >
                                             View
                                           </button>
                                           <button
                                             type="button"
                                             onClick={() => handleDeleteVerification(verification)}
-                                            className="text-red-600 hover:text-red-800 text-xs font-semibold"
+                                            className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-xs font-semibold text-red-600 border border-red-200 hover:bg-red-50 hover:border-red-300 min-w-[62px]"
                                           >
                                             Delete
                                           </button>

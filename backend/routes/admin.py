@@ -322,7 +322,7 @@ async def update_job_status_admin(
 ):
     """Update job status (activate, deactivate, complete, etc.)"""
     
-    valid_statuses = ["active", "completed", "cancelled", "expired", "on_hold"]
+    valid_statuses = ["active", "not_started", "in_progress", "completed", "cancelled", "expired", "on_hold"]
     if status not in valid_statuses:
         raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {', '.join(valid_statuses)}")
     

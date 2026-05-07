@@ -675,6 +675,15 @@ async def update_hiring_status(
         if not tradesperson:
             raise HTTPException(status_code=404, detail="Tradesperson not found")
         
+        # Validate status values for hired flow
+        if hired:
+            allowed_statuses = {"not_started", "in_progress", "completed"}
+            if job_status not in allowed_statuses:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid job status. Must be one of: {', '.join(sorted(allowed_statuses))}"
+                )
+
         # Create hiring status record
         hiring_status_data = {
             "id": str(uuid.uuid4()),
@@ -689,6 +698,22 @@ async def update_hiring_status(
         
         # Save to database
         await database.create_hiring_status(hiring_status_data)
+
+        # When homeowner confirms hiring and sets pre-completion status,
+        # move the job out of public "active" listings so others cannot apply.
+        # Preserve the exact selected status between "not_started" and "in_progress".
+        # Do not change the existing completed flow here.
+        if hired and job_status in ["not_started", "in_progress"]:
+            await database.database.jobs.update_one(
+                {"id": job_id},
+                {
+                    "$set": {
+                        "status": job_status,
+                        "assigned_tradesperson_id": tradesperson_id,
+                        "updated_at": datetime.utcnow()
+                    }
+                }
+            )
         
         # If hired and job is completed, schedule review reminder
         if hired and job_status == "completed":
