@@ -68,6 +68,7 @@ const MyJobsPage = () => {
   const [jobReviews, setJobReviews] = useState({});
   const [showTradespersonSelectionModal, setShowTradespersonSelectionModal] = useState(false);
   const [availableTradespeoplePorReview, setAvailableTradespeoplePorReview] = useState([]);
+  const [resolvingReviewJobId, setResolvingReviewJobId] = useState(null);
   const [jobHiringStatuses, setJobHiringStatuses] = useState({});
   const [pendingReviewJobs, setPendingReviewJobs] = useState(new Set());
   const REVIEW_PENDING_MS = 1500; // brief pending duration before marking completed
@@ -366,30 +367,95 @@ const MyJobsPage = () => {
 
   // Review handling functions
   const handleLeaveReview = async (job, tradesperson = null) => {
+    if (!job?.id) return;
+    setResolvingReviewJobId(job.id);
     setJobToReview(job);
     
     if (tradesperson) {
       // If tradesperson is explicitly provided, use it
       setTradespersonToReview(tradesperson);
       setShowReviewModal(true);
+      setResolvingReviewJobId(null);
     } else {
-      // If no tradesperson provided, try to get hired tradespeople from hiring status
+      // If no tradesperson provided, resolve review candidates from multiple sources
       try {
+        const dedupeById = (items) => {
+          const map = new Map();
+          items.forEach((item) => {
+            if (!item?.id) return;
+            if (!map.has(item.id)) map.set(item.id, item);
+          });
+          return Array.from(map.values());
+        };
+
+        const normalizeCandidate = (personLike) => {
+          const id = personLike?.id || personLike?.tradesperson_id;
+          if (!id) return null;
+          return {
+            id,
+            name: personLike?.name || personLike?.tradesperson_name || personLike?.business_name || 'Tradesperson',
+            business_name: personLike?.business_name || '',
+            source_status: personLike?.status || null,
+          };
+        };
+
+        let candidates = [];
+
+        // 1) Primary source: explicit hiring status records
         const hiredTradespeople = await getHiredTradespeopleForJob(job.id);
-        
-        if (hiredTradespeople.length === 1) {
-          // If only one hired tradesperson, review them directly
-          setTradespersonToReview(hiredTradespeople[0]);
+        candidates.push(...hiredTradespeople.map(normalizeCandidate).filter(Boolean));
+
+        // 2) Fallback source: completed job payload may include selected tradesperson
+        if (job?.hired_tradesperson?.id) {
+          candidates.push(normalizeCandidate(job.hired_tradesperson));
+        }
+        if (job?.assigned_tradesperson_id) {
+          candidates.push(normalizeCandidate({
+            id: job.assigned_tradesperson_id,
+            name: job?.hired_tradesperson?.name || 'Selected Tradesperson'
+          }));
+        }
+
+        // 3) Backward-compat fallback: interested tradespeople with shared contact/paid access
+        if (candidates.length === 0) {
+          const interestsResponse = await interestsAPI.getJobInterestedTradespeople(job.id);
+          const interested = interestsResponse?.interested_tradespeople || [];
+          const reviewEligibleStatuses = new Set(['contact_shared', 'paid_access']);
+          const eligible = interested.filter((p) => reviewEligibleStatuses.has((p?.status || '').toLowerCase()));
+          candidates.push(...eligible.map(normalizeCandidate).filter(Boolean));
+        }
+
+        candidates = dedupeById(candidates);
+
+        // Verify review eligibility against backend rule, but fail open if check endpoint errors.
+        try {
+          const checks = await Promise.all(
+            candidates.map(async (candidate) => {
+              const eligibility = await reviewsAPI.canReviewUser(candidate.id, job.id);
+              return eligibility?.can_review ? candidate : null;
+            })
+          );
+          const eligibleCandidates = checks.filter(Boolean);
+          if (eligibleCandidates.length > 0) {
+            candidates = eligibleCandidates;
+          }
+        } catch {
+          // Keep candidates resolved from local/known sources.
+        }
+
+        if (candidates.length === 1) {
+          // If only one review candidate, review directly
+          setTradespersonToReview(candidates[0]);
           setShowReviewModal(true);
-        } else if (hiredTradespeople.length > 1) {
-          // If multiple hired tradespeople, show selection modal
-          setAvailableTradespeoplePorReview(hiredTradespeople);
+        } else if (candidates.length > 1) {
+          // If multiple candidates, ask user to choose who to review
+          setAvailableTradespeoplePorReview(candidates);
           setShowTradespersonSelectionModal(true);
         } else {
-          // If no hired tradespeople found, show error
+          // If no candidates found, show error
           toast({
             title: "Cannot Leave Review",
-            description: "No hired tradespeople found for this job. Please use the chat to indicate who you hired first.",
+            description: "No reviewable tradesperson found for this job yet. Please confirm who worked on this job from Messages first.",
             variant: "destructive",
           });
         }
@@ -400,6 +466,8 @@ const MyJobsPage = () => {
           description: "Failed to load tradesperson information. Please try again.",
           variant: "destructive",
         });
+      } finally {
+        setResolvingReviewJobId(null);
       }
     }
   };
@@ -1073,10 +1141,19 @@ const MyJobsPage = () => {
                                     size="sm"
                                     className="font-lato text-white text-sm"
                                     style={{backgroundColor: '#34D164'}}
-                                    disabled={pendingReviewJobs.has(job.id) || hasMyReview(job)}
+                                    disabled={pendingReviewJobs.has(job.id) || hasMyReview(job) || resolvingReviewJobId === job.id}
                                   >
-                                    <Star size={14} className="mr-1.5" />
-                                    Leave Review
+                                    {resolvingReviewJobId === job.id ? (
+                                      <>
+                                        <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white mr-1.5"></div>
+                                        Loading...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Star size={14} className="mr-1.5" />
+                                        Leave Review
+                                      </>
+                                    )}
                                   </Button>
                                 )}
 
@@ -1215,9 +1292,19 @@ const MyJobsPage = () => {
                     handleLeaveReview(completedJob);
                   }}
                   className="w-full bg-[#34D164] hover:bg-[#2FBD59] text-white font-medium py-3 rounded-xl shadow-md shadow-[#34D164]/20 font-lato"
+                  disabled={resolvingReviewJobId === completedJob?.id}
                 >
-                  <Star className="w-4 h-4 mr-2" />
-                  Leave Review Now
+                  {resolvingReviewJobId === completedJob?.id ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      <Star className="w-4 h-4 mr-2" />
+                      Leave Review Now
+                    </>
+                  )}
                 </Button>
                 
                 <Button
@@ -1247,6 +1334,49 @@ const MyJobsPage = () => {
               >
                 Skip for now
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tradesperson Selection Modal (for jobs with multiple review candidates) */}
+      {showTradespersonSelectionModal && jobToReview && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100">
+              <h3 className="text-lg font-semibold text-[#121E3C] font-montserrat">Select Tradesperson</h3>
+              <p className="text-sm text-gray-500 mt-1">Choose who you want to review for this completed job.</p>
+            </div>
+            <div className="p-4 space-y-2 max-h-[55vh] overflow-y-auto">
+              {availableTradespeoplePorReview.map((person) => (
+                <button
+                  key={person.id}
+                  type="button"
+                  onClick={() => {
+                    setTradespersonToReview(person);
+                    setShowTradespersonSelectionModal(false);
+                    setShowReviewModal(true);
+                  }}
+                  className="w-full text-left px-4 py-3 rounded-xl border border-gray-200 hover:border-[#34D164]/50 hover:bg-[#34D164]/5 transition-colors"
+                >
+                  <div className="font-medium text-[#121E3C]">{person.name || 'Tradesperson'}</div>
+                  {person.business_name ? (
+                    <div className="text-xs text-gray-500 mt-0.5">{person.business_name}</div>
+                  ) : null}
+                </button>
+              ))}
+            </div>
+            <div className="px-4 py-3 border-t border-gray-100">
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  setShowTradespersonSelectionModal(false);
+                  setAvailableTradespeoplePorReview([]);
+                }}
+              >
+                Cancel
+              </Button>
             </div>
           </div>
         </div>
