@@ -143,7 +143,7 @@ const ReviewForm = ({
   const titleCharacterCount = formData.title.length;
 
   return (
-    <Card className="w-full max-w-4xl mx-auto">
+    <Card className="w-full max-w-4xl mx-auto rounded-2xl">
       <CardHeader>
         <CardTitle className="text-2xl font-bold font-montserrat" style={{color: '#121E3C'}}>
           {initialData ? 'Edit Review' : 'Write a Review'}
@@ -155,7 +155,7 @@ const ReviewForm = ({
         </div>
       </CardHeader>
       
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 pb-[max(5rem,env(safe-area-inset-bottom))]">
         <form onSubmit={handleSubmit}>
           {/* Overall Rating */}
           <div className="space-y-2">
@@ -301,7 +301,7 @@ const ReviewForm = ({
             <label className="block text-sm font-medium text-gray-700 font-lato">
               Would you recommend this person?
             </label>
-            <div className="flex items-center space-x-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => handleInputChange('wouldRecommend', true)}
@@ -331,11 +331,11 @@ const ReviewForm = ({
           </div>
 
           {/* Submit Buttons */}
-          <div className="flex items-center space-x-4 pt-6 border-t">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-4 border-t sticky bottom-0 bg-white/95 supports-[backdrop-filter]:bg-white/85 backdrop-blur-sm pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             <Button
               type="submit"
               disabled={loading}
-              className="text-white font-lato px-8"
+              className="text-white font-lato px-8 w-full sm:w-auto"
               style={{backgroundColor: '#34D164'}}
             >
               {loading ? (
@@ -355,7 +355,7 @@ const ReviewForm = ({
               variant="outline"
               onClick={onCancel}
               disabled={loading}
-              className="font-lato"
+              className="font-lato w-full sm:w-auto"
             >
               Cancel
             </Button>

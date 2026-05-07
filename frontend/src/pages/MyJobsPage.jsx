@@ -1384,8 +1384,8 @@ const MyJobsPage = () => {
 
       {/* Review Modal */}
       {showReviewModal && jobToReview && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center z-[1000] p-3 sm:p-4 pt-4 sm:pt-6 pb-[max(5.5rem,env(safe-area-inset-bottom))]">
+          <div className="bg-white rounded-2xl shadow-xl max-w-4xl w-full max-h-[88dvh] sm:max-h-[90vh] overflow-y-auto overscroll-contain">
             <ReviewForm
               jobId={jobToReview.id}
               revieweeId={tradespersonToReview?.id || 'placeholder-tradesperson-id'}
