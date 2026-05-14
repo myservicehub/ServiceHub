@@ -623,7 +623,7 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
                       />
                       {refErrors.work_referrer_phone && <p className="text-xs text-red-500 mt-0.5 font-lato">{refErrors.work_referrer_phone}</p>}
                       <input 
-                        placeholder="Company Email *" 
+                        placeholder="Email *" 
                         value={workRef.company_email} 
                         onChange={(e) => {
                           const value = e.target.value;
@@ -631,11 +631,9 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
                           setRefErrors((prev) => {
                             const next = { ...prev };
                             if (!value.trim()) {
-                              next.work_referrer_company_email = 'Company email is required';
+                              next.work_referrer_company_email = 'Email is required';
                             } else if (!isValidEmailFormat(value)) {
-                              next.work_referrer_company_email = 'Enter a valid company email';
-                            } else if (!isWorkEmailDomain(value)) {
-                              next.work_referrer_company_email = 'Use a work email (company domain), not Gmail/Yahoo/etc';
+                              next.work_referrer_company_email = 'Enter a valid email';
                             } else {
                               delete next.work_referrer_company_email;
                             }

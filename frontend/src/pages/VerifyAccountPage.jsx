@@ -717,7 +717,7 @@ const VerifyAccountPage = () => {
                                 className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-lato focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164]"
                               />
                               <input 
-                                placeholder="Company Email *" 
+                                placeholder="Email *" 
                                 value={workRef.company_email} 
                                 onChange={(e) => setWorkRef({...workRef, company_email: e.target.value})}
                                 className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-lato focus:ring-2 focus:ring-[#34D164]/30 focus:border-[#34D164]"

@@ -222,13 +222,10 @@ async def submit_tradesperson_references(
             return bool(re.fullmatch(r"\+234\d{10}", p) or re.fullmatch(r"0\d{10}", p))
         except Exception:
             return False
-    generic_domains = {"gmail.com","yahoo.com","outlook.com","hotmail.com","icloud.com","aol.com","yandex.com","protonmail.com","zoho.com","gmx.com","mail.com"}
     try:
         domain = work_referrer_company_email.strip().lower().split("@")[-1]
     except Exception:
-        raise HTTPException(status_code=400, detail="Invalid company email format")
-    if domain in generic_domains:
-        raise HTTPException(status_code=400, detail="Company email must be a work domain, not a generic provider")
+        raise HTTPException(status_code=400, detail="Invalid email format")
 
     # Validate phone numbers
     if work_referrer_phone and work_referrer_phone.strip() and not is_valid_phone(work_referrer_phone.strip()):
