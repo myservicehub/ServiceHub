@@ -20,7 +20,8 @@ import {
   ExternalLink,
   ShieldAlert,
   HelpCircle,
-  FileText
+  FileText,
+  X
 } from 'lucide-react';
 import { adminAPI } from '../../api/wallet';
 import { useToast } from '../../hooks/use-toast';
