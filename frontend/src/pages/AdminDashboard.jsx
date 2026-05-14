@@ -436,16 +436,14 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     if (!isLoggedIn) return;
-    if (['verifications', 'tradespeople_verification', 'users', 'reviews-management', 'approvals', 'fees', 'notifications'].includes(activeTab)) return;
+    if (['verifications', 'tradespeople_verification', 'users', 'reviews-management', 'approvals', 'fees', 'notifications', 'feedback-management'].includes(activeTab)) return;
     const signature =
       activeTab === 'locations'
         ? `${activeTab}:${activeLocationTab}`
-        : activeTab === 'job-posting-feedback'
-          ? `${activeTab}:${jobPostingExitFeedbackSearch || ''}`
-          : String(activeTab || '');
+        : String(activeTab || '');
     if (!shouldFetchForSignature(activeTab, signature)) return;
     fetchData();
-  }, [isLoggedIn, activeTab, activeLocationTab, jobPostingExitFeedbackSearch]);
+  }, [isLoggedIn, activeTab, activeLocationTab]);
 
   useEffect(() => {
     if (!isLoggedIn || activeTab !== 'verifications') return;
