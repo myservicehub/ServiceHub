@@ -180,14 +180,14 @@ const FeedbackManagement = () => {
         payload.internal_note = updateData.internal_note;
       }
 
-      await adminAPI.updateFeedback(caseDetails.id, payload);
+      await adminAPI.updateFeedback(caseDetails.case_id, payload);
       toast({
         title: "Success",
         description: "Case updated successfully"
       });
       fetchFeedbacks();
       fetchStats();
-      handleViewCase(caseDetails.id); // Refresh details
+      handleViewCase(caseDetails.case_id); // Refresh details
     } catch (err) {
       toast({
         title: "Error",
@@ -530,26 +530,45 @@ const FeedbackManagement = () => {
                       <div className="pt-6 border-t space-y-4">
                         <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Actions</h4>
                         <div className="flex flex-wrap gap-2">
-                          <Button variant="outline" size="sm" onClick={() => {
-                            setUpdateData(prev => ({ ...prev, assigned_to: 'Unassigned' }));
-                            // You could add a direct API call here if needed
-                          }}>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => {
+                              const el = document.querySelector('[data-assign-select]');
+                              if (el) el.scrollIntoView({ behavior: 'smooth' });
+                            }}
+                          >
                             <UserPlus className="w-4 h-4 mr-2" />
                             Assign
                           </Button>
-                          <Button variant="outline" size="sm">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              toast({
+                                title: "Case Status",
+                                description: `Current Status: ${caseDetails.status}`,
+                              });
+                            }}
+                          >
                             <Clock className="w-4 h-4 mr-2" />
                             Status
                           </Button>
-                          <Button variant="outline" size="sm">
-                            <HelpCircle className="w-4 h-4 mr-2" />
-                            Request Info
-                          </Button>
-                          <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                            <ShieldAlert className="w-4 h-4 mr-2" />
-                            Escalate
-                          </Button>
-                          <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                          <Button 
+                            size="sm" 
+                            className="bg-green-600 hover:bg-green-700"
+                            onClick={async () => {
+                              try {
+                                await adminAPI.updateFeedback(caseDetails.case_id, { status: 'Resolved' });
+                                toast({ title: "Success", description: "Case marked as resolved" });
+                                fetchFeedbacks();
+                                fetchStats();
+                                handleViewCase(caseDetails.case_id);
+                              } catch (err) {
+                                toast({ title: "Error", description: "Failed to resolve case", variant: "destructive" });
+                              }
+                            }}
+                          >
                             <CheckCircle2 className="w-4 h-4 mr-2" />
                             Mark Resolved
                           </Button>
@@ -684,7 +703,7 @@ const FeedbackManagement = () => {
                       </Select>
                     </div>
 
-                    <div className="space-y-1.5">
+                    <div className="space-y-1.5" data-assign-select>
                       <label className="text-xs font-medium text-slate-600">Assign To</label>
                       <Select value={updateData.assigned_to} onValueChange={(v) => setUpdateData(prev => ({ ...prev, assigned_to: v }))}>
                         <SelectTrigger className="h-9">
