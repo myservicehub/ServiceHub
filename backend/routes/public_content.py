@@ -54,6 +54,42 @@ async def submit_contact_form(request: ContactFormRequest):
             recipient_email=support_email
         )
         
+        # Also create a unified feedback record for the new admin system
+        try:
+            from ..models.feedback import FeedbackCategory, FeedbackSource, FeedbackStatus, FeedbackPriority
+            
+            created_at = datetime.utcnow()
+            unified_feedback = {
+                "id": str(uuid.uuid4()),
+                "case_id": f"SH-FB-{str(uuid.uuid4())[:8].upper()}",
+                "category": FeedbackCategory.GENERAL_INQUIRY, # Default for contact form
+                "source": FeedbackSource.CONTACT_FORM,
+                "status": FeedbackStatus.NEW,
+                "priority": FeedbackPriority.MEDIUM,
+                "user": {
+                    "name": request.name,
+                    "email": request.email,
+                    "phone": None, # Phone not in ContactFormRequest currently
+                    "user_id": None,
+                    "user_type": "Guest"
+                },
+                "is_authenticated": False,
+                "subject": request.subject,
+                "message": request.message,
+                "created_at": created_at,
+                "updated_at": created_at,
+                "timeline": [{
+                    "id": str(uuid.uuid4()),
+                    "action": "Case created",
+                    "details": "Contact form submission captured",
+                    "performed_by": "System",
+                    "created_at": created_at
+                }]
+            }
+            await database.create_feedback(unified_feedback)
+        except Exception as e:
+            logger.error(f"Error creating unified feedback for contact form: {str(e)}")
+            
         return {"message": "Message sent successfully"}
         
     except Exception as e:

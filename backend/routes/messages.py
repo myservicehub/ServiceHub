@@ -789,6 +789,48 @@ async def submit_hiring_feedback(
         # Save to database
         await database.create_hiring_feedback(feedback_record)
         
+        # Also create a unified feedback record for the new admin system
+        try:
+            from ..models.feedback import FeedbackCategory, FeedbackSource, FeedbackStatus, FeedbackPriority
+            
+            # Map feedback type to category or include in message
+            category = FeedbackCategory.GENERAL_INQUIRY
+            if feedback_type == "complaint":
+                category = FeedbackCategory.COMPLAINT
+            
+            unified_feedback = {
+                "id": str(uuid.uuid4()),
+                "case_id": f"SH-FB-{str(uuid.uuid4())[:8].upper()}",
+                "category": category,
+                "source": FeedbackSource.JOB_CLOSURE_NO_HIRE,
+                "status": FeedbackStatus.NEW,
+                "priority": FeedbackPriority.MEDIUM if feedback_type != "complaint" else FeedbackPriority.HIGH,
+                "user": {
+                    "name": current_user.name or "Homeowner",
+                    "email": current_user.email,
+                    "phone": current_user.phone,
+                    "user_id": current_user.id,
+                    "user_type": "Homeowner"
+                },
+                "is_authenticated": True,
+                "subject": f"Hiring Feedback: {job.get('title', 'Untitled Job')}",
+                "message": f"Feedback Type: {feedback_type}. Comment: {comment}",
+                "job_id": job_id,
+                "tradesperson_id": tradesperson_id,
+                "created_at": feedback_record["created_at"],
+                "updated_at": feedback_record["created_at"],
+                "timeline": [{
+                    "id": str(uuid.uuid4()),
+                    "action": "Case created",
+                    "details": "Hiring feedback (not hired) captured",
+                    "performed_by": "System",
+                    "created_at": feedback_record["created_at"]
+                }]
+            }
+            await database.create_feedback(unified_feedback)
+        except Exception as e:
+            logger.error(f"Error creating unified feedback for hiring status: {str(e)}")
+            
         return {
             "message": "Feedback submitted successfully",
             "id": feedback_record["id"]

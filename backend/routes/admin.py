@@ -11,6 +11,7 @@ from ..models.base import JobAccessFeeUpdate, TransactionStatus
 from ..models.admin import AdminPermission
 from ..auth.dependencies import require_permission, get_current_admin_account
 from ..models.reviews import ReviewStatus
+from ..models.feedback import FeedbackStatus, FeedbackPriority, FeedbackCategory
 from .auth import _normalize_user_profile_payload
 
 logger = logging.getLogger(__name__)
@@ -274,6 +275,67 @@ async def delete_review(review_id: str, admin: dict = Depends(require_permission
     if not deleted:
         raise HTTPException(status_code=404, detail="Review not found")
     return {"deleted": True, "id": review_id}
+
+# ==========================================
+# FEEDBACK & CASE MANAGEMENT
+# ==========================================
+
+@router.get("/feedbacks")
+async def get_feedbacks_admin(
+    skip: int = 0,
+    limit: int = 50,
+    search: Optional[str] = None,
+    category: Optional[str] = None,
+    status: Optional[str] = None,
+    priority: Optional[str] = None,
+    admin: dict = Depends(require_permission(AdminPermission.VIEW_SUPPORT_TICKETS))
+):
+    """Get all feedbacks with filtering for admin dashboard"""
+    filters = {}
+    if category: filters["category"] = category
+    if status: filters["status"] = status
+    if priority: filters["priority"] = priority
+    
+    feedback_items, total = await database.get_feedbacks(skip=skip, limit=limit, filters=filters, search=search)
+    return {
+        "feedbacks": feedback_items,
+        "pagination": {
+            "skip": skip,
+            "limit": limit,
+            "total": total
+        }
+    }
+
+@router.get("/feedbacks/stats")
+async def get_feedback_stats_admin(
+    admin: dict = Depends(require_permission(AdminPermission.VIEW_SYSTEM_STATS))
+):
+    """Get feedback statistics for analytics dashboard"""
+    stats = await database.get_feedback_statistics()
+    return stats
+
+@router.get("/feedbacks/{feedback_id}")
+async def get_feedback_detail_admin(
+    feedback_id: str,
+    admin: dict = Depends(require_permission(AdminPermission.VIEW_SUPPORT_TICKETS))
+):
+    """Get detailed feedback information"""
+    feedback = await database.get_feedback_by_id(feedback_id)
+    if not feedback:
+        raise HTTPException(status_code=404, detail="Feedback case not found")
+    return feedback
+
+@router.patch("/feedbacks/{feedback_id}")
+async def update_feedback_admin(
+    feedback_id: str,
+    update_data: dict,
+    admin: dict = Depends(require_permission(AdminPermission.MANAGE_SUPPORT_TICKETS))
+):
+    """Update feedback status, priority, assignment, or add notes"""
+    updated_feedback = await database.update_feedback(feedback_id, update_data, admin_user=admin)
+    if not updated_feedback:
+        raise HTTPException(status_code=404, detail="Feedback case not found")
+    return updated_feedback
 
 @router.get("/job-posting-exit-feedback")
 async def get_job_posting_exit_feedback(

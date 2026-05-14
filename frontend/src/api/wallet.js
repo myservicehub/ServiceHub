@@ -199,6 +199,28 @@ export const adminAPI = {
     return response.data;
   },
 
+  // Unified Feedback API
+  async getFeedbacks(params = {}) {
+    const query = new URLSearchParams(params);
+    const response = await apiClient.get(`/admin/feedbacks?${query.toString()}`);
+    return response.data;
+  },
+
+  async getFeedbackStats() {
+    const response = await apiClient.get('/admin/feedbacks/stats');
+    return response.data;
+  },
+
+  async getFeedbackById(feedbackId) {
+    const response = await apiClient.get(`/admin/feedbacks/${feedbackId}`);
+    return response.data;
+  },
+
+  async updateFeedback(feedbackId, data) {
+    const response = await apiClient.patch(`/admin/feedbacks/${feedbackId}`, data);
+    return response.data;
+  },
+
   // Get transaction details
   async getTransactionDetails(transactionId) {
     const response = await apiClient.get(`/admin/wallet/transaction/${transactionId}`);

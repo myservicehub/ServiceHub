@@ -10,6 +10,7 @@ import ContactManagementTab from './ContactManagementTab';
 import TradeCategoryQuestionsManager from '../components/admin/TradeCategoryQuestionsManager';
 import AdminManagement from '../components/admin/AdminManagement';
 import ContentManagement from '../components/admin/ContentManagement';
+import FeedbackManagement from '../components/admin/FeedbackManagement';
 import AdminHeader from '../components/AdminHeader';
 import { adminReviewsAPI } from '../api/wallet';
 import Footer from '../components/Footer';
@@ -236,9 +237,6 @@ const AdminDashboard = () => {
   const [reviewsStatus, setReviewsStatus] = useState('');
   const [reviewsSearch, setReviewsSearch] = useState('');
   const [reviewsLoading, setReviewsLoading] = useState(false);
-  const [jobPostingExitFeedback, setJobPostingExitFeedback] = useState([]);
-  const [jobPostingExitFeedbackTotal, setJobPostingExitFeedbackTotal] = useState(0);
-  const [jobPostingExitFeedbackSearch, setJobPostingExitFeedbackSearch] = useState('');
   const filteredReviews = useMemo(() => {
     let list = reviews;
     if (reviewsStatus) {
@@ -742,15 +740,6 @@ const AdminDashboard = () => {
         setReviewsTotal(pagination.total || list.length);
         setReviewsPages(pagination.pages || Math.ceil((pagination.total || list.length) / reviewsLimit));
         setReviewsLoading(false);
-      } else if (activeTab === 'job-posting-feedback') {
-        if (!adminAPI.hasPermission('manage_jobs')) {
-          toast({ title: "Permission denied", description: "You do not have permission to view job posting feedback.", variant: "destructive" });
-          setActiveTab('stats');
-          return;
-        }
-        const data = await adminAPI.getJobPostingExitFeedback(0, 200, jobPostingExitFeedbackSearch || '');
-        setJobPostingExitFeedback(data.feedback || []);
-        setJobPostingExitFeedbackTotal(data?.pagination?.total || 0);
       }
     } catch (error) {
       console.error('Failed to fetch data:', error);
@@ -2116,7 +2105,7 @@ const AdminDashboard = () => {
                   { id: 'contacts', label: 'Contact Management', icon: '📞' },
                   { id: 'notifications', label: 'Notifications', icon: '🔔' },
                   { id: 'reviews-management', label: 'Customer Reviews', icon: '⭐' },
-                  { id: 'job-posting-feedback', label: 'Job Exit Feedback', icon: '🧾' },
+                  { id: 'feedback-management', label: 'Feedback Management', icon: '💬' },
                   { id: 'stats', label: 'Dashboard Stats', icon: '📊' }
                 ].map((tab) => (
                   <button
@@ -5271,77 +5260,8 @@ const AdminDashboard = () => {
                   )}
                 </div>
               )}
-              {activeTab === 'job-posting-feedback' && (
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-semibold">Job Posting Exit Feedback</h2>
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="text"
-                        value={jobPostingExitFeedbackSearch}
-                        onChange={(e) => setJobPostingExitFeedbackSearch(e.target.value)}
-                        placeholder="Search by feedback, name, email, phone"
-                        className="px-3 py-2 border rounded w-80"
-                      />
-                      <button onClick={fetchData} className="text-blue-600 hover:text-blue-700">Refresh</button>
-                    </div>
-                  </div>
-                  <div className="text-sm text-gray-600">Total records: {jobPostingExitFeedbackTotal}</div>
-                  {loading ? (
-                    <div className="space-y-4">
-                      {[...Array(3)].map((_, i) => (
-                        <div key={i} className="bg-gray-50 p-4 rounded-lg animate-pulse">
-                          <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
-                          <div className="h-3 bg-gray-200 rounded w-1/4"></div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="bg-white rounded-lg shadow">
-                      <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Feedback</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job Draft</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Authenticated</th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
-                            {jobPostingExitFeedback.length === 0 ? (
-                              <tr>
-                                <td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-500">No feedback records found</td>
-                              </tr>
-                            ) : jobPostingExitFeedback.map((item) => (
-                              <tr key={item.id}>
-                                <td className="px-6 py-4 text-sm text-gray-700">
-                                  {item.created_at ? new Date(item.created_at).toLocaleString('en-NG', { timeZone: 'Africa/Lagos' }) : '—'}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-900 font-medium">{item.feedback_option || '—'}</td>
-                                <td className="px-6 py-4 text-sm text-gray-700 max-w-xs whitespace-pre-wrap">{item.feedback_text || '—'}</td>
-                                <td className="px-6 py-4 text-sm text-gray-700">
-                                  <div>Title: {item.job_title || '—'}</div>
-                                  <div>Category: {item.job_category || '—'}</div>
-                                  <div>Step: {item.current_step ?? '—'}</div>
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-700">
-                                  <div>Name: {item.user_name || '—'}</div>
-                                  <div>Email: {item.user_email || '—'}</div>
-                                  <div>Phone: {item.user_phone || '—'}</div>
-                                  <div>User ID: {item.user_id || 'Guest'}</div>
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-700">{item.is_authenticated ? 'Yes' : 'No'}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
-                </div>
+              {activeTab === 'feedback-management' && (
+                <FeedbackManagement />
               )}
               {/* Stats Tab */}
               {activeTab === 'stats' && (

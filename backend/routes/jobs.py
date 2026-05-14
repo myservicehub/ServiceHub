@@ -734,6 +734,43 @@ async def close_job(
             close_request.additional_feedback
         )
         
+        # Also create a unified feedback record for the new admin system
+        try:
+            from ..models.feedback import FeedbackCategory, FeedbackSource, FeedbackStatus, FeedbackPriority
+            
+            created_at = datetime.utcnow()
+            unified_feedback = {
+                "id": str(uuid.uuid4()),
+                "case_id": f"SH-FB-{str(uuid.uuid4())[:8].upper()}",
+                "category": FeedbackCategory.GENERAL_INQUIRY,
+                "source": FeedbackSource.WEBSITE,
+                "status": FeedbackStatus.NEW,
+                "priority": FeedbackPriority.MEDIUM,
+                "user": {
+                    "name": current_user.name or "Homeowner",
+                    "email": current_user.email,
+                    "phone": current_user.phone,
+                    "user_id": current_user.id,
+                    "user_type": "Homeowner"
+                },
+                "is_authenticated": True,
+                "subject": f"Job Closed/Cancelled: {job.get('title', 'Untitled Job')}",
+                "message": f"Reason: {close_request.reason}. Feedback: {close_request.additional_feedback or 'None'}",
+                "job_id": job_id,
+                "created_at": created_at,
+                "updated_at": created_at,
+                "timeline": [{
+                    "id": str(uuid.uuid4()),
+                    "action": "Case created",
+                    "details": "Job cancellation feedback captured",
+                    "performed_by": "System",
+                    "created_at": created_at
+                }]
+            }
+            await database.create_feedback(unified_feedback)
+        except Exception as e:
+            logger.error(f"Error creating unified feedback for job closure: {str(e)}")
+            
         return {
             "message": "Job closed successfully",
             "job_id": job_id,
@@ -888,6 +925,44 @@ async def submit_job_posting_exit_feedback(
             "created_at": datetime.utcnow()
         }
         await database.create_job_posting_exit_feedback(record)
+        
+        # Also create a unified feedback record for the new admin system
+        try:
+            from ..models.feedback import FeedbackCategory, FeedbackSource, FeedbackStatus, FeedbackPriority
+            
+            unified_feedback = {
+                "id": str(uuid.uuid4()),
+                "case_id": f"SH-FB-{str(uuid.uuid4())[:8].upper()}",
+                "category": FeedbackCategory.ABANDONED_POSTINGS,
+                "source": FeedbackSource.JOB_POSTING_EXIT,
+                "status": FeedbackStatus.NEW,
+                "priority": FeedbackPriority.LOW,
+                "user": {
+                    "name": record["user_name"] or "Guest",
+                    "email": record["user_email"] or "guest@myservicehub.co",
+                    "phone": record["user_phone"],
+                    "user_id": record["user_id"],
+                    "user_type": "Homeowner" if record["is_authenticated"] else "Guest"
+                },
+                "is_authenticated": record["is_authenticated"],
+                "subject": f"Abandoned Posting: {record['job_title'] or 'Untitled'}",
+                "message": f"User exited job posting flow at step {record['current_step']}. Reason: {record['feedback_option']}. Additional Details: {record['feedback_text'] or 'None'}",
+                "job_id": None, # It's a draft/abandoned posting, so no real job_id yet
+                "created_at": record["created_at"],
+                "updated_at": record["created_at"],
+                "timeline": [{
+                    "id": str(uuid.uuid4()),
+                    "action": "Case created",
+                    "details": "Abandoned job posting feedback captured",
+                    "performed_by": "System",
+                    "created_at": record["created_at"]
+                }]
+            }
+            await database.create_feedback(unified_feedback)
+        except Exception as e:
+            logger.error(f"Error creating unified feedback for abandoned posting: {str(e)}")
+            # Don't fail the request if unified feedback fails
+            
         return {"message": "Feedback submitted successfully", "feedback_id": record["id"]}
     except HTTPException:
         raise
