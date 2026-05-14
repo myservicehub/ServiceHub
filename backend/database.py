@@ -9982,6 +9982,11 @@ We may update this Cookie Policy to reflect changes in technology or regulations
                     if value:
                         query[key] = value
             
+            # Map frontend source filter
+            if "source" in query:
+                # Ensure it matches the FeedbackSource enum values if needed
+                pass
+
             if search:
                 search_query = {
                     "$or": [
@@ -10148,10 +10153,16 @@ We may update this Cookie Policy to reflect changes in technology or regulations
             })
             escalation_rate = round((escalated_count / total_cases * 100), 1) if total_cases > 0 else 0
 
-            # Abandoned postings recovery (mock or based on status change)
-            # For now, let's use a placeholder or calculate based on "Abandoned Postings" category
-            abandoned_count = categories.get("Abandoned Postings", 0)
-            recovery_rate = 34  # Placeholder as seen in screenshot
+            # Abandoned postings recovery
+            # Calculate recovery: Abandoned Postings cases that moved from 'New' to 'Resolved' or 'Closed'
+            recovered_count = await self.feedbacks_collection.count_documents({
+                "category": "Abandoned Postings",
+                "status": {"$in": ["Resolved", "Closed"]}
+            })
+            total_abandoned = await self.feedbacks_collection.count_documents({
+                "category": "Abandoned Postings"
+            })
+            recovery_rate = round((recovered_count / total_abandoned * 100), 1) if total_abandoned > 0 else 0
 
             # Positive/Negative ratio (based on rating)
             pipeline_rating = [

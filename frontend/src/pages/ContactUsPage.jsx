@@ -116,6 +116,7 @@ const ContactUsPage = () => {
       await publicAPI.submitContactForm({
         name: payload.name,
         email: payload.email,
+        phone: payload.phone,
         subject: payload.subject,
         message: payload.message
       });

@@ -26,6 +26,7 @@ ALLOWED_RESUME_EXTENSIONS = {".pdf", ".doc", ".docx"}
 class ContactFormRequest(BaseModel):
     name: str
     email: EmailStr
+    phone: Optional[str] = None
     subject: str
     message: str
 
@@ -38,6 +39,7 @@ async def submit_contact_form(request: ContactFormRequest):
         template_data = {
             "name": request.name,
             "email": request.email,
+            "phone": request.phone,
             "subject": request.subject,
             "message": request.message,
             "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -69,7 +71,7 @@ async def submit_contact_form(request: ContactFormRequest):
                 "user": {
                     "name": request.name,
                     "email": request.email,
-                    "phone": None, # Phone not in ContactFormRequest currently
+                    "phone": request.phone, # Updated to include phone
                     "user_id": None,
                     "user_type": "Guest"
                 },

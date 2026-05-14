@@ -216,8 +216,13 @@ export const adminAPI = {
     return response.data;
   },
 
-  async updateFeedback(feedbackId, data) {
-    const response = await apiClient.patch(`/admin/feedbacks/${feedbackId}`, data);
+  async updateFeedback(feedback_id, update_data) {
+    const response = await apiClient.patch(`/admin/feedbacks/${feedback_id}`, update_data);
+    return response.data;
+  },
+
+  async getAllAdmins() {
+    const response = await apiClient.get('/admin-management/admins');
     return response.data;
   },
 

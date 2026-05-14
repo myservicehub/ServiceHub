@@ -77,6 +77,8 @@ const FeedbackManagement = () => {
     total: 0
   });
 
+  const [admins, setAdmins] = useState([]);
+
   const [updateData, setUpdateData] = useState({
     status: '',
     priority: '',
@@ -87,7 +89,17 @@ const FeedbackManagement = () => {
   useEffect(() => {
     fetchStats();
     fetchFeedbacks();
-  }, [pagination.skip, filters]);
+    fetchAdmins();
+  }, [pagination.skip, filters, activeTab]);
+
+  const fetchAdmins = async () => {
+    try {
+      const data = await adminAPI.getAllAdmins();
+      setAdmins(data.admins || []);
+    } catch (err) {
+      console.error('Failed to fetch admins:', err);
+    }
+  };
 
   const fetchStats = async () => {
     try {
@@ -106,6 +118,16 @@ const FeedbackManagement = () => {
         limit: pagination.limit,
         search: search
       };
+      
+      // Map tab values to backend filters
+      if (activeTab === 'job_closure') {
+        params.source = 'job_closure_no_hire';
+      } else if (activeTab === 'job_exit') {
+        params.source = 'job_posting_exit';
+      } else if (activeTab === 'contact_form') {
+        params.source = 'contact_form';
+      }
+      
       if (filters.status !== 'All') params.status = filters.status;
       if (filters.category !== 'All') params.category = filters.category;
       if (filters.priority !== 'All') params.priority = filters.priority;
@@ -216,9 +238,9 @@ const FeedbackManagement = () => {
         <TabsList className="bg-muted/50 p-1">
           <TabsTrigger value="analytics" className="data-[state=active]:bg-white">Analytics</TabsTrigger>
           <TabsTrigger value="all" className="data-[state=active]:bg-white">All Feedback</TabsTrigger>
-          <TabsTrigger value="complaints" className="data-[state=active]:bg-white">Complaints</TabsTrigger>
-          <TabsTrigger value="support" className="data-[state=active]:bg-white">Technical / Support</TabsTrigger>
-          <TabsTrigger value="abandoned" className="data-[state=active]:bg-white">Abandoned Postings</TabsTrigger>
+          <TabsTrigger value="job_closure" className="data-[state=active]:bg-white">Job Closures</TabsTrigger>
+          <TabsTrigger value="job_exit" className="data-[state=active]:bg-white">Cancelled Postings</TabsTrigger>
+          <TabsTrigger value="contact_form" className="data-[state=active]:bg-white">Contact Forms</TabsTrigger>
         </TabsList>
 
         <TabsContent value="analytics" className="space-y-4">
@@ -508,7 +530,10 @@ const FeedbackManagement = () => {
                       <div className="pt-6 border-t space-y-4">
                         <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Actions</h4>
                         <div className="flex flex-wrap gap-2">
-                          <Button variant="outline" size="sm">
+                          <Button variant="outline" size="sm" onClick={() => {
+                            setUpdateData(prev => ({ ...prev, assigned_to: 'Unassigned' }));
+                            // You could add a direct API call here if needed
+                          }}>
                             <UserPlus className="w-4 h-4 mr-2" />
                             Assign
                           </Button>
@@ -535,7 +560,7 @@ const FeedbackManagement = () => {
                     <TabsContent value="feedback" className="space-y-6">
                       <div className="bg-slate-50 p-6 rounded-lg border border-slate-200">
                         <div className="flex justify-between items-start mb-4">
-                          <h3 className="font-bold text-lg">{caseDetails.subject || 'Message Content'}</h3>
+                          <h3 className="font-bold text-lg break-words overflow-hidden">{caseDetails.subject || 'Message Content'}</h3>
                           {caseDetails.rating && (
                             <div className="flex items-center gap-1 text-amber-500">
                               {Array.from({ length: 5 }).map((_, i) => (
@@ -544,9 +569,9 @@ const FeedbackManagement = () => {
                             </div>
                           )}
                         </div>
-                        <p className="text-slate-700 whitespace-pre-wrap leading-relaxed">
+                        <div className="text-slate-700 whitespace-pre-wrap leading-relaxed break-words overflow-hidden">
                           {caseDetails.message}
-                        </p>
+                        </div>
                       </div>
 
                       {caseDetails.job_id && (
@@ -661,12 +686,19 @@ const FeedbackManagement = () => {
 
                     <div className="space-y-1.5">
                       <label className="text-xs font-medium text-slate-600">Assign To</label>
-                      <Input 
-                        placeholder="Admin name" 
-                        className="h-9 text-sm"
-                        value={updateData.assigned_to}
-                        onChange={(e) => setUpdateData(prev => ({ ...prev, assigned_to: e.target.value }))}
-                      />
+                      <Select value={updateData.assigned_to} onValueChange={(v) => setUpdateData(prev => ({ ...prev, assigned_to: v }))}>
+                        <SelectTrigger className="h-9">
+                          <SelectValue placeholder="Select Admin" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Unassigned">Unassigned</SelectItem>
+                          {admins.map(admin => (
+                            <SelectItem key={admin.id} value={admin.full_name}>
+                              {admin.full_name} ({admin.role?.replace('_', ' ')})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     <Button className="w-full mt-2" onClick={handleUpdateCase}>
