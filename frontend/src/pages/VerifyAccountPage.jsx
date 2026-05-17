@@ -269,7 +269,7 @@ const VerifyAccountPage = () => {
     if (workRef.phone?.trim() && !isValidPhone(workRef.phone)) {
       errs.work_referrer_phone = 'Enter a valid phone (+234XXXXXXXXXX or 0XXXXXXXXXX)';
     }
-    if (!workRef.company_email?.trim()) errs.work_referrer_company_email = 'Company email is required';
+    if (!workRef.company_email?.trim()) errs.work_referrer_company_email = 'Email is required';
     if (!workRef.company_name?.trim()) errs.work_referrer_company_name = 'Company name is required';
     if (!workRef.relationship?.trim()) errs.work_referrer_relationship = 'Relationship is required';
     if (!charRef.name?.trim()) errs.character_referrer_name = 'Character referee name is required';
@@ -311,7 +311,7 @@ const VerifyAccountPage = () => {
             seErrs.work_photos && 'Recent work photos (min 2)',
             rfErrs.work_referrer_name && 'Work referee name',
             rfErrs.work_referrer_phone && 'Work referee phone',
-            rfErrs.work_referrer_company_email && 'Work referee company email',
+            rfErrs.work_referrer_company_email && 'Work referee email',
             rfErrs.work_referrer_company_name && 'Work referee company name',
             rfErrs.work_referrer_relationship && 'Work referee relationship',
             rfErrs.character_referrer_name && 'Character referee name',
@@ -420,7 +420,7 @@ const VerifyAccountPage = () => {
             const missingLabels = [
               rfErrs.work_referrer_name && 'Work referrer name',
               rfErrs.work_referrer_phone && 'Work referrer phone',
-              rfErrs.work_referrer_company_email && 'Work referrer company email',
+              rfErrs.work_referrer_company_email && 'Work referee email',
               rfErrs.work_referrer_company_name && 'Work referrer company name',
               rfErrs.work_referrer_relationship && 'Work referrer relationship',
               rfErrs.character_referrer_name && 'Character referee name',

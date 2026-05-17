@@ -13,20 +13,6 @@ const BUSINESS_TYPES = [
   'Limited Liability Partnership (LLP)'
 ];
 
-const GENERIC_EMAIL_DOMAINS = new Set([
-  'gmail.com',
-  'yahoo.com',
-  'outlook.com',
-  'hotmail.com',
-  'icloud.com',
-  'aol.com',
-  'yandex.com',
-  'protonmail.com',
-  'zoho.com',
-  'gmx.com',
-  'mail.com'
-]);
-
 const normalizeBusinessType = (value) => {
   const raw = String(value || '').trim();
   if (!raw) return '';
@@ -39,13 +25,6 @@ const normalizeBusinessType = (value) => {
 };
 
 const isValidEmailFormat = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim());
-
-const isWorkEmailDomain = (email) => {
-  const normalized = String(email || '').trim().toLowerCase();
-  if (!isValidEmailFormat(normalized)) return false;
-  const domain = normalized.split('@')[1] || '';
-  return domain && !GENERIC_EMAIL_DOMAINS.has(domain);
-};
 
 const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
   const { user, getCurrentUser, updateUser } = useAuth();
@@ -106,7 +85,7 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
       message = detail;
       const detailLc = detail.toLowerCase();
       if (detailLc.includes('company email must be a work domain') || detailLc.includes('invalid company email format')) {
-        mappedRefErrors.work_referrer_company_email = 'Use a valid work email (company domain), not a generic provider';
+        mappedRefErrors.work_referrer_company_email = 'Use a valid email address';
       }
       if (detailLc.includes('invalid work referee phone')) {
         mappedRefErrors.work_referrer_phone = 'Enter a valid phone (+234XXXXXXXXXX or 0XXXXXXXXXX)';
@@ -229,9 +208,8 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
     if (workRef.phone?.trim() && !isValidPhone(workRef.phone)) {
       errs.work_referrer_phone = 'Enter a valid phone (+234XXXXXXXXXX or 0XXXXXXXXXX)';
     }
-    if (!workRef.company_email?.trim()) errs.work_referrer_company_email = 'Company email is required';
-    else if (!isValidEmailFormat(workRef.company_email)) errs.work_referrer_company_email = 'Enter a valid company email';
-    else if (!isWorkEmailDomain(workRef.company_email)) errs.work_referrer_company_email = 'Use a work email (company domain), not Gmail/Yahoo/etc';
+    if (!workRef.company_email?.trim()) errs.work_referrer_company_email = 'Email is required';
+    else if (!isValidEmailFormat(workRef.company_email)) errs.work_referrer_company_email = 'Enter a valid email';
     if (!workRef.company_name?.trim()) errs.work_referrer_company_name = 'Company name is required';
     if (!workRef.relationship?.trim()) errs.work_referrer_relationship = 'Relationship is required';
     if (!charRef.name?.trim()) errs.character_referrer_name = 'Character referee name is required';
@@ -268,7 +246,7 @@ const BusinessVerificationModal = ({ isOpen, onClose, onComplete }) => {
             seErrs.proof_of_address && 'Proof of address',
             seErrs.work_photos && 'Recent work photos (min 2)',
             rfErrs.work_referrer_name && 'Work referee name',
-            rfErrs.work_referrer_company_email && 'Work referee company email',
+            rfErrs.work_referrer_company_email && 'Work referee email',
             rfErrs.work_referrer_company_name && 'Work referee company name',
             rfErrs.work_referrer_relationship && 'Work referee relationship',
             rfErrs.character_referrer_name && 'Character referee name',
