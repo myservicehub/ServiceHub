@@ -238,9 +238,6 @@ const FeedbackManagement = () => {
         <TabsList className="bg-muted/50 p-1">
           <TabsTrigger value="analytics" className="data-[state=active]:bg-white">Analytics</TabsTrigger>
           <TabsTrigger value="all" className="data-[state=active]:bg-white">All Feedback</TabsTrigger>
-          <TabsTrigger value="job_closure" className="data-[state=active]:bg-white">Job Closures</TabsTrigger>
-          <TabsTrigger value="job_exit" className="data-[state=active]:bg-white">Cancelled Postings</TabsTrigger>
-          <TabsTrigger value="contact_form" className="data-[state=active]:bg-white">Contact Forms</TabsTrigger>
         </TabsList>
 
         <TabsContent value="analytics" className="space-y-4">
@@ -359,13 +356,13 @@ const FeedbackManagement = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="All">All Categories</SelectItem>
-                  <SelectItem value="Complaint">Complaint</SelectItem>
-                  <SelectItem value="Technical Support">Technical Support</SelectItem>
-                  <SelectItem value="Payment & Billing">Payment & Billing</SelectItem>
-                  <SelectItem value="Account Issues">Account Issues</SelectItem>
                   <SelectItem value="General Inquiry">General Inquiry</SelectItem>
+                  <SelectItem value="Account Issues">Account Issues</SelectItem>
+                  <SelectItem value="Payment & Billing">Payment & Billing</SelectItem>
+                  <SelectItem value="Technical Support">Technical Support</SelectItem>
+                  <SelectItem value="Partnership Opportunities">Partnership Opportunities</SelectItem>
                   <SelectItem value="Feedback & Suggestions">Feedback & Suggestions</SelectItem>
-                  <SelectItem value="Abandoned Postings">Abandoned Postings</SelectItem>
+                  <SelectItem value="Complaint">Complaint</SelectItem>
                 </SelectContent>
               </Select>
 

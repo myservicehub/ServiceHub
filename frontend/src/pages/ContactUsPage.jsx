@@ -105,21 +105,30 @@ const ContactUsPage = () => {
 
   const onSubmit = async (data) => {
     setGlobalErrorMessage('');
+
+    // Check if login is required for certain categories
+    const protectedCategories = ['account', 'payment', 'technical', 'feedback', 'complaint'];
+    if (protectedCategories.includes(data.subject) && !user) {
+      toast({
+        title: "Login Required",
+        description: `Please sign in to submit a message regarding ${data.subject.replace(/_/g, ' ')}.`,
+        variant: "destructive"
+      });
+      // Optionally redirect to login
+      // navigate('/login', { state: { from: '/contact' } });
+      return;
+    }
+
     try {
       // Normalize phone to E.164 if provided
       const payload = {
         ...data,
         phone: data.phone ? formatPhoneE164(data.phone, 'NG') : undefined,
+        user_id: user?.id || null // Include user_id if logged in
       };
 
       // Send contact form to backend
-      await publicAPI.submitContactForm({
-        name: payload.name,
-        email: payload.email,
-        phone: payload.phone,
-        subject: payload.subject,
-        message: payload.message
-      });
+      await publicAPI.submitContactForm(payload);
       
       toast({
         title: "Message Sent Successfully!",
@@ -345,7 +354,6 @@ const ContactUsPage = () => {
                           <option value="homeowner">Homeowner</option>
                           <option value="tradesperson">Tradesperson</option>
                           <option value="business">Business</option>
-                          <option value="other">Other</option>
                         </select>
                         {errors.userType && (
                           <p className="mt-1 text-xs text-red-500">{errors.userType.message}</p>
@@ -370,7 +378,6 @@ const ContactUsPage = () => {
                         <option value="partnership">Partnership Opportunities</option>
                         <option value="feedback">Feedback & Suggestions</option>
                         <option value="complaint">Complaint</option>
-                        <option value="other">Other</option>
                       </select>
                     </div>
 

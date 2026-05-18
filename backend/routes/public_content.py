@@ -29,6 +29,7 @@ class ContactFormRequest(BaseModel):
     phone: Optional[str] = None
     subject: str
     message: str
+    user_id: Optional[str] = None
 
 @router.post("/submit-contact")
 async def submit_contact_form(request: ContactFormRequest):
@@ -46,7 +47,6 @@ async def submit_contact_form(request: ContactFormRequest):
         }
         
         # Send notification to support email
-        # We use user_id=None as this is a system notification to support
         support_email = os.environ.get('SUPPORT_EMAIL', 'support@myservicehub.co')
         
         await notification_service.send_notification(
@@ -60,22 +60,41 @@ async def submit_contact_form(request: ContactFormRequest):
         try:
             from ..models.feedback import FeedbackCategory, FeedbackSource, FeedbackStatus, FeedbackPriority
             
+            # Map request subject to FeedbackCategory
+            subject_map = {
+                "general": FeedbackCategory.GENERAL_INQUIRY,
+                "account": FeedbackCategory.ACCOUNT_ISSUES,
+                "payment": FeedbackCategory.PAYMENT_BILLING,
+                "technical": FeedbackCategory.TECHNICAL_SUPPORT,
+                "partnership": FeedbackCategory.PARTNERSHIP_OPPORTUNITIES,
+                "feedback": FeedbackCategory.FEEDBACK_SUGGESTIONS,
+                "complaint": FeedbackCategory.COMPLAINT
+            }
+            category = subject_map.get(request.subject.lower(), FeedbackCategory.GENERAL_INQUIRY)
+
+            # Determine user type if user_id is provided
+            user_type = "Guest"
+            if request.user_id:
+                user_doc = await database.get_user_by_id(request.user_id)
+                if user_doc:
+                    user_type = str(user_doc.get("role", "Guest")).capitalize()
+
             created_at = datetime.utcnow()
             unified_feedback = {
                 "id": str(uuid.uuid4()),
                 "case_id": f"SH-FB-{str(uuid.uuid4())[:8].upper()}",
-                "category": FeedbackCategory.GENERAL_INQUIRY, # Default for contact form
+                "category": category,
                 "source": FeedbackSource.CONTACT_FORM,
                 "status": FeedbackStatus.NEW,
                 "priority": FeedbackPriority.MEDIUM,
                 "user": {
                     "name": request.name,
                     "email": request.email,
-                    "phone": request.phone, # Updated to include phone
-                    "user_id": None,
-                    "user_type": "Guest"
+                    "phone": request.phone,
+                    "user_id": request.user_id,
+                    "user_type": user_type
                 },
-                "is_authenticated": False,
+                "is_authenticated": bool(request.user_id),
                 "subject": request.subject,
                 "message": request.message,
                 "created_at": created_at,
@@ -83,7 +102,7 @@ async def submit_contact_form(request: ContactFormRequest):
                 "timeline": [{
                     "id": str(uuid.uuid4()),
                     "action": "Case created",
-                    "details": "Contact form submission captured",
+                    "details": f"Contact form submission captured ({category})",
                     "performed_by": "System",
                     "created_at": created_at
                 }]
