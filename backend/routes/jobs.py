@@ -80,6 +80,35 @@ def _extract_valid_coords(job_like: dict):
         return None
 
 
+def _is_job_owner(job: dict, user: User) -> bool:
+    """Robust check if user is the owner of the job"""
+    if not job or not user:
+        return False
+    
+    homeowner = job.get("homeowner", {})
+    if not isinstance(homeowner, dict):
+        return False
+        
+    job_h_id = job.get("homeowner_id") or homeowner.get("id")
+    
+    # Check against all possible user IDs
+    user_ids = [user.id]
+    if hasattr(user, 'user_id') and user.user_id:
+        user_ids.append(user.user_id)
+    if hasattr(user, 'public_id') and user.public_id:
+        user_ids.append(user.public_id)
+        
+    if job_h_id and str(job_h_id) in [str(uid) for uid in user_ids]:
+        return True
+        
+    # Fallback to email if ID check fails (for legacy jobs)
+    job_email = homeowner.get("email")
+    if job_email and user.email and job_email.lower() == user.email.lower():
+        return True
+        
+    return False
+
+
 def _validate_or_warn_job_coords(job_like: dict, source: str) -> None:
     coords = _extract_valid_coords(job_like or {})
     if coords:
@@ -249,7 +278,7 @@ async def update_job_location(
         if not job:
             raise HTTPException(status_code=404, detail="Job not found")
         
-        if job["homeowner"]["id"] != current_user.id:
+        if not _is_job_owner(job, current_user):
             raise HTTPException(status_code=403, detail="Not authorized to update this job")
         
         # Update location
@@ -510,14 +539,23 @@ async def get_my_jobs(
     try:
         skip = (page - 1) * limit
         
-        # Build filters for homeowner's jobs - more robust filter using both ID and email
-        filters = {
-            "$or": [
-                {"homeowner_id": current_user.id},
-                {"homeowner.id": current_user.id},
-                {"homeowner.email": current_user.email}
-            ]
-        }
+        # Build filters for homeowner's jobs - comprehensive filter using all possible identifiers
+        or_filters = [
+            {"homeowner_id": current_user.id},
+            {"homeowner.id": current_user.id},
+            {"homeowner.email": current_user.email}
+        ]
+        
+        # Include short numeric IDs if they exist
+        if hasattr(current_user, 'user_id') and current_user.user_id:
+            or_filters.append({"homeowner_id": current_user.user_id})
+            or_filters.append({"homeowner.id": current_user.user_id})
+            
+        if hasattr(current_user, 'public_id') and current_user.public_id:
+            or_filters.append({"homeowner_id": current_user.public_id})
+            or_filters.append({"homeowner.id": current_user.public_id})
+            
+        filters = {"$or": or_filters}
         if status:
             filters["status"] = status
         
@@ -654,7 +692,7 @@ async def update_job(
         if not job:
             raise HTTPException(status_code=404, detail="Job not found")
         
-        if job["homeowner"]["id"] != current_user.id:
+        if not _is_job_owner(job, current_user):
             raise HTTPException(status_code=403, detail="Not authorized to update this job")
         
         # Check if job can be edited (only active jobs)
@@ -707,7 +745,7 @@ async def close_job(
         if not job:
             raise HTTPException(status_code=404, detail="Job not found")
         
-        if job["homeowner"]["id"] != current_user.id:
+        if not _is_job_owner(job, current_user):
             raise HTTPException(status_code=403, detail="Not authorized to close this job")
         
         # Check if job can be closed (only active jobs)
@@ -803,7 +841,7 @@ async def complete_job(
         if not job:
             raise HTTPException(status_code=404, detail="Job not found")
         
-        if job["homeowner"]["id"] != current_user.id:
+        if not _is_job_owner(job, current_user):
             raise HTTPException(status_code=403, detail="Not authorized to complete this job")
         
         # Check if job can be completed (active or in-progress jobs)
@@ -850,7 +888,7 @@ async def reopen_job(
         if not job:
             raise HTTPException(status_code=404, detail="Job not found")
         
-        if job["homeowner"]["id"] != current_user.id:
+        if not _is_job_owner(job, current_user):
             raise HTTPException(status_code=403, detail="Not authorized to reopen this job")
         
         # Check if job can be reopened (only cancelled jobs)
