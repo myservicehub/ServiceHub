@@ -510,8 +510,14 @@ async def get_my_jobs(
     try:
         skip = (page - 1) * limit
         
-        # Build filters for homeowner's jobs
-        filters = {"homeowner.email": current_user.email}
+        # Build filters for homeowner's jobs - more robust filter using both ID and email
+        filters = {
+            "$or": [
+                {"homeowner_id": current_user.id},
+                {"homeowner.id": current_user.id},
+                {"homeowner.email": current_user.email}
+            ]
+        }
         if status:
             filters["status"] = status
         

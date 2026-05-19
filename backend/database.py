@@ -1223,7 +1223,12 @@ class Database:
         
         # Only return active jobs by default for public queries
         # Don't apply default filters for homeowner's own jobs (My Jobs queries)
-        is_homeowner_query = 'homeowner.email' in query or 'homeowner_id' in query
+        is_homeowner_query = (
+            'homeowner.email' in query or 
+            'homeowner_id' in query or 
+            'homeowner.id' in query or
+            ('$or' in query and any('homeowner' in str(k) or 'homeowner_id' in str(k) for k in query['$or']))
+        )
         
         if not is_homeowner_query:
             # For public job listings, only show active and non-expired jobs
@@ -1636,7 +1641,12 @@ class Database:
         
         # Only return active jobs by default for public queries
         # Don't apply default filters for homeowner's own jobs (My Jobs queries)
-        is_homeowner_query = 'homeowner.email' in query or 'homeowner_id' in query
+        is_homeowner_query = (
+            'homeowner.email' in query or 
+            'homeowner_id' in query or 
+            'homeowner.id' in query or
+            ('$or' in query and any('homeowner' in str(k) or 'homeowner_id' in str(k) for k in query['$or']))
+        )
         
         if not is_homeowner_query:
             # For public job listings, only show active and non-expired jobs
