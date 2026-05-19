@@ -22,6 +22,7 @@ const ContactUsPage = () => {
   });
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [globalErrorMessage, setGlobalErrorMessage] = useState('');
   const [platformStats, setPlatformStats] = useState(null);
   const [contactByType, setContactByType] = useState({});
@@ -114,8 +115,9 @@ const ContactUsPage = () => {
         description: `Please sign in to submit a message regarding ${data.subject.replace(/_/g, ' ')}.`,
         variant: "destructive"
       });
-      // Optionally redirect to login
-      // navigate('/login', { state: { from: '/contact' } });
+      
+      // Trigger login modal
+      window.dispatchEvent(new CustomEvent('open-auth-modal', { detail: { mode: 'login' } }));
       return;
     }
 
