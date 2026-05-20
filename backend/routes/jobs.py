@@ -543,17 +543,32 @@ async def get_my_jobs(
         or_filters = [
             {"homeowner_id": current_user.id},
             {"homeowner.id": current_user.id},
-            {"homeowner.email": current_user.email}
+            {"homeowner.email": current_user.email},
+            {"homeowner_email": current_user.email} # Legacy root-level email
         ]
+        
+        # Add case-insensitive email fallbacks for robustness
+        email_regex = {"$regex": f"^{re.escape(current_user.email)}$", "$options": "i"}
+        or_filters.append({"homeowner.email": email_regex})
+        or_filters.append({"homeowner_email": email_regex})
         
         # Include short numeric IDs if they exist
         if hasattr(current_user, 'user_id') and current_user.user_id:
-            or_filters.append({"homeowner_id": current_user.user_id})
-            or_filters.append({"homeowner.id": current_user.user_id})
+            u_id = current_user.user_id
+            or_filters.append({"homeowner_id": u_id})
+            or_filters.append({"homeowner.id": u_id})
+            # Try as integer if numeric string
+            if u_id.isdigit():
+                try:
+                    or_filters.append({"homeowner_id": int(u_id)})
+                    or_filters.append({"homeowner.id": int(u_id)})
+                except ValueError:
+                    pass
             
         if hasattr(current_user, 'public_id') and current_user.public_id:
-            or_filters.append({"homeowner_id": current_user.public_id})
-            or_filters.append({"homeowner.id": current_user.public_id})
+            p_id = current_user.public_id
+            or_filters.append({"homeowner_id": p_id})
+            or_filters.append({"homeowner.id": p_id})
             
         filters = {"$or": or_filters}
         if status:

@@ -1227,7 +1227,11 @@ class Database:
             'homeowner.email' in query or 
             'homeowner_id' in query or 
             'homeowner.id' in query or
-            ('$or' in query and any('homeowner' in str(k) or 'homeowner_id' in str(k) for k in query['$or']))
+            'homeowner_email' in query or
+            ('$or' in query and any(
+                'homeowner' in str(k) or 'homeowner_id' in str(k) 
+                for k in query['$or'] if isinstance(k, (dict, str))
+            ))
         )
         
         if not is_homeowner_query:
@@ -1645,7 +1649,11 @@ class Database:
             'homeowner.email' in query or 
             'homeowner_id' in query or 
             'homeowner.id' in query or
-            ('$or' in query and any('homeowner' in str(k) or 'homeowner_id' in str(k) for k in query['$or']))
+            'homeowner_email' in query or
+            ('$or' in query and any(
+                'homeowner' in str(k) or 'homeowner_id' in str(k) 
+                for k in query['$or'] if isinstance(k, (dict, str))
+            ))
         )
         
         if not is_homeowner_query:
