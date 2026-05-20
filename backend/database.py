@@ -1204,8 +1204,9 @@ class Database:
             h_id = job["homeowner"].get("id")
         return h_id
 
-    async def _filter_jobs_from_deleted_homeowners(self, jobs: List[dict]) -> List[dict]:
-        if not jobs:
+    async def _filter_jobs_from_deleted_homeowners(self, jobs: List[dict], is_homeowner_query: bool = False) -> List[dict]:
+        if not jobs or is_homeowner_query:
+            # Don't filter out jobs if the homeowner themselves is querying their own jobs
             return jobs
         homeowner_ids = {
             h_id for h_id in
@@ -1223,16 +1224,16 @@ class Database:
         
         # Only return active jobs by default for public queries
         # Don't apply default filters for homeowner's own jobs (My Jobs queries)
-        is_homeowner_query = (
-            'homeowner.email' in query or 
-            'homeowner_id' in query or 
-            'homeowner.id' in query or
-            'homeowner_email' in query or
-            ('$or' in query and any(
-                'homeowner' in str(k) or 'homeowner_id' in str(k) 
-                for k in query['$or'] if isinstance(k, (dict, str))
-            ))
-        )
+        is_homeowner_query = False
+        if any(k in query for k in ['homeowner.email', 'homeowner_id', 'homeowner.id', 'homeowner_email']):
+            is_homeowner_query = True
+        elif '$or' in query and isinstance(query['$or'], list):
+            for condition in query['$or']:
+                if isinstance(condition, dict):
+                    # Check if any key in the condition dict relates to homeowner
+                    if any(k.startswith('homeowner') for k in condition.keys()):
+                        is_homeowner_query = True
+                        break
         
         if not is_homeowner_query:
             # For public job listings, only show active and non-expired jobs
@@ -1246,7 +1247,7 @@ class Database:
         except asyncio.TimeoutError:
             logger.warning(f"get_jobs timeout after 10 seconds; returning empty")
             jobs = []
-        jobs = await self._filter_jobs_from_deleted_homeowners(jobs)
+        jobs = await self._filter_jobs_from_deleted_homeowners(jobs, is_homeowner_query=is_homeowner_query)
         
         for job in jobs:
             job_id_str = str(job['_id'])
@@ -1270,7 +1271,8 @@ class Database:
         # 1. Fetch jobs
         cursor = self.database.jobs.find(query).sort("created_at", -1).skip(skip).limit(limit)
         jobs = await cursor.to_list(length=limit)
-        jobs = await self._filter_jobs_from_deleted_homeowners(jobs)
+        # Admin should see all jobs regardless of homeowner status
+        # jobs = await self._filter_jobs_from_deleted_homeowners(jobs)
         
         if not jobs:
             return []
@@ -1645,16 +1647,16 @@ class Database:
         
         # Only return active jobs by default for public queries
         # Don't apply default filters for homeowner's own jobs (My Jobs queries)
-        is_homeowner_query = (
-            'homeowner.email' in query or 
-            'homeowner_id' in query or 
-            'homeowner.id' in query or
-            'homeowner_email' in query or
-            ('$or' in query and any(
-                'homeowner' in str(k) or 'homeowner_id' in str(k) 
-                for k in query['$or'] if isinstance(k, (dict, str))
-            ))
-        )
+        is_homeowner_query = False
+        if any(k in query for k in ['homeowner.email', 'homeowner_id', 'homeowner.id', 'homeowner_email']):
+            is_homeowner_query = True
+        elif '$or' in query and isinstance(query['$or'], list):
+            for condition in query['$or']:
+                if isinstance(condition, dict):
+                    # Check if any key in the condition dict relates to homeowner
+                    if any(k.startswith('homeowner') for k in condition.keys()):
+                        is_homeowner_query = True
+                        break
         
         if not is_homeowner_query:
             # For public job listings, only show active and non-expired jobs

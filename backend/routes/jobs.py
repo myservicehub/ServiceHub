@@ -570,6 +570,13 @@ async def get_my_jobs(
             or_filters.append({"homeowner_id": p_id})
             or_filters.append({"homeowner.id": p_id})
             
+        # Include ObjectId if current_user.id is a valid ObjectId string
+        from bson import ObjectId
+        if ObjectId.is_valid(current_user.id):
+            obj_id = ObjectId(current_user.id)
+            or_filters.append({"homeowner_id": obj_id})
+            or_filters.append({"homeowner.id": obj_id})
+            
         filters = {"$or": or_filters}
         if status:
             filters["status"] = status
