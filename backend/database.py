@@ -1204,6 +1204,101 @@ class Database:
             h_id = job["homeowner"].get("id")
         return h_id
 
+    def _collect_homeowner_id_aliases(self, user: dict) -> set:
+        """Collect every identifier that may appear on job documents for a homeowner."""
+        aliases = set()
+        if not user:
+            return aliases
+
+        for key in ("id", "user_id", "public_id"):
+            val = user.get(key)
+            if val is None or val == "":
+                continue
+            s = str(val).strip()
+            if not s:
+                continue
+            aliases.add(s)
+            if s.isdigit():
+                try:
+                    aliases.add(int(s))
+                except (TypeError, ValueError):
+                    pass
+                stripped = s.lstrip("0") or "0"
+                if stripped != s:
+                    aliases.add(stripped)
+                    if stripped.isdigit():
+                        try:
+                            aliases.add(int(stripped))
+                        except (TypeError, ValueError):
+                            pass
+                if len(s) <= 6:
+                    aliases.add(s.zfill(4))
+
+        try:
+            from bson import ObjectId
+            for val in list(aliases):
+                if isinstance(val, str) and ObjectId.is_valid(val):
+                    aliases.add(ObjectId(val))
+        except Exception:
+            pass
+
+        return aliases
+
+    async def build_homeowner_jobs_query(
+        self,
+        user: dict,
+        status: Optional[str] = None,
+        include_conversation_jobs: bool = True,
+    ) -> dict:
+        """Build a MongoDB query that matches all jobs owned by this homeowner."""
+        import re
+
+        aliases = self._collect_homeowner_id_aliases(user)
+        or_conditions: List[dict] = []
+
+        if aliases:
+            alias_list = list(aliases)
+            or_conditions.extend([
+                {"homeowner_id": {"$in": alias_list}},
+                {"homeowner.id": {"$in": alias_list}},
+                {"homeowner.user_id": {"$in": alias_list}},
+            ])
+
+        email = (user.get("email") or "").strip()
+        if email:
+            email_regex = {"$regex": f"^{re.escape(email)}$", "$options": "i"}
+            or_conditions.append({"homeowner.email": email_regex})
+            or_conditions.append({"homeowner_email": email_regex})
+
+        if include_conversation_jobs and self.database is not None and aliases:
+            try:
+                conversation_job_ids = await self.database.conversations.distinct(
+                    "job_id",
+                    {"homeowner_id": {"$in": list(aliases)}},
+                )
+                conversation_job_ids = [
+                    str(job_id) for job_id in conversation_job_ids if job_id
+                ]
+                if conversation_job_ids:
+                    or_conditions.append({"id": {"$in": conversation_job_ids}})
+                    or_conditions.append({"job_id": {"$in": conversation_job_ids}})
+            except Exception as conv_err:
+                logger.warning(
+                    "Failed to include conversation-linked jobs for homeowner %s: %s",
+                    user.get("id"),
+                    conv_err,
+                )
+
+        if not or_conditions:
+            # No match criteria — return query that matches nothing
+            query: dict = {"id": {"$exists": False}, "__skip_filters": True}
+        else:
+            query = {"$or": or_conditions, "__skip_filters": True}
+
+        if status:
+            query["status"] = status
+        return query
+
     async def _filter_jobs_from_deleted_homeowners(self, jobs: List[dict], is_homeowner_query: bool = False) -> List[dict]:
         if not jobs or is_homeowner_query:
             # Don't filter out jobs if the homeowner themselves is querying their own jobs
@@ -5775,16 +5870,49 @@ class Database:
             return {w["user_id"]: w for w in wallets_list if "user_id" in w}
         tasks.append(fetch_wallets())
 
-        # 2. Task for homeowner job counts
+        # 2. Task for homeowner job counts (match homeowner_id and nested homeowner.id)
         async def fetch_job_counts():
             if not homeowner_ids:
                 return {}
+            expanded_ids = set()
+            for u in users:
+                if u.get("role") == UserRole.HOMEOWNER.value:
+                    expanded_ids.update(self._collect_homeowner_id_aliases(u))
+            if not expanded_ids:
+                return {}
+            alias_list = list(expanded_ids)
             pipeline = [
-                {"$match": {"homeowner.id": {"$in": homeowner_ids}}},
-                {"$group": {"_id": "$homeowner.id", "count": {"$sum": 1}}}
+                {
+                    "$match": {
+                        "$or": [
+                            {"homeowner_id": {"$in": alias_list}},
+                            {"homeowner.id": {"$in": alias_list}},
+                        ]
+                    }
+                },
+                {
+                    "$group": {
+                        "_id": {"$ifNull": ["$homeowner_id", "$homeowner.id"]},
+                        "count": {"$sum": 1},
+                    }
+                },
             ]
             counts = await self.database.jobs.aggregate(pipeline).to_list(length=len(homeowner_ids))
-            return {str(c["_id"]): c["count"] for c in counts}
+            count_map = {str(c["_id"]): c["count"] for c in counts if c.get("_id") is not None}
+            # Map counts back to canonical user.id for the admin list
+            result_map = {}
+            for u in users:
+                if u.get("role") != UserRole.HOMEOWNER.value:
+                    continue
+                uid = u.get("id")
+                if not uid:
+                    continue
+                aliases = self._collect_homeowner_id_aliases(u)
+                total = 0
+                for alias in aliases:
+                    total += count_map.get(str(alias), 0)
+                result_map[uid] = total
+            return result_map
         tasks.append(fetch_job_counts())
 
         # 3. Task for tradesperson interest counts

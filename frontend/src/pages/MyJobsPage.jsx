@@ -119,10 +119,13 @@ const MyJobsPage = () => {
   };
 
   useEffect(() => {
+    if (authLoading) return;
     if (isAuthenticated && user?.role === 'homeowner') {
       loadMyJobs();
+    } else if (!authLoading) {
+      setLoading(false);
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, authLoading]);
 
   // Load my jobs and hiring status data
   const loadMyJobs = async () => {
@@ -131,13 +134,12 @@ const MyJobsPage = () => {
       const response = await jobsAPI.getMyJobs({ limit: 50 });
       console.log('🔍 Jobs API Response:', response);
       if (response?.jobs) {
-        console.log('🔍 Total jobs loaded:', response.jobs.length);
-        console.log('🔍 Jobs by status:', response.jobs.reduce((acc, job) => {
-          acc[job.status] = (acc[job.status] || 0) + 1;
-          return acc;
-        }, {}));
-        console.log('🔍 Completed jobs:', response.jobs.filter(job => job.status === 'completed'));
-        setJobs(response.jobs);
+        const normalizedJobs = response.jobs.map((job) => ({
+          ...job,
+          id: job?.id || job?.job_id || job?._id,
+        })).filter((job) => job?.id);
+        console.log('🔍 Total jobs loaded:', normalizedJobs.length);
+        setJobs(normalizedJobs);
         // Load hiring status for each job
         await loadHiringStatuses(response.jobs);
       } else {

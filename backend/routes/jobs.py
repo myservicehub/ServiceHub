@@ -109,6 +109,32 @@ def _is_job_owner(job: dict, user: User) -> bool:
     return False
 
 
+def _prepare_job_for_response(job: dict) -> dict:
+    """Normalize legacy job documents so they pass Job model validation."""
+    prepared = dict(job)
+    raw_status = prepared.get("status")
+    if raw_status == "open":
+        prepared["status"] = JobStatus.ACTIVE.value
+    elif raw_status and raw_status not in {s.value for s in JobStatus}:
+        prepared["status"] = JobStatus.PENDING_APPROVAL.value
+
+    homeowner = prepared.get("homeowner")
+    if isinstance(homeowner, dict):
+        ho = dict(homeowner)
+        if not ho.get("name"):
+            ho["name"] = ho.get("email", "Homeowner").split("@")[0] or "Homeowner"
+        if not ho.get("phone"):
+            ho["phone"] = "+2340000000000"
+        if not ho.get("email"):
+            ho["email"] = prepared.get("homeowner_email") or "homeowner@example.com"
+        prepared["homeowner"] = ho
+
+    if "id" not in prepared:
+        prepared["id"] = prepared.get("job_id") or str(prepared.get("_id", ""))
+
+    return prepared
+
+
 def _validate_or_warn_job_coords(job_like: dict, source: str) -> None:
     coords = _extract_valid_coords(job_like or {})
     if coords:
@@ -539,78 +565,30 @@ async def get_my_jobs(
     try:
         skip = (page - 1) * limit
 
-        user_aliases = {str(current_user.id)}
-        if getattr(current_user, 'user_id', None):
-            user_aliases.add(str(current_user.user_id))
-        if getattr(current_user, 'public_id', None):
-            user_aliases.add(str(current_user.public_id))
-        
-        # Build filters for homeowner's jobs - comprehensive filter using all possible identifiers
-        or_filters = [
-            {"homeowner_id": current_user.id},
-            {"homeowner.id": current_user.id},
-            {"homeowner.email": current_user.email},
-            {"homeowner_email": current_user.email} # Legacy root-level email
-        ]
-        
-        # Add case-insensitive email fallbacks for robustness
-        email_regex = {"$regex": f"^{re.escape(current_user.email)}$", "$options": "i"}
-        or_filters.append({"homeowner.email": email_regex})
-        or_filters.append({"homeowner_email": email_regex})
-        
-        # Include short numeric IDs if they exist
-        if hasattr(current_user, 'user_id') and current_user.user_id:
-            u_id = current_user.user_id
-            or_filters.append({"homeowner_id": u_id})
-            or_filters.append({"homeowner.id": u_id})
-            # Try as integer if numeric string
-            if u_id.isdigit():
-                try:
-                    or_filters.append({"homeowner_id": int(u_id)})
-                    or_filters.append({"homeowner.id": int(u_id)})
-                except ValueError:
-                    pass
-            
-        if hasattr(current_user, 'public_id') and current_user.public_id:
-            p_id = current_user.public_id
-            or_filters.append({"homeowner_id": p_id})
-            or_filters.append({"homeowner.id": p_id})
+        # Reload from DB so short user_id/public_id aliases are always available
+        db_user = await database.get_user_by_id(current_user.id)
+        user_doc = {**current_user.dict(exclude_none=True)}
+        if db_user:
+            user_doc.update({k: v for k, v in db_user.items() if v is not None})
 
-        # Conversations are keyed by the authenticated homeowner id and can outlive
-        # legacy job owner-field drift. Use them as a recovery path for My Jobs.
-        try:
-            conversation_job_ids = await database.database.conversations.distinct(
-                "job_id",
-                {"homeowner_id": {"$in": list(user_aliases)}}
-            )
-            conversation_job_ids = [str(job_id) for job_id in conversation_job_ids if job_id]
-            if conversation_job_ids:
-                or_filters.append({"id": {"$in": conversation_job_ids}})
-                or_filters.append({"job_id": {"$in": conversation_job_ids}})
-        except Exception as conv_lookup_error:
-            logger.warning(
-                "Failed to include conversation-linked jobs for homeowner %s: %s",
-                current_user.id,
-                conv_lookup_error,
-            )
-            
-        # Include ObjectId if current_user.id is a valid ObjectId string
-        from bson import ObjectId
-        if ObjectId.is_valid(current_user.id):
-            obj_id = ObjectId(current_user.id)
-            or_filters.append({"homeowner_id": obj_id})
-            or_filters.append({"homeowner.id": obj_id})
-            
-        filters = {"$or": or_filters, "__skip_filters": True}
-        if status:
-            filters["status"] = status
+        filters = await database.build_homeowner_jobs_query(user_doc, status=status)
         
         # Get jobs and total count
         jobs = await database.get_jobs(skip=skip, limit=limit, filters=filters)
         total_jobs = await database.get_jobs_count(filters=filters)
         
-        # Convert to Job objects
-        job_objects = [Job(**job) for job in jobs]
+        # Convert to Job objects (normalize legacy records first)
+        job_objects = []
+        for job in jobs:
+            try:
+                job_objects.append(Job(**_prepare_job_for_response(job)))
+            except Exception as job_err:
+                logger.warning(
+                    "Skipping job %s in my-jobs for user %s: %s",
+                    job.get("id"),
+                    current_user.id,
+                    job_err,
+                )
         
         # Calculate pagination
         total_pages = (total_jobs + limit - 1) // limit
