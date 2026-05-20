@@ -1224,16 +1224,17 @@ class Database:
         
         # Only return active jobs by default for public queries
         # Don't apply default filters for homeowner's own jobs (My Jobs queries)
-        is_homeowner_query = False
-        if any(k in query for k in ['homeowner.email', 'homeowner_id', 'homeowner.id', 'homeowner_email']):
-            is_homeowner_query = True
-        elif '$or' in query and isinstance(query['$or'], list):
-            for condition in query['$or']:
-                if isinstance(condition, dict):
-                    # Check if any key in the condition dict relates to homeowner
-                    if any(k.startswith('homeowner') for k in condition.keys()):
-                        is_homeowner_query = True
-                        break
+        is_homeowner_query = query.pop("__skip_filters", False)
+        if not is_homeowner_query:
+            if any(k in query for k in ['homeowner.email', 'homeowner_id', 'homeowner.id', 'homeowner_email']):
+                is_homeowner_query = True
+            elif '$or' in query and isinstance(query['$or'], list):
+                for condition in query['$or']:
+                    if isinstance(condition, dict):
+                        # Check if any key in the condition dict relates to homeowner
+                        if any(k.startswith('homeowner') for k in condition.keys()):
+                            is_homeowner_query = True
+                            break
         
         if not is_homeowner_query:
             # For public job listings, only show active and non-expired jobs
@@ -1647,16 +1648,17 @@ class Database:
         
         # Only return active jobs by default for public queries
         # Don't apply default filters for homeowner's own jobs (My Jobs queries)
-        is_homeowner_query = False
-        if any(k in query for k in ['homeowner.email', 'homeowner_id', 'homeowner.id', 'homeowner_email']):
-            is_homeowner_query = True
-        elif '$or' in query and isinstance(query['$or'], list):
-            for condition in query['$or']:
-                if isinstance(condition, dict):
-                    # Check if any key in the condition dict relates to homeowner
-                    if any(k.startswith('homeowner') for k in condition.keys()):
-                        is_homeowner_query = True
-                        break
+        is_homeowner_query = query.pop("__skip_filters", False)
+        if not is_homeowner_query:
+            if any(k in query for k in ['homeowner.email', 'homeowner_id', 'homeowner.id', 'homeowner_email']):
+                is_homeowner_query = True
+            elif '$or' in query and isinstance(query['$or'], list):
+                for condition in query['$or']:
+                    if isinstance(condition, dict):
+                        # Check if any key in the condition dict relates to homeowner
+                        if any(k.startswith('homeowner') for k in condition.keys()):
+                            is_homeowner_query = True
+                            break
         
         if not is_homeowner_query:
             # For public job listings, only show active and non-expired jobs

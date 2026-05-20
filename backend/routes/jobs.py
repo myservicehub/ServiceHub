@@ -601,7 +601,7 @@ async def get_my_jobs(
             or_filters.append({"homeowner_id": obj_id})
             or_filters.append({"homeowner.id": obj_id})
             
-        filters = {"$or": or_filters}
+        filters = {"$or": or_filters, "__skip_filters": True}
         if status:
             filters["status"] = status
         
