@@ -538,6 +538,12 @@ async def get_my_jobs(
     """Get jobs posted by current homeowner"""
     try:
         skip = (page - 1) * limit
+
+        user_aliases = {str(current_user.id)}
+        if getattr(current_user, 'user_id', None):
+            user_aliases.add(str(current_user.user_id))
+        if getattr(current_user, 'public_id', None):
+            user_aliases.add(str(current_user.public_id))
         
         # Build filters for homeowner's jobs - comprehensive filter using all possible identifiers
         or_filters = [
@@ -569,6 +575,24 @@ async def get_my_jobs(
             p_id = current_user.public_id
             or_filters.append({"homeowner_id": p_id})
             or_filters.append({"homeowner.id": p_id})
+
+        # Conversations are keyed by the authenticated homeowner id and can outlive
+        # legacy job owner-field drift. Use them as a recovery path for My Jobs.
+        try:
+            conversation_job_ids = await database.database.conversations.distinct(
+                "job_id",
+                {"homeowner_id": {"$in": list(user_aliases)}}
+            )
+            conversation_job_ids = [str(job_id) for job_id in conversation_job_ids if job_id]
+            if conversation_job_ids:
+                or_filters.append({"id": {"$in": conversation_job_ids}})
+                or_filters.append({"job_id": {"$in": conversation_job_ids}})
+        except Exception as conv_lookup_error:
+            logger.warning(
+                "Failed to include conversation-linked jobs for homeowner %s: %s",
+                current_user.id,
+                conv_lookup_error,
+            )
             
         # Include ObjectId if current_user.id is a valid ObjectId string
         from bson import ObjectId
