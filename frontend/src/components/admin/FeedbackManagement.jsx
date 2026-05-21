@@ -78,6 +78,7 @@ const FeedbackManagement = () => {
   });
 
   const [admins, setAdmins] = useState([]);
+  const [assignSelectOpen, setAssignSelectOpen] = useState(false);
 
   const [updateData, setUpdateData] = useState({
     status: '',
@@ -92,13 +93,41 @@ const FeedbackManagement = () => {
     fetchAdmins();
   }, [pagination.skip, filters, activeTab]);
 
+  // Re-resolve assignee once admins list is loaded (legacy cases store full names)
+  useEffect(() => {
+    if (!caseDetails || admins.length === 0) return;
+    setUpdateData((prev) => ({
+      ...prev,
+      assigned_to: resolveAssignedToValue(caseDetails.assigned_to),
+    }));
+  }, [admins, caseDetails?.case_id]);
+
   const fetchAdmins = async () => {
     try {
-      const data = await adminAPI.getAllAdmins();
-      setAdmins(data.admins || []);
+      const data = await adminAPI.getAllAdmins({ status: 'active' });
+      const activeOnly = (data.admins || []).filter(
+        (a) => (a.status || 'active').toLowerCase() === 'active'
+      );
+      setAdmins(activeOnly);
     } catch (err) {
       console.error('Failed to fetch admins:', err);
     }
+  };
+
+  const getAdminLabel = (adminIdOrName) => {
+    if (!adminIdOrName || adminIdOrName === 'Unassigned') return 'Unassigned';
+    const byId = admins.find((a) => a.id === adminIdOrName);
+    if (byId) return byId.full_name || byId.username;
+    const byName = admins.find((a) => a.full_name === adminIdOrName);
+    return byName?.full_name || adminIdOrName;
+  };
+
+  const resolveAssignedToValue = (assigned) => {
+    if (!assigned || assigned === 'Unassigned') return 'Unassigned';
+    const byName = admins.find((a) => a.full_name === assigned);
+    if (byName) return byName.id;
+    const byId = admins.find((a) => a.id === assigned);
+    return byId ? byId.id : assigned;
   };
 
   const fetchStats = async () => {
@@ -155,7 +184,7 @@ const FeedbackManagement = () => {
       setUpdateData({
         status: data.status,
         priority: data.priority,
-        assigned_to: data.assigned_to || '',
+        assigned_to: resolveAssignedToValue(data.assigned_to),
         internal_note: ''
       });
     } catch (err) {
@@ -174,7 +203,9 @@ const FeedbackManagement = () => {
       const payload = {
         status: updateData.status,
         priority: updateData.priority,
-        assigned_to: updateData.assigned_to
+        assigned_to: updateData.assigned_to === 'Unassigned'
+          ? null
+          : getAdminLabel(updateData.assigned_to),
       };
       if (updateData.internal_note) {
         payload.internal_note = updateData.internal_note;
@@ -452,23 +483,28 @@ const FeedbackManagement = () => {
       </Tabs>
 
       {/* Case Details Dialog */}
-      <Dialog open={!!selectedCase} onOpenChange={(open) => !open && setSelectedCase(null)}>
+      <Dialog open={!!selectedCase} onOpenChange={(open) => {
+        if (!open) {
+          setSelectedCase(null);
+          setAssignSelectOpen(false);
+        }
+      }}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-0">
           {detailsLoading ? (
             <div className="p-12 text-center">Loading case details...</div>
           ) : caseDetails && (
             <>
-              <DialogHeader className="p-6 pb-2 border-b bg-slate-50">
-                <div className="flex justify-between items-start">
-                  <div>
+              <DialogHeader className="p-6 pb-2 border-b bg-slate-50 pr-14">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0 flex-1">
                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Feedback Case</p>
-                    <DialogTitle className="text-2xl font-bold flex items-center gap-3">
+                    <DialogTitle className="text-2xl font-bold flex flex-wrap items-center gap-2">
                       {caseDetails.case_id}
                       <Badge variant="secondary" className="font-normal">{caseDetails.category}</Badge>
                     </DialogTitle>
-                    <p className="text-sm text-slate-500 mt-1">{caseDetails.subject || 'No subject'}</p>
+                    <p className="text-sm text-slate-500 mt-1 break-words">{caseDetails.subject || 'No subject'}</p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2 shrink-0 max-w-[220px] sm:max-w-none">
                     {getStatusBadge(caseDetails.status)}
                     {getPriorityBadge(caseDetails.priority)}
                     {caseDetails.is_flagged && <Badge variant="destructive">FLAGGED</Badge>}
@@ -501,7 +537,7 @@ const FeedbackManagement = () => {
                               {caseDetails.source?.replace('_', ' ')}
                             </span>
                             <span className="text-slate-500">Assigned To</span>
-                            <span className="font-medium">{caseDetails.assigned_to || 'Unassigned'}</span>
+                            <span className="font-medium">{getAdminLabel(caseDetails.assigned_to)}</span>
                             <span className="text-slate-500">Created</span>
                             <span className="font-medium">{new Date(caseDetails.created_at).toLocaleString()}</span>
                             <span className="text-slate-500">Last Updated</span>
@@ -511,15 +547,24 @@ const FeedbackManagement = () => {
 
                         <div className="space-y-4">
                           <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Submitter Details</h4>
-                          <div className="grid grid-cols-[100px_1fr] gap-2 text-sm">
+                          <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-2 text-sm">
                             <span className="text-slate-500">Type</span>
-                            <span className="font-medium">{caseDetails.user?.user_type}</span>
+                            <span className="font-medium">{caseDetails.user?.user_type || '—'}</span>
+                            <span className="text-slate-500">User ID</span>
+                            <span className="font-medium font-mono text-xs break-all">
+                              {caseDetails.user?.user_id || caseDetails.user?.account_id || '—'}
+                            </span>
                             <span className="text-slate-500">Name</span>
-                            <span className="font-medium">{caseDetails.user?.name}</span>
+                            <span className="font-medium break-words">{caseDetails.user?.name || '—'}</span>
                             <span className="text-slate-500">Email</span>
-                            <span className="font-medium text-blue-600 underline">{caseDetails.user?.email}</span>
+                            <a
+                              href={`mailto:${caseDetails.user?.email || ''}`}
+                              className="font-medium text-blue-600 underline break-all min-w-0"
+                            >
+                              {caseDetails.user?.email || '—'}
+                            </a>
                             <span className="text-slate-500">Phone</span>
-                            <span className="font-medium">{caseDetails.user?.phone || '—'}</span>
+                            <span className="font-medium break-words">{caseDetails.user?.phone || '—'}</span>
                           </div>
                         </div>
                       </div>
@@ -530,10 +575,7 @@ const FeedbackManagement = () => {
                           <Button 
                             variant="outline" 
                             size="sm" 
-                            onClick={() => {
-                              const el = document.querySelector('[data-assign-select]');
-                              if (el) el.scrollIntoView({ behavior: 'smooth' });
-                            }}
+                            onClick={() => setAssignSelectOpen(true)}
                           >
                             <UserPlus className="w-4 h-4 mr-2" />
                             Assign
@@ -702,15 +744,20 @@ const FeedbackManagement = () => {
 
                     <div className="space-y-1.5" data-assign-select>
                       <label className="text-xs font-medium text-slate-600">Assign To</label>
-                      <Select value={updateData.assigned_to} onValueChange={(v) => setUpdateData(prev => ({ ...prev, assigned_to: v }))}>
+                      <Select
+                        open={assignSelectOpen}
+                        onOpenChange={setAssignSelectOpen}
+                        value={updateData.assigned_to || 'Unassigned'}
+                        onValueChange={(v) => setUpdateData(prev => ({ ...prev, assigned_to: v }))}
+                      >
                         <SelectTrigger className="h-9">
                           <SelectValue placeholder="Select Admin" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="Unassigned">Unassigned</SelectItem>
                           {admins.map(admin => (
-                            <SelectItem key={admin.id} value={admin.full_name}>
-                              {admin.full_name} ({admin.role?.replace('_', ' ')})
+                            <SelectItem key={admin.id} value={admin.id}>
+                              {admin.full_name || admin.username} ({admin.role?.replace(/_/g, ' ')})
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -728,7 +775,7 @@ const FeedbackManagement = () => {
                       <Button 
                         variant="outline" 
                         className={`w-full justify-start text-sm h-9 ${caseDetails.is_flagged ? 'bg-red-50 text-red-600 border-red-200' : ''}`}
-                        onClick={() => adminAPI.updateFeedback(caseDetails.id, { is_flagged: !caseDetails.is_flagged }).then(() => handleViewCase(caseDetails.id))}
+                        onClick={() => adminAPI.updateFeedback(caseDetails.case_id, { is_flagged: !caseDetails.is_flagged }).then(() => handleViewCase(caseDetails.case_id))}
                       >
                         <Flag className="w-4 h-4 mr-2" />
                         {caseDetails.is_flagged ? 'Unflag Case' : 'Flag for Attention'}

@@ -10179,10 +10179,47 @@ We may update this Cookie Policy to reflect changes in technology or regulations
             feedback = await self.feedbacks_collection.find_one(query)
             if feedback:
                 feedback['_id'] = str(feedback['_id'])
+                user_info = feedback.get("user") or {}
+                linked_id = user_info.get("user_id")
+                if linked_id:
+                    user_doc = await self.get_user_by_id(linked_id)
+                    if user_doc:
+                        user_info = dict(user_info)
+                        user_info["user_id"] = user_doc.get("user_id") or user_doc.get("public_id") or linked_id
+                        user_info["account_id"] = user_doc.get("id")
+                        user_info.setdefault("name", user_doc.get("name"))
+                        user_info.setdefault("email", user_doc.get("email"))
+                        user_info.setdefault("phone", user_doc.get("phone"))
+                        if not user_info.get("user_type") or user_info.get("user_type") == "Guest":
+                            role = user_doc.get("role", "guest")
+                            user_info["user_type"] = str(role).replace("_", " ").title()
+                        feedback["user"] = user_info
             return feedback
         except Exception as e:
             logger.error(f"Error getting feedback by id: {str(e)}")
             return None
+
+    def _feedback_update_filter(self, feedback: dict) -> dict:
+        """Build a reliable Mongo filter for a feedback document."""
+        from bson import ObjectId
+
+        clauses = []
+        if feedback.get("case_id"):
+            clauses.append({"case_id": feedback["case_id"]})
+        if feedback.get("id"):
+            clauses.append({"id": feedback["id"]})
+        raw_id = feedback.get("_id")
+        if raw_id:
+            try:
+                if isinstance(raw_id, str) and ObjectId.is_valid(raw_id):
+                    clauses.append({"_id": ObjectId(raw_id)})
+                elif not isinstance(raw_id, str):
+                    clauses.append({"_id": raw_id})
+            except Exception:
+                pass
+        if not clauses:
+            return {"case_id": "__missing__"}
+        return {"$or": clauses} if len(clauses) > 1 else clauses[0]
 
     async def update_feedback(self, feedback_id: str, update_data: dict, admin_user: dict = None) -> Optional[dict]:
         """Update feedback status, priority, or other management fields"""
@@ -10190,6 +10227,10 @@ We may update this Cookie Policy to reflect changes in technology or regulations
             feedback = await self.get_feedback_by_id(feedback_id)
             if not feedback:
                 return None
+
+            update_data = dict(update_data)
+            if update_data.get("assigned_to") in ("Unassigned", "", None):
+                update_data["assigned_to"] = None
 
             # Prepare timeline item if status or assignment changed
             timeline_items = []
@@ -10243,13 +10284,17 @@ We may update this Cookie Policy to reflect changes in technology or regulations
                 update_data["timeline"] = existing_timeline + timeline_items
 
             update_data["updated_at"] = datetime.utcnow()
-            
-            await self.feedbacks_collection.update_one(
-                {"_id": feedback["_id"] if isinstance(feedback["_id"], str) else feedback["_id"]},
-                {"$set": update_data}
+
+            result = await self.feedbacks_collection.update_one(
+                self._feedback_update_filter(feedback),
+                {"$set": update_data},
             )
-            
-            return await self.get_feedback_by_id(feedback_id)
+            if result.matched_count == 0:
+                logger.warning("Feedback update matched no documents for %s", feedback_id)
+                return None
+
+            lookup_id = feedback.get("case_id") or feedback.get("id") or feedback_id
+            return await self.get_feedback_by_id(lookup_id)
         except Exception as e:
             logger.error(f"Error updating feedback: {str(e)}")
             raise

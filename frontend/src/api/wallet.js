@@ -221,8 +221,10 @@ export const adminAPI = {
     return response.data;
   },
 
-  async getAllAdmins() {
-    const response = await apiClient.get('/admin-management/admins');
+  async getAllAdmins(params = {}) {
+    const response = await apiClient.get('/admin-management/admins', {
+      params: { status: 'active', limit: 100, ...params },
+    });
     return response.data;
   },
 

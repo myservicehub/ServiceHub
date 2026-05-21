@@ -14,6 +14,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { contactSchema, formatPhoneE164 } from '../utils/validation';
 import ValidationBanner from '../components/ValidationBanner';
 
+const CONTACT_FORM_DRAFT_KEY = 'servicehub_contact_form_draft';
+
 const ContactUsPage = () => {
   useSEO({
     title: 'Contact Us',
@@ -75,7 +77,50 @@ const ContactUsPage = () => {
     }
   });
 
-  const { register, handleSubmit, formState: { errors, isSubmitting, isValid }, reset } = form;
+  const { register, handleSubmit, formState: { errors, isSubmitting, isValid }, reset, getValues } = form;
+
+  // Restore saved draft after login redirect
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(CONTACT_FORM_DRAFT_KEY);
+      if (saved) {
+        const draft = JSON.parse(saved);
+        reset({
+          name: draft.name || '',
+          email: draft.email || '',
+          phone: draft.phone || '',
+          subject: draft.subject || '',
+          userType: draft.userType || '',
+          message: draft.message || '',
+        });
+      }
+    } catch (err) {
+      console.error('Failed to restore contact form draft:', err);
+    }
+  }, [reset]);
+
+  // Prefill from logged-in user when fields are still empty
+  useEffect(() => {
+    if (!user) return;
+    const current = getValues();
+    reset({
+      name: current.name || user.name || '',
+      email: current.email || user.email || '',
+      phone: current.phone || user.phone || '',
+      subject: current.subject || '',
+      userType: current.userType || (user.role === 'tradesperson' ? 'tradesperson' : user.role === 'homeowner' ? 'homeowner' : ''),
+      message: current.message || '',
+    });
+  }, [user, reset, getValues]);
+
+  const saveContactDraft = (data) => {
+    try {
+      sessionStorage.setItem(CONTACT_FORM_DRAFT_KEY, JSON.stringify(data));
+      sessionStorage.setItem('post_login_redirect', '/contact');
+    } catch (err) {
+      console.error('Failed to save contact form draft:', err);
+    }
+  };
 
   // Build a friendly summary message for the banner
   const summarizeErrors = (errObj) => {
@@ -110,9 +155,10 @@ const ContactUsPage = () => {
     // Check if login is required for certain categories
     const protectedCategories = ['account', 'payment', 'technical', 'feedback', 'complaint'];
     if (protectedCategories.includes(data.subject) && !user) {
+      saveContactDraft(data);
       toast({
         title: "Login Required",
-        description: `Please sign in to submit a message regarding ${data.subject.replace(/_/g, ' ')}.`,
+        description: `Please sign in to submit a message regarding ${data.subject.replace(/_/g, ' ')}. Your form will be restored after login.`,
         variant: "destructive"
       });
       
@@ -138,7 +184,10 @@ const ContactUsPage = () => {
         variant: "default"
       });
 
-      // Reset form
+      // Reset form and clear saved draft
+      try {
+        sessionStorage.removeItem(CONTACT_FORM_DRAFT_KEY);
+      } catch (_) {}
       reset();
     } catch (error) {
       toast({

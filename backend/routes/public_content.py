@@ -72,12 +72,17 @@ async def submit_contact_form(request: ContactFormRequest):
             }
             category = subject_map.get(request.subject.lower(), FeedbackCategory.GENERAL_INQUIRY)
 
-            # Determine user type if user_id is provided
+            # Determine user type and display id if user_id is provided
             user_type = "Guest"
+            display_user_id = None
+            account_id = None
             if request.user_id:
                 user_doc = await database.get_user_by_id(request.user_id)
                 if user_doc:
-                    user_type = str(user_doc.get("role", "Guest")).capitalize()
+                    account_id = user_doc.get("id")
+                    display_user_id = user_doc.get("user_id") or user_doc.get("public_id") or account_id
+                    role = user_doc.get("role", "guest")
+                    user_type = str(role).replace("_", " ").title()
 
             created_at = datetime.utcnow()
             unified_feedback = {
@@ -91,7 +96,8 @@ async def submit_contact_form(request: ContactFormRequest):
                     "name": request.name,
                     "email": request.email,
                     "phone": request.phone,
-                    "user_id": request.user_id,
+                    "user_id": display_user_id or request.user_id,
+                    "account_id": account_id or request.user_id,
                     "user_type": user_type
                 },
                 "is_authenticated": bool(request.user_id),
