@@ -25,6 +25,7 @@ class NotificationType(str, Enum):
     CONTACT_FORM = "contact_form"
     TRADESPERSON_WELCOME = "tradesperson_welcome"
     ADMIN_INVITATION = "admin_invitation"
+    FEEDBACK_CASE_ASSIGNED = "feedback_case_assigned"
 
 class NotificationChannel(str, Enum):
     EMAIL = "email"

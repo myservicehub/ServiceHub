@@ -10249,15 +10249,28 @@ We may update this Cookie Policy to reflect changes in technology or regulations
                 if update_data["status"] == "Resolved":
                     update_data["resolved_at"] = datetime.utcnow()
 
-            if "assigned_to" in update_data and update_data["assigned_to"] != feedback.get("assigned_to"):
-                timeline_items.append({
-                    "id": str(uuid.uuid4()),
-                    "action": "Case assigned",
-                    "details": f"Assigned to {update_data['assigned_to']}",
-                    "performed_by": admin_name,
-                    "performed_by_id": admin_id,
-                    "created_at": datetime.utcnow()
-                })
+            assignment_changed = False
+            new_assignee_id = update_data.get("assigned_to_id")
+            new_assignee_name = update_data.get("assigned_to")
+            if new_assignee_id:
+                assignee = await self.get_admin_by_id(new_assignee_id)
+                if assignee:
+                    new_assignee_name = assignee.get("full_name") or assignee.get("username")
+                    update_data["assigned_to"] = new_assignee_name
+                    update_data["assigned_to_id"] = new_assignee_id
+            prev_assignee = feedback.get("assigned_to_id") or feedback.get("assigned_to")
+            next_assignee = update_data.get("assigned_to_id") or update_data.get("assigned_to")
+            if "assigned_to" in update_data or "assigned_to_id" in update_data:
+                if next_assignee and str(next_assignee) != str(prev_assignee or ""):
+                    assignment_changed = True
+                    timeline_items.append({
+                        "id": str(uuid.uuid4()),
+                        "action": "Case assigned",
+                        "details": f"Assigned to {new_assignee_name or next_assignee}",
+                        "performed_by": admin_name,
+                        "performed_by_id": admin_id,
+                        "created_at": datetime.utcnow()
+                    })
 
             if "internal_note" in update_data:
                 note = update_data.pop("internal_note")
@@ -10294,10 +10307,84 @@ We may update this Cookie Policy to reflect changes in technology or regulations
                 return None
 
             lookup_id = feedback.get("case_id") or feedback.get("id") or feedback_id
-            return await self.get_feedback_by_id(lookup_id)
+            updated = await self.get_feedback_by_id(lookup_id)
+
+            if assignment_changed and updated:
+                try:
+                    await self._notify_admin_feedback_case_assigned(
+                        feedback=updated,
+                        assignee_id=update_data.get("assigned_to_id"),
+                        assignee_name=update_data.get("assigned_to"),
+                        assigned_by=admin_name,
+                    )
+                except Exception as notify_err:
+                    logger.warning(
+                        "Failed to send feedback assignment email for %s: %s",
+                        lookup_id,
+                        notify_err,
+                    )
+
+            return updated
         except Exception as e:
             logger.error(f"Error updating feedback: {str(e)}")
             raise
+
+    async def _notify_admin_feedback_case_assigned(
+        self,
+        feedback: dict,
+        assignee_id: Optional[str],
+        assignee_name: Optional[str],
+        assigned_by: str,
+    ) -> None:
+        """Email the assignee when a feedback case is assigned to them."""
+        if not assignee_id and not assignee_name:
+            return
+
+        assignee = None
+        if assignee_id:
+            assignee = await self.get_admin_by_id(assignee_id)
+        if not assignee and assignee_name:
+            assignee = await self.database.admins.find_one({
+                "$or": [
+                    {"full_name": assignee_name},
+                    {"username": assignee_name},
+                ],
+                "status": "active",
+            })
+        if not assignee or not assignee.get("email"):
+            logger.warning(
+                "No active admin email found for feedback assignment (id=%s name=%s)",
+                assignee_id,
+                assignee_name,
+            )
+            return
+
+        try:
+            from .services.notifications import notification_service
+            from .models.notifications import NotificationType
+        except ImportError:
+            from services.notifications import notification_service
+            from models.notifications import NotificationType
+
+        frontend_url = os.environ.get("FRONTEND_URL", "https://myservicehub.co").rstrip("/")
+        user_info = feedback.get("user") or {}
+        template_data = {
+            "admin_name": assignee.get("full_name") or assignee.get("username") or "Admin",
+            "case_id": feedback.get("case_id", ""),
+            "category": feedback.get("category", ""),
+            "priority": feedback.get("priority", "Medium"),
+            "status": feedback.get("status", "New"),
+            "submitter_name": user_info.get("name", "Unknown"),
+            "submitter_email": user_info.get("email", ""),
+            "assigned_by": assigned_by,
+            "admin_panel_url": f"{frontend_url}/admin",
+        }
+        await notification_service.send_notification(
+            user_id=assignee.get("id"),
+            notification_type=NotificationType.FEEDBACK_CASE_ASSIGNED,
+            template_data=template_data,
+            recipient_email=assignee.get("email"),
+        )
 
     async def get_feedback_statistics(self) -> dict:
         """Get comprehensive feedback statistics for admin analytics"""

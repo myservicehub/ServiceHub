@@ -16,7 +16,8 @@ const HiringStatusModal = ({
   tradespersonName,
   tradespersonId,
   onStatusUpdate,
-  onFeedbackSubmit
+  onFeedbackSubmit,
+  onComplete,
 }) => {
   const { toast } = useToast();
   const [step, setStep] = useState('hiring'); // 'hiring', 'job-status', 'feedback', 'completed'
@@ -54,7 +55,8 @@ const HiringStatusModal = ({
       });
 
       setStep('completed');
-      
+      onComplete?.({ jobStatus: status, hired: true });
+
       // Auto-close after 3 seconds
       setTimeout(() => {
         onClose();
@@ -99,7 +101,8 @@ const HiringStatusModal = ({
       });
 
       setStep('completed');
-      
+      onComplete?.({ jobStatus: null, hired: false });
+
       // Auto-close after 3 seconds
       setTimeout(() => {
         onClose();

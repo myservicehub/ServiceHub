@@ -1388,6 +1388,60 @@ serviceHub Team
             )
         }
 
+        templates[NotificationType.FEEDBACK_CASE_ASSIGNED] = {
+            NotificationChannel.EMAIL: NotificationTemplate(
+                id=str(uuid.uuid4()),
+                type=NotificationType.FEEDBACK_CASE_ASSIGNED,
+                channel=NotificationChannel.EMAIL,
+                subject_template="Feedback case assigned to you: {case_id}",
+                content_template="""
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #374151; margin: 0; padding: 0; background: #f6f7fb; }
+        .container { max-width: 640px; margin: 0 auto; padding: 24px; }
+        .card { background: #ffffff; border-radius: 12px; border: 1px solid #e6e8ef; overflow: hidden; }
+        .header { background: #121E3C; color: #fff; padding: 20px 24px; }
+        .content { padding: 24px; }
+        .meta { background: #f9fafb; border-radius: 8px; padding: 16px; margin: 16px 0; }
+        .meta p { margin: 6px 0; }
+        .btn { display: inline-block; background: #34D164; color: #fff !important; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 16px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header"><h2 style="margin:0;">New case assigned</h2></div>
+            <div class="content">
+                <p>Hi {admin_name},</p>
+                <p><strong>{assigned_by}</strong> assigned feedback case <strong>{case_id}</strong> to you.</p>
+                <div class="meta">
+                    <p><strong>Category:</strong> {category}</p>
+                    <p><strong>Priority:</strong> {priority}</p>
+                    <p><strong>Status:</strong> {status}</p>
+                    <p><strong>From:</strong> {submitter_name} ({submitter_email})</p>
+                </div>
+                <a class="btn" href="{admin_panel_url}">Open Admin Panel</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+                """,
+                variables=[
+                    "admin_name",
+                    "case_id",
+                    "category",
+                    "priority",
+                    "status",
+                    "submitter_name",
+                    "submitter_email",
+                    "assigned_by",
+                    "admin_panel_url",
+                ],
+            )
+        }
+
         # Admin Invitation templates
         templates[NotificationType.ADMIN_INVITATION] = {
             NotificationChannel.EMAIL: NotificationTemplate(

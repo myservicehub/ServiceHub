@@ -206,6 +206,9 @@ const FeedbackManagement = () => {
         assigned_to: updateData.assigned_to === 'Unassigned'
           ? null
           : getAdminLabel(updateData.assigned_to),
+        assigned_to_id: updateData.assigned_to === 'Unassigned'
+          ? null
+          : updateData.assigned_to,
       };
       if (updateData.internal_note) {
         payload.internal_note = updateData.internal_note;
@@ -394,6 +397,9 @@ const FeedbackManagement = () => {
                   <SelectItem value="Partnership Opportunities">Partnership Opportunities</SelectItem>
                   <SelectItem value="Feedback & Suggestions">Feedback & Suggestions</SelectItem>
                   <SelectItem value="Complaint">Complaint</SelectItem>
+                  <SelectItem value="Abandoned Postings">Abandoned Postings</SelectItem>
+                  <SelectItem value="Not Hired">Not Hired</SelectItem>
+                  <SelectItem value="Job Closed">Job Closed</SelectItem>
                 </SelectContent>
               </Select>
 

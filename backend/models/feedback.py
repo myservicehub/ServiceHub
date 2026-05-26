@@ -12,6 +12,9 @@ class FeedbackCategory(str, Enum):
     GENERAL_INQUIRY = "General Inquiry"
     FEEDBACK_SUGGESTIONS = "Feedback & Suggestions"
     PARTNERSHIP_OPPORTUNITIES = "Partnership Opportunities"
+    ABANDONED_POSTINGS = "Abandoned Postings"
+    NOT_HIRED = "Not Hired"
+    JOB_CLOSED = "Job Closed"
 
 class FeedbackStatus(str, Enum):
     NEW = "New"

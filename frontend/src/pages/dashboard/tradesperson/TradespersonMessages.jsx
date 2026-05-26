@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { Badge } from '../../../components/ui/badge';
+import { formatMessageTime } from '../../../utils/datetime';
 
 const TradespersonMessages = () => {
   const [conversations, setConversations] = useState([]);
@@ -437,7 +438,7 @@ const TradespersonMessages = () => {
                             {msg.content}
                           </p>
                           <span className={cn("text-xs mt-2 block", isOwn ? "text-white/70" : "text-gray-400")}>
-                            {msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                            {formatMessageTime(msg.created_at)}
                           </span>
                         </div>
                       </div>

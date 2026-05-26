@@ -717,6 +717,16 @@ async def update_hiring_status(
         
         # If hired and job is completed, schedule review reminder
         if hired and job_status == "completed":
+            await database.database.jobs.update_one(
+                {"id": job_id},
+                {
+                    "$set": {
+                        "status": "completed",
+                        "completed_at": datetime.utcnow(),
+                        "updated_at": datetime.utcnow(),
+                    }
+                },
+            )
             background_tasks.add_task(
                 _send_review_invitation,
                 current_user,
@@ -793,8 +803,7 @@ async def submit_hiring_feedback(
         try:
             from ..models.feedback import FeedbackCategory, FeedbackSource, FeedbackStatus, FeedbackPriority
             
-            # Map feedback type to category or include in message
-            category = FeedbackCategory.GENERAL_INQUIRY
+            category = FeedbackCategory.NOT_HIRED
             if feedback_type == "complaint":
                 category = FeedbackCategory.COMPLAINT
             
@@ -813,8 +822,8 @@ async def submit_hiring_feedback(
                     "user_type": "Homeowner"
                 },
                 "is_authenticated": True,
-                "subject": f"Hiring Feedback: {job.get('title', 'Untitled Job')}",
-                "message": f"Feedback Type: {feedback_type}. Comment: {comment}",
+                "subject": f"Not Hired — {tradesperson.get('name', 'Tradesperson')}: {job.get('title', 'Untitled Job')}",
+                "message": f"Reason: {feedback_type}. Additional comment: {comment or 'None'}",
                 "job_id": job_id,
                 "tradesperson_id": tradesperson_id,
                 "created_at": feedback_record["created_at"],

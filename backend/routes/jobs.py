@@ -810,7 +810,7 @@ async def close_job(
             unified_feedback = {
                 "id": str(uuid.uuid4()),
                 "case_id": f"SH-FB-{str(uuid.uuid4())[:8].upper()}",
-                "category": FeedbackCategory.GENERAL_INQUIRY,
+                "category": FeedbackCategory.JOB_CLOSED,
                 "source": FeedbackSource.WEBSITE,
                 "status": FeedbackStatus.NEW,
                 "priority": FeedbackPriority.MEDIUM,
