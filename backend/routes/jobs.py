@@ -806,11 +806,14 @@ async def close_job(
         try:
             from ..models.feedback import FeedbackCategory, FeedbackSource, FeedbackStatus, FeedbackPriority
             
+            # Use specific category for homeowner job closure
+            category = FeedbackCategory.JOB_CLOSURE_NO_HIRE
+            
             created_at = datetime.utcnow()
             unified_feedback = {
                 "id": str(uuid.uuid4()),
                 "case_id": f"SH-FB-{str(uuid.uuid4())[:8].upper()}",
-                "category": FeedbackCategory.JOB_CLOSED,
+                "category": category,
                 "source": FeedbackSource.WEBSITE,
                 "status": FeedbackStatus.NEW,
                 "priority": FeedbackPriority.MEDIUM,

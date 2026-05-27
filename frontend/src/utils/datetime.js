@@ -11,7 +11,7 @@ export const parseServerDate = (value) => {
 };
 
 /**
- * Format message time in the user's local timezone (Africa/Lagos for Nigeria).
+ * Format message time in the user's local timezone.
  */
 export const formatMessageTime = (value, options = {}) => {
   const date = parseServerDate(value);
@@ -19,7 +19,6 @@ export const formatMessageTime = (value, options = {}) => {
   return date.toLocaleTimeString('en-NG', {
     hour: '2-digit',
     minute: '2-digit',
-    timeZone: 'Africa/Lagos',
     ...options,
   });
 };

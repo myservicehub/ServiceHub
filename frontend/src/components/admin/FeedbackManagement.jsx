@@ -391,15 +391,17 @@ const FeedbackManagement = () => {
                 <SelectContent>
                   <SelectItem value="All">All Categories</SelectItem>
                   <SelectItem value="General Inquiry">General Inquiry</SelectItem>
+                  <SelectItem value="Abandoned Postings">Abandoned Postings</SelectItem>
+                  <SelectItem value="Not Hired">Not Hired</SelectItem>
+                  <SelectItem value="Job Closed">Job Closed</SelectItem>
+                  <SelectItem value="Job Closure (No Hire)">Job Closure (No Hire)</SelectItem>
+                  <SelectItem value="Cancelled Postings">Cancelled Postings</SelectItem>
                   <SelectItem value="Account Issues">Account Issues</SelectItem>
                   <SelectItem value="Payment & Billing">Payment & Billing</SelectItem>
                   <SelectItem value="Technical Support">Technical Support</SelectItem>
                   <SelectItem value="Partnership Opportunities">Partnership Opportunities</SelectItem>
                   <SelectItem value="Feedback & Suggestions">Feedback & Suggestions</SelectItem>
                   <SelectItem value="Complaint">Complaint</SelectItem>
-                  <SelectItem value="Abandoned Postings">Abandoned Postings</SelectItem>
-                  <SelectItem value="Not Hired">Not Hired</SelectItem>
-                  <SelectItem value="Job Closed">Job Closed</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -485,6 +487,66 @@ const FeedbackManagement = () => {
               </TableBody>
             </Table>
           </div>
+
+          {/* Pagination */}
+          {pagination.total > pagination.limit && (
+            <div className="flex items-center justify-between px-2 py-4 border-t">
+              <div className="text-sm text-muted-foreground">
+                Showing <span className="font-medium">{pagination.skip + 1}</span> to{' '}
+                <span className="font-medium">
+                  {Math.min(pagination.skip + pagination.limit, pagination.total)}
+                </span> of{' '}
+                <span className="font-medium">{pagination.total}</span> cases
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPagination(prev => ({ ...prev, skip: Math.max(0, prev.skip - prev.limit) }))}
+                  disabled={pagination.skip === 0}
+                >
+                  Previous
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.ceil(pagination.total / pagination.limit) }).map((_, i) => {
+                    const pageSkip = i * pagination.limit;
+                    if (
+                      i === 0 || 
+                      i === Math.ceil(pagination.total / pagination.limit) - 1 ||
+                      (pageSkip >= pagination.skip - pagination.limit && pageSkip <= pagination.skip + pagination.limit)
+                    ) {
+                      return (
+                        <Button
+                          key={i}
+                          variant={pagination.skip === pageSkip ? "default" : "outline"}
+                          size="sm"
+                          className="w-8 h-8 p-0"
+                          onClick={() => setPagination(prev => ({ ...prev, skip: pageSkip }))}
+                        >
+                          {i + 1}
+                        </Button>
+                      );
+                    }
+                    if (
+                      (i === 1 && pagination.skip > pagination.limit * 2) ||
+                      (i === Math.ceil(pagination.total / pagination.limit) - 2 && pagination.skip < pagination.total - pagination.limit * 3)
+                    ) {
+                      return <span key={i} className="px-1 text-muted-foreground">...</span>;
+                    }
+                    return null;
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPagination(prev => ({ ...prev, skip: pagination.skip + pagination.limit }))}
+                  disabled={pagination.skip + pagination.limit >= pagination.total}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
 

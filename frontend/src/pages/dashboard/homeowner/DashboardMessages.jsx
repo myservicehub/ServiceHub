@@ -324,8 +324,8 @@ const DashboardMessages = () => {
               </div>
 
               {/* Job Status Banner — hidden once job is completed or cancelled */}
-              {selectedConversation?.job_status !== 'completed' &&
-                selectedConversation?.job_status !== 'cancelled' && (
+              {selectedConversation?.job_status?.toLowerCase() !== 'completed' &&
+                selectedConversation?.job_status?.toLowerCase() !== 'cancelled' && (
                 <div className="px-4 py-3 bg-blue-50 border-b border-blue-100">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex gap-3">
@@ -371,7 +371,7 @@ const DashboardMessages = () => {
 
               {/* Message Input */}
               <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-100">
-                {selectedConversation?.job_status === 'completed' ? (
+                {selectedConversation?.job_status?.toLowerCase() === 'completed' ? (
                   <div className="p-4 bg-gray-50 text-center text-gray-500 rounded-lg flex items-center justify-center gap-2">
                     <CheckCheck className="w-4 h-4 text-green-500" />
                     <span>This job is completed. Chat is disabled.</span>
