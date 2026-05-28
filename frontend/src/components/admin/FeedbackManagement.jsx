@@ -394,8 +394,6 @@ const FeedbackManagement = () => {
                   <SelectItem value="Abandoned Postings">Abandoned Postings</SelectItem>
                   <SelectItem value="Not Hired">Not Hired</SelectItem>
                   <SelectItem value="Job Closed">Job Closed</SelectItem>
-                  <SelectItem value="Job Closure (No Hire)">Job Closure (No Hire)</SelectItem>
-                  <SelectItem value="Cancelled Postings">Cancelled Postings</SelectItem>
                   <SelectItem value="Account Issues">Account Issues</SelectItem>
                   <SelectItem value="Payment & Billing">Payment & Billing</SelectItem>
                   <SelectItem value="Technical Support">Technical Support</SelectItem>

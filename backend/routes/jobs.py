@@ -807,7 +807,7 @@ async def close_job(
             from ..models.feedback import FeedbackCategory, FeedbackSource, FeedbackStatus, FeedbackPriority
             
             # Use specific category for homeowner job closure
-            category = FeedbackCategory.JOB_CLOSURE_NO_HIRE
+            category = FeedbackCategory.NOT_HIRED
             
             created_at = datetime.utcnow()
             unified_feedback = {

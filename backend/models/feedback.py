@@ -15,8 +15,6 @@ class FeedbackCategory(str, Enum):
     ABANDONED_POSTINGS = "Abandoned Postings"
     NOT_HIRED = "Not Hired"
     JOB_CLOSED = "Job Closed"
-    JOB_CLOSURE_NO_HIRE = "Job Closure (No Hire)"
-    CANCELLED_POSTINGS = "Cancelled Postings"
 
 class FeedbackStatus(str, Enum):
     NEW = "New"
