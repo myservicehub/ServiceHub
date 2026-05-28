@@ -562,20 +562,22 @@ const FeedbackManagement = () => {
             <div className="p-12 text-center">Loading case details...</div>
           ) : caseDetails && (
             <>
-              <DialogHeader className="p-6 pb-2 border-b bg-slate-50 pr-14">
+              <DialogHeader className="p-6 pb-2 border-b bg-slate-50 pr-14 relative">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Feedback Case</p>
-                    <DialogTitle className="text-2xl font-bold flex flex-wrap items-center gap-2">
-                      {caseDetails.case_id}
-                      <Badge variant="secondary" className="font-normal">{caseDetails.category}</Badge>
-                    </DialogTitle>
-                    <p className="text-sm text-slate-500 mt-1 break-words">{caseDetails.subject || 'No subject'}</p>
-                  </div>
-                  <div className="flex flex-wrap gap-2 shrink-0 max-w-[220px] sm:max-w-none">
-                    {getStatusBadge(caseDetails.status)}
-                    {getPriorityBadge(caseDetails.priority)}
-                    {caseDetails.is_flagged && <Badge variant="destructive">FLAGGED</Badge>}
+                    <div className="flex flex-col gap-2">
+                      <DialogTitle className="text-2xl font-bold break-all">
+                        {caseDetails.case_id}
+                      </DialogTitle>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge variant="secondary" className="font-normal">{caseDetails.category}</Badge>
+                        {getStatusBadge(caseDetails.status)}
+                        {getPriorityBadge(caseDetails.priority)}
+                        {caseDetails.is_flagged && <Badge variant="destructive">FLAGGED</Badge>}
+                      </div>
+                    </div>
+                    <p className="text-sm text-slate-500 mt-2 break-words">{caseDetails.subject || 'No subject'}</p>
                   </div>
                 </div>
               </DialogHeader>
@@ -620,19 +622,19 @@ const FeedbackManagement = () => {
                             <span className="font-medium">{caseDetails.user?.user_type || '—'}</span>
                             <span className="text-slate-500">User ID</span>
                             <span className="font-medium font-mono text-xs break-all">
-                              {caseDetails.user?.user_id || caseDetails.user?.account_id || '—'}
+                              {caseDetails.user?.user_id || caseDetails.user?.public_id || 'N/A'}
                             </span>
                             <span className="text-slate-500">Name</span>
-                            <span className="font-medium break-words">{caseDetails.user?.name || '—'}</span>
+                            <span className="font-medium break-words">{caseDetails.user?.name || 'N/A'}</span>
                             <span className="text-slate-500">Email</span>
                             <a
                               href={`mailto:${caseDetails.user?.email || ''}`}
                               className="font-medium text-blue-600 underline break-all min-w-0"
                             >
-                              {caseDetails.user?.email || '—'}
+                              {caseDetails.user?.email || 'N/A'}
                             </a>
                             <span className="text-slate-500">Phone</span>
-                            <span className="font-medium break-words">{caseDetails.user?.phone || '—'}</span>
+                            <span className="font-medium break-words">{caseDetails.user?.phone || 'N/A'}</span>
                           </div>
                         </div>
                       </div>
@@ -643,7 +645,14 @@ const FeedbackManagement = () => {
                           <Button 
                             variant="outline" 
                             size="sm" 
-                            onClick={() => setAssignSelectOpen(true)}
+                            onClick={() => {
+                              setAssignSelectOpen(true);
+                              // Ensure the select is in view
+                              const el = document.querySelector('[data-assign-select]');
+                              if (el) {
+                                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                              }
+                            }}
                           >
                             <UserPlus className="w-4 h-4 mr-2" />
                             Assign

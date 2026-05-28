@@ -10173,10 +10173,19 @@ We may update this Cookie Policy to reflect changes in technology or regulations
             return [], 0
 
     async def get_feedback_by_id(self, feedback_id: str) -> Optional[dict]:
-        """Get feedback by ID or Case ID"""
+        """Get feedback by ID or Case ID or MongoDB _id"""
         try:
-            query = {"$or": [{"id": feedback_id}, {"case_id": feedback_id}]}
-            feedback = await self.feedbacks_collection.find_one(query)
+            from bson import ObjectId
+            query_clauses = [{"id": feedback_id}, {"case_id": feedback_id}]
+            
+            # Add MongoDB _id to search
+            if ObjectId.is_valid(feedback_id):
+                query_clauses.append({"_id": ObjectId(feedback_id)})
+            else:
+                # Also try as string _id just in case
+                query_clauses.append({"_id": feedback_id})
+                
+            feedback = await self.feedbacks_collection.find_one({"$or": query_clauses})
             if feedback:
                 feedback['_id'] = str(feedback['_id'])
                 user_info = feedback.get("user") or {}
@@ -10208,17 +10217,27 @@ We may update this Cookie Policy to reflect changes in technology or regulations
             clauses.append({"case_id": feedback["case_id"]})
         if feedback.get("id"):
             clauses.append({"id": feedback["id"]})
+        
+        # Also try to match by case_id if feedback_id itself looks like a case_id
+        # (This is handled by get_feedback_by_id, but we want the filter to be robust)
+        
         raw_id = feedback.get("_id")
         if raw_id:
             try:
                 if isinstance(raw_id, str) and ObjectId.is_valid(raw_id):
                     clauses.append({"_id": ObjectId(raw_id)})
-                elif not isinstance(raw_id, str):
+                elif isinstance(raw_id, ObjectId):
+                    clauses.append({"_id": raw_id})
+                else:
+                    # Fallback for string _id
                     clauses.append({"_id": raw_id})
             except Exception:
                 pass
+        
         if not clauses:
             return {"case_id": "__missing__"}
+            
+        # If we have multiple clauses, use $or to be as inclusive as possible
         return {"$or": clauses} if len(clauses) > 1 else clauses[0]
 
     async def update_feedback(self, feedback_id: str, update_data: dict, admin_user: dict = None) -> Optional[dict]:

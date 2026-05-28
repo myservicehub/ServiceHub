@@ -103,14 +103,23 @@ const ContactUsPage = () => {
   useEffect(() => {
     if (!user) return;
     const current = getValues();
-    reset({
-      name: current.name || user.name || '',
-      email: current.email || user.email || '',
-      phone: current.phone || user.phone || '',
-      subject: current.subject || '',
-      userType: current.userType || (user.role === 'tradesperson' ? 'tradesperson' : user.role === 'homeowner' ? 'homeowner' : ''),
-      message: current.message || '',
-    });
+    
+    // Only prefill if the fields are currently empty to avoid overwriting user input
+    const updates = {};
+    if (!current.name && user.name) updates.name = user.name;
+    if (!current.email && user.email) updates.email = user.email;
+    if (!current.phone && user.phone) updates.phone = user.phone;
+    if (!current.userType) {
+      if (user.role === 'tradesperson') updates.userType = 'tradesperson';
+      else if (user.role === 'homeowner') updates.userType = 'homeowner';
+    }
+
+    if (Object.keys(updates).length > 0) {
+      reset({
+        ...current,
+        ...updates
+      });
+    }
   }, [user, reset, getValues]);
 
   const saveContactDraft = (data) => {

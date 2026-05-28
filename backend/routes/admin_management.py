@@ -300,9 +300,9 @@ async def get_all_admins(
     limit: int = 50,
     role: Optional[AdminRole] = None,
     status: Optional[AdminStatus] = None,
-    admin: dict = Depends(require_permission(AdminPermission.MANAGE_ADMINS))
+    admin: dict = Depends(get_current_admin)
 ):
-    """Get all admins (Super Admin only)"""
+    """Get all admins for management or assignment (Filtered by status if provided)"""
     
     # Degraded mode: avoid database calls and return safe fallback
     if not getattr(database, "connected", True):
