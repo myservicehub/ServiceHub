@@ -91,6 +91,8 @@ const FeedbackManagement = () => {
     fetchStats();
     fetchFeedbacks();
     fetchAdmins();
+    // Scroll to top when page changes or filters applied
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [pagination.skip, filters, activeTab]);
 
   // Re-resolve assignee once admins list is loaded (legacy cases store full names)
@@ -348,8 +350,31 @@ const FeedbackManagement = () => {
               <CardHeader>
                 <CardTitle className="text-base">Most Complained-About Providers</CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground text-center py-8">Analytics coming soon</p>
+              <CardContent className="space-y-4">
+                {stats?.top_complained_providers?.map((provider) => (
+                  <div key={provider.id} className="space-y-1">
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex flex-col">
+                        <span className="font-medium">{provider.name}</span>
+                        {provider.avg_rating && (
+                          <span className="text-[10px] text-amber-600 flex items-center">
+                            ★ {provider.avg_rating}/5 avg rating
+                          </span>
+                        )}
+                      </div>
+                      <span className="font-semibold text-red-600">{provider.count} cases</span>
+                    </div>
+                    <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-red-500 rounded-full" 
+                        style={{ width: `${(provider.count / (stats?.total_cases || 1)) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+                {(!stats?.top_complained_providers || stats.top_complained_providers.length === 0) && (
+                  <p className="text-sm text-muted-foreground text-center py-8">No provider complaint data available</p>
+                )}
               </CardContent>
             </Card>
           </div>

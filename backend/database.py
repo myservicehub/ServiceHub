@@ -10467,7 +10467,7 @@ We may update this Cookie Policy to reflect changes in technology or regulations
 
             # Positive/Negative ratio (based on rating)
             pipeline_rating = [
-                {"$match": {"rating": {"$exists": True}}},
+                {"$match": {"rating": {"$exists": True, "$ne": None}}},
                 {"$group": {
                     "_id": {"$gt": ["$rating", 3]},
                     "count": {"$sum": 1}
@@ -10481,7 +10481,30 @@ We may update this Cookie Policy to reflect changes in technology or regulations
                 else:
                     negative = doc["count"]
             
-            rating_ratio = f"{positive}:{negative}" if negative > 0 else f"{positive}:0"
+            rating_ratio = f"{positive}:{negative}" if (positive > 0 or negative > 0) else "0:0"
+
+            # Most Complained-About Providers
+            pipeline_providers = [
+                {"$match": {"tradesperson_id": {"$exists": True, "$ne": None}}},
+                {"$group": {
+                    "_id": "$tradesperson_id",
+                    "complaint_count": {"$sum": 1},
+                    "avg_rating": {"$avg": "$rating"}
+                }},
+                {"$sort": {"complaint_count": -1}},
+                {"$limit": 5}
+            ]
+            top_providers = []
+            async for doc in self.feedbacks_collection.aggregate(pipeline_providers):
+                provider_id = doc["_id"]
+                # Get provider name from users collection
+                provider = await self.get_user_by_id(provider_id)
+                top_providers.append({
+                    "id": provider_id,
+                    "name": provider.get("name") if provider else "Unknown Provider",
+                    "count": doc["complaint_count"],
+                    "avg_rating": round(doc["avg_rating"], 1) if doc.get("avg_rating") else None
+                })
 
             return {
                 "total_cases": total_cases,
@@ -10491,7 +10514,8 @@ We may update this Cookie Policy to reflect changes in technology or regulations
                 "recovery_rate": f"{recovery_rate}%",
                 "rating_ratio": rating_ratio,
                 "categories": categories,
-                "statuses": statuses
+                "statuses": statuses,
+                "top_complained_providers": top_providers
             }
         except Exception as e:
             logger.error(f"Error getting feedback statistics: {str(e)}")
