@@ -150,7 +150,7 @@ const FeedbackManagement = () => {
         search: search
       };
       
-      // Map tab values to backend filters
+      // Map tab value to backend filters
       if (activeTab === 'job_closure') {
         params.source = 'job_closure_no_hire';
       } else if (activeTab === 'job_exit') {

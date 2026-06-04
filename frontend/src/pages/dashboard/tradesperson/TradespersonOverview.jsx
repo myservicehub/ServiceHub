@@ -5,6 +5,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { jobsAPI } from '../../../api/jobs';
 import { authAPI } from '../../../api/services';
 import { walletAPI } from '../../../api/wallet';
+import { reviewsAPI } from '../../../api/reviews';
 import {
   Search,
   Heart,
@@ -152,10 +153,11 @@ const TradespersonOverview = () => {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      // Fetch interests/jobs data and live wallet balance in parallel
-      const [interestsResponse, walletResponse] = await Promise.all([
+      // Fetch interests/jobs data, live wallet balance, and review summary in parallel
+      const [interestsResponse, walletResponse, reviewSummary] = await Promise.all([
         jobsAPI.getMyInterests({ limit: 50 }),
         walletAPI.getBalance().catch(() => null),
+        user?.id ? reviewsAPI.getReviewSummary(user.id).catch(() => null) : null,
       ]);
       const interests = Array.isArray(interestsResponse)
         ? interestsResponse
@@ -167,15 +169,18 @@ const TradespersonOverview = () => {
         : (Number.isFinite(liveWalletCoins) ? liveWalletCoins * 100 : (user?.wallet_balance || 0));
 
       // Calculate stats
-      const activeInterests = interests.filter(i => i.status === 'pending' || i.status === 'accepted').length;
-      const completedJobs = interests.filter(i => i.status === 'completed').length;
+      const activeInterests = interests.filter(i => 
+        !['completed', 'cancelled'].includes(i.job_status) && 
+        ['pending', 'interested', 'contact_shared', 'paid_access', 'accepted'].includes(i.status)
+      ).length;
+      const completedJobs = interests.filter(i => i.job_status === 'completed').length;
 
       setStats({
         activeInterests,
         completedJobs,
         totalEarnings,
-        averageRating: user?.average_rating || 0,
-        reviewCount: user?.review_count || 0,
+        averageRating: reviewSummary?.average_rating || 0,
+        reviewCount: reviewSummary?.total_reviews || 0,
       });
 
       // Get recent jobs

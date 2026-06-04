@@ -25,6 +25,7 @@ import {
   ArrowUpDown
 } from 'lucide-react';
 import { interestsAPI } from '../api/services';
+import { reviewsAPI } from '../api/reviews';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -76,8 +77,11 @@ const CompletedJobsPage = () => {
     try {
       setLoading(true);
       
-      // Use the dedicated completed jobs API
-      const completedJobsData = await interestsAPI.getCompletedJobs();
+      // Use the dedicated completed jobs endpoint and review summary
+      const [completedJobsData, reviewSummary] = await Promise.all([
+        interestsAPI.getCompletedJobs(),
+        user?.id ? reviewsAPI.getReviewSummary(user.id).catch(() => null) : null,
+      ]);
       
       // Sort the jobs based on sortBy
       const sortedJobs = sortCompletedJobs(completedJobsData, sortBy);
@@ -88,7 +92,7 @@ const CompletedJobsPage = () => {
       setCompletedJobs(filteredJobs);
       
       // Calculate stats
-      calculateStats(completedJobsData);
+      calculateStats(completedJobsData, reviewSummary);
       
     } catch (error) {
       console.error('Failed to load completed jobs:', error);
@@ -139,11 +143,9 @@ const CompletedJobsPage = () => {
     }
   };
 
-  const calculateStats = (jobs) => {
+  const calculateStats = (jobs, reviewSummary) => {
     const totalCompleted = jobs.length;
-    const avgRating = jobs.length > 0 
-      ? jobs.reduce((sum, job) => sum + (job.rating || 0), 0) / jobs.length 
-      : 0;
+    const avgRating = reviewSummary?.average_rating || 0;
     
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
